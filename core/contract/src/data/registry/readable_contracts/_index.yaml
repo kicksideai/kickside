@@ -2,205 +2,11 @@ version: "1.0"
 namespace: kickside.data
 
 entries:
-  # ─── Reading a target back ───────────────────────────────────────────
-  # loadable puts rows into a target and promises nothing about getting them
-  # back: list and describe serve its own protocol, and describe_scope, the
-  # one read of data it has, exists so a commit can assert what it is about
-  # to replace. Everything else a producer or an analyst needs -- a sample of
-  # what is there, a profile of a slice, which keys already exist, what one
-  # run loaded, a sum by market year over year -- is a read of the same target
-  # in the same vocabulary (target, columns, key, period, run_id), and without
-  # a contract every caller would have to learn whose tables are behind it.
-  # That is the dependency this contract removes.
-  #
-  # readable is deliberately not a SQL pipe. A caller sends a structural query:
-  # a target, or targets joined many-to-one, a projection, closed predicates,
-  # grouping, a closed catalogue of functions, an order, a limit, named
-  # parameters. The receiver resolves every column against its own describe,
-  # maps every name and alias to identifiers of its own, binds every value,
-  # and compiles and runs the query however it stores rows -- SQLite,
-  # Postgres, a table in memory. Nothing a caller sends ever becomes statement
-  # text, which makes the contract read-only by construction rather than by a
-  # guard over text, and lets a receiver that is not a SQL engine implement it
-  # at all.
-  #
-  # It is a contract over targets, not over sources in general. A target is
-  # what describe describes: typed columns, a key, versions, a receiver that
-  # owns it -- the thing loadable writes into. A client's database, an API, a
-  # warehouse nobody declared are read through their own connectors in their
-  # own dialect, and a workflow lines the two up.
-  #
-  # The contract is tiered. The core every receiver MUST implement is the
-  # read-back an importer needs: one target, closed filters, order, limit and
-  # offset, distinct, the six aggregates grouped by nothing, by the period
-  # column or by run. Everything analytical -- grouping by any column, filtered
-  # aggregates, derived expressions, many-to-one joins, window totals and
-  # ranks, date buckets, text matching -- is the same grammar behind a
-  # capability the receiver declares in describe and refuses by name when
-  # absent. A caller that needs more than a receiver offers runs two queries
-  # and lines them up itself; it never asks for SQL.
-  #
-  # Accepting rows, changing a schema and reading rows are three rights, and a
-  # host grants each through its own binding. A receiver that binds this
-  # contract as well answers loadable.describe with supports.can_read = true.
-  #
-  # The thirteen rules below are normative and are what the method schemas
-  # cannot state. A receiver that implements the five methods but not the
-  # rules will look correct and leak, lie about freshness, or page over
-  # itself, so they belong in a conformance suite next to the pullable and
-  # loadable ones.
-  #
-  #   1. Read-only by construction. No method mutates. The receiver resolves
-  #      every column against describe, maps every name and alias to
-  #      identifiers of its own and binds every value: nothing a caller sends
-  #      -- a value, a column name, an alias -- becomes statement text. Where
-  #      the engine has a read-only transaction it is a second guard, never
-  #      the first. A read never moves data_version.
-  #   2. Nothing leaves that a row read would not return. A column describe
-  #      omits -- a secret above all -- is one query refuses as
-  #      unknown_column. A target whose rows the receiver transforms on the
-  #      way out (masking, computed values, a read hook) is not readable at
-  #      all: an aggregate over stored values would answer what a row read
-  #      hides.
-  #   3. A refusal names every problem at once. invalid_query carries
-  #      details.problems[], each with a JSON pointer into the request; plan
-  #      and query validate identically, so a query plan accepted is refused
-  #      later only for access or infrastructure reasons.
-  #   4. Access is per target, under the calling actor, decided before any
-  #      row is read. One denied target denies the whole call:
-  #      permission_denied, no partial answer.
-  #   5. One call, one snapshot. Every target of a query is read in one
-  #      snapshot (one transaction, or the receiver's equivalent);
-  #      data_versions and the page counts in the answer are that
-  #      snapshot's.
-  #   6. Versions. columns_version changes whenever a target's readable
-  #      columns change, and for a target that is also loadable whenever
-  #      loadable.describe's columns change. data_version changes on every
-  #      committed change to the target's rows -- a load commit, a record
-  #      write or delete -- and on nothing else.
-  #   7. A query has a total order. The receiver appends the key (or @id) to
-  #      a row query's order, every select item to a distinct one's and the
-  #      grouping expressions to an aggregate one's, so the same query with
-  #      the same params on the same data_version answers the same rows in
-  #      the same order. offset continues that order: pages whose answers
-  #      carry the same data_versions neither repeat nor skip a row. When
-  #      data_version moved between pages a later page is best effort, and a
-  #      caller that needs one slice reads again.
-  #   8. Limits are honest. A query answers at most limit (<= max_rows) rows,
-  #      an aggregate query at most max_groups groups, and page says what the
-  #      answer covers: total rows of the from target, filtered rows (groups)
-  #      the query produces before offset and limit, returned in this answer.
-  #      A structural bound exceeded (joins, in values, lookup keys, depth,
-  #      nodes, select, period_in) is refused with limit_exceeded, never
-  #      trimmed silently; depth and nodes count the query after every { ref }
-  #      is expanded. A receiver whose engine cannot stop a query by time MUST
-  #      bound its work by these limits.
-  #   9. Capabilities are honest. A capability describe declares for a target
-  #      works on that target; an undeclared one is refused with
-  #      unsupported_capability naming it; the receiver never emulates one
-  #      silently.
-  #  10. Period scope. in/from/to compare after the same coercion
-  #      loadable.append applies to the period column; latest is the greatest
-  #      non-null period value present in the whole target, before where
-  #      applies (latest = N, the N greatest distinct non-null values); a
-  #      period scope on a target with no role = period column is
-  #      scope_unsupported.
-  #  11. Lineage. @run_id is the run_id loadable.begin stamped on the row;
-  #      rows a load did not write carry null; scope.run_id filters on it;
-  #      lookup answers the owning run_id when lineage.run_id is true.
-  #  12. Joins are many-to-one and co-located. A query over targets the
-  #      receiver cannot read in one snapshot is refused at plan as
-  #      targets_not_co_located. via names a declared relation, whose
-  #      target_columns are a unique set of the related target; on (join =
-  #      adhoc) is equality pairs whose right side covers one of the joined
-  #      target's describe.unique sets, otherwise join_not_keyed. A join
-  #      without a condition, and a join that can multiply rows, do not exist
-  #      here: comparing two fact targets is two aggregate queries a caller
-  #      lines up. A join adds columns and keeps the rows: left, the default,
-  #      keeps a row with no related row and answers its joined columns as
-  #      null, the way an ORM loads a many-to-one relation; inner keeps only
-  #      the rows that have one.
-  #  13. Values are typed, both ways. A literal, a param and a lookup key fit
-  #      the type of what they compare with, as loadable.append checks a row:
-  #      integer and number are one numeric family, a date is an ISO-8601
-  #      string, and a value that does not fit is type_mismatch (keys_invalid
-  #      in lookup) -- never a comparison across types, which one engine
-  #      refuses and another answers wrongly. null compares with nothing;
-  #      is_null and not_null test it. Every row value is a JSON value of its
-  #      column's declared type whatever the engine hands back: integer and
-  #      number as numbers, boolean as true or false, date as an ISO-8601
-  #      string. A row is an object keyed by result column name -- names are
-  #      unique, duplicate_alias otherwise -- and a missing value is an absent
-  #      key (or null), never a positional hole.
-  #
-  # The function catalogue is closed and tiered; describe.capabilities says
-  # which tiers a receiver answers:
-  #
-  #   core        count count_distinct sum avg min max, grouped by nothing, by
-  #               the period column, bucket(period) or @run_id; bucket on the
-  #               period column, when it is a date, for the grains in
-  #               capabilities.buckets;
-  #               predicates eq ne lt lte gt gte in between is_null not_null;
-  #               { ref } to an earlier select item; order_by, limit, offset,
-  #               distinct, params
-  #   aggregate   group_by by any column or bucket; having; order by aggregates
-  #   filtered_aggregates   filter on an aggregate (SUM(CASE WHEN .. THEN x END))
-  #   derived     add sub mul div neg abs round coalesce nullif to_text; case
-  #   window      total rank row_number lag lead, with over.partition_by and
-  #               over.order_by
-  #   buckets     year quarter month week day -- on date columns only, the
-  #               period column included when it is a date; any other column
-  #               is type_mismatch
-  #   text        contains starts_with ends_with like lower upper; every
-  #               match ignores case, on every engine; like takes a pattern
-  #               with % and _, and \ escapes them
-  #   join        none | declared (via) | adhoc (on, keyed)
-  #   lineage     @run_id, scope.run_id
-  #   row_ids     @id
-  #   period_latest   scope.period.latest
-  #   render      a human-readable SQL-like form in plan and query answers, for
-  #               logs and a "supporting query" -- never executable
-  #
-  # Reserved for a later, additive version: a derived source (from: { query })
-  # behind a compose capability, so an aggregate over an aggregate and a filter
-  # by another query's result become expressible. Until then a caller runs two
-  # queries.
-  #
-  # Result column types are loadable's closed enum. count, count_distinct,
-  # rank, row_number -> integer; sum -> the argument's type; avg, div ->
-  # number; min, max, coalesce, lag, lead, total(x) -> the argument's type;
-  # bucket -> string in the lexical ISO form of its grain (2025, 2025-Q3,
-  # 2025-08, 2025-W33, 2025-08-16); to_text -> string; case -> the common type
-  # of its branches (integer and number widen to number), and branches that
-  # share no type are type_mismatch, never a silent cast to string (rule 13).
-  #
-  # Problems (details.problems[].code) a plan or query may name, all at once:
-  # malformed (a request the grammar does not take: an unknown field, a value
-  # of the wrong shape, a constant to group or order by), unknown_target (in a
-  # join), unknown_column, ambiguous_column,
-  # unknown_alias, duplicate_alias, alias_required, ref_misplaced,
-  # type_mismatch, not_grouped, aggregate_misplaced, nested_aggregate,
-  # window_misplaced, unknown_function, arity, unknown_param, missing_param,
-  # unsupported_capability, unsupported_grain, unsupported_op,
-  # scope_unsupported, lineage_unsupported, relation_unknown,
-  # join_incompatible, join_not_keyed, limit_exceeded,
-  # targets_not_co_located.
-  #
-  # Reasons (details.reason) on the closed DataError codes: invalid_request /
-  # invalid_query (with problems), keys_invalid, limit_exceeded,
-  # unsupported_capability;
-  # not_found for an unknown primary target; permission_denied with
-  # details.target; provider_unavailable / timeout (retriable = false) or
-  # infrastructure (retriable = true); rate_limited.
-  #
-  # DataError is inlined into every output schema's $defs, as the sibling
-  # contracts do: there is no cross-schema $ref in this file. The query schema
-  # is likewise inlined into both plan and query, byte for byte.
   - name: readable
     kind: contract.definition
     meta:
-      title: Readable Data Source
-      tags: [data, source, read, query, target, slice, lineage]
+      title: Readable Target
+      tags: [data, read, query, target, slice, lineage]
       comment: Read ABI over declared targets. Structural queries the receiver compiles itself; identifiers resolved against describe, values bound, read-only by construction, tiered by declared capabilities.
     methods:
       - name: list
@@ -273,7 +79,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -309,8 +115,14 @@ entries:
           are always a unique set of the related target, and via in a join names one. pseudo_columns
           lists the system columns a query may name: @run_id (lineage.run_id) and @id (row_ids).
 
-          capabilities and limits are what the receiver answers for; see the contract comment for the
-          tiers. data_version is the target's data version at the time of this answer.
+          capabilities and limits are what the receiver answers for; the fn catalogue of plan and query
+          says what each tier unlocks. data_version is the target's data version at the time of this
+          answer.
+
+          Nothing leaves that a row read would not return. A target whose rows the receiver transforms
+          on the way out -- masking, computed values, a read hook -- is not readable at all, because
+          an aggregate over stored values would answer what a row read hides; a secret column is never
+          among the columns described.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -356,8 +168,8 @@ entries:
                         },
                         "type": {
                           "type": "string",
-                          "enum": ["string", "number", "integer", "boolean", "date"],
-                          "description": "Storage type, loadable's closed enum. What a value compares and aggregates as."
+                          "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"],
+                          "description": "Storage type, loadable's closed enum. What a value compares and aggregates as; date, datetime and time compare as the ISO text they are."
                         },
                         "nullable": { "type": "boolean" },
                         "role": {
@@ -368,6 +180,10 @@ entries:
                         "format": {
                           "type": "string",
                           "description": "Receiver-specific hint such as email, enum: a, b. A caller MAY use it and MUST NOT depend on it."
+                        },
+                        "options": {
+                          "type": "object",
+                          "description": "The column's options as the receiver holds them, keyed as its types().options_schema names them, every default filled in: a string type's max_length, an enum's values. A caller that read options_schema knows the names; absent for a column whose type takes none."
                         },
                         "label": { "type": "string", "description": "What a person calls the column." },
                         "description": {
@@ -433,6 +249,7 @@ entries:
                   "capabilities": {
                     "type": "object",
                     "additionalProperties": false,
+                    "description": "What this target answers beyond the core every receiver serves (one target, closed predicates, order, limit, offset, distinct, the six aggregates grouped by nothing, by the period column, by bucket(period) or by @run_id). A capability declared here works on this target; one not declared is refused with unsupported_capability naming it, never emulated silently.",
                     "required": [
                       "aggregate", "join", "derived", "filtered_aggregates", "window", "buckets", "text",
                       "lineage", "row_ids", "period_latest", "render"
@@ -459,14 +276,15 @@ entries:
                       "buckets": {
                         "type": "array",
                         "items": { "type": "string", "enum": ["year", "quarter", "month", "week", "day"] },
-                        "description": "Grains bucket accepts, on date columns only. Empty means no bucket at all."
+                        "description": "Grains bucket accepts, on date and datetime columns only, the period column included when it is one. Empty means no bucket at all."
                       },
                       "text": {
                         "type": "array",
                         "items": {
                           "type": "string",
                           "enum": ["contains", "starts_with", "ends_with", "like", "lower", "upper"]
-                        }
+                        },
+                        "description": "Text predicates and functions answered; every match ignores case on every engine, and like takes a pattern with % and _, \\ escaping them."
                       },
                       "lineage": {
                         "type": "object",
@@ -502,7 +320,7 @@ entries:
                       "max_period_in": {
                         "type": "integer",
                         "minimum": 1,
-                        "description": "Upper bound on scope.period.in cardinality; equals loadable's max_replace_scopes when both are bound."
+                        "description": "Upper bound on scope.period.in cardinality; equals loadable's max_period_in when both are bound."
                       },
                       "max_depth": {
                         "type": "integer",
@@ -555,7 +373,13 @@ entries:
                         "columns_version": false,
                         "capabilities": false,
                         "limits": false,
-                        "data_version": false
+                        "data_version": false,
+                        "title": false,
+                        "description": false,
+                        "loadable": false,
+                        "period": false,
+                        "relations": false,
+                        "pseudo_columns": false
                       }
                     }
                   }
@@ -574,7 +398,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -611,6 +435,21 @@ entries:
 
           plan and query validate identically: a query plan accepted is refused later only for
           permission or infrastructure reasons.
+
+          What the grammar cannot say, plan enforces. Nothing here mutates, and a read never moves
+          data_version. A literal, a param and a lookup key fit the type of what they compare with:
+          integer and number are one numeric family, a date (YYYY-MM-DD), a datetime
+          (YYYY-MM-DDTHH:MM:SS, no zone) and a time (HH:MM:SS) are ISO-8601 strings, and a value that
+          does not fit is type_mismatch, never a comparison across types; null compares with nothing,
+          is_null and not_null test it. A structural bound exceeded (joins, in values, lookup keys,
+          depth, nodes, select items, period_in) is limit_exceeded, never trimmed silently; depth and
+          nodes count the query after every { ref } is expanded. A capability describe does not
+          declare for a target is unsupported_capability naming it. A period scope on a target with no
+          role=period column is scope_unsupported. Targets the receiver cannot read in one snapshot
+          are targets_not_co_located. A column describe omits -- a secret above all -- is
+          unknown_column. limit_exceeded and unsupported_capability are problems when plan finds them
+          in the query, and the reason of the whole answer when they are about the request as a whole
+          (max_lookup_keys, a capability the method itself needs).
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -683,7 +522,7 @@ entries:
                             "type": "array",
                             "minItems": 1,
                             "items": { "type": "string", "minLength": 1 },
-                            "description": "Period values in the lexical form loadable.append accepts; bounded by limits.max_period_in."
+                            "description": "Period values in the period column's canonical form, as loadable.describe states it; bounded by limits.max_period_in."
                           },
                           "latest": {
                             "oneOf": [{ "const": true }, { "type": "integer", "minimum": 1 }],
@@ -839,7 +678,7 @@ entries:
                           "mul", "div", "neg", "abs", "round", "coalesce", "nullif", "to_text", "lower",
                           "upper", "total", "rank", "row_number", "lag", "lead"
                         ],
-                        "description": "Closed catalogue; see the contract comment for tiers and result types. count takes zero or one argument; bucket takes a date column and a grain literal (type_mismatch on any other column); lag/lead take an expression and an optional offset literal."
+                        "description": "Closed catalogue, tiered by describe.capabilities. Core, every receiver: count, count_distinct, sum, avg, min, max, grouped by nothing, by the period column, by bucket(period) or by @run_id, and bucket on the period column for the grains in capabilities.buckets. derived: add, sub, mul, div, neg, abs, round, coalesce, nullif, to_text and case. window: total, rank, row_number, lag, lead with over. text: lower, upper (and the predicates contains, starts_with, ends_with, like; every match ignores case on every engine, like takes % and _ with \\ escaping them). Result types are the closed storage enum: count, count_distinct, rank, row_number -> integer; sum, min, max, lag, lead, total, neg, abs -> the argument's type; coalesce, nullif, case -> the common type of their arguments (integer and number widen to number, anything else shared by none is type_mismatch); add, sub, mul -> integer when both arguments are integer, else number; avg, div, round -> number; bucket -> string in the lexical ISO form of its grain (2025, 2025-Q3, 2025-08, 2025-W33, 2025-08-16); to_text -> string. count takes zero or one argument; bucket takes a date or datetime column and a grain literal (type_mismatch on any other column); lag/lead take an expression and an optional offset literal."
                       },
                       "args": { "type": "array", "items": { "$ref": "#/$defs/Expr" } },
                       "filter": {
@@ -1038,7 +877,7 @@ entries:
                     "required": ["name", "type", "nullable"],
                     "properties": {
                       "name": { "type": "string", "minLength": 1 },
-                      "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                      "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"] },
                       "nullable": { "type": "boolean" },
                       "source": {
                         "type": "object",
@@ -1058,7 +897,7 @@ entries:
                     "required": ["code", "path", "message"],
                     "description": "The shape every entry of error.details.problems takes as well.",
                     "properties": {
-                      "code": { "type": "string", "minLength": 1 },
+                      "code": { "type": "string", "minLength": 1, "description": "One of: malformed (a request the grammar does not take: an unknown field, a value of the wrong shape, a constant to group or order by), unknown_target (in a join), unknown_column, ambiguous_column, unknown_alias, duplicate_alias, alias_required, ref_misplaced, type_mismatch, not_grouped, aggregate_misplaced, nested_aggregate, window_misplaced, unknown_function, arity, unknown_param, missing_param, unsupported_capability, unsupported_grain, unsupported_op, scope_unsupported, lineage_unsupported, relation_unknown, join_incompatible, join_not_keyed, limit_exceeded, targets_not_co_located." },
                       "path": { "type": "string", "description": "JSON pointer into the request, e.g. /select/2/expr/args/0." },
                       "message": { "type": "string" },
                       "hint": { "type": "string", "description": "What would make it pass, when the receiver can say." }
@@ -1077,7 +916,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -1088,7 +927,7 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": {
                         "type": "object",
-                        "description": "reason, and for invalid_query the problems array (see Problem)."
+                        "description": "reason, and for invalid_query the problems array (see Problem). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for an unknown primary target; permission_denied with target; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
                       }
                     },
                     "required": ["code", "message", "retriable", "scope"]
@@ -1104,7 +943,8 @@ entries:
           sends becomes statement text.
 
           A query without group_by or aggregates is a row query: it has a total order (the receiver
-          appends the key or @id as tiebreaker, and a distinct query orders by every select item) and
+          appends the key or @id as tiebreaker, orders by every select item when the target has
+          neither a key nor row_ids, and a distinct query orders by every select item) and
           answers at most limit rows after skipping offset. An aggregate query does the same over its
           groups, at most limits.max_groups of them. page says what the answer covers: total rows of
           the from target, filtered rows (groups) the query produces before offset and limit, the
@@ -1123,7 +963,9 @@ entries:
           invalid_request/invalid_query with details.problems naming each problem by path; access is checked per target before any row is read and one denied target is
           permission_denied for the whole call. A receiver whose engine stops a query by time answers
           provider_unavailable/timeout with retriable = false; one that cannot bounds the work by its
-          limits instead.
+          limits instead. A statement the engine refused on the data it met -- a division by zero, an
+          overflow, a cast that failed -- is provider_error/query_failed, retriable = false: a retry
+          would compute the same thing over the same rows.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -1196,7 +1038,7 @@ entries:
                             "type": "array",
                             "minItems": 1,
                             "items": { "type": "string", "minLength": 1 },
-                            "description": "Period values in the lexical form loadable.append accepts; bounded by limits.max_period_in."
+                            "description": "Period values in the period column's canonical form, as loadable.describe states it; bounded by limits.max_period_in."
                           },
                           "latest": {
                             "oneOf": [{ "const": true }, { "type": "integer", "minimum": 1 }],
@@ -1352,7 +1194,7 @@ entries:
                           "mul", "div", "neg", "abs", "round", "coalesce", "nullif", "to_text", "lower",
                           "upper", "total", "rank", "row_number", "lag", "lead"
                         ],
-                        "description": "Closed catalogue; see the contract comment for tiers and result types. count takes zero or one argument; bucket takes a date column and a grain literal (type_mismatch on any other column); lag/lead take an expression and an optional offset literal."
+                        "description": "Closed catalogue, tiered by describe.capabilities. Core, every receiver: count, count_distinct, sum, avg, min, max, grouped by nothing, by the period column, by bucket(period) or by @run_id, and bucket on the period column for the grains in capabilities.buckets. derived: add, sub, mul, div, neg, abs, round, coalesce, nullif, to_text and case. window: total, rank, row_number, lag, lead with over. text: lower, upper (and the predicates contains, starts_with, ends_with, like; every match ignores case on every engine, like takes % and _ with \\ escaping them). Result types are the closed storage enum: count, count_distinct, rank, row_number -> integer; sum, min, max, lag, lead, total, neg, abs -> the argument's type; coalesce, nullif, case -> the common type of their arguments (integer and number widen to number, anything else shared by none is type_mismatch); add, sub, mul -> integer when both arguments are integer, else number; avg, div, round -> number; bucket -> string in the lexical ISO form of its grain (2025, 2025-Q3, 2025-08, 2025-W33, 2025-08-16); to_text -> string. count takes zero or one argument; bucket takes a date or datetime column and a grain literal (type_mismatch on any other column); lag/lead take an expression and an optional offset literal."
                       },
                       "args": { "type": "array", "items": { "$ref": "#/$defs/Expr" } },
                       "filter": {
@@ -1485,7 +1327,7 @@ entries:
                       "required": ["name", "type", "nullable"],
                       "properties": {
                         "name": { "type": "string", "minLength": 1 },
-                        "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                        "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"] },
                         "nullable": { "type": "boolean" },
                         "source": {
                           "type": "object",
@@ -1591,7 +1433,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -1602,7 +1444,7 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": {
                         "type": "object",
-                        "description": "reason, and for invalid_query the problems array ({ code, path, message, hint? })."
+                        "description": "reason, and for invalid_query the problems array ({ code, path, message, hint? }). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for an unknown primary target; permission_denied with target; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
                       }
                     },
                     "required": ["code", "message", "retriable", "scope"]
@@ -1757,7 +1599,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {

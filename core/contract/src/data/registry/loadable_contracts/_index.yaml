@@ -2,78 +2,11 @@ version: "1.0"
 namespace: kickside.data
 
 entries:
-  # ─── Bulk load: many batches, one transaction ─────────────────────────
-  # Sibling of writable, not a replacement for it. writable is the per-record
-  # ABI: one sink_op, one idempotency_key, one dest_ref in the engine id-map,
-  # per record. It can model an atomic multi-record write as a provider-atomic
-  # sink_op with a composite input, so a slice replacement that fits one call
-  # is expressible. What it cannot express is a load that arrives in many calls:
-  # a staging identity that outlives one write, idempotent re-delivery of a
-  # batch, a commit that replaces a scope only after every batch has landed, and
-  # an abort that leaves nothing behind.
-  #
-  # loadable is that missing shape. A load is a short-lived transaction identity
-  # over one or more targets: begin it, stream batches into it, then commit or
-  # discard. The staging area belongs to the receiver, which is the only
-  # arrangement that keeps the replacement atomic -- the whole transaction stays
-  # on one side of the boundary.
-  #
-  # The twelve rules below are normative and are what the method schemas cannot
-  # state. A receiver that implements the eight methods but not the rules will
-  # look correct and lose data under concurrency, so they belong in a
-  # conformance suite next to the pullable one.
-  #
-  #   1. commit is one transaction for the whole load, every target of it.
-  #   2. expect is rechecked inside that transaction; a mismatch is conflict
-  #      having mutated nothing.
-  #   3. Rows are ordered by (batch_index, position), deterministically on
-  #      either SQL engine.
-  #   4. begin is idempotent on run_id: an open load is returned again, a
-  #      committed one (within rule 6's window) answers conflict/already_committed
-  #      with the commit result, a discarded or reclaimed one opens a new load.
-  #   5. commit is idempotent on load_id: a repeat returns the same per-target
-  #      results and applies once.
-  #   6. A load with no activity for limits.abandon_after_ms is reclaimed; a
-  #      committed load stays answerable for at least as long after its commit.
-  #   7. A dry run never calls begin; describe and describe_scope are reads.
-  #   8. append is idempotent on (load_id, target, batch_index).
-  #   9. With replace_scope.period_in, every staged row's period must be present
-  #      and in the list.
-  #  10. A non-empty key is enforced at commit: duplicates are conflict, no
-  #      upsert.
-  #  11. columns_version from describe is echoed in begin and rechecked in commit.
-  #  12. A target set the receiver cannot commit together is refused at begin.
-  #
-  # target is a namespace:id string the receiver resolves; what is behind it is
-  # the receiver binding's business, and describe(target) is how a caller learns
-  # the columns and key behind it. Nothing here says a target is a registry
-  # entry: the same syntax is a logical address the receiver resolves from a
-  # table of its own, and list is how a caller learns what exists without either
-  # side knowing how the other stores it.
-  #
-  # Creating a target is deliberately not part of this contract. loadable only
-  # loads; creation is schema evolution with its own semantics and would force
-  # every receiver to implement DDL before it could accept a single row. That
-  # half is kickside.data:definable, and a receiver that binds it answers
-  # describe.supports.can_define = true.
-  #
-  # Reading rows back is not part of it either. list, describe and
-  # describe_scope are the reads the load protocol itself needs -- what
-  # targets exist, how a row must be shaped, who owns the slice a commit is
-  # about to replace -- and none of them answers a row value: describe_scope
-  # reports run ids, counts and the source each load's begin supplied, nothing
-  # a row holds. Reading rows -- a sample, a profile of a slice, which keys
-  # already exist -- is kickside.data:readable, a right a host grants through
-  # its own binding, and a receiver that binds it answers
-  # describe.supports.can_read = true.
-  #
-  # DataError is inlined into every output schema's $defs, as the sibling
-  # contracts do: there is no cross-schema $ref in this file.
   - name: loadable
     kind: contract.definition
     meta:
-      title: Loadable Data Sink
-      tags: [data, sink, load, bulk, transaction, slice]
+      title: Loadable Target
+      tags: [data, load, bulk, transaction, slice]
       comment: Bulk load ABI. Batches staged into one load over one or more targets and committed as one transaction, optionally replacing a scope. Receiver owns staging.
     methods:
       - name: list
@@ -141,7 +74,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -150,7 +83,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -173,9 +106,14 @@ entries:
 
           columns_version changes whenever columns change; begin echoes it and commit rechecks it.
           key names the columns that identify one row; when non-empty, commit refuses duplicates
-          (conflict/duplicate_key). supports.expect = false means the receiver keeps no ownership
-          record: describe_scope answers owners=[] with no target_version and commit refuses any
-          expect. supports.multi_target = false means begin accepts exactly one target.
+          (conflict/duplicate_key); the columns of a non-empty key are never nullable. supports says
+          what this receiver answers for; a request that uses what it declared false is
+          invalid_request/unsupported_option with details.option naming the flag: expect = false
+          means no ownership record (describe_scope answers owners=[] and no data_version),
+          multi_target = false means begin takes exactly one target, replace_scope = false means
+          append only, allow_shrink = false means no replace below the floor. Access is per target
+          under the calling actor, decided here, at describe_scope and at begin: a denied target is
+          permission_denied with details.target.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -212,25 +150,29 @@ entries:
                         "name": { "type": "string", "minLength": 1 },
                         "type": {
                           "type": "string",
-                          "enum": ["string", "number", "integer", "boolean", "date"],
-                          "description": "Storage type. This is what a caller coerces a value to, and nothing else."
+                          "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"],
+                          "description": "Storage type. This is what a caller coerces a value to, and nothing else. A date is YYYY-MM-DD, a datetime a wall-clock moment without a zone as YYYY-MM-DDTHH:MM:SS, a time HH:MM:SS; all three order in time as text."
                         },
                         "format": {
                           "type": "string",
                           "description": "Receiver-specific hint such as email or uuid. A caller MAY use it and MUST NOT depend on it."
                         },
+                        "options": {
+                          "type": "object",
+                          "description": "The column's options as the receiver holds them, keyed as its types().options_schema names them, every default filled in: a string type's max_length, an enum's values. A caller that read options_schema knows the names; absent for a column whose type takes none."
+                        },
                         "role": {
                           "type": "string",
                           "enum": ["period"],
-                          "description": "What this column is for, as distinct from what it holds. A period column is the axis replace_scope.period_in replaces by; at most one column may carry it. A period value is not always a date -- 2025-08, 2025-Q1 -- which is why the role does not replace the storage type."
+                          "description": "What this column is for, as distinct from what it holds. A period column is the axis replace_scope.period_in replaces by; at most one column may carry it, and only a string, integer, date or datetime column can. A period value is not always a date -- 2025-08, 2025-Q1 -- which is why the role does not replace the storage type. Wherever a period is spelled as text (period_in, owners, scope) it is the column's canonical form: a string or date-like value as stored, an integer as plain decimal digits with no leading zeros or fraction."
                         },
-                        "nullable": { "type": "boolean" }
+                        "nullable": { "type": "boolean", "description": "False for a column every row must carry; a column of a non-empty key is never nullable." }
                       }
                     }
                   },
                   "key": {
                     "type": "array",
-                    "description": "Columns naming one row's identity. Empty when the target has no row identity. Enforced at commit when non-empty.",
+                    "description": "Columns naming one row's identity, none of them nullable. Empty when the target has no row identity. Enforced at commit when non-empty.",
                     "items": { "type": "string", "minLength": 1 }
                   },
                   "columns_version": {
@@ -240,15 +182,15 @@ entries:
                   "limits": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["max_batch_rows", "abandon_after_ms"],
+                    "required": ["max_batch_rows", "max_period_in", "abandon_after_ms"],
                     "properties": {
                       "max_batch_rows": {
                         "type": "integer", "minimum": 1,
                         "description": "Largest rows array append accepts. The bound belongs to whoever owns the statement."
                       },
-                      "max_replace_scopes": {
+                      "max_period_in": {
                         "type": "integer", "minimum": 1,
-                        "description": "Upper bound on replace_scope.period_in and describe_scope.period_in cardinality."
+                        "description": "Upper bound on replace_scope.period_in and describe_scope.period_in cardinality, the same bound readable names for scope.period.in. Exceeding it is invalid_request/limit_exceeded with details.limit."
                       },
                       "abandon_after_ms": {
                         "type": "integer", "minimum": 1,
@@ -261,17 +203,17 @@ entries:
                     "additionalProperties": false,
                     "required": ["replace_scope", "expect", "allow_shrink", "multi_target"],
                     "properties": {
-                      "replace_scope": { "type": "boolean" },
-                      "expect": { "type": "boolean" },
-                      "allow_shrink": { "type": "boolean" },
-                      "multi_target": { "type": "boolean" },
+                      "replace_scope": { "type": "boolean", "description": "False: commit takes no replace_scope (unsupported_option)." },
+                      "expect": { "type": "boolean", "description": "False: no ownership record; describe_scope answers owners=[] and no data_version, commit refuses expect (unsupported_option)." },
+                      "allow_shrink": { "type": "boolean", "description": "False: a replace below the shrink floor cannot be forced (unsupported_option)." },
+                      "multi_target": { "type": "boolean", "description": "False: begin takes exactly one target (unsupported_option)." },
                       "can_define": {
                         "type": "boolean",
                         "description": "True when this receiver also binds kickside.data:definable, so a caller holding a file nobody has a target for can create one instead of stopping."
                       },
                       "rehearse": {
                         "type": "boolean",
-                        "description": "True when rehearse runs a load to the end and rolls it back, and begin accepts define for a target it would create or alter."
+                        "description": "Two promises under one flag, until a receiver without transactional DDL separates them: rehearse runs a load to the end and rolls it back, and begin accepts define for a target it would create or alter. False: both are unsupported_option with option rehearse."
                       },
                       "can_read": {
                         "type": "boolean",
@@ -312,7 +254,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -321,7 +263,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -333,11 +275,14 @@ entries:
           Who owns the rows a commit is about to replace. This is the read expect is built from: a
           caller looks, decides, then asserts in commit that what it saw is still true.
 
-          With period_in, owners carries one entry per (period, owning run); a period with no rows
-          appears once with run_id=null. Without period_in the scope is the whole target and entries
-          carry no period; an empty target answers [{run_id: null, rows: 0}]. source is returned
-          exactly as the owning load's begin supplied it. target_version is the value to carry into
-          expect. A receiver with supports.expect=false answers owners=[] and no target_version, but
+          A load owns only the rows it stamped with its run_id. owners carries one entry per owning
+          run -- per (period, run) with period_in, per run without -- and nothing else: a period or a
+          target with no loaded rows contributes no entry, and an empty target answers owners=[].
+          Rows no load stamped -- written through another path, by hand -- are nobody's: they are not
+          listed, cannot be asserted, and a replace never deletes them. They are counted in rows, so
+          rows minus the sum of owners[].rows is how many of them the scope holds. source is returned
+          exactly as the owning load's begin supplied it. data_version is the value to carry into
+          expect. A receiver with supports.expect=false answers owners=[] and no data_version, but
           MUST still answer rows.
         input_schemas:
           - format: application/schema+json
@@ -351,7 +296,7 @@ entries:
                   "period_in": {
                     "type": "array", "minItems": 1,
                     "items": { "type": "string", "minLength": 1 },
-                    "description": "Periods to report on, in the lexical form append accepts for the period column. Bounded by limits.max_replace_scopes. Omit for the whole target."
+                    "description": "Periods to report on, in the period column's canonical form (see describe.columns[].role). Bounded by limits.max_period_in. Omit for the whole target. What describe_scope answers, source included, is visible to anyone with the right to load, so a producer puts no secret in run.source."
                   }
                 },
                 "required": ["target"]
@@ -365,11 +310,11 @@ entries:
                 "additionalProperties": false,
                 "properties": {
                   "success": { "type": "boolean" },
-                  "target_version": {
+                  "data_version": {
                     "type": "string", "minLength": 1,
-                    "description": "Opaque; changes on every commit that mutates the target. Absent when supports.expect is false."
+                    "description": "Opaque; moves on every write to the target, a load commit or a record write, and is the value readable.describe answers. Absent when supports.expect is false."
                   },
-                  "rows": { "type": "integer", "minimum": 0, "description": "Rows currently in the requested scope." },
+                  "rows": { "type": "integer", "minimum": 0, "description": "Rows currently in the requested scope, loaded or not." },
                   "owners": {
                     "type": "array",
                     "items": {
@@ -377,8 +322,8 @@ entries:
                       "additionalProperties": false,
                       "required": ["run_id", "rows"],
                       "properties": {
-                        "period": { "type": "string", "description": "Present only when the request carried period_in." },
-                        "run_id": { "type": ["string", "null"], "description": "Owning run, or null when the period (or target) holds no rows." },
+                        "period": { "type": "string", "description": "Present when the target has a period axis, in the column's canonical form; absent on a target without one." },
+                        "run_id": { "type": "string", "minLength": 1, "description": "The owning run." },
                         "source": { "type": "object", "description": "The owning load's run.source, verbatim." },
                         "rows": { "type": "integer", "minimum": 0 }
                       }
@@ -396,7 +341,7 @@ entries:
                     "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
                     "then": {
                       "required": ["error"],
-                      "properties": { "target_version": false, "rows": false, "owners": false }
+                      "properties": { "data_version": false, "rows": false, "owners": false }
                     }
                   }
                 ],
@@ -414,7 +359,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -423,7 +368,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -439,7 +384,8 @@ entries:
           for a run whose load was committed within limits.abandon_after_ms MUST return
           conflict/already_committed with the commit output in error.details.result, so a retry
           after a lost acknowledgement learns the outcome instead of loading twice. A begin for a run
-          whose load was discarded or reclaimed opens a new load.
+          whose load was discarded or reclaimed opens a new load. A dry run makes no begin: describe
+          and describe_scope are the reads it needs, and a load it never opened leaves nothing behind.
 
           source is opaque provenance the receiver stores with the load and returns from
           describe_scope; the caller decides what identifies a source. Each target echoes the
@@ -453,7 +399,17 @@ entries:
           that does not exist yet or one the definition would alter. The load then stages and checks
           rows as that definition would shape the target, and it can only be rehearsed: commit MUST
           refuse it with invalid_request/rehearsal_only. A receiver that cannot rehearse refuses define
-          here with invalid_request/rehearsal_unsupported.
+          here with invalid_request/unsupported_option, option rehearse. For a target that does not
+          exist yet, target MUST be what define(dry_run) answered for the same request; anything else
+          is invalid_request/define_target_mismatch.
+
+          Access is decided here for every target of the load, under the calling actor: one denied
+          target refuses the whole begin with permission_denied and details.target, and append,
+          rehearse, commit and discard inherit that decision -- load_id is the right they run under.
+          A begin that carries define needs only the right to load: a rehearsal leaves nothing
+          behind. A begin for a run the receiver no longer remembers -- committed before rule 6's
+          window ran out -- opens a new load, and the rows of both commits carry the run_id as one
+          lineage.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -488,7 +444,7 @@ entries:
                         },
                         "define": {
                           "type": "object",
-                          "description": "The kickside.data:definable.define request this target is loaded as if applied. Only a rehearsal may carry one."
+                          "description": "The kickside.data:definable.define request this target is loaded as if applied. Only a rehearsal may carry one, and for a new target target MUST equal define(dry_run).target (invalid_request/define_target_mismatch otherwise)."
                         }
                       }
                     }
@@ -533,7 +489,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -542,7 +498,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -552,9 +508,14 @@ entries:
       - name: append
         description: |
           Stage one batch for one target of the load. Rows are plain objects keyed by column name with
-          JSON scalar values; a column a row omits or carries as null is absent and stored as NULL. A
+          JSON scalar values; a column a row omits or carries as null or as "" is absent and stored as
+          NULL, and NULL in a column described nullable = false is invalid_request/missing_value. A
           key that is not a declared column is invalid_request/unknown_column; a value the column's
-          type cannot hold is invalid_request/type_mismatch. More than limits.max_batch_rows rows MUST
+          storage type cannot hold, or that the receiver's own rule for the column refuses (an enum
+          value outside its list, a malformed email), is invalid_request/type_mismatch with
+          details.column, details.row and, when the receiver has one, details.rule naming its own
+          rule; what is stored is what that rule answers, the same as any other write path of the
+          receiver. More than limits.max_batch_rows rows MUST
           be refused with invalid_request/batch_too_large rather than split silently, so the caller's
           batching stays honest. An empty batch is accepted and counts toward contiguity.
 
@@ -617,7 +578,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -626,7 +587,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -638,11 +599,14 @@ entries:
           Apply the load as one transaction across every target it was opened for. A target with no
           plan entry is committed in append mode. The effect matrix is normative, per target:
           replace_scope omitted MUST insert and delete nothing and return result=appended;
-          replace_scope.period_in MUST delete exactly those periods and then insert, returning
-          result=replaced; replace_scope.all MUST delete the whole target and then insert, returning
-          result=replaced; a target that staged no rows MUST return result=noop, MUST NOT delete
-          anything and skips its expect, so an import that produced nothing cannot erase what it was
-          meant to restate.
+          replace_scope.period_in MUST delete the loaded rows of exactly those periods and then
+          insert, returning result=replaced; replace_scope.all MUST delete every loaded row of the
+          target and then insert, returning result=replaced; a target that staged no rows MUST return
+          result=noop, MUST NOT delete anything and skips expect.owners, so an import that produced
+          nothing cannot erase what it was meant to restate; expect.data_version, when given, is
+          still rechecked, an assertion being an assertion. A row no load stamped is never deleted
+          by a commit: it is not the load's to replace, and a staged row that repeats its key is
+          conflict/duplicate_key like any other duplicate.
 
           With period_in, every staged row of that target MUST carry a period value in the list:
           a null or blank one is invalid_request/period_missing, one outside the list is
@@ -650,10 +614,12 @@ entries:
           invalid_request/period_unsupported. Values are compared after the same coercion append
           applies to the column.
 
-          expect is the caller's assertion, rechecked inside the transaction: target_version asserts
-          nothing was committed since the caller looked (conflict/version_changed); owners asserts,
-          for each period it lists, that the current owner set equals run_ids exactly, an empty array
-          meaning nobody (conflict/owner_changed); an entry without period asserts the whole target.
+          expect is the caller's assertion, rechecked inside the transaction: data_version asserts
+          nothing was written since the caller looked (conflict/version_changed); owners asserts,
+          for each period it lists, that the set of runs owning rows there equals run_ids exactly, an
+          empty array meaning no load owns rows there (conflict/owner_changed); rows no load stamped
+          are not owners and do not enter the comparison; an entry without period asserts the whole
+          target.
           Both may be given and both must hold. Without expect a competing commit simply wins; the
           receiver promises nothing about interleaving.
 
@@ -706,13 +672,13 @@ entries:
                           "type": "object",
                           "additionalProperties": false,
                           "properties": {
-                            "target_version": {
+                            "data_version": {
                               "type": "string", "minLength": 1,
-                              "description": "Version last observed through describe_scope. Receiver refuses when it has moved."
+                              "description": "data_version last observed through describe_scope. Refused with conflict/version_changed when it has moved."
                             },
                             "owners": {
                               "type": "array",
-                              "description": "Who the caller believes owns each scope it is about to replace. An entry without period is about the whole target.",
+                              "description": "Who the caller believes owns each scope it is about to replace. On a target with a period axis every entry names a period, and one without is invalid_request/expect_invalid; on a target without an axis entries carry no period and are about the whole target.",
                               "items": {
                                 "type": "object",
                                 "additionalProperties": false,
@@ -761,9 +727,9 @@ entries:
                         "result": { "type": "string", "enum": ["appended", "replaced", "noop"] },
                         "inserted": { "type": "integer", "minimum": 0 },
                         "deleted": { "type": "integer", "minimum": 0 },
-                        "target_version": {
+                        "data_version": {
                           "type": "string", "minLength": 1,
-                          "description": "Version of the target after this commit; carry it into the next expect. Absent when supports.expect is false."
+                          "description": "data_version of the target after this commit; carry it into the next expect. Absent when supports.expect is false."
                         }
                       }
                     }
@@ -795,7 +761,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -804,7 +770,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -821,8 +787,9 @@ entries:
           A target the load carries define for is shaped inside that transaction as the definition
           would shape it -- created, or altered from what exists -- before any rule runs, so a
           rehearsal answers for a target that does not exist yet exactly as its first commit would. A
-          receiver that cannot rehearse answers invalid_request/rehearsal_unsupported and describes
-          its targets with supports.rehearse = false.
+          receiver that cannot rehearse answers invalid_request/unsupported_option, option rehearse,
+          and describes its targets with supports.rehearse = false. data_version in the answer is the
+          one the rehearsal saw: nothing moved, so there is nothing to carry into a later expect.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -861,13 +828,13 @@ entries:
                           "type": "object",
                           "additionalProperties": false,
                           "properties": {
-                            "target_version": {
+                            "data_version": {
                               "type": "string", "minLength": 1,
-                              "description": "Version last observed through describe_scope. Receiver refuses when it has moved."
+                              "description": "data_version last observed through describe_scope. Refused with conflict/version_changed when it has moved."
                             },
                             "owners": {
                               "type": "array",
-                              "description": "Who the caller believes owns each scope it is about to replace. An entry without period is about the whole target.",
+                              "description": "Who the caller believes owns each scope it is about to replace. On a target with a period axis every entry names a period, and one without is invalid_request/expect_invalid; on a target without an axis entries carry no period and are about the whole target.",
                               "items": {
                                 "type": "object",
                                 "additionalProperties": false,
@@ -916,9 +883,9 @@ entries:
                         "result": { "type": "string", "enum": ["appended", "replaced", "noop"] },
                         "inserted": { "type": "integer", "minimum": 0 },
                         "deleted": { "type": "integer", "minimum": 0 },
-                        "target_version": {
+                        "data_version": {
                           "type": "string", "minLength": 1,
-                          "description": "Version of the target after this commit; carry it into the next expect. Absent when supports.expect is false."
+                          "description": "data_version of the target after this commit; carry it into the next expect. Absent when supports.expect is false."
                         }
                       }
                     }
@@ -950,7 +917,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -959,7 +926,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }
@@ -1019,7 +986,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -1028,7 +995,7 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object" }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
                     },
                     "required": ["code", "message", "retriable", "scope"]
                   }

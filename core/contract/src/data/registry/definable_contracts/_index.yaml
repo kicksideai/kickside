@@ -2,33 +2,11 @@ version: "1.0"
 namespace: kickside.data
 
 entries:
-  # ─── Creating the target a load needs ────────────────────────────────
-  # loadable refuses to create -- a target exists before a load, or there is no
-  # load -- and this is the other half. It is a separate contract rather than two
-  # more methods on loadable because accepting rows and changing a schema are
-  # different rights: a receiver that takes rows must not have to pretend it can
-  # issue DDL, and a host that binds one for loads has not thereby handed it
-  # schema authority. A receiver that binds both answers loadable.describe with
-  # supports.can_define = true.
-  #
-  # There is no type vocabulary in this contract, and that is the decision it is
-  # built around. A receiver publishes its own through types(), with the options
-  # each type accepts, and the caller -- an agent reading a spreadsheet, a person
-  # filling a form -- chooses from what that receiver actually offers. A closed
-  # list here would be one of two things: the smallest set every store can
-  # express, or a promise some store keeps only by widening it, and a password
-  # silently stored as text is not a password. What a caller may depend on is the
-  # answer instead of the vocabulary: define reports what it did, and
-  # loadable.describe then describes those columns in its own closed coercion
-  # enum, which is what a producer coerces values to.
-  #
-  # Reading an existing target's shape is loadable.describe's job, not a third
-  # method here: a receiver that can define is expected to bind both.
   - name: definable
     kind: contract.definition
     meta:
-      title: Definable Data Sink
-      tags: [data, sink, schema, define, ddl]
+      title: Definable Target
+      tags: [data, schema, define, ddl]
       comment: Create or alter the target a load writes into. The receiver owns and publishes its type vocabulary; the caller picks from it.
     methods:
       - name: types
@@ -43,6 +21,17 @@ entries:
           kickside.data:loadable will never carry it, so a caller designing an import should not
           choose one. It is advisory -- the target's own describe is what states which columns a
           load may write.
+
+          coerces_to is the storage type loadable.describe answers for a column of this type -- one
+          of string, number, integer, boolean, date, datetime, time -- and so what a producer coerces
+          values to. A
+          caller that has profiled a column in those words chooses among the types whose
+          coerces_to is what it found. It is absent exactly when bulk_writable is false: a type no
+          load fills has nothing to coerce to.
+
+          options_schema says what a column of the type may set, and an option's default is what the
+          column gets without it: a caller that leaves a string type's max_length out gets the
+          default, and describe then states the column's options as created.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -71,8 +60,13 @@ entries:
                         "name": { "type": "string", "minLength": 1, "description": "What define expects in a column's type." },
                         "title": { "type": "string", "minLength": 1, "description": "What a person choosing it reads." },
                         "description": { "type": "string", "description": "What it is for, in terms a caller deciding between two types can act on." },
-                        "options_schema": { "type": "object", "description": "JSON Schema of this type's per-column options. Absent means the type takes none." },
-                        "bulk_writable": { "type": "boolean", "description": "False when no bulk load can fill a column of this type." }
+                        "options_schema": { "type": "object", "description": "JSON Schema of this type's per-column options. Absent means the type takes none. An option's default is what a column gets without it: a string type's max_length, for one." },
+                        "bulk_writable": { "type": "boolean", "description": "False when no bulk load can fill a column of this type." },
+                        "coerces_to": {
+                          "type": "string",
+                          "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"],
+                          "description": "What loadable.describe answers as the type of a column of this type: the storage type a producer coerces a value to. Absent when no bulk load can fill such a column."
+                        }
                       }
                     }
                   },
@@ -103,7 +97,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -128,17 +122,36 @@ entries:
 
           dry_run = true answers what it would do and writes nothing. That answer is what a person
           approving a schema change reads, so a define that cannot proceed names every reason at once
-          in details.blockers -- each { code, message, column? } -- rather than the first one it hit.
+          in details.blockers -- each { code, message, column? } -- under one reason,
+          invalid_request/invalid_definition, rather than the code of whichever blocker came first;
+          conflict/code_taken is the one refusal that is a race on the apply, not a blocker.
           Well-known blocker codes: unsupported_type, unsupported_option, invalid_code, code_taken,
-          type_conflict, key_unknown_column, period_conflict, immutable.
+          type_conflict, key_unknown_column, key_nullable, period_conflict, immutable.
+
+          Access: types is open to whoever may load; define, and dry_run with it, run under the
+          right to define, which a host grants separately from the right to load.
 
           Adding a column to a target that already holds rows is an addition, never a retype: the rows
           already there have nothing to put in a column that did not exist, so such a column is
           optional however insistently it was asked for. A receiver that cannot add one without
           rewriting the rows refuses instead of rewriting them.
 
+          A column the target already holds is matched by name and kept as it is. Its type MAY be
+          omitted -- that is how a caller re-lists a target it read through loadable.describe, which
+          speaks the coercion enum, without guessing this receiver's names -- and when it is given it
+          MUST be the name this receiver holds the column under, type_conflict otherwise. A column
+          the target does not hold needs a type: without one, or with one types() did not answer,
+          the blocker is unsupported_type. The rest of a held column is compared too, not only its
+          type: a period role on a target that has no axis is a change (period_set), the role on
+          another column than the stored axis is period_conflict, new values for an enum or a longer
+          max_length are a change (options_changed), while nullable = false on an optional column, a
+          value removed from an enum or a changed precision, scale or grain is immutable -- the rows
+          already there may violate it. A column named in key MUST be nullable = false; naming an
+          optional column the target already holds is key_nullable.
+
           describe, when present, is what loadable.describe answers for the target once this
-          definition is applied: the columns, their storage types and the key. A dry run carries it
+          definition is applied: the columns, their storage types, their options as created and the
+          key. A dry run carries it
           for a target that does not exist yet, so a caller can check rows against it before anything
           is created. A receiver that cannot say leaves it out.
         input_schemas:
@@ -171,10 +184,10 @@ entries:
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": ["name", "type"],
+                      "required": ["name"],
                       "properties": {
                         "name": { "type": "string", "minLength": 1 },
-                        "type": { "type": "string", "minLength": 1, "description": "A name types() answered with." },
+                        "type": { "type": "string", "minLength": 1, "description": "A name types() answered with. Required for a column the target does not hold; a column it holds keeps its type and may be named without one." },
                         "nullable": { "type": "boolean" },
                         "role": {
                           "type": "string",
@@ -188,7 +201,7 @@ entries:
                   "key": {
                     "type": "array",
                     "items": { "type": "string", "minLength": 1 },
-                    "description": "Columns naming one row's identity, in loadable's sense: a non-empty key is what makes commit refuse duplicates."
+                    "description": "Columns naming one row's identity, in loadable's sense: a non-empty key is what makes commit refuse duplicates. Its columns are never nullable: a new one is created required, a held optional one is key_nullable."
                   },
                   "dry_run": { "type": "boolean", "description": "Answer what would happen and write nothing." }
                 }
@@ -216,7 +229,7 @@ entries:
                         "action": {
                           "type": "string",
                           "minLength": 1,
-                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, key_set, period_set."
+                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, column_optional (a column asked for as required, added optional to a target that already exists), options_changed, key_set, period_set."
                         },
                         "column": { "type": "string" },
                         "detail": { "type": "string" }
@@ -237,8 +250,9 @@ entries:
                           "required": ["name", "type", "nullable"],
                           "properties": {
                             "name": { "type": "string", "minLength": 1 },
-                            "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                            "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"] },
                             "format": { "type": "string" },
+                            "options": { "type": "object", "description": "The column's options as the receiver holds them, keyed as its types().options_schema names them, every default filled in: a string type's max_length, an enum's values. A caller that read options_schema knows the names; absent for a column whose type takes none." },
                             "role": { "type": "string", "enum": ["period"] },
                             "nullable": { "type": "boolean" }
                           }
@@ -260,7 +274,7 @@ entries:
                   },
                   {
                     "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
-                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "changes": false, "describe": false } }
+                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "planned": false, "changes": false, "describe": false } }
                   }
                 ],
                 "$defs": {
@@ -277,7 +291,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {

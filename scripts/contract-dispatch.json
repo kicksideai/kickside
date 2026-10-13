@@ -83,5 +83,47 @@
       ]
     },
     "reason": "The SSO provisioner calls the host user provisioning contract for verified external identities, group assignment and session creation."
+  },
+  {
+    "module": "external spreadsheet ingest module",
+    "source": "src/receiver.lua",
+    "contracts": {
+      "kickside.data:loadable": [
+        "list",
+        "describe",
+        "describe_scope",
+        "begin",
+        "append",
+        "commit",
+        "rehearse",
+        "discard"
+      ]
+    },
+    "reason": "A spreadsheet ingest module opens the kickside.data:loadable binding its host wires as the receiver and loads parsed rows through it: list and describe choose a target, describe_scope shows whose slices a replace would touch, and begin, append and commit (or rehearse and discard) run one load."
+  },
+  {
+    "module": "external spreadsheet ingest module",
+    "source": "src/administrator.lua",
+    "contracts": {
+      "kickside.data:definable": [
+        "types",
+        "define"
+      ]
+    },
+    "reason": "A spreadsheet ingest module creates or changes a target nothing can load into yet: types reads the column types the receiver supports, and define applies the change through the administrator binding its host wires."
+  },
+  {
+    "module": "external spreadsheet ingest module",
+    "source": "src/reader.lua",
+    "contracts": {
+      "kickside.data:readable": [
+        "list",
+        "describe",
+        "plan",
+        "query",
+        "lookup"
+      ]
+    },
+    "reason": "A spreadsheet ingest module opens the kickside.data:readable binding its host wires as the reader and reads back what a store holds: list and describe a target, plan and query its rows and per-period profile, and lookup which of a file's keys it already holds."
   }
 ]
