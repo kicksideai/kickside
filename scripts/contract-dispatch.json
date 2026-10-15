@@ -107,10 +107,11 @@
     "contracts": {
       "kickside.data:definable": [
         "types",
-        "define"
+        "define",
+        "remove"
       ]
     },
-    "reason": "A spreadsheet ingest module creates or changes a target nothing can load into yet: types reads the column types the receiver supports, and define applies the change through the administrator binding its host wires."
+    "reason": "A spreadsheet ingest module creates or changes a target nothing can load into yet: types reads the column types the receiver supports, and define applies the change through the administrator binding its host wires; deleting a data knowledge base removes its targets through the same binding."
   },
   {
     "module": "external spreadsheet ingest module",

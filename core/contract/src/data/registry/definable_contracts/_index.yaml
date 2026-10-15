@@ -7,7 +7,7 @@ entries:
     meta:
       title: Definable Target
       tags: [data, schema, define, ddl]
-      comment: Create or alter the target a load writes into. The receiver owns and publishes its type vocabulary; the caller picks from it.
+      comment: Create, alter or drop the target a load writes into. The receiver owns and publishes its type vocabulary; the caller picks from it.
     methods:
       - name: types
         description: |
@@ -128,8 +128,12 @@ entries:
           Well-known blocker codes: unsupported_type, unsupported_option, invalid_code, code_taken,
           type_conflict, key_unknown_column, key_nullable, period_conflict, immutable.
 
-          Access: types is open to whoever may load; define, and dry_run with it, run under the
-          right to define, which a host grants separately from the right to load.
+          Access: types is open to whoever may load; define and remove run under the right to
+          define, which a host grants separately from the right to load. On top of it the
+          receiver's own rule for a target that exists decides: a receiver whose targets are
+          platform components alters one only for a caller who may write that component, and
+          answers permission_denied otherwise. A dry run writes nothing, so the right to define is
+          all it needs.
 
           Adding a column to a target that already holds rows is an addition, never a retype: the rows
           already there have nothing to put in a column that did not exist, so such a column is
@@ -275,6 +279,87 @@ entries:
                   {
                     "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
                     "then": { "required": ["error"], "properties": { "target": false, "created": false, "planned": false, "changes": false, "describe": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: remove
+        description: |
+          Drop the target and every row in it. The whole target goes: its rows, what loads recorded
+          about them and the id itself; a later define with the same code makes a new, empty target.
+
+          A target that is already gone is no refusal: retrying a removal, or removing what another
+          caller removed first, succeeds. A target id this receiver does not publish is not_found.
+
+          Access: remove runs under the right to define, as define does, and the receiver's own rule
+          for the target decides on top of it: a receiver whose targets are platform components drops
+          one only for a caller who may delete that component, and answers permission_denied
+          otherwise. A target something else still depends on -- another target that relates to it,
+          a lock the receiver keeps on it -- is conflict, with details.reason naming why.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["target"],
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^[^\\s:]+:[^\\s:]+$",
+                    "description": "The target to drop, as a load names it."
+                  }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"] }
                   }
                 ],
                 "$defs": {
