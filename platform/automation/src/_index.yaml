@@ -88,6 +88,8 @@ entries:
     targets:
       - entry: kickside.automation.migrations:06_trigger_item_ledger
         path: .meta.target_db
+      - entry: kickside.automation.migrations:13_record_delete_replay
+        path: .meta.target_db
       - entry: kickside.automation.migrations:10_drive_schema
         path: .meta.target_db
       - entry: kickside.automation.migrations:11_delivery_provenance

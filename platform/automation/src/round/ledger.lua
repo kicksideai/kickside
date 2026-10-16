@@ -440,4 +440,33 @@ function M.prune_orphans_tx(tx: any, cutoff: string, limit: integer): (integer?,
     return prune_page(tx, cutoff, limit, true)
 end
 
+-- Replay exactly the selected delivery identities in the caller's transaction.
+function M.replay_tx(tx: any, d: Map, rows: { Map }, now: string): (Map?, error?)
+    local port = M.source_port(d)
+    local replayed = 0
+    for _, row in ipairs(rows :: { Map }) do
+        local item, decode_err = (json :: any).decode(tostring(row.envelope_json))
+        if decode_err then return nil, decode_err end
+        item.attempt_generation = math.floor(tonumber(item.attempt_generation) or 0) + 1
+        item.reservation = nil
+        identity.bind({ automation_id = d.automation_id, source_port = M.receipt_port(d), delivery_revision = d.delivery_revision }, item)
+        local encoded, encode_err = (json :: any).encode(item)
+        if encode_err then return nil, encode_err end
+        local result, err = tx:execute("UPDATE " .. M.TABLE
+            .. " SET state='retrying',identity_parked=false,next_attempt_at=$1,updated_at=$1,envelope_json=$2,identity_key=$3"
+            .. " WHERE owner_id=$4 AND source_port=$5 AND item_key=$6 AND identity_key=$7",
+            { now, encoded, item.delivery_key, d.automation_id, port, row.item_key, row.identity_key })
+        if err then return nil, err end
+        replayed = replayed + math.floor(tonumber(result.rows_affected) or 0)
+    end
+    local counted, count_err = tx:query("SELECT COUNT(*) AS n FROM " .. M.TABLE
+        .. " WHERE owner_id = $1 AND source_port = $2 AND state IN ('retrying', 'waiting', 'uncertain', 'parked')", { d.automation_id, port })
+    if count_err then return nil, internal("replay recount failed", count_err) end
+    local updated, set_err = drive.update_cas_tx(tx, d.automation_id, d.drive_key, {},
+        { unresolved_count = math.floor(tonumber((counted :: { Map })[1].n) or 0) })
+    if set_err then return nil, set_err end
+    if not updated then return nil, internal("replay drive is missing", d.drive_key) end
+    return { replayed = replayed }, nil
+end
+
 return M

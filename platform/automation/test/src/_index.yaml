@@ -8,6 +8,15 @@ namespace: app
 # the namespace exclude in wippy.yaml.
 
 entries:
+  - name: delete_replay_migration_test
+    kind: function.lua
+    meta: { type: test, suite: automation }
+    source: file://suites/delete_replay_migration_test.lua
+    method: run
+    modules: [sql, json, funcs, uuid]
+    imports:
+      test: wippy.test:test
+
   - name: slot_provision_errors_test
     kind: function.lua
     meta: {type: test, suite: automation}

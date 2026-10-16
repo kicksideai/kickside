@@ -4,6 +4,19 @@ namespace: kickside.automation.migrations
 # target_db is injected by the root kickside.automation:target_db requirement.
 
 entries:
+  - name: 13_record_delete_replay
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+        - kickside.automation.migrations:11_delivery_provenance
+    source: file://13_record_delete_replay.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+      ledger: kickside.automation:round_ledger
+      drive: kickside.automation:drive
+
   - name: 12_delivery_history
     kind: function.lua
     meta:
