@@ -1,5 +1,6 @@
 """Repository CI gates and publication of one Release Please package."""
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -64,12 +65,17 @@ def publish_command(module, version, dry_run):
         args += ['--dry-run']
     return args
 
-def app_update_command():
-    config = yaml.safe_load((ROOT / 'app/.wippy.yaml').read_text())
-    args = ['wippy', 'update']
-    for name in config.get('workspace', {}).get('replacements', {}):
-        args += ['--set', 'workspace.replacements.' + name + '=']
-    return args
+@contextmanager
+def release_install_environment():
+    path = ROOT / 'app/.wippy.yaml'
+    original = path.read_bytes()
+    config = yaml.safe_load(original)
+    config.get('workspace', {}).pop('replacements', None)
+    try:
+        path.write_text(yaml.safe_dump(config, sort_keys=False))
+        yield
+    finally:
+        path.write_bytes(original)
 
 def lock_digest(root):
     return hashlib.sha256((root / 'app/wippy.lock').read_bytes()).hexdigest()
@@ -183,11 +189,12 @@ def verify_module(module, engine):
          '--module', module['path'], '--embed'])
     run(publish_command(module, version, True))
     if module['path'] == 'app':
-        make(module, 'preboot-check')
-        if os.environ.get('RELEASE_PR') == 'true':
-            check_app_lock_receipt(ROOT, version)
-            run(app_update_command(), directory)
-            run(['git', 'diff', '--exit-code', '--', 'app/wippy.lock'])
+        with release_install_environment():
+            make(module, 'preboot-check')
+            if os.environ.get('RELEASE_PR') == 'true':
+                check_app_lock_receipt(ROOT, version)
+                run(['wippy', 'update'], directory)
+                run(['git', 'diff', '--exit-code', '--', 'app/wippy.lock'])
 
 
 def repository_checks():
@@ -197,20 +204,23 @@ def repository_checks():
     run([sys.executable, '-B', '.github/scripts/test_release_content.py'])
 
 def refresh_app():
-    run(app_update_command(), ROOT / 'app')
-    module = plan()['modules']['app']
-    make(module, 'preboot-check')
-    version = json.loads((ROOT / '.release-please-manifest.json').read_text())['app']
-    write_app_lock_receipt(ROOT, version)
+    with release_install_environment():
+        run(['wippy', 'update'], ROOT / 'app')
+        module = plan()['modules']['app']
+        make(module, 'preboot-check')
+        version = json.loads((ROOT / '.release-please-manifest.json').read_text())['app']
+        write_app_lock_receipt(ROOT, version)
+
 
 def publish(module, version, dry_run, *, publish_unchanged=False):
     publish_args = publish_command(module, version, dry_run)
     run(['make', 'compat'])
     if not dry_run and module['path'] == 'app':
-        check_app_lock_receipt(ROOT, version)
-        run(app_update_command(), ROOT / 'app')
-        run(['git', 'diff', '--exit-code', '--', 'app/wippy.lock'])
-        make(module, 'preboot-check')
+        with release_install_environment():
+            check_app_lock_receipt(ROOT, version)
+            run(['wippy', 'update'], ROOT / 'app')
+            run(['git', 'diff', '--exit-code', '--', 'app/wippy.lock'])
+            make(module, 'preboot-check')
     build(module)
     if plan()['repository'] == 'chestor':
         run(['python3', 'scripts/validate-package.py', module['path']])

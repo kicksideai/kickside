@@ -27,4 +27,4 @@ checks passing, breaking, and error verdicts; compatibility proofs run separatel
 under `make compat`. The tests verify embedded content digests across release versions and changed
 filesystem timestamps.
 
-App release lock refresh and verification use `wippy update` with native `--set workspace.replacements.<module>=` overrides for every development replacement so dependency resolution reads the product source without loading development workspace replacements. The development `.wippy.yaml` stays unchanged. Run `delivery.py refresh-app` after publishing the dependency train.
+App release lock refresh, verification and publication share `release_install_environment`, which removes development workspace replacements from the app configuration for dependency update and preboot gates, then restores its original bytes. Nested install and registry commands read the same Hub-only configuration. Run `delivery.py refresh-app` after publishing the dependency train.

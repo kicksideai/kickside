@@ -14194,6 +14194,13 @@
       ],
       "tier": "full"
     },
+    "release_install_dependency_provenance": {
+      "features": [],
+      "issues": [
+        "RELEASE-INSTALL-DEPENDENCY-PROVENANCE"
+      ],
+      "tier": "regression"
+    },
     "release_runtime_profiles": {
       "features": [],
       "issues": [

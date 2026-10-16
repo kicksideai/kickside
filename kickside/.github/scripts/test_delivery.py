@@ -28,18 +28,64 @@ class PublicationTest(unittest.TestCase):
                 'embed': ['kickside.inbox:ui_fs']}
 
     def test_app_refresh_uses_published_dependencies(self):
-        with patch.object(DELIVERY, 'run') as run, \
-             patch.object(DELIVERY, 'make'), \
-             patch.object(DELIVERY, 'write_app_lock_receipt'):
-            DELIVERY.refresh_app()
-        command = run.call_args.args[0]
-        self.assertEqual(command[:2], ['wippy', 'update'])
-        config = yaml.safe_load((DELIVERY.ROOT / 'app/.wippy.yaml').read_text())
-        self.assertEqual(set(command[3::2]), {
-            'workspace.replacements.' + name + '='
-            for name in config['workspace']['replacements']})
-        self.assertEqual(command[2::2], ['--set'] * len(config['workspace']['replacements']))
-        self.assertEqual(run.call_args.args[1], DELIVERY.ROOT / 'app')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'app').mkdir()
+            config = root / 'app/.wippy.yaml'
+            original = 'workspace:\n  replacements:\n    vendor/module: ../missing\nvars:\n  keep: value\n'
+            config.write_text(original)
+            for failure in (False, True):
+                commands = []
+                def invoke(args, *positional, **keywords):
+                    commands.append(args)
+                    current = yaml.safe_load(config.read_text())
+                    self.assertFalse(current['workspace'].get('replacements'))
+                    self.assertEqual(current['vars'], {'keep': 'value'})
+                    if failure and args[0] == 'make':
+                        raise RuntimeError('preboot gate fails')
+                with self.subTest(failure=failure), patch.object(DELIVERY, 'ROOT', root), \
+                     patch.object(DELIVERY, 'plan', return_value={'modules': {'app': {'path': 'app'}}}), \
+                     patch.object(DELIVERY, 'run', side_effect=invoke), \
+                     patch.object(DELIVERY, 'write_app_lock_receipt') as receipt:
+                    (root / '.release-please-manifest.json').write_text('{"app": "0.2.13"}')
+                    if failure:
+                        with self.assertRaisesRegex(RuntimeError, 'preboot gate fails'):
+                            DELIVERY.refresh_app()
+                        receipt.assert_not_called()
+                    else:
+                        DELIVERY.refresh_app()
+                        receipt.assert_called_once_with(root, '0.2.13')
+                    self.assertEqual(commands, [['wippy', 'update'], ['make', '-C', 'app', 'preboot-check']])
+                    self.assertEqual(config.read_text(), original)
+
+    def test_app_verify_and_publish_share_the_release_install_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'app').mkdir()
+            config = root / 'app/.wippy.yaml'
+            original = 'workspace:\n  replacements:\n    vendor/module: ../missing\n'
+            config.write_text(original)
+            (root / '.release-please-manifest.json').write_text('{"app": "0.2.13"}')
+            module = self.module() | {'path': 'app', 'targets': [], 'harness': None}
+            for action in ('verify', 'publish'):
+                checked = []
+                def invoke(args, *positional, **keywords):
+                    if args[:2] == ['wippy', 'update'] or 'preboot-check' in args:
+                        self.assertFalse(yaml.safe_load(config.read_text())['workspace'].get('replacements'))
+                        checked.append(args)
+                with self.subTest(action=action), patch.object(DELIVERY, 'ROOT', root), \
+                     patch.object(DELIVERY, 'plan', return_value={'repository': 'kickside'}), \
+                     patch.object(DELIVERY, 'build'), \
+                     patch.object(DELIVERY, 'run', side_effect=invoke), \
+                     patch.object(DELIVERY, 'check_app_lock_receipt'), \
+                     patch.object(DELIVERY, 'unchanged_content', return_value=False), \
+                     patch.dict(os.environ, {'WIPPY_TOKEN': 'fixture-token', 'RELEASE_PR': 'true'}):
+                    if action == 'verify':
+                        DELIVERY.verify_module(module, 'sqlite')
+                    else:
+                        DELIVERY.publish(module, '0.2.13', False)
+                    self.assertEqual(len(checked), 2)
+                    self.assertEqual(config.read_text(), original)
 
     def test_dry_run_has_exact_version_and_metadata(self):
         args = DELIVERY.publish_command(self.module(), '0.2.1', True)

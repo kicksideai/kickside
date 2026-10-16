@@ -15,13 +15,14 @@ def release_app_lock_hub_pins(ctx):
     scratch.mkdir(parents=True)
     lock = scratch / 'wippy.lock'
     sys.path.insert(0, str(root / '.github/scripts'))
-    from delivery import app_update_command
+    from delivery import release_install_environment
 
-    completed = subprocess.run(
-        [*app_update_command(), '--lock-file', str(lock),
-         '--modules-dir', str(scratch / 'vendor')],
-        cwd=root / 'app', capture_output=True, text=True, timeout=120,
-    )
+    with release_install_environment():
+        completed = subprocess.run(
+            ['wippy', 'update', '--lock-file', str(lock),
+             '--modules-dir', str(scratch / 'vendor')],
+            cwd=root / 'app', capture_output=True, text=True, timeout=120,
+        )
     require(completed.returncode == 0,
             'Release app dependency resolution fails: ' + completed.stdout + completed.stderr)
     modules = yaml.safe_load(lock.read_text())['modules']
@@ -35,3 +36,19 @@ def release_app_lock_hub_pins(ctx):
 
 REGISTRY = [Scenario('release_app_lock_hub_pins', 'regression', release_app_lock_hub_pins,
                      issues=('RELEASE-APP-LOCK-HUB-PINS',))]
+
+
+def release_install_dependency_provenance(ctx):
+    root = Path(__file__).resolve().parents[2]
+    completed = subprocess.run(
+        [sys.executable, '.github/scripts/test_delivery.py'],
+        cwd=root, capture_output=True, text=True, timeout=60,
+    )
+    require(completed.returncode == 0, completed.stdout + completed.stderr)
+    ctx.inst.evidence.save('release-install-dependency-provenance',
+                           {'output': completed.stdout + completed.stderr})
+
+
+REGISTRY += [Scenario('release_install_dependency_provenance', 'regression',
+                      release_install_dependency_provenance,
+                      issues=('RELEASE-INSTALL-DEPENDENCY-PROVENANCE',))]
