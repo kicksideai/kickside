@@ -9249,6 +9249,29 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "security/member-catalog-registry-authority": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "SECURITY-MEMBER-CATALOG-REGISTRY-AUTHORITY",
+        "SECURITY-RETIRED-SELECTION-SCOPE-CATALOG"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/security/test/src/member_scope_catalog_test.lua"
+    },
+    "security/retired-selection-scope-catalog": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "SECURITY-RETIRED-SELECTION-SCOPE-CATALOG"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/security/test/src/catalog_registry_failure_test.lua"
     }
   },
   "issues": [
@@ -10359,7 +10382,9 @@
     "RELEASE-UI-SERVED-BUNDLE-RESOLUTION",
     "RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE",
     "RELEASE-INSTALL-DEPENDENCY-PROVENANCE",
-    "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES"
+    "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES",
+    "SECURITY-MEMBER-CATALOG-REGISTRY-AUTHORITY",
+    "SECURITY-RETIRED-SELECTION-SCOPE-CATALOG"
   ],
   "schema_version": 1
 }

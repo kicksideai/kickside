@@ -19,16 +19,18 @@ local function handler()
     for _, id in ipairs(args.policies or {}) do
         local policy = assert(security.policy(id))
         local entry = assert(registry.get(id))
-        local resources = entry.data.policy.resources
+        local resources, actions = entry.data.policy.resources, entry.data.policy.actions
         if type(resources) == "string" then resources = {resources} end
-        for _, selector in ipairs(resources) do
-            local resource = selector
-            native[#native + 1] = {id = id, resource = resource,
-                direct = policy:evaluate(member, "access", resource),
-                composed = group:evaluate(member, "access", resource),
-                foreign = policy:evaluate(member, "access", "unrelated.module:read.endpoint"),
-                action = policy:evaluate(member, "delete", resource),
-            }
+        if type(actions) == "string" then actions = {actions} end
+        for _, verb in ipairs(actions) do
+            for _, resource in ipairs(resources) do
+                native[#native + 1] = {id = id, resource = resource, verb = verb,
+                    direct = policy:evaluate(member, verb, resource),
+                    composed = group:evaluate(member, verb, resource),
+                    foreign = policy:evaluate(member, verb, "unrelated.module:read.endpoint"),
+                    action = policy:evaluate(member, "delete", resource),
+                }
+            end
         end
     end
     local signing_material, material_err = env.get("ENCRYPTION_KEY")
