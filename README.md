@@ -23,7 +23,7 @@ wippy run kickside/kickside -c --profile quickstart
 
 Open `http://localhost:8085` and follow the [installation guide](https://github.com/kicksideai/docs/blob/main/getting-started/index.md) for sign-in and setup.
 
-![The KickSide application hosts a Chestor graph with fictional demonstration data](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/chestor/graph.png)
+![KickSide with fictional demonstration data: an agent chat, the CRM pipeline, a visual workflow, and a knowledge base](https://raw.githubusercontent.com/kicksideai/docs/main/assets/readme/kickside-overview.webp)
 
 See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) to extend the application. Dashboard, Research, first-agent onboarding, and SSO live in [components](https://github.com/kicksideai/components).
 
