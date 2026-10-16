@@ -56,3 +56,36 @@ entries:
     imports:
       test: wippy.test:test
       migration_scratch: kickside.core.migration_tests:migration_scratch
+
+  - name: legacy_thread_schema
+    kind: function.lua
+    source: file://legacy_thread_schema.lua
+    method: migrate
+    imports:
+      migration: wippy.migration:migration
+  - name: legacy_component_schema
+    kind: function.lua
+    source: file://legacy_component_schema.lua
+    method: migrate
+    imports:
+      migration: wippy.migration:migration
+  - name: thread_natural_keys_migration_test
+    kind: function.lua
+    source: file://thread_natural_keys_migration_test.lua
+    method: run
+    meta:
+      type: test
+      suite: kickside_core
+    modules:
+    - funcs
+    - uuid
+    - json
+    security:
+      actor:
+        id: system:automation
+      policies:
+      - app:test_scope_policy
+    imports:
+      test: wippy.test:test
+      migration_scratch: kickside.core.migration_tests:migration_scratch
+      natural_key: kickside.core.threads.persist:natural_key

@@ -72,9 +72,52 @@ function M.bind(tx: any, dbtype: string, key: table, id: string, origin: string,
     return nil
 end
 
+local function legacy_row(tx: any, id: string): (table?, error?)
+    local rows, err = tx:query([[SELECT t.id,t.thread_class,t.attrs,t.component_id,c.component_id AS backing_id
+        FROM kickside_thread t LEFT JOIN kickside_components c ON c.component_id=t.id WHERE t.id=$1]],{id})
+    if err then return nil, persistence_error(err) end
+    return rows and rows[1], nil
+end
+
+local function verified_legacy(row: table): (table, error?)
+    local attrs, decode_err = json.decode(row.attrs)
+    if decode_err then return {reason="legacy_natural_key_unverifiable"}, decode_err end
+    local key: table? = nil
+    if type(attrs) == "table" and type(attrs.external_ref) == "string" and attrs.external_ref ~= "" then
+        key = M.key(row.thread_class,attrs.external_ref)
+    end
+    if not key or M.legacy_id(key) ~= tostring(row.id) then
+        return {reason="legacy_natural_key_unverifiable"}, nil
+    end
+    if tostring(row.component_id) ~= tostring(row.id) or tostring(row.backing_id) ~= tostring(row.id) then
+        return {key=key,reason="legacy_natural_key_component_integrity"}, nil
+    end
+    return {key=key}, nil
+end
+
+-- Cold migrations use the same stored tuple and backing-component proof as live capture.
+function M.adopt_legacy(tx: any, dbtype: string, id: string): (table?, error?)
+    local row, read_err = legacy_row(tx,id)
+    if read_err then return nil, read_err end
+    if not row then return {bound=false,reason="legacy_natural_key_unverifiable"}, nil end
+    local verified = verified_legacy(row)
+    local key = verified.key
+    if verified.reason then return {bound=false,reason=verified.reason}, nil end
+    local existing, lookup_err = M.lookup(tx,dbtype,key)
+    if lookup_err then
+        if errors.is(lookup_err,errors.CONFLICT) then return {bound=false,reason=lookup_err:details().reason}, nil end
+        return nil, lookup_err
+    end
+    if existing and tostring(existing.thread_id) ~= tostring(row.id) then
+        return {bound=false,reason="natural_key_binding_collision"}, nil
+    end
+    local bind_err = M.bind(tx,dbtype,key,tostring(row.id),"legacy",true)
+    if bind_err then return nil, bind_err end
+    return {bound=true}, nil
+end
+
 -- The caller owns a write-first transaction and locks the candidate before probing.
--- Existing bindings are checked in place; unbound legacy tuples require the
--- pre-update manual binding procedure.
+-- Existing bindings are checked in place; boot migration adopts verified legacy tuples.
 function M.capture(tx: any, dbtype: string, id: string, required: boolean?): (table?, error?)
     local mapped, mapped_err = tx:query("SELECT key_class,key_ref FROM kickside_thread_natural_key WHERE thread_id=$1",{id})
     if mapped_err then return nil, persistence_error(mapped_err) end
@@ -85,24 +128,17 @@ function M.capture(tx: any, dbtype: string, id: string, required: boolean?): (ta
         if not canonical or tostring(canonical.thread_id) ~= id then return nil, M.conflict("natural_key_binding_collision") end
         return key, nil
     end
-    local rows, err = tx:query([[SELECT t.id,t.thread_class,t.attrs,t.component_id,c.component_id AS backing_id
-        FROM kickside_thread t LEFT JOIN kickside_components c ON c.component_id=t.id WHERE t.id=$1]],{id})
-    if err then return nil, persistence_error(err) end
-    local row = rows and rows[1]
+    local row, read_err = legacy_row(tx,id)
+    if read_err then return nil, read_err end
     if not row then return nil, nil end
-    local attrs, decode_err = json.decode(row.attrs)
+    local verified, decode_err = verified_legacy(row)
+    local key, reason = verified.key, verified.reason
     if decode_err then return nil, persistence_error(decode_err) end
-    local key: table? = nil
-    if type(attrs) == "table" and type(attrs.external_ref) == "string" and attrs.external_ref ~= "" then
-        key = M.key(row.thread_class,attrs.external_ref)
-    end
-    if not key or M.legacy_id(key) ~= id then
-        if required then return nil, M.conflict("legacy_natural_key_unverifiable") end
+    if not key then
+        if required then return nil, M.conflict(reason) end
         return nil, nil
     end
-    if tostring(row.component_id) ~= id or tostring(row.backing_id) ~= id then
-        return nil, M.conflict("legacy_natural_key_component_integrity")
-    end
+    if reason then return nil, M.conflict(reason) end
     return nil, M.conflict("legacy_natural_key_manual_adoption_required")
 end
 

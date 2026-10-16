@@ -18,3 +18,17 @@ entries:
     test: wippy.test:test
     lifecycle: kickside.core.jobs.persist:lifecycle
     claim: kickside.core.jobs.persist:claim
+- name: retired_upload_slot_migration_test
+  kind: function.lua
+  source: file://retired_upload_slot_migration_test.lua
+  method: run
+  meta:
+    type: test
+    suite: kickside_core
+  modules:
+  - sql
+  - uuid
+  - funcs
+  imports:
+    test: wippy.test:test
+    jobs: kickside.core.jobs:jobs
