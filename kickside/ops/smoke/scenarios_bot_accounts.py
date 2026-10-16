@@ -148,7 +148,7 @@ def bot_accounts_identity_update(ctx):
 
 
 REGISTRY += [Scenario('bot_accounts_identity_update', 'regression', bot_accounts_identity_update,
-                      issues=('RA-C05', 'RA-C06', 'RA-C14', 'RA-C16', 'RA-C18', 'RA-H45', 'CREDENTIAL-CONSUMER-INDEPENDENT-UPGRADE'))]
+                      issues=('RA-C05', 'RA-C06', 'RA-C14', 'RA-C16', 'RA-C18', 'RA-H45', 'CREDENTIAL-CONSUMER-INDEPENDENT-UPGRADE', 'COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES'))]
 
 
 def bot_accounts_host_credentials(ctx):

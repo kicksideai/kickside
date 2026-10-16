@@ -670,7 +670,8 @@
         "RA-C16",
         "RA-C18",
         "RA-H45",
-        "CREDENTIAL-CONSUMER-INDEPENDENT-UPGRADE"
+        "CREDENTIAL-CONSUMER-INDEPENDENT-UPGRADE",
+        "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES"
       ],
       "repository": "kickside/kickside",
       "test": "ops/compat/integration/test_identity_bot_accounts_upgrade.py"
@@ -10357,7 +10358,8 @@
     "RELEASE-APP-LOCK-HUB-PINS",
     "RELEASE-UI-SERVED-BUNDLE-RESOLUTION",
     "RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE",
-    "RELEASE-INSTALL-DEPENDENCY-PROVENANCE"
+    "RELEASE-INSTALL-DEPENDENCY-PROVENANCE",
+    "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES"
   ],
   "schema_version": 1
 }

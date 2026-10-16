@@ -59,6 +59,25 @@ class FocusedFixtureTests(unittest.TestCase):
             self.assertEqual(proof['meta']['depends_on'], list(dependencies))
             self.assertNotIn('bot_accounts_test', {row['name'] for row in entries})
 
+    def test_identity_update_host_supplies_uploads_database_and_storage(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            _, source, _ = make_runtime(
+                Path(directory), Path('platform/identity/test-bot-accounts/src'),
+                Path('platform/identity/test-bot-accounts'), 'run_as_identity_upgrade.lua',
+                'identity-proof', {}, ['sql'],
+            )
+            entries = yaml.safe_load((source / '_index.yaml').read_text())['entries']
+            bindings = {parameter['name']: parameter['value']
+                        for entry in entries if entry['kind'] == 'ns.dependency'
+                        for parameter in entry.get('parameters', [])}
+            self.assertEqual(bindings.get('kickside.uploads:database_resource'), 'app:db')
+            storage_id = bindings.get('kickside.uploads:storage_id')
+            self.assertIsNotNone(storage_id)
+            storage = next(entry for entry in entries if 'app:' + entry['name'] == storage_id)
+            self.assertEqual(storage['kind'], 'fs.directory')
+            self.assertTrue(storage['auto_init'])
+            self.assertTrue(storage['directory'].startswith('./.wippy/'))
+
     def test_published_dispatch_proof_retains_dynamic_factory_and_job_dependencies(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             _, source, _ = make_runtime(

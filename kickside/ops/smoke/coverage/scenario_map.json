@@ -5642,7 +5642,8 @@
         "RA-C16",
         "RA-C18",
         "RA-H45",
-        "CREDENTIAL-CONSUMER-INDEPENDENT-UPGRADE"
+        "CREDENTIAL-CONSUMER-INDEPENDENT-UPGRADE",
+        "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES"
       ],
       "tier": "regression"
     },
