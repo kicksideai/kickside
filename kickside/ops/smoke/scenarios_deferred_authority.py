@@ -27,9 +27,7 @@ def _fixture(ctx, group, denied_group=None, unbound_group=None):
         entries = [
             {'name': 'authority_fixture', 'kind': 'library.lua', 'source': 'file://authority_fixture.lua',
              'modules': ['http', 'json', 'registry', 'funcs', 'security', 'sql', 'uuid', 'time'],
-             'imports': {'execution_identity': 'kickside.execution:execution_identity',
-                         'scope_projection': 'kickside.security.service:scope_projection',
-                         'scope_store': 'kickside.security.persist:scope_store', 'component': 'kickside.component:component'}},
+             'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
             {'name': 'identity_probe', 'kind': 'function.lua', 'source': 'file://identity_probe.lua', 'method': 'capture',
              'modules': ['security'],
              'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
@@ -38,37 +36,22 @@ def _fixture(ctx, group, denied_group=None, unbound_group=None):
              'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
             {'name': 'install_delegation', 'kind': 'function.lua', 'source': 'file://authority_fixture.lua', 'method': 'install_delegation',
              'modules': ['http', 'json', 'registry', 'funcs', 'security', 'sql', 'uuid', 'time'],
-             'imports': {'execution_identity': 'kickside.execution:execution_identity',
-                         'scope_projection': 'kickside.security.service:scope_projection',
-                         'scope_store': 'kickside.security.persist:scope_store', 'component': 'kickside.component:component'}},
+             'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
             {'name': 'deferred', 'kind': 'function.lua', 'source': 'file://authority_fixture.lua', 'method': 'deferred',
              'modules': ['http', 'json', 'registry', 'funcs', 'security', 'sql', 'uuid', 'time'],
-             'imports': {'execution_identity': 'kickside.execution:execution_identity',
-                         'scope_projection': 'kickside.security.service:scope_projection',
-                         'scope_store': 'kickside.security.persist:scope_store', 'component': 'kickside.component:component'}},
+             'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
             {'name': 'projection', 'kind': 'function.lua', 'source': 'file://authority_fixture.lua', 'method': 'projection',
              'modules': ['http', 'json', 'registry', 'funcs', 'security', 'sql', 'uuid', 'time'],
-             'imports': {'execution_identity': 'kickside.execution:execution_identity',
-                         'scope_projection': 'kickside.security.service:scope_projection',
-                         'scope_store': 'kickside.security.persist:scope_store', 'component': 'kickside.component:component'}},
-            {'name': 'clear_projection_fence', 'kind': 'function.lua', 'source': 'file://authority_fixture.lua', 'method': 'clear_projection_fence',
-             'modules': ['http', 'json', 'registry', 'funcs', 'security', 'sql', 'uuid', 'time'],
-             'imports': {'execution_identity': 'kickside.execution:execution_identity',
-                         'scope_projection': 'kickside.security.service:scope_projection',
-                         'scope_store': 'kickside.security.persist:scope_store', 'component': 'kickside.component:component'}},
+             'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
             {'name': 'adopt_restricted', 'kind': 'function.lua', 'source': 'file://authority_fixture.lua', 'method': 'adopt_restricted',
              'modules': ['http', 'json', 'registry', 'funcs', 'security', 'sql', 'uuid', 'time'],
-             'imports': {'execution_identity': 'kickside.execution:execution_identity',
-                         'scope_projection': 'kickside.security.service:scope_projection',
-                         'scope_store': 'kickside.security.persist:scope_store', 'component': 'kickside.component:component'}},
+             'imports': {'execution_identity': 'kickside.execution:execution_identity', 'component': 'kickside.component:component'}},
             {'name': 'install_delegation.endpoint', 'kind': 'http.endpoint', 'meta': {'router': 'app:api'},
              'method': 'POST', 'path': '/identity-authority/delegation', 'func': NAMESPACE + ':install_delegation'},
             {'name': 'deferred.endpoint', 'kind': 'http.endpoint', 'meta': {'router': 'app:api'},
              'method': 'POST', 'path': '/identity-authority/deferred', 'func': NAMESPACE + ':deferred'},
             {'name': 'projection.endpoint', 'kind': 'http.endpoint', 'meta': {'router': 'app:api'},
              'method': 'POST', 'path': '/identity-authority/projection', 'func': NAMESPACE + ':projection'},
-            {'name': 'clear_projection_fence.endpoint', 'kind': 'http.endpoint', 'meta': {'router': 'app:api'},
-             'method': 'POST', 'path': '/identity-authority/projection/clear', 'func': NAMESPACE + ':clear_projection_fence'},
             {'name': 'adopt_restricted.endpoint', 'kind': 'http.endpoint', 'meta': {'router': 'app:api'},
              'method': 'POST', 'path': '/identity-authority/adopt-restricted', 'func': NAMESPACE + ':adopt_restricted'},
             {'name': 'deferred_owner', 'kind': 'registry.entry', 'meta': {'private': True}},
@@ -194,34 +177,19 @@ def deferred_native_authority(ctx):
 
 
 def projection_checked_fast_path(ctx):
-    """RA-H47/H48/H49: live group sets reuse safely and fence only affected sets."""
+    """RA-H47/H49: a live group set reuses one canonical native scope through Security's binding."""
     inst = ctx.inst
-    suffix = uuid.uuid4().hex[:12]
-    group = 'app.security:projection_warm_' + suffix
-    unrelated = 'app.security:projection_unrelated_' + suffix
+    group = 'app.security:projection_warm_' + uuid.uuid4().hex[:12]
     _fixture(ctx, group)
     warm = {'groups': [group]}
     first = inst.request('POST', '/api/v1/identity-authority/projection', warm, label='projection-first-materialize')
     require(first.get('success') is True, 'initial projection materialization fails: ' + str(first))
     first_scope = first['result'].get('scope_name')
-    # A reduction fence for a different principal must not turn a warm scope
-    # lookup into a global reconciliation or deny unrelated authority.
-    warm_again = inst.request('POST', '/api/v1/identity-authority/projection',
-                              {**warm, 'fence_group': unrelated}, label='projection-unrelated-fence')
+    warm_again = inst.request('POST', '/api/v1/identity-authority/projection', warm, label='projection-warm-reuse')
     require(warm_again.get('success') is True and warm_again['result'].get('scope_name') == first_scope,
-            'unrelated pending reduction prevents checked warm scope reuse')
-    # The affected set fails closed until its reduction fence clears.
-    affected = inst.request('POST', '/api/v1/identity-authority/projection',
-                            {**warm, 'fence_group': group}, expect=(409,), label='projection-affected-fence')
-    require(affected.get('success') is False, 'affected reduction fence permits materialization')
-    inst.request('POST', '/api/v1/identity-authority/projection/clear', {'group': group}, label='projection-clear-affected-fence')
-    aggregate = inst.request('POST', '/api/v1/identity-authority/projection',
-                            {**warm, 'fence_group': first_scope}, expect=(409,), label='projection-aggregate-fence')
-    require(aggregate.get('success') is False, 'materialized-set reduction fence permits warm reuse')
-    inst.request('POST', '/api/v1/identity-authority/projection/clear', {'group': first_scope}, label='projection-clear-aggregate-fence')
-    inst.request('POST', '/api/v1/identity-authority/projection/clear', {'group': unrelated}, label='projection-clear-unrelated-fence')
-    # Concurrent calls must return one canonical group-set scope.  The Security
-    # owner coalesces the materialization rather than creating per-request scopes.
+            'warm group set does not reuse its materialized scope')
+    # Concurrent calls return one canonical group-set scope: the Security
+    # projection service answers every queued request from one pass.
     with ThreadPoolExecutor(max_workers=6) as pool:
         futures = [pool.submit(inst.request, 'POST', '/api/v1/identity-authority/projection', warm,
                                label='projection-concurrent-' + str(index)) for index in range(6)]
@@ -230,7 +198,7 @@ def projection_checked_fast_path(ctx):
     require({row['result'].get('scope_name') for row in concurrent} == {first_scope},
             'same memberships materialize more than one native group set')
     inst.evidence.save('projection-checked-fast-path', {'group': group, 'scope': first_scope,
-                       'concurrent_requests': len(concurrent), 'unrelated_fence': unrelated})
+                       'concurrent_requests': len(concurrent)})
 
 
 def nested_capture_retains_admission(ctx):

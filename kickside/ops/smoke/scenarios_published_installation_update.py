@@ -277,7 +277,6 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                     'accounts': database_rows(inst, 'SELECT user_id, status, auth_generation FROM app_users'),
                     'memberships': database_rows(inst, 'SELECT user_id, group_id FROM app_user_groups'),
                     'delegations': database_rows(inst, 'SELECT * FROM app_user_delegation_epochs'),
-                    'fences': database_rows(inst, 'SELECT * FROM kickside_security_session_fences'),
                     'scopes': database_rows(inst, 'SELECT * FROM kickside_security_scopes')})
                 def stored_authority():
                     groups = database_rows(inst, 'SELECT slug, policies FROM kickside_security_scopes')

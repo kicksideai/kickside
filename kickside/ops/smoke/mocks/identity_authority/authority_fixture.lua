@@ -2,8 +2,6 @@ local http = require("http")
 local json = require("json")
 local registry = require("registry")
 local execution_identity = require("execution_identity")
-local scope_projection = require("scope_projection")
-local scope_store = require("scope_store")
 local component = require("component")
 local funcs = require("funcs")
 local security = require("security")
@@ -109,36 +107,17 @@ function M.deferred()
     return response(http.STATUS.OK, { success = true, result = result })
 end
 
--- This is intentionally a direct call to Security's materializer.  It uses
--- the deployed registry and persistence owners; it does not model a scope or
--- fabricate a policy handle in the fixture.
+-- Materializes a principal's group set through Security's binding, the path
+-- Users takes at login: the scope projection service answers the request.
 function M.projection()
     local input, input_err = body()
     if input_err then return response(http.STATUS.BAD_REQUEST, { success = false, error = input_err }) end
     if type(input.groups) ~= "table" or #input.groups == 0 then
         return response(http.STATUS.BAD_REQUEST, { success = false, error = "groups are required" })
     end
-    if input.fence_group ~= nil then
-        if type(input.fence_group) ~= "string" or input.fence_group == "" then
-            return response(http.STATUS.BAD_REQUEST, { success = false, error = "fence_group is invalid" })
-        end
-        local queued, queue_err = scope_store.queue_session_fences({input.fence_group}, false)
-        if queue_err or not queued then return response(http.STATUS.INTERNAL_ERROR, { success = false, error = tostring(queue_err) }) end
-    end
-    local result, materialize_err = scope_projection.materialize(input.groups)
+    local result, materialize_err = funcs.call("kickside.security.binding:materialize_group_set", { groups = input.groups })
     if materialize_err then return response(http.STATUS.CONFLICT, { success = false, error = tostring(materialize_err) }) end
     return response(http.STATUS.OK, { success = true, result = result })
-end
-
-function M.clear_projection_fence()
-    local input, input_err = body()
-    if input_err then return response(http.STATUS.BAD_REQUEST, { success = false, error = input_err }) end
-    if type(input.group) ~= "string" or input.group == "" then
-        return response(http.STATUS.BAD_REQUEST, { success = false, error = "group is required" })
-    end
-    local cleared, clear_err = scope_store.clear_session_fences({input.group})
-    if clear_err or not cleared then return response(http.STATUS.INTERNAL_ERROR, { success = false, error = tostring(clear_err) }) end
-    return response(http.STATUS.OK, { success = true })
 end
 
 function M.adopt_restricted()

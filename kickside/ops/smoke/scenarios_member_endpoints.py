@@ -26,8 +26,6 @@ def member_endpoint_matrix(ctx):
             'kickside/skills': [{'name': 'kickside.skills:upload_storage', 'value': 'app:uploads'}],
         }.get(module)
         inst.install(module, parameters=parameters)
-    from scenarios_studio import install_studio
-    install_studio(ctx)
     with ctx.paused():
         fixture = inst.app / 'src' / 'member-endpoint-acceptance'
         fixture.mkdir()

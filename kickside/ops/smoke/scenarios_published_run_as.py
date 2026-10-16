@@ -13,6 +13,21 @@ from scenarios_token_continuity import token_payloads, credential_snapshot
 from upgrade_regressions import candidate_dependency_sources
 
 
+# A module's test harnesses live at its root; source directories named test or
+# tests below the root (keeper.tests.api) are shipped entries.
+HARNESS_DIRECTORIES = {'test', 'tests', 'lint-harness'}
+COPY_IGNORED = shutil.ignore_patterns('.git', '.wippy', 'wippy.lock', 'node_modules', '__pycache__')
+
+
+def module_source_ignore(root):
+    def ignore(directory, names):
+        ignored = set(COPY_IGNORED(directory, names))
+        if Path(directory) == root:
+            ignored |= HARNESS_DIRECTORIES & set(names)
+        return ignored
+    return ignore
+
+
 BOT_ACCOUNTS_ENDPOINT = {
     'data': {'func': 'bot_accounts_list', 'method': 'GET', 'path': '/users/bots'},
     'id': 'kickside.users.api:bot_accounts_list.endpoint',
@@ -103,9 +118,8 @@ def browser_published_human_automation_update(ctx, *, installer=None, setup=None
         for module, path in replacements.items():
             directory = Path(path)
             shutil.rmtree(directory / 'src')
-            shutil.copytree(fixture.state['candidate_sources'][module], directory, dirs_exist_ok=True,
-                            ignore=shutil.ignore_patterns('.git', '.wippy', 'wippy.lock', 'node_modules',
-                                                         '__pycache__', 'test', 'tests', 'lint-harness'))
+            source = Path(fixture.state['candidate_sources'][module])
+            shutil.copytree(source, directory, dirs_exist_ok=True, ignore=module_source_ignore(source))
         root_source = replacements['kickside/kickside']
         pid = inst.process.pid
         for phase, count in (('update', 2), ('repeat', 3), ('restart', 4)):

@@ -199,10 +199,12 @@ def release_explicit_publication(ctx):
     import sys
 
     root = Path(__file__).resolve().parents[2]
-    result = subprocess.run([sys.executable, '.github/scripts/test_delivery.py', '.github/scripts/test_release_content.py'],
-                            cwd=root, capture_output=True, text=True, timeout=60)
-    require(result.returncode == 0, result.stdout + result.stderr)
-    ctx.inst.evidence.save('release-explicit-publication', {'output': result.stdout + result.stderr})
+    output = {}
+    for script in ('.github/scripts/test_delivery.py', '.github/scripts/test_release_content.py'):
+        result = subprocess.run([sys.executable, script], cwd=root, capture_output=True, text=True, timeout=60)
+        require(result.returncode == 0, script + ': ' + result.stdout + result.stderr)
+        output[script] = result.stdout + result.stderr
+    ctx.inst.evidence.save('release-explicit-publication', output)
 
 
 REGISTRY += [Scenario('release_explicit_publication', 'regression', release_explicit_publication,
