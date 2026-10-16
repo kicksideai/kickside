@@ -1,0 +1,339 @@
+version: "1.0"
+namespace: kickside.contract
+
+entries:
+  - name: resource_registry
+    kind: contract.definition
+    meta:
+      comment: Resource registry interface for listing and counting content resources
+      tags:
+        - resource
+        - registry
+        - listing
+        - pagination
+        - counting
+    methods:
+      - name: list
+        description: |
+          List resources with cursor-based pagination and filtering.
+          Calling: list(request)
+        input_schemas:
+          - definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"after_upload_id\": {\n      \"type\": \"string\",\n      \"description\": \"Return items after this upload ID (cursor-based pagination)\"\n    },\n    \"limit\": {\n      \"type\": \"integer\", \n      \"description\": \"Maximum number of items to return\",\n      \"default\": 20,\n      \"minimum\": 1,\n      \"maximum\": 100\n    },\n    \"filters\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"content_types\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          },\n          \"description\": \"Filter by MIME types (e.g., ['text/html', 'application/markdown', 'image/*'])\"\n        },\n        \"created_after\": {\n          \"type\": \"string\",\n          \"format\": \"date-time\",\n          \"description\": \"Show files created after this date\"\n        },\n        \"created_before\": {\n          \"type\": \"string\",\n          \"format\": \"date-time\",\n          \"description\": \"Show files created before this date\"\n        }\n      }\n    },\n    \"sort\": {\n      \"type\": \"string\",\n      \"enum\": [\"created_at\", \"size\"],\n      \"description\": \"Sort field\",\n      \"default\": \"created_at\"\n    },\n    \"sort_order\": {\n      \"type\": \"string\",\n      \"enum\": [\"asc\", \"desc\"], \n      \"description\": \"Sort order\",\n      \"default\": \"desc\"\n    }\n  },\n  \"default\": {}\n}\n"
+            format: application/schema+json
+        output_schemas:
+          - definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"items\": {\n      \"type\": \"array\",\n      \"description\": \"Resource items\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": {\n            \"type\": \"string\",\n            \"description\": \"Resource identifier (upload_id)\"\n          },\n          \"filename\": {\n            \"type\": \"string\", \n            \"description\": \"Original filename\"\n          },\n          \"content_type\": {\n            \"type\": \"string\",\n            \"description\": \"MIME type\"\n          },\n          \"size\": {\n            \"type\": \"integer\",\n            \"description\": \"Size in bytes\"\n          },\n          \"created_at\": {\n            \"type\": \"string\",\n            \"format\": \"date-time\",\n            \"description\": \"Creation timestamp\"\n          },\n          \"metadata\": {\n            \"type\": \"object\",\n            \"description\": \"Additional metadata\"\n          }\n        },\n        \"required\": [\"id\", \"content_type\", \"size\", \"created_at\"]\n      }\n    },\n    \"has_more\": {\n      \"type\": \"boolean\",\n      \"description\": \"Whether there are more items beyond the current page\"\n    }\n  },\n  \"required\": [\"items\", \"has_more\"]\n}\n"
+            format: application/schema+json
+      - name: count
+        description: |
+          Get count of resources matching filters (fast operation).
+          Calling: count_resources(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "filters": {
+                    "type": "object",
+                    "properties": {
+                      "content_types": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Filter by MIME types"
+                      },
+                      "created_after": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Count files created after this date"
+                      },
+                      "created_before": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Count files created before this date"
+                      }
+                    }
+                  }
+                },
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "total_count": {
+                    "type": "integer",
+                    "description": "Total number of matching resources"
+                  }
+                },
+                "required": ["total_count"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:scope_resolver
+  - name: scope_resolver
+    kind: contract.definition
+    meta:
+      comment: |
+        Resolves a subject into serializable scope parameters.
+        Subject-to-scope-params seam. Returns serializable scope parameters only
+        (groups, scope name, policy ids), never a runtime actor or scope object.
+        The app binds this near users. Consumers use resolve({}) for the
+        ambient signed actor snapshot and resolve({ subject_id = ... }) for an
+        explicit users-store lookup by a caller with impersonation/delegation
+        capability.
+      tags:
+        - scope
+        - resolver
+        - access
+        - identity
+    methods:
+      - name: resolve
+        description: |
+          Resolve a subject into serializable scope parameters.
+          When subject_id is omitted, resolves the current signed actor snapshot.
+          When subject_id is present, resolves that explicit subject from the
+          authoritative user store only for callers with impersonation/delegation
+          capability.
+          Returns scope parameters only - never a runtime actor or scope.
+          Calling: resolve(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "subject_id": {
+                    "type": "string",
+                    "description": "Subject to resolve; defaults to the current actor when omitted"
+                  },
+                  "app_scope": {
+                    "type": "string",
+                    "description": "Application scope name to resolve within"
+                  }
+                },
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "subject_id": {
+                    "type": "string",
+                    "description": "Resolved subject identifier"
+                  },
+                  "groups": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Group identifiers the subject belongs to"
+                  },
+                  "scope_name": {
+                    "type": "string",
+                    "description": "Resolved scope name"
+                  },
+                  "scope_groups": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "minItems": 1,
+                    "description": "Live groups composed into the effective scope; denies take precedence"
+                  },
+                  "scope_policy_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Policy identifiers attached to the resolved scope"
+                  },
+                  "meta": {
+                    "type": "object",
+                    "description": "Additional serializable scope metadata"
+                  }
+                },
+                "required": ["subject_id", "groups"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:group_members
+  - name: group_members
+    kind: contract.definition
+    meta:
+      comment: |
+        Resolves a security group into its member user ids.
+        Group-to-members seam (the reverse of scope_resolver's user-to-groups).
+        The app binds this near users; lower layers (component realtime fanout)
+        depend on the definition to expand a group grant into the users who should
+        receive a component-scoped notification, without importing the users schema.
+      tags:
+        - group
+        - members
+        - access
+        - identity
+    methods:
+      - name: members
+        description: |
+          List the member user ids of a security group. Returns an empty list for
+          an unknown group. Calling: members(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "type": "string",
+                    "description": "Security group identifier to expand"
+                  }
+                },
+                "required": ["group_id"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "type": "string",
+                    "description": "The group that was expanded"
+                  },
+                  "user_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Member user identifiers"
+                  }
+                },
+                "required": ["group_id", "user_ids"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:embeddable
+  - name: embeddable
+    kind: contract.definition
+    meta:
+      comment: Universal embeddable interface for knowledge processing
+      tags:
+        - embed
+        - knowledge
+        - processing
+        - universal
+    methods:
+      - name: embed_content
+        description: |
+          Process and embed content into the knowledge system.
+          Calling: embed_content(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "content": {"type": "string", "description": "Content to embed"},
+                  "content_type": {"type": "string", "description": "MIME type of content"},
+                  "metadata": {"type": "object", "description": "Additional metadata for the content"}
+                },
+                "required": ["content", "content_type"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {"type": "boolean", "description": "Indicates if embedding was successful"}
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+      - name: embed_reference
+        description: |
+          Embed content from external reference via content provider.
+          Calling: embed_reference(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "reference": {
+                    "type": "object",
+                    "description": "Content provider reference",
+                    "properties": {
+                      "component_id": {"type": "string", "description": "Content provider component ID"},
+                      "context": {"type": "object", "description": "Context for content provider"}
+                    },
+                    "required": ["component_id"]
+                  },
+                  "metadata": {"type": "object", "description": "Additional metadata for the content"}
+                },
+                "required": ["reference"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {"type": "boolean", "description": "Indicates if embedding was successful"}
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:queryable
+  - name: queryable
+    kind: contract.definition
+    meta:
+      comment: Universal queryable interface for knowledge sources
+      tags:
+        - query
+        - search
+        - queryable
+        - knowledge
+    methods:
+      - name: query
+        description: |
+          Universal query method for search and retrieval.
+          Examples: { "query": "hello world" }, { "query": "hello", "limit": 10 }
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "query": {"type": "string", "description": "Search query string"},
+                  "limit": {"type": "integer", "description": "Maximum number of results to return"},
+                  "offset": {"type": "integer", "minimum": 0, "description": "Optional engine paging offset; omitted starts at the first result"}
+                },
+                "required": ["query"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {"type": "boolean", "description": "Indicates if query was successful"},
+                  "items": {
+                    "type": "array",
+                    "description": "Found items",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "string"},
+                        "content": {"type": "string"},
+                        "meta": {"type": "object"}
+                      },
+                      "required": ["id", "content", "meta"]
+                    }
+                  },
+                  "count": {"type": "integer", "description": "Number of items returned"},
+                  "next_offset": {"type": "integer", "minimum": 0, "description": "Engine continuation offset, absent on the final page"}
+                },
+                "required": ["success", "items", "count"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:realtime

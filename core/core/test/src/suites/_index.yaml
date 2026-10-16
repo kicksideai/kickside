@@ -1,0 +1,95 @@
+version: "1.0"
+namespace: kickside.core
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      title: Packaging Mount
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Packaging
+      comment: src entries resolve under injected requirements; no phantom factory or harness-only storage.
+    source: file://packaging_test.lua
+    method: run
+    modules:
+      - registry
+    imports:
+      test: wippy.test:test
+      core_db: kickside.core:db
+      threads_env: kickside.core.threads:env
+      retention_policy: kickside.core:policy_config
+
+  - name: clock_test
+    kind: function.lua
+    meta:
+      title: Clock Format
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Clock
+      comment: microsecond fixed-width UTC; lexically sortable; sub-second sorts after a second-precision default.
+    source: file://clock_test.lua
+    method: run
+    modules:
+      - sql
+      - time
+    imports:
+      test: wippy.test:test
+      clock: kickside.core.jobs:clock
+
+  - name: sqlite_connection_test
+    kind: function.lua
+    meta:
+      title: SQLite Connection
+      type: test
+      suite: kickside_core
+      comment: The one SQLite connection carries no busy or transaction timeout.
+    source: file://sqlite_connection_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      core_db: kickside.core:db
+
+  - name: proc_supervisor_test
+    kind: function.lua
+    meta:
+      title: Proc Supervisor
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Proc Supervisor
+      comment: supervise_loop terminate-on-timeout/cancel/lease-loss and exit-result interpretation via scripted hooks.
+    source: file://proc_supervisor_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: write_receipt_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      comment: Shared write receipt suite — replay, conflict, pending ambiguity, reconciliation, retention.
+    source: file://write_receipt_test.lua
+    method: run
+    modules: [sql, json, uuid]
+    imports:
+      test: wippy.test:test
+      write_receipt: kickside.core:write_receipt
+      receipt_purge: kickside.core:write_receipt_purge
+
+  - name: write_receipt_expiry_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      comment: Write receipts bounded by age expiry, with same-key dedup under concurrency.
+    source: file://write_receipt_expiry_test.lua
+    method: run
+    modules: [sql, uuid, time, channel]
+    imports:
+      test: wippy.test:test
+      write_receipt: kickside.core:write_receipt
+      receipt_purge: kickside.core:write_receipt_purge

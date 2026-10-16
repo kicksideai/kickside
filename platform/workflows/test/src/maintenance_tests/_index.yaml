@@ -1,0 +1,15 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: maintenance_missing_result_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Maintenance fails closed when the owner query returns no child result.
+    source: file://../suites/maintenance_missing_result_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      maintenance: kickside.workflows.runs:maintenance

@@ -1,0 +1,156 @@
+version: "1.0"
+namespace: kickside.transfer
+
+# KickSide Transfer owns the user-facing export/import of components. This root
+# holds the bundle codec, the batch orchestrator, and the selector web component;
+# the HTTP endpoints live in api/.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Transfer
+      comment: Export and import your components (knowledge bases, agents, skills) between environments.
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the transfer endpoints attach to.
+      description: Authenticated HTTP router the transfer endpoints attach to.
+    targets:
+      - entry: kickside.transfer.api:list_exportable.endpoint
+        path: .meta.router
+      - entry: kickside.transfer.api:export.endpoint
+        path: .meta.router
+      - entry: kickside.transfer.api:import.endpoint
+        path: .meta.router
+
+  - name: scratch_storage
+    kind: ns.requirement
+    meta:
+      value_kind: fs.directory
+      comment: Filesystem used for transient transfer bundle staging.
+      description: Filesystem used for transient transfer bundle staging.
+    targets:
+      - entry: kickside.transfer:storage_config
+        path: .storage_id
+
+  - name: storage_config
+    kind: registry.entry
+    meta:
+      comment: Holds the requirement-injected transfer scratch filesystem id.
+
+  # ─── Bundle codec + orchestrator ─────────────────────────────────────
+  - name: consts
+    kind: library.lua
+    meta:
+      comment: Shared transfer constants — scratch storage id/dir and the portable contract id.
+    source: file://consts.lua
+    modules: [registry]
+
+  - name: bundle
+    kind: library.lua
+    meta:
+      comment: KXB1 bundle container — pack/unpack the manifest (shells) + raw length-delimited data parts. Pure, no I/O.
+    source: file://bundle.lua
+    modules: [json]
+
+  - name: orchestrator
+    kind: library.lua
+    meta:
+      comment: Export/import whole components as one KXB1 bundle — shell via component_service, data via the portable instance contract, scratch staging, batch-atomic rollback.
+    source: file://orchestrator.lua
+    modules: [contract, security, fs, uuid]
+    imports:
+      component: kickside.component:component
+      bundle: kickside.transfer:bundle
+      consts: kickside.transfer:consts
+      portable_io: kickside.component.portability:portable_io
+
+  - name: upload_import_stage
+    kind: function.lua
+    meta:
+      comment: Universal upload stage that imports dropped KXB transfer bundles through the canonical transfer orchestrator.
+    source: file://binding/import_upload_func.lua
+    method: process
+    modules: [fs]
+    imports:
+      orchestrator: kickside.transfer:orchestrator
+
+  - name: upload_import_stage.universal
+    kind: registry.entry
+    meta:
+      type: upload.stage
+      comment: Runs before workspace filing so a dropped KXB materializes as imported components, not as a plain file.
+    scope: universal
+    priority: 100
+    title: Transfer import
+    func: kickside.transfer:upload_import_stage
+
+  # ─── Picker web component (profile dropdown) ─────────────────────────
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the transfer picker UI bundle is served from.
+      description: HTTP server the transfer picker UI bundle is served from.
+    targets:
+      - entry: kickside.transfer:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta: { comment: Built transfer picker web component bundle (from ui/). }
+    directory: ./static
+    auto_init: true
+
+  - name: ui_static
+    kind: http.static
+    meta:
+      comment: Serves the transfer picker bundle at /kickside-transfer.
+    path: /kickside-transfer
+    fs: kickside.transfer:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .map: application/json
+
+  - name: transfer_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: transfer_view
+      title: Export / Import
+      description: Export/Import picker web component — lists the actor's exportable components, multi-selects and exports them as a zip archive, and imports an archive back. Opened from the Export / Import profile-dropdown item; emits selection-change, exported, and close.
+      tag_name: kickside-transfer
+      base_path: kickside-transfer
+      entry_point: index.js
+      auto_register: false
+      secure: false
+      announced: true
+
+  - name: account.transfer
+    kind: registry.entry
+    meta:
+      type: ui.account_item
+      comment: Export / Import entry in the profile dropdown (opens the kickside/transfer picker web component).
+    key: export-import
+    label: Export / Import
+    icon: tabler:package-export
+    order: 50
+    component_tag: kickside-transfer
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

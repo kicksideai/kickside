@@ -1,0 +1,53 @@
+/* ── Embed web component (kickside-workflow-embed) ────────────────────────── */
+.wf-embed {
+  display: flex; flex-direction: column; gap: 12px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  font-size: var(--wf-fs-body); line-height: 1.45;
+  padding: 14px; border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius);
+}
+.wf-embed-note { display: flex; align-items: center; gap: 8px; color: var(--wf-muted); font-size: var(--wf-fs-meta); }
+.wf-embed-directed {
+  display: flex; align-items: flex-start; gap: 10px; padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--p-warn-500) 32%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--p-warn-500) 7%, transparent); border-radius: 10px;
+}
+.wf-embed-directed p { margin: 0; color: var(--p-text-color); }
+.wf-embed-directed-ico { color: var(--p-warn-500); flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.wf-embed-err { margin: 0; min-width: 0; color: var(--wf-danger); font-size: var(--wf-fs-meta); overflow-wrap: anywhere; }
+.wf-embed-subtle { margin: 0; color: var(--wf-muted); font-size: var(--wf-fs-meta); }
+
+/* Picker */
+.wf-embed-pick { display: flex; flex-direction: column; gap: 10px; }
+.wf-embed-search { display: flex; }
+.wf-embed-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+.wf-embed-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+}
+.wf-embed-ico { color: var(--wf-muted); display: inline-flex; }
+.wf-embed-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.wf-embed-title { font-weight: 700; }
+.wf-embed-meta { display: flex; gap: 10px; font-size: var(--wf-fs-meta); color: var(--wf-muted); flex-wrap: wrap; }
+.wf-embed-io strong { font-weight: 700; color: var(--wf-faint); margin-right: 4px; text-transform: uppercase; letter-spacing: .04em; font-size: var(--wf-fs-label); }
+.wf-embed-go { color: var(--wf-faint); flex: none; }
+.wf-embed-empty { margin: 0; color: var(--wf-muted); font-size: var(--wf-fs-meta); text-align: center; padding: 12px; }
+
+/* Run surface */
+.wf-embed-run { display: flex; flex-direction: column; gap: 12px; }
+.wf-embed-hd { display: flex; align-items: center; gap: 10px; }
+.wf-embed-hd-ico { color: var(--wf-accent-fg); display: inline-flex; }
+.wf-embed-hd-main { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.wf-embed-hd-title { font-weight: 750; font-size: var(--wf-fs-title); }
+.wf-embed-hd-sub { font-size: var(--wf-fs-meta); color: var(--wf-muted); }
+.wf-embed-open, .wf-embed-change {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+}
+.wf-embed-input { display: flex; flex-direction: column; gap: 8px; }
+.wf-embed-gate { margin: 0; color: var(--p-warn-500); font-size: var(--wf-fs-meta); }
+.wf-embed-actions { display: flex; gap: 8px; }
+.wf-embed-status { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: var(--wf-fs-meta); }
+.wf-embed-status.is-running { color: var(--wf-muted); }
+.wf-embed-status.is-ok { color: var(--p-success-500); }
+.wf-embed-status.is-error { color: var(--wf-danger); }
+.wf-embed-runid { color: var(--wf-faint); font-weight: 500; font-family: var(--wf-mono); }
+.wf-embed-result { display: flex; flex-direction: column; gap: 10px; }
+.wf-embed-reason { margin: 0; min-width: 0; color: var(--p-text-color); overflow-wrap: anywhere; }

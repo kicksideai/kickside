@@ -1,0 +1,9 @@
+organization: kickside
+module: security-harness
+type: application
+description: Standalone harness that boots kickside/security and runs its role catalog suite.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

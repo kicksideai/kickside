@@ -1,0 +1,261 @@
+version: "1.0"
+namespace: kickside.data.records
+
+entries:
+  # ─── Writing back to a record a reference points at ──────────────────
+  # Not a sync sink. writable is the engine's flow ABI -- the engine owns the
+  # cursor, the id-map and the idempotency key, and a sink writes what a flow
+  # carried. This is a caller-driven field write on a record the caller already
+  # knows by external id: no cursor, no id-map, no engine state. A product that
+  # lets a person edit something the source also owns uses this to carry that
+  # edit back, and never learns whose API is behind it.
+  #
+  # A writer declares what it can change rather than being asked to do whatever
+  # it is handed. describe is therefore load-bearing: a caller reads the fields
+  # a connector accepts and stops there, instead of discovering the limit as a
+  # write that quietly did nothing. Fireflies answers fields: [title] because
+  # updateMeetingTitle is the only content write its API has.
+  #
+  # Discovery is a registry announcement carrying meta.type
+  # kickside.data.record_writer and the system it serves, so a caller resolves a
+  # writer by the system its own reference names and adding a provider is
+  # installing a module rather than editing a switch.
+  - name: external_record_writer
+    kind: contract.definition
+    meta:
+      title: External Record Writer
+      tags: [data, connector, write, record, field]
+      comment: Write a bounded set of fields back onto the external record a reference points at. Caller-driven; carries no engine flow state.
+    methods:
+      - name: describe
+        description: |
+          What this writer can update: the system it writes to, the record kinds it accepts, and the
+          fields it may set. A caller MUST treat the answer as exhaustive -- a field absent from
+          fields is one this connector cannot write, and asking for it anyway MUST be refused rather
+          than partially applied.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The external system this writer updates, matching the system a caller's reference names."
+                  },
+                  "kinds": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "uniqueItems": true,
+                    "description": "External record kinds this writer accepts. A caller MUST NOT send a kind absent from this list."
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "uniqueItems": true,
+                    "description": "Fields this writer may set. Exhaustive: anything else is refused."
+                  }
+                },
+                "required": ["system", "kinds", "fields"]
+              }
+      - name: update_record
+        description: |
+          Set the given fields on one external record, addressed by (system, kind, external_id).
+          The write is LAST-WRITER-WINS by design and carries no idempotency key: the caller's own
+          durable record of what it pushed is the ledger, and re-sending the same values MUST be
+          harmless. A request naming another system, a kind outside describe.kinds, or a field
+          outside describe.fields MUST be refused with success=false and MUST NOT be partially
+          applied. A refusal by the external system is returned as success=false with its reason,
+          never raised: the caller decides whether the refusal is worth retrying, and can only
+          decide that if it is told what was refused.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "System the record lives in; MUST match describe.system."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "External record kind; MUST be one of describe.kinds."
+                  },
+                  "external_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The record to update, as the external system identifies it."
+                  },
+                  "fields": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "description": "Field name -> new value. Every name MUST be one of describe.fields."
+                  }
+                },
+                "required": ["system", "kind", "external_id", "fields"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "updated_fields": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "uniqueItems": true,
+                    "description": "Fields the external system accepted. Required on success."
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Why the write did not happen, in the external system's own terms where it gave one."
+                  },
+                  "retriable": {
+                    "type": "boolean",
+                    "description": "Whether re-sending the same write may succeed later. False means the external system refused it on its merits and a retry spends the caller's attempts on the same answer."
+                  },
+                  "status_code": {
+                    "type": "integer",
+                    "description": "Transport status the answer arrived under; 0 when no response was received."
+                  }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": ["updated_fields"],
+                      "properties": { "error": false, "retriable": false, "status_code": false }
+                    }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": { "updated_fields": false }
+                    }
+                  }
+                ]
+              }
+
+  - name: data_connector_manifest_schema
+    kind: registry.entry
+    meta:
+      type: data.meta_schema
+      id: data.connector
+      target: registry.entry.meta
+      json_schema: |
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "data.connector" },
+            "id": { "type": "string", "minLength": 1 },
+            "provider": { "type": "string", "minLength": 1 },
+            "title": { "type": "string", "minLength": 1 },
+            "description": { "type": "string" },
+            "icon": { "type": "string" },
+            "connection": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "provider": { "type": "string" },
+                "binding": { "type": "string" },
+                "contract": { "const": "kickside.connection:connection" },
+                "context_required": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "default": ["component_id"]
+                }
+              },
+              "required": ["provider", "binding", "contract"]
+            },
+            "capabilities": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["pull", "fetch", "receive", "write"] },
+              "uniqueItems": true
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string" },
+                  "title": { "type": "string" },
+                  "binding": { "type": "string" },
+                  "capabilities": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["pull", "fetch", "receive"] },
+                    "uniqueItems": true
+                  }
+                },
+                "required": ["id", "title", "binding", "capabilities"]
+              }
+            },
+            "sinks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string" },
+                  "title": { "type": "string" },
+                  "binding": { "type": "string" },
+                  "operations": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "uniqueItems": true
+                  }
+                },
+                "required": ["id", "title", "binding"]
+              }
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "entry": { "type": "string" },
+                  "wraps": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "contract": { "const": "kickside.data:writable" },
+                      "binding": { "type": "string" }
+                    },
+                    "required": ["contract", "binding"]
+                  }
+                },
+                "required": ["entry"]
+              }
+            },
+            "install_config_schema": {
+              "type": "object",
+              "description": "Optional connector-level install UI schema."
+            }
+          },
+          "required": ["type", "id", "provider", "title"]
+        }

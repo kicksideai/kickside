@@ -1,0 +1,133 @@
+version: "1.0"
+namespace: kickside.inbox
+
+entries:
+  - name: provision_race_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox / Provisioning
+      comment: Concurrent first touch of the declared inbox is idempotent on both database engines.
+    source: file://provision_race_test.lua
+    method: run
+    modules: [channel, contract, security, uuid]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      autoinit: kickside.component:autoinit
+
+  - name: inbox_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Declarative item-type discovery and the on-read reducer logic.
+    source: file://inbox_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      inbox_item_types: kickside.inbox:inbox_item_types
+      inbox_types: kickside.inbox:inbox_types
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      inbox_events: kickside.inbox.persist:inbox_events
+
+  - name: resolve_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Resolution orchestrator uses registry-owned actions and callbacks, preserves actor and scope, and writes only after callback success.
+    modules: [json]
+    source: file://resolve_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      inbox_resolve: kickside.inbox:inbox_resolve
+      inbox_types: kickside.inbox:inbox_types
+
+  - name: resume_decision_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Inbox-action to canonical Block Signal outcome translation.
+    source: file://resume_decision_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      resume_decision: kickside.inbox:resume_decision_lib
+      review_signal: kickside.blocks:review_signal
+
+  - name: block_contract_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Inbox review is one canonical typed Block with no visual Workflows dependency.
+    source: file://block_contract_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+
+  - name: arm_decision_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Inbox-owned review Block arm assignment, authority, correlation, and idempotency contract.
+    source: file://arm_decision_test.lua
+    method: run
+    modules: [funcs, json, security, contract]
+    imports:
+      test: wippy.test:test
+      arm_decision: kickside.inbox:arm_decision_lib
+      decision_content: kickside.inbox:decision_content
+      test_identity: app:test_identity
+      component: kickside.component:component
+
+  - name: http_error_context
+    kind: library.lua
+    source: file://http_error_context.lua
+  - name: delete_http_subject
+    kind: library.lua
+    source: file://delete_http_subject.lua
+    imports:
+      http: kickside.inbox:http_error_context
+      security: kickside.inbox:http_security_context
+      inbox_writer: kickside.inbox:http_mutation_context
+      http_errors: kickside.contract:http_errors
+  - name: resolve_http_subject
+    kind: library.lua
+    source: file://resolve_http_subject.lua
+    modules: [json]
+    imports:
+      http: kickside.inbox:http_error_context
+      security: kickside.inbox:http_security_context
+      inbox_resolve: kickside.inbox:http_mutation_context
+      http_errors: kickside.contract:http_errors
+  - name: http_errors_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }
+    source: file://http_errors_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      context: kickside.inbox:http_error_context
+      mutation: kickside.inbox:http_mutation_context
+      delete_handler: kickside.inbox:delete_http_subject
+      resolve_handler: kickside.inbox:resolve_http_subject
+
+  - name: http_security_context
+    kind: library.lua
+    source: file://http_security_context.lua
+  - name: http_mutation_context
+    kind: library.lua
+    source: file://http_mutation_context.lua

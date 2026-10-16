@@ -1,0 +1,27 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: catalog_error_fixture
+    kind: library.lua
+    source: file://fixture.lua
+  - name: catalog_error_subject
+    kind: library.lua
+    source: file://catalog.lua
+    imports:
+      workflow_repo: app:catalog_error_fixture
+      version_read: app:catalog_error_version
+  - name: catalog_error_version
+    kind: library.lua
+    source: file://version_read.lua
+    imports:
+      fixture: app:catalog_error_fixture
+  - name: published_catalog_errors_test
+    kind: function.lua
+    meta: {type: test, suite: workflows}
+    source: file://test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fixture: app:catalog_error_fixture
+      catalog: app:catalog_error_subject
+      agent_tool: kickside.workflows.agent:agent_tool

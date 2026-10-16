@@ -1,0 +1,58 @@
+.p-button.p-component {
+  border-radius: var(--p-button-border-radius);
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -.005em;
+  transition: background 200ms, color 200ms, border-color 200ms, transform 150ms;
+}
+.p-button:not(:disabled):hover { transform: translateY(-1px); }
+.p-button:not(:disabled):active { transform: translateY(0); }
+
+.p-button.p-component.p-button-sm {
+  font-size: var(--p-button-sm-font-size);
+  padding: var(--p-button-sm-padding-y) var(--p-button-sm-padding-x);
+}
+/* Focus canon. `.p-button` draws a border - transparent on the filled variants
+   - so it takes the bordered treatment: the border goes primary, the shared
+   halo carries it, and there is no outline to stack with. See the focus canon
+   in app/src/app/docs/kickside-development/frontend/best-practices.md.
+
+   This is a rule rather than a token because the Web Host theme hardcodes the
+   ring as Tailwind utilities (`focus-visible:outline-1 outline-offset-2`)
+   instead of reading its own `--p-button-focus-ring-*`, so setting the tokens
+   alone moves the halo and nothing else.
+
+   Two things the obvious selector gets wrong, both found on the chat panel's
+   "Select Agent" button:
+
+   1. It cannot require `.p-component`. Buttons rendered by the host web
+      components ship `class="p-button p-button-secondary"` with no
+      `.p-component`, so a rule keyed on it silently does not apply.
+   2. It has to out-specify the theme's *scoped* variants, not just the plain
+      one. The theme repeats each ring as `.p-button-secondary:focus-visible`
+      (2), `…:not(.w-theme-light *):not(.w-theme-light)` (4) and
+      `…:is(.w-theme-dark, .w-theme-dark *)` (4), and it loads after this file,
+      so anything that merely ties loses. Doubling `.p-button` and mirroring
+      the theme's own scoping lands at 3/5/5 - above each counterpart.
+
+   Fixing the theme to read its own tokens would let this whole block go. */
+.p-button.p-button:focus-visible,
+.p-button.p-button:focus-visible:not(.w-theme-light *):not(.w-theme-light),
+.p-button.p-button:focus-visible:is(.w-theme-dark, .w-theme-dark *) {
+  outline-width: var(--p-button-focus-ring-width);
+  outline-style: var(--p-button-focus-ring-style);
+  outline-offset: var(--p-button-focus-ring-offset);
+  border-color: var(--p-focus-ring-color);
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* Text and link buttons draw no box, so they are bare: ring with a gap, no
+   halo. One class above the bordered rule at every scope. */
+.p-button.p-button:is(.p-button-text, .p-button-link):focus-visible,
+.p-button.p-button:is(.p-button-text, .p-button-link):focus-visible:not(.w-theme-light *):not(.w-theme-light),
+.p-button.p-button:is(.p-button-text, .p-button-link):focus-visible:is(.w-theme-dark, .w-theme-dark *) {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+  border-color: transparent;
+  box-shadow: none;
+}

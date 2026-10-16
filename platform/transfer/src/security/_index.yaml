@@ -1,0 +1,30 @@
+version: "1.0"
+namespace: kickside.transfer.security
+
+entries:
+  - name: transfer_endpoint_access
+    kind: security.policy
+    meta:
+      comment: Members access transfer views and static assets.
+    groups: []
+    policy:
+      resources:
+      - kickside.transfer:transfer_view
+      - kickside.transfer:ui_static
+      actions: access
+      effect: allow
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach the transfer endpoints.
+      description: Application security group that may reach the transfer endpoints.
+    targets:
+      - entry: kickside.transfer.security:transfer_endpoint_access
+        path: ".groups +="
+      - entry: kickside.transfer.security:module_access
+        path: .groups +=
+      - entry: kickside.transfer.security:module_runtime
+        path: .groups +=

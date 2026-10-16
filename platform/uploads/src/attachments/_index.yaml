@@ -1,0 +1,50 @@
+version: "1.0"
+namespace: kickside.uploads
+entries:
+  - name: uploads_component
+    kind: contract.binding
+    meta:
+      title: Uploads
+      comment: Completed file uploads from this workspace.
+      icon: tabler:upload
+      # Navigated into in the workspace tree to show its uploaded files (and unpacked
+      # archive subtrees) as children, instead of opening a manage view.
+      container: true
+      class:
+        - kickside.uploads
+      provision:
+        scope: user
+      retention:
+        event_days: 7
+        drain_aware: true
+      projections:
+        - kind: "kickside.uploads:summary"
+          worker_ref: "func://kickside.uploads.persist:uploads_projection_worker"
+          input_mode: prefetch_events
+      events:
+        input: []
+        output:
+          - type: kickside.uploads.events:upload.completed
+          - type: kickside.uploads.events:upload.deleted
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:deletable
+        context_required:
+          - component_id
+        methods:
+          delete: kickside.uploads.binding:delete_uploads_func
+
+  # Published port over the upload event-log this component owns on its own thread.
+  # The output face derives from the event entry's schema. upload.deleted is internal
+  # cleanup with no port. Per-user singleton: no instance picker, the install resolves
+  # the source thread from the actor + the binding's class.
+  - name: attachment_ingest
+    kind: library.lua
+    meta:
+      comment: Download a remote attachment reference and push it into the upload pipeline, tagged with its thread.
+    source: file://../attachment_ingest.lua
+    modules: [funcs, http_client, registry]
+    imports:
+      upload_lib: kickside.uploads:uploads

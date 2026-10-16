@@ -1,0 +1,133 @@
+version: "1.0"
+namespace: kickside.oauth.api
+
+entries:
+  - name: discover_providers
+    kind: function.lua
+    meta:
+      comment: Discovers available OAuth providers for connection
+    source: file://discover_providers.lua
+    modules:
+      - http
+      - contract
+      - security
+    method: handler
+
+  # kickside.oauth.api:discover_providers.endpoint
+  - name: discover_providers.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Endpoint that discovers available OAuth providers
+    method: GET
+    func: discover_providers
+    path: /oauth/providers/discover
+
+  # kickside.oauth.api:get_connection_details
+  - name: get_connection_details
+    kind: function.lua
+    meta:
+      comment: Get OAuth connection details for management interface
+    source: file://get_connection_details.lua
+    modules:
+      - http
+      - contract
+      - security
+      - time
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_types: kickside.oauth:oauth_types
+    method: handler
+
+  # kickside.oauth.api:get_connection_details.endpoint
+  - name: get_connection_details.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Endpoint to get OAuth connection details
+    method: GET
+    func: get_connection_details
+    path: /oauth/connections/{component_id}
+
+  # kickside.oauth.api:get_provider_info
+  - name: get_provider_info
+    kind: function.lua
+    meta:
+      comment: Gets detailed information about a specific OAuth provider
+    source: file://get_provider_info.lua
+    modules:
+      - http
+      - contract
+      - security
+    method: handler
+
+  # kickside.oauth.api:get_provider_info.endpoint
+  - name: get_provider_info.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Endpoint that gets OAuth provider information
+    method: GET
+    func: get_provider_info
+    path: /oauth/providers/{provider_name}
+
+  # kickside.oauth.api:init_connection
+  - name: init_connection
+    kind: function.lua
+    meta:
+      comment: Initiates OAuth connection flow for a specific provider
+    source: file://init_connection.lua
+    modules:
+      - http
+      - contract
+      - env
+      - logger
+      - process
+      - security
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      runtime_config: kickside.oauth:runtime_config
+    method: handler
+
+  # kickside.oauth.api:init_connection.endpoint
+  - name: init_connection.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Endpoint that initiates OAuth connection flow
+    method: POST
+    func: init_connection
+    path: /oauth/providers/{provider_name}/init
+
+  # kickside.oauth.api:update_connection
+  - name: update_consistency
+    kind: library.lua
+    meta:
+      comment: Compensated consistency seam for OAuth row and component metadata updates.
+    source: file://update_consistency.lua
+
+  - name: update_connection
+    kind: function.lua
+    meta:
+      comment: Updates existing OAuth connection name and description
+    source: file://update_connection.lua
+    modules:
+      - http
+      - contract
+      - security
+      - time
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      update_consistency: kickside.oauth.api:update_consistency
+    method: handler
+
+  # kickside.oauth.api:update_connection.endpoint
+  - name: update_connection.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Endpoint that updates OAuth connection details
+    method: PUT
+    func: update_connection
+    path: /oauth/connections/{component_id}

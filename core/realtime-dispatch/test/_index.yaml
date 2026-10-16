@@ -1,0 +1,43 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    file: "${sqlite_path}"
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+  - name: dep.kickside.realtime_dispatch
+    kind: ns.dependency
+    component: kickside/realtime-dispatch
+    version: "*"
+  - name: dispatch_test
+    kind: function.lua
+    meta: {type: test, suite: realtime_dispatch}
+    source: file://dispatch_test.lua
+    method: run
+    modules: [contract, security]
+    security:
+      policies: [app:notify_all]
+    imports: {test: "wippy.test:test", dispatch_service: "app:dispatch_service"}
+  - name: notify_all
+    kind: security.policy
+    policy: {resources: "kickside.realtime:*", actions: realtime.notify, effect: allow}
+  - name: scalar_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:realtime
+        default: true
+        methods:
+          notify: app:scalar_notify
+          broadcast: app:scalar_notify
+  - name: scalar_notify
+    kind: function.lua
+    source: file://scalar_notify.lua
+    method: notify
+  - name: dispatch_service
+    kind: library.lua
+    source: file://lib/dispatch.lua
+    modules: [contract]
+    imports: {policy: "kickside.realtime.dispatch:policy"}

@@ -1,0 +1,33 @@
+version: "1.0"
+namespace: kickside.workflows.binding
+
+# Deletable + status functions for the workflow component kind.
+
+entries:
+  - name: destination_bindings
+    kind: library.lua
+    meta:
+      comment: Automation teardown for a removed Workflow — delegates to the Automation-owned resource contract.
+    source: file://destination_bindings.lua
+    modules: [contract]
+
+  - name: get_status_func
+    kind: function.lua
+    meta:
+      comment: Component status for a workflow component.
+    source: file://get_status_func.lua
+    method: get_status
+    modules: [ctx]
+    imports:
+      store_state: kickside.workflows.store:store_state
+
+  - name: delete_workflow_func
+    kind: function.lua
+    meta:
+      comment: Deletable cleanup — release the automations addressed at this workflow, then purge its definition tables.
+    source: file://delete_func.lua
+    method: delete
+    modules: [ctx]
+    imports:
+      workflow: kickside.workflows:workflow
+      destination_bindings: kickside.workflows.binding:destination_bindings

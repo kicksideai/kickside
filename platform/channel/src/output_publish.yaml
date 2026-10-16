@@ -1,0 +1,32 @@
+version: '1.0'
+namespace: kickside.channel
+entries:
+- name: thread_inbound_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources:
+    - kickside.channel.events:message.inbound
+    - kickside.dm.events:message.inbound
+- name: thread_reply_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources:
+    - kickside.dm.events:reply.sent
+    - kickside.dm.events:reply.failed
+    - kickside.channel.events:reply.sent
+    - kickside.channel.events:reply.failed
+- name: thread_responder_session_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources:
+    - kickside.channel.responder.events:session.activated
+    - kickside.channel.responder.events:session.completed

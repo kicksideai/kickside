@@ -1,0 +1,10 @@
+:host {
+  --kx-picker-shadow: var(--p-select-overlay-shadow);
+  --kx-picker-option-icon-size: 17px;
+  --kx-picker-option-icon-gap: 10px;
+  --kx-picker-option-stack-gap: 1px;
+  --kx-picker-option-title-size: 13px;
+  --kx-picker-option-title-weight: 600;
+  --kx-picker-option-subtitle-size: 11.5px;
+  --kx-picker-option-subtitle-line-height: 1.4;
+}

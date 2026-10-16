@@ -1,0 +1,54 @@
+version: '1.0'
+namespace: kickside.transform.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Transform
+    surface: kickside.transform
+    intent: module_access
+    includes:
+    - kickside.transform.security:module_runtime
+    - kickside.transform.security:code_execution_call
+    - kickside.transform.security:transform_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.transform:*
+    - kickside.transform.api:*
+    - kickside.transform.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: transform_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.transform.api:assist.endpoint
+    - kickside.transform.api:snippet.endpoint
+    - kickside.transform.api:validate.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.transform:*
+    - kickside.transform.api:*
+    - kickside.transform.security:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

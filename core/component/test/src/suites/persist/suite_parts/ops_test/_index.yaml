@@ -1,0 +1,24 @@
+version: "1.0"
+namespace: app.component_suites.persist
+
+entries:
+
+  - name: tsplit_ops_test_set_execution_identity_fence
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_identity_boundary
+      comment: Runtime-owned context keys, SET_EXECUTION_IDENTITY fence and audit, v1 classification.
+    source: file://../../ops_test_set_execution_identity_fence.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, json, uuid, time, contract, funcs, security]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      component_command: kickside.component:component_command
+      component_client: kickside.component:component
+      context_ops: kickside.component.persist:context_ops
+      identity_ops: kickside.component.persist:identity_ops

@@ -1,0 +1,38 @@
+version: "1.0"
+namespace: kickside.uploads.events
+
+# Event-type entries for the uploads component thread. upload.completed is the
+# published event output face. upload.deleted is an internal cleanup event with its
+# schema declared from the emit site.
+entries:
+  - name: upload.completed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        upload_id: { type: string }
+        uuid: { type: string }
+        id: { type: string }
+        filename: { type: string }
+        mime_type: { type: string }
+        type_id: { type: string }
+        size: { type: number }
+      anyOf:
+        - { required: [upload_id] }
+        - { required: [uuid] }
+        - { required: [id] }
+
+  # Emit site: platform/uploads/src/uploads.lua:548 (emit EVENT.DELETED, { upload_id = uuid }).
+  - name: upload.deleted
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        upload_id: { type: string }
+      required: [upload_id]

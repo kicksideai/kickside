@@ -1,0 +1,86 @@
+version: "1.0"
+namespace: kickside.realtime
+
+# Centralized realtime push contract. One seam any module uses to reach the UI:
+# broadcast() fans a topic out to every connected client via the wippy/relay
+# central hub; notify() targets a single user's hub. Decoupled from callers —
+# nav, inbox, and others publish through this instead of touching relay directly.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Realtime
+      comment: Centralized broadcast/notify contract over wippy/relay so all UI reacts live.
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: "*"
+
+  - name: dep.kickside.realtime_dispatch
+    kind: ns.dependency
+    version: "*"
+    component: kickside/realtime-dispatch
+
+  - name: dep.wippy.relay
+    kind: ns.dependency
+    component: wippy/relay
+    version: "*"
+
+  # The hub send runs under this realtime-owned policy, added to the caller's
+  # scope inside broadcast/notify only. Authorization stays with the caller's
+  # actor, so a caller reaches only the audience its own authority admits.
+  - name: hub_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets broadcast/notify hand an authorized topic to the relay central hub or a user hub.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: broadcast
+    kind: function.lua
+    meta:
+      comment: Push a topic+data to every connected client via the relay central hub.
+    imports:
+      notify_policy: kickside.realtime.dispatch:policy
+      error_envelope: kickside.contract:error_envelope
+    source: file://realtime.lua
+    method: broadcast
+    modules: [process, security]
+    security:
+      policies:
+        - kickside.realtime:hub_transport
+
+  - name: notify
+    kind: function.lua
+    meta:
+      comment: Push a topic+data to one user's connected clients via their relay hub.
+    imports:
+      notify_policy: kickside.realtime.dispatch:policy
+      error_envelope: kickside.contract:error_envelope
+    source: file://realtime.lua
+    method: notify
+    modules: [process, security]
+    security:
+      policies:
+        - kickside.realtime:hub_transport
+
+  # Implements the shared kickside.contract:realtime definition. The contract
+  # lives in kickside/contract (the central definitions home); this module owns
+  # only the relay-backed implementation.
+  - name: realtime_binding
+    kind: contract.binding
+    meta:
+      title: Realtime Service
+      comment: Canonical implementation of kickside.contract:realtime over wippy/relay.
+    contracts:
+      - contract: kickside.contract:realtime
+        default: true
+        methods:
+          broadcast: kickside.realtime:broadcast
+          notify: kickside.realtime:notify

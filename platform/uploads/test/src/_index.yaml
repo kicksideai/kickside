@@ -1,0 +1,792 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: upload_app_policy_test
+    kind: function.lua
+    meta: { type: test, suite: uploads }
+    source: file://upload_app_policy_test.lua
+    method: run
+    modules: [security]
+    imports: { test: wippy.test:test }
+  - name: upload_http_probe
+    kind: library.lua
+    source: file://upload_http_probe.lua
+    modules: [ctx]
+  - name: upload_get_fixture
+    kind: library.lua
+    source: file://fixtures/get_upload.lua
+    modules: [security]
+    imports:
+      http: app:upload_http_probe
+      upload_response: kickside.uploads.api:upload_response
+      types: kickside.uploads:types
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      component: kickside.component:component
+      http_errors: kickside.contract:http_errors
+  - name: upload_read_probe
+    kind: function.lua
+    modules: [security, contract]
+    source: file://upload_read_probe.lua
+    method: read
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_artifacts_fixture
+    kind: library.lua
+    source: file://fixtures/artifacts.lua
+    modules: [security]
+    imports:
+      http: app:upload_http_probe
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      component: kickside.component:component
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+  - name: upload_delete_fixture
+    kind: library.lua
+    source: file://fixtures/delete_upload.lua
+    modules: [security, json]
+    imports:
+      pipeline: kickside.uploads:pipeline
+      http: app:upload_http_probe
+      upload_lib: kickside.uploads:uploads
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      component: kickside.component:component
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+  - name: upload_artifacts_probe
+    kind: function.lua
+    modules: [security, contract]
+    source: file://upload_read_probe.lua
+    method: artifacts
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_delete_probe
+    kind: function.lua
+    modules: [security, contract]
+    source: file://upload_read_probe.lua
+    method: delete
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_identity_probe
+    kind: function.lua
+    source: file://upload_read_probe.lua
+    method: frozen
+    modules: [security, contract]
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_events_probe
+    kind: function.lua
+    source: file://upload_read_probe.lua
+    method: events
+    modules: [security, contract]
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_raw_probe
+    kind: function.lua
+    modules: [security, contract]
+    source: file://upload_read_probe.lua
+    method: raw
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_raw_fixture
+    kind: library.lua
+    source: file://fixtures/get_raw.lua
+    modules: [security, fs]
+    imports:
+      http: app:upload_http_probe
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      component: kickside.component:component
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+  - name: shared_upload_access_test
+    kind: function.lua
+    meta: { type: test, suite: uploads }
+    source: file://shared_upload_access_test.lua
+    method: run
+    modules: [uuid, security, funcs, sql, json, fs]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      records: kickside.uploads.persist:upload_record_repo
+      types: kickside.uploads:types
+
+  - name: dedup_migration_db
+    kind: db.sql.sqlite
+    file: ":memory:"
+    pool: { max_open: 1, max_idle: 1 }
+
+  - name: archive_dedup_migration_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_uploads }
+    source: file://archive_dedup_migration_test.lua
+    method: run
+    modules: [sql, funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: upload_type_routing_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_uploads }
+    source: file://upload_type_routing_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      upload_type: kickside.uploads:upload_type
+
+  - name: intent_bootstrap_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Upload durability has no repair slot after atomic admission.
+    source: file://intent_bootstrap_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for kickside/uploads.
+    file: "${sqlite_path}"
+
+  - name: other_uploads
+    kind: fs.directory
+    meta:
+      comment: Secondary storage ID for artifact dedupe scope checks.
+    directory: ./.wippy/uploads/
+    auto_init: true
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: test_scope_policy
+    kind: security.policy
+    meta:
+      comment: Permissive scope the uploads suites run their scoped actors under.
+    groups:
+      - app:uploads_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: component_lifecycle_impl
+    kind: ns.requirement
+    meta:
+      comment: Harness-local component lifecycle implementation; uploads tests run without core threads.
+    default: app:component_lifecycle_stub
+    targets:
+      - entry: kickside.component:component_lifecycle
+        path: .imports.lifecycle_impl
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: Separate router for wippy/views so its component routes do not collide with KickSide component endpoints.
+      server: gateway
+    prefix: /public
+
+  - name: text_processor_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Text/tabular processor — bounded csv preview + shape, non-retriable oversize, job failure classification.
+    source: file://text_processor_test.lua
+    modules: [uuid, fs, sql, security]
+    imports:
+      test: wippy.test:test
+      processor: kickside.uploads.text:processor
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      process_job: kickside.uploads.service:process_job_proc
+    method: run
+
+  - name: net_safety_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: SSRF URL guard and fetched-content cap for the fetch_url tool.
+    source: file://net_safety_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      net_safety: kickside.uploads:net_safety
+
+  - name: callback_probe
+    kind: function.lua
+    meta:
+      comment: Test callback target for durable upload callback jobs.
+    source: file://callback_probe.lua
+    modules: [sql]
+    method: handle
+
+  - name: admit_upload
+    kind: function.lua
+    meta:
+      comment: Executes upload admission under a named test user through the real Users resolver.
+    source: file://admit_upload.lua
+    imports:
+      upload_lib: kickside.uploads:uploads
+    method: run
+
+  - name: failing_stage
+    kind: function.lua
+    meta:
+      comment: Test-only universal upload stage that fails when explicitly requested.
+    source: file://failing_stage.lua
+    method: process
+
+  - name: types.failing
+    kind: registry.entry
+    meta:
+      type: upload.type
+      title: Failing Test File
+      comment: Test-only upload type for pipeline error context.
+    type_key: failing
+    priority: -100
+    mime_types:
+      - application/x-kickside-failing-stage-test
+    extensions:
+      - failtest
+    pipeline:
+      - func: app:failing_stage
+        title: Failing Test Stage
+
+  - name: failing_stage.universal
+    kind: registry.entry
+    meta:
+      type: upload.stage
+      comment: Test-only universal stage for pipeline error context.
+    scope: universal
+    priority: -100
+    title: Failing Test Stage
+    func: app:failing_stage
+
+  - name: rasterize_fixtures
+    kind: library.lua
+    meta:
+      type: test_helper
+    source: file://rasterize_fixtures.lua
+    modules: [base64]
+
+  - name: rasterize_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads_rasterize
+      comment: Discovery, PDF adapter, and the empty-document rasterize pipeline stage.
+    source: file://rasterize_test.lua
+    modules: [registry, funcs, fs, uuid, security]
+    imports:
+      test: wippy.test:test
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      rasterizer: kickside.uploads.rasterize:rasterizer
+      fixtures: app:rasterize_fixtures
+    method: run
+
+  - name: dep.kickside.uploads
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: KickSide upload API/storage backing the upload package tests.
+    component: kickside/uploads
+    parameters:
+    - name: kickside.uploads:database_resource
+      value: app:db
+    - name: kickside.uploads:storage_id
+      value: app:uploads
+    - name: kickside.uploads:env_storage
+      value: app:env_storage
+    - name: kickside.uploads:api_router
+      value: app:api
+    - name: kickside.uploads:ui_server
+      value: app:gateway
+    - name: kickside.uploads.security:user_security_scope
+      value: app.security:user
+    - name: kickside.settings:target_db
+      value: app:db
+    - name: kickside.settings:api_router
+      value: app:api
+    - name: kickside.settings:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:uploads_test
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:uploads_test
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:test_scope_policy
+    - name: kickside.core.threads:user_security_scope
+      value: app:test_scope_policy
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+
+  - name: dep.kickside.pdf2image
+    kind: ns.dependency
+    meta:
+      comment: PDF rasterizer converter providing the convert.rasterizer plugin for the rasterize stage tests.
+    component: "kickside/pdf2image"
+    version: '*'
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    component: kickside/users
+    version: '*'
+    parameters:
+      - name: kickside.users:env_storage
+        value: app:env_storage
+      - name: kickside.users:public_router
+        value: app:api_public
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - name: kickside.users:target_db
+        value: app:db
+      - name: kickside.users:user_security_scope
+        value: app:test_scope_policy
+      - name: kickside.users:admin_security_scope
+        value: app:test_scope_policy
+      - name: kickside.users:login_role_resource
+        value: app:*
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies kickside upload migrations.
+    component: "wippy/bootloader"
+    version: '*'
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.views
+    kind: ns.dependency
+    meta:
+      comment: View component registry dependencies for uploads UI packaging tests.
+    component: "wippy/views"
+    version: '*'
+    parameters:
+      - name: api_router
+        value: app:api_public
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.session
+    kind: ns.dependency
+    meta:
+      comment: Session contract definitions used by the upload-backed file_provider binding.
+    component: "wippy/session"
+    version: '*'
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: database_resource
+        value: app:db
+      - name: default_host
+        value: app:processes
+      - name: env_storage
+        value: app:env_storage
+      - name: delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: principal_cleanup_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Principal lifecycle removes upload owner rows and preserves other actors.
+    source: file://principal_cleanup_test.lua
+    method: run
+    security:
+      actor: { id: uploads-harness }
+    modules:
+    - sql
+    - uuid
+    imports:
+      test: wippy.test:test
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      cleanup_principal: kickside.uploads.persist:cleanup_principal
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      types: kickside.uploads:types
+
+  - name: delete_event_failure_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: A failed deletion append retains the upload and live projection for retry.
+    source: file://delete_event_failure_test.lua
+    method: run
+    modules:
+    - uuid
+    - sql
+    imports:
+      test: wippy.test:test
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_lib: kickside.uploads:uploads
+      uploads_events: kickside.uploads.persist:uploads_events
+
+  - name: upload_component_delete_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Component owner delete removes uploads and read models while the component is fenced.
+    source: file://upload_component_delete_test.lua
+    method: run
+    security:
+      actor: { id: uploads-harness }
+    modules:
+    - uuid
+    - sql
+    - security
+    - fs
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      component: kickside.component:component
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      types: kickside.uploads:types
+
+  - name: retention_runtime_read
+    kind: security.policy
+    meta:
+      comment: Runtime reads a Core contract call needs, isolating the uploads boundary grant from an allow-all scope.
+    policy:
+      resources: '*'
+      actions: [db.get, registry.get]
+      effect: allow
+
+  - name: retention_sweeper_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: The supervised Core retention sweeper runs the uploads owner under its declared identity.
+    source: file://retention_sweeper_test.lua
+    method: run
+    modules: [sql, uuid, time, process, security, contract]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      retention_notifier: kickside.core.retention:notifier
+      types: kickside.uploads:types
+
+  - name: delete_stage_failure_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: A failed delete stage retains its upload owner row for retry.
+    source: file://delete_stage_failure_test.lua
+    method: run
+    modules:
+    - uuid
+    - sql
+    imports:
+      test: wippy.test:test
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_lib: kickside.uploads:uploads
+      pipeline_lib: kickside.uploads:pipeline
+      uploads_events: kickside.uploads.persist:uploads_events
+
+  - name: archive_delete_failure_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Archive container deletion retains failed children for retry.
+    source: file://archive_delete_failure_test.lua
+    method: run
+    modules:
+    - uuid
+    imports:
+      test: wippy.test:test
+      upload_lib: kickside.uploads:uploads
+      archive_delete: kickside.uploads.archive:on_delete
+
+  - name: upload_runtime_resources
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [funcs.call, registry.get, db.get, fs.get]
+      effect: allow
+
+  - name: resource_probe
+    kind: function.lua
+    source: file://resource_probe.lua
+    method: run
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+
+  - name: resources_user_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_uploads_qa }
+    source: file://resources_user_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+
+  - name: public_error_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_uploads_qa }
+    source: file://public_error_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      upload_response: kickside.uploads.api:upload_response
+
+  - name: no_actor_creation
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: security.actor.create
+      effect: deny
+
+  - name: attachment_agent_probe
+    kind: function.lua
+    source: file://attachment_agent_probe.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      agent_context: wippy.agent:context
+      prompt_builder: wippy.session:prompt_builder
+      file_provider: kickside.uploads.binding:file_provider_func
+
+  - name: attachment_owner_only
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [view_all, security.actor.create]
+      effect: deny
+
+  - name: dep.kickside.realtime
+    kind: ns.dependency
+    component: kickside/realtime
+    version: '*'
+    parameters:
+      - name: wippy.relay:application_host
+        value: app:processes
+      - name: wippy.relay:env_storage
+        value: app:env_storage
+      - name: wippy.relay:user_security_scope
+        value: app:test_scope_policy
+
+  - name: no_deferred_owner
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: kickside.execution.defer
+      effect: deny
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app.security:user
+
+  - name: uploads_runtime_base
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security, db.get, registry.get, registry.find, env.get, security.actor.create, security.policy.get, security.policy_group.get]
+      effect: allow
+
+  - name: uploads_runtime_meta_test
+    kind: function.lua
+    source: file://runtime_meta_test.lua
+    method: run
+    meta: { type: test, suite: kickside_uploads }
+    modules: [funcs, contract, security, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: upload_list_read_model_fixture
+    kind: library.lua
+    source: file://list_read_model_fixture.lua
+    modules: [ctx]
+
+  - name: upload_list_fixture
+    kind: library.lua
+    source: file://fixtures/list_uploads.lua
+    modules: [security]
+    imports:
+      http: app:upload_http_probe
+      http_errors: kickside.contract:http_errors
+      upload_response: kickside.uploads.api:upload_response
+      upload_read_model: app:upload_list_read_model_fixture
+      types: kickside.uploads:types
+
+  - name: upload_list_error_probe
+    kind: function.lua
+    source: file://list_error_probe.lua
+    method: run
+    imports:
+      api: app:upload_list_fixture
+      http: app:upload_http_probe
+      model: app:upload_list_read_model_fixture
+
+  - name: upload_list_errors_test
+    kind: function.lua
+    source: file://list_errors_test.lua
+    method: run
+    meta: { type: test, suite: kickside_uploads }
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}
+
+  - name: archive_prepare_probe
+    kind: function.lua
+    source: file://archive_prepare_probe.lua
+    method: prepare
+
+  - name: archive_prepare_probe.stage
+    kind: registry.entry
+    meta:
+      type: upload.stage
+    scope: universal
+    prepare_archive: app:archive_prepare_probe
+    priority: 0

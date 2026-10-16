@@ -1,0 +1,474 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@widgets/app/pickerselect.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-modal-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+@import "@kickside/ui-kit/kx-tag.css";
+@import "@kickside/ui-kit/kx-tokens.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host {
+  --kx-modal-shadow: var(--kx-shadow-lg);
+  display: block; height: 100%; min-height: 0;
+}
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Automation control surface. Styled only with the universal --p-* theme
+   vocabulary so it renders correctly inside the shadow DOM of any Wippy host
+   (no SPA tokens), which is also what makes the implementation swappable per
+   deployment. */
+.kx {
+  font-family: inherit;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.kx-head-title { font-size: 17px; font-weight: 700; color: var(--p-text-color); margin: 0; }
+.kx-count { font-size: 12.5px; color: var(--p-text-muted-color); display: inline-flex; align-items: center; gap: 5px; }
+
+.kx-search { position: relative; display: flex; align-items: center; }
+.kx-search-ico { position: absolute; left: 10px; width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kx-search-input {
+  height: 34px; width: 220px; max-width: 40vw; padding: 0 10px 0 30px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; transition: border-color .15s;
+}
+
+/* flex-shrink 0: .kx is the scroll container, so the body must keep its content
+   height and overflow it rather than compress into the viewport slot. */
+.kx-body { flex: 1 0 auto; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+.kx-list {
+  display: flex; flex-direction: column; border: 1px solid var(--p-content-border-color);
+  border-radius: 14px; overflow: hidden; background: var(--p-content-background); max-width: 1100px;
+}
+.kx-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "main status actions"
+    "foot foot   foot";
+  align-items: center; column-gap: 14px; row-gap: 6px; padding: 10px 14px;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+.kx-row:last-child { border-bottom: none; }
+.kx-row.is-open { background: var(--kx-wash-primary); }
+/* Theme-aware hover: surface-100 is not remapped in the dark palette (it stays a
+   light value), so a text-color mix is used instead — subtle in both themes. */
+.kx-row:hover { background: var(--kx-overlay-subtle); }
+.kx-row.is-open:hover { background: var(--kx-wash-primary); }
+
+/* The clickable identity region opens the detail drawer. It is a bare button, so
+   the row reads as one target without nesting the metrics disclosure inside it. */
+.kx-open {
+  grid-area: main; display: flex; align-items: center; gap: 12px; min-width: 0;
+  padding: 0; margin: 0; border: none; background: transparent; text-align: left;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.kx-ficon {
+  width: 38px; height: 38px; flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  background: var(--kx-wash-primary); color: var(--p-primary-color);
+}
+.kx-ficon svg { width: 20px; height: 20px; }
+.kx-id { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.kx-name { display: block; font-size: 14px; font-weight: 600; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-sub { display: block; font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-open:focus-visible { outline: none; }
+.kx-open:focus-visible .kx-name { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--p-primary-color); }
+
+/* Row 2: the status message + Recover, and the metric chips, aligned under the
+   name past the icon column. */
+.kx-rowfoot { grid-area: foot; padding-left: 50px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kx-rowfoot:empty { display: none; }
+.kx-rowmsg {
+  font-size: 11.5px; display: flex; align-items: center; gap: 5px; min-width: 0;
+}
+.kx-rowmsg-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-rowmsg svg { width: 13px; height: 13px; flex: none; }
+.kx-rowmsg-error { color: var(--p-danger-600, var(--p-danger-500)); }
+.kx-rowmsg-success { color: var(--p-success-600, var(--p-success-500)); }
+.kx-recover { flex: none; margin-left: 2px; }
+
+/* Sizing is .kx-tag-sm and the fill is the Tag's own severity; this only places
+   the badge in the row and adds the ring, which derives from the severity ink. */
+.kx-badge { grid-area: status; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }
+.kx-badge::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none;
+}
+.kx-badge:has(svg)::before { display: none; }
+/* Tones set only the color; the pill bg/border/dot derive from currentColor so a
+   tone reads correctly in both light and dark. */
+
+.kx-actions { grid-area: actions; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; min-width: 0; }
+.kx-actions .is-active { color: var(--p-primary-color); border-color: color-mix(in srgb, var(--p-primary-color) 38%, var(--p-content-border-color)); background: color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+
+/* The Config tab carries as many facts as the stored spec has (a schedule-only
+   binding has two, a filtered source with options has six), so the track count
+   follows the content instead of leaving ragged empty cells at a fixed four. */
+.kx-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.kx-admin-item { min-width: 0; padding: 10px 11px; border: 1px solid var(--p-content-border-color); border-radius: 10px; background: var(--p-content-background); }
+.kx-admin-item > span { display: block; margin-bottom: 4px; color: var(--p-text-muted-color); font-size: 10.5px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
+.kx-admin-item strong { display: block; overflow: hidden; color: var(--p-text-color); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+.kx-admin-item strong em { color: var(--p-text-muted-color); font-size: 11px; font-style: normal; font-weight: 600; }
+.kx-admin-item code { display: block; margin-top: 4px; overflow: hidden; color: var(--p-text-muted-color); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
+.kx-admin-item a { display: inline-block; margin-top: 4px; color: var(--p-primary-color); font-size: 11px; font-weight: 650; text-decoration: none; }
+.kx-admin-item a:hover { text-decoration: underline; }
+@media (max-width: 560px) {
+  .kx-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "main   actions"
+      "status status"
+      "foot   foot";
+    align-items: center; row-gap: 8px;
+  }
+  .kx-badge { justify-self: start; }
+  .kx-rowfoot { padding-left: 0; }
+}
+@media (max-width: 640px) { .kx-admin-grid { grid-template-columns: 1fr; } }
+
+/* PrimeVue supplies the dialog shell. Pass-through classes give this component
+   ownership of the slot layout without reaching into PrimeVue's private classes. */
+.kx-modal {
+  --p-dialog-content-padding: 0;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+}
+.kx-modal > .kx-dialog-header { padding: 16px 18px; border-bottom: 1px solid var(--p-content-border-color); gap: 10px; }
+.kx-modal > .kx-dialog-content { padding: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.kx-modal > .kx-dialog-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--p-content-border-color); }
+/* Cross-fade the right-pane setup content when the picked type changes, so the
+   swap reads as a smooth transition rather than a hard cut. */
+.kx-2p-r-body > * { animation: kx-pane-fade .28s ease both; }
+@keyframes kx-pane-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .kx-2p-r-body > * { animation: none; }
+}
+.kx-modal-body { padding: 18px; font-size: 13.5px; line-height: 1.5; color: var(--p-text-color); overflow-y: auto; }
+.kx-modal-body p { margin: 0 0 10px; }
+.kx-modal-body p:last-child { margin-bottom: 0; }
+
+/* Install form (step 2) */
+.kx-form { display: flex; flex-direction: column; gap: 14px; }
+.kx-field { display: flex; flex-direction: column; gap: 5px; }
+.kx-field-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-req { color: var(--p-danger-500); }
+.kx-input {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; transition: border-color .15s; width: 100%;
+}/* Enum fields render a PrimeVue Select (facade --p-select-* tokens theme it);
+   only ensure it fills the field column. */
+.kx-select { width: 100%; min-width: 0; }
+.kx-check,
+.kx-delopt input {
+  appearance: none; -webkit-appearance: none; width: 18px; height: 18px; margin: 0; flex: none;
+  display: grid; place-content: center; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: var(--p-content-background); cursor: pointer;
+  transition: border-color .15s, background-color .15s, box-shadow .15s, opacity .15s;
+}
+.kx-check::before,
+.kx-delopt input::before {
+  content: ""; width: 5px; height: 9px; border: solid var(--p-button-primary-color);
+  border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transform-origin: center;
+  transition: transform .12s ease-out;
+}
+.kx-check:checked,
+.kx-delopt input:checked { border-color: var(--p-primary-color); background: var(--p-primary-color); }
+
+/* A native checkbox with appearance:none paints its own box, so this
+   component owns the ring - the theme has nothing to hug. Values read the
+   focus contract; see app/facade-src/README.md. */
+.kx-check:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+}
+.kx-check:checked::before,
+.kx-delopt input:checked::before { transform: rotate(45deg) scale(1); }.kx-check:disabled,
+.kx-delopt input:disabled { opacity: .55; cursor: not-allowed; }
+.kx-field-hint { font-size: 11px; line-height: 1.3; color: var(--p-text-muted-color); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.kx-custom-host { min-height: 180px; width: 100%; }
+.kx-custom-host > * { display: block; width: 100%; }
+
+/* Delete options */
+.kx-delopts { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.kx-delopt { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.kx-delopt input { margin-top: 2px; }
+.kx-delopt-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kx-delopt-t { display: block; font-size: 13px; font-weight: 600; color: var(--p-text-color); }
+.kx-delopt-d { display: block; font-size: 11.5px; line-height: 1.35; color: var(--p-text-muted-color); }
+
+/* Two-pane install popup: type catalog (left) + setup (right), KB-consistent. */
+/* Shared create-popup width (matches KB + workspace create panel). */
+.kx-modal-2p { width: min(880px, calc(100vw - 40px)); max-width: 100%; }
+/* Component context has no type catalog: the single setup pane sits in a narrower shell. */
+.kx-modal-solo { width: min(620px, calc(100vw - 40px)); max-width: 100%; }
+.kx-modal-manage { width: min(760px, calc(100vw - 40px)); max-width: 100%; }
+.kx-manage-host { display: block; min-height: 180px; }
+
+.kx-2p { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); min-height: 0; flex: 1; overflow: hidden; }
+.kx-2p-solo { grid-template-columns: minmax(0, 1fr); }
+.kx-2p-solo .kx-2p-r-body { padding-top: 16px; }
+.kx-2p-l { padding: 16px; overflow-y: auto; border-right: 1px solid var(--p-content-border-color); display: flex; flex-direction: column; gap: 10px; }
+.kx-2p-r { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: color-mix(in srgb, var(--p-text-color) 2.5%, var(--p-content-background)); }
+.kx-2p-r-head { padding: 14px 18px 10px; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-2p-r-body { padding: 0 18px 18px; overflow-y: auto; flex: 1; min-height: 0; }
+.kx-2p-r-note { margin: 0; font-size: 12.5px; color: var(--p-text-muted-color); }
+.kx-foot-err { order: -1; flex: 1 0 100%; margin: 0; max-width: none; }
+.kx-foot-err + .p-button { margin-left: auto; }
+/* Delete sits apart from Cancel/Save — a destructive action anchored to the
+   opposite corner of the footer so it's never a stray click away from Save. */
+.kx-foot-delete { margin-right: auto; }
+
+.kx-cat-search {
+  display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; flex: none;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; color: var(--p-text-muted-color);
+}
+.kx-cat-search svg { width: 15px; height: 15px; flex: none; }
+.kx-cat-search input { flex: 1; border: none; background: transparent; outline: none; font: inherit; font-size: 13px; color: var(--p-text-color); }
+.kx-cat { display: flex; flex-direction: column; gap: 6px; }
+.kx-cat-card {
+  display: flex; align-items: center; gap: 11px; text-align: left; width: 100%; padding: 10px 12px;
+  border: 1px solid var(--p-content-border-color); border-radius: 14px; background: transparent; color: var(--p-text-color);
+  cursor: pointer; transition: border-color .14s, background .14s;
+}
+.kx-cat-card:hover { background: color-mix(in srgb, var(--p-text-color) 5%, transparent); }
+.kx-cat-card.sel { border-color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 9%, transparent); }
+.kx-cat-ico {
+  width: 34px; height: 34px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 11px;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color);
+}
+.kx-cat-ico svg { width: 18px; height: 18px; }
+.kx-cat-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.kx-cat-name { font-size: 13px; font-weight: 600; }
+.kx-cat-desc { font-size: 11px; line-height: 1.3; color: var(--p-text-muted-color); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.kx-cat-check { width: 17px; height: 17px; flex: none; color: var(--p-primary-color); visibility: hidden; }
+.kx-cat-card.sel .kx-cat-check { visibility: visible; }
+.kx-cat-empty { font-size: 12.5px; color: var(--p-text-muted-color); padding: 4px 2px; }
+
+@media (max-width: 760px) {
+  .kx-modal-2p { width: 560px; }
+  .kx-2p { grid-template-columns: 1fr; }
+  .kx-2p-l { border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
+}
+
+/* Data-flow builder. Renders inside the manager's setup pane; reuses the manager's
+   .kx-field/.kx-input vocabulary plus PrimeVue Buttons, and adds the Source ->
+   Destination pipeline chrome. */
+.kx-flow { display: flex; flex-direction: column; gap: 14px; padding: 6px 0 0; }
+.kx-pipe { display: flex; flex-direction: column; gap: 8px; }
+.kx-stage {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.kx-stage-mid { background: transparent; }
+.kx-stage-head { display: flex; align-items: center; gap: 8px; }
+.kx-stage-ico {
+  width: 26px; height: 26px; border-radius: 11px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color);
+}
+.kx-stage-ico svg { width: 15px; height: 15px; }
+.kx-stage-lbl { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-stage-cfg { margin-top: 2px; }
+.kx-stage-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.kx-stage-desc { margin: 0; font-size: 12px; line-height: 1.4; color: var(--p-text-muted-color); }
+.kx-stage-opts {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--p-content-border-color);
+}
+.kx-opts-lbl { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-pipe-conn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 5px 0; color: var(--p-text-muted-color); font-size: 11px;
+}
+.kx-pipe-conn svg { width: 16px; height: 16px; }
+
+.kx-runopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+
+/* Transform auto-detect notice: whether pass-through suffices or a mapping is needed. */
+.kx-detect {
+  display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.35;
+  padding: 7px 9px; border-radius: 8px; color: var(--p-success-600, var(--p-success-500));
+  background: color-mix(in srgb, var(--p-success-500) 10%, transparent);
+}
+.kx-detect svg { width: 14px; height: 14px; flex: none; }
+.kx-detect-warn {
+  color: var(--p-warn-600, var(--p-warn-500));
+  background: color-mix(in srgb, var(--p-warn-500) 12%, transparent);
+}
+.kx-flow-enable { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--p-text-muted-color); cursor: pointer; }
+.kx-flow-enable input { width: 16px; height: 16px; accent-color: var(--p-primary-color); }
+
+.kx-textarea { height: auto; min-height: 72px; padding: 8px 10px; line-height: 1.4; resize: vertical; }
+
+.kx-wcmount { width: 100%; }
+.kx-wcmount > div { display: block; width: 100%; }
+
+/* Config-driven per-row status: declared public_state_schema fields rendered as
+   compact chips (the default for every automation type). */
+.kx-metrics { display: flex; flex-wrap: wrap; gap: 5px 6px; margin-top: 5px; min-width: 0; }
+.kx-metric {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+  font-size: 11.5px; line-height: 1.6; padding: 2px 9px; border-radius: 6px;
+  background: color-mix(in srgb, var(--p-text-color) 6%, transparent); color: var(--p-text-color);
+}
+.kx-metric-i { width: 13px; height: 13px; color: var(--p-text-muted-color); flex: none; }
+.kx-metric-k { color: var(--p-text-muted-color); font-weight: 600; flex: none; }
+.kx-metric-v { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-metric-details { margin-top: 5px; }
+.kx-metric-more {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer; list-style: none;
+  font-size: 11.5px; font-weight: 600; color: var(--p-text-muted-color); user-select: none;
+}
+.kx-metric-more::-webkit-details-marker { display: none; }
+.kx-metric-more::before {
+  content: ""; width: 0; height: 0; border-left: 4px solid currentColor;
+  border-top: 3px solid transparent; border-bottom: 3px solid transparent;
+  transition: transform .15s; flex: none;
+}
+.kx-metric-details[open] .kx-metric-more::before { transform: rotate(90deg); }
+.kx-metric-more:hover { color: var(--p-text-color); }
+.kx-metrics-detail { margin-top: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kx-modal { transition: none; }
+}
+
+/* The search shell draws the border; the bare input inside it draws none, so
+   the ring belongs to the shell. `:focus-within` is the right trigger here -
+   the box that shows focus is not the node that takes it. */
+.kx-cat-search:focus-within {
+  border-color: var(--p-focus-ring-color);
+  box-shadow: var(--p-focus-ring-shadow);
+}
+.kx-cat-search input:focus { box-shadow: none; }
+
+/* Focus canon: each of these draws a border at rest, so focus lights that
+   border and adds the halo - never an outline. See app/facade-src/README.md. */
+.kx-cat-card:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+.kx-menu { position: relative; display: inline-flex; }
+.kx-menu-trigger.is-active {
+  color: var(--p-primary-color);
+  border-color: color-mix(in srgb, var(--p-primary-color) 38%, var(--p-content-border-color));
+  background: var(--kx-wash-primary);
+}
+.kx-menu-panel {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 6px; border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-14);
+  background: var(--p-content-background); box-shadow: var(--kx-shadow-lg);
+  max-height: min(70vh, 460px); overflow-y: auto;
+}
+.kx-menu-group {
+  padding: 8px 10px 4px; font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--p-text-muted-color);
+}
+.kx-menu-group.is-first { padding-top: 4px; }
+.kx-menu-sep { height: 1px; margin: 5px 6px; background: var(--p-content-border-color); }
+.kx-menu-item {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 8px 10px; text-align: left;
+  border: none; border-radius: var(--kx-radius-10); background: transparent; color: var(--p-text-color);
+  cursor: pointer; transition: background .12s;
+}
+.kx-menu-item:hover, .kx-menu-item:focus-visible { background: var(--kx-overlay-hover); outline: none; }
+.kx-menu-item:disabled { opacity: .5; cursor: not-allowed; }
+.kx-menu-item-ico { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--p-text-muted-color); }
+.kx-menu-item-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.kx-menu-item-label { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; }
+.kx-menu-item-desc { font-size: 11px; line-height: 1.35; color: var(--p-text-muted-color); }
+.kx-menu-item-warn { width: 12px; height: 12px; color: var(--p-warn-600, var(--p-warn-500)); }
+.kx-menu-item.is-warn .kx-menu-item-ico { color: var(--p-warn-600, var(--p-warn-500)); }
+.kx-menu-item.is-danger .kx-menu-item-ico { color: var(--p-danger-600, var(--p-danger-500)); }
+.kx-menu-item.is-danger:hover, .kx-menu-item.is-danger:focus-visible { background: var(--kx-wash-danger); }
+.kx-menu-item.is-danger .kx-menu-item-label { color: var(--p-danger-600, var(--p-danger-500)); }
+
+/* ─── Detail drawer ─────────────────────────────────────────────────────
+   Right slide-over, shadow-safe (rendered in this tree, sits below PrimeVue's
+   own modals so a confirm dialog still stacks on top). */
+.kx-drawer-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: color-mix(in srgb, var(--p-text-color) 40%, transparent);
+  animation: kx-fade .18s ease both;
+}
+.kx-drawer {
+  position: fixed; top: 0; right: 0; height: 100%; width: min(468px, 100vw); z-index: 61;
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--p-content-background); border-left: 1px solid var(--p-content-border-color);
+  box-shadow: var(--kx-shadow-lg); animation: kx-slide-in .22s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes kx-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kx-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .kx-drawer, .kx-drawer-scrim { animation: none; }
+}
+
+.kx-drawer-head {
+  display: flex; align-items: center; gap: 11px; padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--p-content-border-color); flex: none;
+}
+.kx-drawer-id { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.kx-drawer-name { font-size: 15px; font-weight: 700; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-drawer-sub { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-drawer-controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.kx-drawer .kx-badge { flex: none; }
+
+.kx-tabs { display: flex; gap: 2px; padding: 6px 12px 0; border-bottom: 1px solid var(--p-content-border-color); flex: none; }
+.kx-tab {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px 10px; margin-bottom: -1px;
+  border: none; border-bottom: 2px solid transparent; background: transparent; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--p-text-muted-color); transition: color .12s;
+}
+.kx-tab svg { width: 15px; height: 15px; }
+.kx-tab:hover { color: var(--p-text-color); }
+.kx-tab.is-active { color: var(--p-primary-color); border-bottom-color: var(--p-primary-color); }
+.kx-tab:focus-visible { outline: none; color: var(--p-primary-color); }
+
+.kx-drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+.kx-dsec { display: flex; flex-direction: column; gap: 16px; }
+.kx-dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.kx-dfact { padding: 10px 11px; border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-10); background: var(--kx-surface-1); min-width: 0; }
+.kx-dfact-k { display: block; margin-bottom: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-dfact-v { display: block; font-size: 13px; color: var(--p-text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-dsub { display: flex; flex-direction: column; gap: 8px; }
+.kx-dsub-lbl { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-dnote { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--p-text-muted-color); padding: 4px 0; }
+.kx-dnote-err { color: var(--p-danger-600, var(--p-danger-500)); }
+.kx-dsec-foot { padding-top: 4px; }
+.kx-dmsg { margin: 0; font-size: 12.5px; line-height: 1.5; padding: 10px 12px; border-radius: var(--kx-radius-10); background: var(--kx-surface-1); color: var(--p-text-color); word-break: break-word; }
+.kx-dmsg.is-err { background: var(--kx-wash-danger); color: var(--p-danger-700, var(--p-danger-600, var(--p-danger-500))); }
+.kx-dmsg.is-ok { background: var(--kx-wash-success); color: var(--p-success-700, var(--p-success-600, var(--p-success-500))); }
+
+/* Prominent error card (Overview): the real dead-letter cause + Recover CTA. */
+.kx-errcard {
+  display: flex; flex-direction: column; gap: 9px; padding: 13px 14px;
+  border: 1px solid color-mix(in srgb, var(--p-danger-500) 40%, var(--p-content-border-color));
+  border-radius: var(--kx-radius-14); background: var(--kx-wash-danger);
+}
+.kx-errcard-head { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--p-danger-700, var(--p-danger-600, var(--p-danger-500))); }
+.kx-errcard-head svg { width: 17px; height: 17px; flex: none; }
+.kx-errcard-cause { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--p-text-color); word-break: break-word; }
+.kx-errcard .p-button { align-self: flex-start; }
+
+/* Config hint: structural-vs-in-place, shown up front. */
+.kx-hint {
+  display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px;
+  border-radius: var(--kx-radius-10); background: var(--kx-wash-info);
+  font-size: 12px; line-height: 1.45; color: var(--p-text-color);
+}
+.kx-hint svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--p-info-600, var(--p-info-500)); }

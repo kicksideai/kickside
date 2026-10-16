@@ -1,0 +1,5 @@
+local sql = require("sql")
+local fixture = require("fixture")
+type DB = sql.DB
+type Transaction = sql.Transaction
+return {get = fixture.get, type = sql.type}

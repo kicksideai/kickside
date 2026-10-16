@@ -1,0 +1,6 @@
+organization: compat
+module: root-install
+type: application
+directories:
+  src: .
+  modules: .wippy

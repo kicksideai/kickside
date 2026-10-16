@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.widgets.api
+
+entries:
+  - name: create_view_resolver
+    kind: function.lua
+    meta:
+      comment: "GET /api/v1/component-kinds/create-view?class= — resolve a class's binding create.view to its mountable view.component (tag_name)."
+    source: file://create_view_resolver.lua
+    method: handler
+    modules: [http, security, registry]
+
+  - name: create_view_resolver.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: create_view_resolver
+    path: /component-kinds/create-view

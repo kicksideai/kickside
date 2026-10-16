@@ -1,0 +1,152 @@
+version: "1.0"
+namespace: kickside.ui
+entries:
+  - name: facade_resolver
+    kind: function.lua
+    meta:
+      comment: Builds the css_variables override from kickside.ui:primary_color, folded over the static facade ramp.
+    source: file://../../facade_resolver.lua
+    method: resolve
+    modules: [contract, registry, json, fs]
+    imports:
+      theming_helpers: wippy.facade:theming_helpers
+    security:
+      actor:
+        id: kickside.ui:facade_resolver
+      policies:
+        - kickside.ui:public_branding_settings_contract
+        - kickside.ui:public_branding_settings_registry
+        - kickside.ui:public_branding_settings_cache
+        - kickside.ui:facade_resolver_static_read
+        - kickside.ui:facade_resolver_content_fs_read
+
+  - name: facade_resolver_static_read
+    kind: security.policy
+    meta:
+      comment: The base-tone resolver reads the static facade css_variables + content_fs requirements to fold its ramp over the base theme (which the app configures as an fs:// file reference).
+    policy:
+      resources:
+        - wippy.facade:css_variables
+        - wippy.facade:content_fs
+      actions:
+        - registry.get
+      effect: allow
+
+  - name: facade_resolver_content_fs_read
+    kind: security.policy
+    meta:
+      comment: The base-tone resolver opens the app-configured facade content filesystem (content_fs points anywhere, so this mirrors the facade's own content_fs_runtime) to read the fs://-referenced base css_variables file.
+    policy:
+      resources: '*'
+      actions:
+        - fs.get
+      effect: allow
+
+  - name: facade_resolver_handler_settings_contract_policy
+    kind: ns.requirement
+    meta:
+      value_kind: security.policy
+      comment: Facade handlers execute the resolver binding, so they need the resolver's narrow settings-contract read policy.
+      description: Facade handlers execute the resolver binding, so they need the resolver's narrow settings-contract read policy.
+    default: kickside.ui:public_branding_settings_contract
+    targets:
+      - entry: wippy.facade:config_handler
+        path: ".security.policies +="
+      - entry: wippy.facade:css_vars_handler
+        path: ".security.policies +="
+
+  - name: facade_resolver_handler_settings_registry_policy
+    kind: ns.requirement
+    meta:
+      value_kind: security.policy
+      comment: Facade handlers execute the resolver binding, so they need the resolver's narrow settings-definition discovery policy.
+      description: Facade handlers execute the resolver binding, so they need the resolver's narrow settings-definition discovery policy.
+    default: kickside.ui:public_branding_settings_registry
+    targets:
+      - entry: wippy.facade:config_handler
+        path: ".security.policies +="
+      - entry: wippy.facade:css_vars_handler
+        path: ".security.policies +="
+
+  - name: facade_resolver_handler_settings_cache_policy
+    kind: ns.requirement
+    meta:
+      value_kind: security.policy
+      comment: Facade handlers execute the resolver binding, so they need the resolver's warmed settings-cache read policy.
+      description: Facade handlers execute the resolver binding, so they need the resolver's warmed settings-cache read policy.
+    default: kickside.ui:public_branding_settings_cache
+    targets:
+      - entry: wippy.facade:config_handler
+        path: ".security.policies +="
+      - entry: wippy.facade:css_vars_handler
+        path: ".security.policies +="
+
+  - name: facade_resolver_handler_static_read_policy
+    kind: ns.requirement
+    meta:
+      value_kind: security.policy
+      comment: Facade handlers execute the resolver binding, so they need the resolver's static facade variable read policy.
+      description: Facade handlers execute the resolver binding, so they need the resolver's static facade variable read policy.
+    default: kickside.ui:facade_resolver_static_read
+    targets:
+      - entry: wippy.facade:config_handler
+        path: ".security.policies +="
+      - entry: wippy.facade:css_vars_handler
+        path: ".security.policies +="
+
+  - name: facade_resolver_handler_content_fs_policy
+    kind: ns.requirement
+    meta:
+      value_kind: security.policy
+      comment: Facade handlers execute the resolver binding, so they need the resolver's content-fs read policy to resolve the fs:// css_variables reference.
+      description: Facade handlers execute the resolver binding, so they need the resolver's content-fs read policy to resolve the fs:// css_variables reference.
+    default: kickside.ui:facade_resolver_content_fs_read
+    targets:
+      - entry: wippy.facade:config_handler
+        path: ".security.policies +="
+      - entry: wippy.facade:css_vars_handler
+        path: ".security.policies +="
+
+  - name: facade_resolver_handler_contract_policy
+    kind: ns.requirement
+    meta:
+      value_kind: security.policy
+      comment: Facade handlers must first open the optional wippy.facade:resolver contract before its transitive reads run.
+      description: Facade handlers must first open the optional wippy.facade:resolver contract before its transitive reads run.
+    default: kickside.ui:facade_resolver_contract_access
+    targets:
+      - entry: wippy.facade:config_handler
+        path: ".security.policies +="
+      - entry: wippy.facade:css_vars_handler
+        path: ".security.policies +="
+
+  - name: facade_resolver_binding
+    kind: contract.binding
+    meta:
+      title: Facade Base Tone Resolver
+      comment: Implements wippy.facade:resolver — overrides css_variables from the primary_color setting.
+    contracts:
+      - contract: wippy.facade:resolver
+        default: true
+        methods:
+          resolve: kickside.ui:facade_resolver
+
+  # ─── Shell discovery: System tabs + account menu ─────────────────────
+  # Owned by the shell module so the app stays a thin host. Both discover the
+  # caller-visible ui.* contributions (settings_tab / account_item) and normalize
+  # the display fields. /settings/tabs is admin-only via the router firewall (the
+  # System surface); /account/items is the per-user avatar menu.
+  - name: facade_resolver_contract_access
+    kind: security.policy
+    meta:
+      comment: Facade handlers may open only the optional facade resolver contract they execute for runtime branding.
+    policy:
+      resources:
+        - wippy.facade:resolver
+        - kickside.ui:facade_resolver_binding
+        - resolve
+      actions:
+        - contract.get
+        - contract.open
+        - contract.call
+      effect: allow

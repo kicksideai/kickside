@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.agents.tool_errors
+entries:
+  - name: tool_errors_test
+    kind: function.lua
+    meta: { type: test, suite: tool_errors }
+    source: file://tool_errors_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+  - name: tool_errors_scope
+    kind: security.policy
+    groups: [tool_errors_scope]
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow

@@ -1,0 +1,44 @@
+organization: kickside
+module: uploads
+type: plugin
+description: KickSide uploads — upload API, storage pipeline, preview endpoints, artifact storage, file capabilities, and default text/image/document processors.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - uploads
+  - files
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+embed:
+  - kickside.uploads:ui_fs
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "ui/node_modules/**"
+  - "ui/node_modules:**"
+  - "ui/coverage/**"
+  - "ui/coverage:**"
+  - "live-test/**"
+  - "live-test:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "ui/dist/**"
+  - "static/*.map"
+  - "static/**/*.map"
+  - "test/stubs/**"
+  - "test/stubs:**"
+  - "src/**/stubs/**"
+  - "src/**/*.spec.ts"
+  - "src/**/*.spec.tsx"
+  - "ui/src/**/*.spec.ts"
+  - "ui/src/**/*.spec.tsx"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

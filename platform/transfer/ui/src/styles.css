@@ -1,0 +1,84 @@
+@import "@wippy-fe/theme/theme-config.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The modal shell is now PrimeVue's Dialog (panel/header/close chrome ships from
+   the prestyled theme). The picker body stacks the tools/body/foot sections. */
+.ks-title { font-weight: 600; font-size: 1rem; }
+.ks-panel { display: flex; flex-direction: column; }
+
+.ks-tools {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+.ks-search {
+  flex: 1;
+  appearance: none;
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background, transparent);
+  color: inherit;
+  border-radius: 8px;
+  padding: 8px 11px; font: inherit; font-size: 0.85rem;
+}.ks-link {
+  appearance: none; border: none; background: transparent;
+  color: var(--p-primary-color); cursor: pointer; font: inherit; font-size: 0.82rem;
+  padding: 4px 6px; border-radius: 8px; white-space: nowrap;
+}
+.ks-link:hover { background: var(--p-highlight-background); }
+
+.ks-body { padding: 12px 0 4px; overflow-y: auto; flex: 1; max-height: 55vh; }
+.ks-empty { color: var(--p-text-muted-color); font-size: 0.85rem; margin: 16px 0; }
+
+/* Condensed single-line rows: checkbox · name · class/data tags. */
+.ks-list { display: flex; flex-direction: column; }
+.ks-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 8px; border-radius: 8px;
+  cursor: pointer; min-width: 0;
+}
+.ks-row:hover { background: var(--p-highlight-background); }
+.ks-row.is-selected { background: var(--p-highlight-background); }
+.ks-check { width: 15px; height: 15px; accent-color: var(--p-primary-color); cursor: pointer; flex: none; }
+.ks-row-name {
+  flex: 1; min-width: 0; font-size: 0.86rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ks-row-meta { display: flex; align-items: center; gap: 6px; flex: none; }
+.ks-tag {
+  font-size: 0.68rem; line-height: 1.6; color: var(--p-text-muted-color);
+  border: 1px solid var(--p-content-border-color); border-radius: 999px; padding: 0 8px;
+  white-space: nowrap;
+}
+.ks-tag--data { color: var(--p-primary-color); border-color: var(--p-primary-color); }
+
+.ks-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--p-content-border-color);
+}
+.ks-count { color: var(--p-text-muted-color); font-size: 0.82rem; }
+.ks-spacer { flex: 1; }
+
+.ks-btn {
+  appearance: none;
+  border: 1px solid var(--p-primary-color);
+  background: var(--p-primary-color);
+  color: var(--p-button-primary-color);
+  border-radius: 8px;
+  padding: 8px 16px; font: inherit; font-size: 0.85rem; cursor: pointer;
+}
+.ks-btn:disabled { opacity: 0.55; cursor: default; }
+.ks-btn--ghost {
+  background: transparent; color: inherit; border-color: var(--p-content-border-color);
+}
+
+.ks-error { color: var(--p-danger-color); font-size: 0.85rem; margin: 12px 0 0; }
+.ks-notice { color: var(--p-text-muted-color); font-size: 0.85rem; margin: 12px 0 0; }
+.ks-file { display: none; }

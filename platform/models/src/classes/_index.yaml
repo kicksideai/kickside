@@ -1,0 +1,73 @@
+version: "1.0"
+namespace: kickside.models.classes
+
+# Default model-class tiers shipped by the models module: declarative metadata
+# (title / description / icon / weight) for the capability tiers models reference
+# via class:<name>. weight orders the tiers from fastest/lightest (low) to most
+# capable (high) for display and sorting. Discovered by meta.type
+# (kickside.models:model_class); a deployment may add or override tiers by
+# declaring more model_class entries.
+entries:
+  - name: read_model
+    kind: library.lua
+    meta:
+      comment: Registry read-model projecting model_class tiers (title / description / icon / weight) for the classes API.
+    source: file://read_model.lua
+    modules: [registry]
+    imports:
+      models_types: kickside.models:models_types
+
+  - name: class.nano
+    kind: registry.entry
+    meta:
+      type: kickside.models:model_class
+      key: nano
+      title: Nano
+      comment: Smallest, fastest models for classification, extraction, and routing.
+      icon: tabler:feather
+      weight: 10
+      capability: generate
+
+  - name: class.fast
+    kind: registry.entry
+    meta:
+      type: kickside.models:model_class
+      key: fast
+      title: Fast
+      comment: Low-latency models for quick, lightweight tasks.
+      icon: tabler:bolt
+      weight: 20
+      capability: generate
+
+  - name: class.balanced
+    kind: registry.entry
+    meta:
+      type: kickside.models:model_class
+      key: balanced
+      title: Balanced
+      comment: General-purpose models balancing speed and quality.
+      icon: tabler:scale
+      weight: 40
+      capability: generate
+
+  - name: class.premium
+    kind: registry.entry
+    meta:
+      type: kickside.models:model_class
+      key: premium
+      title: Premium
+      comment: Most capable models for complex reasoning and coding.
+      icon: tabler:diamond
+      weight: 80
+      capability: generate
+
+  - name: class.embed
+    kind: registry.entry
+    meta:
+      type: kickside.models:model_class
+      key: embed
+      title: Embedding
+      comment: Embedding models for semantic search and retrieval.
+      icon: tabler:vector
+      weight: 0
+      capability: embed

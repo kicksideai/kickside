@@ -1,0 +1,54 @@
+version: "1.0"
+namespace: kickside.plugins.stubs
+
+# Shared stub handlers for the per-provider connection / reply_provider bindings
+# the registry suites resolve. In the live app these methods live in each
+# provider plugin; here they stand in so connection's registries can register,
+# find, delete, and validate provider bindings in isolation.
+
+entries:
+  - name: get_status
+    kind: function.lua
+    meta: { comment: "stub connection — get_status" }
+    source: file://../stub_connection.lua
+    method: get_status
+    modules: [ctx]
+
+  - name: test_connection
+    kind: function.lua
+    meta: { comment: "stub connection — test_connection" }
+    source: file://../stub_connection.lua
+    method: test_connection
+    modules: [ctx]
+
+  - name: discover_resources
+    kind: function.lua
+    meta: { comment: "stub connection — discover_resources" }
+    source: file://../stub_connection.lua
+    method: discover_resources
+    modules: [ctx]
+
+  - name: delete
+    kind: function.lua
+    meta: { comment: "stub deletable — delete" }
+    source: file://../stub_connection.lua
+    method: delete
+    modules: [ctx]
+
+  - name: send_reply
+    kind: function.lua
+    meta: { comment: "stub reply_provider — send_reply" }
+    source: file://../stub_reply_provider.lua
+    method: send_reply
+
+  - name: update_reply
+    kind: function.lua
+    meta: { comment: "stub reply_provider — update_reply" }
+    source: file://../stub_reply_provider.lua
+    method: update_reply
+
+  - name: send_status
+    kind: function.lua
+    meta: { comment: "stub reply_provider — send_status" }
+    source: file://../stub_reply_provider.lua
+    method: send_status

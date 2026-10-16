@@ -1,0 +1,3 @@
+/* PrimeVue owns standard-control appearance and focus. Module CSS only places feedback. */
+.wf-banner { margin: 10px 14px; min-width: 0; overflow-wrap: anywhere; }
+.wf-banner.wf-banner--error { margin: 0; border-radius: 0; }

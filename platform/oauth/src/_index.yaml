@@ -1,0 +1,147 @@
+version: "1.0"
+namespace: kickside.oauth
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide OAuth
+      comment: OAuth 2.0 connection management with PKCE support, token storage, and refresh.
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    component: kickside/contract
+
+  - name: dep.kickside.jobs
+    version: '*'
+    kind: ns.dependency
+    component: kickside/jobs
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    component: kickside/execution
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    component: wippy/migration
+
+  - name: dep.wippy.views
+    version: '*'
+    kind: ns.dependency
+    component: wippy/views
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the oauth_connections table.
+      description: SQL database resource backing the oauth_connections table.
+    targets:
+      - entry: kickside.oauth.migrations:01_create_oauth_connections_table
+        path: .meta.target_db
+      - entry: kickside.oauth:db_config
+        path: .meta.db_id
+
+  # Resolved DB id for the persist layer. The target_db requirement rewrites
+  # .meta.db_id here; oauth_types.db_id() reads it back so the repo binds the
+  # configured database, not a hardcoded literal.
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured oauth DB id (rewritten by the target_db requirement).
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the OAuth management endpoints attach to.
+      description: Authenticated HTTP router the OAuth management endpoints attach to.
+    targets:
+      - entry: kickside.oauth.api:discover_providers.endpoint
+        path: .meta.router
+      - entry: kickside.oauth.api:get_connection_details.endpoint
+        path: .meta.router
+      - entry: kickside.oauth.api:get_provider_info.endpoint
+        path: .meta.router
+      - entry: kickside.oauth.api:init_connection.endpoint
+        path: .meta.router
+      - entry: kickside.oauth.api:update_connection.endpoint
+        path: .meta.router
+
+  - name: public_api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Public (no-auth) HTTP router the OAuth callback endpoints attach to.
+      description: Public (no-auth) HTTP router the OAuth callback endpoints attach to.
+    targets:
+      - entry: kickside.oauth.api.public:oauth_callback.endpoint
+        path: .meta.router
+      - entry: kickside.oauth.api.public:oauth_callback_page.endpoint
+        path: .meta.router
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host used by every OAuth service and dynamically spawned negotiator.
+      description: Process host used by every OAuth service and dynamically spawned negotiator.
+    targets:
+      - entry: kickside.oauth.service:token_refresh
+        path: .meta.default_host
+      - entry: kickside.oauth.service:refresh_bootstrap.service
+        path: .host
+      - entry: kickside.oauth:process_config
+        path: .meta.host_id
+
+  - name: process_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured OAuth process host used by dynamic child spawns.
+
+  - name: runtime_config
+    kind: library.lua
+    meta:
+      comment: Requirement-injected OAuth runtime resource resolver.
+    source: file://runtime_config.lua
+    modules: [registry]
+
+  - name: callback_names
+    kind: library.lua
+    meta:
+      comment: Process registry name of a pending OAuth negotiator, shared by the negotiator and the public callback.
+    source: file://callback_names.lua
+
+  - name: oauth_types
+    kind: library.lua
+    meta: { comment: "Canonical OAuth type, public DTO, and cross-module id exports." }
+    source: file://types.lua
+    modules: [registry]
+
+  # kickside.oauth:base_connector
+  - name: base_connector
+    kind: contract.binding
+    meta:
+      comment: Generic OAuth 2.0 provider implementation with PKCE support and token refresh
+      tags:
+        - oauth
+        - provider
+        - implementation
+        - generic
+    contracts:
+      - contract: kickside.oauth:connector
+        methods:
+          handle_callback: kickside.oauth.binding:handle_callback_func
+          init_oauth: kickside.oauth.binding:init_oauth_func
+          refresh_token: kickside.oauth.binding:refresh_token_func
+
+  # kickside.oauth:connector

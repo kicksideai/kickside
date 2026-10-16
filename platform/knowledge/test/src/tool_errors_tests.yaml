@@ -1,0 +1,22 @@
+version: "1.0"
+namespace: kickside.knowledge.tool_errors
+entries:
+  - name: tool_errors_test
+    kind: function.lua
+    meta: { type: test, suite: tool_errors }
+    source: file://tool_errors_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+      kb_tools: kickside.knowledge.traits:kb_tools
+      component: kickside.component:component
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+  - name: tool_errors_scope
+    kind: security.policy
+    groups: [tool_errors_scope]
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow

@@ -1,0 +1,68 @@
+version: "1.0"
+namespace: app.worker_parts
+entries:
+  - name: worker_process_test
+    kind: function.lua
+    meta:
+      title: Job Worker
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Execution routing, child supervision, and job finalization.
+    source: file://worker_process_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - process
+      - channel
+      - security
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      reclaim: kickside.core.jobs.persist:reclaim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker: kickside.core.jobs.service:loop
+      worker_pool: kickside.core.jobs.service:worker_pool
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+      worker_child: kickside.core.jobs.service:worker_child
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      jobs: kickside.core.jobs:jobs
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      job_fixture: app:job_fixture
+      worker_db_scaffold: app:worker_db_scaffold
+  - name: worker_supervision_test
+    kind: function.lua
+    meta:
+      title: Job Worker
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Execution routing, child supervision, and job finalization.
+    source: file://worker_supervision_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - process
+      - channel
+      - security
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      reclaim: kickside.core.jobs.persist:reclaim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker: kickside.core.jobs.service:loop
+      worker_pool: kickside.core.jobs.service:worker_pool
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+      worker_child: kickside.core.jobs.service:worker_child
+      worker_fence: kickside.core.jobs.service:worker_fence
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      jobs: kickside.core.jobs:jobs
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      job_fixture: app:job_fixture
+      worker_db_scaffold: app:worker_db_scaffold

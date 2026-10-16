@@ -1,0 +1,739 @@
+version: "1.0"
+namespace: app
+
+# Exercises selected Channel runtime units directly from the production source,
+# with harness-owned imports bound to deterministic test collaborators.
+entries:
+  - name: execution_authority_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel_execution_authority
+    source: file://execution_authority_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      identity_restrictions: app:identity_restrictions
+      execution_identity: app:execution_identity
+
+  - name: dep.wippy_test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: dep.kickside_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: "*"
+
+  - name: dep.wippy_migration
+    kind: ns.dependency
+    component: wippy/migration
+    version: "*"
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: dep.wippy_bootloader
+    kind: ns.dependency
+    component: wippy/bootloader
+    version: "*"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: env_storage
+    kind: env.storage.file
+    file_path: ./.wippy/channel-test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database backing channel persist tests.
+    file: "${sqlite_path}"
+
+  - name: restart_db_access
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [db.get]
+      effect: allow
+
+  - name: persist
+    kind: library.lua
+    source: file://src_link/persist/repo.lua
+    modules: [sql, uuid, time, json, crypto, hash]
+    imports:
+      session_acquire: app:session_acquire
+      conversation_gc: app:conversation_gc
+      channel_retention_policy: app:retention_policy_stub
+      channel_conversation: app:channel_conversation
+      row_size: app:row_size
+
+  - name: row_size
+    kind: library.lua
+    source: file://core_link/row_size.lua
+
+  - name: turn_recovery
+    kind: library.lua
+    source: file://src_link/persist/turn_recovery.lua
+    modules: [sql, time]
+    imports:
+      channel_conversation: app:channel_conversation
+  - name: channel_conversation
+    kind: library.lua
+    source: file://src_link/persist/conversation.lua
+    modules: [sql, time]
+    imports:
+      row_size: app:row_size
+
+  - name: conversation_gc
+    kind: library.lua
+    source: file://src_link/persist/conversation_gc.lua
+    modules: [sql]
+    imports:
+      channel_conversation: app:channel_conversation
+
+  - name: session_acquire
+    kind: library.lua
+    source: file://src_link/persist/session_acquire.lua
+    modules: [sql, uuid, time, json]
+    imports:
+      channel_retention_policy: app:retention_policy_stub
+      channel_conversation: app:channel_conversation
+      row_size: app:row_size
+
+  - name: channel_retention
+    kind: library.lua
+    source: file://src_link/persist/retention.lua
+    modules: [sql]
+    imports:
+      channel_conversation: app:channel_conversation
+
+  - name: channel_archive_retention
+    kind: library.lua
+    source: file://src_link/persist/archive_retention.lua
+    modules: [sql]
+    imports:
+      session_service: app:session_service_stub
+      session_delete_proof: app:session_delete_proof
+      channel_conversation: app:channel_conversation
+
+  - name: complete_unlink
+    kind: function.lua
+    source: file://src_link/binding/cleanup_conversation_func.lua
+    method: complete_unlink
+    imports:
+      channel_persist: app:persist
+      channel_consts: app:channel_consts
+      session_service: app:session_service_stub
+      session_delete_proof: app:session_delete_proof
+      channel_conversation: app:channel_conversation
+      conversation_gc: app:conversation_gc
+
+  - name: session_delete_proof
+    kind: library.lua
+    source: file://src_link/persist/session_delete_proof.lua
+
+  - name: channel_idle_retention
+    kind: library.lua
+    source: file://src_link/persist/idle_retention.lua
+    modules: [sql, time]
+    imports:
+      channel_conversation: app:channel_conversation
+
+  - name: hub_signal_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope of a group principal without process messaging authority; hub messages reach the hub through the channel identity.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, registry.get, registry.find, env.get, db.get]
+      effect: allow
+
+  - name: hub_signal_probe
+    kind: function.lua
+    meta: { type: test_helper, comment: Hands one hub message to the session hub through the ingress seam. }
+    source: file://hub_signal_probe.lua
+    method: run
+    imports:
+      receive: app:receive
+
+  - name: hub_signal_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://hub_signal_test.lua
+    method: run
+    modules: [security, funcs, uuid, channel, time, process]
+    imports:
+      test: wippy.test:test
+      channel_consts: app:channel_consts
+
+  - name: archive_retention_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://archive_retention_test.lua
+    method: run
+    modules: [sql, time]
+    imports:
+      channel_conversation: app:channel_conversation
+      test: wippy.test:test
+      persist: app:persist
+      retention_policy_stub: app:retention_policy_stub
+      receive_fixture: app:receive_fixture
+      channel_archive_retention: app:channel_archive_retention
+      channel_idle_retention: app:channel_idle_retention
+      session_service_stub: app:session_service_stub
+      channel_retention_tick: app:channel_retention_tick
+
+  - name: channel_retention_tick
+    kind: library.lua
+    source: file://src_link/retention.lua
+    modules: [time]
+    imports:
+      channel_consts: app:channel_consts
+      channel_retention: app:channel_retention
+      channel_archive_retention: app:channel_archive_retention
+      channel_idle_retention: app:channel_idle_retention
+      channel_retention_policy: app:retention_policy_stub
+      channel_conversation: app:channel_conversation
+
+  - name: retention_policy_stub
+    kind: library.lua
+    source: file://retention_policy_stub.lua
+
+  - name: retention_policy_source
+    kind: library.lua
+    source: file://src_link/retention_policy.lua
+    modules: [registry]
+
+  - name: turn_retention_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://turn_retention_test.lua
+    method: run
+    modules: [sql, time]
+    imports:
+      channel_conversation: app:channel_conversation
+      persist: app:persist
+      test: wippy.test:test
+      channel_retention: app:channel_retention
+      channel_retention_tick: app:channel_retention_tick
+      retention_policy_source: app:retention_policy_source
+      receive_fixture: app:receive_fixture
+
+  - name: test_state
+    kind: library.lua
+    source: file://test_state.lua
+
+  - name: channel_consts
+    kind: library.lua
+    source: file://channel_consts_stub.lua
+
+  - name: real_channel_consts
+    kind: library.lua
+    source: file://src_link/consts.lua
+    modules: [registry]
+
+  - name: channel_types
+    kind: library.lua
+    source: file://src_link/types.lua
+
+  - name: contract_stub
+    kind: library.lua
+    source: file://contract_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: trace_context_stub
+    kind: library.lua
+    source: file://trace_context_stub.lua
+    imports:
+      trace: app:trace_context
+
+  - name: trace_context
+    kind: library.lua
+    source: file://execution_src_link/trace.lua
+    modules: [uuid]
+
+  - name: agent_ref
+    kind: library.lua
+    source: file://agent_ref_stub.lua
+
+  - name: component_fixture
+    kind: library.lua
+    source: file://component_fixture.lua
+    imports:
+      test_state: app:test_state
+
+  - name: automations_lib_stub
+    kind: library.lua
+    source: file://automations_lib_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: execution_identity
+    kind: library.lua
+    source: file://execution_src_link/execution_identity.lua
+    modules: [funcs]
+    imports:
+      security: app:execution_security
+      contract: app:execution_contract
+      identity_codec: app:identity_codec
+      identity_failure: app:identity_failure
+      identity_restrictions: app:identity_restrictions
+      authority_snapshot: app:authority_snapshot
+
+  - name: identity_restrictions
+    kind: library.lua
+    source: file://execution_src_link/identity_restrictions.lua
+    imports:
+      authority_snapshot: app:authority_snapshot
+
+  - name: authority_snapshot
+    kind: library.lua
+    source: file://execution_src_link/authority_snapshot.lua
+    modules: [json]
+    imports: {identity_failure: app:identity_failure}
+
+  - name: identity_failure
+    kind: library.lua
+    source: file://execution_src_link/identity_failure.lua
+
+  - name: identity_codec
+    kind: library.lua
+    source: file://execution_src_link/identity_codec.lua
+    modules: [json]
+
+  - name: execution_security
+    kind: library.lua
+    source: file://execution_security.lua
+    imports:
+      test_state: app:test_state
+
+  - name: execution_contract
+    kind: library.lua
+    source: file://execution_contract.lua
+    imports:
+      test_state: app:test_state
+
+  - name: execution_ref
+    kind: library.lua
+    source: file://src_link/service/execution_ref.lua
+    imports:
+      execution_identity: app:execution_identity
+      component: app:component_fixture
+      channel_persist: app:persist
+      channel_consts: app:channel_consts
+
+  - name: publication
+    kind: library.lua
+    source: file://src_link/service/publication.lua
+    modules: [process, channel, time, uuid]
+    imports:
+      contract: app:threads_capture_stub
+      execution_ref: app:execution_ref
+      component: app:component_fixture
+      channel_receive_witness: app:receive_witness
+      hub_signal: app:hub_signal
+
+  - name: hub_signal
+    kind: library.lua
+    source: file://src_link/service/hub_signal.lua
+    modules: [process, funcs]
+    imports:
+      channel_consts: app:channel_consts
+
+  - name: reply_admission
+    kind: library.lua
+    source: file://src_link/reply_admission.lua
+    imports:
+      channel_consts: app:channel_consts
+      channel_persist: app:persist
+      execution_ref: app:execution_ref
+
+  - name: real_hub
+    kind: library.lua
+    source: file://src_link/service/hub.lua
+    modules: [logger, channel, process, json, time, uuid]
+    imports:
+      proc_supervisor: app:proc_supervisor
+      responder_health: app:responder_health
+      channel_consts: app:channel_consts
+      channel_dedup: app:dedup
+      execution_ref: app:execution_ref
+      channel_hub_policy: app:hub_policy
+      channel_persist: app:persist
+      channel_turn_supervisor: app:turn_supervisor
+      channel_publication: app:publication
+
+  - name: proc_supervisor
+    kind: library.lua
+    source: file://jobs_src_link/proc_supervisor.lua
+    modules: [process, channel, time, funcs]
+    imports:
+      clock: app:job_clock
+      error_envelope: kickside.contract:error_envelope
+
+  - name: job_clock
+    kind: library.lua
+    source: file://jobs_src_link/clock.lua
+    modules: [time, sql]
+
+  - name: turn_supervisor
+    kind: library.lua
+    source: file://src_link/service/turn_supervisor.lua
+    modules: [channel, process, time, logger]
+    imports:
+      channel_consts: app:channel_consts
+      channel_persist: app:persist
+      channel_turn_recovery: app:turn_recovery
+
+  - name: turn_upgrade_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://turn_upgrade_test.lua
+    method: run
+    modules: [sql, process, channel, time, uuid]
+    imports:
+      test: wippy.test:test
+      turn_supervisor: app:turn_supervisor
+      channel_consts: app:channel_consts
+      turn_recovery: app:turn_recovery
+
+  - name: dm_link_service
+    kind: library.lua
+    source: file://dm_link_service.lua
+
+  - name: dm_consts
+    kind: library.lua
+    source: file://dm_src_link/consts.lua
+
+  - name: real_dm
+    kind: library.lua
+    source: file://dm_src_link/dm.lua
+    modules: [security]
+    imports:
+      link_service: app:dm_link_service
+      reply_sender: app:reply_sender_stub
+      channel_receive: app:receive
+      channel_refusal: app:refusal
+      channel_persist: app:persist
+      channel_consts: app:channel_consts
+      channel_types: app:channel_types
+      dm_consts: app:dm_consts
+      execution_identity: app:execution_identity
+
+  - name: thread_bridge_stub
+    kind: library.lua
+    source: file://thread_bridge_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: threads_capture_stub
+    kind: library.lua
+    source: file://threads_capture_stub.lua
+
+  - name: real_thread_bridge
+    kind: library.lua
+    source: file://src_link/service/thread_bridge.lua
+    modules: [security, hash]
+    imports:
+      contract: app:threads_capture_stub
+      channel_consts: app:channel_consts
+
+  - name: receive
+    kind: library.lua
+    source: file://src_link/receive.lua
+    modules: [process, logger, uuid, security]
+    imports:
+      channel_responder: app:responder
+      contract: app:contract_stub
+      component: app:component_fixture
+      agent_ref: app:agent_ref
+      channel_persist: app:persist
+      channel_consts: app:channel_consts
+      channel_types: app:channel_types
+      trace_context: app:trace_context_stub
+      execution_identity: app:execution_identity
+      responder_health: app:responder_health
+      hub_signal: app:hub_signal
+      channel_receive_witness: app:receive_witness
+      channel_publication: app:publication
+      channel_turn_recovery: app:turn_recovery
+      channel_refusal: app:refusal
+
+  - name: refusal
+    kind: library.lua
+    source: file://src_link/refusal.lua
+
+  - name: receive_witness
+    kind: library.lua
+    source: file://src_link/service/receive_witness.lua
+    modules: [logger]
+    imports:
+      channel_consts: app:channel_consts
+      execution_ref: app:execution_ref
+      channel_thread_bridge: app:thread_bridge_stub
+
+  - name: inject
+    kind: library.lua
+    source: file://src_link/binding/inject_func.lua
+    modules: [uuid, security]
+    imports:
+      component: app:component_fixture
+      contract: app:contract_stub
+
+  - name: responder
+    kind: library.lua
+    source: file://src_link/responder/responder.lua
+    modules: [ctx, funcs, security, contract]
+    imports:
+      automations_lib: app:automations_lib_stub
+      component: app:component_fixture
+      channel_consts: app:channel_consts
+      responder_health: app:responder_health
+
+  - name: responder_projection
+    kind: library.lua
+    source: file://src_link/responder/responder_projection.lua
+    imports:
+      component: app:component_fixture
+
+  - name: dedup
+    kind: library.lua
+    source: file://src_link/service/dedup.lua
+
+  - name: hub_policy
+    kind: library.lua
+    source: file://src_link/service/hub_policy.lua
+
+  - name: reply_policy
+    kind: library.lua
+    source: file://src_link/service/reply_policy.lua
+
+  - name: reply_sender_stub
+    kind: library.lua
+    source: file://reply_sender_stub.lua
+    imports:
+      component: app:component_fixture
+
+  - name: session_consts_stub
+    kind: library.lua
+    source: file://session_consts_stub.lua
+
+  - name: session_service_stub
+    kind: library.lua
+    source: file://session_service_stub.lua
+
+  - name: cleanup_conversation
+    kind: function.lua
+    source: file://src_link/binding/cleanup_conversation_func.lua
+    method: cleanup_conversation
+    imports:
+      channel_persist: app:persist
+      channel_consts: app:channel_consts
+      session_service: app:session_service_stub
+      session_delete_proof: app:session_delete_proof
+      channel_conversation: app:channel_conversation
+      conversation_gc: app:conversation_gc
+
+  - name: attachment_ingest_stub
+    kind: library.lua
+    source: file://attachment_ingest_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: llm_stub
+    kind: library.lua
+    source: file://llm_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: prompt_stub
+    kind: library.lua
+    source: file://prompt_stub.lua
+
+  - name: bridge_support
+    kind: library.lua
+    source: file://src_link/service/bridge_support.lua
+    modules: [logger, time, channel, security, contract]
+    imports:
+      llm: app:llm_stub
+      prompt: app:prompt_stub
+      component: app:component_fixture
+      session_consts: app:session_consts_stub
+      session_service: app:session_service_stub
+      reply_sender: app:reply_sender_stub
+      reply_policy: app:reply_policy
+      attachment_ingest: app:attachment_ingest_stub
+      channel_consts: app:channel_consts
+      channel_thread_bridge: app:thread_bridge_stub
+      trace_context: app:trace_context_stub
+
+  - name: channel_bridge
+    kind: library.lua
+    source: file://src_link/service/bridge.lua
+    modules: [logger, channel, security, contract]
+    imports:
+      time: app:bridge_timer_fixture
+      llm: app:llm_stub
+      prompt: app:prompt_stub
+      component: app:component_fixture
+      session_consts: app:session_consts_stub
+      session_service: app:session_service_stub
+      reply_sender: app:reply_sender_stub
+      reply_policy: app:reply_policy
+      attachment_ingest: app:attachment_ingest_stub
+      channel_consts: app:channel_consts
+      channel_thread_bridge: app:thread_bridge_stub
+      trace_context: app:trace_context_stub
+      bridge_support: app:bridge_support
+      responder_health: app:responder_health
+      hub_signal: app:hub_signal
+      channel_publication: app:publication
+      proc_supervisor: app:proc_supervisor
+
+  - name: channel_sink
+    kind: library.lua
+    source: file://src_link/sink/channel_sink.lua
+    imports:
+      writable_sink: kickside.data:writable_sink
+      reply_sender: app:reply_sender_stub
+
+  - name: persist_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://persist_test.lua
+    method: run
+    modules: [sql, time, channel]
+    imports:
+      test: wippy.test:test
+      session_acquire: app:session_acquire
+      retention_policy_stub: app:retention_policy_stub
+      persist: app:persist
+
+  - name: dedup_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://dedup_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      dedup: app:dedup
+
+  - name: thread_bridge_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://thread_bridge_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      thread_bridge: app:real_thread_bridge
+      threads_capture_stub: app:threads_capture_stub
+
+  - name: hub_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://hub_policy_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      hub_policy: app:hub_policy
+      real_hub: app:real_hub
+
+  - name: identity_consts
+    kind: library.lua
+    source: file://identity_consts_stub.lua
+
+  - name: identity_credential_eligibility
+    kind: library.lua
+    source: file://identity_src_link/credential_eligibility.lua
+    imports:
+      credential_eligibility: kickside.contract:credential_eligibility
+
+  - name: identity_link_service
+    kind: library.lua
+    source: file://identity_src_link/link_service.lua
+    modules: [sql, crypto, uuid, time]
+    imports:
+      component: app:component_fixture
+      channel_cleanup: app:cleanup_conversation
+      channel_cleanup_finalize: app:complete_unlink
+      identity_consts: app:identity_consts
+      credential_eligibility: app:identity_credential_eligibility
+      agent_ref: app:agent_ref
+
+  - name: responder_health
+    kind: library.lua
+    source: file://src_link/responder/health.lua
+    modules: [time]
+    imports:
+      component: app:component_fixture
+
+  - name: bridge_health_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://bridge_health_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      bridge: app:channel_bridge
+      health_reporter: app:responder_health
+      test_state: app:test_state
+
+  - name: registry_probe_access
+    kind: security.policy
+    groups: [app.security:user]
+    policy:
+      resources: app:registry_probe
+      actions: funcs.call
+      effect: allow
+
+  - name: registry_probe
+    kind: function.lua
+    source: file://registry_probe.lua
+    method: claim
+    modules: [process]
+
+  - name: bridge_registry_probe
+    kind: function.lua
+    source: file://registry_probe.lua
+    method: claim
+    modules: [process]
+    security:
+      actor: { id: module:bridge-registry-probe }
+      policies: [kickside.channel.service:bridge_registry]
+
+  - name: registry_authority_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://registry_authority_test.lua
+    method: run
+    modules: [funcs, security, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: bridge_timer_fixture
+    kind: library.lua
+    source: file://bridge_timer_fixture.lua
+    modules: [time]

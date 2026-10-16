@@ -1,0 +1,30 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: command_recovery_test
+    kind: function.lua
+    source: file://command_recovery_test.lua
+    method: run
+    meta:
+      type: test
+      suite: command_recovery
+    modules: [funcs, security, contract, uuid, json]
+    imports:
+      test: wippy.test:test
+      h: kickside.automation:round_harness
+      engine_factory: kickside.automation:automation_test_engine
+      command: kickside.automation:command
+      component: kickside.component:component
+      retention_pin: kickside.core.retention:pin
+  - name: command_recovery_stage
+    kind: function.lua
+    source: file://command_recovery_test.lua
+    method: stage
+    modules: [funcs, security, contract, uuid, json]
+    imports:
+      test: wippy.test:test
+      h: kickside.automation:round_harness
+      engine_factory: kickside.automation:automation_test_engine
+      command: kickside.automation:command
+      component: kickside.component:component
+      retention_pin: kickside.core.retention:pin

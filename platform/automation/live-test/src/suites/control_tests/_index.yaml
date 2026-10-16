@@ -1,0 +1,17 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: control_fixture
+  kind: library.lua
+  meta:
+    comment: Engine fixtures over real drive and command rows with stubbed component,
+      funcs and caller seams.
+  source: file://../../test_src/suites/control_fixture.lua
+  modules:
+  - sql
+  imports:
+    execution_identity: kickside.execution:execution_identity
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    types: kickside.automation:types
+    automation_test_engine: kickside.automation:automation_test_engine

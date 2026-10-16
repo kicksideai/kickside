@@ -1,0 +1,112 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_workflow_test_workflow_writer_concurrency
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../../../suites/workflow_test_workflow_writer_concurrency.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: tsplit_workflow_test_workflow_apply_atomicity
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../../../suites/workflow_test_workflow_apply_atomicity.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: tsplit_workflow_test_workflow_cascade_remove
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../../../suites/workflow_test_workflow_cascade_remove.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: tsplit_workflow_test_workflow_layout
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../../../suites/workflow_test_workflow_layout.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: tsplit_workflow_test_workflow_event_stream
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../../../suites/workflow_test_workflow_event_stream.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: tsplit_workflow_test_workflow_purge
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../../../suites/workflow_test_workflow_purge.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types

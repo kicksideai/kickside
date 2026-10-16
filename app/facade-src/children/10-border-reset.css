@@ -1,0 +1,12 @@
+/* Preflight border reset. The theme's prestyled PrimeVue CSS (primeVueCssUrl)
+   omits a Tailwind-style preflight, so its components that `@apply border` set
+   border-width but never border-style and render invisible borders in the shadow
+   root. Restoring the base (width 0, style solid) once here replaces the per-module
+   `*{border-width:0;border-style:solid}` copies each WC used to carry. Module rules
+   using the `border` shorthand set their own style and are unaffected. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--p-content-border-color);
+}

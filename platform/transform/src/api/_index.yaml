@@ -1,0 +1,52 @@
+version: "1.0"
+namespace: kickside.transform.api
+
+# The browser-facing seam for the transform generator. The reusable
+# kickside-transform-assist web component POSTs here to negotiate a validated
+# transform for a source->sink shape pair, then a host confirms the byte-shape into
+# its own state. Both endpoints run under the caller's actor; the generator func is
+# invoked via funcs.call so its dataflow/llm import closure stays isolated.
+entries:
+  - name: assist
+    kind: function.lua
+    meta: { comment: "POST /transform/assist — negotiate an AI-generated transform for a source->sink pair; returns the validated proposal or the gate errors." }
+    source: file://assist.lua
+    method: handler
+    modules: [http, json, security, funcs]
+
+  - name: assist.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: assist
+    path: /transform/assist
+
+  - name: validate
+    kind: function.lua
+    meta: { comment: "POST /transform/validate — run a transform config over samples and validate each output against the sink schema; returns { ok, valid, errors, outputs }." }
+    source: file://validate.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      generator: kickside.transform:generator
+
+  - name: validate.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: validate
+    path: /transform/validate
+
+  - name: snippet
+    kind: function.lua
+    meta: { comment: "POST /transform/snippet — publish a confirmed transform as a reusable snippet keyed by the shape fingerprints." }
+    source: file://snippet.lua
+    method: handler
+    modules: [http, json, security, funcs]
+
+  - name: snippet.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: snippet
+    path: /transform/snippet

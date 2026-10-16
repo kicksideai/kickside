@@ -1,0 +1,56 @@
+version: "1.0"
+namespace: kickside.workflows.migrations
+
+# target_db is injected by the root kickside.workflows:target_db requirement.
+
+entries:
+  - name: 01_workflows
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Current Flow definition, publication, and run schema.
+      depends_on:
+        - ns:wippy.migration
+    source: file://01_workflows.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 02_definition_state
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Materialize workflow head, ordering, params, labels, and restore lineage so reads never inspect events.
+      depends_on:
+        - ns:wippy.migration
+    source: file://02_definition_state.lua
+    method: migration
+    modules: [json]
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 04_admission_recovery
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Workflow admission gate.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-25T17:00:07Z"
+    source: file://04_admission_recovery.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 05_undo_history
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Durable Workflow undo and redo history.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-10-11T09:00:00Z"
+    source: file://05_undo_history.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration

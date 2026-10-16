@@ -1,0 +1,76 @@
+/* Tab bar geometry, from the System page.
+ *
+ * The System page hand-rolled its tabs with Tailwind utilities and is the shape
+ * the product already reads as "a tab bar": a compact row, a 2px accent under
+ * the active tab, and the accent landing on the surface's own separator rather
+ * than beside it. This states that once, so a PrimeVue Tabs anywhere renders the
+ * same and nobody has to hand-roll it again.
+ *
+ * Values are the ones System resolves to, expressed in the same rem the utility
+ * classes used. `rem` resolves against the document root in a shadow root too,
+ * so a WC and the SPA land on identical pixels.
+ *
+ * The theme sizes `.p-tab` through PrimeVue's own scale, which is bigger and
+ * heavier than this; that is what made a migrated tab bar look wrong next to the
+ * rest of the product.
+ */
+
+/* `.p-tablist-content` scrolls horizontally, which makes it clip vertically too,
+   so anything inside it that reaches past its box loses those pixels - including
+   a tab's accent border. The row is therefore pulled onto the separator from
+   out here, where nothing clips it. */
+.p-tabs {
+  margin-bottom: -1px;
+}
+
+.p-tablist-tab-list {
+  gap: 4px;
+  background: transparent;
+}
+
+.p-tab {
+  /* PrimeVue leaves the tab a block, so an icon beside a label stacks above it.
+     System's markup supplied the row itself; the shared rule does now. */
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom-width: 2px;
+
+  /* The theme pulls each tab up by 1px. That makes its margin box shorter than
+     its border box, and since the scrolling ancestor sizes to the margin box the
+     accent ends up 1px outside it and clipped away. The row is pulled from
+     `.p-tabs` instead, so the tab sits flush in its own container. */
+  margin-bottom: 0;
+}
+
+.p-tab svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* A surface that already draws its own separator sets this, so the tab list does
+   not add a second one directly above it. */
+.p-tabs[data-kx-separator='surface'] .p-tablist-tab-list {
+  border-bottom-width: 0;
+}
+
+/* The accent IS the tab's own bottom border, as on System. An idle tab shows
+   none of it, so the row reads as a single separator rather than a dotted line
+   of grey stubs. */
+.p-tab {
+  border-bottom-color: transparent;
+}
+
+.p-tab[aria-selected='true'] {
+  border-bottom-color: var(--p-primary-color);
+}
+
+/* PrimeVue also slides its own indicator under the active tab. With the border
+   above doing that job the two stack into the doubled line this file exists to
+   remove, so only one of them draws. */
+.p-tablist-active-bar {
+  display: none;
+}

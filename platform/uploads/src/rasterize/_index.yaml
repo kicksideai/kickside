@@ -1,0 +1,193 @@
+version: "1.0"
+namespace: kickside.uploads.rasterize
+
+entries:
+  # The rasterizer plugins (the convert.rasterizer capability + its adapter) live with
+  # the converter that backs them (kickside.convert.pdf2image) and are discovered at
+  # runtime. This module carries no converter dependency, so any consumer of uploads
+  # loads it without bundling a rasterizer; when none is loaded the stage simply no-ops.
+  - name: rasterizer
+    kind: library.lua
+    meta:
+      comment: Discovery for convert.rasterizer plugins; resolves the best rasterizer for a source mime.
+    source: file://rasterizer.lua
+    modules: [registry]
+
+  - name: page_images
+    kind: library.lua
+    meta:
+      comment: Shared definition of a document's page images (rendered screenshots, or large doc2md-extracted page images).
+    source: file://page_images.lua
+    imports:
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+
+  - name: stage
+    kind: function.lua
+    meta:
+      type: processor
+      comment: Universal upload stage; renders empty/low-text documents to rendered-page image artifacts.
+    source: file://stage.lua
+    method: process
+    modules: [funcs, contract, logger]
+    imports:
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      rasterizer: kickside.uploads.rasterize:rasterizer
+      page_images: kickside.uploads.rasterize:page_images
+    pool:
+      type: static
+      size: 4
+      workers: 4
+
+  - name: stage.universal
+    kind: registry.entry
+    meta:
+      type: upload.stage
+      comment: Runs the rasterizer after content extraction on every upload (self-gates to empty documents).
+    scope: universal
+    func: kickside.uploads.rasterize:stage
+    title: Rendering pages
+    priority: 50
+
+  - name: setting.rasterize_empty_enabled
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Render empty/low-text documents to page images so vision captioning can embed them.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_empty_enabled
+    value_type: bool
+    default: true
+    title: Rasterize empty documents
+    category: Rasterization
+    order: 10
+    description: When a converted document has little or no extractable text, render its pages to images for embedding.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_max_text_bytes
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Extracted-text length per page at or below which a document is treated as sparse.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_max_text_bytes
+    value_type: int
+    default: 800
+    title: Sparse-text threshold (bytes/page)
+    category: Thresholds
+    order: 10
+    description: A converted document whose trimmed text length is at or below this many bytes per page is rasterized.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_min_source_bytes
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Minimum original file size before rasterization is attempted.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_min_source_bytes
+    value_type: int
+    default: 4096
+    title: Minimum source size (bytes)
+    category: Thresholds
+    order: 20
+    description: Skip rasterization for source files smaller than this many bytes (genuinely empty documents).
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_dpi
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Render resolution for rasterized pages.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_dpi
+    value_type: int
+    default: 150
+    title: Render resolution (DPI)
+    category: Rasterization
+    order: 30
+    description: Dots-per-inch used when rendering document pages to images.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_batch_pages
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Pages rendered per batch to bound peak memory for large documents.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_batch_pages
+    value_type: int
+    default: 8
+    title: Pages per render batch
+    category: Thresholds
+    order: 40
+    description: Number of pages rendered per render call; lower values reduce peak memory on large documents.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_format
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Output image format for rendered pages (jpeg keeps files small for OCR; png is lossless).
+    namespace: kickside.uploads.rasterize
+    key: rasterize_format
+    value_type: string
+    default: "jpeg"
+    title: Image format
+    category: Rasterization
+    order: 20
+    description: Image format for rendered pages - jpeg (small, recommended for OCR/caption), png (lossless), or webp.
+    scope: global
+    editable: true
+    visible: true
+    schema:
+      type: string
+      enum: [jpeg, png, webp]
+
+  - name: setting.rasterize_quality
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: JPEG/WEBP quality for rendered pages.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_quality
+    value_type: int
+    default: 90
+    title: JPEG/WEBP quality
+    category: Rasterization
+    order: 40
+    description: Quality (1-100) for jpeg/webp rendered pages; 90 keeps page text crisp for OCR at a fraction of png size.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_min_page_bytes
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Minimum byte size for a doc2md-extracted image to count as a full page.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_min_page_bytes
+    value_type: int
+    default: 51200
+    title: Full-page image threshold (bytes)
+    category: Thresholds
+    order: 30
+    description: An extracted image at or above this size counts as a full page; if one per page is present, rendering is skipped and the originals are reused.
+    scope: global
+    editable: true
+    visible: true
+
+  # Rasterization settings are surfaced through the consolidated Files & Uploads
+  # block (kickside.settings:block.storage), which claims this namespace — so this
+  # module declares no standalone block of its own.

@@ -1,0 +1,147 @@
+version: '1.0'
+namespace: app
+entries:
+- name: claim_selection_test
+  kind: function.lua
+  meta:
+    title: Job Claim
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Claim-with-lease exclusivity, heartbeat extension, lease reclaim.
+  source: file://claim_selection_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: concurrency_claim_test
+  kind: function.lua
+  meta:
+    title: Job Claim
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Claim-with-lease exclusivity, heartbeat extension, lease reclaim.
+  source: file://concurrency_claim_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: attempt_budget_test
+  kind: function.lua
+  meta:
+    title: Job Claim
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Claim-with-lease exclusivity, heartbeat extension, lease reclaim.
+  source: file://attempt_budget_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: heartbeat_reclaim_test
+  kind: function.lua
+  meta:
+    title: Job Claim
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Claim-with-lease exclusivity, heartbeat extension, lease reclaim.
+  source: file://heartbeat_reclaim_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    reclaim: kickside.core.jobs.persist:reclaim
+    jobs: kickside.core.jobs:jobs
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: termination_recovery_test
+  kind: function.lua
+  meta:
+    title: Job Termination Recovery
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: A termination fence settles once its execution child has ended.
+  source: file://termination_recovery_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - process
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    reclaim: kickside.core.jobs.persist:reclaim
+    claim_execution: kickside.core.jobs.persist:claim_execution
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    job_fixture: app:job_fixture
+- name: run_history_reclaim_test
+  kind: function.lua
+  meta:
+    title: Job Run History Reclaim
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Lease reclaim closes the lost execution's run history.
+  source: file://run_history_reclaim_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    reclaim: kickside.core.jobs.persist:reclaim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: claim_sequence_test
+  kind: function.lua
+  meta:
+    title: Job Claim Sequence
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Claims start past every recorded run and refuse a bad row alone.
+  source: file://claim_sequence_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture

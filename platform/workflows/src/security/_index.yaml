@@ -1,0 +1,92 @@
+version: "1.0"
+namespace: kickside.workflows.security
+
+# Module-owned access policy for the workflow-management endpoints. The grant travels
+# with the slice; the authenticated-user group is injected by the user_security_scope
+# requirement (so groups ships empty). Per-workflow access is still enforced by the
+# component service inside each handler.
+
+entries:
+  - name: maintenance_defer
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.workflows.runs:maintenance_tick_worker
+      actions: kickside.execution.defer
+      effect: allow
+
+  - name: maintenance_actor
+    kind: security.policy
+    policy:
+      resources:
+        - "*"
+      actions: security.actor.create
+      effect: allow
+
+  - name: maintenance_store
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.workflows:db_config
+        - kickside.core:db_config
+        - kickside.component:db_config
+      actions: registry.get
+      effect: allow
+
+  - name: maintenance_db
+    kind: security.policy
+    policy:
+      resources: "*"
+      actions: db.get
+      effect: allow
+
+  - name: maintenance_threads
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.core:threads
+        - kickside.component:component_service
+      actions: contract.get
+      effect: allow
+
+  - name: maintenance_contract_frame
+    kind: security.policy
+    policy:
+      resources: security
+      actions: contract.security
+      effect: allow
+
+  - name: maintenance_threads_binding
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.core:threads_binding
+        - kickside.component.binding:component_service_impl
+      actions: contract.open
+      effect: allow
+
+  - name: maintenance_threads_emit
+    kind: security.policy
+    policy:
+      resources:
+        - emit
+        - append_event
+        - get_access_context
+        - register
+        - get
+      actions: contract.call
+      effect: allow
+
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach the workflow-management endpoints.
+      description: Application security group that may reach the workflow-management endpoints.
+    targets:
+    - entry: kickside.workflows.security:module_access
+      path: .groups +=
+    - entry: kickside.workflows.security:module_runtime
+      path: .groups +=

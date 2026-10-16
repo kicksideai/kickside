@@ -1,0 +1,15 @@
+.p-overlay-mask.p-overlay-mask {
+  backdrop-filter: blur(2px);
+  z-index: var(--p-mask-z-index, 1100);
+}
+
+/* PrimeVue teleports each modal overlay into a `position:fixed; z-index:auto` Portal
+   wrapper inside the mounting web-component shadow. With no z-index, that wrapper sits
+   at the z-index:auto stacking level — BELOW sticky table headers / toolbars
+   (z-index:1–3) that live in the module's own scroll container — so the mask's own
+   runtime z-index (1101, trapped inside the wrapper's stacking context) can't cover
+   them and the sticky chrome punches through the backdrop. Hoisting the wrapper above
+   app chrome makes masks reliably dim the whole surface. */
+:where(*:has(> .p-overlay-mask)) {
+  z-index: var(--p-mask-z-index, 1100);
+}

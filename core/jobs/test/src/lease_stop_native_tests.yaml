@@ -1,0 +1,17 @@
+version: '1.0'
+namespace: app
+entries:
+- name: lease_stop_native_test
+  kind: function.lua
+  source: file://lease_stop_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: jobs_lease_stop_native
+  imports:
+    test: wippy.test:test
+    lease: kickside.core.jobs.persist:lease_heartbeat
+    worker: app:worker_startup_native_source
+    fixture: app:worker_startup_native_fixture
+    canonical_json: kickside.contract:canonical_json
+    job_types: kickside.core.jobs:types

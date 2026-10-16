@@ -1,0 +1,10 @@
+organization: kickside
+module: automation-live-harness
+type: application
+description: Isolated queue for automation resident worker cases.
+directories:
+  modules: .wippy
+  src: .
+exclude:
+  - ".wippy/**"
+  - ".wippy:**"

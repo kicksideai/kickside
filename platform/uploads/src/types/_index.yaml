@@ -1,0 +1,51 @@
+version: "1.0"
+namespace: kickside.uploads
+entries:
+  - name: upload_type
+    kind: library.lua
+    meta:
+      comment: Library for discovering and validating declarative upload.type entries.
+    source: file://../upload_type.lua
+    modules: [registry, time]
+
+  - name: types.images
+    kind: registry.entry
+    meta:
+      title: Image Files
+      type: upload.type
+      comment: Image files for agent viewing and analysis
+    type_key: images
+    priority: 10
+    extensions: [jpg, jpeg, png, gif, bmp, webp, tiff, tif, svg, ico]
+    mime_types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/bmp
+      - image/x-ms-bmp
+      - image/webp
+      - image/tiff
+      - image/svg+xml
+      - image/x-icon
+      - image/vnd.microsoft.icon
+    pipeline:
+      - title: Processing Image Upload
+        func: kickside.uploads.images:processor
+
+  - name: types.text
+    kind: registry.entry
+    meta:
+      title: Text Files
+      type: upload.type
+      comment: Text and code files including source code, markup, and plain text
+    type_key: text
+    priority: 10
+    extensions: [txt, md, markdown, html, htm, css, js, json, xml, py, lua, rb, php, java, c, cpp, cs, go, sh, bat, ps1, yml, yaml, toml, sql, csv, tsv]
+    mime_types:
+      - text/.*
+      - application/json
+      - application/javascript
+      - application/xml
+    pipeline:
+      - title: Processing Text Content
+        func: kickside.uploads.text:processor

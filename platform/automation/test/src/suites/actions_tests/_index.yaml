@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: actions_error_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../actions_error_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    automation_test_engine: kickside.automation:automation_test_engine

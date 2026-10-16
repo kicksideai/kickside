@@ -1,0 +1,396 @@
+version: "1.0"
+namespace: kickside.component.binding
+
+entries:
+  # kickside.component.binding:component_service_impl
+  - name: component_service_impl
+    kind: contract.binding
+    meta:
+      comment: Default implementation of component service contract
+      tags:
+        - components
+        - kickside
+        - implementation
+    contracts:
+      - contract: kickside.component:component_service
+        default: true
+        methods:
+          delete: kickside.component.binding:delete_component_func
+          get_access_context: kickside.component.binding:get_access_context_func
+          get_access_context_by_meta: kickside.component.binding:get_access_context_by_meta_func
+          get: kickside.component.binding:get_component_func
+          list: kickside.component.binding:list_components_func
+          query: kickside.component.binding:query_components_func
+          count: kickside.component.binding:count_components_func
+          register: kickside.component.binding:register_component_func
+          export: kickside.component.binding:export_component_func
+          import: kickside.component.binding:import_component_func
+          update: kickside.component.binding:update_component_func
+          set_meta: kickside.component.binding:set_meta_component_func
+          set_placement: kickside.component.binding:set_placement_func
+          list_children: kickside.component.binding:list_children_func
+          grant_subtree: kickside.component.binding:grant_subtree_func
+          revoke_subtree: kickside.component.binding:revoke_subtree_func
+          list_access: kickside.component.binding:list_access_func
+          adopt: kickside.component.binding:adopt_component_func
+
+  # kickside.component.binding:list_access_func
+  - name: list_access_func
+    kind: function.lua
+    meta:
+      comment: List the access grants on a component (ADMIN-gated) for the share UI
+      tags:
+        - components
+        - access
+        - sharing
+    source: file://list_access_func.lua
+    modules:
+      - security
+    imports:
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      component_ops: kickside.component.persist:component_ops
+      access_policy: kickside.component:access_policy
+    method: handle
+
+  # kickside.component.binding:delete_component_func
+  - name: delete_component_func
+    kind: function.lua
+    meta:
+      comment: Delete a component with deletable contract support
+      tags:
+        - components
+        - delete
+    source: file://delete_component_func.lua
+    modules:
+      - security
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      component_ops: kickside.component.persist:component_ops
+      teardown: kickside.component.persist:teardown
+    method: handle
+
+  # kickside.component.binding:get_access_context_by_meta_func
+  - name: get_access_context_by_meta_func
+    kind: function.lua
+    meta:
+      comment: Get component access context by metadata filters
+      tags:
+        - components
+        - execution
+        - metadata
+    source: file://../context.lua
+    modules:
+      - sql
+      - security
+      - contract
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      access_policy: kickside.component:access_policy
+      component_types: kickside.component:types
+      read_port: kickside.component.persist:read_port
+      execution_identity: kickside.execution:execution_identity
+    method: get_access_context_by_meta
+
+  # kickside.component.binding:get_access_context_func
+  - name: get_access_context_func
+    kind: function.lua
+    meta:
+      comment: Get component access context for execution
+      tags:
+        - components
+        - execution
+    source: file://../context.lua
+    modules:
+      - sql
+      - security
+      - contract
+      - json
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      access_policy: kickside.component:access_policy
+      component_types: kickside.component:types
+      read_port: kickside.component.persist:read_port
+      execution_identity: kickside.execution:execution_identity
+    method: get_access_context
+
+  # kickside.component.binding:get_component_func
+  - name: get_component_func
+    kind: function.lua
+    meta:
+      comment: Get component public information
+      tags:
+        - components
+        - read
+    source: file://get_component_func.lua
+    modules:
+      - security
+    imports:
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      component_ops: kickside.component.persist:component_ops
+    method: handle
+
+  # kickside.component.binding:list_components_func
+  - name: list_components_func
+    kind: function.lua
+    meta:
+      comment: List accessible components
+      tags:
+        - components
+        - list
+    source: file://list_components_func.lua
+    modules:
+      - security
+    imports:
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+    method: handle
+
+  # kickside.component.binding:query_components_func
+  - name: query_components_func
+    kind: function.lua
+    meta:
+      comment: Access-filtered component read-port (query)
+      tags:
+        - components
+        - read
+        - query
+    source: file://../context.lua
+    modules:
+      - sql
+      - security
+      - contract
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      read_port: kickside.component.persist:read_port
+      component_types: kickside.component:types
+      component_reader: kickside.component.persist:component_reader
+      access_policy: kickside.component:access_policy
+      execution_identity: kickside.execution:execution_identity
+    method: query_components
+
+  # kickside.component.binding:count_components_func
+  - name: count_components_func
+    kind: function.lua
+    meta:
+      comment: Access-filtered component read-port (count)
+      tags:
+        - components
+        - read
+        - count
+    source: file://count_components_func.lua
+    modules:
+      - security
+    imports:
+      envelope: kickside.component:envelope
+      read_port: kickside.component.persist:read_port
+    method: handle
+
+  # kickside.component.binding:register_component_func
+  - name: register_component_func
+    kind: function.lua
+    meta:
+      comment: Register a new component implementation
+      tags:
+        - components
+        - create
+    source: file://register_component_func.lua
+    modules:
+      - sql
+      - uuid
+      - time
+      - security
+    imports:
+      committed_error: kickside.contract:committed_error
+      component_command: kickside.component:component_command
+      envelope: kickside.component:envelope
+      component_ops: kickside.component.persist:component_ops
+      access_policy: kickside.component:access_policy
+      component_lifecycle: kickside.component:component_lifecycle
+    method: handle
+
+  # kickside.component.binding:export_component_func
+  - name: export_component_func
+    kind: function.lua
+    meta:
+      comment: export_component — build the portable shell envelope (ADMIN-gated, secret-free, data-free)
+      tags:
+        - components
+        - portability
+    source: file://export_component_func.lua
+    modules:
+      - json
+      - security
+      - registry
+    imports:
+      context_policy: kickside.component:context_policy
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      component_ops: kickside.component.persist:component_ops
+      base_portable: kickside.component.portability:base_portable
+    method: handle
+
+  # kickside.component.binding:import_component_func
+  - name: import_component_func
+    kind: function.lua
+    meta:
+      comment: import_component — reconstruct a shell from a portable envelope, owned by the actor (register + rollback owned upstream)
+      tags:
+        - components
+        - portability
+    source: file://import_component_func.lua
+    modules:
+      - json
+      - security
+      - registry
+    imports:
+      envelope: kickside.component:envelope
+      register: kickside.component.binding:register_component_func
+      base_portable: kickside.component.portability:base_portable
+    method: handle
+
+  # kickside.component.binding:update_component_func
+  - name: update_component_func
+    kind: function.lua
+    meta:
+      comment: Update component private context
+      tags:
+        - components
+        - update
+    source: file://update_component_func.lua
+    modules:
+      - sql
+      - time
+      - security
+      - logger
+    imports:
+      envelope: kickside.component:envelope
+      component_command: kickside.component:component_command
+      committed_error: kickside.contract:committed_error
+      component_ops: kickside.component.persist:component_ops
+      access_policy: kickside.component:access_policy
+      component_lifecycle: kickside.component:component_lifecycle
+      meta_service: kickside.component:meta_service
+    method: handle
+
+  # kickside.component.binding:set_meta_component_func
+  - name: set_meta_component_func
+    kind: function.lua
+    meta:
+      comment: Set/delete public component metadata
+      tags:
+        - components
+        - update
+        - metadata
+    source: file://set_meta_component_func.lua
+    imports:
+      meta_service: kickside.component:meta_service
+    method: handle
+
+  # kickside.component.binding:set_placement_func
+  - name: set_placement_func
+    kind: function.lua
+    meta:
+      comment: Re-parent and/or reorder a component within the hierarchy
+      tags:
+        - components
+        - placement
+        - hierarchy
+    source: file://set_placement_func.lua
+    modules:
+      - sql
+      - security
+    imports:
+      envelope: kickside.component:envelope
+      component_command: kickside.component:component_command
+      committed_error: kickside.contract:committed_error
+      component_ops: kickside.component.persist:component_ops
+      component_lifecycle: kickside.component:component_lifecycle
+    method: handle
+
+  # kickside.component.binding:list_children_func
+  - name: list_children_func
+    kind: function.lua
+    meta:
+      comment: List the children of a component (root when parent omitted)
+      tags:
+        - components
+        - placement
+        - hierarchy
+    source: file://list_children_func.lua
+    modules:
+      - security
+    imports:
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+    method: handle
+
+  # kickside.component.binding:adopt_component_func
+  - name: adopt_component_func
+    kind: function.lua
+    meta:
+      comment: An instance operator adopts a component no principal holds access to
+      tags:
+        - components
+        - access
+    source: file://adopt_component_func.lua
+    modules:
+      - sql
+      - security
+    imports:
+      component_command: kickside.component:component_command
+      envelope: kickside.component:envelope
+      component_types: kickside.component:types
+      access_subjects: kickside.component.persist:access_subjects
+      adoption: kickside.component.persist:adoption
+      execution_identity: kickside.execution:execution_identity
+    method: handle
+
+  # kickside.component.binding:grant_subtree_func
+  - name: grant_subtree_func
+    kind: function.lua
+    meta:
+      comment: Grant access to a component and all its descendants
+      tags:
+        - components
+        - placement
+        - access
+    source: file://grant_subtree_func.lua
+    modules:
+      - sql
+      - security
+    imports:
+      component_command: kickside.component:component_command
+      envelope: kickside.component:envelope
+      component_ops: kickside.component.persist:component_ops
+      access_policy: kickside.component:access_policy
+      share_subject: kickside.component:share_subject
+    method: handle
+
+  # kickside.component.binding:revoke_subtree_func
+  - name: revoke_subtree_func
+    kind: function.lua
+    meta:
+      comment: Revoke a subject's access from a component and all its descendants
+      tags:
+        - components
+        - placement
+        - access
+    source: file://revoke_subtree_func.lua
+    modules:
+      - sql
+      - security
+    imports:
+      component_command: kickside.component:component_command
+      envelope: kickside.component:envelope
+      component_ops: kickside.component.persist:component_ops
+      share_subject: kickside.component:share_subject
+    method: handle

@@ -1,0 +1,35 @@
+version: "1.0"
+workspace:
+  replacements:
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/component: ../../../core/component
+    kickside/contract: ../../../core/contract
+    kickside/core: ../../../core/core
+    kickside/jobs: ../../../core/jobs
+    kickside/webhooks: ..
+    kickside/execution: ../../../core/execution
+# The gateway port is a var: concurrent runs of this harness (other worktrees)
+# each pass their own free port (--set vars.http_port=...).
+override:
+  "app:db:file": "${sqlite_path}"
+  "app:gateway:addr": ":${http_port}"
+vars:
+  sqlite_path: ":memory:"
+  http_port: 19127
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_webhooks
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8

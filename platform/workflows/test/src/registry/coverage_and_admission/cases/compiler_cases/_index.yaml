@@ -1,0 +1,169 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_compile_test_compiler_convergence_classification
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_test_compiler_convergence_classification.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_node_materialization_1
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_agent_and_iteration_nodes.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_node_materialization_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_edges_and_failures.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_block_materialization
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_test_block_materialization.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_flow_materialization_1
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_flow_node_identity.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_flow_materialization_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_flow_boundaries.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_flow_materialization_3
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_flow_branch_routes.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_compiler_allowlist_freeze
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_test_compiler_allowlist_freeze.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_compiler_canonical_blocks
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_test_compiler_canonical_blocks.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_compiler_branch_if_dissolution
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_test_compiler_branch_if_dissolution.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+
+  - name: tsplit_compile_test_compiler_per_run_reminting
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../../../suites/compiler/compile_test_compiler_per_run_reminting.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts

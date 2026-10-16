@@ -1,0 +1,92 @@
+version: '1.0'
+namespace: app
+entries:
+- name: update_outcomes_fixture
+  kind: library.lua
+  source: file://update_outcomes_fixture.lua
+  modules:
+  - sql
+- name: update_outcomes_sql
+  kind: library.lua
+  source: file://update_outcomes_sql.lua
+  imports:
+    fixture: app:update_outcomes_fixture
+  modules:
+  - sql
+- name: update_outcomes_writer
+  kind: library.lua
+  source: file://update_outcomes_writer.lua
+  imports:
+    fixture: app:update_outcomes_fixture
+- name: update_outcomes_natural_key
+  kind: library.lua
+  source: file://update_outcomes_natural_key.lua
+  imports:
+    fixture: app:update_outcomes_fixture
+- name: update_outcomes_source
+  kind: library.lua
+  source: file://update_outcomes_source.lua
+  modules:
+  - uuid
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+    clock: kickside.core.jobs:clock
+    threads_consts: kickside.core.threads:consts
+    threads_normalize: kickside.core.threads.persist:normalize
+    threads_component: kickside.core.threads:component
+    core_types: kickside.core:types
+    autoinit: kickside.component:autoinit
+    proj_writer: kickside.core.projections.persist:writer
+    retention_repo: kickside.core.retention.persist:repo
+    threads_writer: app:update_outcomes_writer
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_row: kickside.core.threads.persist:thread_row
+    natural_key: app:update_outcomes_natural_key
+    sql: app:update_outcomes_sql
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: update_outcomes_test
+  kind: function.lua
+  source: file://update_outcomes_test.lua
+  method: run
+  imports:
+    fixture: app:update_outcomes_fixture
+    api: app:update_outcomes_source
+    error_envelope: kickside.contract:error_envelope
+    canonical_json: kickside.contract:canonical_json
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+  meta:
+    type: test
+    suite: core_update_outcomes_native
+  modules:
+  - sql
+  - funcs
+  - uuid
+- name: update_outcomes_retry_target
+  kind: function.lua
+  source: file://update_outcomes_retry_target.lua
+  method: run
+  imports:
+    fixture: app:update_outcomes_fixture
+    api: app:update_outcomes_source
+    error_envelope: kickside.contract:error_envelope
+    canonical_json: kickside.contract:canonical_json
+- name: update_outcomes_retry_test
+  kind: function.lua
+  source: file://update_outcomes_retry_test.lua
+  method: run
+  imports:
+    fixture: app:update_outcomes_fixture
+    api: app:update_outcomes_source
+    error_envelope: kickside.contract:error_envelope
+    canonical_json: kickside.contract:canonical_json
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+  meta:
+    type: test
+    suite: core_update_outcomes_native
+  modules:
+  - sql
+  - funcs
+  - uuid

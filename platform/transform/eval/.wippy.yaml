@@ -1,0 +1,46 @@
+version: '1.0'
+override:
+  app:db:file: ${sqlite_path}
+  wippy.llm.bedrock:credential_refresher.service:lifecycle.auto_start: false
+  wippy.llm.google.oauth2:token_refresher.service:lifecycle.auto_start: false
+  wippy.relay:central.service:lifecycle.auto_start: false
+workspace:
+  replacements:
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/security: ../../security
+    kickside/transform: ..
+    kickside/component: ../../../core/component
+    kickside/contract: ../../../core/contract
+    kickside/core: ../../../core/core
+    kickside/settings: ../../settings
+    kickside/users: ../../users
+    kickside/jobs: ../../../core/jobs
+    kickside/execution: ../../../core/execution
+    kickside/code-execution: ../../../../providers/code_execution
+    kickside/widgets: ../../widgets
+vars:
+  sqlite_path: ':memory:'
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_eval_transform
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      app:db:kind: db.sql.postgres
+      app:db:host: ${pg_host}
+      app:db:port: ${pg_port}
+      app:db:database: ${pg_database}
+      app:db:username: ${pg_username}
+      app:db:password: ${pg_password}
+      app:db:options.sslmode: disable
+      app:db:pool.max_open: 16
+      app:db:pool.max_idle: 8
+registry:
+  dispatch_internal_kinds:
+  - registry.entry
+  - ns.requirement
+  - ns.dependency
+  - ns.definition
+  - security.scope

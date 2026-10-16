@@ -1,0 +1,106 @@
+@import "./principal-picker.css";
+@import "@kickside/ui-kit/spin.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* kickside-share renders inside a PrimeVue Dialog (scrim, close button, sizing).
+   The styles below dress the module's own body content and header slot, using the
+   universal --p-* theme vocabulary so it renders correctly in any host. */
+:host { display: block; }
+.kxs { width: 100%; display: flex; flex-direction: column; gap: 12px; font-family: 'Inter', system-ui, sans-serif; color: var(--p-text-color); }
+.kxs *, .kxs *::before, .kxs *::after { box-sizing: border-box; }
+
+.kxs-head-text { display: flex; flex-direction: column; }
+.kxs-head-ico { width: 22px; height: 22px; color: var(--p-primary-color); flex: none; margin-top: 1px; }
+.kxs-title { font-size: 14px; font-weight: 800; letter-spacing: -.01em; }
+.kxs-sub { font-size: 12px; color: var(--p-text-muted-color); margin-top: 1px; }
+
+/* add row */
+.kxs-add { display: flex; gap: 8px; align-items: stretch; }
+.kxs-pick { position: relative; flex: 1; min-width: 0; }
+.kxs-search { position: relative; }
+.kxs-search-ico { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kxs-input {
+  width: 100%; height: 34px; padding: 0 10px 0 30px; font-size: 13px;
+  background: var(--p-content-background); color: var(--p-text-color);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}.kxs-input::placeholder { color: var(--p-text-muted-color); }
+
+.kxs-menu {
+  width: 100%;
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; box-shadow: var(--p-popover-shadow); padding: 4px; max-height: 240px; overflow-y: auto;
+}
+.kxs-menu-empty { padding: 10px; font-size: 12px; color: var(--p-text-muted-color); text-align: center; }
+.kxs-opt { display: flex; align-items: center; gap: 9px; width: 100%; padding: 6px 8px; border: 0; background: transparent; border-radius: 6px; cursor: pointer; text-align: left; }
+.kxs-opt:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kxs-opt-ava, .kxs-ava {
+  width: 28px; height: 28px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color);
+}
+.kxs-ava svg { width: 15px; height: 15px; }
+.kxs-ava-group { background: color-mix(in srgb, var(--p-text-color) 10%, transparent); color: var(--p-text-color); }
+
+/* capability chips — the real access bits (read/write/delete/admin) */
+.kxs-caps { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.kxs-caps-new { margin-top: -4px; }
+.kxs-cap {
+  height: 26px; padding: 0 9px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  background: transparent; color: var(--p-text-muted-color);
+  border: 1px solid var(--p-content-border-color); border-radius: 6px;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.kxs-cap svg { width: 12px; height: 12px; }
+.kxs-cap:hover:not(:disabled) { border-color: var(--p-text-muted-color); color: var(--p-text-color); }
+.kxs-cap-on {
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  border-color: color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+  color: var(--p-primary-color);
+}
+.kxs-cap-sm { height: 24px; padding: 0 8px; font-size: 11px; }
+.kxs-cap-locked, .kxs-cap:disabled { cursor: default; opacity: .85; }
+.kxs-cap-locked.kxs-cap-on { opacity: 1; }
+
+.kxs-owner {
+  margin-left: 7px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  padding: 1px 5px; border-radius: 6px; vertical-align: middle;
+}
+.kxs-icon-locked { color: var(--p-text-muted-color); cursor: default; }
+.kxs-icon-locked:hover { background: transparent; color: var(--p-text-muted-color); }
+
+.kxs-btn {
+  height: 34px; padding: 0 13px; font-size: 13px; font-weight: 700; border-radius: 8px; border: 1px solid transparent;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; flex: none;
+  font-family: 'Outfit', 'Inter', sans-serif; transition: background .15s, transform .12s;
+}
+.kxs-btn svg { width: 15px; height: 15px; }
+.kxs-btn:disabled { opacity: .5; cursor: not-allowed; }
+.kxs-btn-primary { background: var(--p-primary-color); color: var(--p-button-primary-color); }
+.kxs-btn-primary:not(:disabled):hover { background: var(--p-primary-hover-color); transform: translateY(-1px); }
+
+.kxs-err { font-size: 12px; color: var(--p-danger-500); background: color-mix(in srgb, var(--p-danger-500) 8%, transparent); border-radius: 6px; padding: 6px 9px; }
+
+.kxs-list-head { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--p-text-muted-color); }
+.kxs-loading, .kxs-empty { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--p-text-muted-color); padding: 8px 0; }
+.kxs-loading svg, .kxs-empty svg { width: 15px; height: 15px; }
+
+.kxs-list { display: flex; flex-direction: column; gap: 6px; }
+.kxs-row { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; background: color-mix(in srgb, var(--p-text-color) 3.5%, transparent); }
+.kxs-row-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.kxs-row-label { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A principal resolvePrincipals() couldn't match falls back to a neutral name;
+   the raw id still rides along here, as a small mono secondary — never primary. */
+.kxs-id { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 400; color: var(--p-text-muted-color); }
+.kxs-row-sub { font-size: 11px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kxs-icon-btn {
+  width: 28px; height: 28px; border-radius: 8px; border: 0; background: transparent; color: var(--p-text-muted-color);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; transition: background .15s, color .15s;
+}
+.kxs-icon-btn svg { width: 15px; height: 15px; }
+.kxs-icon-btn:hover { background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-500); }

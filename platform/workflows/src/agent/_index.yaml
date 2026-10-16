@@ -1,0 +1,1350 @@
+version: "1.0"
+namespace: kickside.workflows.agent
+
+entries:
+  - name: flows_support
+    kind: library.lua
+    meta:
+      comment: Shared response and identifier validation helpers for Workflow agent tools.
+    source: file://flows_support.lua
+
+  - name: agent_tool
+    kind: library.lua
+    meta:
+      comment: One actor-scoped Workflow catalog prompt and one generic exact-reference run tool.
+    source: file://agent_tool.lua
+    modules: [ctx]
+    imports:
+      tool_result: kickside.contract:tool_result
+      execution: kickside.workflows.execution:execution
+      schema_validate: kickside.workflows.schema:schema_validate
+      published_catalog: kickside.workflows.catalog:published_catalog
+      flow_ref: kickside.workflows.execution:flow_ref
+
+  - name: flow_run_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Run Workflow
+      private: true
+      input_schema:
+        type: object
+        additionalProperties: false
+        required: [flow_ref, input]
+        properties:
+          flow_ref:
+            type: object
+            additionalProperties: false
+            required: [kind, id, version]
+            properties:
+              kind: { const: flow }
+              id: { type: string, minLength: 1 }
+              version: { type: integer, minimum: 1 }
+            description: Exact published Workflow reference copied from the actor-scoped catalog.
+          input:
+            type: object
+            additionalProperties: true
+            description: Arguments for the selected workflow's published Start interface.
+      output_schema:
+        type: object
+        additionalProperties: true
+        description: The Flow's Finish output; a run that ends failed returns { success = false, error, run_id }.
+      llm_alias: RunFlow
+      llm_description: Run an exact published Workflow selected from the current user's Workflow catalog.
+      comment: Hidden generic Workflow tool. Re-resolves actor-scoped access and Start schema before native Dataflow execution.
+    source: file://agent_tool.lua
+    method: flow_run_handler
+    modules: [ctx]
+    imports:
+      tool_result: kickside.contract:tool_result
+      execution: kickside.workflows.execution:execution
+      schema_validate: kickside.workflows.schema:schema_validate
+      published_catalog: kickside.workflows.catalog:published_catalog
+      flow_ref: kickside.workflows.execution:flow_ref
+
+  - name: flow_access_build
+    kind: function.lua
+    meta:
+      comment: Adds the actor-scoped Workflow catalog prompt and one generic exact-reference run_flow tool.
+    source: file://agent_tool.lua
+    method: build
+    modules: [ctx]
+    imports:
+      tool_result: kickside.contract:tool_result
+      execution: kickside.workflows.execution:execution
+      schema_validate: kickside.workflows.schema:schema_validate
+      published_catalog: kickside.workflows.catalog:published_catalog
+      flow_ref: kickside.workflows.execution:flow_ref
+
+  # ─── MCP management surface: read/manage split so a read-only credential is
+  # mintable; every action reuses the HTTP API's internal seams. ───
+  - name: flows_read
+    kind: function.lua
+    meta:
+      type: tool
+      title: Workflows Read
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "catalog lists the authoring vocabulary; catalog_id selects one full record. list shows workflow summaries; read returns one folded definition state; versions lists published versions; export returns the published Flow artifact; runs lists run summaries; run_detail reads one run and its output; node_data reads one selected node payload; events lists journal event summaries; event_detail reads one event payload; export_run returns its redacted record",
+              "enum": ["catalog", "list", "read", "versions", "export", "runs", "run_detail", "node_data", "events", "event_detail", "export_run"]
+            },
+            "id": { "type": "string", "description": "Workflow id. Required for read, versions, and export." },
+            "run_id": { "type": "string", "description": "Run id from runs, required for run_detail, node_data, events and export_run." },
+            "node_id": { "type": "string", "description": "Definition node id from run_detail.nodes, required for node_data." },
+            "event_seq": { "type": "integer", "minimum": 1, "description": "Sequence from events, required for event_detail." },
+            "status": { "type": "string", "description": "runs filter: pending, running, completed, failed, cancelled or terminated." },
+            "limit": { "type": "integer", "minimum": 1, "description": "Page size: default 25 and at most 100 for catalog/list/versions; at most 200 for runs/events and 500 for node_data." },
+            "offset": { "type": "integer", "minimum": 0 },
+            "catalog_id": { "type": "string", "description": "catalog: exact `<section>:<id>` of one catalog record; returns that record as item." },
+            "published": { "type": "boolean", "description": "list: keep only workflows with a published version." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Envelope for every action. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "const": true
+            },
+            "count": {
+              "type": "integer",
+              "description": "Rows in this collection page."
+            },
+            "next_offset": {
+              "type": "integer",
+              "description": "Offset of the following page for catalog, list, versions, runs and node_data; absent on the final page. events carries its own timeline.next_offset."
+            },
+            "catalog": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "description": "Compact authoring vocabulary rows. Select catalog_id=<section>:<id> to receive schemas, ports, commands, and the other full record fields."
+            },
+            "item": {
+              "type": "object",
+              "description": "catalog with catalog_id: the selected full authoring record."
+            },
+            "state": {
+              "type": "object",
+              "description": "read: folded definition snapshot (params, nodes, edges, notes, layout, head_seq)."
+            },
+            "run": {"type": "object"}, "input": {}, "output": {}, "execution": {"type": "object"},
+            "nodes": {"type": "array", "items": {"type": "object"}}, "error_routed": {"type": "boolean"},
+            "export": {"type": "object"},
+            "flow": {
+              "type": "object",
+              "description": "export: the portable published-Flow artifact, importable via flows_manage import."
+            },
+            "node_kinds": {
+              "type": "array",
+              "description": "catalog: every value node.kind accepts. There is no agent or llm kind — an AI step is kind 'block' with node.ref set to an agent Block from the blocks list. Each row carries role, summary, the config fields the compiler accepts (with which are required), the ports an edge may leave, and requires_ref when the kind needs node.ref.",
+              "items": {"type": "object"}
+            },
+            "commands": {
+              "type": "array",
+              "description": "catalog: the exact command type strings flows_manage apply accepts. Copy them verbatim — the layout ones are hyphenated (layout.set-position) while the rest use dots.",
+              "items": {"type": "object"}
+            },
+            "blocks": {
+              "type": "array",
+              "description": "catalog: the executable steps. ref is the exact string to copy into node.ref; input_schema is what the step consumes, config_schema what node.config may hold, ports which source_port an edge may leave it from.",
+              "items": {"type": "object"}
+            },
+            "flows": {
+              "type": "array",
+              "description": "catalog: published workflows callable as a kind 'flow' node; copy flow_ref verbatim into that node's config.flow_ref.",
+              "items": {"type": "object"}
+            },
+            "workflows": {
+              "type": "array",
+              "description": "list: the actor's workflows (id, title, published, and status).",
+              "items": {
+                "type": "object"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "runs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "data": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "timeline": {
+              "type": "object"
+            },
+            "event": { "type": "object", "description": "event_detail: one full journal event, including its payload." },
+            "versions": {
+              "type": "array",
+              "description": "versions: published versions, newest first.",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "required": [
+            "success"
+          ]
+        }
+      llm_alias: WorkflowsRead
+      llm_description: "Read workflows and their authoring vocabulary. catalog returns compact rows; call catalog_id=<section>:<id> for the selected full record before building or editing. Follow next_offset for more rows. list and runs return compact pages; read returns state; run_detail returns a run; events returns journal summaries and event_detail returns one event payload; export returns the portable Flow; export_run returns its redacted record. An AI step is kind block with an exact Block ref. Every action is read-only. Failures return no result and a typed error."
+      mcp:
+        required_scopes: [state.read]
+    source: file://flows_read.lua
+    method: handler
+    modules: [security]
+    imports:
+      tool_result: kickside.contract:tool_result
+      flows_support: kickside.workflows.agent:flows_support
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      version_read: kickside.workflows.repo:version_read
+      definitions_api: kickside.workflows.api:definitions_api
+      types: kickside.workflows:types
+      block_catalog: kickside.workflows.catalog:block_catalog
+      published_catalog: kickside.workflows.catalog:published_catalog
+      runs_read: kickside.workflows.runs:runs_read
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_completion: kickside.workflows.runs:runs_completion
+      exec_api: kickside.workflows.api:exec_api
+
+  - name: flows_manage
+    kind: function.lua
+    meta:
+      type: tool
+      title: Workflows Manage
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "import",
+                "apply",
+                "publish",
+                "restore",
+                "delete"
+              ]
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "parent_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "flow": {
+              "$ref": "#/$defs/flow_artifact"
+            },
+            "bindings": {
+              "type": "object",
+              "description": "Keys declared by flow.refs; values are typed component, published flow, or literal value bindings.",
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "component",
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "flow",
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "value",
+                        "type": "string"
+                      },
+                      "value": {}
+                    },
+                    "required": [
+                      "kind",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "commands": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/command"
+              }
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "create"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "parent_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "import"
+                },
+                "flow": {
+                  "$ref": "#/$defs/flow_artifact"
+                },
+                "bindings": {
+                  "type": "object",
+                  "description": "Keys declared by flow.refs; values are typed component, published flow, or literal value bindings.",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "const": "component",
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "const": "flow",
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id",
+                          "version"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "const": "value",
+                            "type": "string"
+                          },
+                          "value": {}
+                        },
+                        "required": [
+                          "kind",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "action",
+                "flow"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "apply"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "commands": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/command"
+                  }
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "commands"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "publish"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "restore"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "delete"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "id"
+              ],
+              "additionalProperties": false
+            }
+          ],
+          "$defs": {
+            "command": {
+              "type": "object",
+              "description": "Each command is {type, body}; fields belong directly in body. Add commands may omit id for a generated id; use explicit node ids when connecting edges in the same batch.",
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "node.add"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "start",
+                            "finish",
+                            "error",
+                            "block",
+                            "flow",
+                            "branch",
+                            "cycle",
+                            "for_each",
+                            "combine"
+                          ]
+                        },
+                        "ref": {
+                          "type": "string",
+                          "pattern": "^[^\\s:]+:[^\\s:]+$",
+                          "description": "Exact Block ref from WorkflowsRead catalog; required for kind=block."
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "config": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Instance config from WorkflowsRead catalog. Boundaries use input_schema/output_schema/error_schema; Run Code uses code."
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false,
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "kind": {
+                                "const": "block"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ]
+                          },
+                          "then": {
+                            "required": [
+                              "ref"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "node.update"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "start",
+                            "finish",
+                            "error",
+                            "block",
+                            "flow",
+                            "branch",
+                            "cycle",
+                            "for_each",
+                            "combine"
+                          ]
+                        },
+                        "ref": {
+                          "type": "string",
+                          "pattern": "^[^\\s:]+:[^\\s:]+$",
+                          "description": "Exact Block ref from WorkflowsRead catalog; required for kind=block."
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "config": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Instance config from WorkflowsRead catalog. Boundaries use input_schema/output_schema/error_schema; Run Code uses code."
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "node.remove"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "edge.add"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "source_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "target_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "source_port": {
+                          "type": "string"
+                        },
+                        "target_port": {
+                          "type": "string"
+                        },
+                        "transform": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Canonical edge mapping from the workflow editor/catalog."
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "target_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "edge.update"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "source_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "target_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "source_port": {
+                          "type": "string"
+                        },
+                        "target_port": {
+                          "type": "string"
+                        },
+                        "transform": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "description": "Canonical edge mapping from the workflow editor/catalog."
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "edge.remove"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "note.add"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "note",
+                            "frame"
+                          ]
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "note.update"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "color": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "note",
+                            "frame"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "note.remove"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "layout.set-position"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "node_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        },
+                        "width": {
+                          "type": "number"
+                        },
+                        "height": {
+                          "type": "number"
+                        },
+                        "meta": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "required": [
+                        "node_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "layout.clear-position"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "node_id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "node_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "layout.set-viewport"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        },
+                        "zoom": {
+                          "type": "number"
+                        },
+                        "root_id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "const": "layout.set-direction" },
+                    "body": {
+                      "type": "object",
+                      "properties": { "direction": { "type": "string", "enum": ["TB", "LR"] } },
+                      "required": ["direction"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["type", "body"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "param.set"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "value": {
+                          "description": "Any JSON value; omit to remove the parameter."
+                        }
+                      },
+                      "required": [
+                        "key"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "labels.set"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "labels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      },
+                      "required": [
+                        "labels"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "body"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "flow_artifact": {
+              "type": "object",
+              "properties": {
+                "api_version": {
+                  "type": "string",
+                  "const": "kickside.flow/v1"
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "flow"
+                },
+                "key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "refs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "component",
+                          "flow",
+                          "value"
+                        ]
+                      },
+                      "node_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "config_path": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "kind",
+                      "node_id",
+                      "config_path"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "document": {
+                  "type": "object",
+                  "properties": {
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "start",
+                              "finish",
+                              "error",
+                              "block",
+                              "flow",
+                              "branch",
+                              "cycle",
+                              "for_each",
+                              "combine"
+                            ]
+                          },
+                          "ref": {
+                            "type": "string",
+                            "pattern": "^[^\\s:]+:[^\\s:]+$",
+                            "description": "Exact Block ref from WorkflowsRead catalog; required for kind=block."
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "config": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Instance config from WorkflowsRead catalog. Boundaries use input_schema/output_schema/error_schema; Run Code uses code."
+                          },
+                          "status": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind"
+                        ],
+                        "additionalProperties": true
+                      }
+                    },
+                    "edges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "source_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "target_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "source_port": {
+                            "type": "string"
+                          },
+                          "target_port": {
+                            "type": "string"
+                          },
+                          "transform": {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "description": "Canonical edge mapping from the workflow editor/catalog."
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "source_id",
+                          "target_id"
+                        ],
+                        "additionalProperties": true
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "body": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "note",
+                              "frame"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id"
+                        ],
+                        "additionalProperties": true
+                      }
+                    },
+                    "layout": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Canvas positions and viewport from the exported document."
+                    },
+                    "params": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "required": [
+                    "nodes",
+                    "edges"
+                  ],
+                  "additionalProperties": false
+                },
+                "checksum": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "api_version",
+                "kind",
+                "key",
+                "title",
+                "version",
+                "refs",
+                "document",
+                "checksum"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Envelope for every action. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "workflow": {
+              "type": "object",
+              "description": "create/import: the new draft. Its `id` is the workflow id every later action takes — read it from here, the envelope carries no top-level id for create."
+            },
+            "flow": {"type": "object", "description": "import/restore: the created draft (flow_id, title, status)."},
+            "id": {"type": "string"},
+            "events": {"type": "array", "description": "apply: produced definition events.", "items": {"type": "object"}},
+            "head_seq": {"type": "integer", "description": "apply: definition head sequence after the batch."},
+            "state": {"type": "object", "description": "apply: folded definition state after the batch."},
+            "version": {"type": "integer", "description": "publish: the allocated immutable version."},
+            "def_seq": {"type": "integer", "description": "publish: definition sequence frozen into the version."},
+            "hash": {"type": "string", "description": "publish: content hash of the compiled revision."}
+          },
+          "required": ["success"]
+        }
+      llm_alias: WorkflowsManage
+      llm_description: "Build and publish workflows, including Lua scripts with the Run Code Block from WorkflowsRead catalog. For recurring tasks (every minute, hourly, or cron), publish first then schedule its exact {kind: flow, id, version} with RecurringTasks from the Automations Manager capability. Manage workflows: create a draft, import a portable Flow artifact (from flows_read export) as a new unpublished draft, apply a definition command batch through the workflow writer, publish an immutable version, restore a frozen version as a new draft, or delete. Writes carry the same validation and realtime broadcast as the editor. Failures return no result and a typed tool error with a clear message."
+      mcp:
+        required_scopes: [state.write]
+    source: file://flows_manage.lua
+    method: handler
+    modules: [security]
+    imports:
+      tool_result: kickside.contract:tool_result
+      flows_support: kickside.workflows.agent:flows_support
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      definitions_api: kickside.workflows.api:definitions_api
+      workflow: kickside.workflows:workflow
+      workflow_realtime: kickside.workflows:realtime

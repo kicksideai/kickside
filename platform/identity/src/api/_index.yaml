@@ -1,0 +1,73 @@
+version: "1.0"
+namespace: kickside.identity.api
+
+# Dashboard endpoints for external-account linking. router is injected by the
+# root kickside.identity:api_router requirement; it must enforce authentication.
+entries:
+  - name: generate_link_code
+    kind: function.lua
+    meta:
+      comment: POST /identity/link-codes -- issue a fresh link code for the authenticated user.
+    source: file://generate_link_code.lua
+    security:
+      policies: [kickside.identity:credential_eligibility_call]
+    method: handler
+    modules: [http, security, json]
+    imports:
+      http_errors: kickside.contract:http_errors
+      link_service: kickside.identity:link_service
+      identity_consts: kickside.identity:identity_consts
+
+  - name: generate_link_code.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /identity/link-codes
+    method: POST
+    func: generate_link_code
+    path: /identity/link-codes
+
+  - name: list_links
+    kind: function.lua
+    meta:
+      comment: GET /identity/links -- the authenticated user's linked accounts.
+    source: file://list_links.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      link_service: kickside.identity:link_service
+
+  - name: list_links.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /identity/links
+    method: GET
+    func: list_links
+    path: /identity/links
+
+  - name: unlink
+    kind: function.lua
+    meta:
+      comment: POST /identity/unlink -- remove one of the caller's external links.
+    source: file://unlink.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      unlink_response: kickside.identity.api:unlink_response
+
+  - name: unlink_response
+    kind: library.lua
+    source: file://unlink_response.lua
+    modules: [http]
+    imports:
+      http_errors: kickside.contract:http_errors
+      link_service: kickside.identity:link_service
+
+  - name: unlink.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /identity/unlink
+    method: POST
+    func: unlink
+    path: /identity/unlink

@@ -1,0 +1,7 @@
+organization: kickside
+module: channel-test
+type: application
+description: Standalone harness that boots the kickside/channel runtime libs (persist, dedup) against an in-memory DB.
+directories:
+    modules: .wippy
+    src: .

@@ -1,0 +1,45 @@
+version: '1.0'
+namespace: kickside.contract.http
+entries:
+  - name: user_endpoint_access
+    kind: security.policy
+    groups: []
+    policy:
+      actions: access
+      resources:
+      - kickside.core.retention.api:get_thread_retention.endpoint
+      - kickside.core.retention.api:upsert_thread_retention.endpoint
+      - kickside.core.threads.api:create_thread.endpoint
+      - kickside.core.threads.api:delete_thread.endpoint
+      - kickside.core.threads.api:get_graph.endpoint
+      - kickside.core.threads.api:get_thread.endpoint
+      - kickside.core.threads.api:ingest_events_batch.endpoint
+      - kickside.core.threads.api:list_children.endpoint
+      - kickside.core.threads.api:list_classes.endpoint
+      - kickside.core.threads.api:list_events.endpoint
+      - kickside.core.threads.api:list_job_runs.endpoint
+      - kickside.core.threads.api:list_jobs.endpoint
+      - kickside.core.threads.api:list_threads.endpoint
+      - kickside.core.threads.api:post_event.endpoint
+      - kickside.core.threads.api:post_message.endpoint
+      - kickside.core.threads.api:update_thread.endpoint
+      effect: allow
+  - name: member_scope_composition
+    kind: registry.entry
+    meta: {type: kickside.security.group_composition}
+    group_id: kickside.security.groups:members
+    group_ids: []
+    select:
+      meta.member_scope: kickside.contract.http:user_security_scope
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      description: Application member group for explicitly declared user HTTP endpoints.
+    targets:
+      - entry: kickside.contract.http:user_endpoint_access
+        path: '.groups +='
+      - entry: kickside.contract.http:member_scope_composition
+        path: '.group_ids +='

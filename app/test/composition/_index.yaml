@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the composition test harness.
+    file: "${sqlite_path}"
+
+  - name: dep.wippy.test
+    namespace: app.composition
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"

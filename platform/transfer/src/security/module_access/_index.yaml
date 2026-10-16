@@ -1,0 +1,41 @@
+version: '1.0'
+namespace: kickside.transfer.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Transfer
+    surface: kickside.transfer
+    intent: module_access
+    includes:
+    - kickside.transfer.security:module_runtime
+    - kickside.transfer.security:transfer_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.transfer.api:export.endpoint
+    - kickside.transfer.api:import.endpoint
+    - kickside.transfer.api:list_exportable.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.transfer:*
+    - kickside.transfer.api:*
+    - kickside.transfer.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

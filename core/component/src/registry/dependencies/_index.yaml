@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: kickside.component
+entries:
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration
+
+  - name: dep.kickside.realtime_dispatch
+    kind: ns.dependency
+    component: kickside/realtime-dispatch
+    version: "*"

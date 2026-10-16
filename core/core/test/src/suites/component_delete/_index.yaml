@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: purge_cleanup_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:purge_cleanup_delete
+  - name: purge_cleanup_delete
+    kind: function.lua
+    source: file://purge_cleanup_delete.lua
+    method: delete
+    modules: [ctx, sql, contract, funcs, json]
+  - name: component_delete_fence_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+    source: file://component_delete_fence_test.lua
+    method: run
+    modules: [sql, security, contract, uuid, json, funcs]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+  - name: system_purge_cleanup_delete
+    kind: function.lua
+    source: file://system_purge_cleanup_delete.lua
+    method: delete
+    imports:
+      component: kickside.component:component

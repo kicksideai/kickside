@@ -1,0 +1,117 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/focus.css";
+@import "@kickside/ui-kit/kx-tone.css";
+
+.kx-agent-trait-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--p-text-color);
+  font: inherit;
+}
+
+.kx-group-head { display: flex; align-items: center; gap: 12px; }
+.kx-group-title { color: var(--p-text-color); font-size: 13.5px; font-weight: 700; }
+.kx-group-meta { color: var(--p-text-muted-color); font-size: 11.5px; font-weight: 600; margin-left: auto; }
+.kx-tadd { position: relative; }
+.kx-trait-search {
+  box-sizing: border-box;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 8px;
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  font: inherit;
+  font-size: 13px;
+}
+.kx-trait-search::placeholder { color: var(--p-text-muted-color); }
+.kx-trait-menu {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 10px;
+  background: var(--p-content-background);
+  box-shadow: var(--p-popover-shadow);
+}
+.kx-trait-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--p-text-color);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.kx-trait-option:hover,
+.kx-trait-option-active { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-trait-option-text,
+.kx-trait-text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.kx-trait-name { color: var(--p-text-color); font-size: 13px; font-weight: 600; }
+.kx-trait-description { display: -webkit-box; overflow: hidden; color: var(--p-text-muted-color); font-size: 11.5px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+.kx-trait-id { color: var(--p-text-muted-color); font-weight: 400; }
+.kx-trait-badges { display: inline-flex; flex: none; gap: 4px; }
+.kx-trait-badge { flex: none; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+.kx-tint-tools { --kx-cap: var(--kx-tone-blue); }
+.kx-tint-behavior { --kx-cap: var(--kx-tone-violet); }
+.kx-tint-memory { --kx-cap: var(--kx-tone-amber); }
+.kx-tint-plain { --kx-cap: var(--p-text-muted-color); }
+.kx-badge-tools { color: var(--kx-tone-blue); background: color-mix(in srgb, var(--kx-tone-blue) 13%, transparent); }
+.kx-badge-behavior { color: var(--kx-tone-violet); background: color-mix(in srgb, var(--kx-tone-violet) 13%, transparent); }
+.kx-badge-memory { color: var(--kx-tone-amber); background: color-mix(in srgb, var(--kx-tone-amber) 15%, transparent); }
+.kx-trait-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.kx-trait-icon svg { width: 17px; height: 17px; }
+.kx-trait-icon { color: var(--kx-cap); background: color-mix(in srgb, var(--kx-cap) 14%, transparent); }
+.kx-trait-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 14px;
+  background: var(--p-content-background);
+  list-style: none;
+}
+.kx-trait-row-wrap + .kx-trait-row-wrap { border-top: 1px solid color-mix(in srgb, var(--p-content-border-color) 60%, transparent); }
+.kx-trait-row { display: flex; align-items: center; gap: 11px; padding: 10px 12px; }
+.kx-trait-actions { display: inline-flex; flex: none; align-items: center; gap: 5px; }
+.kx-trait-fold,
+.kx-trait-remove {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--p-text-muted-color);
+  cursor: pointer;
+}
+.kx-trait-fold:hover { background: color-mix(in srgb, var(--p-text-color) 7%, transparent); color: var(--p-text-color); }
+.kx-trait-fold svg { width: 16px; height: 16px; }
+.kx-trait-remove:hover { background: color-mix(in srgb, var(--p-danger-500) 14%, transparent); color: var(--p-danger-500); }
+.kx-trait-remove svg { width: 15px; height: 15px; }
+.kx-trait-config { padding: 2px 12px 12px 45px; }
+.kx-trait-empty,
+.kx-trait-empty-state { margin: 0; padding: 10px 12px; color: var(--p-text-muted-color); font-size: 12px; }
+.kx-trait-empty-state { padding: 0; font-size: 12px; line-height: 1.5; }

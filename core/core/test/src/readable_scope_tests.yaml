@@ -1,0 +1,47 @@
+version: '1.0'
+namespace: app
+entries:
+- name: readable_scope_fixture
+  kind: library.lua
+  source: file://readable_scope_fixture.lua
+- name: readable_scope_sql
+  kind: library.lua
+  source: file://readable_scope_sql.lua
+  imports:
+    fixture: app:readable_scope_fixture
+  modules:
+  - sql
+- name: readable_scope_common
+  kind: library.lua
+  source: file://readable_scope_common.lua
+  imports:
+    fixture: app:readable_scope_fixture
+- name: readable_scope_component
+  kind: library.lua
+  source: file://readable_scope_component.lua
+  imports:
+    fixture: app:readable_scope_fixture
+- name: readable_scope_source
+  kind: library.lua
+  source: file://readable_scope_source.lua
+  modules: []
+  imports:
+    component: app:readable_scope_component
+    core_types: kickside.core:types
+    contract_common: app:readable_scope_common
+    sql: app:readable_scope_sql
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    error_envelope: kickside.contract:error_envelope
+- name: readable_scope_test
+  kind: function.lua
+  source: file://readable_scope_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_readable_scope_native
+  imports:
+    test: wippy.test:test
+    fixture: app:readable_scope_fixture
+    api: app:readable_scope_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

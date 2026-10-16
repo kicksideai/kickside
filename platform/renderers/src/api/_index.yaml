@@ -1,0 +1,25 @@
+version: "1.0"
+namespace: kickside.renderers.api
+
+entries:
+  # kickside.renderers.api:list_renderers
+  - name: list_renderers
+    kind: function.lua
+    meta:
+      comment: List registered renderer descriptors for the resource-view host.
+    source: file://list_renderers.lua
+    method: handler
+    modules:
+      - http
+      - registry
+      - json
+
+  # kickside.renderers.api:list_renderers.endpoint
+  - name: list_renderers.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Renderer discovery endpoint.
+      router: api_router
+    func: list_renderers
+    method: GET
+    path: /renderers

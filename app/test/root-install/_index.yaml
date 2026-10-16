@@ -1,0 +1,19 @@
+version: "1.0"
+namespace: compat.root
+entries:
+  - name: root
+    kind: ns.dependency
+    component: kickside/kickside
+    version: "*"
+  - name: test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+  - name: published_root_test
+    kind: function.lua
+    meta: { type: test, suite: published_root }
+    source: file://published_root_test.lua
+    modules: [registry, http_client]
+    imports:
+      test: wippy.test:test
+    method: run

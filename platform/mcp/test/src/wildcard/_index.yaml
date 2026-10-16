@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: app.wildcard
+
+# A tool namespace a trait declares as "app.wildcard:*". Its meta.type=tool entries
+# are what the wildcard expands to; the plain function is not a tool and stays off
+# every surface.
+entries:
+  - name: echo
+    kind: function.lua
+    meta:
+      type: tool
+      input_schema: |
+        {"type":"object","properties":{"payload":{},"options":{"type":"object","properties":{}}},"required":[],"additionalProperties":false,"default":{},"examples":[{},[]]}
+      llm_alias: wild_echo
+      llm_description: Echoes its arguments; harness tool reached through a namespace wildcard.
+    source: file://echo_tool.lua
+    method: handler
+
+  - name: count
+    kind: function.lua
+    meta:
+      type: tool
+      input_schema: {type: object, properties: {items: {type: array, items: {}}}, required: []}
+      llm_alias: wild_count
+      llm_description: Echoes its arguments; second harness tool in the wildcard namespace.
+    source: file://echo_tool.lua
+    method: handler
+
+  - name: helper
+    kind: function.lua
+    meta:
+      llm_alias: wild_helper
+      comment: Plain function in the wildcard namespace; not a tool.
+    source: file://echo_tool.lua
+    method: handler

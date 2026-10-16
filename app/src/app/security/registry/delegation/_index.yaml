@@ -1,0 +1,39 @@
+version: '1.0'
+namespace: app.security
+entries:
+  - name: delegation_validator
+    kind: function.lua
+    meta: {private: true}
+    source: file://delegation.lua
+    method: validate
+    security:
+      actor: {id: app.security:delegation_validator}
+      policies:
+        - app.security:delegation_subject_read
+        - app.security:delegation_component_config
+        - app.security:delegation_component_db
+    imports:
+      scope_resolver: kickside.users.binding:scope_resolver_func
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+  - name: delegation_subject_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: funcs.call
+      resources: kickside.users.binding:subject_lookup
+      effect: allow
+  - name: delegation_component_config
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: registry.get
+      resources: kickside.component:db_config
+      effect: allow
+  - name: delegation_component_db
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: db.get
+      resources: app:db
+      effect: allow

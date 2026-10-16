@@ -1,0 +1,66 @@
+version: "1.0"
+# The gateway port is a var: concurrent runs of this harness (other worktrees)
+# each pass their own free port (--set vars.http_port=...).
+override:
+  "kickside.security.api:security_scopes_binding:contracts":
+    - contract: kickside.contract:security_scopes
+      default: false
+      methods: {list: kickside.security.binding:list_scopes_func}
+  "app:db:file": "${sqlite_path}"
+  "app:gateway:addr": ":${http_port}"
+  "kickside.users.security:tokens:data.token_key_env": ""
+  "kickside.users.security:tokens:data.token_key": "0123456789abcdef0123456789abcdef"
+  "kickside.users.security:token_storage:data.cleanup_interval": "200ms"
+  "kickside.users.api:delete_user:data.imports.lifecycle_report": app:lifecycle_report_stub
+registry:
+  dispatch_internal_kinds:
+    - registry.entry
+    - ns.requirement
+    - ns.dependency
+    - ns.definition
+    - security.scope
+workspace:
+  replacements:
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/users: ..
+    kickside/automation: ../../automation
+    kickside/mcp: ../../mcp
+    kickside/identity: ../../identity
+    kickside/agents: ../../agents
+    kickside/connection: ../../connection
+    kickside/uploads: ../../uploads
+    kickside/channel: ../../channel
+    kickside/execution: ../../../core/execution
+    kickside/contract: ../../../core/contract
+    kickside/component: ../../../core/component
+    kickside/core: ../../../core/core
+    kickside/jobs: ../../../core/jobs
+    kickside/settings: ../../settings
+    kickside/security: ../../security
+vars:
+  sqlite_path: ":memory:"
+  http_port: 19115
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_users
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:grant_migration_db:kind": db.sql.postgres
+      "app:grant_migration_db:host": "${pg_host}"
+      "app:grant_migration_db:port": "${pg_port}"
+      "app:grant_migration_db:database": "${pg_database}_mig"
+      "app:grant_migration_db:username": "${pg_username}"
+      "app:grant_migration_db:password": "${pg_password}"
+      "app:grant_migration_db:options.sslmode": disable
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8

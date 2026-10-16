@@ -1,0 +1,49 @@
+version: "1.0"
+namespace: test.kb
+
+entries:
+  - name: query_fixture
+    kind: library.lua
+    source: file://query_fixture.lua
+    modules: [ctx]
+
+  - name: query_presentation
+    kind: function.lua
+    meta: { type: test_helper }
+    source: file://query_presentation.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      kb_search: test.kb:query_fixture
+      kb_render: test.kb:open_render
+
+  - name: retrieve_presentation
+    kind: function.lua
+    meta: { type: test_helper }
+    source: file://retrieve_presentation.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      kb_search: test.kb:query_fixture
+      kb_render: test.kb:open_render
+
+  - name: open_render
+    kind: library.lua
+    source: file://open_render.lua
+    imports:
+      kb_render: kickside.knowledge.traits:kb_render
+
+  - name: search_presentation
+    kind: function.lua
+    meta: { type: test_helper }
+    source: file://search_presentation.lua
+    method: search
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      kb_search: test.kb:query_fixture
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+      kb_render: test.kb:open_render
+      kb_types: kickside.knowledge:types
+      keyset: kickside.contract:keyset

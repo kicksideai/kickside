@@ -1,0 +1,120 @@
+/* KickSide surface states: empty, loading, error.
+ *
+ * The three answers a surface gives when it has nothing to show, is fetching,
+ * or has failed. Ten modules carried their own copy and most agreed
+ * byte-for-byte, so the bodies below are that majority.
+ *
+ * The differences that were folded in were arbitrary rather than intentional:
+ * `.kx-empty-sub` capped its line length at 360px, 380px, 400px and 420px in
+ * four different modules, `.kx-empty` used a 6px or 8px gap and 44px or 48px of
+ * padding, and `.kx-empty-ico` sat 4px or 8px above the title. Nothing chose
+ * those numbers; they drifted.
+ *
+ * `.kx-empty-title` and `.kx-empty-sub` carry `margin: 0`. Eight modules put
+ * these on a `<div>`, where it changes nothing; workflows uses a `<p>`, where
+ * it removes the browser's default margin. workflows had been resetting that
+ * itself, which is why the reset belongs here.
+ *
+ * `.kx-err` keeps its `margin: 0 20px 8px` because seven modules place it that
+ * way, but the margin is positional rather than appearance, and the three
+ * modules that sit it somewhere else override it. If that margin ever needs to
+ * move, it is a sign the rule should carry appearance only and let each surface
+ * place it.
+ *
+ * Kept local:
+ *   connection  the error sits flush in an already-padded panel
+ *   sessions    the error is an icon-and-text row, not a plain block
+ *   transform   the error sits flush, with no surface gutter to clear
+ *   connection, webhooks  a tighter inline error offset
+ *
+ * inbox does not use `.kx-empty`. Its empty state is a single line of text in a
+ * narrow list pane, not the illustrated block with an icon, a title, a
+ * description and an action that the other nine render - it is the only module
+ * with no `.kx-empty-ico` in its markup. It is renamed `.kx-list-empty` there.
+ *
+ * Note for adopters: a CSS `@import` must precede all other rules, so this
+ * sheet lands first and a module's own rule wins at equal specificity.
+ * Adopting means DELETING the local rules, not just importing.
+ */
+
+/* ── Empty ─────────────────────────────────────────────────────────────── */
+
+.kx-empty {
+  text-align: center;
+  padding: 44px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.kx-empty-ico {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  color: var(--p-primary-color);
+  margin-bottom: 4px;
+}
+
+.kx-empty-ico svg {
+  width: 28px;
+  height: 28px;
+}
+
+.kx-empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--p-text-color);
+  margin: 0;
+}
+
+.kx-empty-sub {
+  font-size: 13px;
+  color: var(--p-text-muted-color);
+  max-width: 380px;
+  margin: 0;
+}
+
+/* A lone call to action, spaced off the description. Direct child on purpose:
+   a button inside .kx-empty-actions is spaced by that row instead, and a
+   descendant selector would offset it a second time within the flex line. */
+.kx-empty > .p-button {
+  margin-top: 6px;
+}
+
+.kx-empty-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* ── Loading ───────────────────────────────────────────────────────────── */
+
+.kx-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--p-text-muted-color);
+  font-size: 13px;
+  padding: 24px;
+}
+
+/* ── Error ─────────────────────────────────────────────────────────────── */
+
+.kx-err {
+  margin: 0 20px 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent);
+  color: var(--p-danger-600, var(--p-danger-500));
+}
+
+/* Inside a field or form body rather than against the surface gutter. */
+.kx-err.inline {
+  margin: 12px 0 0;
+}

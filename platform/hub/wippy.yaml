@@ -1,0 +1,44 @@
+organization: kickside
+module: hub
+type: plugin
+description: "KickSide Hub — module discovery and lifecycle management. Ships the kickside-hub System surface plus a standalone onboarding component that recommends real catalog modules and reviews selected installs sequentially through Keeper."
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - modules
+  - hub
+  - ui
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+embed:
+  - kickside.hub:ui_fs
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "keeper.hub:**"
+  - "ui/node_modules/**"
+  - "ui/node_modules:**"
+  - "ui/coverage/**"
+  - "ui/coverage:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "ui/dist/**"
+  - "static/*.map"
+  - "static/**/*.map"
+  - "test/stubs/**"
+  - "test/stubs:**"
+  - "src/**/stubs/**"
+  - "src/**/*.spec.ts"
+  - "src/**/*.spec.tsx"
+  - "ui/src/**/*.spec.ts"
+  - "ui/src/**/*.spec.tsx"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

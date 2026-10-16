@@ -1,0 +1,42 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: run_completed_public_meta_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Completion updates workflow component public metadata through its owner.
+    source: file://run_completed_public_meta_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+      component: kickside.component:component
+
+  - name: run_completed_public_meta_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+    source: file://run_completed_public_meta_test.lua
+    method: actor_run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+      component: kickside.component:component

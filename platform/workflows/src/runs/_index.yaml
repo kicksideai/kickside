@@ -1,0 +1,316 @@
+version: "1.0"
+namespace: kickside.workflows.runs
+
+entries:
+  - name: engine_api
+    kind: library.lua
+    source: file://engine_api.lua
+
+  - name: admission
+    kind: library.lua
+    source: file://admission.lua
+    modules: [sql, uuid, json]
+    imports:
+      store: kickside.workflows.store:store
+      store_state: kickside.workflows.store:store_state
+      row_limit: kickside.workflows.store:row_limit
+      run_insert: kickside.workflows.runs:run_insert
+      policy: kickside.workflows:policy_config
+      run_time: kickside.workflows.runs:run_time
+      maintenance_wake: kickside.workflows.runs:maintenance_wake
+
+  - name: run_time
+    kind: library.lua
+    meta: { comment: "Canonical RFC3339 parsing and duration rules for workflow runs." }
+    source: file://run_time.lua
+    modules: [time]
+
+  - name: launch_budget
+    kind: library.lua
+    meta: { comment: "Monotonic timeout budget for synchronous run admission." }
+    source: file://launch_budget.lua
+
+  - name: maintenance_wake
+    kind: library.lua
+    meta: { comment: "Direct post-commit process notification to workflow maintenance." }
+    source: file://maintenance_wake.lua
+    modules: [process, funcs]
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  # The wake runs under the workflows identity: committing principals need no
+  # process messaging authority.
+  - name: maintenance_wake_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the maintenance wake message the registered maintenance owner.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: maintenance_wake_signal
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one committed-change wake to the registered workflows maintenance owner.
+    source: file://maintenance_wake.lua
+    method: deliver
+    modules: [process, funcs]
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+    security:
+      actor:
+        id: kickside.workflows.runs:maintenance_wake_signal
+      policies:
+        - kickside.workflows.runs:maintenance_wake_transport
+
+  - name: run_insert
+    kind: library.lua
+    meta: { comment: "One run row insertion after workflow admission." }
+    source: file://run_insert.lua
+
+  - name: run_identity
+    kind: library.lua
+    source: file://run_identity.lua
+    modules: [security]
+    imports:
+      automation: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+
+  - name: run_writable
+    kind: library.lua
+    source: file://run_writable.lua
+    modules: [uuid, json, security]
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      writable_sink: kickside.data:writable_sink
+      flow_ref: kickside.workflows.execution:flow_ref
+      version_read: kickside.workflows.repo:version_read
+      workflow_repo: kickside.workflows.repo:repo
+      schema_validate: kickside.workflows.schema:schema_validate
+      compiler: kickside.workflows.compiler:compiler
+      client: userspace.dataflow:client
+      admission: kickside.workflows.runs:admission
+      engine_api: kickside.workflows.runs:engine_api
+      automation: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+      automation_ref: kickside.automation:automation_ref
+      run_identity: kickside.workflows.runs:run_identity
+
+  - name: resume
+    kind: function.lua
+    meta:
+      comment: Resume a parked workflow under its immutable, live-resolved v2 run identity.
+    source: file://resume.lua
+    method: resume
+    imports:
+      store: kickside.workflows.store:store
+      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      execution_identity: kickside.execution:execution_identity
+
+  - name: run_write
+    kind: function.lua
+    security:
+      policies:
+        - kickside.workflows.security:workflow_started_publish
+    source: file://run_writable.lua
+    method: write
+    modules: [uuid, json, security]
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      writable_sink: kickside.data:writable_sink
+      flow_ref: kickside.workflows.execution:flow_ref
+      version_read: kickside.workflows.repo:version_read
+      workflow_repo: kickside.workflows.repo:repo
+      schema_validate: kickside.workflows.schema:schema_validate
+      compiler: kickside.workflows.compiler:compiler
+      client: userspace.dataflow:client
+      admission: kickside.workflows.runs:admission
+      engine_api: kickside.workflows.runs:engine_api
+      automation: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+      automation_ref: kickside.automation:automation_ref
+      run_identity: kickside.workflows.runs:run_identity
+
+  - name: maintenance
+    kind: library.lua
+    source: file://maintenance.lua
+    modules: [time, sql, logger, uuid, json, funcs, security]
+    imports:
+      admission: kickside.workflows.runs:admission
+      engine_api: kickside.workflows.runs:engine_api
+      client: userspace.dataflow:client
+      runs_read: kickside.workflows.runs:runs_read
+      runs_state: kickside.workflows.runs:runs_state
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      policy: kickside.workflows:policy_config
+      run_time: kickside.workflows.runs:run_time
+
+  - name: maintenance_schedule
+    kind: library.lua
+    meta: { comment: "Indexed completion, publication, and retention deadlines for workflow maintenance." }
+    source: file://maintenance_schedule.lua
+    imports:
+      admission: kickside.workflows.runs:admission
+      policy: kickside.workflows:policy_config
+      run_time: kickside.workflows.runs:run_time
+
+  - name: maintenance_row
+    kind: function.lua
+    meta: { private: true, comment: "Execute one claimed maintenance action under the run identity." }
+    source: file://maintenance_row.lua
+    method: run
+    security:
+      policies:
+        - kickside.workflows.security:maintenance_store
+        - kickside.workflows.security:maintenance_db
+        - kickside.workflows.security:maintenance_threads
+        - kickside.workflows.security:maintenance_contract_frame
+        - kickside.workflows.security:maintenance_threads_binding
+        - kickside.workflows.security:maintenance_threads_emit
+    imports:
+      maintenance: kickside.workflows.runs:maintenance
+
+  - name: maintenance_publish
+    kind: function.lua
+    meta: { private: true, comment: "Publish one claimed terminal audit event as workflow maintenance." }
+    source: file://maintenance_publish.lua
+    method: run
+    security:
+      actor: { id: system:kickside.workflows.maintenance }
+      policies:
+        - kickside.workflows.security:workflow_terminal_publish
+        - kickside.workflows.security:maintenance_store
+        - kickside.workflows.security:maintenance_db
+        - kickside.workflows.security:maintenance_threads
+        - kickside.workflows.security:maintenance_contract_frame
+        - kickside.workflows.security:maintenance_threads_binding
+        - kickside.workflows.security:maintenance_threads_emit
+        - kickside.workflows.security:completion_public_meta
+    imports:
+      maintenance: kickside.workflows.runs:maintenance
+
+  - name: maintenance_tick_worker
+    kind: function.lua
+    meta: { private: true, comment: "Trusted deferred owner for the supervised workflow maintenance slot." }
+    source: file://maintenance_worker.lua
+    method: run
+    security:
+      actor:
+        id: system:kickside.workflows.maintenance
+      policies:
+        - kickside.workflows.security:maintenance_defer
+        - kickside.workflows.security:maintenance_actor
+        - kickside.workflows.security:maintenance_store
+        - kickside.workflows.security:maintenance_db
+    imports:
+      maintenance: kickside.workflows.runs:maintenance
+
+  - name: maintenance_loop
+    kind: library.lua
+    meta: { comment: "Event-driven maintenance owner loop and exact-deadline orchestration." }
+    source: file://maintenance_loop.lua
+    modules: [time, channel, logger, funcs, process, events]
+    imports:
+      policy: kickside.workflows:policy_config
+      run_time: kickside.workflows.runs:run_time
+      maintenance_schedule: kickside.workflows.runs:maintenance_schedule
+      maintenance_wake: kickside.workflows.runs:maintenance_wake
+
+  - name: maintenance_process
+    kind: process.lua
+    source: file://maintenance_process.lua
+    method: main
+    imports:
+      maintenance_loop: kickside.workflows.runs:maintenance_loop
+
+  - name: maintenance.service
+    kind: process.service
+    process: kickside.workflows.runs:maintenance_process
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        initial_delay: 8s
+        max_delay: 60s
+        max_attempts: 10
+      security:
+        groups: [wippy.security:process]
+
+  - name: runs_state
+    kind: library.lua
+    meta: { comment: "Run-plane dependency constructor and error formatting." }
+    source: file://state.lua
+    modules: [json, uuid, security, contract, logger, time]
+    imports:
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      store_state: kickside.workflows.store:store_state
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      compiler: kickside.workflows.compiler:compiler
+      workflow_repo: kickside.workflows.repo:repo
+      schema_validate: kickside.workflows.schema:schema_validate
+      client: userspace.dataflow:client
+      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      node_reader: userspace.dataflow.persist:node_reader
+      data_reader: userspace.dataflow.persist:data_reader
+      automation_ref: kickside.automation:automation_ref
+      execution_identity: kickside.execution:execution_identity
+      persisted_json: kickside.contract:persisted_json
+
+  - name: runs_read
+    kind: library.lua
+    meta: { comment: "Run history reads and lifecycle event vocabulary." }
+    source: file://read.lua
+    imports:
+      runs_state: kickside.workflows.runs:runs_state
+      run_time: kickside.workflows.runs:run_time
+
+  - name: runs_launch
+    kind: library.lua
+    meta: { comment: "Published and draft workflow launch operations." }
+    source: file://launch.lua
+    modules: [time]
+    imports:
+      runs_read: kickside.workflows.runs:runs_read
+      admission: kickside.workflows.runs:admission
+      engine_api: kickside.workflows.runs:engine_api
+      policy: kickside.workflows:policy_config
+      launch_budget: kickside.workflows.runs:launch_budget
+
+  - name: runs_completion
+    kind: library.lua
+    meta: { comment: "Run completion projection, output reads, and node inspection." }
+    source: file://completion.lua
+    imports:
+      runs_read: kickside.workflows.runs:runs_read
+      admission: kickside.workflows.runs:admission
+      engine_api: kickside.workflows.runs:engine_api
+
+  - name: runs_debug
+    kind: library.lua
+    meta: { comment: "Read-only run debug projection: engine linkage, raw export, and paged normalized timeline." }
+    source: file://debug.lua
+    imports:
+      runs_read: kickside.workflows.runs:runs_read
+
+  - name: run_completed
+    kind: function.lua
+    security:
+      policies:
+        - kickside.workflows.security:workflow_terminal_publish
+    meta:
+      comment: Best-effort engine completion hook projects persisted terminal status; maintenance publishes and refreshes public counts.
+    source: file://completion.lua
+    method: run_completed
+    imports:
+      runs_read: kickside.workflows.runs:runs_read
+      admission: kickside.workflows.runs:admission
+      engine_api: kickside.workflows.runs:engine_api
+
+  # ─── Undo/redo process actor ─────────────────────────────────────────

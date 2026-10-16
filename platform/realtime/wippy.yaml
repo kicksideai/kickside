@@ -1,0 +1,25 @@
+organization: kickside
+module: realtime
+type: library
+description: KickSide realtime — a centralized contract for pushing topics to connected UIs. broadcast() fans out to every client via the wippy/relay central hub; notify() targets one user's hub. Any module (nav, inbox, …) publishes through one seam so all UI reacts live.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - realtime
+  - relay
+  - broadcast
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "test/**"
+  - "test:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support

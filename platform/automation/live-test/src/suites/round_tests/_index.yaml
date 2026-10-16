@@ -1,0 +1,19 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: round_wake_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: "Wake-to-claim \u2014 a woken installed event drive is claimed and delivers\
+      \ within the steady bound on the live jobs worker."
+  source: file://../../test_src/suites/round/wake_test.lua
+  method: run
+  modules:
+  - json
+  - time
+  - registry
+  imports:
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness

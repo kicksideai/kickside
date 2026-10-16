@@ -1,0 +1,166 @@
+# kickside.trigger — the trigger contract family.
+# One vocabulary for every way an automation starts: a declaration with no
+# source is a timer; a source that emits thread events is an event source; a
+# pullable source is a collection source. The automation round delivers each
+# page of a drive's items to the kind's round_consumer. Trigger Spec v2 is
+# published here as a JSON schema so kinds embed it without a load-dependency
+# on the automation engine.
+
+version: "1.0"
+namespace: kickside.trigger
+
+entries:
+
+  # The round's delivery boundary (design v5 §3.2, CONTRACTS §19). A kind that
+  # implements it is driven by automation rounds: each round delivers one page of
+  # source items and every input delivery_key is answered in exactly one outcome list.
+  - name: round_consumer
+    kind: contract.definition
+    meta:
+      title: Round Consumer
+      tags: [trigger, consumer, round]
+      comment: The delivery boundary an automation round calls with one page of a drive's items, under the automation's live execution identity.
+    methods:
+      - name: deliver
+        description: "Deliver one page of a drive's items. Every input delivery_key appears in exactly one outcome list; changes of the same item_key are delivered in source order. Calling: deliver(request)"
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "drive": {
+                    "type": "object",
+                    "properties": {
+                      "automation_id": { "type": "string" },
+                      "automation_revision": { "type": "integer", "description": "The automation's command generation the round delivers under; writes name it in automation_ref." },
+                      "drive_key": { "type": "string" },
+                      "source_kind": { "type": "string" },
+                      "source_ref": { "type": "string" },
+                      "source_port": { "type": "string" },
+                      "delivery_revision": { "type": "integer" },
+                      "principal": { "type": "object", "description": "The execution principal {kind, id} the round runs as." },
+                      "operator": { "type": "object", "description": "The operator {kind, id} that authorized the execution identity (authorized_by)." },
+                      "prepared_receipts": { "type": "object", "description": "Receipts produced by earlier source changes of this record in the current ordered page." },
+                      "fence": { "type": "object", "description": "The round's fence {round_token, revision, rewind_generation, command_generation} every pre-effect write takes." }
+                    },
+                    "required": ["automation_id", "drive_key", "source_kind", "delivery_revision"]
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "item_key": { "type": "string" },
+                        "dedup_key": { "type": "string" },
+                        "delivery_key": { "type": "string", "description": "Canonical destination/source-change/operation/generation tuple used for outcome correlation." },
+                        "op": { "enum": ["upsert", "delete"] },
+                        "payload": {},
+                        "occurred_at": { "type": "string" },
+                        "attempts": { "type": "integer", "minimum": 0 }
+                      },
+                      "required": ["item_key", "dedup_key", "delivery_key"]
+                    }
+                  },
+                  "config": { "type": "object" }
+                },
+                "required": ["drive", "items", "config"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "delivered_items": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string", "description": "The answered input item's delivery_key." }, "prepared_key": { "type": "string" }, "receipts": { "type": "array", "items": { "type": "object", "properties": { "identity_key": { "type": "string" }, "idempotency_key": { "type": "string" }, "map_slot": { "type": "string" }, "dest_ref": {}, "dest_version": { "type": "string" }, "removed": { "type": "boolean" } } } } }, "required": ["key"] } },
+                  "skipped_items": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string", "description": "The answered input item's delivery_key." }, "reason": { "type": "string" } }, "required": ["key"] } },
+                  "waiting_items": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string", "description": "The answered input item's delivery_key." }, "retry_after_ms": { "type": "integer", "minimum": 0 } }, "required": ["key"] } },
+                  "uncertain_items": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string", "description": "The answered input item's delivery_key." }, "evidence": { "type": "object" } }, "required": ["key"] } },
+                  "failed_items": { "type": "array", "items": { "type": "object", "properties": { "key": { "type": "string", "description": "The answered input item's delivery_key." }, "error": {} }, "required": ["key", "error"] } }
+                }
+              }
+
+  - name: source_schema
+    kind: contract.definition
+    meta:
+      title: Trigger Source Schema
+      tags: [trigger, source, schema]
+      comment: Optional source contract publishing the selected instance's validated payload shape.
+    methods:
+      - name: describe
+        description: Return the payload JSON Schema of the selected source instance from component_id in the open context. Read access is required; failures use the contract error return.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{"type":"object","additionalProperties":false,"properties":{}}'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{"type":"object","required":["context_schema"],"properties":{"context_schema":{"type":"object"}}}'
+
+  - name: trigger_spec_schema
+    kind: registry.entry
+    meta:
+      type: trigger.schema
+      id: trigger.spec.v2
+      title: Trigger Spec v2
+      comment: The one trigger configuration shape every kind embeds as inputs.trigger. Absent source = timer. Every field has a meaning on the automation round (design v5 §3.2, A36).
+      json_schema: |
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["v"],
+          "properties": {
+            "v": { "const": 2 },
+            "source": { "type": "string", "description": "Source port entry id. Absent = timer." },
+            "config": { "type": "object", "description": "Per-source fields incl. role:primary instance key (thread_id | connection_id) + options." },
+            "filter": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "expr": { "type": "string" }
+              }
+            },
+            "schedule": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "expression"],
+              "properties": {
+                "type": { "enum": ["once", "interval", "ticker", "cron"] },
+                "expression": { "type": "string" }
+              }
+            },
+            "backfill": {
+              "oneOf": [
+                { "enum": ["all", "none"] },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "since": { "type": "string" },
+                    "last_days": { "type": "integer" }
+                  }
+                }
+              ],
+              "description": "Required for collection and event sources; forbidden for timer."
+            },
+            "delivery": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Per-item delivery retry delay (round delivery.retry_after_ms); omitted uses the operator default.",
+              "properties": {
+                "retry_after_ms": { "type": "integer", "minimum": 1 }
+              }
+            },
+            "poll": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Collection acquisition bounds (round.page_size, round.max_pages, round.max_items). Valid only for collection sources; omitted values use operator defaults.",
+              "properties": {
+                "page_size": { "type": "integer", "minimum": 1 },
+                "max_pages_per_run": { "type": "integer", "minimum": 1 },
+                "max_items_per_run": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        }

@@ -1,0 +1,15 @@
+entries:
+- imports:
+    round_harness: kickside.automation:round_harness
+    test: wippy.test:test
+  kind: function.lua
+  meta:
+    suite: round_authority
+    type: test
+  modules:
+  - json
+  method: run
+  name: round_authority_test
+  source: file://authority_test.lua
+namespace: app
+version: '1.0'

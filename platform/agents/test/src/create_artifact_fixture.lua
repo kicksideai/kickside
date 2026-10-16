@@ -1,0 +1,1 @@
+../../src/traits/create_artifact.lua

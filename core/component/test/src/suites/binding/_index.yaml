@@ -1,0 +1,184 @@
+version: "1.0"
+namespace: app.component_suites.binding
+
+entries:
+  - name: runtime_meta_test
+    kind: function.lua
+    meta: { type: test, suite: component_runtime_meta }
+    source: file://runtime_meta_test.lua
+    method: run
+    modules: [sql, security, contract, uuid]
+    imports:
+      test: wippy.test:test
+  - name: share_subject_test
+    kind: function.lua
+    meta:
+      title: Subtree Binding Subject Normalization Test
+      type: test
+      suite: component_subtree_subject
+    source: file://share_subject_test.lua
+    method: run
+    modules: [sql, uuid, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: read_port_test
+    kind: function.lua
+    meta:
+      title: Component Read Port Test
+      type: test
+      suite: component_read_port
+      comment: Query and count filtering, access scoping, default actor, and gated widening.
+    source: file://read_port_test.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: group_access_test
+    kind: function.lua
+    meta:
+      title: Component Group Access Test
+      type: test
+      suite: component_group_access
+      comment: Group-subject access resolves like a direct grant.
+    source: file://group_access_test.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+
+  - name: list_access_level_test
+    kind: function.lua
+    meta:
+      title: Component List Access Level Test
+      type: test
+      suite: component_list_access_level
+      comment: Flat and children listings report the caller's effective access mask per row.
+    source: file://list_access_level_test.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: get_access_context_by_meta_test
+    kind: function.lua
+    meta:
+      title: Component Access Context By Meta Test
+      type: test
+      suite: component_access_by_meta
+      comment: Metadata-filtered access-context resolution and access-mask filtering.
+    source: file://get_access_context_by_meta_test.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: placement_test
+    kind: function.lua
+    meta:
+      title: Component Placement Test
+      type: test
+      suite: component_placement
+      comment: Hierarchy, ordering, cycle rejection, orphaning, and subtree access.
+    source: file://placement_test.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+      placement: kickside.component.persist:placement
+
+  - name: canonical_register_test
+    kind: function.lua
+    meta:
+      title: Component Canonical Registration Test
+      type: test
+      suite: component_canonical_register
+      comment: Registration through the component_service contract preserves scoped actor identity.
+    source: file://canonical_register_test.lua
+    method: run
+    modules: [sql, time, uuid, contract, security, json]
+    imports:
+      test: wippy.test:test
+
+  - name: runtime_meta_scope_test
+    kind: function.lua
+    meta:
+      title: Component Runtime Meta Scope Test
+      type: test
+      suite: component_runtime_meta_scope
+      comment: Trusted runtime meta writes are authorized against the target component's attributes.
+    source: file://runtime_meta_scope_test.lua
+    method: run
+    modules: [sql, uuid, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: context_revision_test
+    kind: function.lua
+    meta:
+      title: Component Context Revision Test
+      type: test
+      suite: component_context_revision
+      comment: Private-context revisions are reported by readers and guard update with compare-and-set.
+    source: file://context_revision_test.lua
+    method: run
+    modules: [sql, uuid, contract, security, funcs, json, channel, time]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+
+  - name: constraints_test
+    kind: function.lua
+    meta:
+      title: Component Schema Constraints Test
+      type: test
+      suite: component_constraints
+      comment: Database constraints, parent orphaning, path indexing, and pagination bounds.
+    source: file://constraints_test.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: last_admin_guard_test
+    kind: function.lua
+    meta:
+      title: Last-Admin Guard Test
+      type: test
+      suite: component_last_admin_guard
+      comment: Direct service calls cannot remove or downgrade the sole administrator.
+    source: file://last_admin_guard_test.lua
+    method: run
+    modules: [uuid, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: failure_classification_test
+    kind: function.lua
+    meta:
+      title: Component Failure Classification Test
+      type: test
+      suite: component_failure_classification
+      comment: Every component_service method classifies malformed input, access refusal, known absence or conflict, and storage or lifecycle failure; the client surfaces the kind.
+    source: file://failure_classification_test.lua
+    method: run
+    modules: [sql, uuid, json, contract, security, funcs]
+    imports:
+      test: wippy.test:test
+      read_port: kickside.component.persist:read_port
+
+  - name: adopt_component_test
+    kind: function.lua
+    meta:
+      title: Component Orphan Adoption Test
+      type: test
+      suite: component_orphan_adoption
+      comment: Operators adopt maintenance-only components through the component service; owned components and callers without the capability are refused.
+    source: file://adopt_component_test.lua
+    method: run
+    modules: [sql, uuid, json, contract, security, registry]
+    imports:
+      test: wippy.test:test

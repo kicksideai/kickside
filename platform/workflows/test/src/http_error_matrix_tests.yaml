@@ -1,0 +1,18 @@
+version: '1.0'
+namespace: app.http_errors_test
+entries:
+- name: http_error_matrix_test
+  kind: function.lua
+  source: file://http_error_matrix_test.lua
+  method: run
+  meta:
+    type: test
+    suite: http_error_matrix
+  imports:
+    test: wippy.test:test
+    exec_api: kickside.workflows.api:exec_api
+    delete_api: kickside.workflows.api:delete_workflow
+    list_published: kickside.workflows.api:list_published
+    blocks_api: kickside.workflows.api:blocks_api
+    run_errors: kickside.workflows.runs:runs_state
+    canonical_json: kickside.contract:canonical_json

@@ -1,0 +1,36 @@
+version: "1.0"
+namespace: kickside.webhooks.api.public
+
+# The single public webhook endpoint: POST /api/public/hooks/{id}. Mounted on the
+# unauthenticated public router; the handler enforces the secret itself. Its system
+# actor may open the db (resolve the webhook), synthesize the stored actor + scope
+# then dispatch one internal append function as that actor. The internal function,
+# not this anonymous endpoint, resolves the threads contract.
+
+entries:
+  - name: post_hook
+    kind: function.lua
+    meta: { comment: "POST /api/public/hooks/{id} — verify secret, validate body, append event as actor." }
+    source: file://post_hook.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      webhook_ingress: kickside.webhooks.ingress:ingress
+      webhook_consts: kickside.webhooks:consts
+    security:
+      actor:
+        id: kickside.webhooks.api.public:post_hook
+      policies:
+        - kickside.webhooks.security:endpoint_db_access
+        - kickside.webhooks.security:endpoint_db_config_read
+        - kickside.webhooks.security:endpoint_actor_create
+        - kickside.webhooks.security:endpoint_session_scope_read
+        - kickside.webhooks.security:endpoint_verified_dispatch
+        - kickside.webhooks.security:endpoint_actor_binding
+
+  - name: post_hook.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: post_hook
+    path: /hooks/{id}

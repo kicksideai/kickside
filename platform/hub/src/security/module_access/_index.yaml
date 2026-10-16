@@ -1,0 +1,66 @@
+version: '1.0'
+namespace: kickside.hub.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Hub
+    surface: kickside.hub
+    intent: module_access
+    includes:
+    - kickside.hub.security:module_runtime
+    - kickside.hub.security:module_calls
+  groups: []
+  policy:
+    resources:
+    - kickside.hub:*
+    - kickside.hub.api:*
+    - kickside.hub.instruments:*
+    - kickside.hub.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+    conditions:
+    - field: resource
+      operator: nin
+      value:
+      - kickside.hub.instruments:recommender
+      - kickside.hub.instruments:requirement_resolver
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: &id001 []
+  policy:
+    resources: &id002
+    - kickside.hub:*
+    - kickside.hub.api:*
+    - kickside.hub.instruments:*
+    - kickside.hub.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+    conditions:
+    - field: resource
+      operator: nin
+      value:
+      - kickside.hub.instruments:recommender
+      - kickside.hub.instruments:requirement_resolver
+- name: module_calls
+  kind: security.policy
+  meta:
+    private: true
+  groups: *id001
+  policy:
+    resources: *id002
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

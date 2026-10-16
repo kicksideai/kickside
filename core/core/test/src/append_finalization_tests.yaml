@@ -1,0 +1,88 @@
+version: '1.0'
+namespace: app
+entries:
+- name: append_finalization_source
+  kind: library.lua
+  source: file://append_finalization_source.lua
+  modules:
+  - sql
+  - json
+  - registry
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    committed_error: kickside.contract:committed_error
+    error_envelope: kickside.contract:error_envelope
+    contract_common: app:append_finalization_common
+    threads_reader: kickside.core.threads.persist:reader
+    threads_writer: app:append_finalization_writer
+    threads_thread_crud: app:principal_resolution_crud
+    threads_teardown: kickside.core.threads.persist:teardown
+    component_client: app:principal_resolution_component
+    contract_event_authorization: app:append_finalization_authorization
+    security: app:principal_resolution_security
+- name: append_finalization_fixture
+  kind: library.lua
+  source: file://append_finalization_fixture.lua
+  modules:
+  - sql
+- name: append_finalization_common
+  kind: library.lua
+  source: file://append_finalization_common.lua
+  imports:
+    fixture: app:append_finalization_fixture
+    common: kickside.core.threads:contract_common
+- name: append_finalization_writer
+  kind: library.lua
+  source: file://append_finalization_writer.lua
+  imports:
+    fixture: app:append_finalization_fixture
+- name: append_finalization_authorization
+  kind: library.lua
+  source: file://append_finalization_authorization.lua
+  imports:
+    fixture: app:append_finalization_fixture
+- name: append_finalization_test
+  kind: function.lua
+  source: file://append_finalization_test.lua
+  method: run
+  imports:
+    fixture: app:append_finalization_fixture
+    api: app:append_finalization_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+  modules:
+  - sql
+  - uuid
+  - funcs
+  meta:
+    type: test
+    suite: core_append_finalization
+- name: append_finalization_retry_test
+  kind: function.lua
+  source: file://append_finalization_retry_test.lua
+  method: run
+  imports:
+    fixture: app:append_finalization_fixture
+    api: app:append_finalization_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+  modules:
+  - sql
+  - uuid
+  - funcs
+  meta:
+    type: test
+    suite: core_append_finalization
+- name: append_finalization_retry_target
+  kind: function.lua
+  source: file://append_finalization_retry_target.lua
+  method: run
+  imports:
+    fixture: app:append_finalization_fixture
+    api: app:append_finalization_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

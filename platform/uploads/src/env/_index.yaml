@@ -1,0 +1,30 @@
+version: "1.0"
+namespace: kickside.uploads.env
+
+entries:
+  # kickside.uploads.env:database_resource
+  - name: database_resource
+    kind: env.variable
+    meta:
+      comment: Database resource for uploads storage
+      icon: tabler:database
+      private: true
+    variable: KICKSIDE_UPLOADS_DATABASE_RESOURCE
+
+  # kickside.uploads.env:storage_id
+  - name: storage_id
+    kind: env.variable
+    meta:
+      comment: Storage service ID for file uploads
+      icon: tabler:upload
+      private: true
+    variable: KICKSIDE_UPLOADS_STORAGE_ID
+
+  # kickside.uploads.env:storage_s3
+  - name: storage_s3
+    kind: env.variable
+    meta:
+      comment: S3 cloud storage service ID for presigned uploads
+      icon: tabler:cloud-upload
+      private: true
+    variable: KICKSIDE_UPLOADS_STORAGE_S3

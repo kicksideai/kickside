@@ -1,0 +1,87 @@
+version: '1.0'
+namespace: kickside.users.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Users management
+    surface: kickside.users
+    intent: module_management
+    includes:
+    - kickside.users.security:directory_access
+    - kickside.users.security:login_settings_read
+    - kickside.security.security:module_runtime
+  groups: []
+  policy:
+    actions: access
+    resources:
+    - kickside.users.api:list_users.endpoint
+    - kickside.users.api:create_user.endpoint
+    - kickside.users.api:bot_accounts_create.endpoint
+    - kickside.users.api:bot_accounts_list.endpoint
+    - kickside.users.api:update_user.endpoint
+    - kickside.users.api:delete_user.endpoint
+    - kickside.users.api:get_user_groups.endpoint
+    - kickside.users.api:set_user_groups.endpoint
+    - kickside.users.api:list_assignable_scopes.endpoint
+    - kickside.ui.api:list_settings_tabs.endpoint
+    effect: allow
+- name: directory_access
+  kind: security.policy
+  meta:
+    title: User directory
+    surface: kickside.users
+    intent: module_access
+    includes:
+    - kickside.users.security:module_runtime
+    - kickside.users.security:users_runtime_read
+    - kickside.users.security:users_endpoint_access
+    - kickside.users.profile:profile_endpoint_access
+    - kickside.users.directory:directory_endpoint_access
+    - kickside.users.security:run_as_candidate_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.users:*
+    - kickside.users.api:*
+    - kickside.users.binding:*
+    - kickside.users.directory:*
+    - kickside.users.env:*
+    - kickside.users.migrations:*
+    - kickside.users.persist:*
+    - kickside.users.profile:*
+    - kickside.users.provisioning:*
+    - kickside.users.security:*
+    - kickside.users.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.security.binding:classify_membership_effect
+    - kickside.users:*
+    - kickside.users.api:*
+    - kickside.users.binding:*
+    - kickside.users.directory:*
+    - kickside.users.env:*
+    - kickside.users.migrations:*
+    - kickside.users.persist:*
+    - kickside.users.profile:*
+    - kickside.users.provisioning:*
+    - kickside.users.security:*
+    - kickside.users.traits:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

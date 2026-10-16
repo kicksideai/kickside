@@ -1,0 +1,22 @@
+version: "1.0"
+namespace: kickside.webhooks.binding
+
+entries:
+  - name: delete_webhook_func
+    kind: function.lua
+    meta:
+      comment: kickside.contract:deletable.delete for a webhook component; removes the webhook side row.
+    source: file://delete_webhook_func.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      webhook_repo: kickside.webhooks:repo
+
+  - name: describe_schema_func
+    kind: function.lua
+    meta: { comment: Read the selected webhook's validated payload schema through source_schema.describe. }
+    source: file://describe_schema_func.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      webhook_repo: kickside.webhooks:repo

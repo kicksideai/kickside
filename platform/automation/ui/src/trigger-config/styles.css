@@ -1,0 +1,127 @@
+@import "@kickside/ui-kit/spin.css";
+/* kickside-trigger-config styles. Inlined into the element's shadow stylesheet.
+   The flagship trigger editor: a calm vertical rhythm of labelled fields, one
+   grouped control per row, with the instance/schedule/history controls given a
+   light inset so the section reads as one coherent "when this runs" block. */
+@import '@widgets/app/pickerselect.css';
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; font-size: 13px; color: var(--p-text-color); }
+*, *::before, *::after { box-sizing: border-box; }
+
+.kx-tc { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.kx-tc-field, .kx-tc-sub { min-width: 0; }
+.kx-tc-off { opacity: .6; pointer-events: none; }
+
+.kx-tc-field { display: flex; flex-direction: column; gap: 7px; }
+.kx-tc-sub { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.kx-tc-lbl {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 650; letter-spacing: .02em;
+  text-transform: uppercase; color: var(--p-text-muted-color);
+}
+.kx-tc-lbl svg { width: 13px; height: 13px; opacity: .85; }
+.kx-tc-desc { margin: 0; font-size: 12px; line-height: 1.45; color: var(--p-text-muted-color); }
+.kx-tc-hint { font-size: 11px; line-height: 1.45; color: var(--p-text-muted-color); }
+
+.kx-tc-input {
+  width: 100%; height: 36px; padding: 0 10px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; transition: border-color .15s, box-shadow .15s;
+}.kx-tc-input:disabled { opacity: .6; }
+.kx-tc-textarea { height: auto; min-height: 56px; padding: 8px 10px; line-height: 1.45; resize: vertical; font-family: ui-monospace, monospace; font-size: 12px; }
+.kx-tc-code { font-family: ui-monospace, monospace; font-size: 12px; }
+.kx-tc-row { display: grid; grid-template-columns: max-content minmax(72px, 96px) minmax(120px, 1fr); align-items: center; gap: 8px; }
+/* A number input's intrinsic minimum exceeds its 96px track; without this it
+   spills over the gap into the unit select. */
+.kx-tc-num, .kx-tc-unit { width: 100%; min-width: 0; }
+.kx-tc-check { display: inline-flex; align-items: center; gap: 8px; width: fit-content; font-size: 12px; color: var(--p-text-color); cursor: pointer; }
+.kx-tc-check input {
+  appearance: none; -webkit-appearance: none; width: 18px; height: 18px; margin: 0; flex: none;
+  display: grid; place-content: center; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: var(--p-content-background); cursor: pointer;
+  transition: border-color .15s, background-color .15s, box-shadow .15s, opacity .15s;
+}
+.kx-tc-check input::before {
+  content: ""; width: 5px; height: 9px; border: solid var(--p-button-primary-color);
+  border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transform-origin: center;
+  transition: transform .12s ease-out;
+}
+.kx-tc-check input:checked { border-color: var(--p-primary-color); background: var(--p-primary-color); }
+
+/* A native checkbox with appearance:none paints its own box, so this
+   component owns the ring - the theme has nothing to hug. Values read the
+   focus contract; see app/facade-src/README.md. */
+.kx-tc-check input:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+}
+.kx-tc-check input:checked::before { transform: rotate(45deg) scale(1); }.kx-tc-check input:disabled { opacity: .55; cursor: not-allowed; }
+.kx-tc-check:has(input:disabled) { cursor: not-allowed; }
+.kx-tc-specific { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(112px, 140px) minmax(112px, 140px); gap: 8px; align-items: start; }
+.kx-tc-specific .kx-tc-sub { grid-column: 1 / -1; margin-top: 0; }
+
+/* The schedule/history choosers are PrimeVue Selects (facade --p-select-* tokens
+   theme them); only ensure each fills its field row. */
+.kx-tc-select { width: 100%; min-width: 0; }
+
+/* Structural fields locked while v1 rejects a structural reconfigure. */
+.kx-tc-locked { pointer-events: none; opacity: .6; }
+
+/* A locked field's value: no select chrome, no caret — a control the operator
+   cannot open must not look like one. */
+.kx-tc-static { display: flex; align-items: center; min-height: 36px; font-size: 13px; color: var(--p-text-color); }
+
+/* The instance picker + its options sit in a light inset so the picked source and
+   everything it needs read as one grouped control. */
+.kx-tc-field[data-test="tc-instance"] {
+  gap: 9px; padding: 12px; border-radius: 10px;
+  border: 1px solid var(--p-content-border-color);
+  background: color-mix(in srgb, var(--p-text-color) 2.5%, transparent);
+}
+
+.kx-tc-note {
+  display: flex; align-items: center; gap: 7px; font-size: 11.5px; line-height: 1.4;
+  padding: 8px 10px; border-radius: 10px; color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+}
+.kx-tc-note svg { width: 15px; height: 15px; flex: none; }
+.kx-tc-note > span, .kx-tc-warn > span, .kx-tc-gate > span { min-width: 0; flex: 1; }
+
+.kx-tc-warn {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 7px; font-size: 11.5px; line-height: 1.4;
+  padding: 8px 10px; border-radius: 10px; color: var(--p-warn-600, var(--p-warn-500));
+  background: color-mix(in srgb, var(--p-warn-500) 12%, transparent);
+}
+.kx-tc-warn svg { width: 15px; height: 15px; flex: none; }
+.kx-tc-retry {
+  margin-left: auto; padding: 8px 10px; font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 8px;
+}
+
+.kx-tc-gate {
+  display: flex; align-items: center; gap: 7px; font-size: 11.5px; line-height: 1.4; color: var(--p-text-muted-color);
+  padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
+}
+.kx-tc-gate svg { width: 15px; height: 15px; flex: none; }
+
+.kx-tc-opts { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px dashed var(--p-content-border-color); }
+.kx-tc-detail { margin-top: 2px; }
+
+.kx-tc-adv summary {
+  display: flex; align-items: center; gap: 6px; cursor: pointer; list-style: none;
+  font-size: 12px; font-weight: 600; color: var(--p-text-muted-color);
+}
+.kx-tc-adv summary::-webkit-details-marker { display: none; }
+.kx-tc-adv summary:hover { color: var(--p-text-color); }
+.kx-tc-caret { width: 14px; height: 14px; transition: transform .15s; }
+.kx-tc-adv[open] .kx-tc-caret { transform: rotate(90deg); }
+.kx-tc-adv-body { margin-top: 8px; }
+
+@media (max-width: 520px) {
+  .kx-tc-row, .kx-tc-specific { grid-template-columns: 1fr; }
+}

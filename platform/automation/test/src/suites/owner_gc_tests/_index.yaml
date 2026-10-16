@@ -1,0 +1,162 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: owner_gc_component_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Automation owner deletion removes every owned SQL row and canonical drive slot.
+  source: file://../owner_gc_test.lua
+  method: run_component
+  security:
+    actor: { id: automation-owner-gc-test }
+  modules:
+  - sql
+  - uuid
+  - json
+  - security
+  - contract
+  - funcs
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    owner_gc: kickside.automation:owner_gc
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    component: kickside.component:component
+    retention_pin: kickside.core.retention:pin
+    automations_lib: kickside.automation:automation
+    lifecycle_consts: kickside.core.lifecycle:consts
+    threads_teardown: kickside.core.threads.persist:teardown
+    round_claim: kickside.automation:round_claim
+- name: owner_gc_receipts_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Automation owner deletion removes every owned SQL row and canonical drive slot.
+  source: file://../owner_gc_test.lua
+  method: run_receipts
+  modules:
+  - sql
+  - uuid
+  - json
+  - security
+  - contract
+  - funcs
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    owner_gc: kickside.automation:owner_gc
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    component: kickside.component:component
+    retention_pin: kickside.core.retention:pin
+    automations_lib: kickside.automation:automation
+    lifecycle_consts: kickside.core.lifecycle:consts
+    threads_teardown: kickside.core.threads.persist:teardown
+    round_claim: kickside.automation:round_claim
+- name: owner_gc_drives_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    timeout: 120s
+    comment: Automation owner deletion removes every owned SQL row and canonical drive slot.
+  source: file://../owner_gc_test.lua
+  method: run_drives
+  modules:
+  - sql
+  - uuid
+  - json
+  - security
+  - contract
+  - funcs
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    owner_gc: kickside.automation:owner_gc
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    component: kickside.component:component
+    retention_pin: kickside.core.retention:pin
+    automations_lib: kickside.automation:automation
+    lifecycle_consts: kickside.core.lifecycle:consts
+    threads_teardown: kickside.core.threads.persist:teardown
+    round_claim: kickside.automation:round_claim
+- name: owner_gc_source_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Automation owner deletion removes every owned SQL row and canonical drive slot.
+  source: file://../owner_gc_test.lua
+  method: run_source
+  modules:
+  - sql
+  - uuid
+  - json
+  - security
+  - contract
+  - funcs
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    owner_gc: kickside.automation:owner_gc
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    component: kickside.component:component
+    retention_pin: kickside.core.retention:pin
+    automations_lib: kickside.automation:automation
+    lifecycle_consts: kickside.core.lifecycle:consts
+    threads_teardown: kickside.core.threads.persist:teardown
+    round_claim: kickside.automation:round_claim
+- name: owner_gc_counts_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../owner_gc_counts_test.lua
+  method: run_1
+  security:
+    actor: { id: automation-owner-gc-test }
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    owner_gc: kickside.automation:owner_gc
+    component: kickside.component:component
+- name: owner_gc_counts_test_2
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../owner_gc_counts_test.lua
+  method: run_2
+  security:
+    actor: { id: automation-owner-gc-test }
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    owner_gc: kickside.automation:owner_gc
+    component: kickside.component:component
+- name: owner_gc_counts_test_3
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../owner_gc_counts_test.lua
+  method: run_3
+  security:
+    actor: { id: automation-owner-gc-test }
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    owner_gc: kickside.automation:owner_gc
+    component: kickside.component:component

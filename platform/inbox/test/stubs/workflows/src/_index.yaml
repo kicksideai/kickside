@@ -1,0 +1,9 @@
+version: "1.0"
+namespace: kickside.workflows.node.await
+
+entries:
+  - name: node
+    kind: registry.entry
+    meta:
+      private: true
+      comment: Harness-only target named by the Inbox node declaration's generic lowering.

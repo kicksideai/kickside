@@ -1,0 +1,43 @@
+organization: kickside
+module: mcp
+type: plugin
+description: KickSide MCP — user- and workspace-scoped Model Context Protocol endpoints. A user mints a scoped bearer credential whose synthetic principal is granted, over a chosen component subtree (their account root or a workspace slice), only the access the owner themselves holds. A single stateless streamable-HTTP endpoint multiplexes every credential; two-layer authz (tool allowlist + the native component access model) gates each call. Tokens are hashed at rest and shown once.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - mcp
+  - tools
+  - security
+embed:
+  - kickside.mcp:ui_fs
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "ui/node_modules/**"
+  - "ui/node_modules:**"
+  - "ui/coverage/**"
+  - "ui/coverage:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "ui/dist/**"
+  - "static/*.map"
+  - "static/**/*.map"
+  - "test/stubs/**"
+  - "test/stubs:**"
+  - "src/**/stubs/**"
+  - "src/**/*.spec.ts"
+  - "src/**/*.spec.tsx"
+  - "ui/src/**/*.spec.ts"
+  - "ui/src/**/*.spec.tsx"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

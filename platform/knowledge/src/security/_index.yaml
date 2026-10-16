@@ -1,0 +1,29 @@
+version: "1.0"
+namespace: kickside.knowledge.security
+
+entries:
+  - name: knowledge_endpoint_access
+    kind: security.policy
+    meta:
+      comment: Authenticated users may reach the knowledge base product endpoints.
+    groups: []
+    policy:
+      resources:
+      - kickside.knowledge.organize:*
+      actions: access
+      effect: allow
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach the knowledge endpoints.
+      description: Application security group that may reach the knowledge endpoints.
+    targets:
+      - entry: kickside.knowledge.security:knowledge_endpoint_access
+        path: ".groups +="
+      - entry: kickside.knowledge.security:module_access
+        path: .groups +=
+      - entry: kickside.knowledge.security:module_runtime
+        path: .groups +=

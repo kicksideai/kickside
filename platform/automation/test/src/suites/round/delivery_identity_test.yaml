@@ -1,0 +1,18 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: round_delivery_identity_test
+    kind: function.lua
+    source: file://delivery_identity_test.lua
+    method: run
+    meta:
+      type: test
+      suite: round_delivery_identity
+    modules: [json, security, funcs, contract, uuid, time]
+    imports:
+      test: wippy.test:test
+      h: kickside.automation:round_harness
+      round_write: kickside.automation:round_write
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      ledger: kickside.automation:round_ledger

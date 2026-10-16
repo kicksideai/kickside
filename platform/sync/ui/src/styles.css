@@ -1,0 +1,87 @@
+@import "@wippy-fe/theme/theme-config.css";
+/* Shared PickerSelect (searchable grouped single-select) styles. */
+@import "@widgets/app/pickerselect.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+.kx-field { display: flex; flex-direction: column; gap: 5px; }
+.kx-field-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-req { color: var(--p-danger-500); }
+.kx-input {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; transition: border-color .15s; width: 100%;
+}/* PrimeVue Select in a form field: full width to match the sibling .kx-input
+   controls; chrome (border/background/overlay) comes from the prestyled PrimeVue
+   CSS injected via primeVueCssUrl. */
+.kx-select { width: 100%; min-width: 0; }
+.kx-check { width: 18px; height: 18px; accent-color: var(--p-primary-color); }
+.kx-reconcile-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--p-text-color); cursor: pointer; }
+.kx-field-hint { font-size: 11.5px; color: var(--p-text-muted-color); }
+.kx-2p-r-note { margin: 0; font-size: 12.5px; color: var(--p-text-muted-color); }
+.kx-alert {
+  margin: 0; padding: 8px 10px; font-size: 12.5px; line-height: 1.4;
+  color: var(--p-danger-600, var(--p-danger-500)); border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--p-danger-500) 32%, transparent);
+  background: color-mix(in srgb, var(--p-danger-500) 8%, transparent);
+}
+
+@keyframes kx-spin { to { transform: rotate(360deg); } }
+
+/* Data-flow builder. Renders inside the manager's setup pane; reuses the manager's
+   .kx-field/.kx-input vocabulary and adds the Source -> Transform -> Destination
+   pipeline chrome. */
+.kx-flow { display: flex; flex-direction: column; gap: 14px; padding: 6px 0 0; }
+.kx-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.kx-pipe { display: flex; flex-direction: column; gap: 8px; }
+.kx-stage {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.kx-stage-mid { background: transparent; }
+.kx-stage-head { display: flex; align-items: center; gap: 8px; }
+.kx-stage-ico {
+  width: 26px; height: 26px; border-radius: 11px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color);
+}
+.kx-stage-ico svg { width: 15px; height: 15px; }
+.kx-stage-lbl { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-stage-cfg { margin-top: 2px; }
+.kx-stage-desc { margin: 0; font-size: 12px; line-height: 1.4; color: var(--p-text-muted-color); }
+.kx-stage-opts {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--p-content-border-color);
+}
+.kx-opts-lbl { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-pipe-conn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 5px 0; color: var(--p-text-muted-color); font-size: 11px;
+}
+.kx-pipe-conn svg { width: 16px; height: 16px; }
+
+.kx-runopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+
+/* Transform auto-detect notice: whether pass-through suffices or a mapping is needed. */
+.kx-detect {
+  display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.35;
+  padding: 7px 9px; border-radius: 8px; color: var(--p-success-600, var(--p-success-500));
+  background: color-mix(in srgb, var(--p-success-500) 10%, transparent);
+}
+.kx-detect svg { width: 14px; height: 14px; flex: none; }
+.kx-detect-warn {
+  color: var(--p-warn-600, var(--p-warn-500));
+  background: color-mix(in srgb, var(--p-warn-500) 12%, transparent);
+}
+
+.kx-wcmount { width: 100%; }
+.kx-wcmount > div { display: block; width: 100%; }

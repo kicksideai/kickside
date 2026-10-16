@@ -1,0 +1,68 @@
+version: "1.0"
+namespace: kickside.channel.persist
+
+entries:
+  - name: session_delete_proof
+    kind: library.lua
+    source: file://session_delete_proof.lua
+
+  - name: repo
+    kind: library.lua
+    meta: { comment: "Slim session mapping (provider, external_id) -> session_id over a given table: get / get_or_create / set / clear. Shared by DM and channel." }
+    source: file://repo.lua
+    modules: [sql, uuid, time, json, crypto, hash]
+    imports:
+      session_acquire: kickside.channel.persist:session_acquire
+      conversation_gc: kickside.channel.persist:conversation_gc
+      channel_conversation: kickside.channel.persist:conversation
+      channel_retention_policy: kickside.channel:retention_policy
+      row_size: kickside.core:row_size
+  - name: conversation
+    kind: library.lua
+    meta: { comment: "Conversation owner row, session owner map and owner-delete fence locked before turn and session rows." }
+    source: file://conversation.lua
+    modules: [sql, time]
+    imports:
+      row_size: kickside.core:row_size
+  - name: conversation_gc
+    kind: library.lua
+    source: file://conversation_gc.lua
+    modules: [sql]
+    imports:
+      channel_conversation: kickside.channel.persist:conversation
+  - name: turn_recovery
+    kind: library.lua
+    meta:
+      comment: Persisted append acknowledgement and exact accepted-turn retry deadlines.
+    source: file://turn_recovery.lua
+    modules: [sql, time]
+    imports:
+      channel_conversation: kickside.channel.persist:conversation
+  - name: session_acquire
+    kind: library.lua
+    source: file://session_acquire.lua
+    modules: [sql, uuid, time, json]
+    imports:
+      channel_conversation: kickside.channel.persist:conversation
+      channel_retention_policy: kickside.channel:retention_policy
+      row_size: kickside.core:row_size
+  - name: retention
+    kind: library.lua
+    source: file://retention.lua
+    modules: [sql]
+    imports:
+      channel_conversation: kickside.channel.persist:conversation
+  - name: archive_retention
+    kind: library.lua
+    source: file://archive_retention.lua
+    modules: [sql]
+    imports:
+      session_service: wippy.session:service
+      session_delete_proof: kickside.channel.persist:session_delete_proof
+      channel_conversation: kickside.channel.persist:conversation
+  - name: idle_retention
+    kind: library.lua
+    source: file://idle_retention.lua
+    modules: [sql, time]
+    imports:
+      channel_conversation: kickside.channel.persist:conversation

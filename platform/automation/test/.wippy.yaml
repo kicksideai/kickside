@@ -1,0 +1,43 @@
+version: "1.0"
+# The suites drive rounds themselves; the resident jobs worker would race
+# their assertions. A suite that proves the
+# live worker path starts its own worker through round_harness.start_worker.
+# The suites apply registry versions mid-run; the runtime reopens an in-memory
+# SQLite resource on a registry version change, so the SQLite database is a
+# per-run file named by the caller (--set vars.sqlite_path=<fresh file>).
+override:
+  "app:db:file": "${sqlite_path}"
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
+  "kickside.core.retention.service:sweeper.service:lifecycle.auto_start": false
+registry:
+  enable_history: true
+  history_type: memory
+workspace:
+  replacements:
+    kickside/realtime: ../../realtime
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/automation: ..
+    kickside/component: ../../../core/component
+    kickside/core: ../../../core/core
+    kickside/jobs: ../../../core/jobs
+    kickside/contract: ../../../core/contract
+    kickside/execution: ../../../core/execution
+vars:
+  sqlite_path: ":memory:"
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_automation
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8

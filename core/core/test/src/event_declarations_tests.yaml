@@ -1,0 +1,60 @@
+version: '1.0'
+namespace: app
+entries:
+- name: event_declarations_fixture
+  kind: library.lua
+  source: file://event_declarations_fixture.lua
+- name: event_declarations_source
+  kind: library.lua
+  source: file://event_declarations_source.lua
+  modules:
+  - sql
+  - uuid
+  - json
+  imports:
+    threads_writer: kickside.core.threads.persist:writer
+    component_client: app:event_declarations_component
+    core_types: kickside.core:types
+    contract_common: app:event_declarations_common
+    registry: app:event_declarations_registry
+    security: app:event_declarations_security
+    error_envelope: kickside.contract:error_envelope
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: event_declarations_registry
+  kind: library.lua
+  source: file://event_declarations_registry.lua
+  imports:
+    fixture: app:event_declarations_fixture
+- name: event_declarations_security
+  kind: library.lua
+  source: file://event_declarations_security.lua
+  imports:
+    fixture: app:event_declarations_fixture
+- name: event_declarations_component
+  kind: library.lua
+  source: file://event_declarations_component.lua
+  imports:
+    fixture: app:event_declarations_fixture
+    real: kickside.component:component
+- name: event_declarations_common
+  kind: library.lua
+  source: file://event_declarations_common.lua
+  imports:
+    fixture: app:event_declarations_fixture
+    real: kickside.core.threads:contract_common
+- name: event_declarations_test
+  kind: function.lua
+  source: file://event_declarations_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_event_declaration_native
+  modules:
+  - registry
+  - uuid
+  imports:
+    test: wippy.test:test
+    fixture: app:event_declarations_fixture
+    api: app:event_declarations_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

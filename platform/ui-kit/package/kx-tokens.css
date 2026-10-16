@@ -1,0 +1,131 @@
+/* KickSide derived design tokens.
+ *
+ * hub, kickside/ui and the SPA each carried a 67-token block over the theme's
+ * `--p-*` vocabulary, byte-identical in all three. Three things were tangled in
+ * it, and only one of them belongs in a shared sheet:
+ *
+ *   1. Renames.  `--t1: var(--p-text-color)`, `--ac: var(--p-primary-color)`,
+ *      `--gn: var(--p-success-500)` and fifteen more added nothing but a second
+ *      name for a token the theme already publishes. The Wippy convention is to
+ *      consume `--p-*` directly - a module-local alias is for a derived value,
+ *      not for hiding the host vocabulary. Those are gone, and their call sites
+ *      now name the theme token.
+ *
+ *   2. Dead weight.  23 of the 67 were declared in all three modules and read
+ *      by none: the entire `--sp-1..--sp-8` spacing rhythm, half the radius
+ *      ladder, `--scrim`, `--rd-hover`, and most of the `--lt-btn-*` family.
+ *      Also gone. (Custom properties can only be read through `var()` or
+ *      `getPropertyValue`; the two dynamic properties in the repo are
+ *      `--p-primary` and pdf.js's `--scale-factor`, neither of them these.)
+ *
+ *   3. Real derived values.  A surface ladder, a border ramp, the soft washes,
+ *      the font pair, a radius scale, the elevation set. Those are KickSide
+ *      decisions the theme does not make, and they are what this sheet is.
+ *
+ * Names are spelled out. `--s2` and `--gns` were only legible to whoever wrote
+ * them, and a shared contract has to read for whoever finds it next.
+ *
+ * A NOTE ON THE FONT PAIR. The theme publishes `--p-font-heading-family` and
+ * `--p-font-mono-family`, so by the book those should be used - but in this
+ * build `--p-font-heading-family` resolves to `Arial` and
+ * `--p-font-body-family` is not set at all, while the product renders Outfit
+ * and Inter. The pair below is the real decision; it moves to the theme tokens
+ * the day those carry it.
+ *
+ * `:host, :root` is deliberate. A shadow root matches `:host` and never
+ * `:root`; the host document is the other way round. Both are valid selectors
+ * in either context, so the list is not invalidated - the SPA already uses this
+ * idiom, and it is why one sheet can serve a web component and the page.
+ */
+
+:host,
+:root {
+  /* ── Surfaces ───────────────────────────────────────────────────────────
+     Tiers mix a little text colour into the content background, so they lift
+     on a dark background and depress on a light one - one ladder, both
+     themes. */
+  --kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);
+  --kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);
+  --kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);
+  --kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);
+
+  /* ── Borders ───────────────────────────────────────────────────────────
+     The theme's own `--p-content-border-color` is the quiet one; these two are
+     for a divider that has to be seen. */
+  --kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);
+  --kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);
+
+  /* ── Text ──────────────────────────────────────────────────────────────
+     Two steps quieter than `--p-text-muted-color`, for timestamps and counts
+     that should not compete with the thing they annotate. */
+  --kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);
+  --kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);
+
+  /* ── Washes ────────────────────────────────────────────────────────────
+     A 12% tint of a severity over the content background - the fill behind a
+     badge, a banner or a highlighted row. The severity itself still comes from
+     the theme: pair a wash with `--p-<severity>-700` for the text on it. */
+  --kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);
+  --kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);
+  --kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);
+  --kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);
+  --kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);
+  --kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);
+
+  /* ── Type ──────────────────────────────────────────────────────────────
+     Outfit for headings and labels, Inter for body. See the note above. */
+  --kx-font-heading: 'Outfit', system-ui, sans-serif;
+  --kx-font-body: 'Inter', system-ui, sans-serif;
+
+  /* ── Shape ─────────────────────────────────────────────────────────────
+     Only the steps the product actually uses. A tag follows the theme's
+     content radius so a re-themed build keeps its corners consistent. */
+  --kx-radius-4: 4px;
+  --kx-radius-6: 6px;
+  --kx-radius-8: 8px;
+  --kx-radius-10: 10px;
+  --kx-radius-14: 14px;
+  --kx-radius-16: 16px;
+  --kx-radius-tag: var(--p-content-border-radius, 6px);
+
+  /* One height for every button, input and select on a row together. */
+  --kx-control-height: 34px;
+
+  /* ── Elevation ─────────────────────────────────────────────────────────
+     Overridden for dark below: the same alpha reads as nothing against a dark
+     surface. */
+  --kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);
+  --kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);
+  --kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);
+
+  /* ── Overlays ──────────────────────────────────────────────────────────
+     A film of the text colour over whatever is underneath, for a row
+     highlight or a sunken well. Unlike the surface ladder these are
+     transparent, so they work on a card as well as on the page, and unlike a
+     fixed rgba they flip with the theme on their own - which is why neither
+     needs a dark override below. */
+  --kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);
+  --kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent);
+
+  /* No focus token here on purpose. The old `--ring` hardcoded a double shadow
+     off the primary colour, which is the facade's `--p-focus-ring-shadow` said
+     twice - and the focus canon fails any ring that does not read the theme's
+     `--p-focus-ring-*` contract. It had no readers left; `focus.css` is where
+     the treatments live. */
+}
+
+@media (prefers-color-scheme: dark) {
+  :host(:not(.w-theme-light)),
+  :root:not(.w-theme-light) {
+    --kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+    --kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);
+    --kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .60);
+  }
+}
+
+:host(.w-theme-dark),
+:root.w-theme-dark {
+  --kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+  --kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);
+  --kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .60);
+}

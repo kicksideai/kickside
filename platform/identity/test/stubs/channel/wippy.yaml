@@ -1,0 +1,3 @@
+organization: kickside
+module: channel
+description: Test-owned Channel cleanup seam for the Identity unit harness.

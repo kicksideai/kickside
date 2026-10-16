@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.core.provenance
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: source_ref_test
+    kind: function.lua
+    meta:
+      title: Provenance Source Ref
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Provenance
+      comment: Canonical source_ref origin envelope builder.
+    source: file://source_ref_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      source_ref: kickside.core.provenance:source_ref

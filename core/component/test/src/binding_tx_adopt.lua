@@ -1,0 +1,1 @@
+../../src/binding/adopt_component_func.lua

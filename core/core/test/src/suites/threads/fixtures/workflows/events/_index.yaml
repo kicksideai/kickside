@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: kickside.workflows.runs.events
+entries:
+  - name: started
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+  - name: finished
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+  - name: failed
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+

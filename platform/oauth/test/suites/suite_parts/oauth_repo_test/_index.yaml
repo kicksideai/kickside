@@ -1,0 +1,277 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_oauth_repo_test_create_connection
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_create_connection.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_get_connection
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_get_connection.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_get_connection_metadata
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_get_connection_metadata.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_get_access_token
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_get_access_token.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_update_tokens
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_update_tokens.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_update_connection
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_update_connection.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_update_schedule_id
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_update_schedule_id.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_list_by_provider
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_list_by_provider.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_list_by_schedule_id
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_list_by_schedule_id.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_disable_connection
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_disable_connection.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_delete_connection
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_delete_connection.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_encryption_decryption
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_encryption_decryption.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: tsplit_oauth_repo_test_rfc3339_utc_timestamps
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://../../persist/oauth_repo_test_rfc3339_utc_timestamps.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo

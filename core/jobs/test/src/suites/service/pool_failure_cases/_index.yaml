@@ -1,0 +1,47 @@
+version: '1.0'
+namespace: app
+entries:
+- name: pool_registration_and_timers_test
+  kind: function.lua
+  meta:
+    title: Job Pool Subscription Failures
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Typed subscription failures, child drain, and service restart.
+  source: file://pool_registration_and_timers_test.lua
+  method: run
+  modules:
+  - sql
+  - time
+  - registry
+  - process
+  - channel
+  - uuid
+  imports:
+    test: wippy.test:test
+    worker_pool: kickside.core.jobs.service:worker_pool
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: pool_subscription_recovery_test
+  kind: function.lua
+  meta:
+    title: Job Pool Subscription Failures
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Typed subscription failures, child drain, and service restart.
+  source: file://pool_subscription_recovery_test.lua
+  method: run
+  modules:
+  - sql
+  - time
+  - registry
+  - process
+  - channel
+  - uuid
+  imports:
+    test: wippy.test:test
+    worker_pool: kickside.core.jobs.service:worker_pool
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture

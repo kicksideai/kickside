@@ -1,0 +1,37 @@
+/* Focus override helpers.
+ *
+ * The facade owns the DEFAULT: `children/20-focus-ring.css` gives bare elements an
+ * offset outline and text entry the bordered treatment, from the
+ * `--p-focus-ring-*` tokens. These two classes exist for the cases where a
+ * component needs the OTHER treatment, so that needing it never means
+ * re-declaring the three properties by hand - which is how the same rule ended up
+ * copied into twelve module stylesheets, and how halos drifted to 18%, 22% and
+ * 45% alpha before the canon existed.
+ *
+ * Values are the facade tokens, so this changes no contract: it only makes the
+ * contract expressible in one place.
+ *
+ * Two treatments, chosen by whether the element draws a box at rest. Never both -
+ * an outline stacked on a halo is the doubled ring the canon exists to prevent.
+ *
+ * Note for adopters: a CSS `@import` must precede all other rules, so this sheet
+ * lands first in the cascade and a module's own rule wins at equal specificity.
+ * Adopting a helper therefore means DELETING the local rule, not just importing.
+ */
+
+/* The element draws a border at rest, so the ring is that border going primary
+   plus the shared halo. Filled controls count: their border is transparent until
+   focus, which is what it is there for. */
+.kx-focus-halo:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* The element draws no box, so there is no border to light: the ring is an offset
+   outline, and no halo - a halo with no edge to hug reads as a smudge. */
+.kx-focus-outline:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+  box-shadow: none;
+}

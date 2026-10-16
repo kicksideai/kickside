@@ -1,0 +1,10 @@
+organization: kickside
+module: uploads-live-harness
+type: application
+description: Isolated queue for the uploads resident worker test.
+directories:
+  modules: .wippy
+  src: .
+exclude:
+  - ".wippy/**"
+  - ".wippy:**"

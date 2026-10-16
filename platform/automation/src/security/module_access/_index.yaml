@@ -1,0 +1,111 @@
+version: '1.0'
+namespace: kickside.automation.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Automation
+    surface: kickside.automation
+    intent: module_access
+    includes:
+    - kickside.automation.security:module_runtime
+    - kickside.automation.security:manual_task_install
+    - kickside.automation.security:automation_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.automation:*
+    - kickside.automation.agent:*
+    - kickside.automation.api:*
+    - kickside.automation.binding:*
+    - kickside.automation.engine:*
+    - kickside.automation.mcp:*
+    - kickside.automation.migrations:*
+    - kickside.automation.manual:*
+    - kickside.automation.recurring:*
+    - kickside.automation.security:*
+    - kickside.automation.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: automation_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.automation.api:call_action.endpoint
+    - kickside.automation.api:delete.endpoint
+    - kickside.automation.api:drive_control.endpoint
+    - kickside.automation.api:export.endpoint
+    - kickside.automation.api:get_execution_identity.endpoint
+    - kickside.automation.api:health.endpoint
+    - kickside.automation.api:history.endpoint
+    - kickside.automation.api:import.endpoint
+    - kickside.automation.api:install.endpoint
+    - kickside.automation.api:install_selected.endpoint
+    - kickside.automation.api:list.endpoint
+    - kickside.automation.api:list_sinks.endpoint
+    - kickside.automation.api:list_sources.endpoint
+    - kickside.automation.api:list_types.endpoint
+    - kickside.automation.api:read_config.endpoint
+    - kickside.automation.api:read_state.endpoint
+    - kickside.automation.api:reconfigure.endpoint
+    - kickside.automation.api:set_execution_identity.endpoint
+    - kickside.automation.api:status.endpoint
+    - kickside.automation.api:update_meta.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.automation:*
+    - kickside.automation.agent:*
+    - kickside.automation.api:*
+    - kickside.automation.binding:*
+    - kickside.automation.engine:*
+    - kickside.automation.mcp:*
+    - kickside.automation.migrations:*
+    - kickside.automation.manual:*
+    - kickside.automation.recurring:*
+    - kickside.automation.security:*
+    - kickside.automation.traits:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: manual_task_install
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources: kickside.automation.manual:task
+    actions: access
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.automation.security:module_access
+    path: .groups +=
+  - entry: kickside.automation.security:module_runtime
+    path: .groups +=
+  - entry: kickside.automation.security:manual_task_install
+    path: .groups +=
+  - entry: kickside.automation.security:automation_endpoint_access
+    path: .groups +=

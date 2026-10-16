@@ -1,0 +1,60 @@
+local test = require("test")
+local publisher = require("publisher")
+local fixture = require("fixture")
+local args = {component_id = "owner", impl_id = "impl", identity_generation = 3, record_json = "{}"}
+return {run = test.run_cases(function()
+    test.describe("native committed identity audit publication dependencies", function()
+        for _, stage in ipairs({"get", "ensure", "append"}) do
+            for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID,
+                errors.PERMISSION_DENIED, errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED,
+                errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
+                for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
+                    test.it(stage .. "/" .. kind .. "/" .. tostring(options.retryable), function()
+                        local native = errors.new({kind = kind, message = "identity audit publication refusal", retryable = options.retryable,
+                            details = {code = "identity_audit_dependency", nested = {stage = stage}}})
+                        fixture.reset(stage, native)
+                        local result, err = publisher.publish_audit(args)
+                        test.is_nil(result)
+                        test.eq(type(err), "userdata")
+                        test.eq(err:kind(), native:kind())
+                        test.eq(err:retryable(), native:retryable())
+                        test.eq(err:details().code, "identity_audit_dependency")
+                        test.eq(err:details().nested.stage, stage)
+                        test.eq(fixture.opens, 1)
+                        test.eq(fixture.ensures, stage == "get" and 0 or 1)
+                        test.eq(fixture.appends, stage == "append" and 1 or 0)
+                        test.eq(fixture.releases, stage == "get" and 0 or 1)
+                        test.eq(native:details().nested.stage, stage)
+                    end)
+                end
+            end
+        end
+        test.it("retains the stable publication key and original audit record", function()
+            fixture.reset("", nil)
+            local result, err = publisher.publish_audit(args)
+            test.is_nil(err)
+            test.eq(result.inserted, 1)
+            test.eq(result.duplicates, 0)
+            test.eq(fixture.opens, 1)
+            test.eq(fixture.ensures, 1)
+            test.eq(fixture.appends, 1)
+            test.eq(fixture.releases, 1)
+            test.eq(fixture.owner, args.component_id)
+            test.eq(fixture.key, "identity_audit:" .. args.component_id .. ":" .. args.identity_generation)
+            test.eq(fixture.kind, fixture.KIND.UPDATED)
+            test.eq(fixture.data.component_id, args.component_id)
+            test.eq(fixture.data.impl_id, args.impl_id)
+            test.eq(fixture.data.identity_generation, args.identity_generation)
+            test.eq(fixture.data.identity_audit, args.record_json)
+        end)
+        test.it("invalid publication avoids durable work", function()
+            fixture.reset("", nil)
+            local result, err = publisher.publish_audit({})
+            test.is_nil(result)
+            test.is_true(errors.is(err, errors.INVALID))
+            test.eq(fixture.opens, 0)
+            test.eq(fixture.ensures, 0)
+            test.eq(fixture.appends, 0)
+        end)
+    end)
+end)}

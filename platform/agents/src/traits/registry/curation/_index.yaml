@@ -1,0 +1,193 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: curator_specs
+    kind: library.lua
+    meta: { comment: "Builds the {id, context} trait specs the curator emits so per-trait context survives the active-traits recompile." }
+    source: file://../../curator_specs.lua
+    imports:
+      id_set: kickside.agents.traits:id_set
+
+  - name: trait_curator
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Capability Manager
+      public: true
+      icon: tabler:adjustments-bolt
+      comment: Discovers available capabilities and turns them on or off as a task needs them.
+      tags: [agents, master, traits]
+      web_component: kickside-master-namespace-picker
+      context_schema:
+        type: object
+        properties:
+          namespaces:
+            type: array
+            title: Namespace allow-list
+            role: value
+            items: { type: string }
+          trait_ids:
+            type: array
+            title: Capability allow-list
+            role: value
+            items: { type: string }
+          inject_trait_catalog:
+            type: boolean
+            title: Inject available capabilities
+            role: value
+        additionalProperties: false
+    prompt: |
+      You can discover and manage your own capabilities at runtime with the **Capabilities**
+      tool. `list` shows the capabilities you can turn on; `activate` adds one (its tools and
+      guidance become available immediately); `deactivate` removes one you activated.
+      When a user asks for a capability you do not currently have -- reading knowledge
+      bases, embedding content, using files, managing skills, or similar -- call
+      `list` before saying you cannot do it, then activate the relevant capability if one is
+      available.
+      Filter `list` with `q` using a task keyword to find relevant capabilities.
+      Translate the user's phrasing into the operation's catalog vocabulary before
+      searching: "every minute" describes recurring work and schedules, while
+      "find a document" describes knowledge or files. Search these operation
+      keywords rather than the whole request; the catalog supplies the available
+      capabilities and their supported actions.
+      `q` is a literal substring filter. If a phrase finds no match, retry with a
+      shorter keyword or list without `q` before concluding that no capability exists.
+      The capability catalog shows operations available to this caller. It does
+      not list workspace resources. If the needed capability is absent, explain
+      that you cannot access that operation; do not infer that its resources are empty.
+      Do not ask the user to confirm capability activation when their request already needs
+      that capability. Activate the capability directly and continue the task.
+      Activate a capability only when the current task needs it, and deactivate it when you
+      are done so your toolset stays focused.
+    prompt_func_id: kickside.agents.traits:active_traits_prompt
+    tools:
+      - kickside.agents.traits:trait_curator_tool
+
+  - name: trait_curator_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Capabilities
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "list the activatable capabilities, or activate/deactivate one", "enum": ["list", "activate", "deactivate"] },
+            "q": { "type": "string", "description": "list only: case-insensitive substring of capability title, id, description or tags. Use a task keyword for a focused catalog." },
+            "fields": { "type": "array", "items": { "type": "string", "enum": ["description"] }, "description": "list only: optional larger row fields. Default rows are compact summaries; description returns the full capability description." },
+            "trait_id": { "type": "string", "description": "Registry id of the capability to activate or deactivate (e.g. kickside.knowledge.traits:kb_reader). Required for activate/deactivate." },
+            "context": { "type": "object", "description": "Optional context to pass to the activated capability. Use only when it expects context, such as selected KB ids or connection ids." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "list only: capabilities per page; default 25." },
+            "cursor": { "type": "string", "description": "list only: the next_cursor of the previous page." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "scope": {"type": "string", "description": "list: the namespace and capability scope of the catalog."},
+            "capabilities": {
+              "type": "array",
+              "description": "list: compact activatable capabilities in id order, each { id, title, tags, state (base, active or available), context_configurable }. Request fields=[description] for descriptions.",
+              "items": {"type": "object"}
+            },
+            "count": {"type": "integer", "description": "list: number of capabilities in this page."},
+            "next_cursor": {"type": "string", "description": "list: pass as cursor for the next page; absent on the last page."},
+            "message": {"type": "string", "description": "activate/deactivate: human-readable outcome."},
+            "_control": {
+              "type": "object",
+              "description": "Runtime directive that recompiles the session with the new capability (trait) set so its tools and prompt go live.",
+              "properties": {
+                "config": {
+                  "type": "object",
+                  "properties": {
+                    "traits": {
+                      "type": "array",
+                      "description": "The full {id, context} capability specs the session recompiles with.",
+                      "items": {"type": "object"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "Successful tool result. Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: Capabilities
+      llm_description: "Discover and activate capabilities for work such as building workflows, recurring tasks and schedules (every minute, hourly, daily, or cron), code execution, knowledge and files. Turn them on or off for this session. Activating one makes its tools and guidance available immediately. Failures return no result and a typed tool error with a clear message."
+    source: file://../../trait_curator_tool.lua
+    modules: [ctx, registry]
+    imports:
+      id_set: kickside.agents.traits:id_set
+      master_ns: kickside.agents.traits:master_ns
+      curator_specs: kickside.agents.traits:curator_specs
+      capability_context: kickside.agents.traits:capability_context
+      keyset: kickside.contract:keyset
+    method: handler
+
+  - name: active_traits_prompt
+    kind: function.lua
+    meta:
+      comment: Capability manager prompt func -- lists the capabilities the agent activated this session.
+    source: file://../../active_traits_prompt.lua
+    modules: [ctx, registry]
+    imports:
+      id_set: kickside.agents.traits:id_set
+      master_ns: kickside.agents.traits:master_ns
+      capability_context: kickside.agents.traits:capability_context
+    method: execute
+
+  # Master capability: the capability manager with no namespace bound -- the agent can activate
+  # ANY public trait at runtime, not a configured subset. Reuses the curator's tool +
+  # prompt func; the resolver seeds base_traits/trait_contexts/self_id for it exactly as
+  # for the curator, and with no namespace scope master_ns treats every public trait as
+  # activatable. No namespace picker, so it cannot be narrowed -- the unrestricted variant.
+  - name: trait_master
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: All Capabilities
+      public: true
+      icon: tabler:adjustments-bolt
+      comment: Lets the agent discover and activate any public capability at runtime, then turn it off when done.
+      tags: [agents, master, traits]
+      context_schema:
+        type: object
+        properties:
+          inject_trait_catalog:
+            type: boolean
+            title: Inject available capabilities
+            role: value
+        additionalProperties: false
+    prompt: |
+      You discover workspace operations with the **Capabilities** tool.
+      Your currently visible tools cover only active capabilities, not everything
+      the workspace supports. For a user request needing a workspace operation,
+      call `list` with `q` set to a task keyword, then `activate` the matching
+      capability and perform the operation with its tools. Activation makes its
+      tools and guidance available immediately. Pass activation `context` only
+      when the capability declares configuration such as a knowledge base or connection.
+      Translate the user's phrasing into the operation's catalog vocabulary before
+      searching: "every minute" describes recurring work and schedules, while
+      "find a document" describes knowledge or files. Search these operation
+      keywords rather than the whole request; the catalog supplies the available
+      capabilities and their supported actions.
+      `q` is a literal substring filter. If a phrase finds no match, retry with a
+      shorter keyword or list without `q` before concluding that no capability exists.
+      The capability catalog shows operations available to this caller. It does
+      not list workspace resources. If the needed capability is absent, explain
+      that you cannot access that operation; do not infer that its resources are empty.
+      Do not claim an operation is unsupported just because its tool is not currently visible.
+      The user's request authorizes activation; continue without asking for confirmation.
+      Report the outcome the tools return. A scheduling receipt means queued work,
+      not completed work. Explain a tool error with its actual configuration requirement.
+      Deactivate capabilities when their work is complete to keep the toolset focused.
+    prompt_func_id: kickside.agents.traits:active_traits_prompt
+    tools:
+      - kickside.agents.traits:trait_curator_tool
+
+  # Agent roster: inject the reachable agents on start and delegate/redirect to any of
+  # them. The resolver seeds self_id so the agent excludes itself.

@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: kickside.automation.mcp
+
+entries:
+  - name: reader
+    kind: registry.entry
+    meta:
+      type: mcp.preset
+      title: Automations Reader
+      comment: Read granted automations through the automation reader capability.
+      icon: tabler:list-search
+    access_mode: traits
+    scopes: [state.read]
+    trait_filter:
+      include_ids: [kickside.automation.traits:reader]
+    default_active: [kickside.automation.traits:reader]

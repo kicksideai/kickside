@@ -1,0 +1,9 @@
+organization: kickside
+module: realtime-harness
+type: application
+description: Standalone runnable harness that boots kickside/realtime and runs its suite.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

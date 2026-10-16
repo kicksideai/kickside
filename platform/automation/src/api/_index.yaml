@@ -1,0 +1,414 @@
+version: "1.0"
+namespace: kickside.automation.api
+
+entries:
+  - name: errors
+    kind: library.lua
+    meta:
+      comment: Shared error->HTTP-status shaping for automation endpoints.
+    source: file://errors.lua
+    modules: [http]
+
+  # ─── GET /automations/types — installable automation types ───────────
+    imports:
+      http_errors: kickside.contract:http_errors
+
+  - name: list_types
+    kind: function.lua
+    meta:
+      comment: List installable automation types from the registry (meta.type=kickside.automation).
+    source: file://list_types.lua
+    modules: [http, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: list_types.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_types
+    path: /automations/types
+
+  # ─── GET /automations/sources — kickside.data source catalog ─
+  - name: list_sources
+    kind: function.lua
+    meta:
+      comment: List kickside.data:pullable source bindings for automation create UIs.
+    source: file://list_sources.lua
+    modules: [http, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: list_sources.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_sources
+    path: /automations/sources
+
+  # ─── GET /automations/sinks — kickside.data:writable sink catalog ────
+  - name: list_sinks
+    kind: function.lua
+    meta:
+      comment: List kickside.data:writable destination bindings for automation create UIs.
+    source: file://list_sinks.lua
+    modules: [http, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: list_sinks.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_sinks
+    path: /automations/sinks
+
+  # ─── GET /automations/destinations — exact Flow target catalog ───────
+  - name: list
+    kind: function.lua
+    meta:
+      comment: List user-visible installed automations (components with class=automation).
+    source: file://list_automations.lua
+    modules: [http, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: list.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list
+    path: /automations
+
+  # ─── POST /automations — install ─────────────────────────────────────
+  - name: install
+    kind: function.lua
+    meta:
+      comment: Install an automation type. Body { type, input }. Persists state+metadata+rollback to a new component.
+    source: file://install_automation.lua
+    modules: [http, security, registry, funcs, logger]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: install.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: install
+    path: /automations
+
+  - name: install_selected
+    kind: function.lua
+    meta:
+      comment: Install a prepared automation under a selected user. Body { type, input, component_id, request_id, principal, parent_id? }.
+    security:
+      policies:
+        - kickside.automation.security:identity_command_evaluation
+    source: file://install_automation.lua
+    modules: [http, security, registry, funcs, logger]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: selected_handler
+
+  - name: install_selected.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: install_selected
+    path: /automations/selected
+
+  # ─── DELETE /automations/{id} — uninstall (replay rollback) ──────────
+  - name: delete
+    kind: function.lua
+    meta:
+      comment: Uninstall an automation. Replays its persisted rollback chain via funcs, then removes the component.
+    source: file://delete_automation.lua
+    modules: [http, security, funcs, logger]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: delete.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete
+    path: /automations/{id}
+
+  # ─── GET /automations/{id}/state — durable public projection ───
+  - name: read_state
+    kind: function.lua
+    meta:
+      comment: Read schema-gated automation public state from component public meta.
+    source: file://read_state.lua
+    modules: [http, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: read_state.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: read_state
+    path: /automations/{id}/state
+
+  # ─── GET /automations/{id}/config — full editable install config ─────
+  - name: read_config
+    kind: function.lua
+    meta:
+      comment: Read a reconfigurable automation's full editable install config (its own private state) for the editor.
+    source: file://read_config.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: read_config.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: read_config
+    path: /automations/{id}/config
+
+  - name: export
+    kind: function.lua
+    meta:
+      comment: Export one automation as a portable declaration, including its transform but excluding runtime identity and state.
+    source: file://export_automation.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: export.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: export
+    path: /automations/{id}/export
+
+  - name: import
+    kind: function.lua
+    meta:
+      comment: Recreate an exported automation or exact Flow binding; optional input_overrides explicitly rebind environment-owned install fields without changing its transform.
+    source: file://import_automation.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: import.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: import
+    path: /automations/import
+
+  # ─── PUT /automations/{id} — reconfigure (edit config in place) ──────
+  - name: reconfigure
+    kind: function.lua
+    meta:
+      comment: Reconfigure an installed automation in place; the kind applies declaration and schedule changes through one fenced command.
+    source: file://reconfigure.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: reconfigure.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: reconfigure
+    path: /automations/{id}
+
+  # ─── PATCH /automations/{id} — rename (public meta title/description) ─
+  - name: update_meta
+    kind: function.lua
+    meta:
+      comment: Rename an automation in place by updating its public meta title/description via component.set_meta.
+    source: file://update_meta.lua
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: update_meta.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PATCH
+    func: update_meta
+    path: /automations/{id}
+
+  # ─── Control readers over drive and command state ──────────────────
+  - name: control
+    kind: library.lua
+    meta:
+      comment: Status, health and execution-identity change responses over the automation library.
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+
+  - name: status
+    kind: function.lua
+    meta:
+      comment: GET one automation's paginated drive and command status (READ).
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: status_handler
+
+  - name: status.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: status
+    path: /automations/{id}/status
+
+  - name: history
+    kind: function.lua
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: history_handler
+
+  - name: history.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: history
+    path: /automations/{id}/history
+
+  - name: health
+    kind: function.lua
+    meta:
+      comment: GET the caller's automation health over their readable automations.
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: health_handler
+
+  - name: health.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: health
+    path: /automations/health
+
+  - name: get_execution_identity
+    kind: function.lua
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: get_execution_identity_handler
+
+  - name: get_execution_identity.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_execution_identity
+    path: /automations/{id}/identity
+
+  - name: set_execution_identity
+    kind: function.lua
+    meta:
+      comment: POST an execution-execution-identity change through the automation command stream (ADMIN).
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: set_execution_identity_handler
+
+  - name: set_execution_identity.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: set_execution_identity
+    path: /automations/{id}/identity
+
+  - name: drive_control
+    kind: function.lua
+    meta:
+      comment: POST a drive control (pause, resume, run_now, replay, resync) through the automation command stream (WRITE).
+    source: file://control.lua
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: control_handler
+
+  - name: drive_control.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: drive_control
+    path: /automations/{id}/control
+
+  # ─── POST /automations/{id}/actions/{method} — declared action dispatch ───
+  - name: call_action
+    kind: function.lua
+    meta:
+      comment: Dispatch a public method declared by the automation binding's meta.actions allowlist.
+    source: file://call_action.lua
+    modules: [http, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+    method: handler
+
+  - name: call_action.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: call_action
+    path: /automations/{id}/actions/{method}

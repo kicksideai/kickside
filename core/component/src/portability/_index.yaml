@@ -1,0 +1,22 @@
+version: "1.0"
+namespace: kickside.component.portability
+
+# Pure domain core for component export/import (the kickside.contract:portable
+# capability). I/O-free so the rules — what is portable, what is a secret, how
+# references remap on import — are unit-testable in isolation. The contract impls
+# and the coordinator consume this; they own storage, registry, and lifecycle.
+
+entries:
+  - name: base_portable
+    kind: library.lua
+    meta:
+      comment: Component portability domain — envelope build/parse, portable_schema allowlist, credential exclusion, slot derivation, and id_map ref remapping. No I/O.
+    source: file://base_portable.lua
+
+  - name: portable_io
+    kind: library.lua
+    meta:
+      comment: I/O companion to base_portable — shared JSONL read/write + parent-dir creation for the data-bearing portable adapters (kb10, skills).
+    source: file://portable_io.lua
+    modules: [json]
+    imports: {error_envelope: kickside.contract:error_envelope}

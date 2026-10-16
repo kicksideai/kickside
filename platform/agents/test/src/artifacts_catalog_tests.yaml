@@ -1,0 +1,44 @@
+version: "1.0"
+namespace: app.artifacts_catalog
+entries:
+  - name: state
+    kind: library.lua
+    source: file://artifacts_catalog_state.lua
+  - name: components
+    kind: library.lua
+    source: file://artifacts_component_registry.lua
+    imports: {state: app.artifacts_catalog:state}
+  - name: pages
+    kind: library.lua
+    source: file://artifacts_page_registry.lua
+    imports: {state: app.artifacts_catalog:state}
+  - name: metadata
+    kind: library.lua
+    source: file://artifacts_bundled_meta.lua
+    imports: {state: app.artifacts_catalog:state}
+  - name: catalog
+    kind: library.lua
+    source: file://artifacts_catalog_fixture.lua
+    imports:
+      component_registry: app.artifacts_catalog:components
+      page_registry: app.artifacts_catalog:pages
+  - name: artifacts_catalog_test
+    kind: function.lua
+    meta: {type: test, suite: artifacts_catalog}
+    source: file://artifacts_catalog_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      catalog: app.artifacts_catalog:catalog
+      state: app.artifacts_catalog:state
+      artifact: app.artifacts_catalog:create_artifact
+  - name: create_artifact
+    kind: library.lua
+    source: file://create_artifact_fixture.lua
+    modules: [json]
+    imports:
+      tool_result: kickside.contract:tool_result
+      canonical_json: kickside.contract:canonical_json
+      component_registry: app.artifacts_catalog:components
+      page_registry: app.artifacts_catalog:pages
+      bundled_meta: app.artifacts_catalog:metadata

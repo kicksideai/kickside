@@ -1,0 +1,523 @@
+version: "1.0"
+namespace: kickside.connection
+
+entries:
+  - name: capacity_retry_floor
+    kind: registry.entry
+    meta:
+      type: kickside.component.owned_meta_key
+      key: kickside.connection.capacity.retry_at_ms
+
+  - name: capacity_http
+    kind: library.lua
+    source: file://capacity_http.lua
+    modules: [time]
+    imports: {capacity: "kickside.connection:capacity"}
+
+  - name: capacity
+    kind: library.lua
+    source: file://capacity.lua
+    modules: [sql, time]
+    imports:
+      component: kickside.component:component
+      component_ops: kickside.component.persist:component_ops
+      conn_types: kickside.connection:types
+      capacity_executor: kickside.contract:capacity_executor
+
+  - name: capacity_check
+    kind: function.lua
+    source: file://capacity.lua
+    method: check
+    modules: [sql, time]
+    imports:
+      component: kickside.component:component
+      component_ops: kickside.component.persist:component_ops
+      conn_types: kickside.connection:types
+      capacity_executor: kickside.contract:capacity_executor
+
+  - name: capacity_record
+    kind: function.lua
+    source: file://capacity.lua
+    method: record
+    modules: [sql, time]
+    imports:
+      component: kickside.component:component
+      component_ops: kickside.component.persist:component_ops
+      conn_types: kickside.connection:types
+      capacity_executor: kickside.contract:capacity_executor
+
+  - name: capacity_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:connection_capacity
+        default: true
+        methods:
+          check: kickside.connection:capacity_check
+          record: kickside.connection:capacity_record
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Connections
+      comment: Provider connections and reply targets modelled as components. Automation owns durable source configuration, cron owns timing, and core threads own emitted events.
+
+  # Shared adapter helpers + the provider checklist (see the file header). Provider
+  # connection bindings import this to drop their shared boilerplate.
+  - name: base_connection
+    kind: library.lua
+    meta:
+      comment: Shared kickside.connection provider-binding helpers (component_id, trim, deletable delete) + the add-a-provider checklist.
+    source: file://base_connection.lua
+    modules: [ctx, time]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      capacity: kickside.connection:capacity
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the connection admin endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the connection admin endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.connection.api:list_connections.endpoint
+        path: .meta.router
+      - entry: kickside.connection.api:create_connection.endpoint
+        path: .meta.router
+      - entry: kickside.connection.api:delete_connection.endpoint
+        path: .meta.router
+      - entry: kickside.connection.api:update_connection.endpoint
+        path: .meta.router
+      - entry: kickside.connection.api:discover_resources.endpoint
+        path: .meta.router
+      - entry: kickside.connection.api:discover_providers.endpoint
+        path: .meta.router
+      - entry: kickside.connection.api:provider_badges.endpoint
+        path: .meta.router
+
+  # ─── Connections page UI (self-served web component) ────────────────
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the connections UI static mount attaches to.
+      description: HTTP server the connections UI static mount attaches to.
+    targets:
+      - entry: kickside.connection:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-connections web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-connections
+    fs: kickside.connection:ui_fs
+    options:
+      cache: "no-cache"
+
+  - name: connections_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: connections_view
+      title: Connections
+      description: >-
+        The Connections management page (tag kickside-connections) the host nav
+        mounts by tag: manage provider credentials and reply targets. Takes no
+        props and fetches its own data; emits only the lifecycle events load,
+        unload, error, and invalid.
+      announced: true
+      tag_name: kickside-connections
+      base_path: kickside-connections
+      entry_point: index.js
+
+  - name: onboard_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: onboard_view
+      title: Connect your tools
+      description: >-
+        The onboarding-wizard variant of the Connections surface (tag
+        kickside-onboard-connections). Takes no props and fetches its own data;
+        emits the lifecycle events load, unload, error, and invalid, plus done
+        and back to drive the host wizard.
+      announced: true
+      tag_name: kickside-onboard-connections
+      base_path: kickside-connections
+      entry_point: onboard.js
+
+  - name: connection_trait_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: connection_trait_picker_view
+      title: Connection Capability Picker
+      description: >-
+        A capability config editor (tag kickside-connection-trait-picker) that
+        picks one connection of a given provider. Takes config (the current
+        capability context, { connection_id }), provider (filters the offered
+        connections; without it the picker renders a not-configured error), and
+        label (field caption, defaults to "<provider> connection"); every
+        selection is reported via config-changed { connection_id }.
+      tag_name: kickside-connection-trait-picker
+      base_path: kickside-connections
+      entry_point: connection_trait_picker.js
+      announced: true
+      auto_register: false
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          description: "Current capability context: { connection_id }."
+        provider:
+          type: string
+          description: Connection provider whose connections are offered; without it the picker renders a not-configured error.
+        label:
+          type: string
+          description: Field caption; defaults to "<provider> connection".
+
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /connections
+      route_name: connections
+      title: Connections
+      comment: Manage provider credentials and reply targets.
+      icon: tabler:plug-connected
+      order: 50
+      render: component
+      component_tag: kickside-connections
+
+  - name: reply_provider
+    kind: contract.definition
+    meta:
+      comment: "Send replies to a provider resource. Static reply capabilities (max_length, content_types, attachments, embeds) live in the binding's meta.reply block, read from the registry -- not a runtime method."
+    methods:
+      - name: send_reply
+        description: Send content to a provider resource
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "resource_id": { "type": "string" }, "content": { "description": "Reply payload (text or provider-specific structure)" }, "content_type": { "type": "string" }, "reply_proof": { "type": "object" } }, "required": ["resource_id", "content"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "message_ref": { "type": "string", "description": "Provider message id/timestamp for later update when supported." } }, "required": ["success"] }
+            format: application/schema+json
+      - name: update_reply
+        description: Update previously sent content when the provider supports editable messages
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "resource_id": { "type": "string" }, "message_ref": { "type": "string" }, "content": { "description": "Replacement reply payload" }, "content_type": { "type": "string" } }, "required": ["resource_id", "message_ref", "content"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "message_ref": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: send_status
+        description: Render transient provider-native status for a resource without sending chat content
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "resource_id": { "type": "string" }, "phase": { "type": "string" }, "label": { "type": "string" } }, "required": ["resource_id", "phase"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "rendered": { "type": "boolean", "description": "True when the provider rendered a native status indicator." } }, "required": ["success"] }
+            format: application/schema+json
+
+  - name: connection
+    kind: contract.definition
+    meta: {}
+    methods:
+      - name: get_status
+        description: Read projected public connection status from component meta. Use test_connection for live credential/connectivity diagnostics.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "status": { "type": "string" }, "details": { "type": "object" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: test_connection
+        description: Verify credentials and connectivity
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "details": { "type": "object" }, "error": { "type": "string" }, "warnings": { "type": "array", "description": "Typed non-fatal findings: the connection works with reduced capability.", "items": { "type": "object", "properties": { "reason": { "type": "string" }, "message": { "type": "string" } }, "required": ["reason", "message"] } } }, "required": ["success"] }
+            format: application/schema+json
+      - name: discover_resources
+        description: List available resources the connection can access
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "description": "Optional provider-specific discovery args. Providers may accept q/search text, type filters, pagination cursors, or parent ids; unknown keys must be ignored unless the provider explicitly validates them.",
+                "properties": {
+                  "q": { "type": "string", "description": "Optional provider-side search/filter text." },
+                  "type": { "type": "string", "description": "Optional resource type filter, e.g. jira_project, confluence_space, slack_channel, github_repo." },
+                  "parent_id": { "type": "string", "description": "Optional parent/container resource id for drill-down discovery." },
+                  "cursor": { "type": "string", "description": "Provider cursor returned by a previous discovery call." },
+                  "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "description": "Requested maximum resources to return." }
+                },
+                "additionalProperties": true
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "resources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "properties": {
+                        "type": { "type": "string", "description": "Stable provider resource type, e.g. jira_project, confluence_space, slack_channel, github_repo." },
+                        "id": { "type": ["string", "number"], "description": "Provider resource id. Prefer string for new providers." },
+                        "key": { "type": "string", "description": "Human-visible stable key when the provider has one, e.g. Jira project key or Confluence space key." },
+                        "name": { "type": "string", "description": "Human-readable display name." },
+                        "description": { "type": "string" },
+                        "url": { "type": "string" },
+                        "selectable": { "type": "boolean", "description": "False for container-only rows that require drill-down before selection." },
+                        "parent_id": { "type": "string", "description": "Parent/container id when this row is nested." },
+                        "metadata": { "type": "object", "description": "Provider-specific non-secret attributes for pickers." },
+                        "capabilities": {
+                          "type": "array",
+                          "items": { "type": "string" },
+                          "description": "Optional provider capability tags such as read, write, post, source, sink."
+                        }
+                      },
+                      "required": ["type", "id", "name"]
+                    }
+                  },
+                  "next_cursor": { "type": "string", "description": "Cursor for the next discovery page, if any." },
+                  "error": { "type": "string" }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+
+  # ─── Connection registry (used by templates and admin UI) ─────────────
+  # Operates over connections in a scope. Per-binding `connection` (above)
+  # is the per-instance contract. This registry is the global one.
+  - name: connections
+    kind: contract.definition
+    meta:
+      title: Connection Registry
+      comment: Find/create/delete/list component-backed provider connections. Reversible methods carry rollback metadata.
+    methods:
+      - name: register
+        description: Create a new connection component. Reversible via delete.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" }, "auth": { "type": "object", "description": "Provider private_context" }, "validate": { "type": "boolean" } }, "required": ["provider", "name", "auth"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "provider": { "type": "string" }, "name": { "type": "string" }, "rollback": { "type": "object" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: find
+        description: Find one by provider and optional name. Read-only.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" } }, "required": ["provider"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": ["object", "null"], "properties": { "component_id": { "type": "string" }, "impl_id": { "type": "string" }, "meta": { "type": "object" } } }
+            format: application/schema+json
+      - name: upsert
+        description: Idempotent register. Returns { connection, created }. Reversible only when created=true.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" }, "auth": { "type": "object", "description": "Provider private_context used when creating" }, "validate": { "type": "boolean" } }, "required": ["provider", "name", "auth"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "connection": { "type": "object" }, "created": { "type": "boolean" }, "rollback": { "type": ["object", "null"] } }, "required": ["connection", "created"] }
+            format: application/schema+json
+      - name: update
+        description: Rename an existing connection component.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" } }, "required": ["component_id", "name"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: delete
+        description: Remove a connection component and run provider cleanup through the component delete path.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: list
+        description: One offset page of connections, newest first by default; filter by provider, name and text, page with pagination { limit, offset } and follow has_more.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" }, "text": { "type": "string" }, "pagination": { "type": "object", "properties": { "limit": { "type": "integer", "minimum": 1, "maximum": 100 }, "offset": { "type": "integer", "minimum": 0 } } }, "ordering": { "type": "object" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "connections": { "type": "array", "items": { "type": "object" } }, "total_count": { "type": "integer" }, "has_more": { "type": "boolean" } }, "required": ["connections", "total_count", "has_more"] }
+            format: application/schema+json
+      - name: validate
+        description: Test the connection (calls per-binding test_connection). Requires WRITE access because it uses stored credentials and may contact the provider.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "ok": { "type": "boolean" }, "details": { "type": "object" }, "error": { "type": "string" } }, "required": ["ok"] }
+            format: application/schema+json
+
+  # ─── Reply provider registry ─────────────────────────────────────────
+  - name: reply_providers
+    kind: contract.definition
+    meta:
+      title: Reply Provider Registry
+      comment: Connection-backed reply targets agents can write to.
+    methods:
+      - name: create
+        description: Register a reply-provider component.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" }, "auth": { "type": "object", "description": "Provider private_context" } }, "required": ["provider", "name", "auth"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "provider": { "type": "string" }, "name": { "type": "string" }, "rollback": { "type": "object" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: find
+        description: Lookup by provider and optional name.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" } }, "required": ["provider"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": ["object", "null"], "properties": { "component_id": { "type": "string" }, "impl_id": { "type": "string" }, "meta": { "type": "object" } } }
+            format: application/schema+json
+      - name: upsert
+        description: Idempotent register.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" }, "auth": { "type": "object", "description": "Provider private_context used when creating" } }, "required": ["provider", "name", "auth"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "reply_provider": { "type": "object" }, "created": { "type": "boolean" }, "rollback": { "type": ["object", "null"] } }, "required": ["reply_provider", "created"] }
+            format: application/schema+json
+      - name: update
+        description: Rename an existing reply-provider component.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" } }, "required": ["component_id", "name"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: delete
+        description: Remove.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: list
+        description: One offset page of reply providers, newest first; filter by provider, name and text, page with pagination { limit, offset } and follow has_more.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "name": { "type": "string" }, "text": { "type": "string" }, "pagination": { "type": "object", "properties": { "limit": { "type": "integer", "minimum": 1, "maximum": 100 }, "offset": { "type": "integer", "minimum": 0 } } } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "reply_providers": { "type": "array", "items": { "type": "object" } }, "total_count": { "type": "integer" }, "has_more": { "type": "boolean" } }, "required": ["reply_providers", "total_count", "has_more"] }
+            format: application/schema+json
+
+  # ─── Connection-domain contract types + runtime vocabulary ───────────
+  - name: types
+    kind: library.lua
+    source: file://types.lua
+
+  # ─── Reply-sending domain libs ────────────────────────────────────────
+  - name: html_text
+    kind: library.lua
+    source: file://html_text.lua
+    modules: [html]
+
+  - name: reply_sender
+    kind: library.lua
+    source: file://reply_sender.lua
+    modules: [logger, registry]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      reply_authorization: kickside.connection:reply_authorization
+
+  - name: reply_authorization
+    kind: library.lua
+    source: file://reply_authorization.lua
+    modules: [contract, security]
+    imports:
+      base: kickside.connection:base_connection
+
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: endpoints
+    kind: library.lua
+    meta:
+      comment: Resolves instance endpoints from provider declarations configured by namespace requirements.
+    source: file://endpoints.lua
+    modules: [registry]
+
+  - name: reconcile_workers
+    kind: function.lua
+    meta:
+      type: projection.worker
+      title: Connection Worker Lifecycle
+    source: file://base_connection.lua
+    method: reconcile_workers
+    modules: [ctx, time, process]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      capacity: kickside.connection:capacity

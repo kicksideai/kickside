@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.identity.migrations
+
+# target_db is injected by the root kickside.identity:target_db requirement.
+entries:
+  - name: 01_external_links
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_external_links + kickside_link_codes tables
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-21T00:00:00Z"
+    source: file://01_external_links.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

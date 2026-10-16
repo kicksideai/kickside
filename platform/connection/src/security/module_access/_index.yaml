@@ -1,0 +1,72 @@
+version: '1.0'
+namespace: kickside.connection.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Connection
+    surface: kickside.connection
+    intent: module_access
+    includes:
+    - kickside.connection.security:module_runtime
+    - kickside.connection.security:connection_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.connection:*
+    - kickside.connection.api:*
+    - kickside.connection.registry:*
+    - kickside.connection.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: connection_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.connection.api:create_connection.endpoint
+    - kickside.connection.api:delete_connection.endpoint
+    - kickside.connection.api:discover_providers.endpoint
+    - kickside.connection.api:discover_resources.endpoint
+    - kickside.connection.api:list_connections.endpoint
+    - kickside.connection.api:provider_badges.endpoint
+    - kickside.connection.api:update_connection.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.connection:*
+    - kickside.connection.api:*
+    - kickside.connection.registry:*
+    - kickside.connection.security:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.connection.security:module_access
+    path: .groups +=
+  - entry: kickside.connection.security:module_runtime
+    path: .groups +=
+  - entry: kickside.connection.security:connection_endpoint_access
+    path: .groups +=

@@ -1,0 +1,29 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: login_registry
+    kind: library.lua
+    source: file://login_registry.lua
+  - name: login_http
+    kind: library.lua
+    source: file://login_http.lua
+  - name: login_templates
+    kind: library.lua
+    source: file://login_templates.lua
+  - name: login_subject
+    kind: library.lua
+    source: file://login_subject.lua
+    imports:
+      registry: app:login_registry
+      http: app:login_http
+      templates: app:login_templates
+  - name: login_theme_config_test
+    kind: function.lua
+    meta: {type: test, suite: app_login}
+    source: file://login_theme_config_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      login: app:login_subject
+      registry: app:login_registry
+      templates: app:login_templates

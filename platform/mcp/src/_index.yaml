@@ -1,0 +1,352 @@
+version: "1.0"
+namespace: kickside.mcp
+
+entries:
+  - name: credential_eligibility
+    kind: ns.requirement
+    meta:
+      description: Optional host credential eligibility function; a configured guard fails closed.
+    default: ''
+    targets:
+      - entry: kickside.mcp:credential_config
+        path: .meta.credential_eligibility
+      - entry: kickside.mcp.security:credential_eligibility_call
+        path: ".policy.resources +="
+
+  - name: credential_config
+    kind: registry.entry
+    meta: {credential_eligibility: ''}
+
+  - name: credential_eligibility_check
+    kind: library.lua
+    meta: {credential_admission: host}
+    source: file://credential_eligibility.lua
+    imports:
+      credential_eligibility: kickside.contract:credential_eligibility
+
+  - name: retention
+    kind: function.lua
+    meta:
+      type: kickside.retention.owner
+      comment: Reclaim MCP-owned expired OAuth rows on the existing core retention tick.
+    source: file://retention.lua
+    method: run
+    security:
+      actor: { id: system:kickside.mcp.retention }
+      policies: [kickside.mcp.security:endpoint_db_access]
+    imports:
+      mcp_oauth_repo: kickside.mcp.oauth:repo
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide MCP
+      comment: >-
+        Actor-scoped MCP endpoints. An actor mints a bearer credential that runs
+        as that actor, optionally confined to selected component subtrees. One
+        stateless streamable-HTTP endpoint multiplexes every credential; two-layer
+        authz (tool allowlist + the native component access model) gates each call.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the MCP credential tables.
+      description: SQL database resource backing the MCP credential tables.
+    targets:
+      - entry: kickside.mcp.migrations:04_authority_snapshot
+        path: .meta.target_db
+      - entry: kickside.mcp.migrations:01_mcp_credentials
+        path: .meta.target_db
+      - entry: kickside.mcp.migrations:02_mcp_oauth
+        path: .meta.target_db
+      - entry: kickside.mcp.migrations:03_oauth_resource
+        path: .meta.target_db
+      - entry: kickside.mcp:db_config
+        path: .meta.db_id
+      - entry: kickside.mcp.security:endpoint_db_access
+        path: .policy.resources
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured MCP DB id (rewritten by the target_db requirement).
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the credential-management endpoints attach to. Must enforce session auth.
+      description: Authenticated HTTP router the credential-management endpoints attach to. Must enforce session auth.
+    targets:
+      - entry: kickside.mcp.api:create_credential.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:update_credential.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:list_credentials.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:revoke_credential.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:delete_credential.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:list_tools.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:list_components.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:list_presets.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:context.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:consent.endpoint
+        path: .meta.router
+
+  - name: public_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Public (unauthenticated) HTTP router the streamable-HTTP /mcp endpoint attaches to. The MCP handler enforces the bearer token itself; the OAuth register/token/authorize endpoints are public by protocol.
+      description: Public (unauthenticated) HTTP router the streamable-HTTP /mcp endpoint attaches to. The MCP handler enforces the bearer token itself; the OAuth register/token/authorize endpoints are public by protocol.
+    targets:
+      - entry: kickside.mcp.api:serve_mcp.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:serve_mcp.get.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.api:serve_mcp.delete.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:register.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:token.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:authorize.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:well_known_resource.endpoint
+        path: .meta.router
+      - entry: kickside.mcp.oauth:well_known_auth_server.endpoint
+        path: .meta.router
+
+  # ─── Preset bundles (the "traits" knob) ──────────────────────────────
+  # A preset names a set of tool ids a credential can be minted with. Any module
+  # ships one by declaring an entry of meta.type=mcp.preset; the create UI lists
+  # them and mint expands the chosen preset into the credential's allowlist. This
+  # "reader" entry is the template — populate tool_ids with real registry tool ids
+  # (e.g. the KB explorer read tools) per deployment.
+  - name: preset.reader
+    kind: registry.entry
+    meta:
+      type: mcp.preset
+      title: Reader
+      comment: Read-only access to the scoped components via the read tools.
+      tool_ids: []
+
+  # ─── Management UI (buildless static admin page) ─────────────────────
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server hosting the MCP admin page and public OAuth discovery.
+      description: HTTP server hosting the MCP admin page and public OAuth discovery.
+    targets:
+      - entry: kickside.mcp:ui_static
+        path: .meta.server
+      - entry: kickside.mcp.oauth:well_known_router
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-mcp web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-mcp
+    fs: kickside.mcp:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation the browser caches it
+      # hard and never picks up rebuilds (matches the other view modules).
+      cache: "no-cache"
+
+  # The credentials manager as a web component the app shell mounts in the nav.
+  # Built (vite) into ./static and served from the mount above; available to every
+  # authenticated user, not just admins.
+  - name: mcp_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: mcp_view
+      title: MCP
+      description: >-
+        MCP credentials manager: mint per-user credentials configured like an
+        agent (label, TTL, public traits with per-trait context, optional
+        component whitelist), reveal the token once with the public endpoint
+        URL and client config snippet, and rename or delete existing ones.
+      announced: true
+      tag_name: kickside-mcp
+      base_path: kickside-mcp
+      entry_point: index.js
+
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /mcp
+      route_name: mcp
+      title: MCP
+      comment: Mint and manage scoped MCP credentials for your agents.
+      icon: tabler:plug-connected
+      order: 60
+      render: component
+      component_tag: kickside-mcp
+
+  # ─── Shared libraries ────────────────────────────────────────────────
+  - name: consts
+    kind: library.lua
+    meta: { comment: "Stable vocabulary — table names, token shape, principal convention, protocol + discovery markers." }
+    source: file://consts.lua
+
+  - name: public_url
+    kind: library.lua
+    meta: { comment: "The public base and MCP endpoint URL: configured domain first, then the live request's host. Never the browser origin, which is null in the sandboxed SPA frame." }
+    source: file://public_url.lua
+    modules: [http, env]
+
+  - name: http_headers
+    kind: library.lua
+    meta: { private: true }
+    source: file://http_headers.lua
+
+  - name: mcp_types
+    kind: library.lua
+    meta: { comment: DB binding (db_id) + credential/principal row shapes. }
+    source: file://types.lua
+    modules: [registry]
+
+  - name: mcp_core_security
+    kind: library.lua
+    meta: { comment: "Load the protected credential identity and invoke tools through the core execution resolver." }
+    source: file://security.lua
+    modules: [funcs]
+    imports:
+      execution_identity: kickside.execution:execution_identity
+      mcp_repo: kickside.mcp.persist:repo
+      mcp_consts: kickside.mcp:consts
+      public_url: kickside.mcp:public_url
+
+  - name: credential_restriction
+    kind: function.lua
+    meta:
+      private: true
+      comment: Trusted active credential restriction lookup for the core execution resolver.
+    source: file://credential_restriction.lua
+    security:
+      policies: [kickside.mcp.security:credential_eligibility_call]
+    method: get
+    imports:
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: mcp_presets
+    kind: library.lua
+    meta: { comment: Resolve registry-declared mcp.preset trait/tool bundles for mint + the create UI. }
+    source: file://presets.lua
+    modules: [registry]
+    imports:
+      mcp_consts: kickside.mcp:consts
+      mcp_traits: kickside.mcp:mcp_traits
+
+  - name: mcp_traits
+    kind: library.lua
+    meta: { comment: "Registry facade over agent.trait capability packs — list, get, ranked search, expand trait and <ns>:* tool ids to concrete tool ids." }
+    source: file://traits.lua
+    modules: [registry]
+    imports:
+      mcp_consts: kickside.mcp:consts
+      tool_resolver: wippy.agent.discovery:tools
+
+  - name: mcp_surface
+    kind: library.lua
+    meta: { comment: Build a credential's REAL tool surface (active-trait tools + direct allowed tools) — descriptors + name->id map. }
+    source: file://surface.lua
+    modules: [registry, json]
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      mcp_consts: kickside.mcp:consts
+      mcp_traits: kickside.mcp:mcp_traits
+
+  - name: mcp_meta_tools
+    kind: library.lua
+    meta: { comment: "The always-present meta-tools — session_info, trait discovery + runtime activation (use_trait/...), list/find/call_tool." }
+    source: file://meta_tools.lua
+    imports:
+      mcp_consts: kickside.mcp:consts
+      mcp_traits: kickside.mcp:mcp_traits
+      mcp_surface: kickside.mcp:mcp_surface
+      canonical_json: kickside.contract:canonical_json
+      keyset: kickside.contract:keyset
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: dispatch_authenticated
+    kind: function.lua
+    meta: { private: true }
+    source: 'return { run = require("dispatcher").dispatch_authenticated }'
+    method: run
+    imports:
+      dispatcher: kickside.mcp:mcp_dispatcher
+
+  - name: tool_arguments
+    kind: library.lua
+    meta: { private: true }
+    source: file://tool_arguments.lua
+    modules: [json]
+
+  - name: mcp_dispatcher
+    kind: library.lua
+    meta: { comment: "Stateless MCP JSON-RPC dispatcher — initialize/ping, tools.list/call (meta + real, two-layer authz), resources.*, prompts.*." }
+    source: file://dispatcher.lua
+    modules: [json, registry, security]
+    imports:
+      mcp_traits: kickside.mcp:mcp_traits
+      canonical_json: kickside.contract:canonical_json
+      mcp_consts: kickside.mcp:consts
+      mcp_core_security: kickside.mcp:mcp_core_security
+      mcp_surface: kickside.mcp:mcp_surface
+      mcp_meta_tools: kickside.mcp:mcp_meta_tools
+      mcp_repo: kickside.mcp.persist:repo
+      tool_arguments: kickside.mcp:tool_arguments
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.wippy.agent
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Tool resolver that expands trait <ns>:* tool declarations, the same expansion the agent compiler applies.
+    component: wippy/agent
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration

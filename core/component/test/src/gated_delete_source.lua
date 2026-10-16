@@ -1,0 +1,1 @@
+../../src/binding/delete_component_func.lua

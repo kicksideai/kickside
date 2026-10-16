@@ -1,0 +1,84 @@
+/* KickSide decorative tones.
+ *
+ * A tone is a colour that carries IDENTITY, not STATE. A capability category, a
+ * knowledge-base type, a module's card accent - things that need to be told
+ * apart at a glance and would be told apart just as well if every hue were
+ * rotated one step.
+ *
+ * SEVERITY DOES NOT LIVE HERE. Success, warning, danger and info already have a
+ * published vocabulary: PrimeVue's `severity` prop on a component, the theme's
+ * `--p-success-*` / `--p-warn-*` / `--p-danger-*` / `--p-info-*` ramps, the
+ * `--kx-wash-*` tints in `kx-tokens.css`, and Tailwind's semantic utilities.
+ * There is no `.kx-tone-danger`, and there should never be one - a red that
+ * means "error" must come from the danger ramp so that re-theming, contrast
+ * work and colour-blind adjustments reach it. The reverse mistake is just as
+ * bad: a category that happens to be red must NOT borrow `--p-danger-500`,
+ * because it is not an error.
+ *
+ * That line is why this file is short. Sixteen `tone-*` / `t-*` classes were
+ * scattered across seven modules under four naming schemes, and every single
+ * one of them turned out to be a severity wearing a colour name - `.tone-gn`
+ * was `--p-success-500`, `.t-bad` was `--p-danger-500`. They are gone, replaced
+ * by state classes that read the theme directly. What is left, below, is the
+ * genuinely decorative set: three hues agents and mcp each hardcoded to tell
+ * agent capabilities apart.
+ *
+ * The hues are literals rather than `--p-*` because the theme publishes only
+ * semantic ramps - `surface`, `primary`, and the four severities. There is no
+ * decorative palette to borrow, and borrowing a severity ramp is the mistake
+ * this file exists to prevent.
+ *
+ * Each tone sets the ink and derives its own fill from it, so a tone works on a
+ * `.kx-tag-sm`, an icon tile or a bare `<span>` without any of them knowing
+ * which tone they got.
+ */
+
+:host,
+:root {
+  /* Chosen for separation at small sizes on white, and re-picked below for dark
+     rather than lightened programmatically - a hue that reads as violet at 45%
+     lightness does not at 75%. */
+  --kx-tone-blue: #2563eb;
+  --kx-tone-violet: #7c3aed;
+  --kx-tone-amber: #b45309;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host(:not(.w-theme-light)),
+  :root:not(.w-theme-light) {
+    --kx-tone-blue: #60a5fa;
+    --kx-tone-violet: #a78bfa;
+    --kx-tone-amber: #fbbf24;
+  }
+}
+
+:host(.w-theme-dark),
+:root.w-theme-dark {
+  --kx-tone-blue: #60a5fa;
+  --kx-tone-violet: #a78bfa;
+  --kx-tone-amber: #fbbf24;
+}
+
+/* 13% is the tint that reads as "coloured" without competing with the label on
+   top of it, matched to `--kx-wash-*` in kx-tokens.css so a decorative badge
+   and a severity badge sit at the same weight beside each other. */
+.kx-tone-blue {
+  color: var(--kx-tone-blue);
+  background-color: color-mix(in srgb, var(--kx-tone-blue) 13%, transparent);
+}
+
+.kx-tone-violet {
+  color: var(--kx-tone-violet);
+  background-color: color-mix(in srgb, var(--kx-tone-violet) 13%, transparent);
+}
+
+.kx-tone-amber {
+  color: var(--kx-tone-amber);
+  background-color: color-mix(in srgb, var(--kx-tone-amber) 13%, transparent);
+}
+
+/* The absence of a tone, for a category with nothing to say. */
+.kx-tone-neutral {
+  color: var(--p-text-muted-color);
+  background-color: color-mix(in srgb, var(--p-text-color) 10%, transparent);
+}

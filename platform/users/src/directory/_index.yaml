@@ -1,0 +1,101 @@
+version: "1.0"
+namespace: kickside.users.directory
+
+# The principal directory — the swappable "who can I share with" seam.
+# directory.lua is the adapter over the kickside user persistence; the binding
+# exposes it as kickside.contract:directory so backend consumers resolve
+# principals through the port, and the /principals endpoints are the frontend
+# transport for the share UI. Replacing the user backend = rebind this contract.
+
+entries:
+  - name: directory_catalog
+    kind: library.lua
+    source: file://catalog.lua
+    modules: [contract, security]
+
+  - name: search_cursor
+    kind: library.lua
+    source: file://search_cursor.lua
+    modules: [json, base64]
+
+  - name: search_page
+    kind: library.lua
+    source: file://search_page.lua
+    imports:
+      user_directory_repo: kickside.users.persist:user_directory_repo
+      directory_catalog: kickside.users.directory:directory_catalog
+      search_cursor: kickside.users.directory:search_cursor
+
+  - name: directory_lib
+    kind: library.lua
+    meta: { comment: Directory adapter — shareable users + groups as typed principals. }
+    source: file://directory.lua
+    modules: [funcs]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      consts: kickside.users:consts
+      directory_catalog: kickside.users.directory:directory_catalog
+      search_page: kickside.users.directory:search_page
+
+  - name: directory_search
+    kind: function.lua
+    meta: { comment: "kickside.contract:directory:search binding method." }
+    source: file://directory_search.lua
+    imports:
+      directory: kickside.users.directory:directory_lib
+    method: handler
+
+  - name: directory_resolve
+    kind: function.lua
+    meta: { comment: "kickside.contract:directory:resolve binding method." }
+    source: file://directory_resolve.lua
+    imports:
+      directory: kickside.users.directory:directory_lib
+    method: handler
+
+  - name: directory_exists
+    kind: function.lua
+    meta: { comment: "kickside.contract:directory:exists binding method." }
+    source: file://directory_exists.lua
+    imports:
+      directory: kickside.users.directory:directory_lib
+    method: handler
+
+  - name: directory_groups
+    kind: function.lua
+    meta: { comment: "kickside.contract:directory:groups binding method." }
+    source: file://directory_groups.lua
+    security:
+      actor:
+        id: kickside.users.directory:directory_groups
+      policies:
+        - kickside.users.directory:subject_lookup_access
+    imports:
+      directory: kickside.users.directory:directory_lib
+    method: handler
+
+  - name: subject_lookup_access
+    kind: security.policy
+    policy:
+      resources: kickside.users.binding:subject_lookup
+      actions: funcs.call
+      effect: allow
+
+  - name: directory_binding
+    kind: contract.binding
+    meta:
+      comment: Canonical implementation of kickside.contract:directory over the kickside user persistence.
+    contracts:
+      - contract: kickside.contract:directory
+        default: true
+        methods:
+          search: kickside.users.directory:directory_search
+          resolve: kickside.users.directory:directory_resolve
+          exists: kickside.users.directory:directory_exists
+          groups: kickside.users.directory:directory_groups
+
+  # Module-owned access policy for the principal lookup endpoints (share pickers).
+  # The user group is injected by the kickside.users:user_security_scope
+  # requirement (the app wires app.security:user), so groups ships empty. User CRUD
+  # and group mutation stay admin-only by living in the kickside.users namespace,
+  # outside this grant.

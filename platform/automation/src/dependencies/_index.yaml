@@ -1,0 +1,50 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration
+
+  - name: dep.wippy.views
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Server-rendered view substrate.
+    component: wippy/views
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Provides the Trigger lifecycle, delivery, and acquisition-control contracts.
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Event-sourced on the core thread engine (thread upsert, event append, status).
+    component: kickside/core
+
+  - name: dep.kickside.jobs
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Automation health reads the jobs runtime policy's overdue grace.
+    component: kickside/jobs

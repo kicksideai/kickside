@@ -1,0 +1,1 @@
+../../../../src/app/security/user_endpoint_policy_test.lua

@@ -1,0 +1,32 @@
+version: "1.0"
+namespace: kickside.channel.binding
+
+entries:
+  - name: inject_func
+    kind: function.lua
+    meta: { comment: "kickside.channel:inject -- read the thread's attrs, synthesize the inbound, and re-dispatch through its surface (dm/channel receive)." }
+    source: file://inject_func.lua
+    method: inject
+    modules: [contract, uuid, security]
+    imports:
+      component: kickside.component:component
+    security:
+      policies: [kickside.channel:receive_inject]
+
+  - name: cleanup_conversation
+    kind: function.lua
+    meta: { comment: "Delete a chat session + mapping row. The responder's install rollback target." }
+    source: file://cleanup_conversation_func.lua
+    method: cleanup_conversation
+    imports:
+      channel_persist: kickside.channel.persist:repo
+      channel_consts: kickside.channel:consts
+      session_service: wippy.session:service
+      session_delete_proof: kickside.channel.persist:session_delete_proof
+      channel_conversation: kickside.channel.persist:conversation
+      conversation_gc: kickside.channel.persist:conversation_gc
+
+  # ─── Install-form UI server ──────────────────────────────────────────
+  # The channel-responder automation lives in its own component
+  # (kickside.channel.responder); this module only serves its built UI bundle
+  # (../ui -> ./static) at /kickside-channel.

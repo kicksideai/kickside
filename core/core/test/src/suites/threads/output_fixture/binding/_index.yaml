@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: kickside.test.threads.binding
+entries:
+  - name: sibling_output_kind
+    kind: contract.binding
+    meta:
+      events:
+        output:
+          - type: kickside.test.threads:changed
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status

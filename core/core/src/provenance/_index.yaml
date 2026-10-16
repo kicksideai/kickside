@@ -1,0 +1,9 @@
+version: "1.0"
+namespace: kickside.core.provenance
+
+entries:
+  - name: source_ref
+    kind: library.lua
+    meta:
+      comment: Canonical event-body source_ref provenance envelope builder.
+    source: file://source_ref.lua

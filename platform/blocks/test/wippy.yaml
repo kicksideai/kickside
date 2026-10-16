@@ -1,0 +1,12 @@
+organization: kickside
+module: blocks-contract-harness
+type: application
+description: Isolated canonical Block contract and lowering tests.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true
+exclude:
+  - ".wippy/**"
+  - ".wippy:**"

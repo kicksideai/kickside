@@ -1,0 +1,118 @@
+version: "1.0"
+namespace: kickside.core.projections
+
+# Projection engine slice. Owns kickside_projection / kickside_projection_cursor
+# reads, writes, and the generic worker boundary. Jobs owns cursor slot execution.
+
+entries:
+  # ─── Runtime policy (design §8) ──────────────────────────────────────
+  # One configuration shape. A host overrides a value through
+  # .wippy.yaml "kickside.core.projections:policy:meta.<path>".
+  - name: policy
+    kind: registry.entry
+    meta:
+      comment: Projection runtime policy — apply batch size and supervised proc execution ceiling.
+      apply:
+        batch_size: 200
+      proc:
+        max_execution: 10m
+
+  - name: policy_config
+    kind: library.lua
+    meta:
+      comment: Validated projections runtime policy reader.
+    source: file://policy.lua
+    modules: [registry, time]
+
+  - name: apply
+    kind: library.lua
+    meta:
+      comment: Generation and sequence fenced cursor apply with atomic jobs completion.
+    source: file://apply.lua
+    modules: [sql, json, registry]
+    imports:
+      clock: kickside.core.jobs:clock
+      threads_writer: kickside.core.threads.persist:writer
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      retention_notifier: kickside.core.retention:notifier
+      execution_identity: kickside.execution:execution_identity
+      error_envelope: kickside.contract:error_envelope
+
+  - name: invoke
+    kind: library.lua
+    meta:
+      comment: Load a projection cursor batch and invoke its declared worker.
+    source: file://invoke.lua
+    modules: [sql, json, time]
+    imports:
+      clock: kickside.core.jobs:clock
+      core_db: kickside.core:db
+      worker: kickside.core.projections.persist:worker
+      projection_policy: kickside.core.projections:policy_config
+      apply: kickside.core.projections:apply
+      trace_context: kickside.execution:trace
+      jobs: kickside.core.jobs:jobs
+      execution_identity: kickside.execution:execution_identity
+      job_types: kickside.core.jobs:types
+      error_envelope: kickside.contract:error_envelope
+
+  - name: advance
+    kind: function.lua
+    meta:
+      comment: Jobs slot worker for one projection cursor batch.
+      # Synchronous consumers (catch_up_projection) wait on this slot, so it
+      # runs on the jobs pool's awaited slots.
+      job_class: awaited
+    source: file://invoke.lua
+    method: run
+    modules: [sql, json, time]
+    imports:
+      clock: kickside.core.jobs:clock
+      core_db: kickside.core:db
+      worker: kickside.core.projections.persist:worker
+      projection_policy: kickside.core.projections:policy_config
+      apply: kickside.core.projections:apply
+      trace_context: kickside.execution:trace
+      jobs: kickside.core.jobs:jobs
+      execution_identity: kickside.execution:execution_identity
+      job_types: kickside.core.jobs:types
+      error_envelope: kickside.contract:error_envelope
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # Runtime DB access resolves the root target_db-injected db_config.
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the projection admin endpoints attach to.
+    targets:
+      - entry: kickside.core.projections.api:register_projection.endpoint
+        path: .meta.router
+      - entry: kickside.core.projections.api:remove_projection.endpoint
+        path: .meta.router
+      - entry: kickside.core.projections.api:pause_projection.endpoint
+        path: .meta.router
+      - entry: kickside.core.projections.api:resume_projection.endpoint
+        path: .meta.router
+      - entry: kickside.core.projections.api:list_projection_cursors.endpoint
+        path: .meta.router
+
+  # ─── Constant vocabulary ─────────────────────────────────────────────
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Projection/cursor constant vocabulary (status, keys, worker schemes, bounds).
+    source: file://types.lua
+
+  - name: get_read_model
+    kind: function.lua
+    meta:
+      comment: kickside.core:read_models get — access-check and return one committed projection body only.
+    source: file://read_models.lua
+    method: get
+    modules: [sql, json]
+    imports:
+      core_db: kickside.core:db
+      component: kickside.core.threads:component
+      core_types: kickside.core:types

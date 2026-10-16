@@ -1,0 +1,112 @@
+version: "1.0"
+namespace: kickside.webhooks.security
+
+# The actor scope a webhook ingress runs the thread append under (broad allow, tempered
+# by a control-plane deny), plus the capabilities the public endpoint's own actor needs
+# before it resolves a webhook and synthesizes the stored actor.
+
+entries:
+  - name: session
+    kind: security.policy
+    meta:
+      comment: Runtime scope for a synthesized webhook actor. Component access is the real gate.
+    groups:
+      - kickside.webhooks.security:session
+    policy:
+      resources:
+        - "*"
+      actions:
+        - "*"
+      effect: allow
+
+  - name: session_deny_control_plane
+    kind: security.policy
+    meta:
+      comment: A webhook actor may never mutate the registry, administer security/access, or read/broadcast across tenants, regardless of scope breadth.
+    groups:
+      - kickside.webhooks.security:session
+    policy:
+      resources:
+        - "*"
+      actions:
+        - "registry.apply"
+        - "registry.delete"
+        - "security.admin"
+        - "access.admin"
+        - "list_all"
+        - "view_all"
+        - "realtime.broadcast"
+      effect: deny
+
+  - name: endpoint_db_access
+    kind: security.policy
+    meta:
+      comment: The public webhook endpoint may open the requirement-bound database to resolve a webhook by id.
+    policy:
+      actions:
+        - db.get
+      effect: allow
+
+  - name: endpoint_db_config_read
+    kind: security.policy
+    meta:
+      comment: The public endpoint may resolve only the requirement-injected database configuration entry.
+    policy:
+      resources:
+        - kickside.webhooks:db_config
+      actions:
+        - registry.get
+      effect: allow
+
+  - name: endpoint_actor_create
+    kind: security.policy
+    meta:
+      comment: The public webhook endpoint may synthesize the resolved webhook actor after secret verification.
+    policy:
+      resources: '*'
+      actions:
+        - security.actor.create
+      effect: allow
+
+  - name: endpoint_session_scope_read
+    kind: security.policy
+    meta:
+      comment: The public webhook endpoint may resolve only the webhook named session scope for its synthesized actor.
+    policy:
+      resources:
+        - kickside.webhooks.security:session
+      actions:
+        - security.policy_group.get
+      effect: allow
+
+  # After verification, ingress calls exactly one internal dispatch function under
+  # the synthesized webhook actor. The endpoint receives no threads-contract grant:
+  # that function resolves and opens the contract under the stored actor's named
+  # session scope, where the component WRITE gate remains authoritative.
+  - name: endpoint_verified_dispatch
+    kind: security.policy
+    meta:
+      comment: The public webhook endpoint may call only the verified-ingress append function.
+    policy:
+      resources:
+        - kickside.webhooks.ingress:append_event
+      actions:
+        - funcs.call
+      effect: allow
+
+  - name: endpoint_actor_binding
+    kind: security.policy
+    meta:
+      comment: The public webhook endpoint may bind its synthesized webhook actor onto the internal function executor.
+    policy:
+      resources:
+        - security
+      actions:
+        - funcs.security
+      effect: allow
+
+  # Module-owned access policy for the webhook-management endpoints (a user mints +
+  # manages their own webhook secrets). Declared here so the grant travels with the
+  # slice; the user group is injected by the user_security_scope requirement (the
+  # host wires its authenticated user group), so groups ships empty. The public
+  # /hooks ingress endpoint is on the open router and is unaffected.

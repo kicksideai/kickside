@@ -1,0 +1,432 @@
+version: "1.0"
+namespace: kickside.settings
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Settings
+      description: Runtime, admin-editable, DB-backed settings. Modules declare typed kickside.settings:definition entries; the DB stores only admin overrides; a store.memory cache (warmed at boot) serves reads; all writes go through one canonical writer. Exposed as the kickside.settings:settings contract.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      description: SQL database resource backing kickside_settings.
+    targets:
+      - entry: kickside.settings.migrations:01_settings
+        path: .meta.target_db
+      - entry: kickside.settings:db_config
+        path: .meta.db_id
+
+  # Resolved DB id for the writer. The target_db requirement rewrites .meta.db_id
+  # here; settings_types.db_id() reads it back so the writer binds the
+  # configured database, not a hardcoded literal.
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured settings DB id (rewritten by the target_db requirement).
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      description: HTTP router the settings admin endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.settings.api:list_settings.endpoint
+        path: .meta.router
+      - entry: kickside.settings.api:list_blocks.endpoint
+        path: .meta.router
+      - entry: kickside.settings.api:put_settings.endpoint
+        path: .meta.router
+      - entry: kickside.settings.api:get_about.endpoint
+        path: .meta.router
+
+  # ─── Override cache (store.memory) ───────────────────────────────────
+  - name: cache
+    kind: store.memory
+    meta:
+      comment: In-memory override cache. Warmed from the DB at boot; reads are served from here, not the DB.
+    cleanup_interval: 30m
+    lifecycle:
+      auto_start: true
+    max_size: 1000
+
+  # ─── Settings domain ─────────────────────────────────────────────────
+  - name: settings_types
+    kind: library.lua
+    source: file://types.lua
+    modules: [registry]
+
+  - name: about_content
+    kind: registry.entry
+    notices: file://THIRD_PARTY_NOTICES.md
+
+  - name: about_info
+    kind: library.lua
+    source: file://about.lua
+    modules: [http, registry, system]
+
+  - name: settings_defs
+    kind: library.lua
+    meta: { comment: Discover kickside.settings:definition entries + coerce values to their declared type. }
+    source: file://defs.lua
+    modules: [registry, time]
+    imports:
+      settings_types: kickside.settings:settings_types
+
+  - name: settings_blocks
+    kind: library.lua
+    meta: { comment: Discover declared settings blocks and synthesize namespace blocks for visible definitions. }
+    source: file://blocks.lua
+    modules: [registry]
+
+  - name: settings_cache
+    kind: library.lua
+    meta: { comment: store.memory wrapper holding the whole override map under one key. }
+    source: file://cache.lua
+    modules: [store, json]
+    imports:
+      settings_types: kickside.settings:settings_types
+
+  - name: settings_secrets
+    kind: library.lua
+    meta: { comment: "AES encryption for secret-typed settings, keyed by ENCRYPTION_KEY (64 hex / 32 bytes)." }
+    source: file://secrets.lua
+    modules: [crypto, base64, env]
+
+  # Per-method dispatchers over the single settings.lua source; each is one
+  # contract method. The import set is the transitive closure of settings.lua's
+  # libraries (Wippy resolves a library's require() against the leaf entry).
+  # Reads retain the caller identity so declarative read_access can check the
+  # admin capability. Their narrow policies add internal cache/registry reads
+  # only for the function invocation; callers never gain direct cache access.
+  - name: reader_cache
+    kind: security.policy
+    meta: { comment: Settings read functions may read the warmed override cache. }
+    policy:
+      resources:
+        - kickside.settings:cache
+      actions:
+        - store.get
+        - store.key.get
+      effect: allow
+
+  - name: reader_registry
+    kind: security.policy
+    meta: { comment: Settings read functions may scan declared definitions (the scan spans namespaces). }
+    policy:
+      resources:
+        - "*"
+      actions:
+        - registry.find
+        - registry.get
+      effect: allow
+
+  - name: get
+    kind: function.lua
+    meta: { comment: settings — get one value. }
+    source: file://settings.lua
+    method: get
+    modules: [store, security]
+    imports:
+      settings_defs: kickside.settings:settings_defs
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_types: kickside.settings:settings_types
+    security:
+      policies:
+        - kickside.settings:reader_cache
+        - kickside.settings:reader_registry
+
+  - name: set
+    kind: function.lua
+    meta: { comment: settings — set (override) one value via the canonical writer. }
+    source: file://settings.lua
+    method: set
+    modules: [store, security]
+    imports:
+      settings_defs: kickside.settings:settings_defs
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_types: kickside.settings:settings_types
+
+  - name: unset
+    kind: function.lua
+    meta: { comment: "settings — clear an override, reverting to the default." }
+    source: file://settings.lua
+    method: unset
+    modules: [store, security]
+    imports:
+      settings_defs: kickside.settings:settings_defs
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_types: kickside.settings:settings_types
+
+  - name: list
+    kind: function.lua
+    meta: { comment: settings — list declarations merged with overrides + provenance. }
+    source: file://settings.lua
+    method: list
+    modules: [store, security]
+    imports:
+      settings_defs: kickside.settings:settings_defs
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_types: kickside.settings:settings_types
+
+  - name: get_namespace
+    kind: function.lua
+    meta: { comment: settings — effective values for every key in a namespace. }
+    source: file://settings.lua
+    method: get_namespace
+    modules: [store, security]
+    imports:
+      settings_defs: kickside.settings:settings_defs
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_types: kickside.settings:settings_types
+    security:
+      policies:
+        - kickside.settings:reader_cache
+        - kickside.settings:reader_registry
+
+  # ─── Boot warmer ─────────────────────────────────────────────────────
+  - name: cache_bootloader
+    kind: function.lua
+    meta:
+      comment: Warms the settings cache from the DB at boot so reads avoid the DB.
+      type: bootloader
+      order: 30
+      requires:
+        - wippy.migration:migration_bootloader
+    source: file://service/cache_bootloader.lua
+    method: run
+    modules: [store]
+    imports:
+      settings_writer: kickside.settings.persist:settings_writer
+
+  # ─── UI component (the settings editor as a Wippy web component) ──────
+  # Settings is a self-contained component: it BUILDS (ui/), SHIPS (static/), and
+  # SERVES (its own http.static) its admin UI, exposed as a view.component the
+  # host mounts by tag. No dependency on the app to host the bundle.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      description: HTTP server the settings UI bundle is served from.
+    targets:
+      - entry: kickside.settings:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta: { comment: Built settings web component bundle (from ui/). }
+    directory: ./static
+    auto_init: true
+
+  - name: ui_static
+    kind: http.static
+    meta:
+      comment: Serves the settings web component bundle at /kickside-settings.
+    path: /kickside-settings
+    fs: kickside.settings:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .map: application/json
+
+  - name: settings_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Settings
+      title: Settings
+      description: >-
+        The admin settings editor (tag kickside-settings): fetches the block
+        list from GET /api/v1/settings/blocks and renders a grouped left-nav
+        plus a content pane — a block with a component_tag mounts that bespoke
+        editor by tag, a namespace block renders the generic per-value-type
+        form. Takes the route prop to deep-link a block by key (unset selects
+        the first block); emits only the standard bridge lifecycle events.
+      tag_name: kickside-settings
+      base_path: kickside-settings
+      entry_point: index.js
+      auto_register: false
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties:
+        route:
+          type: string
+          default: ""
+          description: Deep-link to a settings block by key. Unset selects the first block.
+
+  - name: provider_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Settings Provider
+      title: Settings Provider
+      description: >-
+        A shared config-driven provider settings card (tag
+        kickside-settings-provider) hosts embed to surface one namespace's
+        declared settings on their own page. Takes the config prop (a JSON
+        attribute { namespace, title?, icon?, help? }) and renders that
+        namespace's settings form; emits only the standard bridge lifecycle
+        events.
+      tag_name: kickside-settings-provider
+      base_path: kickside-settings
+      entry_point: provider.js
+      auto_register: false
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          default: {}
+          description: Provider card config ({ namespace, title?, icon?, help? }) passed as a JSON attribute; renders that namespace's declared settings.
+
+  - name: about_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide About
+      title: About
+      description: >-
+        Application information in Settings (tag kickside-settings-about).
+        Shows the active KickSide package version, Community License link,
+        shipped third-party notices and running Wippy version from GET
+        /api/v1/settings/about. Takes no props and emits standard bridge lifecycle events.
+      tag_name: kickside-settings-about
+      base_path: kickside-settings
+      entry_point: about.js
+      auto_register: false
+      secure: false
+      announced: true
+
+  - name: block.about
+    kind: registry.entry
+    meta:
+      type: kickside.settings:block
+    key: about
+    title: About
+    group: Application
+    order: 100
+    icon: tabler:info-circle
+    component_tag: kickside-settings-about
+
+  # Module-owned System tab: installing this module adds the Settings tab to the
+  # System page; uninstalling removes it. The host discovers it at /settings/tabs.
+  - name: tab.settings
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Editable application settings (kickside/settings web component).
+    key: settings
+    label: Settings
+    icon: tabler:adjustments
+    order: 50
+    render: component
+    component_tag: kickside-settings
+    access: kickside.settings.api:put_settings.endpoint
+
+  # ─── Contract + canonical binding ────────────────────────────────────
+  - name: settings
+    kind: contract.definition
+    meta:
+      title: Settings
+      description: Read/write admin-editable settings. Reads fall back to declared defaults; writes validate against the declaration. unset reverts to default.
+    methods:
+      - name: get
+        description: get({ namespace, key }) -> { success, value }. Falls back to the declared default.
+        input_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" } },
+                "required": ["namespace", "key"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "value": { "description": "Stored value or declared default" }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+      - name: set
+        description: set({ namespace, key, value }) -> { success }. Validates against the declaration.
+        input_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" }, "value": { "description": "Value to store; validated against the setting declaration" } },
+                "required": ["namespace", "key", "value"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: unset
+        description: unset({ namespace, key }) -> { success }. Reverts to the declared default.
+        input_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" } },
+                "required": ["namespace", "key"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: list
+        description: list({ namespace? }) -> { success, settings[] }
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "namespace": { "type": "string", "description": "Optional namespace filter" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "settings": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+      - name: get_namespace
+        description: get_namespace({ namespace }) -> { success, values }. All key->value pairs in a namespace (defaults applied).
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "namespace": { "type": "string" } }, "required": ["namespace"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "values": { "type": "object", "description": "key -> value map" }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+
+  - name: settings_binding
+    kind: contract.binding
+    meta:
+      title: Settings Service
+      comment: Canonical implementation of kickside.settings:settings.
+    contracts:
+      - contract: kickside.settings:settings
+        default: true
+        methods:
+          get: kickside.settings:get
+          set: kickside.settings:set
+          unset: kickside.settings:unset
+          list: kickside.settings:list
+          get_namespace: kickside.settings:get_namespace
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration

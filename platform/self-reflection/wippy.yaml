@@ -1,0 +1,27 @@
+organization: kickside
+module: self-reflection
+type: plugin
+description: Optional Self Reflection agent capability for read-only registry/app introspection.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - agents
+  - registry
+  - introspection
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support

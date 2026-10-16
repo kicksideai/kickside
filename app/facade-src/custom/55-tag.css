@@ -1,0 +1,61 @@
+/* Tag: the warn severity, restored to the amber the product had before.
+ *
+ * models, security, users, uploads and automation all used to paint their own
+ * warn badge as `--p-warn-600` ink on an 18% `--p-warn-500` wash. Those badges
+ * are PrimeVue Tags now, and the theme's own warn Tag is a step darker and a
+ * step paler - `--p-warn-700` (#92400e, which reads brown rather than amber) on
+ * a wash light enough that the pill nearly disappears next to the info and
+ * success ones beside it.
+ *
+ * "0 overlay" sitting next to "414 discovered" is exactly where that shows: the
+ * green reads as a colour and the orange reads as a smudge. This puts the old
+ * pair back, once, so every warn Tag in the product gets it rather than each
+ * module re-deciding.
+ *
+ * Only warn. info and success shifted the same way (600 ink -> 700, paler
+ * wash) and were left alone deliberately - they still read as colours, and
+ * changing them is a separate call.
+ */
+
+.p-tag-warn {
+  color: var(--p-warn-600);
+  background: color-mix(in srgb, var(--p-warn-500) 18%, transparent);
+}
+
+/* `--p-warn-600` is chosen to sit on a light background; against a dark surface
+   it is the wash that has to carry the colour and the ink that has to lift, or
+   the pill turns into dark-brown-on-dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.w-theme-light) .p-tag-warn,
+  :host(:not(.w-theme-light)) .p-tag-warn {
+    color: var(--p-warn-400, var(--p-warn-500));
+    background: color-mix(in srgb, var(--p-warn-500) 22%, transparent);
+  }
+}
+
+:root.w-theme-dark .p-tag-warn,
+:host(.w-theme-dark) .p-tag-warn {
+  color: var(--p-warn-400, var(--p-warn-500));
+  background: color-mix(in srgb, var(--p-warn-500) 22%, transparent);
+}
+
+/* Tag: the success severity, one rung darker in light.
+ *
+ * The prestyled PrimeVue sheet paints a light Tag as the `-700` rung of its
+ * severity over the `-100` wash. Every ramp here is a mix over its seed, so that
+ * geometry holds AA only while the seed is dark: info, danger, secondary and
+ * contrast clear 5.9:1 or better, and the green `--p-success` seed - the lightest
+ * of the set - lands at 4.06:1. That is the published version badge and the
+ * last-run label in the Workflow catalog, both under AA on their own pill.
+ *
+ * `--p-success-800` is the next rung down, 5.23:1 on the same wash and the same
+ * green. Only the ink moves, so the pill keeps its weight next to the info and
+ * danger ones beside it.
+ *
+ * Light only. The dark Tag is a different pair (`-300` ink on a 15% `-500` wash)
+ * and already reads at 14.9:1; the rules that paint it carry the theme selector
+ * and out-specify this one, so it is untouched.
+ */
+.p-tag-success {
+  color: var(--p-success-800);
+}

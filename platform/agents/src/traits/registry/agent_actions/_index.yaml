@@ -1,0 +1,72 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: agents_action
+    kind: function.lua
+    meta:
+      type: tool
+      title: Agents
+      mcp:
+        required_scopes: [state.read, state.write]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "list reachable agents, delegate a subtask to one, or redirect the chat to one", "enum": ["list", "delegate", "redirect"] },
+            "agent_id": { "type": "string", "description": "Target agent id (e.g. user_agent:UUID or a system agent id). Required for delegate and redirect." },
+            "task": { "type": "string", "description": "For delegate: the self-contained instruction the sub-agent works from (it does not see this chat)." },
+            "fields": { "type": "array", "items": { "type": "string", "enum": ["description"] }, "description": "list only: optional larger row fields. Default rows are compact summaries; description returns the full agent description." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "For list: agents per page; default 25." },
+            "cursor": { "type": "string", "description": "For list: the next_cursor of the previous page." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "For delegate: the sub-agent's returned text result."
+            },
+            {
+              "type": "object",
+              "description": "Structured result. For list, a page of reachable agents. For redirect, the control directive that hands the chat to the target agent (which takes over; you do not continue). A delegate may also return a structured result table from the sub-agent.",
+              "properties": {
+                "success": { "type": "boolean", "const": true, "description": "list: the listing succeeded." },
+                "scope": { "type": "string", "description": "list: the namespace scope the roster is filtered by." },
+                "agents": {
+                  "type": "array",
+                  "description": "list: compact reachable agents in agent_id order, each { agent_id, title }. Request fields=[description] for descriptions.",
+                  "items": { "type": "object" }
+                },
+                "count": { "type": "integer", "description": "list: number of agents in this page." },
+                "next_cursor": { "type": "string", "description": "list: pass as cursor for the next page; absent on the last page." },
+                "message": {
+                  "type": "string",
+                  "description": "Confirmation naming the agent the chat is being redirected to (redirect action)."
+                },
+                "_control": {
+                  "type": "object",
+                  "description": "Runtime directive that hands the session to the target agent.",
+                  "properties": {
+                    "config": {
+                      "type": "object",
+                      "properties": {"agent": {"type": "string", "description": "Agent id that takes over the chat."}}
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "description": "Successful tool result. Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: Agents
+      llm_description: "List the agents you can reach (25 per page by default; pass next_cursor as cursor for more), delegate a self-contained subtask to one (isolated, returns to you), or redirect the chat to one (it takes over; you do not continue). Failures return no result and a typed tool error with a clear message."
+    source: file://../../agents_action.lua
+    modules: [funcs, ctx, env, security]
+    imports:
+      roster_list: kickside.agents.traits:roster_list
+      master_ns: kickside.agents.traits:master_ns
+      keyset: kickside.contract:keyset
+    method: handler

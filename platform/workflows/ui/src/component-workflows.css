@@ -1,0 +1,22 @@
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+:host { display: block; height: 100%; min-height: 0; color: var(--p-text-color); font-family: inherit; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+.cw-root { display: flex; flex-direction: column; min-width: 0; min-height: 100%; background: var(--p-content-background); }
+.cw-head { display: flex; align-items: center; gap: 12px; padding: 20px 24px 14px; }
+.cw-head-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 11px; color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); }
+.cw-head-icon svg { width: 22px; height: 22px; }
+.cw-head-copy { min-width: 0; }
+.cw-head h1 { margin: 0; color: var(--p-text-color); font-size: 18px; line-height: 1.3; font-weight: 700; letter-spacing: -.015em; }
+.cw-head p { margin: 2px 0 0; color: var(--p-text-muted-color); font-size: 13px; line-height: 1.45; }
+.cw-section { min-width: 0; flex: 1; }
+.cw-host { min-height: 180px; }
+.cw-host > * { display: block; min-height: 180px; }
+.cw-state { display: flex; align-items: center; gap: 8px; padding: 30px 24px; color: var(--p-text-muted-color); font-size: 13px; }
+.cw-spinner { width: 18px; height: 18px; }
+.cw-feedback { margin: 0 24px 10px; }
+@media (max-width: 640px) { .cw-head { padding: 16px 16px 12px; } .cw-feedback { margin-inline: 16px; } }

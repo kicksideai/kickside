@@ -1,0 +1,457 @@
+version: "1.0"
+namespace: kickside.renderers
+
+# Isolated content-viewer web components, shared across kickside. Each viewer is
+# its own lazy-loaded bundle (markdown / pdf / image) so heavy deps never enter a
+# host bundle; <wc-resource-view> is the reusable host that mounts the right one
+# by tag for a given content-type. Any module uses it by tag (loadByTagName).
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Content Renderers
+      comment: Isolated, reusable content viewers — <wc-resource-view> host + <wc-render-markdown>/<wc-render-pdf>/<wc-render-image>. Mounted by tag wherever a resource needs inline rendering (wiki, uploads, inbox).
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the renderers static bundle attaches to.
+      description: HTTP server the renderers static bundle attaches to.
+    targets:
+      - entry: kickside.renderers:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built renderer web component bundles (one per viewer + the host).
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-renderers
+    fs: kickside.renderers:ui_fs
+    options:
+      cache: "no-cache"
+
+  # ─── Authorization ──────────────────────────────────────────────────
+  # Module-owned access policy for renderer static bundles and discovery. The
+  # host injects its authenticated user group through user_security_scope.
+  - name: renderers_endpoint_access
+    kind: security.policy
+    meta:
+      comment: Authenticated users may load renderer bundles and discover registered renderer metadata.
+    groups: []
+    policy:
+      resources:
+      - kickside.renderers:render_audio
+      - kickside.renderers:render_code
+      - kickside.renderers:render_docx
+      - kickside.renderers:render_html
+      - kickside.renderers:render_image
+      - kickside.renderers:render_markdown
+      - kickside.renderers:render_pdf
+      - kickside.renderers:render_pptx
+      - kickside.renderers:render_video
+      - kickside.renderers:render_xlsx
+      - kickside.renderers:resource_view
+      - kickside.renderers:ui_static
+      actions: access
+      effect: allow
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach renderer user surfaces.
+      description: Application security group that may reach renderer user surfaces.
+    targets:
+      - entry: kickside.renderers:renderers_endpoint_access
+        path: ".groups +="
+
+  # ─── Host: <wc-resource-view> ────────────────────────────────────────
+      - entry: kickside.renderers.security:module_access
+        path: .groups +=
+      - entry: kickside.renderers.security:module_runtime
+        path: .groups +=
+  - name: resource_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: resource_view
+      title: Resource View
+      announced: true
+      auto_register: true
+      tag_name: wc-resource-view
+      base_path: kickside-renderers
+      entry_point: resource-view.js
+      icon: tabler:eye
+    props:
+      type: object
+      properties:
+        content-type:
+          type: string
+          default: ""
+          description: MIME type of the resource (text/markdown, application/pdf, image/png, …).
+        source:
+          type: string
+          default: ""
+          description: Inline text source (markdown/plain) when there is no URL.
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the resource bytes/text from (auth via the host proxy).
+        alt:
+          type: string
+          default: ""
+          description: Alt text for image resources.
+        filename:
+          type: string
+          default: ""
+          description: Original filename, forwarded to viewers that infer type from the extension.
+
+  # ─── Viewer: <wc-render-markdown> ────────────────────────────────────
+  - name: render_markdown
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_markdown
+      title: Markdown Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-markdown
+      base_path: kickside-renderers
+      entry_point: render-markdown.js
+      icon: tabler:markdown
+    props:
+      type: object
+      properties:
+        source:
+          type: string
+          default: ""
+          description: Markdown/plain text to render inline.
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the source text from when source is empty.
+
+  - name: render_markdown_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-markdown
+      title: Markdown
+      priority: 50
+      content_types: ["text/markdown", "text/x-markdown", "application/markdown", "text/plain"]
+
+  # ─── Viewer: <wc-render-pdf> ─────────────────────────────────────────
+  - name: render_pdf
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_pdf
+      title: PDF Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-pdf
+      base_path: kickside-renderers
+      entry_point: render-pdf.js
+      icon: tabler:file-type-pdf
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the PDF bytes from.
+
+  - name: render_pdf_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-pdf
+      title: PDF
+      priority: 90
+      content_types: ["application/pdf"]
+
+  # ─── Viewer: <wc-render-image> ───────────────────────────────────────
+  - name: render_image
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_image
+      title: Image Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-image
+      base_path: kickside-renderers
+      entry_point: render-image.js
+      icon: tabler:photo
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the image bytes from.
+        alt:
+          type: string
+          default: ""
+          description: Alt text.
+
+  - name: render_image_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-image
+      title: Image
+      priority: 90
+      content_types: ["image/*"]
+
+  # ─── Viewer: <wc-render-html> ────────────────────────────────────────
+  - name: render_html
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_html
+      title: HTML Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-html
+      base_path: kickside-renderers
+      entry_point: render-html.js
+      icon: tabler:code
+    props:
+      type: object
+      properties:
+        source:
+          type: string
+          default: ""
+          description: Inline HTML document to render.
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the HTML from.
+
+  - name: render_html_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-html
+      title: HTML
+      priority: 80
+      content_types: ["text/html", "application/xhtml+xml"]
+
+  # ─── Viewer: <wc-render-code> ────────────────────────────────────────
+  - name: render_code
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_code
+      title: Code Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-code
+      base_path: kickside-renderers
+      entry_point: render-code.js
+      icon: tabler:source-code
+    props:
+      type: object
+      properties:
+        source:
+          type: string
+          default: ""
+          description: Inline source/data text.
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the text from.
+        content-type:
+          type: string
+          default: ""
+          description: MIME type, used to pick the highlight language / table mode.
+        filename:
+          type: string
+          default: ""
+          description: Filename, used to infer language from the extension.
+
+  - name: render_code_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-code
+      title: Code
+      priority: 70
+      content_types: ["application/json", "application/xml", "text/xml", "application/javascript", "text/javascript", "application/typescript", "text/css", "application/x-yaml", "text/yaml", "text/csv", "text/tab-separated-values", "application/sql", "text/x-python", "text/x-go", "text/x-lua", "application/x-sh", "text/x-shellscript"]
+
+  # ─── Viewer: <wc-render-audio> ───────────────────────────────────────
+  - name: render_audio
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_audio
+      title: Audio Player
+      announced: true
+      auto_register: true
+      tag_name: wc-render-audio
+      base_path: kickside-renderers
+      entry_point: render-audio.js
+      icon: tabler:music
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the audio bytes from.
+
+  - name: render_audio_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-audio
+      title: Audio
+      priority: 90
+      content_types: ["audio/*"]
+
+  # ─── Viewer: <wc-render-video> ───────────────────────────────────────
+  - name: render_video
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_video
+      title: Video Player
+      announced: true
+      auto_register: true
+      tag_name: wc-render-video
+      base_path: kickside-renderers
+      entry_point: render-video.js
+      icon: tabler:movie
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the video bytes from.
+
+  - name: render_video_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-video
+      title: Video
+      priority: 90
+      content_types: ["video/*"]
+
+  # ─── Viewer: <wc-render-docx> (high-fidelity Word) ───────────────────
+  - name: render_docx
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_docx
+      title: Word Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-docx
+      base_path: kickside-renderers
+      entry_point: render-docx.js
+      icon: tabler:file-type-docx
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the .docx bytes from.
+
+  - name: render_docx_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-docx
+      title: Word
+      priority: 85
+      content_types: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+
+  # ─── Viewer: <wc-render-xlsx> (spreadsheets) ─────────────────────────
+  - name: render_xlsx
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_xlsx
+      title: Spreadsheet Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-xlsx
+      base_path: kickside-renderers
+      entry_point: render-xlsx.js
+      icon: tabler:file-type-xls
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the workbook bytes from.
+
+  - name: render_xlsx_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-xlsx
+      title: Spreadsheet
+      priority: 85
+      content_types: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel", "application/vnd.oasis.opendocument.spreadsheet"]
+
+  # ─── Viewer: <wc-render-pptx> (PowerPoint) ───────────────────────────
+  - name: render_pptx
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: render_pptx
+      title: PowerPoint Viewer
+      announced: true
+      auto_register: true
+      tag_name: wc-render-pptx
+      base_path: kickside-renderers
+      entry_point: render-pptx.js
+      icon: tabler:file-type-ppt
+    props:
+      type: object
+      properties:
+        source-url:
+          type: string
+          default: ""
+          description: URL to fetch the .pptx bytes from.
+
+  - name: render_pptx_renderer
+    kind: registry.entry
+    meta:
+      type: kickside.renderer
+      component_tag: wc-render-pptx
+      title: Presentation
+      priority: 85
+      content_types: ["application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.ms-powerpoint", "application/vnd.oasis.opendocument.presentation"]
+
+  # ─── Discovery endpoint: GET /api/v1/renderers ───────────────────────
+  # The <wc-resource-view> host fetches the renderer descriptors at
+  # runtime and dispatches by content-type, so adding a viewer is registry-only.
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the renderer discovery endpoint attaches to.
+      description: HTTP router the renderer discovery endpoint attaches to.
+    targets:
+      - entry: kickside.renderers.api:list_renderers.endpoint
+        path: .meta.router
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

@@ -1,0 +1,263 @@
+/* ══ CANVAS ══════════════════════════════════════════════════════════════ */
+.wf-canvas-root { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--p-content-background); outline: none; container-type: inline-size; }
+.wf-top {
+  display: flex; align-items: center; gap: 4px;
+  height: 48px; padding: 0 12px; flex: none;
+  position: relative; z-index: var(--wf-layer-toolbar); border-bottom: 1px solid var(--p-content-border-color); background: var(--wf-panel);
+}
+.wf-top-count { margin-left: 8px; font-size: var(--wf-fs-meta); color: var(--wf-muted); white-space: nowrap; }
+.wf-top-spacer { flex: 1; }
+.wf-vsep { width: 1px; height: 20px; background: var(--wf-line-soft); margin: 0 4px; }
+/* Undo / Redo / Edit connections share the secondary-outlined treatment with the
+   labelled controls further along the row. These buttons carry no label, so
+   their content box is shorter than a labelled control under the same padding;
+   the height is pinned to the row's control height to line them up.
+
+   The theme's `buttongroup.css` supplies the border merge and the end radii.
+   What it does not supply is a `display` on the group root (a <span
+   role="group">), so the flex row is ours to set. */
+.wf-edit-actions { display: inline-flex; }
+.wf-edit-actions .p-button { min-height: 34px; min-width: 34px; }
+/* The shell stays secondary so the border matches the labelled controls beside
+   it, while the glyphs keep the primary colour. Targeted at the icon, not the
+   button: the theme colours `.p-button-outlined.p-button-secondary` in three
+   mirrored scopes (plain, `:not(.w-theme-light *)`, `:is(.w-theme-dark, …)`)
+   x three states, and loads AFTER this sheet - so a button-level override has
+   to out-specify nine rules and still loses a tie on document order. It sets
+   no colour on the icon at all, so one rule here wins in every theme and
+   state. Disabled is left alone: PrimeVue dims the whole button with opacity,
+   which carries the icon with it. */
+.wf-edit-actions .p-button:not(:disabled) svg { color: var(--p-primary-color); }
+/* The View and overflow ("More workflow actions") dropdowns share this wrapper at every
+   width — canvas-view controls and Export/Share are never inlined, so there is no
+   wide-vs-narrow split to maintain here. Both menus sit above the toolbar they hang from
+   and below the coordinate-space overlays, on the same declared layer scale. */
+.wf-toolbar-menu-wrap { position: relative; display: inline-flex; }
+.wf-toolbar-menu-backdrop { position: fixed; inset: 0; z-index: var(--wf-layer-toolbar); }
+/* Overlay menus read as one control across KickSide, so this matches the house
+   menu (sessions' row menu) rather than the canvas's own --wf-* surface scale:
+   10px radius, 5px padding, and the theme's popover elevation. The canvas
+   tokens are for canvas furniture; a menu is app chrome. */
+.wf-toolbar-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: var(--wf-layer-coordinate-hint); width: min(224px, calc(100cqw - 16px));
+  display: flex; flex-direction: column; gap: 2px; padding: 5px;
+  border: 1px solid var(--p-content-border-color); border-radius: 10px; background: var(--p-content-background); box-shadow: var(--p-popover-shadow);
+}
+.wf-toolbar-menu button {
+  display: flex; align-items: center; gap: 9px; width: 100%; min-height: 34px; padding: 0 9px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--p-text-color); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+}
+.wf-toolbar-menu button:hover:not(:disabled), .wf-toolbar-menu button:focus-visible { background: color-mix(in srgb, var(--p-text-color) 9%, transparent); }
+.wf-toolbar-menu button:disabled { opacity: .55; cursor: default; }
+.wf-toolbar-menu button svg { width: 15px; height: 15px; flex: none; color: var(--p-text-muted-color); }
+.wf-toolbar-menu-sep { height: 1px; margin: 3px 5px; background: var(--p-content-border-color); }
+
+.wf-body { flex: 1; min-height: 0; display: flex; background: var(--p-content-background); position: relative; }
+
+.wf-canvas { flex: 1; min-width: 0; min-height: 0; position: relative; }
+.wf-flow { width: 100%; height: 100%; }
+.wf-canvas-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--wf-muted); pointer-events: none; }
+.wf-canvas-loading svg { width: 26px; height: 26px; }
+
+/* Empty canvas invitation. */
+.wf-empty-canvas { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center; }
+.wf-empty-flow { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.wf-gnode { width: 74px; height: 44px; border-radius: var(--wf-radius); border: 1.5px dashed var(--wf-line-strong); }
+.wf-gnode--start { border-color: color-mix(in srgb, var(--wf-contract-in) 60%, var(--p-content-border-color)); background: color-mix(in srgb, var(--wf-contract-in) 8%, transparent); }
+.wf-gnode--block { border-color: color-mix(in srgb, var(--wf-blue) 60%, var(--p-content-border-color)); background: color-mix(in srgb, var(--wf-blue) 7%, transparent); }
+.wf-gwire { width: 26px; height: 2px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--wf-line-strong) 0 5px, transparent 5px 9px); }
+
+/* Connect ghost hint. */
+.wf-connect-hint {
+  position: fixed; z-index: var(--wf-layer-coordinate-hint); display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 9px; border-radius: var(--wf-radius-sm); pointer-events: none;
+  font-size: var(--wf-fs-meta); font-weight: 600;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--p-text-color) 22%, transparent);
+}
+.wf-connect-hint svg { width: 14px; height: 14px; }
+.wf-connect-hint.is-ok { background: color-mix(in srgb, var(--p-success-500) 92%, var(--p-text-color)); color: var(--p-button-success-color); }
+.wf-connect-hint.is-warn { background: color-mix(in srgb, var(--wf-amber) 90%, var(--p-text-color)); color: var(--p-button-primary-color); }
+.wf-connect-hint.is-error { background: color-mix(in srgb, var(--wf-danger) 92%, var(--p-text-color)); color: var(--p-button-danger-color); }
+
+/* ══ INTENT-EDGE OVERLAYS (W11.1) ════════════════════════════════════════
+   Both anchor at the edge midpoint (left/top set inline in screen coords); the
+   transform lifts them just above the wire. Tokens-only, calm, premium restraint. */
+
+@keyframes wf-automap-in { from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); } to { opacity: 1; transform: translate(-50%, calc(-100% - 10px)); } }
+
+/* ── Auto-map reveal + persistent trace ── */
+.wf-automap {
+  position: fixed; z-index: var(--wf-layer-coordinate-trace); transform: translate(-50%, calc(-100% - 10px));
+  pointer-events: none;
+}
+.wf-automap-card, .wf-automap-trace { pointer-events: auto; }
+.wf-automap-card {
+  display: flex; flex-direction: column; align-items: stretch; text-align: left;
+  min-width: min(200px, calc(100vw - 24px)); max-width: min(300px, calc(100vw - 24px));
+  max-height: min(var(--wf-overlay-max-height, calc(100vh - 32px)), calc(100vh - 32px)); overflow-y: auto;
+  animation: wf-automap-in 200ms var(--wf-ease);
+}
+.wf-automap-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.wf-automap-hd svg { width: 15px; height: 15px; flex: none; color: var(--wf-accent-fg); }
+.wf-automap-title { font-size: var(--wf-fs-body); font-weight: 700; color: var(--p-text-color); }
+.wf-automap-count { margin-left: auto; font-size: var(--wf-fs-label); color: var(--wf-muted); white-space: nowrap; }
+.wf-automap-pairs { display: flex; flex-direction: column; gap: 5px; }
+.wf-automap-pair { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.wf-automap-pair svg { width: 12px; height: 12px; flex: none; color: var(--wf-faint); }
+.wf-automap-src, .wf-automap-tgt {
+  padding: 2px 7px; border-radius: 6px; font-size: var(--wf-fs-meta);
+  font-family: var(--wf-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wf-automap-src { background: var(--wf-surface); border: 1px solid var(--p-content-border-color); color: var(--wf-muted); }
+.wf-automap-tgt { background: color-mix(in srgb, var(--p-primary-color) 12%, var(--wf-surface)); border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, var(--p-content-border-color)); color: var(--p-text-color); }
+.wf-automap-hint { margin: 8px 0 0; font-size: var(--wf-fs-label); color: var(--wf-faint); }
+
+.wf-automap-trace {
+  position: relative; display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px; border-radius: 6px; background: var(--wf-panel);
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 28%, var(--p-content-border-color));
+  box-shadow: var(--wf-elev-1); animation: wf-automap-in 160ms var(--wf-ease);
+}
+.wf-automap-tracebtn {
+  gap: 5px;
+}
+.wf-automap-tracebtn svg { width: 13px; height: 13px; flex: none; }
+.wf-automap-tracelbl { white-space: nowrap; }
+.wf-automap-tracex { min-width: 32px; min-height: 32px; }
+.wf-automap-tracex svg { width: 12px; height: 12px; }
+.wf-automap-why {
+  position: absolute; top: calc(100% + 6px); right: 0; min-width: min(240px, calc(100vw - 24px)); max-width: min(340px, calc(100vw - 24px));
+  padding: 8px 10px; border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius);
+  background: var(--wf-elevated); box-shadow: var(--wf-elev-2);
+}
+.wf-automap-whyline { margin: 0; font-size: var(--wf-fs-meta); color: var(--wf-muted); line-height: 1.5; }
+.wf-automap-whyline + .wf-automap-whyline { margin-top: 4px; }
+
+/* ── Intent popover (ambiguous edge) ── */
+.wf-intent {
+  position: fixed; z-index: var(--wf-layer-coordinate-editor); transform: translate(-50%, calc(-100% - 14px));
+  width: min(280px, calc(100vw - 24px)); max-height: min(var(--wf-overlay-max-height, calc(100vh - 32px)), calc(100vh - 32px)); overflow-y: auto; padding: 12px 12px 10px;
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, var(--p-content-border-color));
+  border-radius: var(--wf-radius); background: var(--wf-panel); box-shadow: var(--wf-elev-3);
+  animation: wf-automap-in 180ms var(--wf-ease);
+}
+.wf-intent-x { position: absolute; top: 8px; right: 8px; }
+.wf-intent-hd { display: flex; align-items: center; gap: 6px; padding-right: 20px; font-size: var(--wf-fs-body); font-weight: 700; color: var(--p-text-color); }
+.wf-intent-hd svg { width: 15px; height: 15px; flex: none; color: var(--wf-accent-fg); }
+.wf-intent-hd--err svg { color: var(--wf-danger); }
+.wf-intent-needs { margin: 6px 0 0; min-width: 0; font-size: var(--wf-fs-meta); color: var(--wf-muted); overflow-wrap: anywhere; }
+.wf-intent-needs strong { color: var(--p-text-color); font-weight: 600; }
+.wf-intent-input { width: 100%; margin-top: 8px; }
+.wf-intent-help { margin: 7px 0 0; font-size: var(--wf-fs-label); color: var(--wf-faint); line-height: 1.5; }
+.wf-intent-note { display: flex; align-items: center; gap: 6px; margin: 7px 0 0; font-size: var(--wf-fs-meta); color: var(--wf-muted); }
+.wf-intent-note svg { width: 14px; height: 14px; flex: none; }
+.wf-intent-err { margin: 6px 0 0; min-width: 0; overflow-wrap: anywhere; }
+.wf-intent-summary { margin: 6px 0 0; color: var(--wf-muted); font-size: var(--wf-fs-meta); line-height: 1.45; overflow-wrap: anywhere; }
+.wf-intent-topology { display: grid; gap: 7px; margin-top: 8px; min-width: 0; }
+.wf-intent-step {
+  display: inline-flex; align-items: center; justify-self: start; gap: 5px; min-width: 0;
+  padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--p-primary-color) 32%, var(--p-content-border-color));
+  border-radius: 6px; background: color-mix(in srgb, var(--p-primary-color) 9%, var(--wf-surface));
+  color: var(--p-text-color); font-size: var(--wf-fs-meta); font-weight: 650;
+}
+.wf-intent-step svg { width: 14px; height: 14px; flex: none; color: var(--wf-accent-fg); }
+.wf-intent-step.is-unavailable { border-color: var(--p-content-border-color); background: var(--wf-surface); color: var(--wf-faint); }
+.wf-intent-rows { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; max-height: 180px; overflow-y: auto; }
+.wf-intent-row { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.wf-intent-row svg { width: 12px; height: 12px; flex: none; color: var(--wf-faint); }
+.wf-intent-src, .wf-intent-tgt, .wf-intent-raw {
+  padding: 2px 7px; font-size: var(--wf-fs-meta);
+  font-family: var(--wf-mono);
+}
+.wf-intent-src, .wf-intent-tgt {
+  white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.35;
+}
+.wf-intent-src { border-radius: 6px; background: var(--wf-surface); border: 1px solid var(--p-content-border-color); color: var(--wf-muted); flex: 1; min-width: 0; }
+.wf-intent-tgt { border-radius: 6px; background: color-mix(in srgb, var(--p-primary-color) 12%, var(--wf-surface)); border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, var(--p-content-border-color)); color: var(--p-text-color); }
+.wf-intent-raw { display: block; max-width: 100%; max-height: 180px; overflow: auto; overflow-wrap: anywhere; word-break: break-word; border-radius: var(--wf-radius-sm); white-space: pre-wrap; background: var(--wf-surface); border: 1px solid var(--p-content-border-color); color: var(--p-text-color); }
+.wf-intent-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.wf-panel-rail {
+  width: 32px; flex: none;
+}
+.wf-panel-rail svg { width: 16px; height: 16px; }
+
+/* The canvas remains fully usable in a compact host. Palette and inspector already
+   become overlays below 1180px; at this narrower tier we reclaim toolbar space from
+   secondary labels while keeping the primary Run and Publish actions explicit. */
+@container (max-width: 1024px) {
+  .wf-top { gap: 2px; padding-inline: 8px; }
+  .wf-top-count { display: none; }
+  .wf-top .wf-vsep { margin-inline: 2px; }
+  .wf-top .wf-toolbar-compactable { width: 32px; padding-inline: 0; justify-content: center; }
+  .wf-top .wf-toolbar-compactable span { display: none; }
+}
+
+/* At phone-width host slots, Run and Publish remain visible. Nothing is clipped or
+   silently removed — the View and overflow menus already hold every other command at
+   any width. */
+@container (max-width: 860px) {
+  .wf-top { padding-inline: 6px; }
+  .wf-top > * { min-width: 0; }
+}
+
+/* A workflow editor already owns Back navigation and its full tool surface. On a phone,
+   keeping the application rail beside it leaves as little as 176px for the graph—too
+   narrow for a readable card at the canonical 0.55 zoom floor. Make only the manage view
+   immersive; the workflow list stays inside the ordinary shell. */
+@media (max-width: 640px) {
+  .wf:has(.wf-canvas-root) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--wf-layer-immersive-shell);
+  }
+}
+
+/* Keyboard-accessible connection editing uses PrimeVue for all interactive surfaces;
+   these rules only establish the dialog's content layout and readable wrapping. */
+/* Wider than the 460px house modal because the From/To pickers are a two-column
+   row; the head/body/foot block is the standard one. */
+.wf-connections-modal { width: min(42rem, calc(100vw - 2rem)); }
+.wf-connections-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.875rem; }
+.wf-connections-field { display: grid; gap: 6px; min-width: 0; }
+.wf-connections-field > label { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.wf-connections-field > small { font-size: 11.5px; color: var(--p-danger-500); }
+.wf-connections-existing { margin-top: 18px; }
+.wf-connections-existing h3 {
+  margin: 0 0 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--p-text-muted-color);
+}
+.wf-connections-existing ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+/* Each connection is a row, not a bare line of text: the same bordered surface
+   the rest of the app gives a listed item, so the delete action has something
+   to sit in and the list reads as a list. */
+.wf-connections-existing li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0;
+  padding: 4px 6px 4px 11px; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: color-mix(in srgb, var(--p-text-color) 3%, transparent);
+}
+.wf-connections-existing li > span { min-width: 0; font-size: 12.5px; color: var(--p-text-color); overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .wf-connections-form { grid-template-columns: 1fr; }
+}
+
+/* ── Workspace preview (frozen graph) ─────────────────────────────────── */
+.wfp {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+}
+.wfp-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--p-text-muted-color);
+  padding: 24px 0;
+  justify-content: center;
+}
+.wfp-error { color: var(--p-danger-500); padding: 24px 16px; }
+.wfp-flow { flex: 1; min-height: 0; }

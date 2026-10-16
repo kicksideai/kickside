@@ -1,0 +1,134 @@
+version: "1.0"
+namespace: kickside.dm
+
+# kickside.dm — the DM surface over the shared kickside.channel runtime.
+#
+# A DM is a private, user-owned kickside.core thread bridged to a user-owned
+# wippy.session. This module is policy only: it resolves the external sender to a
+# KickSide user via the kickside.identity link, handles the DM-only commands
+# (link / clear), and builds a Route the shared kickside.channel runtime consumes.
+# The runtime owns the durable mapping (provider, external_id) -> session_id, the
+# hub + bridge, thread writes, the session run as the linked user, and the reply
+# (pure transport over the connection's bot token at the system level).
+# Providers normalize platform events and call kickside.dm:receive; they never
+# touch session, identity, or storage.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide DM
+      comment: The DM surface over the shared kickside.channel runtime. Resolves the external identity to an internal user via the kickside.identity link, handles link/clear, and routes a subject-identity Route to the runtime; a user-owned wippy.session runs the agent as that user.
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    component: kickside/core
+
+  - name: dep.kickside.identity
+    version: '*'
+    kind: ns.dependency
+    component: kickside/identity
+
+  - name: dep.kickside.connection
+    version: '*'
+    kind: ns.dependency
+    component: kickside/connection
+
+  - name: dep.kickside.channel
+    version: '*'
+    kind: ns.dependency
+    component: kickside/channel
+
+  - name: dep.kickside.agents
+    version: '*'
+    kind: ns.dependency
+    component: kickside/agents
+
+  # ─── Surface vocabulary ──────────────────────────────────────────────
+  # DM owns no db: session persist lives on the shared kickside.channel db + table.
+  - name: consts
+    kind: library.lua
+    meta: { comment: "DM thread class, event types, greeter agent id, external_ref (route key) builder." }
+    source: file://consts.lua
+
+  # Component-kind declaration. The DM thread events this component OWNS are internal
+  # machinery, not a normal Data Flow picker option, so this kind publishes no port
+  # (message.inbound / reply.sent / reply.failed stay audit-only in events.output).
+  # This kind declares no sink: a DM reply is the same transport as a channel reply
+  # (reply_sender posts to any {connection_id, resource_id}), so the post sink is the
+  # shared channel_sink.
+  - name: dm_kind
+    kind: contract.binding
+    meta:
+      title: Direct Message Chat
+      icon: tabler:message
+      comment: Inbound direct messages routed to a linked user.
+      class:
+        - kickside.dm
+      group: Channels
+      events:
+        input: []
+        output:
+          - type: "kickside.dm.events:message.inbound"
+            system_only: true
+          - type: "kickside.dm.events:reply.sent"
+            system_only: true
+          - type: "kickside.dm.events:reply.failed"
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  # ─── Contract (kickside.dm:receive) ─────────────────────────────────
+  - name: receive
+    kind: contract.definition
+    meta:
+      title: DM Receive
+      comment: Provider-neutral inbound DM seam. Connection providers normalize platform events and hand them here; the DM surface owns identity resolution and the link/clear commands, then routes a Route to the shared runtime.
+    methods:
+      - name: receive
+        description: Accept one normalized inbound external DM and route it (or handle a link/clear command).
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "reply_component_id": { "type": "string" }, "reply_resource_id": { "type": "string" }, "channel_id": { "type": "string" }, "external_user_id": { "type": "string" }, "external_username": { "type": "string" }, "external_display_name": { "type": "string" }, "external_message_id": { "type": "string" }, "text": { "type": "string" }, "attachments": { "type": "array" }, "trace_context": { "type": "object" } }, "required": ["provider", "reply_component_id", "channel_id", "external_user_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "accepted": { "type": "boolean" }, "status": { "type": "string" }, "user_id": { "type": "string" }, "session_id": { "type": "string" }, "error": { "type": "string" } }, "required": ["accepted", "status"] }
+            format: application/schema+json
+
+  - name: receive_func
+    kind: function.lua
+    meta: { comment: "kickside.dm:receive — resolve the external sender via kickside.identity, handle link/clear, build a subject-identity spec, and route it through the shared kickside.channel inbound-routing surface." }
+    source: file://dm.lua
+    method: receive
+    modules: [security]
+    imports:
+      link_service: kickside.identity:link_service
+      reply_sender: kickside.connection:reply_sender
+      channel_receive: kickside.channel:receive_func
+      channel_refusal: kickside.channel:refusal
+      channel_persist: kickside.channel.persist:repo
+      channel_consts: kickside.channel:consts
+      channel_types: kickside.channel:types
+      execution_identity: kickside.execution:execution_identity
+      dm_consts: kickside.dm:consts
+
+  - name: dm_binding
+    kind: contract.binding
+    meta:
+      title: DM Receive Service
+      comment: Default provider-neutral DM receive implementation.
+    contracts:
+      - contract: kickside.dm:receive
+        default: true
+        methods:
+          receive: kickside.dm:receive_func

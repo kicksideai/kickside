@@ -1,0 +1,1 @@
+../../../../src/app/security/validate_encryption_key.lua

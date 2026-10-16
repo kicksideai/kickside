@@ -1,0 +1,328 @@
+version: "1.0"
+namespace: kickside.knowledge.api
+
+entries:
+  - name: listing_page
+    kind: library.lua
+    source: file://listing_page.lua
+    modules: [json, base64]
+
+  - name: query_params
+    kind: library.lua
+    meta:
+      comment: Strict query/body parameter parsing shared by knowledge endpoints.
+    source: file://query_params.lua
+    modules: [http]
+
+  # List KBs
+  - name: list_kb
+    kind: function.lua
+    source: file://list_kb.lua
+    modules: [http, json, security, registry]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      query_params: kickside.knowledge.api:query_params
+      listing_page: kickside.knowledge.api:listing_page
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: list_kb.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_kb
+    path: /knowledge/list
+
+  # List installed KB engines (registry-discovered type choices + UI tags)
+  - name: list_engines
+    kind: function.lua
+    source: file://list_engines.lua
+    modules: [http, security]
+    imports:
+      engines: kickside.knowledge:engines
+    method: handler
+
+  - name: list_engines.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_engines
+    path: /knowledge/engines
+
+  # Create KB
+  - name: create_kb
+    kind: function.lua
+    source: file://create_kb.lua
+    modules: [http, json, security, contract]
+    imports:
+      engines: kickside.knowledge:engines
+    method: handler
+
+  - name: create_kb.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_kb
+    path: /knowledge/create
+
+  # Get KB
+  - name: get_kb
+    kind: function.lua
+    source: file://get_kb.lua
+    modules: [http, json, security, registry]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
+    method: handler
+
+  - name: get_kb.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_kb
+    path: /knowledge/{id}
+
+  # Delete KB
+  - name: delete_kb
+    kind: function.lua
+    source: file://delete_kb.lua
+    modules: [http, security, contract]
+    imports:
+      component: kickside.component:component
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: delete_kb.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_kb
+    path: /knowledge/{id}
+
+  # Update KB
+  - name: update_consistency
+    kind: library.lua
+    meta:
+      comment: Compensated consistency seam for KB engine config and public component metadata updates.
+    imports:
+      http_errors: kickside.contract:http_errors
+      util: kickside.knowledge:util
+    source: file://update_consistency.lua
+
+  - name: update_kb
+    kind: function.lua
+    source: file://update_kb.lua
+    modules: [http, json, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
+      http_errors: kickside.contract:http_errors
+      update_consistency: kickside.knowledge.api:update_consistency
+    method: handler
+
+  - name: update_kb.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: update_kb
+    path: /knowledge/{id}
+
+  # run_treatment lives in the kb10 engine (kickside.kb10.api:run_treatment): graph
+  # treatment (concept dedup) is engine-specific. The /knowledge/{id}/treatment route
+  # is registered by kb10 on app:api.
+
+  # Sharing and access listing for KB components go through the generic component
+  # endpoints (/component-access/share/{id}, /component-access/grants/{id}); the KB FE mounts
+  # the shared kickside-share widget against those. No KB-specific duplicate here.
+
+  # Upload token
+  - name: upload_token
+    kind: function.lua
+    source: file://upload_token.lua
+    modules: [http, json, security, uuid]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      execution_identity: kickside.execution:execution_identity
+      trace_context: kickside.execution:trace
+    method: handler
+
+  - name: upload_token.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: upload_token
+    path: /knowledge/{id}/upload-token
+
+  # reembed lives in the kb10 engine (kickside.kb10.api:reembed): re-vectorizing
+  # kb10 nodes is engine-specific and writes through the kb10 store directly. The
+  # /knowledge/{id}/reembed route is registered by kb10 on app:api.
+
+  # Ingest content
+  - name: ingest_content
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    source: file://ingest_content.lua
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+    method: handler
+    pool:
+      size: 8
+
+  - name: ingest_content.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: ingest_content
+    path: /knowledge/{id}/ingest
+
+  # Delete content by canonical external identity or stored source_ref.
+  - name: delete_content
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_deleted_publish
+    source: file://delete_content.lua
+    modules: [http, json, security]
+    imports:
+      util: kickside.knowledge:util
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      source_ref_builder: kickside.core.provenance:source_ref
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+    method: handler
+    pool:
+      size: 4
+
+  - name: delete_content.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_content
+    path: /knowledge/{id}/content
+
+  # Shared ingest-from-upload core (pipeline callback, ingest-upload endpoint, and
+  # the agent EmbedToKB tool all queue an upload's processed content through this).
+  - name: ingest_upload
+    kind: library.lua
+    meta:
+      comment: Turn a processed upload into a KB content event.
+    source: file://ingest_upload.lua
+    modules: [contract, security]
+    imports:
+      component: kickside.component:component
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  # Ingest already-uploaded file(s) into a KB by upload id ("My uploads").
+  - name: ingest_existing_upload
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    source: file://ingest_existing_upload.lua
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      ingest_upload: kickside.knowledge.api:ingest_upload
+    method: handler
+    pool:
+      size: 4
+
+  - name: ingest_existing_upload.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: ingest_existing_upload
+    path: /knowledge/{id}/ingest-upload
+
+  # Search
+  - name: search
+    kind: function.lua
+    source: file://search.lua
+    modules: [http, json, security]
+    imports:
+      component: kickside.component:component
+      http_errors: kickside.contract:http_errors
+      kb_search: kickside.knowledge.retrieval:kb_search
+      query_params: kickside.knowledge.api:query_params
+    method: handler
+    pool:
+      size: 4
+
+  - name: search.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: search
+    path: /knowledge/{id}/search
+
+  # Ask (grounded answer via the per-KB query driver)
+  - name: ask
+    kind: function.lua
+    source: file://ask.lua
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+      query_params: kickside.knowledge.api:query_params
+    method: handler
+    pool:
+      size: 4
+
+  - name: ask.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: ask
+    path: /knowledge/{id}/ask
+
+  # List embedding models
+  - name: list_embedding_models
+    kind: function.lua
+    source: file://list_embedding_models.lua
+    modules: [http, security]
+    imports:
+      models: kickside.models.catalog:model_catalog
+    method: handler
+
+  - name: list_embedding_models.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_embedding_models
+    path: /knowledge/models
+
+  # Organize uploaded files into a new KB (workspace onboarding).
+  - name: organize
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    meta: { comment: "POST /knowledge/organize — organize uploaded files into a new KB." }
+    source: file://organize.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      organizer: kickside.knowledge.organize:organizer
+
+  - name: organize.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: organize
+    path: /knowledge/organize

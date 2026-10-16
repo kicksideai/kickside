@@ -1,0 +1,65 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "./picker-base.css";
+@import "@kickside/ui-kit/spin.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: inline-block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Single component root, layout-transparent so the trigger sizes as before and
+   the fixed popover still positions against the viewport. */
+.ip-root { display: contents; }
+
+/* The trigger reads as a soft icon tile so it sits flush with borderless inline
+   fields, while still working standalone. */
+.ip-trigger {
+  display: inline-flex; align-items: center; gap: 1px;
+  height: 32px; padding: 0 4px 0 7px; border: 1px solid transparent;
+  background: color-mix(in srgb, var(--p-text-color) 8%, var(--p-content-background));
+  border-radius: 8px; color: var(--p-text-muted-color); cursor: pointer; flex-shrink: 0; outline: none;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.ip-trigger:hover { color: var(--p-text-color); border-color: var(--p-content-border-color); }
+.ip-on { border-color: var(--p-primary-color); color: var(--p-text-color); }.ip-trigger > svg:first-child { width: 18px; height: 18px; }
+.ip-caret { width: 12px; height: 12px; opacity: .45; }
+
+/* Placement (fixed positioning, z-index) is owned by AnchoredPanel; this keeps only
+   the panel's own chrome. The grid caps its own height and scrolls. */
+.ip-pop {
+  box-sizing: border-box; min-width: 0; overflow: hidden;
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-select-overlay-border-radius);
+  box-shadow: var(--p-select-overlay-shadow); padding: 8px; display: flex; flex-direction: column; gap: 8px;
+  transition: height .2s ease, max-height .2s ease;
+}
+.ip-search { display: flex; align-items: center; gap: 7px; padding: 0 8px; height: 34px; border: 1px solid var(--p-content-border-color); border-radius: 8px; background: var(--p-content-background); }
+/* The shell draws the border, the bare input inside draws none, so the ring is
+   the shell's. Values from the contract - this used to hand-copy them. */
+.ip-search:focus-within { border-color: var(--p-focus-ring-color); box-shadow: var(--p-focus-ring-shadow); }
+.ip-search > svg { width: 15px; height: 15px; color: var(--p-text-muted-color); flex-shrink: 0; }
+.ip-search input { flex: 1; min-width: 0; border: none; background: transparent; outline: none; font: inherit; font-size: 13px; color: var(--p-text-color); }
+.ip-reset { border: none; border-radius: 8px; background: transparent; color: var(--p-primary-color); font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 8px 6px; flex-shrink: 0; }
+.ip-reset:hover { background: color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+.ip-state { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; padding: 24px; font-size: 12.5px; color: var(--p-text-muted-color); overflow-wrap: anywhere; }
+.ip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(28px, 1fr)); gap: 3px; max-height: min(280px, calc(var(--anchored-panel-available-height, 360px) - 60px)); overflow-y: auto; }
+.ip-cell { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border: none; border-radius: 8px; background: transparent; color: var(--p-text-muted-color); cursor: pointer; outline: none; transition: background .1s, color .1s; }
+.ip-cell:hover { background: var(--p-select-option-focus-background); color: var(--p-text-color); }
+.ip-cell:focus-visible { background: var(--p-select-option-focus-background); color: var(--p-text-color); }
+.ip-cell-on { background: var(--p-select-option-selected-background); color: var(--p-primary-color); }
+.ip-cell svg { width: 19px; height: 19px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ip-pop { transition: none; }
+}
+
+/* Boxed: draws a 1px border at rest (transparent until focus), so the ring is
+   that border going primary plus the shared halo - never an outline. Focus
+   canon: app/facade-src/README.md. */
+.ip-trigger:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}

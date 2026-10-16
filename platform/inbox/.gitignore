@@ -1,0 +1,6 @@
+.wippy/
+*.log
+test-out.txt
+.local/
+.lint.out
+lint-raw.txt

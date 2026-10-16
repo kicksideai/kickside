@@ -1,0 +1,158 @@
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: user.runtime_actor_delegation
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.security
+      intent: trusted_product_runtime
+      comment: Narrow actor creation for managed KB injection; arbitrary scope construction and policy reads are intentionally not granted.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - system:knowledge.injection
+      actions:
+        - security.actor.create
+      effect: allow
+
+  - name: user.runtime_process_context
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.process
+      intent: trusted_product_runtime
+      comment: Trusted user-scoped runtime flows may attach durable process context and propagate the already-resolved actor/scope; policy lookup and arbitrary actor/scope construction remain unavailable.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - context
+        - security
+      actions:
+        - process.context
+        - process.security
+      effect: allow
+
+  - name: user.runtime_session_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.session
+      intent: trusted_product_runtime
+      comment: Session reader/writer coarse gate for authenticated sessions; per-user ownership remains enforced by session repos using actor:id().
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - session:*
+      actions:
+        - read
+        - write
+      effect: allow
+
+  - name: user.runtime_session_registry
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.session
+      intent: trusted_product_runtime
+      comment: Per-session processes may own only their session registry names.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - session.*
+      actions:
+        - process.registry.register
+        - process.registry.unregister
+      effect: allow
+
+  - name: user.runtime_oauth_spawn
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: kickside.oauth.runtime
+      intent: trusted_product_runtime
+      comment: User OAuth connection setup may spawn only the declared connection negotiator.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - kickside.oauth.service:connection_negotiator
+      actions:
+        - process.spawn
+      effect: allow
+
+  - name: user.runtime_process_host
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.process
+      intent: trusted_product_runtime
+      comment: User-scoped product flows may target the app process host only where another policy grants the specific process operation.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - app:processes
+      actions:
+        - process.host
+      effect: allow
+
+  - name: user.runtime_oauth_registry
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: kickside.oauth.runtime
+      intent: trusted_product_runtime
+      comment: The user-spawned OAuth negotiator owns only its temporary callback process-registry name.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - kickside.oauth.service:connection_negotiator:*
+      actions:
+        - process.registry.register.consistent
+        - process.registry.unregister.consistent
+      effect: allow
+
+  - name: user.runtime_http_client
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.network
+      intent: trusted_product_runtime
+      comment: Normal outbound HTTP for trusted product flows such as OAuth, provider discovery, connection sync, URL ingest, and agent web fetch. Unix sockets, insecure TLS, overlay selection, and link-local metadata IPs remain denied.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - https://*
+        - http://*
+      actions:
+        - http_client.request
+      effect: allow
+
+  - name: user.runtime_dataflow_registry
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.dataflow
+      intent: trusted_product_runtime
+      comment: User-scoped Dataflow orchestrators claim and release their workflow ownership names.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - dataflow.*
+      actions:
+        - process.registry.register
+        - process.registry.unregister
+      effect: allow
+      conditions:
+        - field: resource
+          operator: matches
+          value: '^dataflow[.][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'

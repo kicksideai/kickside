@@ -1,0 +1,49 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: negotiator_fault_process
+    kind: library.lua
+    source: file://negotiator_fault_process.lua
+    modules: [process]
+  - name: negotiator_fault_adapter
+    kind: library.lua
+    source: file://negotiator_fault_adapter.lua
+    modules: [time, contract, channel, security]
+    imports:
+      process: app:negotiator_fault_process
+      connection_manager: kickside.oauth:connection_manager
+      callback_names: kickside.oauth:callback_names
+      callback_reply: app:negotiator_fault_reply
+  - name: negotiator_fault_reply
+    kind: library.lua
+    source: file://negotiator_fault_reply.lua
+    imports:
+      faults: app:negotiator_fault_process
+  - name: negotiator_reply_test
+    kind: function.lua
+    meta: {type: test, suite: oauth, timeout: 30s}
+    source: file://negotiator_reply_test.lua
+    method: run
+    modules: [process]
+    imports:
+      test: wippy.test:test
+      negotiator: app:negotiator_fault_adapter
+      faults: app:negotiator_fault_process
+  - name: negotiator_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope of a group principal without process messaging authority; the negotiator owns only its callback name.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security,
+        registry.get, registry.find, env.get, db.get, process.registry.register.consistent, process.registry.unregister.consistent]
+      effect: allow
+  - name: negotiator_scope_test
+    kind: function.lua
+    meta: {type: test, suite: oauth, timeout: 30s}
+    source: file://negotiator_scope_test.lua
+    method: run
+    modules: [process, security, uuid, channel, time]
+    imports:
+      test: wippy.test:test
+      callback_names: kickside.oauth:callback_names

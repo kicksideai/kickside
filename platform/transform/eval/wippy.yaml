@@ -1,0 +1,15 @@
+organization: kickside
+module: transform-eval-harness
+type: application
+description: Real-LLM eval harness for kickside/transform. Boots the generator dataflow PLUS a live models module and runs the transform_eval suite (gated by KICKSIDE_INTEGRATION_TESTS; self-skips offline).
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true
+workspace:
+  replacements:
+    kickside/transform: ..
+    kickside/component: ../../../core/component
+    kickside/contract: ../../../core/contract
+    kickside/execution: ../../../core/execution

@@ -1,0 +1,13 @@
+/* WippyElement mirrors a forced theme class onto its direct shadow container so
+   class-based component styles work inside the shadow. The host theme sheet also
+   declares its default primary palette on that container, which would otherwise
+   replace the facade-configured seed inherited from the web-component host.
+
+   Keep only the canonical seed inherited here. This includes nested web-component
+   hosts, which receive the same forced class before entering their own shadow.
+   The theme sheet continues to own every palette and role formula, so a configured
+   or live-previewed --p-primary recalculates the complete light/dark palette
+   without duplicating generators. */
+:host :is(.w-theme-light, .w-theme-dark) {
+  --p-primary: inherit;
+}

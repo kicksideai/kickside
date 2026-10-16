@@ -1,0 +1,17 @@
+version: '1.0'
+namespace: fixture.module.api
+entries:
+  - name: fixture.endpoint
+    kind: http.endpoint
+    meta: {router: app:endpoint_policy_router}
+    method: GET
+    path: /fixture
+    func: app:endpoint_policy_handler
+  - name: module_access
+    kind: security.policy
+    meta: {title: Fixture, surface: fixture.module, intent: module_access}
+    groups: []
+    policy:
+      resources: [fixture.module.api:fixture.endpoint]
+      actions: access
+      effect: allow

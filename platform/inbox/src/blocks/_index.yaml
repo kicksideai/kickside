@@ -1,0 +1,163 @@
+version: "1.0"
+namespace: kickside.inbox
+
+# Inbox publishes a canonical Block. Agents and headless Flow builders can compose
+# it with only kickside.blocks installed; the visual Workflows plugin is one optional
+# consumer of the same typed contract.
+
+entries:
+  - name: block.review
+    kind: registry.entry
+    meta:
+      type: kickside.block
+      public: true
+      title: Inbox review
+      description: Creates an Inbox decision, parks durably, and returns the reviewer outcome.
+    data:
+      block:
+        api_version: kickside.block/v1
+        input:
+          type: object
+          additionalProperties: true
+        config:
+          type: object
+          additionalProperties: false
+          required: [prompt]
+          properties:
+            prompt: { type: string, minLength: 1, title: Prompt, format: textarea }
+            form:
+              type: object
+              title: Form schema
+              format: json-schema
+              description: Optional fields collected from the reviewer and returned with the decision.
+            assignee:
+              type: string
+              title: Assignee
+              picker: wc-principal-picker
+              kinds: user
+              empty_label: Use Flow runner
+            approve_label: { type: string, title: Approve label, default: Approve }
+            reject_label: { type: string, title: Reject label, default: Reject }
+            priority: { type: string, title: Priority, enum: [low, normal, high, urgent], default: normal }
+            timeout:
+              type: string
+              title: Timeout
+              description: Optional Dataflow duration such as 30m or 2h.
+        output:
+          type: object
+          additionalProperties: false
+          required: [outcome, form]
+          properties:
+            outcome: { type: string, enum: [approve, reject] }
+            form: { type: object }
+            timed_out: { type: boolean }
+            timeout_code: { type: string }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+        ports:
+          - { id: then, label: Approve, direction: out, condition: "output.outcome == 'approve'" }
+          - { id: else, label: Reject, direction: out, condition: "output.outcome == 'reject'" }
+          - { id: failed, label: Failed, direction: out }
+        presentation:
+          category: Human
+          icon: tabler:inbox
+          hue: rose
+          blurb: Sends the incoming data for review, waits safely, then routes the decision.
+        execution:
+          kind: wait
+          arm_id: kickside.inbox:arm_decision
+
+  - name: decision_content
+    kind: library.lua
+    meta: { comment: "Reviewed values rendered as Markdown facts, tables, lists, and JSON blocks." }
+    source: file://decision_content.lua
+    modules: [json]
+
+  - name: arm_decision_lib
+    kind: library.lua
+    meta: { comment: "Inbox-owned review arm with assignment policy and idempotent item creation." }
+    source: file://arm_decision.lua
+    modules: [security, contract]
+    imports:
+      decision_content: kickside.inbox:decision_content
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      component: kickside.component:component
+
+  - name: arm_decision
+    kind: function.lua
+    meta: { comment: "Public arm_ref target for the Inbox review Block." }
+    security:
+      policies:
+      - kickside.inbox.security:submit_output_publish
+    source: file://arm_decision.lua
+    method: arm_decision
+    modules: [security, contract]
+    imports:
+      decision_content: kickside.inbox:decision_content
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      component: kickside.component:component
+
+  - name: create_decision
+    kind: function.lua
+    meta: { private: true, comment: "Actor-bound Inbox decision creation after assignment policy resolution." }
+    security:
+      policies:
+      - kickside.inbox.security:submit_output_publish
+    source: file://arm_decision.lua
+    method: create_decision
+    modules: [security, contract]
+    imports:
+      decision_content: kickside.inbox:decision_content
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      component: kickside.component:component
+
+  - name: preview_decision
+    kind: function.lua
+    meta: { private: true, comment: "Testable Inbox decision item builder; does not write." }
+    source: file://arm_decision.lua
+    method: preview_decision
+    modules: [security, contract]
+    imports:
+      decision_content: kickside.inbox:decision_content
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      component: kickside.component:component
+
+  - name: item_type.flow_decision
+    kind: registry.entry
+    meta:
+      type: inbox.item_type
+      value: flow_decision
+      title: Flow Decision
+      icon: tabler:git-pull-request
+      color: indigo
+      category: flow
+      severity: info
+      actions: [approve, reject]
+      on_resolve: kickside.inbox:resume_decision
+
+  - name: resume_decision_lib
+    kind: library.lua
+    meta: { comment: "Inbox decision completion handler for the canonical Block Signal target." }
+    source: file://resume_decision.lua
+    modules: [funcs, security]
+    imports:
+      review_signal: kickside.blocks:review_signal
+
+  - name: resume_decision
+    kind: function.lua
+    meta: { comment: "Inbox action callback; invokes kickside.blocks:resume without requiring visual Workflows." }
+    source: file://resume_decision.lua
+    method: resume
+    modules: [funcs, security]
+    security:
+      policies: [kickside.inbox.security:review_resume, kickside.inbox.security:review_identity]
+    imports:
+      review_signal: kickside.blocks:review_signal

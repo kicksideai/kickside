@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: kickside.models.providers
+
+entries:
+  - name: provider_read_model
+    kind: library.lua
+    meta:
+      comment: Registry read-model projecting provider adapters and profile presets for the admin surface.
+    source: file://read_model.lua
+    modules: [registry]
+    imports:
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry

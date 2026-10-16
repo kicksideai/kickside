@@ -1,0 +1,45 @@
+version: '1.0'
+namespace: kickside.inbox.security
+entries:
+- name: create_output_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources:
+    - kickside.inbox.events:item.created
+    - kickside.inbox.events:delivery.claimed
+- name: resolve_output_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources: kickside.inbox.events:item.resolved
+- name: submit_output_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources: kickside.inbox.events:item.created
+- name: delete_output_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources:
+    - kickside.inbox.events:item.deleted
+    - kickside.inbox.events:delivery.claimed
+- name: sink_output_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources:
+    - kickside.inbox.events:item.created
+    - kickside.inbox.events:item.deleted
+    - kickside.inbox.events:delivery.claimed

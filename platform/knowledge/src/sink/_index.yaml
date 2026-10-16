@@ -1,0 +1,137 @@
+version: "1.0"
+namespace: kickside.knowledge.sink
+
+# KB-embed sink: a kickside.data:writable binding that embeds written content
+# into a selected knowledge base. Data flows write through
+# the generic writable ABI; the sink declares wc-kb-picker as its config UI so a
+# composing form mounts it to choose the destination KB.
+
+entries:
+  - name: kb_embed_runtime
+    kind: library.lua
+    source: file://kb_embed_sink.lua
+    imports:
+      writable_sink: kickside.data:writable_sink
+      component: kickside.component:component
+      stores: kickside.knowledge:stores
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: kb_embed_write
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:sink_output_publish
+    meta:
+      comment: kickside.data:writable.write — embed content into config.kb_id via embeddable.
+    source: file://kb_embed_sink.lua
+    method: write
+    imports:
+      writable_sink: kickside.data:writable_sink
+      component: kickside.component:component
+      stores: kickside.knowledge:stores
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  # The embed SINK. It implements kickside.data:writable; its published port (below)
+  # makes it a sink the poller catalog offers. The write method IS the backing -- the
+  # poller opens this binding's writable directly and calls write({config, content}).
+  - name: kb_embed_sink
+    kind: contract.binding
+    meta:
+      name: Add to Knowledge Base
+      # Upsert has a stable external document identity; asynchronous projection
+      # and delete event delivery do not provide an atomic final-effect receipt.
+      delivery: at_least_once
+      input_shape: content
+      title: Add to Knowledge Base
+      icon: tabler:books
+      description: Embed each item into a chosen knowledge base.
+      group: Knowledge
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.knowledge.sink:kb_embed_write
+
+  # Published store port. upsert is the default embed; delete removes the document
+  # named by the write's identity_key (the document external_id) through a
+  # content.deleted event. Neither needs a destination reference -- the record identity
+  # locates the document -- so requires_dest_ref stays false.
+  - name: kb_embed
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Add to Knowledge Base
+      comment: Store incoming content in a selected knowledge base.
+      icon: tabler:books
+    binding: kickside.knowledge.sink:kb_embed_sink
+    operations:
+      upsert: {}
+      delete:
+        requires_dest_ref: false
+    # The upsert (default) input envelope the write handler reads (input.*). content is
+    # embedded; content_type and metadata ride onto the document. dedup_key/external_id
+    # derive from the idempotency key when metadata omits them. Delete input identity
+    # (item_key/dedup_key/metadata) is standardized by the writable ABI, not redeclared here.
+    input_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "content": { "type": "string", "description": "Text to embed. Required." },
+          "content_type": { "type": "string", "description": "MIME type of the content; defaults to text/plain. Any value accepted." },
+          "metadata": { "type": "object", "description": "Carried onto the embedded document. dedup_key defaults to the write's identity_key, which is also projected into the document external_id so redelivery reconciles to the same document." }
+        },
+        "required": ["content"] }
+    config_schema:
+      kb_id: { picker: wc-kb-picker, required: true, title: "Knowledge base" }
+      source_label:
+        picker: wc-schema-form
+        required: false
+        title: Source label
+        description: Optional origin tag stored with each embedded item.
+    output_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": { "type": "boolean" },
+          "result": { "type": "string", "enum": ["created", "updated", "deleted", "noop"] },
+          "dest_ref": {
+            "type": "object",
+            "properties": { "kb_id": { "type": "string" }, "external_id": { "type": "string" } },
+            "required": ["kb_id"]
+          },
+          "dest_version": { "type": "string" },
+          "dest_refs": {
+            "type": "object",
+            "description": "Destination references keyed by map_slot (\"default\" when the sync does not slot destinations).",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "dest_ref": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kb_id": { "type": "string" },
+                    "idempotency_key": { "type": "string", "description": "Source identity projected into the KB document external_id." }
+                  },
+                  "required": ["kb_id"]
+                },
+                "dest_version": { "type": "string" }
+              },
+              "required": ["dest_ref"]
+            }
+          },
+          "retry_after_ms": { "type": "integer", "minimum": 0 },
+          "error": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "retriable": { "type": "boolean" },
+              "scope": { "type": "string" }
+            },
+            "required": ["code", "message", "retriable", "scope"]
+          }
+        },
+        "required": ["success"] }

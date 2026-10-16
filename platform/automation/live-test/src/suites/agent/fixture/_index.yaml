@@ -1,0 +1,181 @@
+version: '1.0'
+namespace: kickside.automation.agent.fixture
+entries:
+- name: install
+  kind: function.lua
+  source: file://../../../test_src/suites/agent/fixture/fixture_type.lua
+  method: install
+  modules:
+  - ctx
+  imports:
+    automations_lib: kickside.automation:automation
+- name: execute
+  kind: function.lua
+  source: file://../../../test_src/suites/agent/fixture/fixture_type.lua
+  method: execute
+  modules:
+  - ctx
+  imports:
+    automations_lib: kickside.automation:automation
+- name: reconfigure
+  kind: function.lua
+  source: file://../../../test_src/suites/agent/fixture/fixture_type.lua
+  method: reconfigure
+  modules:
+  - ctx
+  imports:
+    automations_lib: kickside.automation:automation
+- name: fixture_contract
+  kind: contract.definition
+  meta:
+    title: Agent Fixture Automation Controls
+    comment: Runtime controls for the agent-tool test fixture automation type.
+  methods:
+  - name: execute
+    description: Manually run the fixture automation.
+  - name: reconfigure
+    description: Edit the fixture automation's stored input in place.
+- name: automation_type
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Agent Fixture Automation
+    comment: Minimal installable automation type used only by the agent-tool test
+      suite.
+    icon: tabler:flask
+    category: test
+    class: automation
+    reconfigurable: true
+    exportable: true
+    public_state_schema:
+      fields:
+      - key: status
+        type: text
+      - key: enabled
+        type: boolean
+        hidden: true
+    actions:
+    - name: execute
+    - name: reconfigure
+    inputs:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          title: Name
+        note:
+          type: string
+          title: Note
+        refuse:
+          type: boolean
+          title: Refuse
+        install_only:
+          type: object
+          title: Install-only block
+      required: []
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.agent.fixture:install
+  - contract: kickside.contract:deletable
+    methods:
+      delete: kickside.automation:noop_delete
+  - contract: kickside.automation.agent.fixture:fixture_contract
+    methods:
+      execute: kickside.automation.agent.fixture:execute
+      reconfigure: kickside.automation.agent.fixture:reconfigure
+- name: fixture_contract_trigger_run
+  kind: contract.definition
+  meta:
+    title: Agent Fixture Automation Controls (trigger run)
+    comment: Runtime controls for the trigger-named-run agent-tool test fixture automation
+      type.
+  methods:
+  - name: reconfigure
+    description: Edit the fixture automation's stored input in place.
+  - name: trigger
+    description: Manually run the fixture automation via the trigger action name.
+- name: automation_type_trigger_run
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Agent Fixture Automation (trigger run)
+    comment: Fixture automation type whose manual-run action is named trigger.
+    icon: tabler:flask
+    category: test
+    class: automation
+    reconfigurable: true
+    public_state_schema:
+      fields:
+      - key: status
+        type: text
+      - key: enabled
+        type: boolean
+        hidden: true
+    actions:
+    - name: trigger
+    - name: reconfigure
+    inputs:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          title: Name
+        note:
+          type: string
+          title: Note
+      required: []
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.agent.fixture:install
+  - contract: kickside.automation.agent.fixture:fixture_contract_trigger_run
+    methods:
+      trigger: kickside.automation.agent.fixture:execute
+      reconfigure: kickside.automation.agent.fixture:reconfigure
+- name: fixture_contract_no_run
+  kind: contract.definition
+  meta:
+    title: Agent Fixture Automation Controls (no run)
+    comment: Runtime controls for the no-manual-run agent-tool test fixture automation
+      type.
+  methods:
+  - name: reconfigure
+    description: Edit the fixture automation's stored input in place.
+- name: automation_type_no_run
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Agent Fixture Automation (no run)
+    comment: Fixture automation type with no manual-run action declared.
+    icon: tabler:flask
+    category: test
+    class: automation
+    reconfigurable: true
+    public_state_schema:
+      fields:
+      - key: status
+        type: text
+      - key: enabled
+        type: boolean
+        hidden: true
+    inputs:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          title: Name
+        note:
+          type: string
+          title: Note
+      required: []
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.agent.fixture:install
+  - contract: kickside.automation.agent.fixture:fixture_contract_no_run
+    methods:
+      reconfigure: kickside.automation.agent.fixture:reconfigure

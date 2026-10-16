@@ -1,0 +1,102 @@
+version: '1.0'
+namespace: kickside.automation.manual
+entries:
+- name: install
+  kind: function.lua
+  source: file://task.lua
+  method: install
+  imports:
+    task_target: kickside.automation:task_target
+- name: task
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Manual task
+    comment: Run a published workflow, agent prompt or declared writable action on explicit request.
+    icon: tabler:player-play
+    class: automation
+    exportable: true
+    inputs:
+      type: object
+      additionalProperties: false
+      required:
+      - target
+      properties:
+        title:
+          type: string
+          title: Title
+        enabled:
+          type: boolean
+          title: Enabled
+        target:
+          type: object
+          title: Target
+          additionalProperties: false
+          required:
+          - kind
+          properties:
+            kind:
+              type: string
+              enum:
+              - workflow
+              - agent
+              - action
+            flow_ref:
+              type: object
+              additionalProperties: false
+              required:
+              - kind
+              - id
+              - version
+              properties:
+                kind:
+                  type: string
+                  const: flow
+                id:
+                  type: string
+                  x-reference:
+                    kind: flow
+                    access: READ
+                version:
+                  type: integer
+                  minimum: 1
+            agent_id:
+              type: string
+              x-reference:
+                kind: agent
+                access: READ
+            prompt:
+              type: string
+              minLength: 1
+            port:
+              type: string
+              minLength: 1
+            config:
+              type: object
+            input:
+              type: object
+    public_state_schema:
+      fields:
+      - key: when
+        type: text
+        label: When
+        role: subtitle
+      - key: enabled
+        type: boolean
+        label: Enabled
+  contracts:
+  - contract: kickside.contract:component
+    methods:
+      get_status: kickside.core.threads:thread_status
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.manual:install
+  - contract: kickside.trigger:round_consumer
+    methods:
+      deliver: kickside.automation.recurring:deliver
+  - contract: kickside.contract:deletable
+    methods:
+      delete: kickside.automation:noop_delete
+  - contract: kickside.automation:prepared_installable
+    methods:
+      prepare_install: kickside.automation.manual:install

@@ -1,0 +1,39 @@
+version: '1.0'
+namespace: kickside.sessions.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Sessions
+    surface: kickside.sessions
+    intent: module_access
+    includes:
+    - kickside.sessions.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.sessions.api:favorite.endpoint
+    - kickside.sessions.api:start_token.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.sessions:*
+    - kickside.sessions.api:*
+    - kickside.sessions.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

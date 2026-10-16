@@ -1,0 +1,72 @@
+version: "1.0"
+namespace: kickside.test.threads
+
+entries:
+  - name: trigger
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+
+  - name: changed
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+
+  - name: attested
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+
+  - name: thread_kind
+    kind: contract.binding
+    meta:
+      events:
+        input:
+          - type: kickside.test.threads:trigger
+          - type: kickside.test.threads:attested
+        output:
+          - type: kickside.test.threads:changed
+          - type: kickside.test.threads:attested
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: shared_output_kind
+    kind: contract.binding
+    meta:
+      class: [test-shared-output]
+      events:
+        input: []
+        output:
+          - type: app:threads_cross_output
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: bad_boolean_kind
+    kind: contract.binding
+    meta:
+      events:
+        output:
+          - type: kickside.test.threads:changed
+            system_only: "true"
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: contradictory_kind
+    kind: contract.binding
+    meta:
+      events:
+        output:
+          - type: kickside.test.threads:changed
+          - type: kickside.test.threads:changed
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status

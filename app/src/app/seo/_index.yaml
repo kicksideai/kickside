@@ -1,0 +1,33 @@
+version: "1.0"
+namespace: app.seo
+
+entries:
+  - name: robots
+    kind: function.lua
+    source: file://serve.lua
+    modules:
+      - http
+    method: robots
+
+  - name: robots.endpoint
+    kind: http.endpoint
+    meta:
+      router: wippy.facade:web_router
+    method: GET
+    func: robots
+    path: /robots.txt
+
+  - name: llms
+    kind: function.lua
+    source: file://serve.lua
+    modules:
+      - http
+    method: llms
+
+  - name: llms.endpoint
+    kind: http.endpoint
+    meta:
+      router: wippy.facade:web_router
+    method: GET
+    func: llms
+    path: /llms.txt

@@ -1,0 +1,19 @@
+@import './styles/tokens.css';
+@import './styles/controls.css';
+@import './styles/runs.css';
+@import './styles/list.css';
+@import './styles/canvas.css';
+@import './styles/palette.css';
+@import './styles/panels.css';
+@import './styles/nodes.css';
+@import './styles/vueflow.css';
+@import './styles/schema.css';
+@import './styles/config-assist.css';
+@import './styles/predicate.css';
+@import './styles/dialogs.css';
+@import './styles/reduced-motion.css';
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;

@@ -1,0 +1,45 @@
+version: "1.0"
+namespace: kickside.webhooks.ingress
+
+# Transport-free ingress domain: schema validation, actor synthesis, and the
+# resolve/verify/append core. The public HTTP shell lives in api/public/ and
+# delegates here.
+
+entries:
+  - name: validator
+    kind: library.lua
+    meta: { comment: "Validates a webhook's declared input schema via native json.validate." }
+    source: file://validator.lua
+    modules: [json]
+
+  - name: security_core
+    kind: library.lua
+    meta: { comment: "Actor synthesis + named, control-plane-denied scope + run-as-actor dispatch seam for public ingress." }
+    source: file://security.lua
+    modules: [security, funcs, contract]
+    imports:
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+
+  - name: append_event
+    kind: function.lua
+    security:
+      policies:
+        - kickside.webhooks.security:ingress_output_publish
+    meta: { private: true, comment: "Internal verified-ingress append; runs under the synthesized webhook actor, never the anonymous endpoint actor." }
+    source: file://security.lua
+    method: append_event
+    modules: [security, funcs, contract]
+    imports:
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+
+  - name: ingress
+    kind: library.lua
+    meta: { comment: "Transport-free ingress: resolve, verify secret, validate body, append event." }
+    source: file://ingress.lua
+    modules: [hash]
+    imports:
+      webhook_consts: kickside.webhooks:consts
+      webhook_validator: kickside.webhooks.ingress:validator
+      webhook_repo: kickside.webhooks:repo

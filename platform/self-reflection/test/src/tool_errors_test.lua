@@ -1,0 +1,19 @@
+local test = require("test")
+local funcs = require("funcs")
+local security = require("security")
+
+local function define_tests()
+    test.describe("canonical tool failures", function()
+        test.it("kickside.self_reflection.traits:self_reflection_tool rejects failures through the error return", function()
+            local exec = funcs.new():with_actor(security.new_actor("tool_error_contract", {}))
+                :with_scope(security.named_scope("kickside.self_reflection.tool_errors:tool_errors_scope"))
+            local result, err = exec:call("kickside.self_reflection.traits:self_reflection_tool", { action = "invalid" })
+            test.is_nil(result, "a failing tool must not return a successful result")
+            test.not_nil(err, "a failing tool must return an invocation error")
+            test.is_true(errors.is(err, errors.INVALID), "error kind: " .. tostring(err))
+            test.is_true(tostring(err):find("unknown action", 1, true) ~= nil, tostring(err))
+        end)
+    end)
+end
+
+return { run = test.run_cases(define_tests) }

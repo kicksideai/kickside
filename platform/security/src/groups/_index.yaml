@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: kickside.security.groups
+entries:
+  - name: members
+    kind: security.scope
+    meta:
+      title: Members
+      comment: Default module access composed from installed public module policies.
+    policies: []
+
+  - name: members_composition
+    kind: registry.entry
+    meta: {type: kickside.security.group_composition}
+    group_id: kickside.security.groups:members
+    select:
+      meta.intent: module_access

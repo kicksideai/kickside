@@ -1,0 +1,2839 @@
+version: "1.0"
+namespace: app
+
+# Standalone test harness for the component module. Provides db / processes /
+# bootloader so the module boots and runs its migrations in isolation. Excluded
+# from publish (see wippy.yaml exclude: app:**).
+
+entries:
+  - name: owned_identity_selection_probe
+    kind: function.lua
+    source: file://owned_identity_selection_probe.lua
+    method: run
+    modules: [sql]
+    imports:
+      context_ops: kickside.component.persist:context_ops
+      ops: kickside.component.persist:component_ops
+
+  - name: identity_selection_probe
+    kind: function.lua
+    source: file://identity_selection_probe.lua
+    method: run
+    imports:
+      component_command: kickside.component:component_command
+
+  - name: identity_selection_resolver
+    kind: function.lua
+    source: file://identity_selection_resolver.lua
+    method: resolve
+
+  - name: identity_selection_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        default: true
+        methods: {resolve: app:identity_selection_resolver}
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: lifecycle_seam_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_packaging
+    source: file://lifecycle_seam_test.lua
+    method: run
+    modules: [registry, process, channel, contract, security, uuid]
+    imports:
+      test: wippy.test:test
+      component_lifecycle: kickside.component:component_lifecycle
+      lifecycle_stub: app:component_lifecycle_test_impl
+      unwired: kickside.component:component_lifecycle_unwired
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for component tests
+    file: "${sqlite_path}"
+
+  - name: repo_root
+    kind: fs.directory
+    meta:
+      comment: Repo tree root, so the trusted-read guard suite can scan module .lua sources for calls into the component trusted-read tier.
+    directory: ../../..
+
+  - name: trusted_read_guard_test
+    kind: function.lua
+    meta:
+      title: Trusted Read Guard
+      type: test
+      suite: component_trusted_read_guard
+      timeout: "120s"
+      group: Components
+      comment: Enumerates every module-qualified call into the component trusted-read tier (list_system/open_private/list_for_subject/get_private_context/system_delete/resolve_path_prefixes) and requires each caller site to be explicitly allowlisted with an exact count.
+    source: file://trusted_read_guard_test.lua
+    method: run
+    modules:
+      - fs
+    imports:
+      test: wippy.test:test
+      allowlist: app:trusted_read_allowlist
+
+  - name: trusted_read_allowlist
+    kind: library.lua
+    meta:
+      comment: Explicit roster of every module-qualified call site into the component trusted-read tier, keyed by repo-relative caller path and method with an exact declared count. Reaching for a trusted read means adding a line here.
+    source: file://trusted_read_allowlist.lua
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server for the share endpoints.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router (app:api) the share endpoints attach to.
+      server: gateway
+    prefix: /api
+
+  - name: test_scope_policy
+    kind: security.policy
+    meta:
+      comment: Permissive scope for component tests (grants db access to the test actor; component access itself stays grant-based)
+    groups:
+      - component_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: restricted_base_policy
+    kind: security.policy
+    meta:
+      comment: Grants db/runtime access to the restricted read-port test actor
+    groups:
+      - component_restricted
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: runtime_meta_base_policy
+    kind: security.policy
+    meta:
+      comment: Runtime plumbing for a scoped runtime-meta writer; grants no component.runtime_meta.write.
+    policy:
+      resources: '*'
+      actions:
+        - contract.*
+        - db.*
+        - funcs.*
+        - security.*
+        - registry.*
+        - env.*
+      effect: allow
+
+  - name: runtime_meta_connection_policy
+    kind: security.policy
+    meta:
+      comment: Runtime-meta write scoped to connection components of one provider through component attributes.
+    policy:
+      resources: '*'
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.class
+          operator: eq
+          value: connection
+        - field: meta.provider
+          operator: eq
+          value: gateway-test
+        - field: meta.region
+          operator: eq
+          value: trusted
+
+  - name: runtime_meta_impl_policy
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.impl_id
+          operator: eq
+          value: kickside.test:runtime_meta
+
+  - name: deny_access_context_call_policy
+    kind: security.policy
+    meta:
+      comment: Denies calling the component_service get_access_context method, so a client call to it fails at dispatch with a typed refusal.
+    policy:
+      resources: 'get_access_context'
+      actions: 'contract.call'
+      effect: deny
+
+  - name: deny_access_context_by_meta_call_policy
+    kind: security.policy
+    meta:
+      comment: Denies calling the component_service get_access_context_by_meta method, so a client call to it fails at dispatch with a typed refusal.
+    policy:
+      resources: 'get_access_context_by_meta'
+      actions: 'contract.call'
+      effect: deny
+
+  - name: deny_service_open_policy
+    kind: security.policy
+    meta:
+      comment: Denies opening the component_service binding, so the client fails to acquire the service with a typed refusal.
+    policy:
+      resources: 'kickside.component.binding:component_service_impl'
+      actions: 'contract.open'
+      effect: deny
+
+  - name: deny_portable_registry_policy
+    kind: security.policy
+    meta:
+      comment: Denies reading the portable test impl's registry entry, so an export or import lookup of it fails with a typed refusal.
+    policy:
+      resources: 'app:portable_impl'
+      actions: 'registry.get'
+      effect: deny
+
+  - name: restricted_scope_policy
+    kind: security.policy
+    meta:
+      comment: Denies the list-all capability on components so read-port widening is rejected for the non-privileged actor (deny takes precedence over the base allow)
+    groups:
+      - component_restricted
+    policy:
+      resources: 'kickside.component:components'
+      actions: 'list_all'
+      effect: deny
+
+  # The component module loads directly via directories.src=../src so its tests
+  # are included; its ns.requirement defaults (app:db / app:api) resolve against
+  # the harness resources above without an explicit ns.dependency wiring here.
+
+  - name: notify_access_realtime_binding
+    kind: contract.binding
+    meta:
+      comment: Harness-local realtime implementation for component.notify_access contract-path coverage.
+    contracts:
+      - contract: kickside.contract:realtime_batch
+        default: true
+        methods:
+          notify: app:notify_access_realtime_notify
+      - contract: kickside.contract:realtime
+        default: true
+        methods:
+          notify: app:notify_access_realtime_notify
+          broadcast: app:notify_access_realtime_broadcast
+
+  - name: notify_access_realtime_notify
+    kind: function.lua
+    meta:
+      comment: Records targeted realtime notify calls for component.notify_access tests.
+    source: file://notify_access_fake_realtime.lua
+    method: notify
+    modules:
+      - sql
+      - json
+      - security
+
+  - name: notify_access_realtime_broadcast
+    kind: function.lua
+    meta:
+      comment: Fails if component.notify_access uses broadcast.
+    source: file://notify_access_fake_realtime.lua
+    method: broadcast
+    modules:
+      - sql
+      - json
+      - security
+
+  - name: notify_access_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope of a group principal without process messaging or realtime authority; component fanout reaches the stored audience through the component policy.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security, db.get, registry.get, registry.find, env.get]
+      effect: allow
+
+  - name: notify_access_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Fans a component notification out in the caller's frame.
+    source: file://notify_access_probe.lua
+    method: run
+    imports:
+      component: kickside.component:component
+
+  - name: notify_access_group_members_binding
+    kind: contract.binding
+    meta:
+      comment: Harness-local group_members so component.notify_access group expansion is exercised.
+    contracts:
+      - contract: kickside.contract:group_members
+        default: true
+        methods:
+          members: app:notify_access_group_members
+
+  - name: notify_access_group_members
+    kind: function.lua
+    meta:
+      comment: Returns the members the test seeded for a group (table-backed).
+    source: file://notify_access_fake_group_members.lua
+    method: members
+    modules:
+      - sql
+
+  # A test-only component-kind binding carrying a provision block, which the
+  # provisioner discovers via registry.find on contract.binding + meta.provision.
+  # Harness declaration owner: confirms a pending set_execution_identity command whose id
+  # starts with "owned-" for the operator and principal the SET names.
+  - name: declaration_owner_stub
+    kind: function.lua
+    meta:
+      comment: Confirms harness set_execution_identity commands named owned-* for automation-owned SET coverage.
+    source: file://declaration_owner_stub.lua
+    method: verify_identity_command
+
+  - name: declaration_owner_binding
+    kind: contract.binding
+    meta:
+      comment: Harness binding of the component declaration-owner contract.
+    contracts:
+      - contract: kickside.component:declaration_owner
+        default: true
+        methods:
+          verify_identity_command: app:declaration_owner_stub
+
+  - name: component_lifecycle_test_impl
+    kind: library.lua
+    source: file://component_lifecycle_stub.lua
+    modules: [process]
+
+  - name: portable_impl
+    kind: registry.entry
+    meta:
+      comment: A component impl that declares a portable_schema, so export and import accept its components.
+      portable_schema:
+        context: true
+
+  - name: autoinit_test_decl
+    kind: contract.binding
+    meta:
+      title: Test Workspace
+      class:
+        - test_workspace
+      provision:
+        scope: user
+      projections:
+        - kind: test.lifecycle
+          worker_ref: "func://app:test_autoinit_worker"
+          on: child.lifecycle
+          events:
+            input:
+              - type: kickside.component.events:created
+              - type: kickside.component.events:updated
+              - type: kickside.component.events:deleted
+      retention:
+        event_days: 30
+        drain_aware: true
+      events:
+        input:
+          - type: kickside.test.workspace.events:trigger
+            schema:
+              type: object
+        output:
+          - type: kickside.test.workspace.events:changed
+            via: "func://app:test_autoinit_worker"
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+
+  - name: autoinit_grants_test_decl
+    kind: contract.binding
+    meta:
+      title: Grants Test Workspace
+      class:
+        - test_grants_workspace
+      provision:
+        scope: user
+        grants:
+          - subject_id: grants-user-1
+            subject_type: user
+            access_mask: 1
+          - subject_id: grants-group-1
+            subject_type: group
+            access_mask: 2
+          - subject_id: grants-typeless-1
+            access_mask: 1
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+
+  - name: autoinit_test_status
+    kind: function.lua
+    meta:
+      comment: Harness get_status for the test component-kind binding (declaration-parsing coverage only).
+    source: file://autoinit_test_status.lua
+    method: get_status
+
+  - name: autoinit_test
+    kind: function.lua
+    meta:
+      title: Component Autoinit
+      type: test
+      suite: component_autoinit
+      group: Components
+      comment: per-actor autoinit provisioning + idempotency + declaration parsing.
+    source: file://autoinit_test.lua
+    method: run
+    modules:
+      - uuid
+    imports:
+      test: wippy.test:test
+      autoinit: kickside.component:autoinit
+
+  - name: autoinit_descriptor_decl
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      thread:
+        class: test.descriptor.thread
+
+  - name: share_subject_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_sharing
+    source: file://share_subject_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      share_subject: kickside.component:share_subject
+
+  - name: share_directory_stub
+    kind: function.lua
+    source: file://share_directory_stub.lua
+    method: resolve
+
+  - name: share_directory_groups_stub
+    kind: function.lua
+    source: file://share_directory_stub.lua
+    method: groups
+
+  - name: share_directory_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:directory
+        default: true
+        methods:
+          search: app:share_directory_stub
+          groups: app:share_directory_groups_stub
+          resolve: app:share_directory_stub
+          exists: app:share_directory_stub
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: runtime_meta_support
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: ['db.get', 'funcs.call', 'registry.get', 'registry.find']
+      effect: allow
+  - name: runtime_meta_grant
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.class
+          operator: eq
+          value: runtime_target
+
+  - name: metadata_migration_db
+    kind: db.sql.sqlite
+    file: ":memory:"
+    pool: { max_open: 1, max_idle: 1 }
+
+  - name: audit_portable_kind
+    kind: registry.entry
+    meta:
+      portable_schema:
+        context: [prompt, settings, source_id]
+        refs:
+          - key: source_id
+            path: /source_id
+            required: true
+      credential_schema:
+        fields:
+          - key: api_key
+
+  - name: portable_contract_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_component
+    source: file://portable_contract_test.lua
+    method: run
+    modules: [sql, uuid, json, security, contract]
+    imports:
+      test: wippy.test:test
+
+  - name: contract_open_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_contract_open_native}
+    source: file://contract_open_native_test.lua
+    method: run
+    modules: [contract, funcs]
+    imports:
+      test: wippy.test:test
+      context_policy: kickside.component:context_policy
+      canonical_json: kickside.contract:canonical_json
+
+  - name: contract_open_native_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://contract_open_native_test.lua
+    method: probe
+    modules: [contract, funcs]
+    imports:
+      test: wippy.test:test
+      context_policy: kickside.component:context_policy
+      canonical_json: kickside.contract:canonical_json
+
+  - name: share_subject_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_share_subject_native}
+    source: file://share_subject_native_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      share_subject: kickside.component:share_subject
+  - name: share_subject_native_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://share_subject_native_test.lua
+    method: probe
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      share_subject: kickside.component:share_subject
+
+  - name: service_open_native_contract
+    kind: library.lua
+    source: file://service_open_native_stub.lua
+
+  - name: service_open_native_context
+    kind: library.lua
+    source: file://service_open_native_context.lua
+    modules: [security, sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      contract: app:service_open_native_contract
+      component_types: kickside.component:types
+      component_reader: kickside.component.persist:component_reader
+      access_policy: kickside.component:access_policy
+      envelope: kickside.component:envelope
+      read_port: kickside.component.persist:read_port
+      execution_identity: kickside.execution:execution_identity
+
+  - name: service_open_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_service_open_native}
+    source: file://service_open_native_test.lua
+    method: run
+    modules: [funcs]
+    security:
+      actor: {id: native-service-opening}
+      policies: [app:test_scope_policy]
+    imports:
+      test: wippy.test:test
+      context_fixture: app:service_open_native_context
+      contract_fixture: app:service_open_native_contract
+
+  - name: service_open_native_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://service_open_native_test.lua
+    method: probe
+    modules: [funcs]
+    security:
+      actor: {id: native-service-opening}
+      policies: [app:test_scope_policy]
+    imports:
+      test: wippy.test:test
+      context_fixture: app:service_open_native_context
+      contract_fixture: app:service_open_native_contract
+
+  - name: lifecycle_native_result_test
+    kind: function.lua
+    meta: {type: test, suite: component_lifecycle_native}
+    source: file://lifecycle_native_result_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      component_lifecycle: kickside.component:component_lifecycle
+      lifecycle_stub: app:component_lifecycle_test_impl
+
+  - name: list_validation_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_list_native}
+    source: file://list_validation_native_test.lua
+    method: run
+    modules: [funcs, contract, security]
+    imports:
+      test: wippy.test:test
+      envelope: kickside.component:envelope
+
+  - name: directory_native_dependency
+    kind: library.lua
+    source: file://directory_native_fixture.lua
+
+  - name: directory_native_subject
+    kind: library.lua
+    source: file://directory_native_subject.lua
+    imports:
+      contract: app:directory_native_dependency
+      access_policy: kickside.component:access_policy
+
+  - name: directory_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_directory_native}
+    source: file://directory_native_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      subject_fixture: app:directory_native_subject
+      directory_fixture: app:directory_native_dependency
+
+  - name: directory_native_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://directory_native_test.lua
+    method: probe
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      subject_fixture: app:directory_native_subject
+      directory_fixture: app:directory_native_dependency
+
+  - name: migration_native_capture
+    kind: library.lua
+    source: file://migration_native_capture.lua
+    imports:
+      migration_core: wippy.migration:core
+
+  - name: migration_native_01_create_components_table
+    kind: library.lua
+    source: file://migration_native_01_create_components_table.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_02_create_component_meta_table
+    kind: library.lua
+    source: file://migration_native_02_create_component_meta_table.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_03_create_component_access_table
+    kind: library.lua
+    source: file://migration_native_03_create_component_access_table.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_07_identity_fence
+    kind: library.lua
+    source: file://migration_native_07_identity_fence.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_08_derived_acl
+    kind: library.lua
+    source: file://migration_native_08_derived_acl.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_11_declaration_fence
+    kind: library.lua
+    source: file://migration_native_11_declaration_fence.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_12_thread_reap
+    kind: library.lua
+    source: file://migration_native_12_thread_reap.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_13_unique_component_meta
+    kind: library.lua
+    source: file://migration_native_13_unique_component_meta.lua
+    imports:
+      migration: app:migration_native_capture
+
+  - name: migration_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_migration_native}
+    source: file://migration_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_01_create_components_table
+      migration_2: app:migration_native_02_create_component_meta_table
+      migration_3: app:migration_native_03_create_component_access_table
+      migration_4: app:migration_native_07_identity_fence
+      migration_5: app:migration_native_08_derived_acl
+      migration_6: app:migration_native_11_declaration_fence
+      migration_7: app:migration_native_12_thread_reap
+      migration_8: app:migration_native_13_unique_component_meta
+
+  - name: implementation_native_fixture
+    kind: library.lua
+    source: file://implementation_native_fixture.lua
+
+  - name: implementation_native_sql_adapter
+    kind: library.lua
+    source: file://implementation_native_sql_adapter.lua
+    imports:
+      fixture: app:implementation_native_fixture
+
+  - name: implementation_native_security_adapter
+    kind: library.lua
+    source: file://implementation_native_security_adapter.lua
+    imports:
+      fixture: app:implementation_native_fixture
+
+  - name: implementation_native_source
+    kind: library.lua
+    source: file://implementation_native_source.lua
+    imports:
+      sql: app:implementation_native_sql_adapter
+      security: app:implementation_native_security_adapter
+      component_types: kickside.component:types
+
+  - name: implementation_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_implementation_native}
+    source: file://implementation_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fixture: app:implementation_native_fixture
+      implementation: app:implementation_native_source
+
+  - name: implementation_candidates_test
+    kind: function.lua
+    meta: {type: test, suite: component_implementation_candidates}
+    source: file://implementation_candidates_test.lua
+    method: run
+    modules: [sql, time, uuid]
+    imports:
+      test: wippy.test:test
+      access_subjects: kickside.component.persist:access_subjects
+      component_query: kickside.component.persist:component_query
+      component_reader: kickside.component.persist:component_reader
+      implementation_access: kickside.component.persist:implementation_access
+
+  - name: identity_native_fixture
+    kind: library.lua
+    source: file://identity_native_fixture.lua
+
+  - name: identity_native_sql_adapter
+    kind: library.lua
+    source: file://identity_native_sql_adapter.lua
+    imports:
+      fixture: app:identity_native_fixture
+
+  - name: identity_native_access_adapter
+    kind: library.lua
+    source: file://identity_native_access_adapter.lua
+    imports:
+      fixture: app:identity_native_fixture
+
+  - name: identity_native_source
+    kind: library.lua
+    source: file://identity_native_source.lua
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      sql: app:identity_native_sql_adapter
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      access_ops: app:identity_native_access_adapter
+      error_envelope: kickside.contract:error_envelope
+
+  - name: identity_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_identity_native}
+    source: file://identity_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fixture: app:identity_native_fixture
+      identity: app:identity_native_source
+      component_types: kickside.component:types
+
+  - name: audit_policy_native_fixture
+    kind: library.lua
+    source: file://audit_policy_native_fixture.lua
+
+  - name: audit_policy_native_registry_adapter
+    kind: library.lua
+    source: file://audit_policy_native_registry_adapter.lua
+    imports:
+      fixture: app:audit_policy_native_fixture
+
+  - name: audit_policy_native_source
+    kind: library.lua
+    source: file://audit_policy_native_source.lua
+    imports:
+      registry: app:audit_policy_native_registry_adapter
+
+  - name: audit_policy_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_audit_policy_native}
+    source: file://audit_policy_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fixture: app:audit_policy_native_fixture
+      policy: app:audit_policy_native_source
+
+  - name: fence_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_fence_native}
+    source: file://fence_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:fence_native_source
+
+  - name: fence_native_sql_adapter
+    kind: library.lua
+    source: file://fence_native_sql_adapter.lua
+    modules: [sql]
+
+  - name: fence_native_source
+    kind: library.lua
+    source: file://fence_native_source.lua
+    modules: [time]
+    imports:
+      sql: app:fence_native_sql_adapter
+      component_types: kickside.component:types
+      context_ops: kickside.component.persist:context_ops
+      declaration_ops: kickside.component.persist:declaration_ops
+      declaration_fence: kickside.component.persist:declaration_fence
+      meta_ops: kickside.component.persist:meta_ops
+      delete_ops: kickside.component.persist:delete_ops
+      placement_ops: kickside.component.persist:placement_ops
+      access_ops: kickside.component.persist:access_ops
+      declared_create: kickside.component.persist:declared_create
+
+  - name: delete_native_fixture
+    kind: library.lua
+    source: file://delete_native_fixture.lua
+
+  - name: delete_native_sql_adapter
+    kind: library.lua
+    source: file://delete_native_sql_adapter.lua
+    modules: [sql]
+
+  - name: delete_native_placement_adapter
+    kind: library.lua
+    source: file://delete_native_placement_adapter.lua
+    imports:
+      fixture: app:delete_native_fixture
+
+  - name: delete_native_source
+    kind: library.lua
+    source: file://delete_native_source.lua
+    imports:
+      sql: app:delete_native_sql_adapter
+      placement: app:delete_native_placement_adapter
+      component_types: kickside.component:types
+
+  - name: delete_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_delete_native}
+    source: file://delete_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:delete_native_source
+      fixture: app:delete_native_fixture
+
+  - name: delete_native_test_dependencies_2
+    kind: function.lua
+    meta: {type: test, suite: component_delete_native}
+    source: file://delete_native_test.lua
+    method: run_dependencies_2
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:delete_native_source
+      fixture: app:delete_native_fixture
+
+  - name: delete_native_test_dependencies_3
+    kind: function.lua
+    meta: {type: test, suite: component_delete_native}
+    source: file://delete_native_test.lua
+    method: run_dependencies_3
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:delete_native_source
+      fixture: app:delete_native_fixture
+
+  - name: delete_native_test_dependencies_4
+    kind: function.lua
+    meta: {type: test, suite: component_delete_native}
+    source: file://delete_native_test.lua
+    method: run_dependencies_4
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:delete_native_source
+      fixture: app:delete_native_fixture
+
+  - name: delete_native_test_dependencies_5
+    kind: function.lua
+    meta: {type: test, suite: component_delete_native}
+    source: file://delete_native_test.lua
+    method: run_dependencies_5
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:delete_native_source
+      fixture: app:delete_native_fixture
+
+  - name: delete_native_test_proofs
+    kind: function.lua
+    meta: {type: test, suite: component_delete_native}
+    source: file://delete_native_test.lua
+    method: run_proofs
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      ops: app:delete_native_source
+      fixture: app:delete_native_fixture
+
+  - name: pending_delete_native_fixture
+    kind: library.lua
+    source: file://pending_delete_native_fixture.lua
+
+  - name: pending_delete_native_sql_adapter
+    kind: library.lua
+    source: file://pending_delete_native_sql_adapter.lua
+    imports: {fixture: app:pending_delete_native_fixture}
+
+  - name: pending_delete_native_component_adapter
+    kind: library.lua
+    source: file://pending_delete_native_component_adapter.lua
+    imports: {fixture: app:pending_delete_native_fixture}
+
+  - name: pending_delete_native_source
+    kind: library.lua
+    source: file://pending_delete_native_source.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      sql: app:pending_delete_native_sql_adapter
+      component: app:pending_delete_native_component_adapter
+      component_types: kickside.component:types
+      teardown: kickside.component.persist:teardown
+
+  - name: pending_delete_native_test_dependencies
+    kind: function.lua
+    meta: {type: test, suite: component_pending_delete_native}
+    source: file://pending_delete_native_test.lua
+    method: dependencies
+    imports:
+      test: wippy.test:test
+      pending: app:pending_delete_native_source
+      fixture: app:pending_delete_native_fixture
+
+  - name: pending_delete_native_test_proofs
+    kind: function.lua
+    meta: {type: test, suite: component_pending_delete_native}
+    source: file://pending_delete_native_test.lua
+    method: proofs
+    imports:
+      test: wippy.test:test
+      pending: app:pending_delete_native_source
+      fixture: app:pending_delete_native_fixture
+
+  - name: declaration_fence_native_fixture
+    kind: library.lua
+    source: file://declaration_fence_native_fixture.lua
+
+  - name: declaration_fence_native_sql_adapter
+    kind: library.lua
+    source: file://declaration_fence_native_sql_adapter.lua
+    imports: {fixture: app:declaration_fence_native_fixture}
+
+  - name: declaration_fence_native_source
+    kind: library.lua
+    source: file://declaration_fence_native_source.lua
+    modules: [time]
+    imports:
+      sql: app:declaration_fence_native_sql_adapter
+      error_envelope: kickside.contract:error_envelope
+
+  - name: declaration_fence_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_declaration_fence_native}
+    source: file://declaration_fence_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fence: app:declaration_fence_native_source
+      fixture: app:declaration_fence_native_fixture
+
+  - name: meta_native_fixture
+    kind: library.lua
+    source: file://meta_native_fixture.lua
+    modules: [sql]
+
+  - name: meta_native_sql_adapter
+    kind: library.lua
+    source: file://meta_native_sql_adapter.lua
+    modules: [sql]
+    imports: {fixture: app:meta_native_fixture}
+
+  - name: meta_native_registry_adapter
+    kind: library.lua
+    source: file://meta_native_registry_adapter.lua
+    imports: {fixture: app:meta_native_fixture}
+
+  - name: meta_native_json_adapter
+    kind: library.lua
+    source: file://meta_native_json_adapter.lua
+    modules: [json]
+    imports: {fixture: app:meta_native_fixture}
+
+  - name: meta_native_source
+    kind: library.lua
+    source: file://meta_native_source.lua
+    modules: [time, uuid]
+    imports:
+      sql: app:meta_native_sql_adapter
+      registry: app:meta_native_registry_adapter
+      json: app:meta_native_json_adapter
+      component_types: kickside.component:types
+      error_envelope: kickside.contract:error_envelope
+
+  - name: meta_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_meta_native}
+    source: file://meta_native_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      meta: app:meta_native_source
+      fixture: app:meta_native_fixture
+
+  - name: portable_io_native_fixture
+    kind: library.lua
+    source: file://portable_io_native_fixture.lua
+
+  - name: portable_io_native_json
+    kind: library.lua
+    source: file://portable_io_native_json.lua
+    modules: [json]
+    imports: {fixture: app:portable_io_native_fixture}
+
+  - name: portable_io_native_source
+    kind: library.lua
+    source: file://portable_io_native_source.lua
+    imports:
+      json: app:portable_io_native_json
+      error_envelope: kickside.contract:error_envelope
+
+  - name: portable_io_native_test
+    kind: function.lua
+    meta: {type: test, suite: portable_io_native}
+    source: file://portable_io_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      portable_io: app:portable_io_native_source
+      fixture: app:portable_io_native_fixture
+
+  - name: teardown_cause_fixture
+    kind: library.lua
+    source: file://teardown_cause_fixture.lua
+
+  - name: teardown_cause_sql
+    kind: library.lua
+    source: file://teardown_cause_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:teardown_cause_fixture
+
+  - name: teardown_cause_contract
+    kind: library.lua
+    source: file://teardown_cause_contract.lua
+    imports:
+      fixture: app:teardown_cause_fixture
+
+  - name: teardown_cause_source
+    kind: library.lua
+    source: file://teardown_cause_source.lua
+    modules:
+    - security
+    - registry
+    - time
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      sql: app:teardown_cause_sql
+      contract: app:teardown_cause_contract
+      component_ops: app:teardown_cause_fixture
+      placement: kickside.component.persist:placement
+      component_lifecycle: kickside.component:component_lifecycle
+
+  - name: teardown_cause_test
+    kind: function.lua
+    source: file://teardown_cause_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_teardown_cause_native
+    imports:
+      test: wippy.test:test
+      teardown: app:teardown_cause_source
+      fixture: app:teardown_cause_fixture
+
+  - name: access_cause_fixture
+    kind: library.lua
+    source: file://access_cause_fixture.lua
+
+  - name: access_cause_sql
+    kind: library.lua
+    source: file://access_cause_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:access_cause_fixture
+
+  - name: access_cause_source
+    kind: library.lua
+    source: file://access_cause_source.lua
+    modules:
+    - uuid
+    - time
+    imports:
+      component_types: kickside.component:types
+      access_subjects: kickside.component.persist:access_subjects
+      access_policy: kickside.component:access_policy
+      placement: kickside.component.persist:placement
+      execution_identity: kickside.execution:execution_identity
+      implementation_access: kickside.component.persist:implementation_access
+      sql: app:access_cause_sql
+
+  - name: access_cause_test
+    kind: function.lua
+    source: file://access_cause_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_access_cause_native
+    imports:
+      test: wippy.test:test
+      access: app:access_cause_source
+      fixture: app:access_cause_fixture
+
+  - name: cleanup_setup_fixture
+    kind: library.lua
+    source: file://cleanup_setup_fixture.lua
+
+  - name: cleanup_setup_contract
+    kind: library.lua
+    source: file://cleanup_setup_contract.lua
+    imports:
+      fixture: app:cleanup_setup_fixture
+
+  - name: cleanup_setup_source
+    kind: library.lua
+    source: file://cleanup_setup_source.lua
+    modules:
+    - sql
+    - time
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      security: app:cleanup_setup_security
+      contract: app:cleanup_setup_contract
+      registry: app:cleanup_setup_fixture
+      component_ops: kickside.component.persist:component_ops
+      placement: kickside.component.persist:placement
+      component_lifecycle: kickside.component:component_lifecycle
+
+  - name: cleanup_setup_test
+    kind: function.lua
+    source: file://cleanup_setup_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_cleanup_setup_native
+    imports:
+      test: wippy.test:test
+      teardown: app:cleanup_setup_source
+      fixture: app:cleanup_setup_fixture
+
+  - name: cleanup_setup_security
+    kind: library.lua
+    source: file://cleanup_setup_security.lua
+    imports:
+      fixture: app:cleanup_setup_fixture
+
+  - name: envelope_native_test
+    kind: function.lua
+    source: file://envelope_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_envelope_native
+    imports:
+      test: wippy.test:test
+      envelope: kickside.component:envelope
+
+  - name: context_result_native_test
+    kind: function.lua
+    source: file://context_result_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_context_result_native
+    imports:
+      test: wippy.test:test
+      context: kickside.component:context_policy
+
+  - name: command_cause_fixture
+    kind: library.lua
+    source: file://command_cause_fixture.lua
+
+  - name: command_cause_sql
+    kind: library.lua
+    source: file://command_cause_sql.lua
+    imports:
+      fixture: app:command_cause_fixture
+
+  - name: command_cause_contract
+    kind: library.lua
+    source: file://command_cause_contract.lua
+    imports:
+      fixture: app:command_cause_fixture
+
+  - name: command_cause_ops
+    kind: library.lua
+    source: file://command_cause_ops.lua
+    imports:
+      fixture: app:command_cause_fixture
+
+  - name: command_cause_lifecycle
+    kind: library.lua
+    source: file://command_cause_lifecycle.lua
+    imports:
+      fixture: app:command_cause_fixture
+
+  - name: command_cause_source
+    kind: library.lua
+    source: file://command_cause_source.lua
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      sql: app:command_cause_sql
+      contract: app:command_cause_contract
+      component_ops: app:command_cause_ops
+      component_lifecycle: app:command_cause_lifecycle
+
+  - name: command_cause_test
+    kind: function.lua
+    source: file://command_cause_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_command_causes
+    imports:
+      test: wippy.test:test
+      command: app:command_cause_source
+      fixture: app:command_cause_fixture
+
+  - name: system_delete_fixture
+    kind: library.lua
+    source: file://system_delete_fixture.lua
+
+  - name: system_delete_reader
+    kind: library.lua
+    source: file://system_delete_reader.lua
+    imports:
+      fixture: app:system_delete_fixture
+
+  - name: system_delete_teardown
+    kind: library.lua
+    source: file://system_delete_teardown.lua
+    imports:
+      fixture: app:system_delete_fixture
+      teardown: kickside.component.persist:teardown
+
+  - name: system_delete_source
+    kind: library.lua
+    source: file://system_delete_source.lua
+    modules:
+    - contract
+    - security
+    - sql
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      component_reader: app:system_delete_reader
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      component_ops: kickside.component.persist:component_ops
+      teardown: app:system_delete_teardown
+      meta_service: kickside.component:meta_service
+      autoinit: kickside.component:autoinit
+      component_command: kickside.component:component_command
+      context_policy: kickside.component:context_policy
+      identity_access: kickside.component:identity_access
+
+  - name: system_delete_native_test
+    kind: function.lua
+    source: file://system_delete_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_system_delete_native
+    imports:
+      test: wippy.test:test
+      component: app:system_delete_source
+      fixture: app:system_delete_fixture
+
+  - name: singleton_emit_fixture
+    kind: library.lua
+    source: file://singleton_emit_fixture.lua
+
+  - name: singleton_emit_contract
+    kind: library.lua
+    source: file://singleton_emit_contract.lua
+    imports:
+      fixture: app:singleton_emit_fixture
+
+  - name: singleton_emit_context
+    kind: library.lua
+    source: file://singleton_emit_context.lua
+    imports:
+      fixture: app:singleton_emit_fixture
+
+  - name: singleton_emit_source
+    kind: library.lua
+    source: file://singleton_emit_source.lua
+    modules:
+    - security
+    - sql
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      component_ops: kickside.component.persist:component_ops
+      teardown: kickside.component.persist:teardown
+      meta_service: kickside.component:meta_service
+      autoinit: kickside.component:autoinit
+      component_command: kickside.component:component_command
+      context_policy: app:singleton_emit_context
+      identity_access: kickside.component:identity_access
+      contract: app:singleton_emit_contract
+
+  - name: singleton_emit_native_test
+    kind: function.lua
+    source: file://singleton_emit_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_singleton_emit_native
+    imports:
+      test: wippy.test:test
+      component: app:singleton_emit_source
+      fixture: app:singleton_emit_fixture
+
+  - name: context_binding_security
+    kind: library.lua
+    source: file://context_binding_security.lua
+    imports:
+      fixture: app:singleton_emit_fixture
+
+  - name: context_binding_source
+    kind: library.lua
+    source: file://context_binding_source.lua
+    modules:
+    - sql
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+      component_reader: kickside.component.persist:component_reader
+      access_policy: kickside.component:access_policy
+      envelope: kickside.component:envelope
+      read_port: kickside.component.persist:read_port
+      execution_identity: kickside.execution:execution_identity
+      contract: app:singleton_emit_contract
+      security: app:context_binding_security
+
+  - name: context_binding_native_test
+    kind: function.lua
+    source: file://context_binding_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_context_binding_native
+    imports:
+      test: wippy.test:test
+      context_policy: app:context_binding_source
+      fixture: app:singleton_emit_fixture
+
+  - name: retry_release_fixture
+    kind: library.lua
+    source: file://retry_release_fixture.lua
+
+  - name: retry_release_sql
+    kind: library.lua
+    source: file://retry_release_sql.lua
+    imports:
+      fixture: app:retry_release_fixture
+
+  - name: retry_release_component
+    kind: library.lua
+    source: file://retry_release_component.lua
+    imports:
+      fixture: app:retry_release_fixture
+
+  - name: retry_release_source
+    kind: library.lua
+    source: file://retry_release_source.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+      component: app:retry_release_component
+      teardown: kickside.component.persist:teardown
+      sql: app:retry_release_sql
+
+  - name: retry_release_native_test
+    kind: function.lua
+    source: file://retry_release_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_retry_release_native
+    imports:
+      test: wippy.test:test
+      pending: app:retry_release_source
+      fixture: app:retry_release_fixture
+
+  - name: grant_cleanup_fixture
+    kind: library.lua
+    source: file://grant_cleanup_fixture.lua
+
+  - name: grant_cleanup_sql
+    kind: library.lua
+    source: file://grant_cleanup_sql.lua
+    imports:
+      fixture: app:grant_cleanup_fixture
+
+  - name: grant_cleanup_source
+    kind: library.lua
+    source: file://grant_cleanup_source.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      sql: app:grant_cleanup_sql
+      component_types: kickside.component:types
+
+  - name: grant_cleanup_native_test
+    kind: function.lua
+    source: file://grant_cleanup_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_grant_cleanup_native
+    imports:
+      test: wippy.test:test
+      cleanup: app:grant_cleanup_source
+      fixture: app:grant_cleanup_fixture
+
+  - name: teardown_reap_cleanup_test
+    kind: function.lua
+    source: file://teardown_reap_cleanup_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_teardown_reap_cleanup_native
+    imports:
+      test: wippy.test:test
+      teardown: app:teardown_cause_source
+      fixture: app:teardown_cause_fixture
+
+  - name: teardown_tx_cleanup_fixture
+    kind: library.lua
+    source: file://teardown_tx_cleanup_fixture.lua
+
+  - name: teardown_tx_cleanup_sql
+    kind: library.lua
+    source: file://teardown_tx_cleanup_sql.lua
+    imports:
+      fixture: app:teardown_tx_cleanup_fixture
+
+  - name: teardown_tx_cleanup_contract
+    kind: library.lua
+    source: file://teardown_tx_cleanup_contract.lua
+    imports:
+      fixture: app:teardown_tx_cleanup_fixture
+
+  - name: teardown_tx_cleanup_source
+    kind: library.lua
+    source: file://teardown_tx_cleanup_source.lua
+    modules:
+    - security
+    - registry
+    - time
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      sql: app:teardown_tx_cleanup_sql
+      contract: app:teardown_tx_cleanup_contract
+      component_ops: app:teardown_tx_cleanup_fixture
+      placement: app:teardown_tx_cleanup_placement
+      component_lifecycle: app:teardown_tx_cleanup_lifecycle
+
+  - name: teardown_tx_cleanup_test
+    kind: function.lua
+    source: file://teardown_tx_cleanup_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_teardown_transaction_cleanup_native
+    imports:
+      test: wippy.test:test
+      teardown: app:teardown_tx_cleanup_source
+      fixture: app:teardown_tx_cleanup_fixture
+
+  - name: teardown_tx_cleanup_placement
+    kind: library.lua
+    source: file://teardown_tx_cleanup_placement.lua
+    imports:
+      fixture: app:teardown_tx_cleanup_fixture
+
+  - name: teardown_tx_cleanup_lifecycle
+    kind: library.lua
+    source: file://teardown_tx_cleanup_lifecycle.lua
+    imports:
+      fixture: app:teardown_tx_cleanup_fixture
+
+  - name: inherited_cleanup_native_test
+    kind: function.lua
+    source: file://inherited_cleanup_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_inherited_cleanup_native
+    imports:
+      test: wippy.test:test
+      teardown: kickside.component.persist:teardown
+
+  - name: gated_delete_fixture
+    kind: library.lua
+    source: file://gated_delete_fixture.lua
+
+  - name: gated_delete_security
+    kind: library.lua
+    source: file://gated_delete_security.lua
+    imports:
+      fixture: app:gated_delete_fixture
+
+  - name: gated_delete_reader
+    kind: library.lua
+    source: file://gated_delete_reader.lua
+    imports:
+      fixture: app:gated_delete_fixture
+
+  - name: gated_delete_ops
+    kind: library.lua
+    source: file://gated_delete_ops.lua
+    imports:
+      fixture: app:gated_delete_fixture
+
+  - name: gated_delete_teardown
+    kind: library.lua
+    source: file://gated_delete_teardown.lua
+    imports:
+      fixture: app:gated_delete_fixture
+      teardown: kickside.component.persist:teardown
+
+  - name: gated_delete_source
+    kind: library.lua
+    source: file://gated_delete_source.lua
+    imports:
+      security: app:gated_delete_security
+      component_reader: app:gated_delete_reader
+      component_ops: app:gated_delete_ops
+      teardown: app:gated_delete_teardown
+      envelope: kickside.component:envelope
+      error_envelope: kickside.contract:error_envelope
+
+  - name: gated_delete_native_test
+    kind: function.lua
+    source: file://gated_delete_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_gated_delete_native
+    imports:
+      test: wippy.test:test
+      binding: app:gated_delete_source
+      fixture: app:gated_delete_fixture
+
+  - name: portable_json_fixture
+    kind: library.lua
+    source: file://portable_json_fixture.lua
+
+  - name: portable_json_security
+    kind: library.lua
+    source: file://portable_json_security.lua
+    imports:
+      fixture: app:portable_json_fixture
+
+  - name: portable_json_reader
+    kind: library.lua
+    source: file://portable_json_reader.lua
+    imports:
+      fixture: app:portable_json_fixture
+
+  - name: portable_json_registry
+    kind: library.lua
+    source: file://portable_json_registry.lua
+    imports:
+      fixture: app:portable_json_fixture
+
+  - name: portable_json_ops
+    kind: library.lua
+    source: file://portable_json_ops.lua
+    imports:
+      fixture: app:portable_json_fixture
+
+  - name: portable_json_base
+    kind: library.lua
+    source: file://portable_json_base.lua
+    imports:
+      fixture: app:portable_json_fixture
+
+  - name: portable_json_json
+    kind: library.lua
+    source: file://portable_json_json.lua
+    modules:
+    - json
+    imports:
+      fixture: app:portable_json_fixture
+
+  - name: portable_json_source
+    kind: library.lua
+    source: file://portable_json_source.lua
+    imports:
+      json: app:portable_json_json
+      security: app:portable_json_security
+      registry: app:portable_json_registry
+      component_reader: app:portable_json_reader
+      component_ops: app:portable_json_ops
+      base_portable: app:portable_json_base
+      envelope: kickside.component:envelope
+      context_policy: kickside.component:context_policy
+
+  - name: portable_json_native_test
+    kind: function.lua
+    source: file://portable_json_native_test.lua
+    method: run
+    modules:
+    - json
+    meta:
+      type: test
+      suite: component_portable_json_native
+    imports:
+      test: wippy.test:test
+      binding: app:portable_json_source
+      fixture: app:portable_json_fixture
+
+  - name: binding_tx_fixture
+    kind: library.lua
+    source: file://binding_tx_fixture.lua
+
+  - name: binding_tx_sql
+    kind: library.lua
+    source: file://binding_tx_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:binding_tx_fixture
+
+  - name: binding_tx_security
+    kind: library.lua
+    source: file://binding_tx_security.lua
+    imports:
+      fixture: app:binding_tx_fixture
+
+  - name: binding_tx_ops
+    kind: library.lua
+    source: file://binding_tx_ops.lua
+    imports:
+      fixture: app:binding_tx_fixture
+
+  - name: binding_tx_adoption
+    kind: library.lua
+    source: file://binding_tx_adoption.lua
+    imports:
+      fixture: app:binding_tx_fixture
+
+  - name: binding_tx_access_subjects
+    kind: library.lua
+    source: file://binding_tx_access_subjects.lua
+    imports:
+      fixture: app:binding_tx_fixture
+
+  - name: binding_tx_execution_identity
+    kind: library.lua
+    source: file://binding_tx_execution_identity.lua
+    imports:
+      fixture: app:binding_tx_fixture
+
+  - name: binding_tx_command
+    kind: library.lua
+    source: file://binding_tx_command.lua
+    modules:
+    - contract
+    imports:
+      committed_error: kickside.contract:committed_error
+      sql: app:binding_tx_sql
+      error_envelope: kickside.contract:error_envelope
+      component_ops: app:binding_tx_ops
+      component_lifecycle: kickside.component:component_lifecycle
+
+  - name: binding_tx_adopt
+    kind: library.lua
+    source: file://binding_tx_adopt.lua
+    imports:
+      sql: app:binding_tx_sql
+      security: app:binding_tx_security
+      component_ops: app:binding_tx_ops
+      envelope: kickside.component:envelope
+      component_command: app:binding_tx_command
+      component_types: kickside.component:types
+      access_subjects: app:binding_tx_access_subjects
+      adoption: app:binding_tx_adoption
+      execution_identity: app:binding_tx_execution_identity
+
+  - name: binding_tx_grant
+    kind: library.lua
+    source: file://binding_tx_grant.lua
+    imports:
+      sql: app:binding_tx_sql
+      security: app:binding_tx_security
+      component_ops: app:binding_tx_ops
+      envelope: kickside.component:envelope
+      component_command: app:binding_tx_command
+      share_subject: kickside.component:share_subject
+      access_policy: kickside.component:access_policy
+
+  - name: binding_tx_revoke
+    kind: library.lua
+    source: file://binding_tx_revoke.lua
+    imports:
+      sql: app:binding_tx_sql
+      security: app:binding_tx_security
+      component_ops: app:binding_tx_ops
+      envelope: kickside.component:envelope
+      component_command: app:binding_tx_command
+      share_subject: kickside.component:share_subject
+
+  - name: binding_tx_native_test
+    kind: function.lua
+    source: file://binding_tx_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_binding_transactions_native
+    imports:
+      test: wippy.test:test
+      fixture: app:binding_tx_fixture
+      adopt: app:binding_tx_adopt
+      grant: app:binding_tx_grant
+      revoke: app:binding_tx_revoke
+
+  - name: registration_tx_fixture
+    kind: library.lua
+    source: file://registration_tx_fixture.lua
+
+  - name: registration_tx_sql
+    kind: library.lua
+    source: file://registration_tx_sql.lua
+    imports:
+      fixture: app:registration_tx_fixture
+    modules:
+    - sql
+
+  - name: registration_tx_ops
+    kind: library.lua
+    source: file://registration_tx_ops.lua
+    imports:
+      fixture: app:registration_tx_fixture
+
+  - name: registration_tx_security
+    kind: library.lua
+    source: file://registration_tx_security.lua
+    imports:
+      fixture: app:registration_tx_fixture
+
+  - name: registration_tx_lifecycle
+    kind: library.lua
+    source: file://registration_tx_lifecycle.lua
+    imports:
+      fixture: app:registration_tx_fixture
+
+  - name: registration_tx_command
+    kind: library.lua
+    source: file://registration_tx_command.lua
+    modules:
+    - contract
+    imports:
+      committed_error: kickside.contract:committed_error
+      sql: app:registration_tx_sql
+      error_envelope: kickside.contract:error_envelope
+      component_ops: app:registration_tx_ops
+      component_lifecycle: app:registration_tx_lifecycle
+
+  - name: registration_tx_source
+    kind: library.lua
+    source: file://registration_tx_source.lua
+    modules:
+    - json
+    - uuid
+    - time
+    imports:
+      committed_error: kickside.contract:committed_error
+      sql: app:registration_tx_sql
+      security: app:registration_tx_security
+      component_ops: app:registration_tx_ops
+      component_lifecycle: app:registration_tx_lifecycle
+      component_command: app:registration_tx_command
+      envelope: kickside.component:envelope
+      access_policy: kickside.component:access_policy
+
+  - name: registration_tx_native_test
+    kind: function.lua
+    source: file://registration_tx_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_registration_transactions_native
+    imports:
+      test: wippy.test:test
+      register: app:registration_tx_source
+      fixture: app:registration_tx_fixture
+
+  - name: audit_retention_fixture
+    kind: library.lua
+    source: file://audit_retention_fixture.lua
+
+  - name: audit_retention_sql
+    kind: library.lua
+    source: file://audit_retention_sql.lua
+    imports:
+      fixture: app:audit_retention_fixture
+
+  - name: audit_retention_policy
+    kind: library.lua
+    source: file://audit_retention_policy.lua
+    imports:
+      fixture: app:audit_retention_fixture
+
+  - name: audit_retention_lifecycle
+    kind: library.lua
+    source: file://audit_retention_lifecycle.lua
+    imports:
+      fixture: app:audit_retention_fixture
+
+  - name: audit_retention_types
+    kind: library.lua
+    source: file://audit_retention_types.lua
+    imports:
+      fixture: app:audit_retention_fixture
+
+  - name: audit_retention_source
+    kind: library.lua
+    source: file://audit_retention_source.lua
+    modules:
+    - time
+    imports:
+      sql: app:audit_retention_sql
+      component_types: app:audit_retention_types
+      audit_policy: app:audit_retention_policy
+      component_lifecycle: app:audit_retention_lifecycle
+      error_envelope: kickside.contract:error_envelope
+
+  - name: audit_retention_native_test
+    kind: function.lua
+    source: file://audit_retention_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_audit_retention_native
+    imports:
+      test: wippy.test:test
+      retention: app:audit_retention_source
+      fixture: app:audit_retention_fixture
+
+  - name: retention_boundary_fixture
+    kind: library.lua
+    source: file://retention_boundary_fixture.lua
+
+  - name: retention_boundary_pending
+    kind: library.lua
+    source: file://retention_boundary_pending.lua
+    imports:
+      fixture: app:retention_boundary_fixture
+
+  - name: retention_boundary_teardown
+    kind: library.lua
+    source: file://retention_boundary_teardown.lua
+    imports:
+      fixture: app:retention_boundary_fixture
+
+  - name: retention_boundary_audit
+    kind: library.lua
+    source: file://retention_boundary_audit.lua
+    imports:
+      fixture: app:retention_boundary_fixture
+
+  - name: retention_boundary_source
+    kind: library.lua
+    source: file://retention_boundary_source.lua
+    imports:
+      component_command: kickside.component:component_command
+      pending_delete: app:retention_boundary_pending
+      teardown: app:retention_boundary_teardown
+      audit_retention: app:retention_boundary_audit
+
+  - name: retention_boundary_native_test
+    kind: function.lua
+    source: file://retention_boundary_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_retention_boundaries_native
+    imports:
+      test: wippy.test:test
+      fixture: app:retention_boundary_fixture
+      retention: app:retention_boundary_source
+
+  - name: committed_retry_fixture
+    kind: library.lua
+    source: file://committed_retry_fixture.lua
+    modules:
+    - sql
+
+  - name: committed_retry_sql
+    kind: library.lua
+    source: file://committed_retry_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:committed_retry_fixture
+
+  - name: committed_retry_ops
+    kind: library.lua
+    source: file://committed_retry_ops.lua
+    imports:
+      fixture: app:committed_retry_fixture
+
+  - name: committed_retry_lifecycle
+    kind: library.lua
+    source: file://committed_retry_lifecycle.lua
+    imports:
+      fixture: app:committed_retry_fixture
+
+  - name: committed_retry_security
+    kind: library.lua
+    source: file://committed_retry_security.lua
+    imports:
+      fixture: app:committed_retry_fixture
+
+  - name: committed_retry_command
+    kind: library.lua
+    source: file://committed_retry_command.lua
+    modules:
+    - contract
+    imports:
+      sql: app:committed_retry_sql
+      component_ops: app:committed_retry_ops
+      component_lifecycle: app:committed_retry_lifecycle
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+
+  - name: committed_retry_register
+    kind: library.lua
+    source: file://committed_retry_register.lua
+    modules:
+    - uuid
+    - time
+    imports:
+      sql: app:committed_retry_sql
+      security: app:committed_retry_security
+      component_ops: app:committed_retry_ops
+      component_lifecycle: app:committed_retry_lifecycle
+      component_command: app:committed_retry_command
+      committed_error: kickside.contract:committed_error
+      envelope: kickside.component:envelope
+      access_policy: kickside.component:access_policy
+
+  - name: committed_retry_probe
+    kind: function.lua
+    source: file://committed_retry_probe.lua
+    method: run
+    imports:
+      register: app:committed_retry_register
+      fixture: app:committed_retry_fixture
+      envelope: kickside.component:envelope
+
+  - name: committed_retry_test
+    kind: function.lua
+    source: file://committed_retry_test.lua
+    method: run
+    meta:
+      type: test
+      suite: component_committed_error_retry
+    modules:
+    - sql
+    - funcs
+    imports:
+      test: wippy.test:test
+
+  - name: access_subject_native_fixture
+    kind: library.lua
+    source: file://access_subject_native_fixture.lua
+
+  - name: access_subject_native_source
+    kind: library.lua
+    source: file://access_subject_native_source.lua
+    imports:
+      security: app:access_subject_native_security
+      contract: app:access_subject_native_fixture
+      component_types: kickside.component:types
+      execution_identity: kickside.execution:execution_identity
+
+  - name: access_subject_native_test
+    kind: function.lua
+    source: file://access_subject_native_test.lua
+    method: run
+    meta: {type: test, suite: component_access_subject_native}
+    imports:
+      test: wippy.test:test
+      subjects: app:access_subject_native_source
+      fixture: app:access_subject_native_fixture
+
+  - name: access_subject_native_security
+    kind: library.lua
+    source: file://access_subject_native_security.lua
+    imports:
+      fixture: app:access_subject_native_fixture
+
+  - name: context_storage_native_fixture
+    kind: library.lua
+    source: file://context_storage_native_fixture.lua
+
+  - name: context_storage_native_sql
+    kind: library.lua
+    source: file://context_storage_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:context_storage_native_fixture
+
+  - name: context_storage_native_json
+    kind: library.lua
+    source: file://context_storage_native_json.lua
+    modules: [json]
+    imports:
+      fixture: app:context_storage_native_fixture
+
+  - name: context_storage_native_source
+    kind: library.lua
+    source: file://context_storage_native_source.lua
+    modules: [time, security]
+    imports:
+      sql: app:context_storage_native_sql
+      json: app:context_storage_native_json
+      meta_ops: app:context_storage_native_fixture
+      component_types: kickside.component:types
+      context_policy: kickside.component:context_policy
+      access_ops: kickside.component.persist:access_ops
+      access_subjects: kickside.component.persist:access_subjects
+      identity_ops: kickside.component.persist:identity_ops
+      audit_policy: kickside.component.persist:audit_policy
+      identity_access: kickside.component:identity_access
+      execution_identity: kickside.execution:execution_identity
+      declaration_fence: kickside.component.persist:declaration_fence
+
+  - name: context_storage_native_test
+    kind: function.lua
+    source: file://context_storage_native_test.lua
+    method: run
+    modules: [json]
+    meta: {type: test, suite: component_context_storage_native}
+    imports:
+      test: wippy.test:test
+      context: app:context_storage_native_source
+      fixture: app:context_storage_native_fixture
+
+  - name: identity_context_native_test
+    kind: function.lua
+    source: file://identity_context_native_test.lua
+    method: run
+    meta: {type: test, suite: component_identity_context_native}
+    imports:
+      test: wippy.test:test
+      context: app:context_storage_native_source
+      fixture: app:context_storage_native_fixture
+
+  - name: declaration_serial_native_fixture
+    kind: library.lua
+    source: file://declaration_serial_native_fixture.lua
+
+  - name: declaration_serial_native_json
+    kind: library.lua
+    source: file://declaration_serial_native_json.lua
+    modules: [json]
+    imports:
+      fixture: app:declaration_serial_native_fixture
+
+  - name: declaration_serial_native_source
+    kind: library.lua
+    source: file://declaration_serial_native_source.lua
+    imports:
+      json: app:declaration_serial_native_json
+      security: app:declaration_serial_native_fixture
+      context_ops: kickside.component.persist:context_ops
+      meta_ops: kickside.component.persist:meta_ops
+      declaration_fence: kickside.component.persist:declaration_fence
+      execution_identity: kickside.execution:execution_identity
+
+  - name: declaration_serial_native_test
+    kind: function.lua
+    source: file://declaration_serial_native_test.lua
+    method: run
+    meta: {type: test, suite: component_declaration_serial_native}
+    imports:
+      test: wippy.test:test
+      declaration: app:declaration_serial_native_source
+      fixture: app:declaration_serial_native_fixture
+
+  - name: identity_prepare_native_fixture
+    kind: library.lua
+    source: file://identity_prepare_native_fixture.lua
+
+  - name: identity_prepare_native_security
+    kind: library.lua
+    source: file://identity_prepare_native_security.lua
+    imports:
+      fixture: app:identity_prepare_native_fixture
+
+  - name: identity_prepare_native_identity
+    kind: library.lua
+    source: file://identity_prepare_native_identity.lua
+    imports:
+      fixture: app:identity_prepare_native_fixture
+      native: kickside.execution:execution_identity
+
+  - name: identity_prepare_native_subjects
+    kind: library.lua
+    source: file://identity_prepare_native_subjects.lua
+    imports:
+      fixture: app:identity_prepare_native_fixture
+
+  - name: identity_prepare_native_source
+    kind: library.lua
+    source: file://identity_prepare_native_source.lua
+    modules: [sql, time, json]
+    imports:
+      security: app:identity_prepare_native_security
+      execution_identity: app:identity_prepare_native_identity
+      access_subjects: app:identity_prepare_native_subjects
+      meta_ops: kickside.component.persist:meta_ops
+      component_types: kickside.component:types
+      context_policy: kickside.component:context_policy
+      access_ops: kickside.component.persist:access_ops
+      identity_ops: kickside.component.persist:identity_ops
+      audit_policy: kickside.component.persist:audit_policy
+      identity_access: kickside.component:identity_access
+      declaration_fence: kickside.component.persist:declaration_fence
+
+  - name: identity_prepare_native_test
+    kind: function.lua
+    source: file://identity_prepare_native_test.lua
+    method: run
+    meta: {type: test, suite: component_identity_prepare_native}
+    imports:
+      test: wippy.test:test
+      context: app:identity_prepare_native_source
+      fixture: app:identity_prepare_native_fixture
+
+  - name: identity_replay_native_access
+    kind: library.lua
+    source: file://identity_replay_native_access.lua
+
+  - name: identity_replay_native_fence
+    kind: library.lua
+    source: file://identity_replay_native_fence.lua
+
+  - name: identity_replay_native_source
+    kind: library.lua
+    source: file://identity_replay_native_source.lua
+    modules: [time]
+    imports:
+      sql: app:context_storage_native_sql
+      json: app:context_storage_native_json
+      security: app:identity_prepare_native_security
+      execution_identity: app:identity_prepare_native_identity
+      access_subjects: app:identity_prepare_native_subjects
+      meta_ops: app:context_storage_native_fixture
+      component_types: kickside.component:types
+      context_policy: kickside.component:context_policy
+      access_ops: app:identity_replay_native_access
+      identity_ops: kickside.component.persist:identity_ops
+      audit_policy: kickside.component.persist:audit_policy
+      identity_access: kickside.component:identity_access
+      declaration_fence: app:identity_replay_native_fence
+
+  - name: identity_replay_native_test
+    kind: function.lua
+    source: file://identity_replay_native_test.lua
+    method: run
+    meta: {type: test, suite: component_identity_replay_native}
+    imports:
+      test: wippy.test:test
+      context: app:identity_replay_native_source
+      authority: app:identity_prepare_native_fixture
+      storage: app:context_storage_native_fixture
+      identity: kickside.component.persist:identity_ops
+
+  - name: reader_native_fixture
+    kind: library.lua
+    source: file://reader_native_fixture.lua
+
+  - name: reader_native_query
+    kind: library.lua
+    source: file://reader_native_query.lua
+    imports:
+      native: kickside.component.persist:component_query
+      fixture: app:reader_native_fixture
+
+  - name: reader_native_sql
+    kind: library.lua
+    source: file://reader_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:reader_native_fixture
+
+  - name: reader_native_implementation
+    kind: library.lua
+    source: file://reader_native_implementation.lua
+    imports:
+      fixture: app:reader_native_fixture
+
+  - name: reader_native_source
+    kind: library.lua
+    source: file://reader_native_source.lua
+    modules: [uuid]
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      error_envelope: kickside.contract:error_envelope
+      sql: app:reader_native_sql
+      component_query: app:reader_native_query
+      implementation_access: app:reader_native_implementation
+      component_types: kickside.component:types
+
+  - name: reader_native_test
+    kind: function.lua
+    source: file://reader_native_test.lua
+    method: run
+    meta: {type: test, suite: component_reader_native}
+    imports:
+      test: wippy.test:test
+      reader: app:reader_native_source
+      fixture: app:reader_native_fixture
+
+  - name: reader_context_native_test
+    kind: function.lua
+    source: file://reader_context_native_test.lua
+    method: run
+    meta: {type: test, suite: component_reader_context_native}
+    imports:
+      test: wippy.test:test
+      reader: app:reader_native_source
+      fixture: app:reader_native_fixture
+
+  - name: identity_read_cleanup_fixture
+    kind: library.lua
+    source: file://identity_read_cleanup_fixture.lua
+
+  - name: identity_read_cleanup_sql
+    kind: library.lua
+    source: file://identity_read_cleanup_sql.lua
+    imports:
+      fixture: app:identity_read_cleanup_fixture
+
+  - name: identity_read_cleanup_access
+    kind: library.lua
+    source: file://identity_read_cleanup_access.lua
+    imports:
+      fixture: app:identity_read_cleanup_fixture
+
+  - name: identity_read_cleanup_source
+    kind: library.lua
+    source: file://identity_read_cleanup_source.lua
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      sql: app:identity_read_cleanup_sql
+      access_ops: app:identity_read_cleanup_access
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      error_envelope: kickside.contract:error_envelope
+
+  - name: identity_read_cleanup_test
+    kind: function.lua
+    source: file://identity_read_cleanup_test.lua
+    method: run
+    meta: {type: test, suite: identity_read_cleanup_native}
+    imports:
+      test: wippy.test:test
+      identity: app:identity_read_cleanup_source
+      fixture: app:identity_read_cleanup_fixture
+
+  - name: identity_receipt_context_test
+    kind: function.lua
+    source: file://identity_receipt_context_test.lua
+    method: run
+    meta: {type: test, suite: identity_receipt_context_native}
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      identity: app:identity_read_cleanup_source
+      fixture: app:identity_read_cleanup_fixture
+
+  - name: metadata_tx_fixture
+    kind: library.lua
+    source: file://metadata_tx_fixture.lua
+
+  - name: metadata_tx_sql
+    kind: library.lua
+    source: file://metadata_tx_sql.lua
+    modules: [sql]
+    imports: {fixture: 'app:metadata_tx_fixture'}
+
+  - name: metadata_tx_security
+    kind: library.lua
+    source: file://metadata_tx_security.lua
+    imports: {fixture: 'app:metadata_tx_fixture'}
+
+  - name: metadata_tx_lifecycle
+    kind: library.lua
+    source: file://metadata_tx_lifecycle.lua
+    imports: {fixture: 'app:metadata_tx_fixture'}
+
+  - name: metadata_tx_funcs
+    kind: library.lua
+    source: file://metadata_tx_funcs.lua
+    imports: {fixture: 'app:metadata_tx_fixture'}
+
+  - name: metadata_tx_registry
+    kind: library.lua
+    source: file://metadata_tx_registry.lua
+    imports: {fixture: 'app:metadata_tx_fixture'}
+
+  - name: metadata_tx_command
+    kind: library.lua
+    source: file://metadata_tx_command.lua
+    modules: [contract]
+    imports:
+      sql: app:metadata_tx_sql
+      component_ops: app:metadata_tx_fixture
+      component_lifecycle: app:metadata_tx_lifecycle
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+
+  - name: metadata_tx_source
+    kind: library.lua
+    source: file://metadata_tx_source.lua
+    modules: [time, contract]
+    imports:
+      sql: app:metadata_tx_sql
+      security: app:metadata_tx_security
+      registry: app:metadata_tx_registry
+      funcs: app:metadata_tx_funcs
+      component_ops: app:metadata_tx_fixture
+      component_lifecycle: app:metadata_tx_lifecycle
+      component_command: app:metadata_tx_command
+      committed_error: kickside.contract:committed_error
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      autoinit: kickside.component:autoinit
+      envelope: kickside.component:envelope
+
+  - name: metadata_tx_native_test
+    kind: function.lua
+    source: file://metadata_tx_native_test.lua
+    method: run
+    meta: {type: test, suite: metadata_tx_native}
+    imports:
+      test: wippy.test:test
+      metadata: app:metadata_tx_source
+      fixture: app:metadata_tx_fixture
+      envelope: kickside.component:envelope
+
+  - name: metadata_retry_funcs
+    kind: library.lua
+    source: file://metadata_retry_funcs.lua
+    imports: {fixture: 'app:committed_retry_fixture'}
+
+  - name: metadata_retry_source
+    kind: library.lua
+    source: file://metadata_retry_source.lua
+    modules: [time, contract, registry]
+    imports:
+      sql: app:committed_retry_sql
+      security: app:committed_retry_security
+      funcs: app:metadata_retry_funcs
+      component_ops: app:committed_retry_fixture
+      component_lifecycle: app:committed_retry_lifecycle
+      component_command: app:committed_retry_command
+      committed_error: kickside.contract:committed_error
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      autoinit: kickside.component:autoinit
+      envelope: kickside.component:envelope
+
+  - name: metadata_retry_probe
+    kind: function.lua
+    source: file://metadata_retry_probe.lua
+    method: run
+    imports:
+      metadata: app:metadata_retry_source
+      fixture: app:committed_retry_fixture
+      envelope: kickside.component:envelope
+
+  - name: notification_access_fixture
+    kind: library.lua
+    source: file://notification_access_fixture.lua
+
+  - name: notification_access_policy
+    kind: library.lua
+    source: file://notification_access_policy.lua
+    imports:
+      native: kickside.component:access_policy
+      fixture: app:notification_access_fixture
+
+  - name: notification_access_ops
+    kind: library.lua
+    source: file://notification_access_ops.lua
+    imports:
+      fixture: app:notification_access_fixture
+      types: kickside.component:types
+
+  - name: notification_access_source
+    kind: library.lua
+    source: file://notification_access_source.lua
+    modules: [sql, time, security, contract, registry, funcs]
+    imports:
+      component_command: kickside.component:component_command
+      committed_error: kickside.contract:committed_error
+      component_ops: app:notification_access_ops
+      access_policy: app:notification_access_policy
+      component_types: kickside.component:types
+      component_lifecycle: kickside.component:component_lifecycle
+      envelope: kickside.component:envelope
+      autoinit: kickside.component:autoinit
+
+  - name: notification_access_native_test
+    kind: function.lua
+    source: file://notification_access_native_test.lua
+    method: run
+    meta: {type: test, suite: notification_access_native}
+    imports:
+      test: wippy.test:test
+      metadata: app:notification_access_source
+      fixture: app:notification_access_fixture
+
+  - name: update_tx_meta_service
+    kind: library.lua
+    source: file://update_tx_meta_service.lua
+    imports: {fixture: 'app:metadata_tx_fixture'}
+
+  - name: update_tx_source
+    kind: library.lua
+    source: file://update_tx_source.lua
+    modules: [time]
+    imports:
+      sql: app:metadata_tx_sql
+      security: app:metadata_tx_security
+      component_ops: app:metadata_tx_fixture
+      access_policy: kickside.component:access_policy
+      component_lifecycle: app:metadata_tx_lifecycle
+      meta_service: app:update_tx_meta_service
+      component_command: app:metadata_tx_command
+      committed_error: kickside.contract:committed_error
+      envelope: kickside.component:envelope
+
+  - name: update_tx_native_test
+    kind: function.lua
+    source: file://update_tx_native_test.lua
+    method: run
+    meta: {type: test, suite: update_tx_native}
+    imports:
+      test: wippy.test:test
+      update: app:update_tx_source
+      fixture: app:metadata_tx_fixture
+      envelope: kickside.component:envelope
+
+  - name: update_retry_meta_service
+    kind: library.lua
+    source: file://update_retry_meta_service.lua
+    imports: {fixture: 'app:committed_retry_fixture'}
+
+  - name: update_retry_source
+    kind: library.lua
+    source: file://update_retry_source.lua
+    modules: [time]
+    imports:
+      sql: app:committed_retry_sql
+      security: app:committed_retry_security
+      component_ops: app:committed_retry_fixture
+      access_policy: kickside.component:access_policy
+      component_lifecycle: app:committed_retry_lifecycle
+      meta_service: app:update_retry_meta_service
+      component_command: app:committed_retry_command
+      committed_error: kickside.contract:committed_error
+      envelope: kickside.component:envelope
+
+  - name: update_retry_probe
+    kind: function.lua
+    source: file://update_retry_probe.lua
+    method: run
+    imports:
+      update: app:update_retry_source
+      fixture: app:committed_retry_fixture
+      envelope: kickside.component:envelope
+
+  - name: placement_tx_source
+    kind: library.lua
+    source: file://placement_tx_source.lua
+    imports:
+      sql: app:metadata_tx_sql
+      security: app:metadata_tx_security
+      component_ops: app:metadata_tx_fixture
+      component_lifecycle: app:metadata_tx_lifecycle
+      component_command: app:metadata_tx_command
+      committed_error: kickside.contract:committed_error
+      envelope: kickside.component:envelope
+
+  - name: placement_retry_source
+    kind: library.lua
+    source: file://placement_retry_source.lua
+    imports:
+      sql: app:committed_retry_sql
+      security: app:committed_retry_security
+      component_ops: app:committed_retry_fixture
+      component_lifecycle: app:committed_retry_lifecycle
+      component_command: app:committed_retry_command
+      committed_error: kickside.contract:committed_error
+      envelope: kickside.component:envelope
+
+  - name: placement_tx_native_test
+    kind: function.lua
+    source: file://placement_tx_native_test.lua
+    method: run
+    meta: {type: test, suite: placement_tx_native}
+    imports:
+      test: wippy.test:test
+      placement: app:placement_tx_source
+      fixture: app:metadata_tx_fixture
+      envelope: kickside.component:envelope
+
+  - name: placement_retry_probe
+    kind: function.lua
+    source: file://placement_retry_probe.lua
+    method: run
+    imports:
+      placement: app:placement_retry_source
+      fixture: app:committed_retry_fixture
+      envelope: kickside.component:envelope
+
+  - name: placement_storage_fixture
+    kind: library.lua
+    source: file://placement_storage_fixture.lua
+
+  - name: placement_storage_sql
+    kind: library.lua
+    source: file://placement_storage_sql.lua
+    modules: [sql]
+    imports: {fixture: 'app:placement_storage_fixture'}
+
+  - name: placement_storage_source
+    kind: library.lua
+    source: file://placement_storage_source.lua
+    imports:
+      sql: app:placement_storage_sql
+      component_types: kickside.component:types
+
+  - name: placement_storage_native_test
+    kind: function.lua
+    source: file://placement_storage_native_test.lua
+    method: run
+    modules: [sql]
+    meta: {type: test, suite: placement_storage_native}
+    imports:
+      test: wippy.test:test
+      placement: app:placement_storage_source
+      fixture: app:placement_storage_fixture
+
+  - name: adoption_storage_fixture
+    kind: library.lua
+    source: file://adoption_storage_fixture.lua
+
+  - name: adoption_storage_sql
+    kind: library.lua
+    source: file://adoption_storage_sql.lua
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: adoption_storage_json
+    kind: library.lua
+    source: file://adoption_storage_json.lua
+    modules: [json]
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: adoption_storage_source
+    kind: library.lua
+    source: file://adoption_storage_source.lua
+    modules: [uuid]
+    imports:
+      sql: app:adoption_storage_sql
+      json: app:adoption_storage_json
+      component_types: kickside.component:types
+      access_ops: app:adoption_storage_access_ops
+      context_ops: app:adoption_storage_context_ops
+      declaration_fence: app:adoption_storage_declaration_fence
+      identity_ops: app:adoption_storage_identity_ops
+      audit_policy: app:adoption_storage_audit_policy
+      execution_identity: kickside.execution:execution_identity
+      error_envelope: kickside.contract:error_envelope
+
+  - name: adoption_storage_native_test
+    kind: function.lua
+    source: file://adoption_storage_native_test.lua
+    method: run
+    meta: {type: test, suite: adoption_storage_native}
+    imports:
+      test: wippy.test:test
+      adoption: app:adoption_storage_source
+      fixture: app:adoption_storage_fixture
+
+  - name: adoption_storage_access_ops
+    kind: library.lua
+    source: file://adoption_storage_access_ops.lua
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: adoption_storage_context_ops
+    kind: library.lua
+    source: file://adoption_storage_context_ops.lua
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: adoption_storage_declaration_fence
+    kind: library.lua
+    source: file://adoption_storage_declaration_fence.lua
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: adoption_storage_identity_ops
+    kind: library.lua
+    source: file://adoption_storage_identity_ops.lua
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: adoption_storage_audit_policy
+    kind: library.lua
+    source: file://adoption_storage_audit_policy.lua
+    imports: {fixture: 'app:adoption_storage_fixture'}
+
+  - name: placement_writer_fixture
+    kind: library.lua
+    source: file://placement_writer_fixture.lua
+
+  - name: placement_writer_sql
+    kind: library.lua
+    source: file://placement_writer_sql.lua
+    modules: [sql]
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_json
+    kind: library.lua
+    source: file://placement_writer_json.lua
+    modules: [json]
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_security
+    kind: library.lua
+    source: file://placement_writer_security.lua
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_placement
+    kind: library.lua
+    source: file://placement_writer_placement.lua
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_placement_rules
+    kind: library.lua
+    source: file://placement_writer_placement_rules.lua
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_identity_ops
+    kind: library.lua
+    source: file://placement_writer_identity_ops.lua
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_audit_policy
+    kind: library.lua
+    source: file://placement_writer_audit_policy.lua
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_meta_ops
+    kind: library.lua
+    source: file://placement_writer_meta_ops.lua
+    imports: {fixture: 'app:placement_writer_fixture'}
+
+  - name: placement_writer_source
+    kind: library.lua
+    source: file://placement_writer_source.lua
+    modules: [time, uuid]
+    imports:
+      sql: app:placement_writer_sql
+      json: app:placement_writer_json
+      security: app:placement_writer_security
+      placement: app:placement_writer_placement
+      placement_rules: app:placement_writer_placement_rules
+      identity_ops: app:placement_writer_identity_ops
+      audit_policy: app:placement_writer_audit_policy
+      meta_ops: app:placement_writer_meta_ops
+      context_policy: kickside.component:context_policy
+      component_types: kickside.component:types
+      execution_identity: kickside.execution:execution_identity
+
+  - name: placement_writer_native_test
+    kind: function.lua
+    source: file://placement_writer_native_test.lua
+    method: run
+    meta: {type: test, suite: placement_writer_native}
+    imports:
+      test: wippy.test:test
+      writer: app:placement_writer_source
+      fixture: app:placement_writer_fixture
+
+  - name: context_access_fixture
+    kind: library.lua
+    source: file://context_access_fixture.lua
+
+  - name: context_access_security
+    kind: library.lua
+    source: file://context_access_security.lua
+    imports: {fixture: 'app:context_access_fixture'}
+
+  - name: context_access_access_policy
+    kind: library.lua
+    source: file://context_access_access_policy.lua
+    imports: {fixture: 'app:context_access_fixture'}
+
+  - name: context_access_reader
+    kind: library.lua
+    source: file://context_access_reader.lua
+    imports: {fixture: 'app:context_access_fixture'}
+
+  - name: context_access_contract
+    kind: library.lua
+    source: file://context_access_contract.lua
+    imports: {fixture: 'app:context_access_fixture'}
+
+  - name: context_access_source
+    kind: library.lua
+    source: file://context_access_source.lua
+    imports:
+      component_types: kickside.component:types
+      security: app:context_access_security
+      access_policy: app:context_access_access_policy
+      component_reader: app:context_access_reader
+      contract: app:context_access_contract
+      envelope: kickside.component:envelope
+      error_envelope: kickside.contract:error_envelope
+      read_port: kickside.component.persist:read_port
+      execution_identity: kickside.execution:execution_identity
+
+  - name: context_access_native_test
+    kind: function.lua
+    source: file://context_access_native_test.lua
+    method: run
+    meta: {type: test, suite: context_access_native}
+    imports:
+      test: wippy.test:test
+      context: app:context_access_source
+      fixture: app:context_access_fixture
+      envelope: kickside.component:envelope

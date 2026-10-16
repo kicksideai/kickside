@@ -1,0 +1,83 @@
+version: "1.0"
+namespace: kickside.core
+entries:
+  - name: read_models
+    kind: contract.definition
+    meta:
+      title: Committed Read Models
+      comment: Read-only access to materialized projection bodies. This contract has no history, cursor, replay, or catch-up operations.
+    methods:
+      - name: get
+        description: Return one committed materialized-view body after checking READ access to its owner.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "owner_id": { "type": "string" },
+                  "kind": { "type": "string" },
+                  "projection_key": { "type": "string", "default": "default" }
+                },
+                "required": ["owner_id", "kind"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "type": "object",
+                "properties": { "body": { "type": "object" } },
+                "required": ["body"]
+              }
+
+  - name: read_models_binding
+    kind: contract.binding
+    meta:
+      comment: Default projection-body-only implementation of kickside.core:read_models.
+    contracts:
+      - contract: kickside.core:read_models
+        default: true
+        methods:
+          get: kickside.core.projections:get_read_model
+
+  # ─── Public contract binding ─────────────────────────────────────────
+  # The threads slice implements kickside.core:threads. Each method maps to a
+  # function.lua entry point in the slice's contract.lua (folding the old
+  # kickside_sdk orchestration). default: true makes this the implicit binding when
+  # a consumer opens the contract without naming one.
+  - name: threads_binding
+    kind: contract.binding
+    meta:
+      comment: Default kickside.core:threads implementation (the threads slice).
+      tags:
+        - threads
+        - kickside
+        - implementation
+    contracts:
+      - contract: kickside.core:threads
+        default: true
+        methods:
+          create: kickside.core.threads:create_method
+          ensure_thread: kickside.core.threads:ensure_thread_method
+          emit: kickside.core.threads:emit_method
+          purge: kickside.core.threads:purge_method
+          find: kickside.core.threads:find_method
+          upsert: kickside.core.threads:upsert_method
+          update: kickside.core.threads:update_method
+          delete: kickside.core.threads:delete_method
+          list: kickside.core.threads:list_method
+          list_events: kickside.core.threads:list_events_method
+          prune_boundary: kickside.core.threads:prune_boundary_method
+          find_event_by_external: kickside.core.threads:find_event_by_external_method
+          append_events: kickside.core.threads:append_events_method
+          append_event: kickside.core.threads:append_event_method
+          list_children: kickside.core.threads:list_children_method
+          list_edges: kickside.core.threads:list_edges_method
+          list_classes: kickside.core.threads:list_classes_method
+          register_projection: kickside.core.threads:register_projection_method
+          list_projections: kickside.core.threads:list_projections_method
+          get_projection_cursor: kickside.core.threads:get_projection_cursor_method
+          catch_up_projection: kickside.core.threads:catch_up_projection_method
+          pause_projection: kickside.core.threads:pause_projection_method
+          resume_projection: kickside.core.threads:resume_projection_method
+          remove_projection: kickside.core.threads:remove_projection_method

@@ -1,0 +1,52 @@
+@import "../picker/cp-base.css";
+@import "@kickside/ui-kit/spin.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The control: a field-like box showing the current selection, themed on --p-*. */
+.cp {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  min-height: 36px; padding: 6px 10px; border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background); border-radius: 8px; color: var(--p-text-color);
+  font: inherit; font-size: 13px; cursor: pointer; transition: border-color .12s;
+}
+.cp:hover, .cp-open { border-color: var(--p-primary-color); }
+.cp-lead { width: 16px; height: 16px; color: var(--p-text-muted-color); flex-shrink: 0; }
+.cp-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-ph { color: var(--p-text-muted-color); }
+/* The raw id, when it must show at all (resolution failed), rides as a small
+   monospace secondary detail — it never stands in for the label itself. */
+.cp-value-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+.cp-caret { width: 16px; height: 16px; color: var(--p-text-muted-color); flex-shrink: 0; }
+
+/* Placement (fixed positioning, z-index, viewport clamp) is owned by AnchoredPanel;
+   this keeps only the panel's own chrome + a static max-height so the tree scrolls. */
+.cp-pop {
+  box-sizing: border-box; overflow: hidden;
+  max-width: calc(100vw - 16px); max-height: 360px;
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-select-overlay-border-radius);
+  box-shadow: var(--p-select-overlay-shadow); padding: 6px; display: flex; flex-direction: column; gap: 2px;
+  transition: height .2s ease, max-height .2s ease;
+}
+.cp-state { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 18px; font-size: 12.5px; color: var(--p-text-muted-color); }
+.cp-tree { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+.cp-row {
+  display: flex; align-items: center; gap: 7px; width: 100%; text-align: left;
+  padding: 7px 8px; border: none; border-radius: 8px; background: transparent;
+  color: var(--p-text-color); cursor: pointer; outline: none; transition: background .1s;
+}
+/* Tree-depth indentation: --cp-depth is set per-row inline (depth * 16px). */
+.cp-row { padding-left: calc(10px + var(--cp-depth, 0px)); }
+.cp-row:hover, .cp-row:focus-visible { background: var(--p-select-option-focus-background); }
+.cp-row-on { background: var(--p-select-option-selected-background); }
+.cp-channel { font-size: 13px; }
+.cp-connection, .cp-container { font-weight: 600; }
+.cp-twist { width: 15px; height: 15px; color: var(--p-text-muted-color); flex-shrink: 0; }
+.cp-twist-empty { display: inline-block; }

@@ -1,0 +1,21 @@
+version: '1.0'
+namespace: app
+entries:
+- name: job_child_startup_native_claim
+  kind: library.lua
+  source: file://job_child_startup_native_claim.lua
+  imports:
+    fixture: app:worker_startup_native_fixture
+- name: job_child_startup_native_test
+  kind: function.lua
+  source: file://job_child_startup_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: jobs_child_startup_native
+  imports:
+    test: wippy.test:test
+    worker: app:worker_startup_native_source
+    fixture: app:worker_startup_native_fixture
+    canonical_json: kickside.contract:canonical_json
+    job_types: kickside.core.jobs:types

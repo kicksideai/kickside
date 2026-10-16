@@ -1,0 +1,87 @@
+version: "1.0"
+namespace: kickside.users.env
+
+entries:
+  - name: baseline_group_id
+    kind: env.variable
+    meta: { private: true }
+    storage: kickside.users.env:envs
+    variable: KICKSIDE_USERS_BASELINE_GROUP_ID
+    default: ""
+  - name: envs
+    kind: env.storage.os
+    meta:
+      type: envstorage
+      comment: OS storage for user environment variables
+
+  - name: database_resource
+    kind: env.variable
+    meta:
+      comment: Database resource used by user persistence.
+      private: true
+    storage: kickside.users.env:envs
+    variable: KICKSIDE_USERS_DATABASE_RESOURCE
+
+  # kickside.users.env:admin_group_id
+  - name: admin_group_id
+    kind: env.variable
+    meta:
+      comment: Security group ID for admin users (also used as scope)
+      icon: tabler:shield
+      private: true
+    storage: kickside.users.env:envs
+    variable: KICKSIDE_USERS_ADMIN_GROUP_ID
+
+  # kickside.users.env:admin_init_enabled
+  - name: admin_init_enabled
+    kind: env.variable
+    meta:
+      comment: Enable automatic admin user creation on first boot
+      icon: tabler:user-plus
+      private: true
+    storage: kickside.users.env:envs
+    default: "true"
+    variable: KICKSIDE_USERS_ADMIN_INIT_ENABLED
+
+  # kickside.users.env:default_admin_email
+  - name: default_admin_email
+    kind: env.variable
+    meta:
+      comment: Default admin email for bootstrap (migration only)
+      icon: tabler:at
+      private: true
+    storage: kickside.users.env:envs
+    default: ""
+    variable: KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL
+
+  # kickside.users.env:default_admin_password
+  - name: default_admin_password
+    kind: env.variable
+    meta:
+      comment: Default admin password for bootstrap (migration only)
+      icon: tabler:key
+      private: true
+    storage: kickside.users.env:envs
+    default: ""
+    variable: KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD
+
+  # kickside.users.env:default_group_id
+  - name: default_group_id
+    kind: env.variable
+    meta:
+      comment: Default security group ID for new users (also used as scope)
+      icon: tabler:users
+      private: true
+    storage: kickside.users.env:envs
+    variable: KICKSIDE_USERS_DEFAULT_GROUP_ID
+
+  # kickside.users.env:token_expiration
+  - name: token_expiration
+    kind: env.variable
+    meta:
+      comment: Default token expiration duration
+      icon: tabler:clock
+      private: true
+    storage: kickside.users.env:envs
+    default: 24h
+    variable: KICKSIDE_USERS_TOKEN_EXPIRATION

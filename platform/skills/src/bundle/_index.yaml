@@ -1,0 +1,32 @@
+version: "1.0"
+namespace: kickside.skills.bundle
+
+# Bundle helpers — pure logic shared by the skill store, the sources, and the
+# import endpoint. frontmatter parses the open SKILL.md frontmatter (a bounded
+# subset, not general YAML); normalize maps a parsed document + fetched file list
+# into the canonical SkillBundle the store consumes.
+
+entries:
+  - name: frontmatter
+    kind: library.lua
+    meta:
+      comment: SKILL.md frontmatter parser (bounded subset — key/value, nested metadata, lists, allowed-tools).
+    source: file://frontmatter.lua
+
+  - name: normalize
+    kind: library.lua
+    meta:
+      comment: Normalize parsed frontmatter + body + files into a SkillBundle (kind/mime/script-language inference).
+    source: file://normalize.lua
+    imports:
+      types: kickside.skills:types
+
+  - name: store
+    kind: library.lua
+    meta:
+      comment: A skill's bundled file bytes in its own bundle filesystem, content-addressed by sha256 under the skill id.
+    source: file://store.lua
+    modules: [fs, hash]
+    imports:
+      skill_storage: kickside.skills:storage
+      portable_io: kickside.component.portability:portable_io

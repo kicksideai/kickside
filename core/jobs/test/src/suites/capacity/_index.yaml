@@ -1,0 +1,75 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: claim_fence_test
+    kind: function.lua
+    meta:
+      title: Worker Claim Thread Fence
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+    source: file://claim_fence_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      claim: kickside.core.jobs.persist:claim
+      job_fixture: app:job_fixture
+
+  - name: restart_test
+    kind: function.lua
+    meta:
+      title: Jobs Writes Across Process Restart
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+    source: file://restart_test.lua
+    method: run
+    modules: [sql, uuid, process, channel]
+    imports:
+      test: wippy.test:test
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      job_fixture: app:job_fixture
+
+  - name: restart_probe
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Holds a jobs write across a monitored process termination.
+    source: file://restart_probe.lua
+    method: run
+    modules: [sql, process]
+    imports:
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.persist:completion
+
+  - name: thread_teardown_test
+    kind: function.lua
+    meta:
+      title: Jobs Owned Thread Cleanup
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Exercises the public bounded thread-cleanup operation and durable A48 receipts.
+    source: file://thread_teardown_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      thread_fence: kickside.core.jobs.persist:thread_fence
+      job_fixture: app:job_fixture
+
+  - name: enqueue_notification_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_jobs
+    source: file://enqueue_notification_test.lua
+    method: run
+    modules: [uuid, process, channel]
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs

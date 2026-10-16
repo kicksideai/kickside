@@ -1,0 +1,341 @@
+version: "1.0"
+namespace: app.security
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    meta:
+      type: test_dependency
+      comment: Test runner dependency for the app security suite; excluded from application publishing.
+    component: wippy/test
+    version: "*"
+
+  - name: compact_user_runtime_policy_test
+    kind: function.lua
+    meta: {type: test, suite: app_security}
+    source: file://compact_user_runtime_policy_test.lua
+    method: run
+    modules: [registry, security, json]
+    imports:
+      test: wippy.test:test
+      policy_coverage: kickside.security:policy_coverage
+
+  - name: resolver_identity_capability_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_security
+    source: file://resolver_identity_capability_test.lua
+    method: run
+    modules: [registry, security]
+    imports:
+      test: wippy.test:test
+
+  - name: admin_boundary_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_security
+      comment: Ordinary users cannot reach administrator-only Keeper and system-onboarding capabilities.
+    source: file://admin_boundary_policy_test.lua
+    method: run
+    modules:
+      - security
+    imports:
+      test: wippy.test:test
+      scope_projection: kickside.security.service:scope_projection
+
+  # Descriptors give the built-in roles (app.security:* groups) human labels and
+  # descriptions in the roles/scopes admin. The security module reads any
+  # registry.entry of meta.type kickside.security.role; custom roles are created
+  # the same way at runtime. Built-in roles cannot be edited from the UI.
+  - name: role_admin
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: Administrator
+      comment: Full access to every app, keeper, and management surface. Assign sparingly.
+    role_id: app.security:admin
+    protected: true
+
+  - name: role_user
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: User
+      comment: Core access for every signed-in user. Module access comes from group memberships.
+    role_id: app.security:user
+    protected: true
+
+  - name: role_members
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: Members
+      comment: Default module access. Remove this membership before assigning narrower groups.
+    role_id: app.security:members
+    protected: true
+
+  - name: user.profile_runtime
+    kind: security.policy
+    groups: [app.security:user]
+    policy:
+      resources:
+        - kickside.users.profile:*
+        - kickside.users:profile_view
+      actions: [registry.get, registry.find, contract.get, contract.open, contract.call, contract.implementations, contract.security, funcs.call, funcs.security]
+      effect: allow
+
+  - name: role_ingress
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: Ingress (system)
+      comment: Internal HTTP ingress scope. System-managed and never assigned to users.
+      internal: true
+    role_id: app.security:ingress
+    protected: true
+
+  - name: admin.all_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.root
+      intent: root_admin
+      comment: Root administrator access. Keeper and app-management surfaces are reachable only through this scope. Thread output publication is a module service capability and stays outside human administration.
+    groups:
+      - app.security:admin
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+      conditions:
+        - field: action
+          operator: nin
+          value: [threads.output.publish]
+
+  - name: ingress.endpoint_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.ingress
+      intent: endpoint_access
+      comment: Ingress scopes may enter HTTP endpoints only; registry/system mutations are not part of this action surface.
+      internal: true
+    groups:
+      - app.security:ingress
+    policy:
+      resources: '*'
+      actions: access
+      effect: allow
+
+  - name: public_env.read
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.public_env
+      intent: public_config_runtime
+      comment: Public env bootstrap may read only app-approved PUBLIC_* variables.
+    policy:
+      resources:
+        - PUBLIC_API_URL
+      actions:
+        - env.get
+      effect: allow
+
+  - name: encryption_key_guard
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 20
+      comment: Validate ENCRYPTION_KEY before token-backed services are used.
+      requires:
+        - wippy.bootloader.bootloaders:encryption_key
+    source: file://validate_encryption_key.lua
+    modules:
+      - env
+      - logger
+    method: run
+
+  - name: user.dataflow_state_view
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.artifacts
+      intent: trusted_product_runtime
+    groups: [app.security:user]
+    policy:
+      resources: page:userspace.dataflow.session.views:state
+      actions: view
+      effect: allow
+
+  - name: user.dataflow_state_template
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.artifacts
+      intent: trusted_product_runtime
+    groups: [app.security:user]
+    policy:
+      resources: userspace.dataflow.session.views:templates
+      actions: template.get
+      effect: allow
+
+  - name: user.events_bus_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: keeper.events
+      intent: realtime_subscription_runtime
+      comment: User hubs may open the keeper events pg bus to join when the admin-gated subscribe endpoint instructs them. Admin filtering is enforced at that endpoint, not here.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - keeper.events:bus
+      actions: pg.open
+      effect: allow
+
+  # Authenticated access to the principal directory (kickside.users.directory) and
+  # the UI shell discovery endpoints (kickside.ui) is now module-owned: each slice
+  # declares its own access policy with groups:[] and an injected user_security_scope
+  # requirement, so the grant travels with the module rather than being bound here.
+
+  - name: user.runtime_data_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.data
+      intent: trusted_product_runtime
+      comment: Runtime data primitives needed by trusted KickSide modules behind user-scoped endpoints.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - app:db
+        - app:uploads
+        - kickside.models:cache
+        - app:cache
+      actions:
+        - db.get
+        - fs.get
+        - store.get
+        - store.info
+        - store.key.get
+        - store.key.list
+        - store.key.set
+        - store.key.delete
+        - store.key.has
+      effect: allow
+
+  - name: user.runtime_registry_read
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.registry
+      intent: trusted_product_runtime
+      comment: Read-only registry discovery for product metadata, renderers, automation types, upload types, settings tabs, and plugins.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - userspace.dataflow:*
+        - userspace.dataflow.*
+        - wippy.views:*
+        - wippy.session:*
+        - wippy.session.*
+        - wippy.agent:*
+        - wippy.agent.*
+        - wippy.llm:*
+        - wippy.llm.*
+        - app.api.websocket:*
+        - app.env:*
+      actions:
+        - registry.get
+        - registry.find
+      effect: allow
+      conditions:
+        - field: resource
+          operator: nin
+          value:
+            - kickside.hub.instruments:recommender
+            - kickside.hub.instruments:requirement_resolver
+
+  - name: user.documentation_tool
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.documentation
+      intent: public_documentation
+      comment: Authenticated users and their Agents may invoke only the public application documentation function.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - app:documentation
+      actions:
+        - funcs.call
+        - funcs.security
+      effect: allow
+
+  - name: user.identity_resolution
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.identity
+      intent: trusted_product_runtime
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - kickside.users:scope_resolver_binding
+        - kickside.users.binding:scope_resolver_func
+      actions:
+        - contract.get
+        - contract.open
+        - funcs.call
+      effect: allow
+
+  - name: user.runtime_contracts
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.contracts
+      intent: trusted_product_runtime
+      comment: Contract/function execution required to preserve caller actor/scope through canonical component, thread, inbox, and automation ports.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - chestor.workspace:file_reap_stage
+        - userspace.dataflow:*
+        - userspace.dataflow.*
+        - wippy.session:*
+        - wippy.session.*
+        - wippy.agent:*
+        - wippy.agent.*
+        - wippy.llm:*
+        - wippy.llm.*
+        - security
+      actions:
+        - contract.get
+        - contract.open
+        - contract.call
+        - contract.implementations
+        - contract.security
+        - funcs.call
+        - funcs.security
+      effect: allow
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_security
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules: [registry, security]
+    imports:
+      test: wippy.test:test
+      scope_projection: kickside.security.service:scope_projection
+      execution_identity: kickside.execution:execution_identity

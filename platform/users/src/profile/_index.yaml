@@ -1,0 +1,248 @@
+version: "1.0"
+namespace: kickside.users.profile
+
+# Per-user, extensible, DB-backed profile fields. Modules declare typed
+# kickside.users.profile:definition entries; the DB stores per-user values; reads
+# fall back to declared defaults. Same model as kickside.settings, scoped to a
+# user, with a self|public visibility axis. Exposed as the
+# kickside.users.profile:profile contract. The DB binding + endpoint wiring are
+# exposed through the users module's target_db / api_router / user_security_scope
+# requirements (see ../_index.yaml).
+
+entries:
+  # Resolved DB id for the persist layer. The users target_db requirement
+  # rewrites .meta.db_id here; profile_types.db_id() reads it back so the writer
+  # binds the configured database, not a hardcoded literal.
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured profile DB id (rewritten by the users target_db requirement).
+
+  # ─── Profile domain ──────────────────────────────────────────────────
+  - name: profile_types
+    kind: library.lua
+    source: file://types.lua
+    modules: [registry]
+
+  - name: profile_defs
+    kind: library.lua
+    meta: { comment: Discover kickside.users.profile:definition entries + coerce values to their declared type. }
+    source: file://defs.lua
+    modules: [registry, time, json]
+    imports:
+      profile_types: kickside.users.profile:profile_types
+
+  # Per-method dispatchers over the single profile.lua source; each is one
+  # contract method.
+  - name: get
+    kind: function.lua
+    meta: { comment: "profile — get one value (own, or another user's public field)." }
+    source: file://profile.lua
+    method: get
+    modules: [json, security]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_writer: kickside.users.persist:profile_writer
+      profile_types: kickside.users.profile:profile_types
+
+  - name: set
+    kind: function.lua
+    meta: { comment: profile — set the actor's own value via the canonical writer. }
+    source: file://profile.lua
+    method: set
+    modules: [json, security]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_writer: kickside.users.persist:profile_writer
+      profile_types: kickside.users.profile:profile_types
+
+  - name: unset
+    kind: function.lua
+    meta: { comment: "profile — clear the actor's own value, reverting to the default." }
+    source: file://profile.lua
+    method: unset
+    modules: [json, security]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_writer: kickside.users.persist:profile_writer
+      profile_types: kickside.users.profile:profile_types
+
+  - name: list
+    kind: function.lua
+    meta: { comment: profile — list visible declarations merged with the actor's values + provenance. }
+    source: file://profile.lua
+    method: list
+    modules: [json, security]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_writer: kickside.users.persist:profile_writer
+      profile_types: kickside.users.profile:profile_types
+
+  - name: get_namespace
+    kind: function.lua
+    meta: { comment: "profile — effective values for every key in a namespace (own, or another user's public fields)." }
+    source: file://profile.lua
+    method: get_namespace
+    modules: [json, security]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_writer: kickside.users.persist:profile_writer
+      profile_types: kickside.users.profile:profile_types
+
+  # ─── Authorization ───────────────────────────────────────────────────
+  # Module-owned access policy for the per-user profile endpoints. The role group
+  # that receives it is injected by the users user_security_scope requirement (the
+  # app wires app.security:user). Per-user scoping is enforced inside the contract
+  # by actor id, so this is access-only.
+  - name: profile
+    kind: contract.definition
+    meta:
+      title: Profile
+      comment: Read/write per-user profile fields. Writes target the authenticated actor; reads default to the actor but may target another user for public-visibility fields. Reads fall back to declared defaults; unset reverts to default.
+    methods:
+      - name: get
+        description: get({ namespace, key, user_id? }) -> { success, value }. Defaults to the actor; user_id allowed only for public fields.
+        input_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" }, "user_id": { "type": "string" } },
+                "required": ["namespace", "key"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "value": { "description": "Stored value or declared default" }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+      - name: set
+        description: set({ namespace, key, value }) -> { success }. Writes the actor's own value, validated against the declaration.
+        input_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" }, "value": { "description": "Value to store; validated against the field declaration" } },
+                "required": ["namespace", "key", "value"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: unset
+        description: unset({ namespace, key }) -> { success }. Reverts the actor's field to the declared default.
+        input_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" } },
+                "required": ["namespace", "key"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: list
+        description: list({ namespace? }) -> { success, fields[] }. The actor's visible fields merged with their values.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "namespace": { "type": "string", "description": "Optional namespace filter" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "fields": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+      - name: get_namespace
+        description: get_namespace({ namespace, user_id? }) -> { success, values }. All key->value pairs in a namespace (defaults applied); cross-user returns only public fields.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "namespace": { "type": "string" }, "user_id": { "type": "string" } }, "required": ["namespace"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "values": { "type": "object", "description": "key -> value map" }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+
+  - name: profile_binding
+    kind: contract.binding
+    meta:
+      title: Profile Service
+      comment: Canonical implementation of kickside.users.profile:profile.
+    contracts:
+      - contract: kickside.users.profile:profile
+        default: true
+        methods:
+          get: kickside.users.profile:get
+          set: kickside.users.profile:set
+          unset: kickside.users.profile:unset
+          list: kickside.users.profile:list
+          get_namespace: kickside.users.profile:get_namespace
+
+  # ─── Bundled base fields ─────────────────────────────────────────────
+  # Universal profile fields every install has. Other modules add more by
+  # declaring their own kickside.users.profile:definition entries. The field
+  # namespace is the stored value bucket (the kickside_profile.namespace column),
+  # kept as kickside.profile so existing per-user values resolve unchanged.
+  # display_name / avatar_url / bio are public so they can render across the app;
+  # locale / timezone are personal preferences (self).
+  - name: field.display_name
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: kickside.profile
+    key: display_name
+    value_type: string
+    default: ""
+    description: Name shown to other users.
+    editable: true
+    visibility: public
+    schema: { type: string, maxLength: 80 }
+
+  - name: field.avatar_url
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: kickside.profile
+    key: avatar_url
+    value_type: string
+    default: ""
+    description: URL of the user's avatar image.
+    editable: true
+    visibility: public
+    schema: { type: string, maxLength: 2048 }
+
+  - name: field.bio
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: kickside.profile
+    key: bio
+    value_type: string
+    default: ""
+    description: Short self-description.
+    editable: true
+    visibility: public
+    schema: { type: string, maxLength: 500 }
+
+  - name: field.locale
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: kickside.profile
+    key: locale
+    value_type: string
+    default: "en"
+    description: Preferred language/locale (BCP 47).
+    editable: true
+    visibility: self
+    schema: { type: string, maxLength: 35 }
+
+  - name: field.timezone
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: kickside.profile
+    key: timezone
+    value_type: string
+    default: "UTC"
+    description: Preferred IANA timezone.
+    editable: true
+    visibility: self
+    schema: { type: string, maxLength: 64 }
+
+  # ─── Tests ───────────────────────────────────────────────────────────

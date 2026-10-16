@@ -1,0 +1,184 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-tag.css";
+@import "@kickside/ui-kit/kx-tokens.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Appearance editor styles (moved out of the SFC <style scoped> block
+   so they inject into the shadow root via inlineCss; :deep() flattened to
+   plain descendant selectors). */
+.ap {
+  --system-surface-gutter: var(--kickside-system-surface-gutter, 24px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+}
+
+/* The toolbar (Save / Discard), not a page-title header — System owns the title +
+   tab strip (which already draws the divider below it). No border-bottom here, so
+   the appearance content starts flush like the other System tabs instead of
+   showing a second rule right under the tab strip. */
+/* Toolbar + content share one left-anchored column matching the System title
+   gutter, so Appearance does not jump relative to the other System tabs. */
+.ap-bar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; margin: 0; padding: 12px var(--system-surface-gutter); background: var(--p-content-background); position: sticky; top: 0; z-index: 3; }
+.ap-dirty { display: inline-flex; align-items: center; height: 34px; font-size: 12px; font-weight: 600; color: var(--p-warn-600, var(--p-warn-500)); background: color-mix(in srgb, var(--p-warn-500) 16%, transparent); padding: 0 11px; border-radius: 8px; }
+
+.ap-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid transparent; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter .15s, background .15s, opacity .15s; }
+.ap-btn:disabled { opacity: .45; cursor: default; }
+.ap-btn-primary { background: var(--p-primary-color); color: var(--p-button-primary-color); }
+.ap-btn-primary:hover:not(:disabled) { filter: brightness(1.05); }
+.ap-btn-ghost { background: transparent; border-color: var(--p-content-border-color); color: var(--p-text-color); }
+.ap-btn-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--p-text-color) 8%, transparent); }
+.ap-btn svg { width: 16px; height: 16px; }
+
+.ap-msg { width: calc(100% - (var(--system-surface-gutter) * 2)); margin: 12px 0 0 var(--system-surface-gutter); padding: 9px 12px; border-radius: 8px; font-size: 13px; }
+.ap-err { background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-600, var(--p-danger-500)); }
+.ap-loading { display: flex; align-items: center; gap: 8px; color: var(--p-text-muted-color); font-size: 13px; padding: 24px; }
+
+/* Two-pane: a sticky left rail (layout + legend) beside a wide structure pane, so
+   horizontal space is used and the long list scrolls against fixed controls. */
+.ap-body { flex: 1; overflow-y: auto; padding: 0 0 28px; }
+.ap-grid { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; align-items: start; width: 100%; margin: 0; padding: 6px var(--system-surface-gutter) 0; }
+/* Rail sticks just below the sticky toolbar (its ~58px tall). */
+.ap-side { position: sticky; top: 58px; display: flex; flex-direction: column; gap: 16px; }
+@media (max-width: 880px) { .ap-grid { grid-template-columns: 1fr; } .ap-side { position: static; } }
+
+.ap-card { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 14px; padding: 16px 18px; }
+.ap-structure { min-height: 0; }
+.ap-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--p-text-color); letter-spacing: -.2px; }
+.ap-h svg { width: 17px; height: 17px; color: var(--p-text-muted-color); }
+.ap-add { margin-left: auto; height: 30px; padding: 0 10px; }
+.ap-sub { font-size: 12.5px; color: var(--p-text-muted-color); margin: 4px 0 12px; }
+
+/* Branding card: title input + logo upload control. */
+.ap-blabel { display: block; font-size: 11.5px; font-weight: 700; color: var(--p-text-muted-color); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 6px; }
+.ap-binput { width: 100%; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--p-content-border-color); background: var(--p-content-background); color: var(--p-text-color); font: inherit; font-size: 13px; box-sizing: border-box; }.ap-logo { display: flex; align-items: center; gap: 12px; }
+.ap-logo-prev { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; flex: none; border-radius: 11px; border: 1px solid var(--p-content-border-color); background: color-mix(in srgb, var(--p-text-color) 4%, transparent); overflow: hidden; }
+.ap-logo-prev img { width: 100%; height: 100%; object-fit: contain; }
+.ap-logo-prev svg { width: 22px; height: 22px; color: var(--p-text-muted-color); }
+.ap-logo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ap-btn-busy { opacity: .7; pointer-events: none; }
+.ap-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.ap-hint { font-size: 11.5px; color: var(--p-text-muted-color); margin: 8px 0 0; }
+/* Legibility-guard warning. Danger-toned (independent of --p-primary) so it stays
+   readable even while an unreadable primary tone is previewed. */
+.ap-tone-warn { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 11.5px; font-weight: 600; line-height: 1.35; color: var(--p-danger-600, var(--p-danger-500)); }
+.ap-tone-warn svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+.ap-dirty-warn { color: var(--p-danger-600, var(--p-danger-500)); background: color-mix(in srgb, var(--p-danger-500) 16%, transparent); }
+.ap-tone { display: flex; align-items: center; gap: 8px; }
+/* PrimeVue <ColorPicker>: the swatch is its `preview` element, so the box geometry lives
+   there rather than on the root (which is just an inline wrapper). Sized to match the hex
+   input beside it; the picker panel itself is facade-themed. */
+.ap-tone-swatch { flex: none; display: inline-flex; }
+.ap-tone-preview {
+  width: 40px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--p-content-border-color); cursor: pointer;
+}
+.ap-tone-hex { flex: 1; }
+
+.ap-theme-modes {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px;
+  padding: 3px; border-radius: 8px;
+  background: color-mix(in srgb, var(--p-text-color) 5%, transparent);
+}
+.ap-theme-mode {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-width: 0; height: 28px; padding: 0 6px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--p-text-muted-color); cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 600;
+}
+.ap-theme-mode svg { width: 15px; height: 15px; flex: none; }
+.ap-theme-mode:hover { color: var(--p-text-color); }.ap-theme-mode-on {
+  color: var(--p-text-color); background: var(--p-content-background);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--p-text-color) 12%, transparent);
+}
+
+/* layout mockups (stacked in the narrow rail) */
+.ap-layouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ap-lo { display: flex; flex-direction: column; gap: 8px; padding: 11px; background: var(--p-content-background); border: 2px solid var(--p-content-border-color); border-radius: 14px; cursor: pointer; transition: border-color .15s, transform .15s; text-align: left; }
+.ap-lo:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--p-text-color) 24%, var(--p-content-border-color)); }
+.ap-lo-on { border-color: var(--p-primary-color); }
+.ap-lo-name { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--p-text-color); }
+.ap-lo-name svg { width: 15px; height: 15px; color: var(--p-primary-color); }
+.ap-lo-desc { font-size: 11.5px; color: var(--p-text-muted-color); }
+.mock { display: block; height: 56px; border: 1px solid var(--p-content-border-color); border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--p-text-color) 4%, var(--p-content-background)); }
+.mock-v { display: flex; }
+.mock-v .mock-rail { width: 26%; background: color-mix(in srgb, var(--p-text-color) 8%, var(--p-content-background)); display: flex; flex-direction: column; gap: 5px; padding: 7px 6px; }
+.mock-v .mock-rail i { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--p-text-color) 22%, transparent); }
+.mock-v .mock-fill { flex: 1; }
+.mock-h { display: flex; flex-direction: column; }
+.mock-h .mock-top { height: 30%; background: color-mix(in srgb, var(--p-text-color) 8%, var(--p-content-background)); display: flex; gap: 6px; align-items: center; padding: 0 7px; }
+.mock-h .mock-top i { width: 16px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--p-text-color) 22%, transparent); }
+.mock-h .mock-fill { flex: 1; }
+.ap-lo-on .mock-rail i, .ap-lo-on .mock-top i { background: var(--p-primary-color); }
+
+.ap-legend .ap-tips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.ap-legend .ap-tips li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--p-text-color); }
+.ap-legend .ap-tips svg { width: 15px; height: 15px; color: var(--p-text-muted-color); flex-shrink: 0; }
+
+/* structure tree */
+.ap-group { border: 1px solid var(--p-content-border-color); border-radius: 14px; margin-top: 12px; overflow: hidden; transition: border-color .12s, box-shadow .12s; }
+.ap-group-over { border-color: var(--p-primary-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-primary-color) 14%, transparent); }
+.ap-group-head { display: flex; align-items: center; gap: 9px; padding: 9px 12px; background: color-mix(in srgb, var(--p-text-color) 4%, var(--p-content-background)); border-bottom: 1px solid var(--p-content-border-color); }
+.ap-count { margin-left: auto; font-size: 11px; color: var(--p-text-muted-color); background: color-mix(in srgb, var(--p-text-color) 8%, var(--p-content-background)); padding: 1px 8px; border-radius: 999px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.ap-grip { display: flex; align-items: center; justify-content: center; width: 22px; cursor: grab; color: color-mix(in srgb, var(--p-text-muted-color) 70%, transparent); flex-shrink: 0; }
+.ap-grip:active { cursor: grabbing; }
+.ap-grip:hover { color: var(--p-text-color); }
+.ap-grip svg { width: 16px; height: 16px; }
+.ap-grip-cat svg { width: 15px; height: 15px; }
+.ap-grip-ghost { cursor: default; }
+
+.ap-drop-hint { font-size: 12px; color: color-mix(in srgb, var(--p-text-muted-color) 70%, transparent); padding: 14px; text-align: center; font-style: italic; }
+.ap-row { display: flex; align-items: center; gap: 9px; padding: 8px 12px 8px 6px; border-bottom: 1px solid var(--p-content-border-color); background: var(--p-content-background); }
+.ap-row:last-child { border-bottom: none; }
+.ap-row:hover { background: color-mix(in srgb, var(--p-text-color) 4%, var(--p-content-background)); }
+.ap-row-dragging { opacity: .4; }
+.ap-row-off { opacity: .8; padding-left: 6px; }
+.ap-tile { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--p-text-color) 8%, var(--p-content-background)); color: var(--p-text-color); flex-shrink: 0; }
+.ap-tile-muted { color: var(--p-text-muted-color); }
+.ap-tile svg { width: 18px; height: 18px; }
+
+/* The icon picker is a fixed, inline item so it shares the title's line and never
+   collapses or wraps onto its own row. */
+.wc-iconfield { display: inline-flex; align-items: center; flex-shrink: 0; }
+/* Inline editable label flexes to fill the wide row. */
+.ap-field { min-width: 0; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 6px 9px; font: inherit; font-size: 13px; color: var(--p-text-color); transition: border-color .12s, background .12s; }
+.ap-field-strong { flex: 1; font-weight: 600; }
+.ap-field:not(.ap-field-static):hover { border-color: var(--p-content-border-color); }
+.ap-field:focus { background: var(--p-content-background); }
+.ap-field-static { border-color: transparent; cursor: default; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ap-path { font-family: ui-monospace, monospace; font-size: 11.5px; color: color-mix(in srgb, var(--p-text-muted-color) 80%, transparent); flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 640px) { .ap-path { display: none; } }
+/* Sizing is .kx-tag-sm. */
+.ap-pill { flex-shrink: 0; color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); }
+.ap-edited { width: 14px; height: 14px; color: var(--p-primary-color); flex-shrink: 0; }
+
+.ap-icon-btn { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--p-text-muted-color); cursor: pointer; flex-shrink: 0; transition: background .15s, color .15s; }
+.ap-icon-btn:hover { color: var(--p-text-color); background: color-mix(in srgb, var(--p-text-color) 8%, transparent); }
+.ap-icon-btn svg { width: 16px; height: 16px; }
+.ap-danger:hover { color: var(--p-danger-600, var(--p-danger-500)); }
+.ap-home-on { color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); }
+.ap-home-on:hover { color: var(--p-primary-color); }
+
+.ap-pill-home svg { width: 11px; height: 11px; }
+
+.ap-hidden { margin-top: 14px; }
+.ap-hidden-h { display: flex; align-items: center; gap: 6px; width: 100%; font-size: 12px; font-weight: 600; color: var(--p-text-color); background: transparent; border: none; padding: 6px 2px; cursor: pointer; }
+.ap-hidden-h svg { width: 15px; height: 15px; }
+.ap-hidden-list { border: 1px dashed var(--p-content-border-color); border-radius: 14px; margin-top: 4px; overflow: hidden; }
+

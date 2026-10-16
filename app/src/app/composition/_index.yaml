@@ -1,0 +1,261 @@
+version: "1.0"
+namespace: app.composition
+
+# Application-owned capability bundles consumed by the generic Hub onboarding
+# menu. These are install roots, not resolved dependency snapshots: versions are
+# intentionally omitted so Keeper resolves the live catalog graph. Users may
+# select several bundles; Hub de-duplicates the combined package queue.
+
+entries:
+  - name: default_members
+    kind: registry.entry
+    meta: {type: kickside.security.group_composition}
+    group_id: app.security:members
+    groups: [app.security:user, kickside.security.groups:members]
+
+  - name: core_access
+    kind: registry.entry
+    meta: {type: kickside.security.group_composition}
+    group_id: app.security:user
+    policies:
+      - kickside.agents.security:module_access
+      - kickside.core.jobs.security:module_access
+      - kickside.component.security:module_access
+      - kickside.contract.security:module_access
+      - kickside.core.security:module_access
+      - kickside.execution.security:module_access
+      - kickside.ui.security:module_access
+      - kickside.sessions.security:module_access
+      - kickside.renderers.security:module_access
+      - kickside.widgets.security:module_access
+
+  - name: default_member_enrollment
+    kind: registry.entry
+    meta: {type: kickside.users.default_membership}
+    group_id: app.security:members
+    new_users: true
+
+  - name: core_member_enrollment
+    kind: registry.entry
+    meta: {type: kickside.users.default_membership}
+    group_id: app.security:user
+
+  - name: onboarding_profile.knowledge
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: knowledge
+    title: Knowledge base
+    description: Add document and image knowledge, OCR transcription, and the KB10 graph engine to this workspace.
+    icon: tabler:brain
+    order: 10
+    required: true
+    packages:
+      - component: kickside/knowledge
+        parameters:
+          - name: kickside.knowledge:api_router
+            value: app:api
+          - name: kickside.knowledge:ui_server
+            value: app:gateway
+      - component: kickside/kb10
+        parameters:
+          - name: kickside.kb10:api_router
+            value: app:api
+          - name: kickside.kb10:ui_server
+            value: app:gateway
+          - name: kickside.kb10:target_db
+            value: app:db
+          - name: kickside.kb10:process_host
+            value: app:processes
+      - component: kickside/llm-ocr
+
+  - name: onboarding_profile.workspace
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: workspace
+    title: Workspace & Graphs
+    description: Organize files and links, explore connected records, and inspect database schemas.
+    icon: tabler:layout-sidebar
+    order: 20
+    packages:
+      - component: chestor/workspace
+        parameters:
+          - name: chestor.workspace:api_router
+            value: app:api
+          - name: chestor.workspace:ui_server
+            value: app:gateway
+      - component: chestor/graph
+        parameters:
+          - name: chestor.graph:target_db
+            value: app:db
+          - name: chestor.graph:api_router
+            value: app:api
+          - name: chestor.graph:ui_server
+            value: app:gateway
+      - component: chestor/db-schema
+        parameters:
+          - name: chestor.db_schema:target_db
+            value: app:db
+          - name: chestor.db_schema:api_router
+            value: app:api
+          - name: chestor.db_schema:ui_server
+            value: app:gateway
+
+  - name: onboarding_profile.automation
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: automation
+    title: Automations
+    description: Add executable automation steps and secured webhook triggers without installing the visual workflow editor.
+    icon: tabler:bolt
+    order: 30
+    packages:
+      - component: kickside/code-execution
+        parameters:
+          - name: kickside.code_execution:api_router
+            value: app:api
+          - name: kickside.code_execution:ui_server
+            value: app:gateway
+      - component: kickside/webhooks
+        parameters:
+          - name: kickside.webhooks:target_db
+            value: app:db
+          - name: kickside.webhooks:api_router
+            value: app:api
+          - name: kickside.webhooks:public_router
+            value: app:api.public
+          - name: kickside.webhooks:ui_server
+            value: app:gateway
+
+  - name: onboarding_profile.workflows
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: workflows
+    title: Visual Workflows
+    description: Add tool-aware code steps, reusable business blocks, and the visual workflow composer as a separate capability.
+    icon: tabler:route
+    order: 40
+    packages:
+      - component: kickside/code-execution
+        parameters:
+          - name: kickside.code_execution:api_router
+            value: app:api
+          - name: kickside.code_execution:ui_server
+            value: app:gateway
+      - component: kickside/blocks
+        parameters:
+          - name: kickside.blocks:process_host
+            value: app:processes
+      - component: kickside/workflows
+        parameters:
+          - name: kickside.workflows:target_db
+            value: app:db
+          - name: kickside.workflows:api_router
+            value: app:api
+          - name: kickside.workflows:ui_server
+            value: app:gateway
+          - name: kickside.workflows:process_host
+            value: app:processes
+
+  - name: onboarding_profile.research
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: research
+    title: Web Research
+    description: Add grounded web search without installing specialized OCR, meeting, or research-task packages.
+    icon: tabler:world-search
+    order: 50
+    packages:
+      - component: kickside/webscout
+
+  - name: onboarding_profile.gtm
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: gtm
+    title: Sales & GTM
+    description: Connect HubSpot, enrich prospects with PhantomBuster, and add grounded web research for go-to-market work.
+    icon: tabler:target-arrow
+    order: 60
+    packages:
+      - component: kickside/hubspot
+      - component: kickside/phantombuster
+      - component: kickside/webscout
+
+  - name: onboarding_profile.google_workspace
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: google_workspace
+    title: Google Workspace
+    description: Connect Gmail, Drive, Calendar, Docs, Sheets, Slides, Contacts, and Analytics.
+    icon: tabler:brand-google
+    order: 55
+    packages:
+      - component: kickside/google
+
+  - name: onboarding_profile.channels
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: channels
+    title: Team Channels
+    description: Work across Slack, Discord, Telegram, and direct-message conversations from one workspace.
+    icon: tabler:messages
+    order: 70
+    packages:
+      - component: kickside/slack
+      - component: kickside/discord
+      - component: kickside/telegram
+      - component: kickside/dm
+
+  - name: onboarding_profile.developer
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: developer
+    title: Developer Tools
+    description: Connect GitHub and Atlassian, add reusable skills, reflection, and managed file transfer for engineering agents.
+    icon: tabler:code
+    order: 80
+    packages:
+      - component: kickside/github
+      - component: kickside/atlassian
+      - component: kickside/skills
+        parameters:
+          - name: kickside.skills:api_router
+            value: app:api
+          - name: kickside.skills:ui_server
+            value: app:gateway
+          - name: kickside.skills:upload_storage
+            value: app:uploads
+      - component: kickside/self-reflection
+        parameters:
+          - name: kickside.self_reflection.security:admin_scope
+            value: app.security:admin
+          - name: kickside.self_reflection.security:forbid_scope
+            value: app.security:user
+      - component: kickside/transfer
+        parameters:
+          - name: kickside.transfer:api_router
+            value: app:api
+          - name: kickside.transfer:ui_server
+            value: app:gateway
+          - name: kickside.transfer:scratch_storage
+            value: app:tmp
+
+  - name: onboarding_profiles_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_composition
+      comment: Verifies the application-owned onboarding profile registry contract and package roots.
+    source: file://onboarding_profiles_test.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+    method: run

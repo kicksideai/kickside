@@ -1,0 +1,264 @@
+version: "1.0"
+namespace: kickside.core.lifecycle
+
+# The system lifecycle reaper. A single scope:system component (a thread) owned by the
+# system:lifecycle actor is provisioned at boot; a principal/component delete reports
+# itself as an event on that thread; a projection on the thread reaps every component
+# the named owner still owns (via the trusted component.system_delete, which fires each
+# impl's deletable). A durable, retriable teardown fan-out -- all grants +
+# a provisioned component-kind declaration + a projection; no new machinery, it rides the thread engine.
+
+entries:
+  # ─── Dependency interface (ns.requirement, userspace pattern) ────────
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host the boot provisioner runs on.
+    targets:
+      - entry: kickside.core.lifecycle:boot.service
+        path: .host
+
+  - name: user_lifecycle_grant
+    kind: ns.requirement
+    meta:
+      comment: Structured WRITE grant for the host's authenticated-user group on the system lifecycle component.
+    targets:
+      - entry: kickside.core.lifecycle:system_lifecycle
+        path: ".meta.provision.grants +="
+
+  - name: admin_lifecycle_grant
+    kind: ns.requirement
+    meta:
+      comment: Structured READ|WRITE|ADMIN grant for the host's administrator group on the system lifecycle component.
+    targets:
+      - entry: kickside.core.lifecycle:system_lifecycle
+        path: ".meta.provision.grants +="
+
+  # ─── Shared vocabulary ───────────────────────────────────────────────
+  - name: consts
+    kind: library.lua
+    meta:
+      comment: System actor id, lifecycle class/thread id, owner meta key, and deletion event types.
+    source: file://consts.lua
+    imports:
+      autoinit: kickside.component:autoinit
+
+  # ─── Delete-site reporter ────────────────────────────────────────────
+  - name: report
+    kind: library.lua
+    meta:
+      comment: Delete-site seam -- publish framework-owned lifecycle events to the lifecycle thread for an already-authorized principal/component deletion.
+    source: file://report.lua
+    modules: [funcs, security]
+    imports:
+      lifecycle_consts: kickside.core.lifecycle:consts
+      framework_events: kickside.core.threads:contract_events
+
+  - name: report_publish_runtime
+    kind: security.policy
+    meta:
+      comment: Narrow runtime access needed by the lifecycle audit publisher.
+    policy:
+      resources: "*"
+      actions: [db.get, registry.get]
+      effect: allow
+
+  - name: report_publish_audit
+    kind: security.policy
+    meta:
+      comment: The lifecycle reporter alone may use the Threads audit append capability.
+    policy:
+      resources: kickside.core:threads
+      actions: threads.audit.publish
+      effect: allow
+
+  - name: publish_report
+    kind: function.lua
+    meta:
+      private: true
+      comment: Checks the lifecycle report capability and appends one lifecycle audit event through the canonical Threads append seam.
+    source: file://report.lua
+    method: publish_report
+    modules: [funcs, security]
+    security:
+      policies:
+        - kickside.core.lifecycle:report_publish_runtime
+        - kickside.core.lifecycle:report_publish_audit
+        - kickside.core.jobs.persist:pool_nudge_access
+        - kickside.core.retention:notify_access
+        - kickside.core.threads:emit_update_access
+    imports:
+      lifecycle_consts: kickside.core.lifecycle:consts
+      framework_events: kickside.core.threads:contract_events
+
+  - name: component_lifecycle_impl
+    kind: library.lua
+    meta:
+      comment: In-process implementation for component CRUD lifecycle; appends canonical events and attaches declared lifecycle projections in the caller's transaction.
+    source: file://component_lifecycle.lua
+    modules: [uuid, process, sql]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      proj_writer: kickside.core.projections.persist:writer
+      jobs_wake: kickside.core.jobs.persist:wake
+      threads_env: kickside.core.threads:env
+      threads_thread_row: kickside.core.threads.persist:thread_row
+      component_meta: kickside.component.persist:meta_ops
+      execution_identity: kickside.execution:execution_identity
+
+  - name: component_lifecycle
+    kind: function.lua
+    meta:
+      comment: Binding for kickside.component:lifecycle; appends canonical component lifecycle events and attaches declared lifecycle projections.
+    source: file://component_lifecycle.lua
+    method: created
+    modules: [uuid, process, sql]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      proj_writer: kickside.core.projections.persist:writer
+      jobs_wake: kickside.core.jobs.persist:wake
+      threads_env: kickside.core.threads:env
+      threads_thread_row: kickside.core.threads.persist:thread_row
+      component_meta: kickside.component.persist:meta_ops
+      execution_identity: kickside.execution:execution_identity
+
+  - name: component_lifecycle.updated
+    kind: function.lua
+    meta:
+      comment: kickside.component:lifecycle updated method.
+    source: file://component_lifecycle.lua
+    method: updated
+    modules: [uuid, process, sql]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      proj_writer: kickside.core.projections.persist:writer
+      jobs_wake: kickside.core.jobs.persist:wake
+      threads_env: kickside.core.threads:env
+      threads_thread_row: kickside.core.threads.persist:thread_row
+      component_meta: kickside.component.persist:meta_ops
+      execution_identity: kickside.execution:execution_identity
+
+  - name: component_lifecycle.deleted
+    kind: function.lua
+    meta:
+      comment: kickside.component:lifecycle deleted method.
+    source: file://component_lifecycle.lua
+    method: deleted
+    modules: [uuid, process, sql]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      proj_writer: kickside.core.projections.persist:writer
+      jobs_wake: kickside.core.jobs.persist:wake
+      threads_env: kickside.core.threads:env
+      threads_thread_row: kickside.core.threads.persist:thread_row
+      component_meta: kickside.component.persist:meta_ops
+      execution_identity: kickside.execution:execution_identity
+
+  - name: component_lifecycle_binding
+    kind: contract.binding
+    meta:
+      comment: Default core implementation of the internal component lifecycle contract.
+    contracts:
+      - contract: kickside.component:lifecycle
+        default: true
+        methods:
+          created: kickside.core.lifecycle:component_lifecycle
+          updated: kickside.core.lifecycle:component_lifecycle.updated
+          deleted: kickside.core.lifecycle:component_lifecycle.deleted
+
+  - name: child_lifecycle_projection
+    kind: function.lua
+    meta:
+      type: projection.worker
+      title: Child Lifecycle Projection
+      comment: Generic projection worker over a child lifecycle thread, keyed by a supervising parent component.
+    source: file://child_lifecycle_projection.lua
+    method: run
+
+  # ─── Reaper projection worker ────────────────────────────────────────
+  - name: reaper
+    kind: function.lua
+    meta:
+      type: projection.worker
+      private: true
+      title: Lifecycle Reaper
+      comment: Projection worker over the lifecycle thread -- reaps every component a reported owner still owns via the trusted system delete, recursing into nested ownership.
+    source: file://reaper.lua
+    method: run
+    modules: [registry, funcs, security]
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      component_envelope: kickside.component:envelope
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      lifecycle_consts: kickside.core.lifecycle:consts
+
+  # ─── The system lifecycle component (scope:system provisioned kind) ──
+  # Owner is the provisioning system actor (implicit FULL). The provision grants give
+  # the user group WRITE-only (report a deletion, never read the queue) and admins
+  # READ|WRITE|ADMIN (inspect + report + share). The reaper projection self-wires over the
+  # component's own thread; the input event contract is the writable trigger surface
+  # delete sites report to. The kind binding doubles as the provision declaration.
+  - name: system_lifecycle
+    kind: contract.binding
+    meta:
+      title: System Lifecycle
+      comment: System-scope lifecycle reaper component (its thread is the deletion-report queue).
+      class:
+        - lifecycle
+      provision:
+        scope: system
+        grants: []
+      projections:
+        - kind: lifecycle.reap
+          worker_ref: "func://kickside.core.lifecycle:reaper"
+          input_mode: prefetch_events
+      retention:
+        event_days: 7
+        drain_aware: true
+      events:
+        input:
+          - type: kickside.lifecycle.events:principal.deleted
+          - type: kickside.lifecycle.events:component.deleted
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  # ─── Boot provisioner ────────────────────────────────────────────────
+  - name: boot_process
+    kind: process.lua
+    meta:
+      comment: Provisions the system lifecycle singleton and converges declared component state as system:lifecycle, then stays resident and upgradable — on the OUTDATED code-change event it process.upgrade()s in place, re-running convergence at install time.
+    source: file://boot.lua
+    method: main
+    modules: [security, logger, process]
+    imports:
+      provision: kickside.core.threads:provision
+      lifecycle_consts: kickside.core.lifecycle:consts
+      error_envelope: kickside.contract:error_envelope
+
+  - name: boot.service
+    kind: process.service
+    meta:
+      comment: Supervised resident boot provisioner + declared-state converger. Its host is supplied through the process_host requirement.
+    process: kickside.core.lifecycle:boot_process
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_delay: 120s
+        max_attempts: 10
+      security:
+        groups:
+          - wippy.security:process

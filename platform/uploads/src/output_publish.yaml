@@ -1,0 +1,10 @@
+version: '1.0'
+namespace: kickside.uploads
+entries:
+- name: thread_deleted_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources: kickside.uploads.events:upload.deleted

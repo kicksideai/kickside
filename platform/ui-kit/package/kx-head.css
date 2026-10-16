@@ -1,0 +1,79 @@
+/* KickSide surface header.
+ *
+ * Ten modules open a surface with this header: an icon tile, a title and
+ * subtitle, and an actions group pushed to the right. Two of its selectors were
+ * already byte-identical in all ten and the rest agreed in eight or nine, so
+ * the bodies below are that majority, in the order agents declared them.
+ *
+ * connection's three differences were `var(--ac)`, `var(--t1)` and `var(--t3)`,
+ * which its own `:host` defines as exact aliases of `--p-primary-color`,
+ * `--p-text-color` and `--p-text-muted-color`. Folding them in changes nothing
+ * that renders; it just stops the header depending on one module's private
+ * alias layer.
+ *
+ * Kept local, because each is a real need rather than drift:
+ *   sessions   `.kx-head { flex: none }` - the header must not shrink inside
+ *              its column.
+ *   knowledge  a 15px title that truncates, rather than the 17px full title.
+ *   inbox      a 1.2 line-height on the title.
+ *
+ * inbox does not use `.kx-head` at all. Its `.kx-head` was a different thing
+ * wearing the same name - an outer bar with a border that wraps a
+ * `.kx-head-row` carrying the flex layout everyone else puts on `.kx-head`
+ * itself - so it is renamed `.kx-head-bar` there. inbox still uses the icon,
+ * text, title and actions from this sheet.
+ *
+ * Note for adopters: a CSS `@import` must precede all other rules, so this
+ * sheet lands first and a module's own rule wins at equal specificity.
+ * Adopting means DELETING the local rules, not just importing.
+ */
+
+.kx-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 14px;
+  flex-wrap: wrap;
+}
+
+.kx-head-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
+  color: var(--p-primary-color);
+}
+
+.kx-head-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.kx-head-text {
+  min-width: 0;
+}
+
+.kx-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--p-text-color);
+  margin: 0;
+}
+
+.kx-head-sub {
+  font-size: 13px;
+  color: var(--p-text-muted-color);
+  margin: 2px 0 0;
+}
+
+.kx-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}

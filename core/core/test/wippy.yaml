@@ -1,0 +1,7 @@
+organization: kickside
+module: core-harness
+type: application
+description: Standalone application harness that boots kickside/core and runs its harness-owned test suites.
+directories:
+  modules: .wippy
+  src: .

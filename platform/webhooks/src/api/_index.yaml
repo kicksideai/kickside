@@ -1,0 +1,91 @@
+version: "1.0"
+namespace: kickside.webhooks.api
+
+# Authenticated webhook-management API. Mint returns the raw secret + ingress URL
+# once; list/revoke manage the caller's webhooks. The routers are injected by the
+# root kickside.webhooks:api_router requirement.
+
+entries:
+  - name: create_webhook
+    kind: function.lua
+    meta: { comment: "POST /api/v1/webhooks — mint a webhook; returns the raw secret + URL once." }
+    source: file://create_webhook.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      webhook_repo: kickside.webhooks:repo
+
+  - name: create_webhook.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_webhook
+    path: /webhooks
+
+  - name: list_webhooks
+    kind: function.lua
+    meta: { comment: "GET /api/v1/webhooks — the caller's webhooks (no secrets)." }
+    source: file://list_webhooks.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      webhook_repo: kickside.webhooks:repo
+      http_errors: kickside.contract:http_errors
+
+  - name: list_webhooks.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_webhooks
+    path: /webhooks
+
+  - name: update_webhook
+    kind: function.lua
+    meta: { comment: "PATCH /api/v1/webhooks/{id} — update a webhook label/schema." }
+    source: file://update_webhook.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      webhook_repo: kickside.webhooks:repo
+      http_errors: kickside.contract:http_errors
+
+  - name: update_webhook.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PATCH
+    func: update_webhook
+    path: /webhooks/{id}
+
+  - name: revoke_webhook
+    kind: function.lua
+    meta: { comment: "POST /api/v1/webhooks/{id}/revoke — revoke one of your webhooks." }
+    source: file://revoke_webhook.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      webhook_repo: kickside.webhooks:repo
+      http_errors: kickside.contract:http_errors
+
+  - name: revoke_webhook.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: revoke_webhook
+    path: /webhooks/{id}/revoke
+
+  - name: delete_webhook
+    kind: function.lua
+    meta: { comment: "DELETE /api/v1/webhooks/{id} — delete a webhook component through canonical teardown." }
+    source: file://delete_webhook.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      webhook_repo: kickside.webhooks:repo
+      http_errors: kickside.contract:http_errors
+
+  - name: delete_webhook.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_webhook
+    path: /webhooks/{id}

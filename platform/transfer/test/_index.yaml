@@ -1,0 +1,312 @@
+version: "1.0"
+namespace: app
+
+# Host resources the transfer src binds to at boot: the api router its export/import
+# endpoints attach to, the gateway the picker bundle is served from, and the scratch
+# fs the orchestrator stages into (consts.SCRATCH_STORAGE = app:uploads). The bundle
+# codec suites are pure and need none of it, but loading the whole src does.
+
+entries:
+  - name: export_http_subject
+    kind: library.lua
+    source: file://export_http_subject.lua
+    modules: [json]
+    imports:
+      http: app:import_http_fixture
+      security: app:import_http_security
+      orchestrator: app:orchestrator_fault_adapter
+      fs: app:orchestrator_fault_fs
+  - name: export_http_errors_test
+    kind: function.lua
+    meta: {type: test, suite: transfer}
+    source: file://export_http_errors_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      state: app:orchestrator_fault_state
+      fixture: app:import_http_fixture
+      subject: app:export_http_subject
+
+  - name: import_http_fixture
+    kind: library.lua
+    source: file://import_http_fixture.lua
+    imports:
+      state: app:orchestrator_fault_state
+  - name: import_http_security
+    kind: library.lua
+    source: file://import_http_security.lua
+    imports:
+      fixture: app:import_http_fixture
+  - name: import_http_orchestrator
+    kind: library.lua
+    source: file://import_http_orchestrator.lua
+    imports:
+      fixture: app:import_http_fixture
+      orchestrator: app:orchestrator_fault_adapter
+  - name: import_http_subject
+    kind: library.lua
+    source: file://import_http_subject.lua
+    modules: [uuid]
+    imports:
+      http: app:import_http_fixture
+      security: app:import_http_security
+      orchestrator: app:import_http_orchestrator
+      fs: app:orchestrator_fault_fs
+      consts: kickside.transfer:consts
+      portable_io: kickside.component.portability:portable_io
+  - name: import_http_errors_test
+    kind: function.lua
+    meta: {type: test, suite: transfer}
+    source: file://import_http_errors_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      state: app:orchestrator_fault_state
+      fixture: app:import_http_fixture
+      subject: app:import_http_subject
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transfer
+      comment: Verifies transfer staging follows the scratch_storage requirement.
+    source: file://src/suites/packaging_test.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      consts: kickside.transfer:consts
+    method: run
+
+  - name: bundle_test
+    kind: function.lua
+    meta:
+      title: KXB1 Bundle Codec Test
+      type: test
+      suite: transfer
+      comment: build/parse round-trip, raw-byte fidelity (newlines + magic in parts), truncation rejection, empty list.
+    source: file://src/suites/bundle_test.lua
+    imports:
+      test: wippy.test:test
+      bundle: kickside.transfer:bundle
+    method: run
+
+  - name: upload_import_stage_test
+    kind: function.lua
+    meta:
+      title: Transfer Upload Import Stage Test
+      type: test
+      suite: transfer
+      comment: KXB upload detection, placement, metadata marker, and non-retriable invalid-bundle errors.
+    source: file://src/suites/import_upload_func_test.lua
+    imports:
+      test: wippy.test:test
+      upload_import_stage: kickside.transfer:upload_import_stage
+    method: run
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: "${sqlite_path}"
+
+  - name: user
+    kind: security.policy
+    groups: [transfer_test]
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.kickside.transfer
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Transfer mounted as a root; the harness owns its router, storage, UI server, and component seams.
+    component: kickside/transfer
+    parameters:
+    - name: kickside.transfer:api_router
+      value: app:api
+    - name: kickside.transfer:scratch_storage
+      value: app:uploads
+    - name: kickside.transfer:ui_server
+      value: app:gateway
+    - name: kickside.transfer.security:user_security_scope
+      value: app:user
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Core lifecycle provider and its jobs/scheduler dependencies for the transfer component graph.
+    component: kickside/core
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Applies every registered migration before the test suites run.
+    component: wippy/bootloader
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: env_storage
+    kind: env.storage.file
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: false
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: uploads
+    kind: fs.directory
+    meta:
+      comment: Scratch storage for the transfer orchestrator.
+    directory: ./storage
+    auto_init: true
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: orchestrator_fault_state
+    kind: library.lua
+    source: file://orchestrator_fault_state.lua
+
+  - name: orchestrator_fault_fs
+    kind: library.lua
+    source: file://orchestrator_fault_fs.lua
+    imports:
+      state: app:orchestrator_fault_state
+
+  - name: orchestrator_fault_contract
+    kind: library.lua
+    source: file://orchestrator_fault_contract.lua
+    imports:
+      state: app:orchestrator_fault_state
+
+  - name: orchestrator_fault_bundle
+    kind: library.lua
+    source: file://orchestrator_fault_bundle.lua
+    imports:
+      state: app:orchestrator_fault_state
+
+  - name: orchestrator_fault_adapter
+    kind: library.lua
+    source: file://orchestrator_fault_adapter.lua
+    modules: [security, uuid]
+    imports:
+      contract: app:orchestrator_fault_contract
+      fs: app:orchestrator_fault_fs
+      bundle: app:orchestrator_fault_bundle
+      component: kickside.component:component
+      consts: kickside.transfer:consts
+      portable_io: kickside.component.portability:portable_io
+
+  - name: orchestrator_directory_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transfer
+    source: file://orchestrator_directory_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      state: app:orchestrator_fault_state
+      orchestrator: app:orchestrator_fault_adapter

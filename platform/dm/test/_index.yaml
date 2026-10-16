@@ -1,0 +1,96 @@
+version: "1.0"
+namespace: app
+
+# Exercises the production DM surface with deterministic Channel and Identity
+# collaborators. The harness owns only its test doubles and database resource.
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: dm_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_dm
+      group: KickSide DM
+      comment: DM link, admission, routing, and clear behavior over test collaborators.
+    source: file://dm_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      dm_runtime: app:dm_runtime
+      test_state: app:test_state
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the PostgreSQL profile wiring.
+    file: "${sqlite_path}"
+
+  - name: dm_runtime
+    kind: library.lua
+    meta:
+      comment: Production DM surface with harness-owned collaborators.
+    source: file://src_link/dm.lua
+    modules: [security]
+    imports:
+      link_service: app:link_service_stub
+      reply_sender: app:reply_sender_stub
+      channel_receive: app:channel_receive_stub
+      channel_refusal: app:channel_refusal
+      channel_persist: app:channel_persist_stub
+      channel_consts: app:channel_consts_stub
+      channel_types: app:channel_types_stub
+      execution_identity: app:execution_identity_stub
+      dm_consts: app:dm_consts
+
+  - name: channel_refusal
+    kind: library.lua
+    source: file://channel_link/refusal.lua
+
+  - name: dm_consts
+    kind: library.lua
+    source: file://src_link/consts.lua
+
+  - name: channel_types_stub
+    kind: library.lua
+    source: file://channel_types_stub.lua
+
+  - name: channel_consts_stub
+    kind: library.lua
+    source: file://channel_consts_stub.lua
+
+  - name: execution_identity_stub
+    kind: library.lua
+    source: file://execution_identity_stub.lua
+
+  - name: test_state
+    kind: library.lua
+    source: file://test_state.lua
+
+  - name: link_service_stub
+    kind: library.lua
+    source: file://link_service_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: reply_sender_stub
+    kind: library.lua
+    source: file://reply_sender_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: channel_receive_stub
+    kind: library.lua
+    source: file://channel_receive_stub.lua
+    imports:
+      test_state: app:test_state
+
+  - name: channel_persist_stub
+    kind: library.lua
+    source: file://channel_persist_stub.lua
+    imports:
+      test_state: app:test_state

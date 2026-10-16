@@ -1,0 +1,49 @@
+version: '1.0'
+namespace: app
+entries:
+- name: writer_read_fixture
+  kind: library.lua
+  source: file://writer_read_fixture.lua
+- name: writer_read_sql
+  kind: library.lua
+  source: file://writer_read_sql.lua
+  imports:
+    fixture: app:writer_read_fixture
+  modules:
+  - sql
+- name: writer_read_component
+  kind: library.lua
+  source: file://writer_read_component.lua
+  imports:
+    real: kickside.core.threads:component
+    fixture: app:writer_read_fixture
+- name: writer_read_source
+  kind: library.lua
+  source: file://writer_read_source.lua
+  modules:
+  - logger
+  imports:
+    threads_normalize: kickside.core.threads.persist:normalize
+    threads_component: app:writer_read_component
+    core_types: kickside.core:types
+    retention_notifier: kickside.core.retention:notifier
+    jobs_wake: kickside.core.jobs.persist:wake
+    threads_append: kickside.core.threads.persist:append
+    sql: app:writer_read_sql
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: writer_read_test
+  kind: function.lua
+  source: file://writer_read_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_writer_read_native
+  modules:
+  - sql
+  imports:
+    test: wippy.test:test
+    fixture: app:writer_read_fixture
+    api: app:writer_read_source
+    canonical_json: kickside.contract:canonical_json

@@ -1,0 +1,43 @@
+version: "1.0"
+namespace: kickside.workflows.repo
+
+entries:
+  - name: repo
+    kind: library.lua
+    meta:
+      comment: Component lifecycle — create/list/delete workflows and access checks through the component service.
+    source: file://repo.lua
+    modules: [contract, security, hash]
+    imports:
+      types: kickside.workflows:types
+      component: kickside.component:component
+      store: kickside.workflows.store:store
+      envelope: kickside.component:envelope
+
+  - name: version_publish
+    kind: library.lua
+    meta:
+      comment: Workflow version publication and compilation; publishes immutable snapshots and their canonical hash marker atomically.
+    source: file://version_publish.lua
+    modules: [json, funcs, security]
+    imports:
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      store_state: kickside.workflows.store:store_state
+      workflow: kickside.workflows:workflow
+      compiler: kickside.workflows.compiler:compiler
+      realtime: kickside.workflows:realtime
+      block_catalog: kickside.workflows.catalog:block_catalog
+      canonical_json: kickside.contract:canonical_json
+      policy: kickside.workflows:policy_config
+
+  - name: version_read
+    kind: library.lua
+    meta:
+      comment: Immutable workflow version reads, source export, history listing, and revision diffing.
+    source: file://version_read.lua
+    modules: [json]
+    imports:
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      mapping: kickside.workflows.execution:mapping

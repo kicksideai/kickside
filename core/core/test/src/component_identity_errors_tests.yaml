@@ -1,0 +1,50 @@
+version: '1.0'
+namespace: app
+entries:
+- name: component_identity_errors_fixture
+  kind: library.lua
+  source: file://component_identity_errors_fixture.lua
+- name: component_identity_errors_source
+  kind: library.lua
+  source: file://component_identity_errors_source.lua
+  imports:
+    component_client: app:component_identity_errors_component
+    execution_identity: app:component_identity_errors_execution
+    error_envelope: kickside.contract:error_envelope
+- name: component_identity_errors_common_source
+  kind: library.lua
+  source: file://component_identity_errors_common_source.lua
+  modules:
+  - sql
+  - security
+  imports:
+    component_identity: app:component_identity_errors_source
+    execution_identity: app:component_identity_errors_execution
+    threads_env: kickside.core.threads:env
+    threads_notify: kickside.core.threads:notify
+    error_envelope: kickside.contract:error_envelope
+- name: component_identity_errors_test
+  kind: function.lua
+  source: file://component_identity_errors_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_component_identity_errors
+  imports:
+    test: wippy.test:test
+    fixture: app:component_identity_errors_fixture
+    identity: app:component_identity_errors_source
+    common: app:component_identity_errors_common_source
+    canonical_json: kickside.contract:canonical_json
+    execution: kickside.execution:execution_identity
+- name: component_identity_errors_component
+  kind: library.lua
+  source: file://component_identity_errors_component.lua
+  imports:
+    fixture: app:component_identity_errors_fixture
+- name: component_identity_errors_execution
+  kind: library.lua
+  source: file://component_identity_errors_execution.lua
+  imports:
+    fixture: app:component_identity_errors_fixture
+    execution: kickside.execution:execution_identity

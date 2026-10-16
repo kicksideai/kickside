@@ -1,0 +1,330 @@
+version: "1.0"
+namespace: kickside.contract
+
+entries:
+  - name: realtime
+    kind: contract.definition
+    meta:
+      comment: |
+        Centralized realtime push — fan a topic out to connected UIs.
+        Push topics to connected UIs over the relay. broadcast reaches every
+        connected client (global changes like nav layout); notify reaches one
+        user's clients (per-user events). Implemented over wippy/relay by
+        kickside/realtime; callers depend on this seam, not the relay directly.
+      tags:
+        - realtime
+        - relay
+        - broadcast
+        - notify
+    methods:
+      - name: broadcast
+        description: |
+          Fan a topic + payload out to every connected client. Calling:
+          broadcast({ topic, data? })
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "topic": {"type": "string", "description": "Realtime topic the UI subscribes to"},
+                  "data": {"type": "object", "description": "Optional payload"}
+                },
+                "required": ["topic"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: '{ "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }'
+            format: application/schema+json
+      - name: notify
+        description: |
+          Push a topic + payload to one user's connected clients. Calling:
+          notify({ user_id, topic, data? })
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "user_id": {"type": "string", "description": "Target user whose clients receive the topic"},
+                  "topic": {"type": "string", "description": "Realtime topic the UI subscribes to"},
+                  "data": {"type": "object", "description": "Optional payload"}
+                },
+                "required": ["user_id", "topic"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: '{ "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }'
+            format: application/schema+json
+
+  - name: realtime_batch
+    kind: contract.definition
+    meta:
+      comment: Bounded audience dispatch through the selected scalar realtime owner; an unbound owner reports status=not_supported with no delivery.
+    methods:
+      - name: notify
+        input_schemas:
+          - definition: |
+              {"type":"object","properties":{"user_ids":{"type":"array","minItems":1,"maxItems":128,"items":{"type":"string","minLength":1}},"topic":{"type":"string","minLength":1},"data":{"type":"object"}},"required":["user_ids","topic"]}
+            format: application/schema+json
+        output_schemas:
+          - definition: '{"type":"object","properties":{"success":{"type":"boolean"},"notified":{"type":"integer"},"status":{"type":"string"}},"required":["success","notified"]}'
+            format: application/schema+json
+
+  # kickside.contract:directory
+  # The swappable seam for "who can I share with". Adapters (kickside/users today)
+  # bind this to a real user/group source; the sharing UI + access-list enrichment
+  # depend only on this contract, so the user backend can be replaced without
+  # touching the sharing layer. A principal is a typed grant subject for the
+  # component access store: { type: "user" | "group", id, label, sublabel? }.
+  - name: directory
+    kind: contract.definition
+    meta:
+      comment: Principal directory — search/resolve users and groups you can share with
+      tags: [sharing, directory, principals, users, groups]
+    methods:
+      - name: search
+        description: |
+          Search shareable principals by free-text query.
+          Calling: search({ query?, kinds?, limit?, cursor? })
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "query": { "type": "string", "description": "Free-text match on label/email/id; empty returns top principals" },
+                  "kinds": { "type": "array", "items": { "type": "string", "enum": ["user", "group"] }, "description": "Restrict to these principal kinds (default both)" },
+                  "limit": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 },
+                  "cursor": { "type": "string", "description": "Opaque continuation for the same query and principal kinds" }
+                },
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "has_more": { "type": "boolean" },
+                  "cursor": { "type": "string" },
+                  "principals": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["user", "group"] },
+                        "id": { "type": "string" },
+                        "label": { "type": "string" },
+                        "sublabel": { "type": "string" }
+                      },
+                      "required": ["type", "id", "label"]
+                    }
+                  }
+                },
+                "required": ["principals"]
+              }
+            format: application/schema+json
+      - name: resolve
+        description: |
+          Resolve a set of principal refs to display info (for rendering an access list).
+          Calling: resolve({ refs: [{ type, id }] })
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "refs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["user", "group"] },
+                        "id": { "type": "string" }
+                      },
+                      "required": ["type", "id"]
+                    }
+                  }
+                },
+                "required": ["refs"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "principals": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string" },
+                        "id": { "type": "string" },
+                        "label": { "type": "string" },
+                        "sublabel": { "type": "string" }
+                      },
+                      "required": ["type", "id", "label"]
+                    }
+                  }
+                },
+                "required": ["principals"]
+              }
+            format: application/schema+json
+      - name: exists
+        description: |
+          Report whether a principal exists — used to reject share grants to phantom
+          users without coupling to any user backend. Calling: exists({ type?, id });
+          type defaults to "user".
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "type": { "type": "string", "enum": ["user", "group"], "default": "user" }, "id": { "type": "string" } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "exists": { "type": "boolean" } }, "required": ["exists"] }
+            format: application/schema+json
+      - name: groups
+        description: |
+          The live group memberships of a user, for resolving the grants of a
+          principal who is not the current actor exactly as live access does (A32).
+          An unknown or inactive user is not active and has no groups.
+          Calling: groups({ id })
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string" } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "active": { "type": "boolean" }, "groups": { "type": "array", "items": { "type": "string" } } }, "required": ["active", "groups"] }
+            format: application/schema+json
+
+  # kickside.contract:security_scopes
+  # Read model for the assignable scope/role catalog. One port over the authorization
+  # model so consumers (e.g. the user editor) get a single normalized list of
+  # assignable scopes — built-in roles AND custom scopes — without coupling to the
+  # security module's internals or HTTP endpoints. The security module binds it;
+  # a different security implementation can bind the same shape and swap in cleanly.
+  - name: security_scopes
+    kind: contract.definition
+    meta:
+      comment: Assignable security scope/role catalog (normalized).
+      tags:
+        - security
+        - scopes
+    methods:
+      - name: list
+        description: |
+          List assignable scopes. Internal/system scopes are excluded unless
+          include_internal is true. Calling: list(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "include_internal": { "type": "boolean", "default": false }
+                },
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "scopes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "label": { "type": "string" },
+                        "description": { "type": "string" },
+                        "source": { "type": "string" },
+                        "internal": { "type": "boolean" },
+                        "enabled": { "type": "boolean" }
+                      },
+                      "required": ["id"]
+                    }
+                  }
+                },
+                "required": ["scopes"]
+              }
+            format: application/schema+json
+
+  # ─── Automation contracts ────────────────────────────────────────────
+  # Shared so domain modules can declare automation-type bindings (and event
+  # runtimes can read installed automations) without a load-dependency on the
+  # kickside.automation engine. The engine consumes these; providers bind them.
+  - name: installable
+    kind: contract.definition
+    meta:
+      title: Installable Automation
+      comment: |
+        The install method receives validated user input and returns
+        { state, public_state?, metadata }. State persists in the component's
+        private_context (incl. the rollback chain); public_state is
+        frontend-safe component public meta and must match the binding's
+        meta.public_state_schema when present; input is
+        validated against the binding's meta.inputs schema when declared
+        (password/sensitive fields are masked by the standard manager UI);
+        metadata persists in component_meta.
+    methods:
+      - name: install
+        description: Create the automation. Receives validated input. Returns { state, public_state?, metadata }.
+        input_schemas:
+          - definition: |
+              { "type": "object", "description": "Automation-type-specific input, already validated against the type's input schema before this is called." }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": {
+                  "state": { "type": "object", "description": "Persisted to the component private_context, incl. the rollback chain" },
+                  "public_state": { "type": "object", "description": "Frontend-safe durable state persisted as component public meta; keys must be declared by meta.public_state_schema" },
+                  "metadata": { "type": "object", "description": "Persisted to component_meta" },
+                  "error": { "type": "string" }
+                } }
+            format: application/schema+json
+
+  - name: runtime_reader
+    kind: contract.definition
+    meta:
+      title: Automation Runtime Reader
+      comment: |
+        list_runtime / get_runtime return installed automations together with the
+        canonical frozen execution_identity record (and
+        optional state with reserved engine keys stripped). Used by event-driven
+        runtimes (gateway hubs/workers) to run an automation as its installer.
+    methods:
+      - name: list
+        description: List installed automations (filter by type_ids or type_meta or class) with execution identity. Input { type_ids?, type_meta?, class?, limit?, offset?, include_state?, actor_id? }.
+        input_schemas:
+          - definition: |
+              { "type": "object" }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "automations": { "type": "array" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: get
+        description: Get one installed automation by id with execution identity. Input { id, include_state? }.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string" }, "include_state": { "type": "boolean" } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "automation": { "type": "object" }, "error": { "type": "string" } } }
+            format: application/schema+json
+
+  - name: connection_capacity
+    kind: contract.definition
+    meta:
+      comment: Optional connection-owned durable retry floor; an absent binding is not_supported and bound failures remain native.
+    methods:
+      - name: check
+        input_schemas:
+          - definition: '{"type":"object","required":["connection_id"],"properties":{"connection_id":{"type":"string","minLength":1}}}'
+            format: application/schema+json
+      - name: record
+        input_schemas:
+          - definition: '{"type":"object","required":["connection_id","error"],"properties":{"connection_id":{"type":"string","minLength":1},"error":{"type":"object","required":["kind","message"],"properties":{"kind":{"type":"string"},"message":{"type":"string"},"retryable":{"type":"boolean"},"details":{"type":"object"}}}}}'
+            format: application/schema+json

@@ -1,0 +1,82 @@
+version: '1.0'
+namespace: kickside.oauth.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Oauth
+    surface: kickside.oauth
+    intent: module_access
+    includes:
+    - kickside.oauth.security:module_runtime
+    - kickside.oauth.security:oauth_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.oauth:*
+    - kickside.oauth.api:*
+    - kickside.oauth.api.public:*
+    - kickside.oauth.binding:*
+    - kickside.oauth.discovery:*
+    - kickside.oauth.migrations:*
+    - kickside.oauth.persist:*
+    - kickside.oauth.security:*
+    - kickside.oauth.service:*
+    - kickside.oauth.views:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: oauth_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.oauth.api:discover_providers.endpoint
+    - kickside.oauth.api:get_connection_details.endpoint
+    - kickside.oauth.api:get_provider_info.endpoint
+    - kickside.oauth.api:init_connection.endpoint
+    - kickside.oauth.api:update_connection.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.oauth:*
+    - kickside.oauth.api:*
+    - kickside.oauth.api.public:*
+    - kickside.oauth.binding:*
+    - kickside.oauth.discovery:*
+    - kickside.oauth.migrations:*
+    - kickside.oauth.persist:*
+    - kickside.oauth.security:*
+    - kickside.oauth.service:*
+    - kickside.oauth.views:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.oauth.security:module_access
+    path: .groups +=
+  - entry: kickside.oauth.security:module_runtime
+    path: .groups +=
+  - entry: kickside.oauth.security:oauth_endpoint_access
+    path: .groups +=

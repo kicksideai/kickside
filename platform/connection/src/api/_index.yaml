@@ -1,0 +1,156 @@
+version: "1.0"
+namespace: kickside.connection.api
+
+entries:
+  - name: query_params
+    kind: library.lua
+    meta:
+      comment: Strict HTTP query parameter parsing for connection endpoints.
+    source: file://query_params.lua
+    modules: [http]
+
+  - name: list_connections
+    kind: function.lua
+    meta:
+      comment: List the calling user's connection components, optionally filtered by provider
+    source: file://list_connections.lua
+    modules: [http, contract, registry, security]
+    imports:
+      conn_types: kickside.connection:types
+      query_params: kickside.connection.api:query_params
+      create_policy: kickside.connection.api:create_policy
+    method: handler
+
+  - name: list_connections.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_connections
+    path: /connections
+
+  - name: create_connection
+    kind: function.lua
+    source: file://create_connection.lua
+    modules: [http, json, registry]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      create_policy: kickside.connection.api:create_policy
+    method: handler
+
+  - name: create_connection.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_connection
+    path: /connections
+
+  - name: create_policy
+    kind: library.lua
+    meta:
+      comment: Validates generic connection create requests and implementation binding shape.
+    source: file://create_policy.lua
+
+  - name: discover_providers
+    kind: function.lua
+    meta:
+      comment: Discover non-OAuth connection providers with generic credential schemas.
+    source: file://discover_providers.lua
+    modules: [http, registry]
+    imports:
+      conn_types: kickside.connection:types
+      create_policy: kickside.connection.api:create_policy
+    method: handler
+
+  - name: discover_providers.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: discover_providers
+    path: /connections/providers/discover
+
+  # Provider presentation catalogue for consumers that persist a provider id
+  # (for example, session rows). Unlike discovery this intentionally includes
+  # credential, OAuth, reply, and channel bindings, but returns only a stable
+  # provider id, human label, and icon -- never a connection instance or secret.
+  - name: provider_badges
+    kind: function.lua
+    meta:
+      comment: List safe provider labels and icons for provider-id presentation.
+    source: file://provider_badges.lua
+    modules: [http, registry, logger]
+    method: handler
+
+  - name: provider_badges.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: provider_badges
+    path: /connections/providers/badges
+
+  - name: delete_connection
+    kind: function.lua
+    source: file://delete_connection.lua
+    modules: [http, contract]
+    method: handler
+    imports:
+      http_errors: kickside.contract:http_errors
+
+  - name: delete_connection.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_connection
+    path: /connections/{id}
+
+  - name: update_connection
+    kind: function.lua
+    source: file://update_connection.lua
+    modules: [http, json]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      update_policy: kickside.connection.api:update_policy
+    method: handler
+
+  - name: update_connection.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: update_connection
+    path: /connections/{id}
+
+  - name: update_policy
+    kind: library.lua
+    meta:
+      comment: Validates generic connection metadata updates and blocks credential patching.
+    source: file://update_policy.lua
+
+  # Discover upstream resources for a connection (Confluence spaces, Jira
+  # projects, GitHub repos, Gmail labels, etc.). Source-bound KB wizard calls
+  # this to populate its resource picker with the LIVE list — not just the
+  # subset already configured. Calls the per-instance contract's
+  # discover_resources method.
+  - name: discovery_envelope
+    kind: library.lua
+    meta:
+      comment: Response envelope of discover_resources — provider rows, picker items, and the provider's next_cursor.
+    source: file://discovery_envelope.lua
+
+  - name: discover_resources
+    kind: function.lua
+    source: file://discover_resources.lua
+    modules: [http, json]
+    imports:
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      discovery_envelope: kickside.connection.api:discovery_envelope
+    method: handler
+
+  - name: discover_resources.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: discover_resources
+    path: /connections/{id}/discover_resources

@@ -1,0 +1,63 @@
+version: '1.0'
+namespace: kickside.channel.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Channel
+    surface: kickside.channel
+    intent: module_access
+    includes:
+    - kickside.channel.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.channel:*
+    - kickside.channel.binding:*
+    - kickside.channel.events:*
+    - kickside.channel.migrations:*
+    - kickside.channel.persist:*
+    - kickside.channel.responder:*
+    - kickside.channel.responder.events:*
+    - kickside.channel.security:*
+    - kickside.channel.service:*
+    - kickside.channel.sink:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.channel:*
+    - kickside.channel.binding:*
+    - kickside.channel.events:*
+    - kickside.channel.migrations:*
+    - kickside.channel.persist:*
+    - kickside.channel.responder:*
+    - kickside.channel.responder.events:*
+    - kickside.channel.security:*
+    - kickside.channel.service:*
+    - kickside.channel.sink:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

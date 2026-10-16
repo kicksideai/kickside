@@ -1,0 +1,12 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: registration_ensure_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://registration_ensure_test.lua
+    method: run
+    modules: [sql, json, uuid]
+    imports:
+      test: wippy.test:test
+      writer: kickside.core.projections.persist:writer

@@ -1,0 +1,80 @@
+version: "1.0"
+namespace: kickside.automation.security
+
+# Module-owned access policy for the automation product endpoints. Declared here so the
+# grant travels with the slice; the role group that receives it is injected by the
+# user_security_scope requirement (the app wires app.security:user), keeping the
+# slice app-agnostic. Component ACL access is enforced behind the endpoints.
+entries:
+  - name: identity_command_evaluation
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      resources: '*'
+      actions: [security.actor.create, security.policy_group.get, security.scope.create]
+      effect: allow
+
+  - name: execution_scope
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: security.policy_group.get
+      effect: allow
+
+  - name: declaration_writer
+    kind: security.policy
+    meta:
+      comment: The automation declaration writer may create automation components and apply declarations for pending automation commands (design v4 §6.3; production grant is F-owned).
+    policy:
+      resources:
+        - kickside.component:declaration
+      actions:
+        - component.declaration.create
+        - component.declaration.apply
+      effect: allow
+
+  - name: round_worker_defer
+    kind: security.policy
+    meta:
+      comment: The drive slot worker resolves an automation's stored execution identity as its trusted deferred owner (IDENTITY-1).
+    policy:
+      resources:
+        - kickside.automation:round
+        - kickside.automation:round_authority
+      actions:
+        - kickside.execution.defer
+      effect: allow
+
+  - name: identity_writer_defer
+    kind: security.policy
+    meta:
+      comment: The identity writer resolves the operating operator's live frame as its trusted deferred owner (IDENTITY-1).
+    policy:
+      resources:
+        - kickside.automation:identity_writer
+      actions:
+        - kickside.execution.defer
+      effect: allow
+
+  - name: round_worker_actor
+    kind: security.policy
+    meta:
+      comment: The drive slot worker, the identity writer and the declaration writer construct the live actor of the principal they resolve.
+    policy:
+      resources:
+        - "*"
+      actions:
+        - security.actor.create
+      effect: allow
+
+  - name: declaration_deferred_resolution
+    kind: security.policy
+    meta:
+      comment: Permit the trusted writer to ask the single execution resolver about stored subjects.
+    policy:
+      resources:
+        - kickside.automation:declaration_writer_create
+        - kickside.automation:declaration_writer_create_selected
+        - kickside.automation:declaration_writer_apply
+      actions: kickside.execution.defer
+      effect: allow

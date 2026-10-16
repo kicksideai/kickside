@@ -1,0 +1,77 @@
+version: "1.0"
+namespace: kickside.self_reflection.traits
+
+# Optional agent surface. Installing this package contributes the public trait/tool
+# registry ids that the agents module discovers by meta.type.
+entries:
+  - name: self_reflection
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Self Reflection
+      public: true
+      icon: tabler:mirror
+      comment: Read-only app and registry introspection with search, namespace tree, relation tracing, and namespace comparison.
+      tags: [agents, platform, registry, introspection]
+    prompt: |
+      You can inspect this app's registry with **Self Reflection**.
+
+      Use it to answer read-only questions about what modules, namespaces, views,
+      capabilities, policies, endpoints, functions, and dependencies exist. Start
+      with `overview` or `tree` for broad questions, `search_registry` for text or
+      metadata search, `related` to trace what a registry entry references, and
+      `compare_namespaces` to compare two or more modules.
+
+      This capability only describes registry entries visible to your actor. It
+      does not grant permission to mutate resources or call unrelated tools.
+    tools:
+      - kickside.self_reflection.traits:self_reflection_tool
+
+  - name: self_reflection_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Self Reflection
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "enum": ["overview", "search_registry", "get_entry", "list_namespaces", "tree", "related", "compare_namespaces"] },
+            "q": { "type": "string", "description": "Optional substring search over id, kind, metadata, and data." },
+            "namespace": { "type": "string", "description": "Optional id prefix filter such as kickside.agents, kickside.ui, or app." },
+            "namespaces": { "type": "array", "items": { "type": "string" }, "description": "Namespaces to compare for compare_namespaces." },
+            "kind": { "type": "string", "description": "Optional registry kind filter such as registry.entry, function.lua, http.endpoint, or security.policy." },
+            "meta_type": { "type": "string", "description": "Optional meta.type filter such as agent.trait, tool, ui.nav_item, or view.component." },
+            "id": { "type": "string", "description": "Registry id required by get_entry and related." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "search_registry, list_namespaces, tree children, related, and compare_namespaces: records per page; default 25." },
+            "cursor": { "type": "string", "description": "The next_cursor of the previous page." },
+            "per_bucket_limit": { "type": "integer", "minimum": 1, "maximum": 20 }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Read-only registry introspection result. All results are limited to entries visible to the caller. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "overview": {"type": "object"},
+            "entries": {"type": "array", "items": {"type": "object"}},
+            "entry": {"type": "object"},
+            "namespaces": {"type": "array", "items": {"type": "object"}},
+            "tree": {"type": "object"},
+            "related": {"type": "object"},
+            "comparison": {"type": "array", "items": {"type": "object"}},
+            "count": {"type": "integer"},
+            "next_cursor": {"type": "string", "description": "search_registry, list_namespaces, and compare_namespaces: pass as cursor for the next page; tree and related carry theirs inside tree and related."}
+          },
+          "required": ["success"]
+        }
+      llm_alias: SelfReflection
+      llm_description: "Read-only registry/app introspection: search visible registry entries, inspect details, build namespace trees, trace related entries, and compare namespaces. get_entry returns the entry with its full meta and data. search_registry, list_namespaces, tree children, related entries, and namespace comparisons come in pages of 25 by default; pass next_cursor as cursor for the next page. Failures return no result and a typed tool error with a clear message."
+    source: file://self_reflection_tool.lua
+    modules: [registry, security]
+    imports:
+      reflection: kickside.self_reflection:reflection
+    method: handler

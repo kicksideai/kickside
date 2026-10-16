@@ -1,0 +1,598 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/users. Provides the host resources the module
+# and its kickside user persistence dep require (app:db, app:processes, app:api
+# router, app:gateway, env storage, a permissive actor scope) and boots
+# kickside/contract so the harness-owned users suites
+# drives user_repo / user_groups_repo directly. Harness-only; excluded from
+# publish via the namespace exclude in wippy.yaml.
+
+entries:
+  - name: uploads
+    kind: fs.directory
+    directory: ./.wippy/uploads
+    auto_init: true
+  - name: bot_identity_selection
+    kind: function.lua
+    source: file://suites/bot_identity_selection.lua
+    method: run
+    imports:
+      component: kickside.component:component
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+  - name: delegation_validation_caller
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: app.security:delegation_validator
+      effect: allow
+  - name: bot_execution_effects
+    kind: store.memory
+    lifecycle: {auto_start: true}
+  - name: bot_effect_probe
+    kind: function.lua
+    source: file://suites/bot_effect_probe.lua
+    method: run
+    modules: [security, store]
+    imports:
+      execution_identity: kickside.execution:execution_identity
+  - name: bot_capability_probe
+    kind: function.lua
+    source: file://suites/bot_capability_probe.lua
+    method: run
+    imports:
+      execution_identity: kickside.execution:execution_identity
+  - name: bot_process_probe
+    kind: function.lua
+    source: file://suites/bot_process_probe.lua
+    method: run
+    imports:
+      projection_worker: kickside.core.projections.persist:worker
+  - name: bot_process_effect
+    kind: process.lua
+    meta: {type: projection.worker}
+    source: file://suites/bot_effect_probe.lua
+    method: run
+    modules: [security, store]
+    imports:
+      execution_identity: kickside.execution:execution_identity
+  - name: bot_effect_access
+    kind: security.policy
+    groups: [app.security:run_as_membership_allow]
+    policy:
+      actions: [funcs.call, store.get, store.key.get, store.key.set]
+      resources: [app:bot_effect_probe, app:bot_execution_effects]
+      effect: allow
+
+  - name: readiness_caller
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: kickside.users.binding:credential_readiness
+      effect: allow
+
+  - name: admin
+    kind: security.policy
+    groups: [app.security:admin]
+    policy: {actions: access, resources: '*', effect: allow}
+  - name: projection_caller
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: kickside.security.binding:materialize_group_set
+      effect: allow
+  - name: dep.kickside.security
+    kind: ns.dependency
+    version: '*'
+    component: kickside/security
+    parameters:
+      - {name: kickside.security:sessions_invalidator, value: kickside.users:custom_session_revoker}
+      - {name: kickside.security:delegation_validator, value: app.security:delegation_validator}
+      - {name: api_router, value: app:api}
+      - {name: ui_server, value: app:gateway}
+      - {name: target_db, value: app:db}
+      - {name: process_host, value: app:processes}
+
+  - name: scope_unrestricted
+    kind: security.policy
+    groups: [app.security:scope_unrestricted]
+    policy: {actions: '*', resources: '*', effect: allow}
+  - name: scope_service_reserved
+    kind: security.policy
+    groups: [app.security:scope_service_reserved]
+    policy:
+      actions: '*'
+      resources: '*'
+      effect: allow
+      conditions:
+        - {field: action, operator: nin, value: [threads.output.publish]}
+  - name: scope_narrow_grant
+    kind: security.policy
+    groups: [app.security:scope_narrow_grant]
+    policy: {actions: access, resources: 'app:narrow.endpoint', effect: allow}
+  - name: run_as_membership_allow
+    kind: security.policy
+    groups: [app.security:run_as_membership_allow]
+    policy: {actions: access, resources: 'app:run_as_membership_extension', effect: allow}
+  - name: run_as_membership_baseline
+    kind: security.policy
+    groups: [app.security:run_as_membership_baseline]
+    policy: {actions: access, resources: 'app:run_as_membership_baseline_marker', effect: allow}
+  - name: run_as_membership_deny
+    kind: security.policy
+    groups: [app.security:run_as_membership_deny]
+    policy: {actions: access, resources: 'app:run_as_membership_extension', effect: deny}
+  - name: run_as_membership_acl_only
+    kind: security.policy
+    groups: [app:run_as_membership_acl_only]
+    policy: {actions: access, resources: 'app:run_as_membership_baseline_marker', effect: allow}
+  - name: scope_narrow_reserved
+    kind: security.policy
+    groups: [app.security:scope_narrow_grant]
+    policy:
+      actions: '*'
+      resources: '*'
+      effect: allow
+      conditions:
+        - {field: action, operator: nin, value: [threads.output.publish]}
+  - name: scope_reserved_grant
+    kind: security.policy
+    groups: [app.security:scope_reserved_grant]
+    policy: {actions: threads.output.publish, resources: 'app:producer_event', effect: allow}
+  - name: lifecycle_report_stub
+    kind: library.lua
+    meta:
+      comment: Harness-owned durable lifecycle reporter probe.
+    source: file://lifecycle_report_stub.lua
+
+  - name: migration_ledger_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_users
+      comment: Every registered app:db migration is recorded before tests start, and a missing ledger entry is detected.
+    source: file://migration_ledger_test.lua
+    modules: [sql]
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    imports:
+      test: wippy.test:test
+      migration_registry: wippy.migration:registry
+      migration_runner: wippy.migration:runner
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the users suite.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    addr: :19115
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api.public
+    kind: http.router
+    meta:
+      comment: Test public (no-auth) router for the kickside login endpoint.
+      server: gateway
+    prefix: /api/public
+
+  - name: api.views
+    kind: http.router
+    meta:
+      comment: Separate router for the generic Views API so its tag route cannot overlap component share routes.
+      server: gateway
+    prefix: /views
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope for the suite.
+    groups:
+      - users_test
+      - app.security:user
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  # Harness-only execution grant. This application is excluded from the Users
+  # package; current runtimes enforce module capabilities on test functions just
+  # like production functions, so the standalone suite declares its needs here.
+  - name: test_runtime
+    kind: security.policy
+    meta:
+      comment: Full capability policy scoped to the publish-excluded Users test harness.
+    policy:
+      resources: "*"
+      actions: "*"
+      effect: allow
+
+  - name: hidden_profile_fixture
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: test.profile
+    key: internal_state
+    value_type: string
+    default: hidden-default
+    description: Harness-only private profile value used to verify exact GET routing.
+    visibility: self
+    editable: true
+    visible: false
+
+  - name: object_profile_fixture
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: test.profile
+    key: object_state
+    value_type: json
+    default: {}
+    description: Harness-only JSON object used to verify empty-map shape preservation.
+    schema: { type: object }
+    visibility: self
+    editable: true
+    visible: false
+
+  - name: locked_profile_fixture
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: test.profile
+    key: locked_state
+    value_type: string
+    default: locked-default
+    description: Harness-only immutable field used to verify unset authorization.
+    visibility: self
+    editable: false
+    visible: false
+
+  - name: malformed_schema_fixture
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: test.profile
+    key: malformed_schema
+    value_type: string
+    default: ""
+    description: Harness-only malformed declaration used to verify fail-closed schema handling.
+    schema: { type: string, maxLength: "5" }
+    visibility: self
+    editable: true
+    visible: false
+
+  # The kickside/users package is mounted through the workspace replacement; its
+  # ns.requirement defaults (app:api, app:gateway) resolve against the harness
+  # resources above without a second dependency wiring layer.
+
+  - name: dep.kickside.users
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Users mounted as the single package root; this app harness supplies all host and transitive seams.
+    component: kickside/users
+    parameters:
+    - name: kickside.users:env_storage
+      value: app.env:store
+    - name: kickside.users:public_router
+      value: app:api.public
+    - name: kickside.users:api_router
+      value: app:api
+    - name: kickside.users:ui_server
+      value: app:gateway
+    - name: kickside.users:target_db
+      value: app:db
+    - name: kickside.users:user_security_scope
+      value: app.security:user
+    - name: kickside.users:admin_security_scope
+      value: app.security:admin
+    - name: kickside.users:login_role_resource
+      value: app.security:*
+    - name: kickside.settings:target_db
+      value: app:db
+    - name: kickside.settings:api_router
+      value: app:api
+    - name: kickside.settings:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app.security:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app.security:admin
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.projections:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.projections:env_storage
+      value: app:env_storage
+    - name: kickside.core.retention:user_security_scope
+      value: app.security:user
+    - name: kickside.core.threads:user_security_scope
+      value: app.security:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.views:api_router
+      value: app:api.views
+    - name: wippy.views:env_storage
+      value: app.env:store
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: kickside.users:public_router
+        value: app:api.public
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - name: kickside.users:target_db
+        value: app:db
+      - name: kickside.users:user_security_scope
+        value: app.security:user
+      - name: kickside.users:admin_security_scope
+        value: app.security:admin
+      - name: kickside.users:login_role_resource
+        value: app.security:*
+      - name: wippy.migration:app_db
+        value: app:db
+      - name: wippy.views:api_router
+        value: app:api.views
+      - name: wippy.views:env_storage
+        value: app.env:store
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app.security:user
+
+  - name: mcp_resolver_caller
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.users.directory:directory_groups
+        - kickside.users.binding:scope_resolver_func
+      actions: 'funcs.call'
+      effect: allow
+
+  - name: runtime_env_host
+    kind: security.policy
+    policy:
+      resources: [app:runtime_env_probe, app:db]
+      actions: [funcs.call, db.get]
+      effect: allow
+
+  - name: runtime_env_probe
+    kind: function.lua
+    source: file://runtime_env_probe.lua
+    method: run
+    modules: [env, security]
+    imports:
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: group_members_caller
+    kind: security.policy
+    policy:
+      resources: 'kickside.users.binding:group_members_func'
+      actions: 'funcs.call'
+      effect: allow
+
+  - name: scope_subject_lookup
+    kind: security.policy
+    groups: [app.security:scope_sales]
+    policy:
+      actions: funcs.call
+      resources: kickside.users.binding:subject_lookup
+      effect: allow
+
+  - name: scope_sales
+    kind: security.policy
+    groups: [app.security:scope_sales]
+    policy:
+      actions: access
+      resources: [app:crm.endpoint, app:shared.endpoint]
+      effect: allow
+
+  - name: scope_support
+    kind: security.policy
+    groups: [app.security:scope_support]
+    policy:
+      actions: access
+      resources: app:journal.endpoint
+      effect: allow
+
+  - name: scope_restricted
+    kind: security.policy
+    groups: [app.security:scope_restricted]
+    policy:
+      actions: access
+      resources: app:shared.endpoint
+      effect: deny
+
+  - name: native_delegation_allow
+    kind: security.policy
+    groups: [app.security:delegation_authorizer]
+    policy:
+      actions: security.actor.delegate
+      resources: native-delegation-resource
+      effect: allow
+
+  - name: native_delegation_deny
+    kind: security.policy
+    groups: [app.security:delegation_authorizer]
+    policy:
+      actions: security.actor.delegate
+      resources: native-delegation-denied-resource
+      effect: deny
+
+  - name: grant_migration_db
+    kind: db.sql.sqlite
+    file: ":memory:"
+    foreign_keys: true
+
+  - name: dep.kickside.automation
+    kind: ns.dependency
+    component: kickside/automation
+    version: '*'
+    parameters:
+      - {name: kickside.automation:target_db, value: app:db}
+      - {name: kickside.automation:api_router, value: app:api}
+      - {name: kickside.automation:ui_server, value: app:gateway}
+      - {name: wippy.llm:process_host, value: app:processes}
+      - {name: wippy.llm:env_storage, value: app:env_storage}
+      - {name: wippy.session:api_router, value: app:api}
+      - {name: wippy.session:database_resource, value: app:db}
+      - {name: wippy.session:default_host, value: app:processes}
+      - {name: wippy.session:env_storage, value: app:env_storage}
+      - {name: wippy.relay:user_security_scope, value: app.security:user}
+      - {name: wippy.relay:env_storage, value: app:env_storage}
+      - {name: wippy.relay:application_host, value: app:processes}
+
+  - name: prepared_bot_task
+    kind: contract.binding
+    meta: {type: kickside.automation, inputs: {type: object}, title: Prepared Task, test_fixture: true}
+    contracts:
+      - contract: kickside.automation:prepared_installable
+        methods: {prepare_install: app:bot_install_prepare}
+
+  - name: bot_install_prepare
+    kind: function.lua
+    meta: {test_fixture: true}
+    source: file://suites/bot_install_probe.lua
+    method: prepare
+    imports:
+      automations: kickside.automation:automation
+
+  - name: bot_install_probe
+    kind: function.lua
+    meta: {test_fixture: true}
+    source: file://suites/bot_install_probe.lua
+    method: run
+    imports:
+      automations: kickside.automation:automation
+
+  - name: dep.kickside.mcp
+    kind: ns.dependency
+    component: kickside/mcp
+    version: '*'
+    parameters:
+      - {name: kickside.mcp:target_db, value: app:db}
+      - {name: kickside.mcp:api_router, value: app:api}
+      - {name: kickside.mcp:credential_eligibility, value: 'kickside.users.binding:credential_eligibility'}
+  - name: dep.kickside.identity
+    kind: ns.dependency
+    component: kickside/identity
+    version: '*'
+    parameters:
+      - {name: kickside.identity:target_db, value: app:db}
+      - {name: kickside.identity:api_router, value: app:api}
+      - {name: kickside.identity:credential_eligibility, value: 'kickside.users.binding:credential_eligibility'}
+      - {name: kickside.mcp:ui_server, value: app:gateway}
+      - {name: kickside.identity:ui_server, value: app:gateway}
+      - {name: kickside.agents:ui_server, value: app:gateway}
+      - {name: kickside.agents:api_router, value: app:api}
+      - {name: kickside.channel:ui_server, value: app:gateway}
+      - {name: kickside.channel:api_router, value: app:api}
+      - {name: kickside.channel:target_db, value: app:db}
+      - {name: kickside.connection:ui_server, value: app:gateway}
+      - {name: kickside.connection:api_router, value: app:api}
+      - {name: kickside.uploads:ui_server, value: app:gateway}
+      - {name: kickside.uploads:api_router, value: app:api}
+      - {name: kickside.uploads:env_storage, value: app:env_storage}
+      - {name: kickside.mcp:public_router, value: app:api.public}
+      - {name: kickside.channel:process_host, value: app:processes}
+      - {name: kickside.uploads:database_resource, value: app:db}
+      - {name: kickside.uploads:storage_id, value: app:uploads}
+
+  - name: bot_identity_command_probe
+    kind: function.lua
+    source: file://suites/bot_install_probe.lua
+    method: select_identity
+    imports:
+      automations: kickside.automation:automation
+
+  - name: resolver_caller_probe
+    kind: function.lua
+    source: file://resolver_caller_probe.lua
+    method: run
+    modules: [funcs, security]

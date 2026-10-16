@@ -1,0 +1,39 @@
+version: "1.0"
+namespace: kickside.users.profile
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: profile_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_users
+      group: KickSide Users / Profile
+      comment: get/set/unset round-trip, default fallback, type validation, per-user isolation, public vs self cross-user reads — over the contract.
+    source: file://profile_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [contract, env, json, security, sql, time]
+    imports:
+      test: wippy.test:test
+      profile_writer: kickside.users.persist:profile_writer
+      get_profile: kickside.users.api:get_profile
+
+  - name: db_config_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_users
+      group: KickSide Users / Profile
+      comment: Verifies the persist layer resolves its DB id via the users target_db requirement, not a literal.
+    source: file://db_config_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      profile_types: kickside.users.profile:profile_types

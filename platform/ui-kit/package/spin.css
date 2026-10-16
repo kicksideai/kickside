@@ -1,0 +1,28 @@
+/* The spinner rotation, once.
+ *
+ * Every module that shows a loading state had grown its own copy: 19 `.spin`
+ * rules across the platform, and `@keyframes` under 11 different names
+ * (`kx-spin`, `av-spin`, `km-spin`, `cp-spin`, ...) because each module
+ * namespaced its own to avoid colliding inside its shadow root. The rules were
+ * the same animation; only the name and, in a few cases, the duration differed
+ * (1s, 0.9s, 0.8s). 1s is the majority and the one used here.
+ *
+ * The reduced-motion clause travels with it deliberately. Several modules had
+ * the animation without it, which is the kind of gap that appears when the same
+ * rule is written eleven times instead of imported once.
+ */
+.spin {
+  animation: kx-spin 1s linear infinite;
+}
+
+@keyframes kx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

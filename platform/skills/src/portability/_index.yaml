@@ -1,0 +1,49 @@
+version: "1.0"
+namespace: kickside.skills.portability
+
+# Skill's implementation of kickside.contract:portable (+ deletable). A skill's
+# data is its version history (thread events folded into the projection body) and
+# its file bytes (the skill's bundle). export streams the version records + file
+# bytes; import_into replays them into the new component (thread + projection +
+# bundle + version events); delete tears down the bundle + history thread.
+# The generic coordinator handles the component shell.
+
+entries:
+  - name: export_func
+    kind: function.lua
+    meta:
+      comment: skill portable.export — stream the version records to data/versions.jsonl and each file's raw bytes to its own data/files/<sha256> part file.
+    source: file://skill_export.lua
+    modules: [fs, ctx]
+    imports:
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+      portable_io: kickside.component.portability:portable_io
+    method: handler
+
+  - name: import_into_func
+    kind: function.lua
+    security:
+      policies:
+        - kickside.skills.security:import_output_publish
+    meta:
+      comment: skill portable.import_into — replay data/versions.jsonl into the new skill (thread + projection + bundle + version events), storing each file's bytes from its part file.
+    source: file://skill_import.lua
+    modules: [fs, ctx, security, contract, hash]
+    imports:
+      types: kickside.skills:types
+      version_append: kickside.skills:version_append
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+      portable_io: kickside.component.portability:portable_io
+    method: handler
+
+  - name: delete_func
+    kind: function.lua
+    meta:
+      comment: skill deletable — remove the skill's bundle for the component in context; the component cascade purges its history thread.
+    source: file://skill_delete.lua
+    modules: [ctx, funcs, security]
+    imports:
+      bundle_store: kickside.skills.bundle:store
+    method: handle

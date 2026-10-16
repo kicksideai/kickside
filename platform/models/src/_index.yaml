@@ -1,0 +1,341 @@
+version: "1.0"
+namespace: kickside.models
+
+# The LLM model catalog + discovery API the app resolves models through.
+# Static defaults live in registry entries; runtime provider profiles and model
+# overlays live in DB/cache so users can add OpenAI-compatible endpoints and
+# discovered models without mutating registry.
+# The endpoints attach to a host-wired router (api_router) that enforces auth +
+# endpoint_firewall.
+
+entries:
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Models
+      comment: LLM model catalog, provider profiles, and discovery. Registry ships defaults; DB/cache stores admin-added provider profiles and model overlays.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing model provider profiles and overlays.
+      description: SQL database resource backing model provider profiles and overlays.
+    targets:
+      - entry: kickside.models.migrations:01_models_schema
+        path: .meta.target_db
+      - entry: kickside.models:db_config
+        path: .meta.db_id
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured models DB id (rewritten by the target_db requirement).
+
+  # The host wires api_router via ns.dependency; its targets inject the resolved
+  # router into each endpoint's .meta.router.
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the model-discovery endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the model-discovery endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.models.api:list_models.endpoint
+        path: .meta.router
+      - entry: kickside.models.api:list_model_classes.endpoint
+        path: .meta.router
+      - entry: kickside.models.api:models_by_name.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:admin.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:create_profile.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:update_profile.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:delete_profile.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:discover_profile.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:test_profile.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:test_card.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:upsert_card.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:delete_card.endpoint
+        path: .meta.router
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the models admin UI bundle is served from.
+      description: HTTP server the models admin UI bundle is served from.
+    targets:
+      - entry: kickside.models:ui_static
+        path: .meta.server
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host for model-owned background services.
+      description: Process host for model-owned background services.
+    targets:
+      - entry: kickside.models.providers.google_vertex:vertex_token_supervisor
+        path: .meta.default_host
+      - entry: kickside.models.providers.google_vertex:vertex_token_supervisor.service
+        path: .host
+
+  # ─── Runtime cache and resolver ──────────────────────────────────────
+
+  - name: cache
+    kind: store.memory
+    meta:
+      comment: In-memory model provider/profile snapshot. Warmed at boot and updated write-through.
+    cleanup_interval: 30m
+    lifecycle:
+      auto_start: true
+    max_size: 1000
+
+  - name: models_types
+    kind: library.lua
+    source: file://types.lua
+    modules: [registry]
+
+  - name: model_resolver
+    kind: contract.binding
+    meta:
+      comment: App-level model resolver. Resolves DB-backed provider profiles/model overlays before registry fallback.
+    contracts:
+      - contract: wippy.llm:model_resolver
+        default: true
+        methods:
+          resolve: kickside.models.catalog:model_resolver_func
+
+  - name: openai_compat_plain.driver
+    kind: contract.binding
+    meta:
+      comment: Plain-message OpenAI-compatible driver wrapper owned by kickside/models.
+      title: OpenAI-Compatible Plain Chat Driver
+      tags: [openai-compat, plain-chat, llm, driver]
+    contracts:
+      - contract: wippy.llm:generator
+        methods:
+          generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+      - contract: wippy.llm:embedder
+        methods:
+          embed: wippy.llm.openai_compat:embed
+      - contract: wippy.llm:provider
+        methods:
+          status: wippy.llm.openai_compat:status
+      # Reuse native structured_output (response_format json-schema). The plain
+      # variant only flattens message CONTENT; structured output is response-side,
+      # so the native impl works — and KB ask synthesis (llm.structured_output)
+      # needs it, otherwise it calls a non-existent method on this provider.
+      - contract: wippy.llm:structured_output
+        methods:
+          structured_output: wippy.llm.openai_compat:structured_output
+    optional_context:
+      api_key:
+        default_env: OPENAI_COMPAT_API_KEY
+        description: API key for the compatible endpoint.
+        type: string
+      base_url:
+        default_env: OPENAI_COMPAT_BASE_URL
+        default_value: https://api.openai.com/v1
+        description: Base URL of the OpenAI-compatible endpoint.
+        type: string
+      organization:
+        default_env: OPENAI_COMPAT_ORGANIZATION
+        description: Organization ID.
+        type: string
+      timeout:
+        default_env: OPENAI_COMPAT_TIMEOUT
+        default_value: 600
+        description: Request timeout in seconds.
+        type: integer
+      retry:
+        description: Provider-level retry policy for transient transport/provider failures.
+        type: object
+
+  - name: openai_compat_plain.provider
+    kind: registry.entry
+    meta:
+      type: llm.provider
+      title: OpenAI Compatible (plain chat)
+      comment: OpenAI-compatible Chat Completions provider for endpoints that reject structured message content.
+      tags: [llm, provider, openai-compat, chat-completions, plain-chat]
+    depends_on:
+      - wippy.llm.openai_compat:api_key
+      - wippy.llm.openai_compat:base_url
+      - wippy.llm.openai_compat:organization
+      - wippy.llm.openai_compat:timeout
+    driver:
+      id: kickside.models:openai_compat_plain.driver
+      options:
+        api_key_env: wippy.llm.openai_compat:api_key
+        base_url_env: wippy.llm.openai_compat:base_url
+        organization_env: wippy.llm.openai_compat:organization
+        timeout_env: wippy.llm.openai_compat:timeout
+
+  - name: ui_fs
+    kind: fs.directory
+    meta: { comment: Built kickside-models web component bundle. }
+    directory: ./static
+    auto_init: true
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-models
+    fs: kickside.models:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .map: application/json
+
+  - name: models_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: models_view
+      title: Models
+      announced: true
+      tag_name: kickside-models
+      base_path: kickside-models
+      entry_point: index.js
+
+  - name: tab.models
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Model providers and catalog.
+    key: models
+    label: Models
+    icon: tabler:brain
+    order: 60
+    render: component
+    component_tag: kickside-models
+    access: kickside.models.api.admin:admin.endpoint
+
+  # Onboarding-mode model setup: connect a provider and assign default models per
+  # class. Same bundle (entry_point index.js) as the full Models surface; a splash
+  # step mounts it by tag and listens for its done/back events.
+
+  - name: onboard_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: onboard_view
+      title: Connect a model
+      announced: true
+      tag_name: kickside-onboard-models
+      base_path: kickside-models
+      entry_point: onboard.js
+
+  # Provider-profile editors are declarative WCs. The main Models settings page
+  # discovers the editor tag for the selected adapter and lets the provider WC
+  # own validation/field semantics. Generic fallback exists in the same bundle.
+
+  - name: provider_editor.openai_compat
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for OpenAI-compatible endpoints.
+    provider_id: wippy.llm.openai_compat:provider
+    tag_name: kickside-model-provider-openai-compatible
+    base_path: kickside-models
+    entry_point: index.js
+
+  - name: provider_editor.openai_compat_plain
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for OpenAI-compatible plain-chat endpoints.
+    provider_id: kickside.models:openai_compat_plain.provider
+    tag_name: kickside-model-provider-openai-compatible
+    base_path: kickside-models
+    entry_point: index.js
+
+  - name: provider_editor.openai
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for OpenAI's native provider.
+    provider_id: wippy.llm.openai:provider
+    tag_name: kickside-model-provider-openai
+    base_path: kickside-models
+    entry_point: index.js
+
+  - name: provider_editor.anthropic
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for Anthropic's Claude provider.
+    provider_id: wippy.llm.claude:provider
+    tag_name: kickside-model-provider-anthropic
+    base_path: kickside-models
+    entry_point: index.js
+
+  - name: provider_editor.google_generative_ai
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for Google Gemini API provider.
+    provider_id: wippy.llm.google.generative_ai:provider
+    tag_name: kickside-model-provider-google-generative-ai
+    base_path: kickside-models
+    entry_point: index.js
+
+  - name: provider_editor.google_vertex
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for Google Vertex AI provider.
+    provider_id: wippy.llm.google.vertex:provider
+    tag_name: kickside-model-provider-google-vertex
+    base_path: kickside-models
+    entry_point: index.js
+    validate_func: kickside.models.providers.google_vertex:google_vertex.validate
+    on_change_func: kickside.models.providers.google_vertex:google_vertex.on_change
+
+  - name: provider_editor.bedrock
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_editor
+      comment: Profile editor for AWS Bedrock provider.
+    provider_id: wippy.llm.bedrock:provider
+    tag_name: kickside-model-provider-bedrock
+    base_path: kickside-models
+    entry_point: index.js
+
+  - name: preset.openai_compatible
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Generic OpenAI-compatible endpoint.
+    key: openai-compatible
+    title: OpenAI Compatible
+    description: Ollama, vLLM, llama.cpp, LM Studio, Together, Groq, and other OpenAI-compatible APIs.
+    icon: tabler:plug
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 10
+    config:
+      base_url: http://localhost:11434/v1
+      timeout: 600
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

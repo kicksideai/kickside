@@ -1,0 +1,43 @@
+organization: kickside
+module: webhooks
+type: plugin
+description: KickSide webhooks — user-minted, secret-secured, schema-validated public webhook endpoints. Each webhook is a thread-backed component (class kickside.webhooks) that acts as a data-flow trigger source; the public endpoint verifies the secret, validates the body against the webhook's declared schema, and appends it as a thread event the poller drains.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - webhooks
+  - ingress
+  - automation
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+embed:
+  - kickside.webhooks:ui_fs
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "ui/node_modules:**"
+  - "ui/coverage:**"
+  - "ui/node_modules/**"
+  - "ui/coverage/**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "ui/dist/**"
+  - "static/*.map"
+  - "static/**/*.map"
+  - "test/stubs/**"
+  - "test/stubs:**"
+  - "src/**/stubs/**"
+  - "src/**/*.spec.ts"
+  - "src/**/*.spec.tsx"
+  - "ui/src/**/*.spec.ts"
+  - "ui/src/**/*.spec.tsx"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

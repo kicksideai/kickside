@@ -1,0 +1,6 @@
+organization: kickside
+module: app-composition-test
+description: Standalone registry harness for the KickSide application-owned onboarding profiles.
+directories:
+  modules: ../../.wippy
+  src: .

@@ -1,0 +1,513 @@
+version: "1.0"
+namespace: kickside.agents
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Agents
+      comment: User agents — agent/tool registries, user-created agent components, the agent resolver, runner, and capability library, with a user-facing CRUD API. Permission-agnostic; all auth is enforced by the host router and the component service.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # The consuming host wires this via ns.dependency. The module owns no tables;
+  # user-created agents persist through kickside.component. Its HTTP endpoints
+  # attach to api_router, which must enforce auth + endpoint_firewall — the
+  # handlers do no authentication of their own.
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the user-agent + discovery endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the user-agent + discovery endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.agents.api:list_user_agents.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:get_user_agent.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:create_user_agent.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:update_user_agent.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:delete_user_agent.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:list_agents.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:agents_by_name.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:list_traits.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:list_namespaces.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:list_tools.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:list_memory_options.endpoint
+        path: .meta.router
+
+  # ─── Agents page UI (self-served web component) ──────────────────────
+  # The page web component renders the agent list + create/edit/delete over the
+  # user-agents HTTP API; it ships and serves its own built bundle.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the agents UI static mount attaches to.
+      description: HTTP server the agents UI static mount attaches to.
+    targets:
+      - entry: kickside.agents:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-agents web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-agents
+    fs: kickside.agents:ui_fs
+    options:
+      # Stable file names; revalidate so a rebuilt bundle is picked up on refresh.
+      cache: "no-cache"
+
+  - name: agents_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: agents_view
+      title: Agents
+      announced: true
+      tag_name: kickside-agents
+      base_path: kickside-agents
+      entry_point: index.js
+
+  # Canonical agent picker, owned by this module. Any surface (agent form,
+  # recurrent automation, knowledge query-agent) mounts <wc-agent-picker> by tag
+  # instead of re-wiring the agents endpoint and field mapping. Mirrors
+  # wc-multiselect's contract: `selected` in, `change` with detail.selected out.
+  - name: agent_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: agent_picker_view
+      title: Agent Picker
+      announced: true
+      auto_register: true
+      tag_name: wc-agent-picker
+      base_path: kickside-agents
+      entry_point: agent_picker.js
+      icon: tabler:robot
+    props:
+      type: object
+      properties:
+        selected:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Selected agent refs (canonical names).
+        multi:
+          type: boolean
+          default: true
+          description: Allow selecting more than one agent.
+        placeholder:
+          type: string
+          description: Placeholder for the search box.
+        value:
+          type: string
+          default: ""
+          description: "Config-host convention (WcMount): the current config as a JSON object string whose agent_id names the selection, or a bare agent ref. Presence switches the picker to single-select and adds agent_id to the change detail."
+
+  - name: agent_block_config_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: agent_block_config_view
+      title: Agent Block Configuration
+      announced: true
+      auto_register: true
+      tag_name: kickside-agent-block-config
+      base_path: kickside-agents
+      entry_point: agent_block_config.js
+      icon: tabler:robot
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          description: Canonical Agent Block instance configuration.
+
+  - name: block.agent
+    kind: registry.entry
+    meta:
+      type: kickside.block
+      public: true
+      title: Agent
+      comment: Run either one exact installed Agent or inline instructions with standard Agent controls.
+    data:
+      block:
+        api_version: kickside.block/v1
+        input:
+          type: object
+          additionalProperties: true
+        config:
+          type: object
+          additionalProperties: false
+          properties:
+            agent_id: { type: string, title: Existing agent }
+            instructions: { type: string, title: Instructions }
+            name: { type: string, title: Name }
+            model: { type: string, title: Model }
+            tools:
+              type: array
+              title: Tools
+              items: { type: string }
+            exit_schema: { type: object, title: Output shape, additionalProperties: true }
+            tool_calling: { type: string, title: Tool calling, enum: [auto, any, none] }
+            context: { type: object, title: Context, additionalProperties: true }
+            max_tokens: { type: integer, title: Response token budget, minimum: 1 }
+            exit_func_id: { type: string, title: Exit check }
+            max_iterations: { type: integer, title: Turn limit, minimum: 1 }
+        output:
+          type: object
+          additionalProperties: true
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+          additionalProperties: false
+        ports:
+          - { id: result, label: Result, direction: out }
+          - { id: failed, label: Failed, direction: out }
+        presentation:
+          category: Agents
+          icon: tabler:robot
+          hue: violet
+          blurb: Run an existing Agent or write focused instructions for this step.
+          config_wc: kickside-agent-block-config
+        execution:
+          kind: agent
+          mode: config
+
+  # The shared agent editor (AgentForm) as a custom element, mounted by both the
+  # Agents page and the workspace user_agent kind for create and manage. parent-id
+  # selects create mode; an agent id (component-id / entry-id, or the route channel)
+  # selects edit mode. Emits saved / created / close ({ id }).
+  - name: agent_edit_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: agent_edit_view
+      title: Agent Editor
+      announced: true
+      auto_register: true
+      tag_name: wc-agent-edit
+      base_path: kickside-agents
+      entry_point: agent_edit.js
+      icon: tabler:robot
+    props:
+      type: object
+      properties:
+        parent-id:
+          type: string
+          description: Workspace parent to create the new agent under (create mode).
+        component-id:
+          type: string
+          description: Agent component id to edit (edit mode).
+        entry-id:
+          type: string
+          description: Agent component id to edit (edit mode, alias of component-id).
+        route:
+          type: string
+          description: Host route channel; an agent id here selects edit mode when no component-id/entry-id is set and no parent-id is given.
+        mode:
+          type: string
+          description: Optional host hint.
+
+  # Config editor for the master capabilities (Capability Manager, Agent Roster): edits their
+  # namespace allow-list. The agent editor mounts it by tag when one of those traits
+  # is enabled; it reports the chosen namespaces via config-changed -> trait_contexts.
+  - name: master_namespace_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: master_namespace_picker_view
+      title: Master Namespace Picker
+      announced: true
+      auto_register: false
+      tag_name: kickside-master-namespace-picker
+      base_path: kickside-agents
+      entry_point: master_picker.js
+      icon: tabler:hierarchy
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          description: "Capability context: { namespaces: string[], trait_ids: string[], inject_trait_catalog: boolean }."
+
+  # Module-owned nav entry: installing this module adds the Agents surface to the
+  # nav; uninstalling removes it. The host bundle renders route_name "agents" by
+  # mounting the kickside-agents web component by tag.
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /agents
+      route_name: agents
+      title: Agents
+      comment: Configured assistants — a model, a prompt, and the tools they use.
+      icon: tabler:robot
+      order: 30
+      render: component
+      component_tag: kickside-agents
+
+  - name: types
+    kind: library.lua
+    source: file://types.lua
+
+  - name: agent_ref
+    kind: library.lua
+    meta:
+      comment: Canonical helpers for user-agent references (user_agent:<component_id>).
+    source: file://agent_ref.lua
+
+  - name: checkpoint_policy
+    kind: library.lua
+    meta:
+      comment: Derives per-agent checkpoint limits from model cards.
+    source: file://checkpoint_policy.lua
+    modules: [env, registry]
+    imports:
+      llm: wippy.llm:llm
+
+  - name: agent_resolver_func
+    kind: function.lua
+    source: file://agent_resolver.lua
+    modules:
+      - contract
+      - registry
+      - logger
+      - security
+    imports:
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      agent_registry: wippy.agent.discovery:registry
+      tool_resolver: wippy.agent.discovery:tools
+      curator_specs: kickside.agents.traits:curator_specs
+      agent_ref: kickside.agents:agent_ref
+      capability_context: kickside.agents.traits:capability_context
+      checkpoint_policy: kickside.agents:checkpoint_policy
+    method: resolve
+
+  - name: agents
+    kind: contract.definition
+    meta:
+      title: Agent Registry
+      comment: Find/create/delete agents and manage their KB/tool bindings.
+    methods:
+      - name: create
+        description: Create agent.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "name": { "type": "string" }, "description": { "type": "string" }, "icon": { "type": "string" }, "model": { "type": "string" }, "prompt": { "type": "string" }, "temperature": { "type": "number" }, "max_tokens": { "type": "number" }, "thinking_effort": { "type": "string" }, "traits": { "type": "array", "items": { "type": "string" } }, "trait_contexts": { "type": "object" }, "trait_agent_options": { "type": "object" }, "agent_options": { "type": "object" }, "tools": { "type": "array", "items": { "type": "string" } }, "delegates": { "type": "array", "items": { "type": "string" } }, "memory_target_id": { "type": "string" }, "memory_provider_id": { "type": "string" } }, "required": ["name"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" }, "rollback": { "type": "object" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: find
+        description: Lookup by component_id or name.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": ["object", "null"], "properties": { "component_id": { "type": "string" }, "impl_id": { "type": "string" }, "meta": { "type": "object" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: upsert
+        description: Idempotent. Natural key (visible agent name).
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "name": { "type": "string" }, "description": { "type": "string" }, "icon": { "type": "string" }, "model": { "type": "string" }, "prompt": { "type": "string" }, "temperature": { "type": "number" }, "max_tokens": { "type": "number" }, "thinking_effort": { "type": "string" }, "traits": { "type": "array", "items": { "type": "string" } }, "trait_contexts": { "type": "object" }, "trait_agent_options": { "type": "object" }, "agent_options": { "type": "object" }, "tools": { "type": "array", "items": { "type": "string" } }, "delegates": { "type": "array", "items": { "type": "string" } }, "memory_target_id": { "type": "string" }, "memory_provider_id": { "type": "string" } }, "required": ["name"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "agent": { "type": "object" }, "created": { "type": "boolean" }, "rollback": { "type": ["object", "null"] }, "error": { "type": "string" } }, "required": ["agent", "created"] }
+            format: application/schema+json
+      - name: update
+        description: Patch agent metadata and private runtime config.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" }, "description": { "type": "string" }, "icon": { "type": "string" }, "model": { "type": "string" }, "prompt": { "type": "string" }, "temperature": { "type": "number" }, "max_tokens": { "type": "number" }, "thinking_effort": { "type": "string" }, "traits": { "type": "array", "items": { "type": "string" } }, "trait_contexts": { "type": "object" }, "trait_agent_options": { "type": "object" }, "agent_options": { "type": "object" }, "tools": { "type": "array", "items": { "type": "string" } }, "delegates": { "type": "array", "items": { "type": "string" } }, "memory_target_id": { "type": "string" }, "memory_provider_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: delete
+        description: Remove agent.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: list
+        description: One offset page of visible agents, newest first; filter by text, page with pagination { limit, offset } and follow has_more.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "text": { "type": "string" }, "pagination": { "type": "object", "properties": { "limit": { "type": "integer", "minimum": 1, "maximum": 100 }, "offset": { "type": "integer", "minimum": 0 } } } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "agents": { "type": "array", "items": { "type": "object" } }, "total_count": { "type": "integer" }, "has_more": { "type": "boolean" } }, "required": ["agents", "total_count", "has_more"] }
+            format: application/schema+json
+      - name: attach_kb
+        description: Bind the agent's memory to a KB (memory_target_id); the memory provider recalls from it each turn. The Knowledge Base Reader trait's searchable KBs are set through trait_contexts, not here.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "kb_id": { "type": "string" } }, "required": ["component_id", "kb_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "kb_id": { "type": "string" }, "attached": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: detach_kb
+        description: Unbind the agent's memory KB; kb_id must be the bound memory KB.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "kb_id": { "type": "string" } }, "required": ["component_id", "kb_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "detached": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: attach_tool
+        description: Grant agent a tool reference + policy.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "tool_id": { "type": "string" }, "policy": { "type": "object" } }, "required": ["component_id", "tool_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "attached": { "type": "boolean" }, "deduped": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: detach_tool
+        description: Reverse attach_tool.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "tool_id": { "type": "string" } }, "required": ["component_id", "tool_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "detached": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+
+  # ─── Tool registry ────────────────────────────────────────────────────
+  - name: tools
+    kind: contract.definition
+    meta:
+      title: Tool Registry
+      comment: Read-only discovery facade for source-owned agent tools.
+    methods:
+      - name: find
+        description: Lookup.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "scope": { "type": "object" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "tool": { "type": "object" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: list
+        description: List by scope.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "scope": { "type": "object" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "tools": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+
+  - name: user_agent
+    kind: contract.binding
+    meta:
+      title: User Agent
+      delivery: at_most_once
+      input_shape: content
+      comment: User-created AI agent
+      icon: tabler:robot
+      # Workspace kind: the shared agent editor (wc-agent-edit) is both the create
+      # popup and the manage page -- one editor creates and manages the agent.
+      component:
+        create: { view: kickside.agents:agent_edit_view }
+        manage: { view: kickside.agents:agent_edit_view, deep_link: true }
+      class:
+        - agent
+      group: Agents
+      # Shell-only portability: the agent's whole config travels as context. Traits,
+      # tools and model are global registry ids (installed on both sides), so they
+      # carry verbatim. Component references (memory_target_id) travel as re-bindable slots,
+      # never raw ids; delegates / memory_provider_id are dropped (re-bind after import).
+      portable_schema:
+        context:
+          - prompt
+          - model
+          - temperature
+          - max_tokens
+          - thinking_effort
+          - traits
+          - trait_contexts
+          - agent_options
+          - tools
+        refs:
+          - key: memory_target_id
+            path: /memory_target_id
+            contract: kickside.contract:embeddable
+            required: false
+        meta:
+          - model
+          - description
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.agents.binding:agent_status_func
+      - contract: kickside.contract:deletable
+        methods:
+          delete: kickside.agents.binding:delete_agent_func
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.agents.invoke:agent_invoke_write
+
+  - name: invoke_sink
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      recurring_target: agent
+      title: Run Agent
+      comment: Run the selected agent on the delivered prompt.
+      icon: tabler:robot
+    binding: kickside.agents:user_agent
+    input_schema: '{ "type": "object", "required": ["content"], "properties": { "content": { "type": "string" }, "content_type": { "type": "string" } } }'
+    operations: { upsert: {} }
+    config_schema:
+      agent_id: { type: string, title: Agent, required: true, picker: wc-agent-picker }
+
+  - name: agent_resolver
+    kind: contract.binding
+    contracts:
+      - contract: wippy.agent:resolver
+        default: true
+        methods:
+          resolve: kickside.agents:agent_resolver_func

@@ -1,0 +1,14 @@
+version: "1.0"
+namespace: kickside.workflows.security
+
+entries:
+  - name: completion_public_meta
+    kind: security.policy
+    policy:
+      resources: "*"
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.impl_id
+          operator: eq
+          value: kickside.workflows:workflow_kind

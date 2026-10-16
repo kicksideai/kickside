@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`EdgeIntentPopover request identity > is a named non-modal region, focuses its PrimeVue input, and dismisses on Escape > editing connection intent 1`] = `
+"<div class="wf-intent" role="region" aria-label="Describe this connection"><button class="p-button p-component p-button-secondary p-button-rounded p-button-text wf-intent-x" data-p="rounded text" type="button" aria-label="Dismiss" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Dismiss" pc0="" data-pc-section="root"><i data-icon="tabler:x" aria-hidden="true"></i></button><!-- Ask -->
+  <div class="wf-intent-hd"><i data-icon="tabler:wand" aria-hidden="true"></i><span>What should flow here?</span></div>
+  <p class="wf-intent-needs">Needs <strong>Query</strong>.</p><input type="text" class="p-inputtext p-component wf-intent-input" data-p="" placeholder="e.g. use the first search result’s link" aria-label="What should flow across this connection" data-pc-name="inputtext" pc1="" data-pc-section="root">
+  <p class="wf-intent-help">Describe what should happen — mapping, branching and failure routes are previewed before anything changes.</p>
+  <div class="wf-intent-foot"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc2="" data-pc-section="root">Dismiss</button><button class="p-button p-component wf-intent-submit" data-p="" type="button" disabled="" data-pc-name="button" data-p-disabled="true" pc3="" data-pc-section="root"><i data-icon="tabler:sparkles" aria-hidden="true"></i><span>Draft</span></button></div>
+</div>"
+`;
+
+exports[`EdgeIntentPopover request identity > previews a canonical Condition before emitting the graph action > validated condition preview 1`] = `
+"<div class="wf-intent" role="region" aria-label="Describe this connection"><button class="p-button p-component p-button-secondary p-button-rounded p-button-text wf-intent-x" data-p="rounded text" type="button" aria-label="Dismiss" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Dismiss" pc0="" data-pc-section="root"><i data-icon="tabler:x" aria-hidden="true"></i></button><!-- Ask -->
+  <!-- Preview -->
+  <div class="wf-intent-hd"><i data-icon="tabler:arrows-split-2" aria-hidden="true"></i><span>Add a Condition?</span></div>
+  <p class="wf-intent-summary">Continue when approved.</p>
+  <div class="wf-intent-topology"><span class="wf-intent-step"><i data-icon="tabler:arrows-split-2" aria-hidden="true"></i>Condition</span><code class="wf-intent-raw">output.approved == true</code>
+    <p class="wf-intent-help">The current connection becomes the True path. The False path stays visible for you to connect.</p>
+  </div>
+  <div class="wf-intent-foot"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc5="" data-pc-section="root">Redraft</button>
+    <!--v-if--><button class="p-button p-component wf-intent-submit" data-p="" type="button" data-pc-name="button" data-p-disabled="false" pc6="" data-pc-section="root"><i data-icon="tabler:check" aria-hidden="true"></i><span>Add Condition</span></button>
+  </div>
+</div>"
+`;

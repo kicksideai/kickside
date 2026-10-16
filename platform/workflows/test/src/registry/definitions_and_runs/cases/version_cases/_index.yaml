@@ -1,0 +1,24 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_versions_test_workflow_version_reads
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Versions — publish folds+compiles+allocates head+1, refuses an invalid graph, enforces the size cap, appends the version.published marker, and lists/gets.
+    source: file://../../../../suites/versions_test_workflow_version_reads.lua
+    method: run
+    modules: [sql, json, uuid, funcs, env]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      block_catalog: kickside.workflows.catalog:block_catalog
+      canonical_json: kickside.contract:canonical_json
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types

@@ -1,0 +1,16 @@
+version: '1.0'
+namespace: app
+entries:
+- name: resource_cleanup_test
+  kind: function.lua
+  source: file://resource_cleanup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_resource_cleanup
+  imports:
+    test: wippy.test:test
+    fixture: app:component_cleanup_fixture
+    api: app:component_cleanup_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

@@ -1,0 +1,11 @@
+{
+  "name": "kickside-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "KickSide assembled Wippy app. Holds the facade-CSS assembler that concatenates app/facade-src/ partials into app/static/*.facade.generated.css.",
+  "scripts": {
+    "build:facade-css": "node scripts/build-facade-css.mjs",
+    "check:facade-css": "node scripts/build-facade-css.mjs --check"
+  }
+}

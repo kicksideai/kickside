@@ -1,0 +1,64 @@
+version: "1.0"
+namespace: app.component_suites
+
+entries:
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      title: Packaging Mount
+      type: test
+      suite: component_packaging
+      comment: Migrations resolve their injected target_db under the mounted registry.
+    source: file://packaging_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      component_types: kickside.component:types
+
+  - name: envelope_test
+    kind: function.lua
+    meta:
+      title: Component Service Envelope Test
+      type: test
+      suite: component_envelope
+      group: Components
+      comment: Failure-envelope classification on the service side and its decoding on the client side.
+    source: file://envelope_test.lua
+    method: run
+    modules: [registry, json]
+    imports:
+      test: wippy.test:test
+      envelope: kickside.component:envelope
+
+  - name: access_policy_test
+    kind: function.lua
+    meta:
+      title: Component Access Policy Test
+      type: test
+      suite: component_access_policy
+      group: Components
+      comment: Boundary tests for access masks and typed share subjects.
+    source: file://access_policy_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      access_policy: kickside.component:access_policy
+      component_types: kickside.component:types
+
+  - name: notify_access_test
+    kind: function.lua
+    meta:
+      title: Component Notify Access Test
+      type: test
+      suite: component_notify_access
+      group: Components
+      comment: Component-scoped realtime notify fans out to direct user grants and group members.
+    source: file://notify_access_test.lua
+    method: run
+    modules: [sql, uuid, security, funcs]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      component_types: kickside.component:types
+      meta_service: kickside.component:meta_service

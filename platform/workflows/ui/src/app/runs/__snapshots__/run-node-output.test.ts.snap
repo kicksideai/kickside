@@ -1,0 +1,165 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RunNodeOutput — real failed-agent run > matches the captured drawer snapshot 1`] = `
+"<aside class="wf-panel wf-panel--run"><button class="p-button p-component p-button-secondary p-button-rounded p-button-text wf-panel-close" data-p="rounded text" type="button" aria-label="Close inspector" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Close inspector" pc0="" data-pc-section="root"><i class="ic" data-icon="tabler:x" aria-hidden="true"></i></button>
+  <div class="wf-panel-hdr wf-panel-hdr--run"><i class="ic" data-icon="tabler:history" aria-hidden="true"></i><span class="wf-panel-hdr-kind">Viewing run</span></div>
+  <p class="wf-panel-how"><span class="p-tag p-component p-tag-danger wf-run-status-tag" data-p="danger" data-pc-name="tag" pc1="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">Failed</span></span><span class="p-tag p-component p-tag-secondary wf-run-version-tag" data-p="secondary" title="Ran published version 1" data-pc-name="tag" pc2="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">v1</span></span><span> Run 88444c66 · started 23m ago<span> · finished 23m ago</span>. Read-only — nothing here can be edited.</span></p>
+  <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc3="" data-pc-section="root"><i class="ic" data-icon="tabler:refresh" aria-hidden="true"></i><span>Re-run with same input</span></button><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc4="" data-pc-section="root"><i class="ic" data-icon="tabler:pencil" aria-hidden="true"></i><span>Back to editing</span></button></div>
+  <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc5="" data-pc-section="root"><i class="ic" data-icon="tabler:download" aria-hidden="true"></i><span>Download run details</span></button>
+    <!--v-if-->
+  </div>
+  <!--v-if-->
+  <div class="p-tabs p-component wf-run-tabs" data-pc-name="tabs" pc6="" data-pc-section="root">
+    <div class="p-tablist" data-p="" aria-label="Run inspector sections" data-pc-name="tablist" pc7="" data-pc-section="root">
+      <!---->
+      <div class="p-tablist-content p-tablist-viewport" data-p="" data-pc-section="content">
+        <div class="p-tablist-tab-list" role="tablist" aria-orientation="horizontal" data-pc-section="tablist"><button class="p-tab p-tab-active" data-p="active" type="button" id="pv_id_6_tab_overview" tabindex="0" role="tab" aria-selected="true" aria-controls="pv_id_6_tabpanel_overview" data-pc-name="tab" data-p-disabled="false" data-p-active="true" pc8="" data-pc-section="root">Overview</button><button class="p-tab" data-p="" type="button" id="pv_id_6_tab_timeline" tabindex="-1" role="tab" aria-selected="false" aria-controls="pv_id_6_tabpanel_timeline" data-pc-name="tab" data-p-disabled="false" data-p-active="false" pc9="" data-pc-section="root">Timeline</button><span class="p-tablist-active-bar" role="presentation" aria-hidden="true" data-pc-section="activebar"></span></div>
+      </div><button type="button" class="p-tablist-next-button p-tablist-nav-button" aria-label="Next" tabindex="0" data-pc-section="nextbutton" data-pc-group-section="navigator"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon" aria-hidden="true" data-pc-section="nexticon">
+          <path d="M4.38708 13C4.28408 13.0005 4.18203 12.9804 4.08691 12.9409C3.99178 12.9014 3.9055 12.8433 3.83313 12.7701C3.68634 12.6231 3.60388 12.4238 3.60388 12.2161C3.60388 12.0084 3.68634 11.8091 3.83313 11.6622L8.50507 6.99022L3.83313 2.31827C3.69467 2.16968 3.61928 1.97313 3.62287 1.77005C3.62645 1.56698 3.70872 1.37322 3.85234 1.22959C3.99596 1.08597 4.18972 1.00371 4.3928 1.00012C4.59588 0.996539 4.79242 1.07192 4.94102 1.21039L10.1669 6.43628C10.3137 6.58325 10.3962 6.78249 10.3962 6.99022C10.3962 7.19795 10.3137 7.39718 10.1669 7.54416L4.94102 12.7701C4.86865 12.8433 4.78237 12.9014 4.68724 12.9409C4.59212 12.9804 4.49007 13.0005 4.38708 13Z" fill="currentColor"></path>
+        </svg></button>
+    </div>
+  </div>
+  <div class="wf-panel-label">Refund Triage</div>
+  <!--v-if-->
+  <p class="wf-run-status"><span class="p-tag p-component p-tag-danger wf-run-status-tag" data-p="danger" data-pc-name="tag" pc11="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">Failed</span></span><span class="wf-run-timing"><i class="ic" data-icon="tabler:clock" aria-hidden="true"></i>3.6s</span></p><!-- Error first: a directed moment — what happened, then what to do next. -->
+  <div class="wf-run-fail">
+    <div class="wf-run-fail-h"><i class="ic" data-icon="tabler:alert-triangle" aria-hidden="true"></i><span>This step failed.</span></div>
+    <!--v-if-->
+    <p class="wf-run-fail-note">No further detail was recorded for this failure. Re-run with the same input to try again, or open the step to adjust it.</p>
+  </div>
+  <div class="p-panel p-component p-panel-toggleable wf-payload" data-p="toggleable" data-pc-name="panel" pc13="" data-pc-section="root">
+    <div class="p-panel-header" data-p="toggleable" data-pc-section="header"><span class="wf-payload-title"><i class="ic" data-icon="tabler:login-2" aria-hidden="true"></i><span>Input</span></span>
+      <div class="p-panel-header-actions" data-pc-section="headeractions"><button class="p-button p-component p-button-secondary p-button-outlined p-button-sm wf-payload-copy" data-p="small outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Copy to clipboard" pc14="" data-pc-section="root"><i class="ic" data-icon="tabler:copy" aria-hidden="true"></i><span>Copy</span></button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-rounded p-button-text p-panel-toggle-button" data-p="icon-only rounded text" type="button" data-pc-name="pctogglebutton" data-p-disabled="false" data-p-severity="secondary" id="pv_id_13_header" aria-controls="pv_id_13_content" aria-expanded="true" data-pc-extend="button" pc15="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon" aria-hidden="true">
+            <path d="M13.2222 7.77778H0.777778C0.571498 7.77778 0.373667 7.69584 0.227806 7.54998C0.0819442 7.40412 0 7.20629 0 7.00001C0 6.79373 0.0819442 6.5959 0.227806 6.45003C0.373667 6.30417 0.571498 6.22223 0.777778 6.22223H13.2222C13.4285 6.22223 13.6263 6.30417 13.7722 6.45003C13.9181 6.5959 14 6.79373 14 7.00001C14 7.20629 13.9181 7.40412 13.7722 7.54998C13.6263 7.69584 13.4285 7.77778 13.2222 7.77778Z" fill="currentColor"></path>
+          </svg>
+          <!---->
+          <!---->
+        </button></div>
+    </div>
+    <transition-stub name="p-collapsible" appear="false" persisted="false" css="true">
+      <div id="pv_id_13_content" class="p-panel-content-container" role="region" aria-labelledby="pv_id_13_header" data-pc-section="contentcontainer">
+        <div class="p-panel-content-wrapper" data-pc-section="contentwrapper">
+          <div class="p-panel-content" data-pc-section="content"><pre class="wf-run-output wf-mono">{
+  "query": "industrial automation trends",
+  "total_results": "76700000",
+  "results": [
+    {
+      "title": "Top 10 industrial automation trends - IoT Analytics",
+      "link": "https://iot-analytics.com/top-10-industrial-automation-trends/",
+      "snippet": "Jan 28, 2026 ... 10 industrial automation trends observed at SPS 2023 · 1. Solutions that enable flexibility · 2. IT/OT convergence · 3. Increasing emphasis on&nbsp;...",
+      "displayLink": "iot-analytics.com"
+    },
+    {
+      "title": "8 Key Industrial Automation Trends in 2025 | US",
+      "link": "https://www.rockwellautomation.com/en-us/company/news/the-journal/8-key-industrial-automation-trends-in-2025.html",
+      "snippet": "8 Key Industrial Automation Trends in 2025 · 1. Industrial Internet of Things (IIoT) · 2. Edge Computing and Cloud Computing, Separately or Together · 3.",
+      "displayLink": "www.rockwellautomation.com"
+    },
+    {
+      "title": "The Future of Industrial Automation: 5 Key Trends",
+      "link": "https://ibtinc.com/learn/industrial-automation-future-trends/",
+      "snippet": "Jul 23, 2024 ... Discover 5 key industrial automation trends! Learn how AI, cobots, &amp; edge computing are transforming factories &amp; how to stay competitive in&nbsp;...",
+      "displayLink": "ibtinc.com"
+    },
+    {
+      "snippet": "Mar 26, 2025 ... After years of rapid expansion, the industrial automation sector has hit a speed bump in 2024 which will continue in 2025.",
+      "displayLink": "www.rolandberger.com",
+      "title": "Challenging outlook for industrial automation - Roland Berger",
+      "link": "https://www.rolandberger.com/en/Insights/Publications/Challenging-outlook-for-industrial-automation.html"
+    },
+    {
+      "link": "https://www.mckinsey.com/industries/automotive-and-assembly/our-insights/is-industrial-automation-headed-for-a-tipping-point",
+      "snippet": "Jun 16, 2023 ... Over the past few decades, industrial automation has evolved gradually, with few changes in market structure. But the pace of change is&nbsp;...",
+      "displayLink": "www.mckinsey.com",
+      "title": "Is industrial automation headed for a tipping point? - McKinsey"
+    },
+    {
+      "title": "5 Industrial Automation Trends That Defined 2025",
+      "link": "https://dynamicsourcemfg.com/5-industrial-automation-trends-that-defined-2025/",
+      "snippet": "Dec 8, 2025 ... Industry analyses highlight robots, cobots, and autonomous mobile robots (AMRs) as core industrial automation trends for 2025, enabled by better&nbsp;...",
+      "displayLink": "dynamicsourcemfg.com"
+    },</pre><button class="p-button p-component p-button-secondary p-button-outlined p-button-sm wf-payload-more" data-p="small outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc17="" data-pc-section="root"><i class="ic" data-icon="tabler:chevrons-down" aria-hidden="true"></i><span>Show 27 more lines</span></button></div>
+          <!---->
+        </div>
+      </div>
+    </transition-stub>
+  </div>
+  <div class="p-panel p-component p-panel-toggleable wf-payload" data-p="toggleable" data-pc-name="panel" pc18="" data-pc-section="root">
+    <div class="p-panel-header" data-p="toggleable" data-pc-section="header"><span class="wf-payload-title"><i class="ic" data-icon="tabler:logout-2" aria-hidden="true"></i><span>Output</span></span>
+      <div class="p-panel-header-actions" data-pc-section="headeractions"><button class="p-button p-component p-button-secondary p-button-outlined p-button-sm wf-payload-copy" data-p="small outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Copy to clipboard" pc19="" data-pc-section="root"><i class="ic" data-icon="tabler:copy" aria-hidden="true"></i><span>Copy</span></button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-rounded p-button-text p-panel-toggle-button" data-p="icon-only rounded text" type="button" data-pc-name="pctogglebutton" data-p-disabled="false" data-p-severity="secondary" id="pv_id_18_header" aria-controls="pv_id_18_content" aria-expanded="true" data-pc-extend="button" pc20="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon" aria-hidden="true">
+            <path d="M13.2222 7.77778H0.777778C0.571498 7.77778 0.373667 7.69584 0.227806 7.54998C0.0819442 7.40412 0 7.20629 0 7.00001C0 6.79373 0.0819442 6.5959 0.227806 6.45003C0.373667 6.30417 0.571498 6.22223 0.777778 6.22223H13.2222C13.4285 6.22223 13.6263 6.30417 13.7722 6.45003C13.9181 6.5959 14 6.79373 14 7.00001C14 7.20629 13.9181 7.40412 13.7722 7.54998C13.6263 7.69584 13.4285 7.77778 13.2222 7.77778Z" fill="currentColor"></path>
+          </svg>
+          <!---->
+          <!---->
+        </button></div>
+    </div>
+    <transition-stub name="p-collapsible" appear="false" persisted="false" css="true">
+      <div id="pv_id_18_content" class="p-panel-content-container" role="region" aria-labelledby="pv_id_18_header" data-pc-section="contentcontainer">
+        <div class="p-panel-content-wrapper" data-pc-section="contentwrapper">
+          <div class="p-panel-content" data-pc-section="content">
+            <wc-render-markdown class="wf-run-md" source="Based on the provided search results, several key trends are shaping the landscape of industrial automation through 2025 and into 2026. The overarching theme is a structural shift from simple **control** to advanced **intelligence**.
+
+### 1. Artificial Intelligence (AI) and Intelligence-Driven Automation
+The most significant trend is the integration of AI to move beyond programmed tasks toward autonomous decision-making.
+*   **AI-Powered Systems:** AI is being used to transform factories by enabling smarter, more predictive operations.
+*   **Shift to Intelligence:** Value in the industry is moving away from basic machine control and toward intelligent systems that can analyze data and optimize processes.
+
+### 2. Connectivity and Data Integration
+The convergence of physical machinery and digital data is central to modern automation.
+*   **IIoT (Industrial Internet of Things):** Connecting machines to networks to gather real-time data.
+*   **IT/OT Convergence:** The merging of Information Technology (IT) and Operational Technology (OT) to bridge the gap between business data and factory floor operations.
+*   **Edge and Cloud Computing:** Using a combination of edge computing (processing data near the source) and cloud computing to manage the massive influx of industrial data.
+
+### 3. Advanced Robotics and Flexibility
+The demand for adaptable manufacturing solutions is driving new types of robotics.
+*   **Cobots (Collaborative Robots):** Robots designed to work safely alongside human workers.
+*   **AMRs (Autonomous Mobile Robots):** Robots that can navigate factory floors independently to move goods and materials.
+*   **Flexibility:** A major focus is on solutions that allow production lines to be easily reconfigured to handle different products or changing market demands.
+
+### 4. Digital Transformation Tools
+New technologies are creating &quot;digital mirrors&quot; of physical processes.
+*   **Digital Twins:** Creating virtual representations of physical assets or systems to simulate and optimize performance.
+*   **Industry 4.0:** The broader movement toward fully interconnected, smart manufacturing ecosystems.
+
+### 5. Market Outlook and Challenges
+*   **Growth Projections:** The industrial automation market is projected to reach significant heights, with some estimates placing it at approximately **$378.57 billion by 2030**.
+*   **Economic &quot;Speed Bumps&quot;:** Despite the technological advancements, some analysts note that the sector faced a period of slower expansion (a &quot;speed bump&quot;) through 2024 and 2025."></wc-render-markdown>
+          </div>
+          <!---->
+        </div>
+      </div>
+    </transition-stub>
+  </div>
+  <section class="wf-run-trace">
+    <div class="wf-run-section-h"><i class="ic" data-icon="tabler:robot" aria-hidden="true"></i><span>Agent trace</span></div>
+    <div class="wf-run-trace-item">
+      <p class="wf-panel-hint">No tools were called — the model answered directly.</p>
+      <!--v-if-->
+      <div class="p-panel p-component p-panel-toggleable wf-payload" data-p="toggleable" data-pc-name="panel" pc22="" data-pc-section="root">
+        <div class="p-panel-header" data-p="toggleable" data-pc-section="header"><span class="wf-payload-title"><i class="ic" data-icon="tabler:sparkles" aria-hidden="true"></i><span>Generation</span></span>
+          <div class="p-panel-header-actions" data-pc-section="headeractions"><button class="p-button p-component p-button-secondary p-button-outlined p-button-sm wf-payload-copy" data-p="small outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Copy to clipboard" pc23="" data-pc-section="root"><i class="ic" data-icon="tabler:copy" aria-hidden="true"></i><span>Copy</span></button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-rounded p-button-text p-panel-toggle-button" data-p="icon-only rounded text" type="button" data-pc-name="pctogglebutton" data-p-disabled="false" data-p-severity="secondary" id="pv_id_22_header" aria-controls="pv_id_22_content" aria-expanded="false" data-pc-extend="button" pc24="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon" aria-hidden="true">
+                <path d="M7.67742 6.32258V0.677419C7.67742 0.497757 7.60605 0.325452 7.47901 0.198411C7.35197 0.0713707 7.17966 0 7 0C6.82034 0 6.64803 0.0713707 6.52099 0.198411C6.39395 0.325452 6.32258 0.497757 6.32258 0.677419V6.32258H0.677419C0.497757 6.32258 0.325452 6.39395 0.198411 6.52099C0.0713707 6.64803 0 6.82034 0 7C0 7.17966 0.0713707 7.35197 0.198411 7.47901C0.325452 7.60605 0.497757 7.67742 0.677419 7.67742H6.32258V13.3226C6.32492 13.5015 6.39704 13.6725 6.52358 13.799C6.65012 13.9255 6.82106 13.9977 7 14C7.17966 14 7.35197 13.9286 7.47901 13.8016C7.60605 13.6745 7.67742 13.5022 7.67742 13.3226V7.67742H13.3226C13.5022 7.67742 13.6745 7.60605 13.8016 7.47901C13.9286 7.35197 14 7.17966 14 7C13.9977 6.82106 13.9255 6.65012 13.799 6.52358C13.6725 6.39704 13.5015 6.32492 13.3226 6.32258H7.67742Z" fill="currentColor"></path>
+              </svg>
+              <!---->
+              <!---->
+            </button></div>
+        </div>
+        <transition-stub name="p-collapsible" appear="false" persisted="false" css="true">
+          <div id="pv_id_22_content" class="p-panel-content-container" role="region" aria-labelledby="pv_id_22_header" data-pc-section="contentcontainer" style="display: none;">
+            <div class="p-panel-content-wrapper" data-pc-section="contentwrapper">
+              <div class="p-panel-content" data-pc-section="content"><pre class="wf-run-output wf-mono">{
+  "tool_calls": [],
+  "result": "Based on the provided search results, several key trends are shaping the landscape of industrial automation through 2025 and into 2026. The overarching theme is a structural shift from simple **control** to advanced **intelligence**.\\n\\n### 1. Artificial Intelligence (AI) and Intelligence-Driven Automation\\nThe most significant trend is the integration of AI to move beyond programmed tasks toward autonomous decision-making.\\n*   **AI-Powered Systems:** AI is being used to transform factories by enabling smarter, more predictive operations.\\n*   **Shift to Intelligence:** Value in the industry is moving away from basic machine control and toward intelligent systems that can analyze data and optimize processes.\\n\\n### 2. Connectivity and Data Integration\\nThe convergence of physical machinery and digital data is central to modern automation.\\n*   **IIoT (Industrial Internet of Things):** Connecting machines to networks to gather real-time data.\\n*   **IT/OT Convergence:** The merging of Information Technology (IT) and Operational Technology (OT) to bridge the gap between business data and factory floor operations.\\n*   **Edge and Cloud Computing:** Using a combination of edge computing (processing data near the source) and cloud computing to manage the massive influx of industrial data.\\n\\n### 3. Advanced Robotics and Flexibility\\nThe demand for adaptable manufacturing solutions is driving new types of robotics.\\n*   **Cobots (Collaborative Robots):** Robots designed to work safely alongside human workers.\\n*   **AMRs (Autonomous Mobile Robots):** Robots that can navigate factory floors independently to move goods and materials.\\n*   **Flexibility:** A major focus is on solutions that allow production lines to be easily reconfigured to handle different products or changing market demands.\\n\\n### 4. Digital Transformation Tools\\nNew technologies are creating \\"digital mirrors\\" of physical processes.\\n*   **Digital Twins:** Creating virtual representations of physical assets or systems to simulate and optimize performance.\\n*   **Industry 4.0:** The broader movement toward fully interconnected, smart manufacturing ecosystems.\\n\\n### 5. Market Outlook and Challenges\\n*   **Growth Projections:** The industrial automation market is projected to reach significant heights, with some estimates placing it at approximately **$378.57 billion by 2030**.\\n*   **Economic \\"Speed Bumps\\":** Despite the technological advancements, some analysts note that the sector faced a period of slower expansion (a \\"speed bump\\") through 2024 and 2025."
+}</pre>
+                <!--v-if-->
+              </div>
+              <!---->
+            </div>
+          </div>
+        </transition-stub>
+      </div>
+    </div>
+  </section>
+  <!--v-if-->
+</aside>"
+`;

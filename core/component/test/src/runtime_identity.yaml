@@ -1,0 +1,38 @@
+version: "1.0"
+namespace: kickside.test
+entries:
+  - name: runtime_meta
+    kind: contract.binding
+    meta: {class: runtime_target}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+  - name: other_runtime_meta
+    kind: contract.binding
+    meta: {class: runtime_other}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+  - name: gateway_connection
+    kind: contract.binding
+    meta: {class: [connection, reply_provider], provider: gateway-test, region: trusted}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+  - name: other_connection
+    kind: contract.binding
+    meta: {class: [connection], provider: other, region: trusted}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+  - name: other_region
+    kind: contract.binding
+    meta: {class: [connection], provider: gateway-test, region: other}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status

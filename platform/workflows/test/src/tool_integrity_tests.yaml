@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: tool_integrity_test
+    kind: function.lua
+    meta: { type: test, suite: workflow_integrity }
+    source: file://tool_integrity_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      publish: kickside.workflows.repo:version_publish
+      read: kickside.workflows.repo:version_read
+      workflow: kickside.workflows:workflow

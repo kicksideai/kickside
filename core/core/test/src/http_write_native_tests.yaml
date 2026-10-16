@@ -1,0 +1,98 @@
+version: '1.0'
+namespace: app
+entries:
+- name: http_write_native_fixture
+  kind: library.lua
+  source: file://http_write_native_fixture.lua
+- name: http_write_native_http_adapter
+  kind: library.lua
+  source: file://http_write_native_http_adapter.lua
+  imports:
+    fixture: app:http_write_native_fixture
+- name: http_write_native_contract_adapter
+  kind: library.lua
+  source: file://http_write_native_contract_adapter.lua
+  imports:
+    fixture: app:http_write_native_fixture
+- name: http_write_native_create_thread
+  kind: library.lua
+  source: file://http_write_native_create_thread.lua
+  imports:
+    http_errors: kickside.contract:http_errors
+    threads_contract: app:http_write_native_contract_adapter
+    http: app:http_write_native_http_adapter
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+  modules:
+  - json
+- name: http_write_native_update_thread
+  kind: library.lua
+  source: file://http_write_native_update_thread.lua
+  imports:
+    http_errors: kickside.contract:http_errors
+    threads_contract: app:http_write_native_contract_adapter
+    http: app:http_write_native_http_adapter
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+  modules:
+  - json
+- name: http_write_native_delete_thread
+  kind: library.lua
+  source: file://http_write_native_delete_thread.lua
+  imports:
+    http_errors: kickside.contract:http_errors
+    threads_contract: app:http_write_native_contract_adapter
+    http: app:http_write_native_http_adapter
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+  modules: []
+- name: http_write_native_post_event
+  kind: library.lua
+  source: file://http_write_native_post_event.lua
+  imports:
+    http_errors: kickside.contract:http_errors
+    threads_contract: app:http_write_native_contract_adapter
+    http: app:http_write_native_http_adapter
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+  modules:
+  - json
+- name: http_write_native_post_message
+  kind: library.lua
+  source: file://http_write_native_post_message.lua
+  imports:
+    http_errors: kickside.contract:http_errors
+    threads_contract: app:http_write_native_contract_adapter
+    http: app:http_write_native_http_adapter
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+  modules:
+  - json
+- name: http_write_native_ingest_events_batch
+  kind: library.lua
+  source: file://http_write_native_ingest_events_batch.lua
+  imports:
+    http_errors: kickside.contract:http_errors
+    threads_contract: app:http_write_native_contract_adapter
+    http: app:http_write_native_http_adapter
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+  modules:
+  - json
+- name: http_write_native_test
+  kind: function.lua
+  source: file://http_write_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_http_write_native
+  imports:
+    fixture: app:http_write_native_fixture
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    create_thread: app:http_write_native_create_thread
+    update_thread: app:http_write_native_update_thread
+    delete_thread: app:http_write_native_delete_thread
+    post_event: app:http_write_native_post_event
+    post_message: app:http_write_native_post_message
+    ingest_events_batch: app:http_write_native_ingest_events_batch

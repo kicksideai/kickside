@@ -1,0 +1,235 @@
+version: "1.0"
+namespace: kickside.agents.api
+
+entries:
+  - name: query_params
+    kind: library.lua
+    meta:
+      comment: Strict query-param parsing shared by agent picker endpoints.
+    source: file://query_params.lua
+    modules: [http]
+
+  - name: pack_start_token
+    kind: function.lua
+    meta:
+      comment: Packs one session start-token (isolated pool to avoid consts alias collision)
+    source: file://pack_start_token.lua
+    modules: []
+    imports:
+      start_tokens: wippy.session:start_tokens
+    method: handler
+    pool: { size: 4 }
+
+  - name: list_user_agents
+    kind: function.lua
+    meta:
+      comment: Lists user-created agents
+    source: file://list_user_agents.lua
+    modules: [http, security, funcs]
+    imports:
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      query_params: kickside.agents.api:query_params
+      agent_ref: kickside.agents:agent_ref
+    method: handler
+
+  - name: list_user_agents.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_user_agents
+    path: /user-agents
+
+  - name: get_user_agent
+    kind: function.lua
+    meta:
+      comment: Gets a user agent configuration
+    source: file://get_user_agent.lua
+    modules: [http, security, json]
+    imports:
+      component_envelope: kickside.component:envelope
+      component: kickside.component:component
+      http_errors: kickside.contract:http_errors
+      user_agents: kickside.agents.binding:user_agents_func
+      agent_types: kickside.agents:types
+    method: handler
+
+  - name: get_user_agent.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_user_agent
+    path: /user-agents/{id}
+
+  - name: create_user_agent
+    kind: function.lua
+    meta:
+      comment: Creates a user agent
+    source: file://create_user_agent.lua
+    modules: [http, security, json]
+    imports:
+      user_agents: kickside.agents.binding:user_agents_func
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: create_user_agent.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_user_agent
+    path: /user-agents
+
+  - name: update_user_agent
+    kind: function.lua
+    meta:
+      comment: Updates a user agent
+    source: file://update_user_agent.lua
+    modules: [http, security, json]
+    imports:
+      user_agents: kickside.agents.binding:user_agents_func
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: update_user_agent.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: update_user_agent
+    path: /user-agents/{id}
+
+  - name: delete_user_agent
+    kind: function.lua
+    meta:
+      comment: Deletes a user agent
+    source: file://delete_user_agent.lua
+    modules: [http, security]
+    imports:
+      component_envelope: kickside.component:envelope
+      component: kickside.component:component
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: delete_user_agent.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_user_agent
+    path: /user-agents/{id}
+
+  # ─── System agent discovery (registry-backed) ────────────────────────
+  - name: list_agents
+    kind: function.lua
+    meta:
+      comment: Lists public system agents plus user-created agents visible to the caller.
+    source: file://list_agents.lua
+    modules: [http, security, registry, funcs, contract]
+    imports:
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      query_params: kickside.agents.api:query_params
+      agent_ref: kickside.agents:agent_ref
+    method: handler
+
+  - name: list_agents.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_agents
+    path: /agents/list
+
+  - name: agents_by_name
+    kind: function.lua
+    meta:
+      comment: Resolves agent titles by id or name
+    source: file://get_agents_by_name.lua
+    modules: [http, registry, security]
+    imports:
+      component: kickside.component:component
+      agent_ref: kickside.agents:agent_ref
+      agent_types: kickside.agents:types
+    method: handler
+
+  - name: agents_by_name.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: agents_by_name
+    path: /agents/by-name
+
+  - name: list_traits
+    kind: function.lua
+    meta:
+      comment: Lists available agent traits
+    source: file://list_traits.lua
+    modules: [http, security, registry]
+    imports:
+      query_params: kickside.agents.api:query_params
+      capability_context: kickside.agents.traits:capability_context
+    method: handler
+
+  - name: list_traits.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_traits
+    path: /agents/traits
+
+  - name: list_namespaces
+    kind: function.lua
+    meta:
+      comment: Lists the trait and agent namespaces a master agent can be scoped to
+    source: file://list_namespaces.lua
+    modules: [http, security, registry]
+    method: handler
+
+  - name: list_namespaces.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_namespaces
+    path: /agents/namespaces
+
+  - name: list_tools
+    kind: function.lua
+    meta:
+      comment: Lists available agent tools
+    source: file://list_tools.lua
+    modules: [http, security, registry]
+    imports:
+      query_params: kickside.agents.api:query_params
+      tool_schema: kickside.agents.registry:tool_schema
+      tool_visibility: kickside.agents.registry:tool_visibility
+    method: handler
+
+  - name: list_tools.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_tools
+    path: /agents/tools
+
+  - name: list_memory_options
+    kind: function.lua
+    meta:
+      comment: Lists agent memory targets from registered agent.memory_provider entries.
+    source: file://list_memory_options.lua
+    modules: [http, security, registry, funcs]
+    imports:
+      agent_types: kickside.agents:types
+    method: handler
+
+  - name: list_memory_options_lib
+    kind: library.lua
+    meta:
+      comment: Shared implementation for agent memory target discovery.
+    source: file://list_memory_options.lua
+    modules: [http, security, registry, funcs]
+    imports:
+      agent_types: kickside.agents:types
+
+  - name: list_memory_options.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_memory_options
+    path: /agents/memory-options

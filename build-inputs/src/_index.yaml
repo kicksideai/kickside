@@ -1,0 +1,24 @@
+version: "1.0"
+namespace: buildinputs
+
+# Build-time module inputs. Nothing here runs; the tree exists so these
+# dependencies are declared, resolved and vendored WITHOUT entering the
+# application's dependency graph.
+#
+# They must be declared as entries, not just added to the lock: `wippy update`
+# re-resolves from declarations, so a lock-only entry is dropped on the next
+# update and its vendored .wapp removed.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide build inputs
+      comment: Modules consumed at build time only - see the Makefile ui-kit target.
+
+  # Shared frontend vocabulary. Consumed by `wippy artifacts materialize`, never
+  # loaded at runtime.
+  - name: ui_kit
+    kind: ns.dependency
+    component: kickside/ui-kit
+    version: ">=1.0.0"

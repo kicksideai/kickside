@@ -1,0 +1,68 @@
+version: '1.0'
+namespace: kickside.automation.agent
+entries:
+- name: automations_control_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: Execution-identity change and status/health through the MCP tools under real user actors.
+  source: file://automations_control_test.lua
+  modules:
+  - funcs
+  - security
+  - process
+  - channel
+  - uuid
+  imports:
+    test: wippy.test:test
+  method: run
+- name: automations_read_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: AutomationsRead tool -- list/types/catalog/read_config/export against a real installed fixture automation, plus auth and unknown-action rejection.
+  source: file://automations_read_test.lua
+  modules:
+  - funcs
+  - security
+  - uuid
+  imports:
+    test: wippy.test:test
+  method: run
+- name: automations_read_error_stub
+  kind: library.lua
+  source: file://automations_read_error_stub.lua
+- name: automations_read_error_fixture
+  kind: function.lua
+  source: file://automations_read_fixture.lua
+  modules: [security]
+  imports:
+    tool_result: kickside.contract:tool_result
+    keyset: kickside.contract:keyset
+    automations_lib: kickside.automation.agent:automations_read_error_stub
+  method: handler
+- name: automations_read_error_test
+  kind: function.lua
+  meta: { type: test, suite: automation }
+  source: file://automations_read_error_test.lua
+  modules: [funcs, security]
+  imports:
+    test: wippy.test:test
+    stub: kickside.automation.agent:automations_read_error_stub
+  method: run
+- name: automations_manage_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: AutomationsManage tool -- install/read_config roundtrip, pause/resume, run, reconfigure, uninstall, plus auth and unknown-action/undeclared-run rejection.
+  source: file://automations_manage_test.lua
+  modules:
+  - funcs
+  - security
+  - uuid
+  imports:
+    test: wippy.test:test
+  method: run

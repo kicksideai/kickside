@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: kickside.inbox
+entries:
+  - name: list_context
+    kind: library.lua
+    source: file://list_context.lua
+  - name: list_api_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }
+    source: file://list_api_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      list_handler: kickside.inbox.api:list_inbox_lib
+      list_context: kickside.inbox:list_context

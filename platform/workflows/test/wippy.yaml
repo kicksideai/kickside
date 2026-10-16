@@ -1,0 +1,12 @@
+organization: kickside
+module: workflows-harness
+type: application
+description: Standalone runnable harness that boots kickside/workflows (+ core, component) and runs its suite.
+directories:
+  modules: .wippy
+  src: .
+exclude:
+  - ".wippy/**"
+  - ".wippy:**"
+  - ".test-modules/**"
+  - ".test-modules:**"

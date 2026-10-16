@@ -1,0 +1,341 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/workflows. Provides the host resources the compiler,
+# version plane, run launcher, and automation kind require (app:db, routers, process
+# host, env storage, a permissive scope) and boots the automation + dataflow stack so
+# its harness-owned suites run in isolation. The module loads once through its
+# dependency replacement. Test source lives in this harness under suites/.
+# Harness-only; excluded from publish.
+
+entries:
+  - name: coverage_gauntlet_compile_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_2_coverage
+      group: KickSide Workflows
+      comment: Full-vocabulary compiler gauntlet.
+    source: file://../../suites/coverage_gauntlet_compile_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      builders: app:coverage_gauntlet_builders
+      graph: kickside.workflows.compiler:graph
+      materialize: kickside.workflows.compiler:materialize
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+      block_catalog: kickside.workflows.catalog:block_catalog
+
+  - name: coverage_gauntlet_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_2_coverage
+      group: KickSide Workflows
+      comment: Live-engine gauntlet; final suite because it owns the heaviest durable dataflow fixture load.
+    source: file://../../suites/coverage_gauntlet_test.lua
+    method: run
+    modules: [funcs, uuid, time, security, process, channel]
+    imports:
+      test: wippy.test:test
+      builders: app:coverage_gauntlet_builders
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      types: kickside.workflows:types
+      engine_consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+
+  - name: coverage_gauntlet_seam
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound launch and generic signal seam used by the coverage gauntlet.
+    source: file://../../suites/coverage_gauntlet_seam_fn.lua
+    method: seam
+    imports:
+      runs: app:runs_fixture
+      client: userspace.dataflow:client
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+
+  - name: coverage_cycle_step
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only cycle step helper that returns the cycle envelope shape for the coverage gauntlet.
+    source: file://../../suites/coverage_gauntlet_cycle_step.lua
+    method: run
+
+  - name: gauntlet_event_listener
+    kind: process.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Forwards committed Dataflow change notifications to the coverage suite.
+    source: file://../../gauntlet_event_listener.lua
+    method: run
+    modules: [process, channel]
+
+  - name: assist_seam
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound assist seam used by the workflow assist suite.
+    source: file://../../suites/assist_test.lua
+    method: seam
+    modules: [security, funcs, json]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+      component: kickside.component:component
+
+  - name: assist_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Assist — shared mapping/schema generation validates model output; persisted edges require WRITE while binding drafts require target-workflow READ.
+    source: file://../../suites/assist_test.lua
+    method: run
+    modules: [security, funcs, json]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+      component: kickside.component:component
+
+  - name: access_seam
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound repo seam used by the workflow access suite.
+    source: file://../../suites/access_test.lua
+    method: seam
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: agent_tools_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: MCP tool surface — create/apply/publish/export/import/delete lifecycle under real actors, stranger denial.
+    source: file://../../suites/agent_tools_test.lua
+    method: run
+    modules: [security, funcs, uuid, sql, json]
+    imports:
+      test: wippy.test:test
+
+  - name: typed_errors_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Workflow libraries behind the agent tools fail with typed errors of the right kind.
+    source: file://../../suites/typed_errors_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      repo: kickside.workflows.repo:repo
+      flow_ref: kickside.workflows.execution:flow_ref
+
+  - name: access_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Access — creator holds write, a non-owner is denied through the component service.
+    source: file://../../suites/access_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: compile_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Compile-level fixtures — Start/reachability/cycle validation, condition+negation, join inputs.required, def_node_id stamping, allowlist freeze, reminting. No engine boot.
+    source: file://../../suites/compiler/compile_test.lua
+    method: run
+
+    imports:
+      test: wippy.test:test
+      compiler: kickside.workflows.compiler:compiler
+      consts: kickside.workflows.compiler:dataflow_consts
+  - name: expand_flow_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Exact published Flow calls expand into the current Dataflow.
+    source: file://../../suites/runtime/expand_flow_test.lua
+    method: run
+
+    imports:
+      test: wippy.test:test
+      expand_flow: kickside.workflows.runtime:expand_flow
+
+  - name: admission_race_init
+    kind: process.lua
+    meta:
+      comment: Test process to initialize the database and install the race automation.
+    source: file://../../admission_race_process.lua
+    method: init
+    modules: [time, uuid, funcs, security, json]
+    security:
+      groups: [wippy.security:process]
+    imports:
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+      user_repo: kickside.users.persist:user_repo
+
+  - name: admission_race_racer_a
+    kind: process.lua
+    meta:
+      comment: Racer process A that contends for the last admission slot.
+    source: file://../../admission_race_process.lua
+    method: race_a
+    modules: [time, uuid, funcs, security, json]
+    security:
+      groups: [wippy.security:process]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+
+  - name: admission_race_racer_b
+    kind: process.lua
+    meta:
+      comment: Racer process B that contends for the last admission slot.
+    source: file://../../admission_race_process.lua
+    method: race_b
+    modules: [time, uuid, funcs, security, json]
+    security:
+      groups: [wippy.security:process]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+
+  - name: admission_race_verify
+    kind: process.lua
+    meta:
+      comment: Verifies outcome of 2-process admission race.
+    source: file://../../admission_race_process.lua
+    method: verify
+    modules: [time, uuid, funcs, security, json]
+    security:
+      groups: [wippy.security:process]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+
+  - name: admission_race_type
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: Admission race fixture
+      private: true
+      environment: test
+      test_only: true
+    contracts:
+      - contract: kickside.contract:installable
+        methods:
+          install: app:admission_race_fixture_install
+
+  - name: admission_race_fixture_install
+    kind: function.lua
+    source: file://../../admission_race_process.lua
+    method: fixture_install
+    modules: [time, uuid, funcs, security, json]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+
+  - name: admission_race_install_automation
+    kind: function.lua
+    source: file://../../admission_race_process.lua
+    method: install_automation
+    modules: [time, uuid, funcs, security, json]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+
+  - name: admission_race_write
+    kind: function.lua
+    source: file://../../admission_race_process.lua
+    method: write_as_owner
+    modules: [time, uuid, funcs, security, json]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation
+
+  - name: admission_race_identity_probe
+    kind: function.lua
+    source: file://../../admission_race_process.lua
+    method: identity_probe
+    modules: [time, uuid, funcs, security, json]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      run_writable: kickside.workflows.runs:run_writable
+      run_identity: kickside.workflows.runs:run_identity
+      automation: kickside.automation:automation

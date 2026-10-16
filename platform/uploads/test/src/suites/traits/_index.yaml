@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: app.uploads_suites.traits
+
+entries:
+  - name: fetch_url_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: FetchURL check-only, async upload, durable completion wait, and error handling.
+    source: file://fetch_url_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      handler: kickside.uploads.traits:fetch_url
+
+  - name: upload_file_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: UploadFile decoding, size limit, base64 validation, and hand-off to the shared upload pipeline.
+    source: file://upload_file_test.lua
+    modules: [base64]
+    method: run
+    imports:
+      test: wippy.test:test
+      handler: kickside.uploads.traits:upload_file

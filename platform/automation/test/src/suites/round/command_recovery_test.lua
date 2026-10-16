@@ -1,0 +1,202 @@
+local test = require("test")
+local h = require("h")
+local engine_factory = require("engine_factory")
+local command = require("command")
+local component = require("component")
+local retention_pin = require("retention_pin")
+local funcs = require("funcs")
+local security = require("security")
+local contract = require("contract")
+local uuid = require("uuid")
+local json = require("json")
+local errors = require("errors")
+local M = {}
+type Map = { [string]: any }
+local MANAGE = "kickside.automation.agent:automations_manage"
+local STAGE = "app:command_recovery_stage"
+
+function M.stage(args: Map): (any?, any)
+    local engine = engine_factory.new({funcs={new=function()
+        return {call=function()
+            return nil, errors.new({kind=args.failure_kind or errors.UNAVAILABLE,
+                retryable=args.failure_kind == nil,message="declaration target refuses the request"})
+        end},nil
+    end}})
+    return engine.update_portable_input(args.id,{thread_id=args.thread_id,start="all"},
+        {source=args.change_source ~= false and {source_kind="event",source_thread_id=args.thread_id,start="all",
+            source_ref="fixture:events",event_type=h.EVENT_TYPE} or nil})
+end
+
+M.run = test.run_cases(function()
+    test.describe("explicit authority command recovery",function()
+        test.it("keeps a refusal before any target mutation terminal and permits a later authorized edit",function()
+            local env=h.setup("refused_unmutated_command")
+            local installed=env.caller:call(MANAGE,{action="install",
+                type="kickside.automation.round.fixture:event_kind",input={thread_id=env.thread_id,start="all"}})
+            local id=installed.id
+            local before=h.read_drive(id,"main")
+            local _,denied_err=env.caller:call(STAGE,{id=id,thread_id=env.thread_id,
+                change_source=false,failure_kind=errors.PERMISSION_DENIED})
+            test.not_nil(denied_err)
+            local db=h.db()
+            local held,held_err=command.pending(db,id)
+            test.is_nil(held_err,tostring(held_err))
+            test.is_nil(held)
+            local ops=h.query("SELECT state,target_receipts_json FROM kickside_automation_op WHERE automation_id=$1 AND request_id LIKE 'reconfigure:%'",{id})
+            test.eq(#ops,1)
+            test.eq(ops[1].state,"failed")
+            test.is_nil(next(json.decode(ops[1].target_receipts_json)))
+            db:release()
+            test.eq(h.read_drive(id,"main").pin_generation,before.pin_generation)
+            local result,result_err=env.caller:call(MANAGE,{action="reconfigure",id=id,
+                input={thread_id=env.thread_id,start="all",page_size=7}})
+            test.is_nil(result_err,tostring(result_err))
+            test.is_true(result.success)
+            test.eq(h.read_drive(id,"main").applied.policy.round.page_size,7)
+        end)
+
+        test.it("retains replacement pending until the new principal holds the whole installed declaration",function()
+            local env=h.setup("recovery_resources")
+            local installed=env.caller:call(MANAGE,{action="install",
+                type="kickside.automation.round.fixture:event_kind",input={thread_id=env.thread_id,start="all"}})
+            local id=installed.id
+            local next_source=env.threads:upsert({thread_class="kickside.test.round",
+                impl_id="kickside.automation.round.fixture:round_source_kind",external_ref=uuid.v7(),title="Pending source"})
+            local replacement="resource_admin_" .. uuid.v4():sub(1,8)
+            local definition=contract.get("kickside.component:component_service")
+            local service=definition:with_actor(env.actor):with_scope(env.scope):open()
+            local grant,grant_err=service:grant_subtree({root_component_id=id,
+                subject={subject_id=replacement,subject_type="user"},access_mask=15})
+            test.is_nil(grant_err,tostring(grant_err))
+            test.is_true(grant.success)
+            local actor=security.new_actor(replacement,{security_groups={"automation_test"}})
+            local admin=funcs.new():with_actor(actor):with_scope(env.scope)
+            local _,stage_err=env.caller:call(STAGE,{id=id,thread_id=next_source.thread_id})
+            test.not_nil(stage_err)
+            h.exec("INSERT INTO round_authority_revocation (principal_id,error_kind) VALUES ($1,'subject')",{env.owner})
+            local engine=engine_factory.new()
+            test.is_nil(select(2,engine.recover_drive(id,"main")))
+            local db=h.db()
+            local pending=command.pending(db,id)
+            db:release()
+            test.not_nil(pending)
+            local receipt=component.get_identity_receipt(id)
+            local request={action="set_execution_identity",id=id,principal={kind="user",id=replacement},
+                expected_identity_generation=receipt.identity_generation,request_id=uuid.v7(),supersede_request_id=pending.request_id}
+            local _,denied_err=admin:call(MANAGE,request)
+            test.not_nil(denied_err)
+            test.is_true(errors.is(denied_err,errors.PERMISSION_DENIED))
+            db=h.db()
+            local held=command.pending(db,id)
+            db:release()
+            test.not_nil(held)
+            test.eq(held.request_id,request.request_id)
+            test.eq(held.last_error.state,"blocked_authority")
+            test.eq(held.last_error.error_kind,"access")
+            test.eq(component.get_identity_receipt(id).principal.id,env.owner)
+            grant,grant_err=service:grant_subtree({root_component_id=env.thread_id,
+                subject={subject_id=replacement,subject_type="user"},access_mask=1})
+            test.is_nil(grant_err,tostring(grant_err))
+            test.is_true(grant.success)
+            local result,result_err=admin:call(MANAGE,request)
+            test.is_nil(result_err,tostring(result_err))
+            test.eq(result.state,"succeeded")
+            test.eq(component.get_identity_receipt(id).principal.id,replacement)
+            test.eq(h.read_drive(id,"main").source_thread_id,env.thread_id)
+        end)
+
+        test.it("recovers a revoked reconfigure after pin lowering through the normal ADMIN control without losing configuration or debt",function()
+            local env=h.setup("command_recovery")
+            local installed,install_err=env.caller:call(MANAGE,{action="install",
+                type="kickside.automation.round.fixture:event_kind",input={thread_id=env.thread_id,start="all"}})
+            test.is_nil(install_err,tostring(install_err))
+            local id=installed.id
+            local before=h.read_drive(id,"main")
+            local next_source,next_err=env.threads:upsert({thread_class="kickside.test.round",
+                impl_id="kickside.automation.round.fixture:round_source_kind",external_ref=uuid.v7(),title="Pending source"})
+            test.is_nil(next_err,tostring(next_err))
+            local next_thread=next_source.thread_id
+            local replacement="command_admin_" .. uuid.v4():sub(1,8)
+            local definition=contract.get("kickside.component:component_service")
+            local service=definition:with_actor(env.actor):with_scope(env.scope):open()
+            for _,root in ipairs({id,env.thread_id,next_thread}) do
+                local grant,grant_err=service:grant_subtree({root_component_id=root,
+                    subject={subject_id=replacement,subject_type="user"},access_mask=15})
+                test.is_nil(grant_err,tostring(grant_err))
+                test.is_true(grant.success)
+            end
+            local actor=security.new_actor(replacement,{security_groups={"automation_test"}})
+            local admin=funcs.new():with_actor(actor):with_scope(env.scope)
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,'retained-debt','payload',$2,$3)",
+                {id,json.encode({title="retained prepared output"}),h.PAST})
+            local _,stage_err=env.caller:call(STAGE,{id=id,thread_id=next_thread})
+            test.not_nil(stage_err)
+            test.is_true(errors.is(stage_err,errors.UNAVAILABLE))
+            local db=h.db()
+            local pending,pending_err=command.pending(db,id)
+            test.is_nil(pending_err,tostring(pending_err))
+            local lowered,lowered_err=retention_pin.read(db,next_thread,"drive:" .. id .. ":main")
+            test.is_nil(lowered_err,tostring(lowered_err))
+            test.not_nil(lowered)
+            db:release()
+            h.exec("INSERT INTO round_authority_revocation (principal_id,error_kind) VALUES ($1,'subject')",{env.owner})
+            local engine=engine_factory.new()
+            local blocked,blocked_err=engine.recover_drive(id,"main")
+            test.is_nil(blocked_err,tostring(blocked_err))
+            test.eq(blocked.state,"pending")
+            db=h.db()
+            local held=command.pending(db,id)
+            db:release()
+            test.not_nil(held)
+            test.eq(held.last_error.kind,errors.PERMISSION_DENIED)
+            test.eq(held.last_error.error_kind,"subject")
+            test.eq(held.last_error.state,"blocked_authority")
+            local receipt=component.get_identity_receipt(id)
+            local request={action="set_execution_identity",id=id,principal={kind="user",id=replacement},
+                expected_identity_generation=receipt.identity_generation,request_id=uuid.v7(),supersede_request_id=pending.request_id}
+            local recovered,recover_err=admin:call(MANAGE,request)
+            test.is_nil(recover_err,tostring(recover_err))
+            test.eq(recovered.state,"succeeded")
+            test.is_true(recovered.generation>pending.generation)
+            local after=h.read_drive(id,"main")
+            test.eq(after.source_thread_id,before.source_thread_id)
+            test.eq(after.event_seq,before.event_seq)
+            test.eq(after.applied_hash,before.applied_hash)
+            test.is_nil(after.pending_command_id)
+            local retained=component.get_private_context(id)
+            test.eq(retained._portable_input.thread_id,env.thread_id)
+            test.eq(retained._execution_identity.principal.id,replacement)
+            test.eq(#h.query("SELECT prepared_json FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key='retained-debt'",{id}),1)
+            db=h.db()
+            local old=command.read_op(db,id,pending.request_id)
+            test.eq(old.state,"superseded")
+            test.eq(old.outcome.superseded_input.declaration.thread_id,next_thread)
+            test.eq(old.target_receipts["pin:main"].pin_generation,lowered.generation)
+            local _,late_lower=retention_pin.pin_lower(db,{thread_id=next_thread,consumer_key="drive:" .. id .. ":main",
+                command_id=pending.request_id,command_generation=pending.generation,target_cursor=0})
+            test.not_nil(late_lower)
+            local _,late_raise=retention_pin.pin_raise(db,{thread_id=env.thread_id,consumer_key="drive:" .. id .. ":main",
+                expected_pin_generation=before.pin_generation,new_cursor=100})
+            test.not_nil(late_raise)
+            local tx=db:begin()
+            local _,late_final=command.finalize_tx(tx,{automation_id=id,request_id=pending.request_id,
+                generation=pending.generation,digest=pending.digest,state="succeeded",outcome={}})
+            tx:rollback()
+            test.not_nil(late_final)
+            test.eq(late_final:details().reason,command.REASON.STALE)
+            db:release()
+            local _,late_write=funcs.new():call("kickside.automation:declaration_writer_apply",{component_id=id,automation_id=id,
+                command_id=pending.request_id,generation=pending.generation,declaration_hash=pending.digest})
+            test.not_nil(late_write)
+            local again,again_err=admin:call(MANAGE,request)
+            test.is_nil(again_err,tostring(again_err))
+            test.eq(again.generation,recovered.generation)
+            local converged,converge_err=admin:call(MANAGE,{action="reconfigure",id=id,input={thread_id=next_thread,start="all"}})
+            test.is_nil(converge_err,tostring(converge_err))
+            test.is_true(converged.success)
+            test.eq(h.read_drive(id,"main").source_thread_id,next_thread)
+            test.eq(#h.query("SELECT prepared_json FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key='retained-debt'",{id}),1)
+        end)
+    end)
+end)
+return M

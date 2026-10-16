@@ -1,0 +1,100 @@
+version: "1.0"
+namespace: kickside.users.provisioning
+
+entries:
+  - name: provisioning
+    kind: library.lua
+    meta:
+      comment: kickside.users:user_provisioning implementation, backed by app_users + groups.
+    source: file://provisioning.lua
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+
+  - name: provisioning_get_user
+    kind: function.lua
+    meta:
+      comment: user_provisioning.get_user -- load a user with groups, status, has_password.
+    source: file://provisioning.lua
+    method: get_user
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+
+  - name: provisioning_create_passwordless_user
+    kind: function.lua
+    meta:
+      comment: user_provisioning.create_passwordless_user -- insert an SSO-only account.
+    source: file://provisioning.lua
+    method: create_passwordless_user
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+
+  - name: provisioning_assign_group
+    kind: function.lua
+    meta:
+      comment: user_provisioning.assign_group -- grant a single security group.
+    source: file://provisioning.lua
+    method: assign_group
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+
+  - name: provisioning_complete_passwordless_user
+    kind: function.lua
+    meta:
+      comment: user_provisioning.complete_passwordless_user -- atomically activate a pending SSO account with its groups.
+    source: file://provisioning.lua
+    method: complete_passwordless_user
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+
+  - name: provisioning_apply_sourced_groups
+    kind: function.lua
+    meta:
+      comment: user_provisioning.apply_sourced_groups -- reconcile a source's memberships.
+    source: file://provisioning.lua
+    method: apply_sourced_groups
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+
+  - name: provisioning_mint_session
+    kind: function.lua
+    meta:
+      comment: user_provisioning.mint_session -- mint a session mirroring password login.
+    source: file://provisioning.lua
+    method: mint_session
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session

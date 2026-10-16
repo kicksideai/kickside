@@ -1,0 +1,265 @@
+version: "1.0"
+namespace: app
+
+# Standalone test harness for the component module. Provides db / processes /
+# bootloader so the module boots and runs its migrations in isolation. Excluded
+# from publish (see wippy.yaml exclude: app:**).
+
+entries:
+  - name: deletable_retention_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:deletable_retention_delete
+
+  - name: deletable_retention_delete
+    kind: function.lua
+    source: file://../../deletable_retention_delete.lua
+    method: handle
+    modules: [sql, ctx, funcs]
+
+  - name: teardown_purge_retry_test
+    kind: function.lua
+    meta:
+      title: Teardown Purge Retry
+      type: test
+      suite: component_teardown_purge
+      group: Components
+      comment: A failed primary-thread purge keeps the component row and reports failure so the reaper's durable retry re-attempts the cascade.
+    source: file://../../teardown_purge_retry_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - contract
+      - funcs
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+
+  - name: emit_singleton_probe
+    kind: function.lua
+    meta:
+      comment: Runs component.emit_singleton_event under the executor's bound actor + scope so the ambient-frame path is exercisable from a test.
+    source: file://../../emit_singleton_probe.lua
+    method: run
+    imports:
+      component: kickside.component:component
+
+  - name: context_revision_probe
+    kind: function.lua
+    meta:
+      comment: Runs component client calls (update, validate_access, query) under the executor's bound actor + scope so the client is exercisable from a test.
+    source: file://../../context_revision_probe.lua
+    method: run
+    imports:
+      component: kickside.component:component
+
+  - name: emit_singleton_test
+    kind: function.lua
+    meta:
+      title: Component Emit Singleton
+      type: test
+      suite: component_emit_singleton
+      group: Components
+      comment: emit_singleton_event folds singleton-id resolution + threads-contract open + append into one guarded call; the shared plumbing the per-module event wrappers reuse.
+    source: file://../../emit_singleton_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - funcs
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      autoinit: kickside.component:autoinit
+
+  - name: deletable_unopenable_binding
+    kind: contract.binding
+    meta:
+      title: Unopenable Deletable
+      comment: A component kind that declares the deletable contract but wires its delete method to an unresolvable function id, so the contract is declared yet the binding cannot be opened.
+      class:
+        - deletable_unopenable
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:deletable_missing_delete
+
+  - name: deletable_ok_binding
+    kind: contract.binding
+    meta:
+      title: Openable Deletable
+      comment: A component kind that declares the deletable contract with a delete method that opens cleanly and reports a successful cleanup, so the declared-deletable happy path is covered.
+      class:
+        - deletable_ok
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:deletable_ok_delete
+
+  - name: deletable_ok_delete
+    kind: function.lua
+    meta:
+      comment: Harness deletable cleanup that reports success and records the call.
+    source: file://../../deletable_ok_delete.lua
+    method: handle
+    modules:
+      - sql
+
+  - name: deletable_fenced_binding
+    kind: contract.binding
+    meta:
+      title: Fenced Deletable
+      comment: A component kind whose deletable cleanup asks the component fence for a write to its backing data, standing in for a consumer write that lands while the delete runs.
+      class:
+        - deletable_fenced
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:deletable_fenced_delete
+
+  - name: deletable_fenced_delete
+    kind: function.lua
+    meta:
+      comment: Harness deletable cleanup that succeeds only when the component fence refuses a write as NOT_FOUND.
+    source: file://../../deletable_fenced_delete.lua
+    method: handle
+    modules:
+      - sql
+      - ctx
+    imports:
+      component: kickside.component:component
+
+  - name: deletable_typed_failure_binding
+    kind: contract.binding
+    meta:
+      title: Typed-Failure Deletable
+      comment: A component kind whose deletable cleanup fails with a typed error of the kind named in its private context.
+      class:
+        - deletable_typed_failure
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:deletable_typed_failure_delete
+
+  - name: deletable_typed_failure_delete
+    kind: function.lua
+    meta:
+      comment: Harness deletable cleanup that fails with a typed error of the component's configured kind.
+    source: file://../../deletable_typed_failure_delete.lua
+    method: handle
+    modules:
+      - ctx
+
+  - name: deletable_failing_binding
+    kind: contract.binding
+    meta:
+      title: Failing Deletable
+      comment: A component kind whose deletable cleanup always fails.
+      class:
+        - deletable_failing
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:autoinit_test_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: app:deletable_failing_delete
+
+  - name: deletable_failing_delete
+    kind: function.lua
+    meta:
+      comment: Harness deletable cleanup that always fails.
+    source: file://../../deletable_failing_delete.lua
+    method: handle
+
+  - name: fence_test
+    kind: function.lua
+    meta:
+      name: Component Fence
+      type: test
+      suite: component_fence
+      group: Components
+      comment: component.fence admits writes only to a live component; a delete refuses them from before its cleanup runs, and a failed cleanup lets the component live on.
+    source: file://../../fence_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - contract
+      - funcs
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      teardown: kickside.component.persist:teardown
+  - name: deletable_gate_test
+    kind: function.lua
+    meta:
+      name: Teardown Deletable Gate
+      type: test
+      suite: component_deletable_gate
+      group: Components
+      comment: A component whose declared deletable cannot be opened fails the delete and keeps its row rather than being silently unregistered into an orphan tombstone.
+    source: file://../../deletable_gate_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - contract
+    imports:
+      test: wippy.test:test
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: "Bootloader configuration for testing"
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Component module mounted as a root so mandatory host requirements are exercised.
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: app:component_lifecycle_test_impl
+
+  - name: dep.wippy.migration
+    version: "*"
+    kind: ns.dependency
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db

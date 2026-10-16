@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: kickside.uploads.images
+
+entries:
+  - name: processor
+    kind: function.lua
+    meta:
+      type: processor
+      comment: Process image uploads
+    source: file://processor.lua
+    modules:
+      - fs
+      - hash
+    imports:
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    method: process

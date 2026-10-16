@@ -1,0 +1,4 @@
+organization: kickside
+module: connection-harness
+type: application
+description: Standalone runnable harness that boots kickside/connection and its component dependency and runs its co-located *_test.lua suites.

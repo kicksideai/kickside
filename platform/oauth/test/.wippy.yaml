@@ -1,0 +1,40 @@
+version: "1.0"
+# These suites explicitly bootstrap and dispatch refresh demand and claim Jobs
+# slots. Ambient services would change the same generations and leases between
+# assertions; migration/key boot remains enabled through wippy/bootloader.
+override:
+  "app:refresh_endpoint_provider:connector_contract.context_values.oauth_token_endpoint": "http://127.0.0.1:${http_port}/public/test-token"
+  "app:refresh_network_provider:connector_contract.context_values.oauth_token_endpoint": "https://127.0.0.1:${http_port}/public/test-token"
+  "kickside.oauth.service:refresh_bootstrap.service:lifecycle.auto_start": false
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
+  "app:db:file": "${sqlite_path}"
+  "app:gateway:addr": ":${http_port}"
+workspace:
+  replacements:
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/contract: ../../../core/contract
+    kickside/oauth: ..
+    kickside/component: ../../../core/component
+    kickside/core: ../../../core/core
+    kickside/execution: ../../../core/execution
+    kickside/jobs: ../../../core/jobs
+vars:
+  http_port: 19145
+  sqlite_path: ":memory:"
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_oauth
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8

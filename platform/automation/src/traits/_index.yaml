@@ -1,0 +1,79 @@
+version: "1.0"
+namespace: kickside.automation.traits
+
+# Agent capabilities over automation management (kickside.automation.agent's
+# read/write tools). Split into a read-only reader and a reader+writer manager so
+# a read-only MCP credential is mintable independently of a write-capable one.
+
+entries:
+  - name: reader
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Automations Reader
+      public: true
+      icon: tabler:list-search
+      comment: Reads the automation catalog and installed automations, without changing anything.
+      tags: [automation]
+    prompt: |
+      You can inspect automations with the **AutomationsRead** tool: `list` shows
+      installed automations (optionally filtered by class), `types` shows installable
+      types with their input schemas, `catalog` shows the source/sink/destination
+      options an install input can reference, `read_config` reads one automation's full
+      editable config, and `export` returns it as a portable artifact. Automation ids
+      are the component ids `list` returns.
+    tools:
+      - kickside.automation.agent:automations_read
+
+  - name: manager
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Automations Manager
+      public: true
+      icon: tabler:settings-automation
+      comment: "Schedules recurring tasks (every minute, hourly, daily, or cron) to run workflows, agents, or actions with RecurringTasks; installs, reconfigures, pauses/resumes, runs, imports, and uninstalls automations."
+      tags: [automation, scheduling, recurring, schedules]
+    prompt: |
+      Use **RecurringTasks** for “every X, run this task”: create with a UTC
+      interval (e.g. 15m) or cron and target kind workflow, agent, or action.
+      A workflow uses an exact published flow_ref and Start input; an agent uses
+      agent_id and prompt; an action uses a declared writable port, config and input.
+      Before creating an action target, read its port config_schema and input_schema
+      with AutomationsRead action=catalog. Put port configuration in target.config
+      and every required per-run field in target.input, including fields also present
+      in config. These are separate schema-validated objects. Include all requested
+      output fields, including optional ones, in the appropriate config or input
+      object. Task metadata such as its title names the schedule and does not
+      configure the action output.
+      RecurringTasks action=list shows recurring schedules and targets, owned and
+      READ-shared tasks, last/next run and last error; action=get reads one task.
+      AutomationsRead action=list shows the installed automation component inventory.
+      Use both list operations when the request asks for recurring tasks and automations.
+      pause, resume,
+      update schedule/target, delete and run_now take the returned task id.
+      No data source is needed. Execution defaults to the calling user; selecting
+      a group requires current membership and explicit delegation.
+      You can inspect and manage automations with the **AutomationsRead** and
+      **AutomationsManage** tools.
+
+      Before installing, call AutomationsRead `types` to see installable types and their
+      input schemas, and `catalog` for the source/sink/destination options a type's input
+      can reference. Install with AutomationsManage `install` (type + input).
+
+      To edit an installed automation in place, read its current config with
+      AutomationsRead `read_config` and pass the config's `_portable_input` block back as
+      `input` to AutomationsManage `reconfigure` -- do not invent a different shape. A
+      data sync's destination cannot change through reconfigure; uninstall and reinstall
+      instead.
+
+      `pause`/`resume` toggle an installed automation. `run` wakes its main drive
+      through the generic run_now control; paused drives remain paused.
+      `import` recreates a portable artifact from AutomationsRead `export`, optionally
+      with `input_overrides` for environment-owned fields (e.g. destination) or a
+      different `parent_id`. `uninstall` tears an automation down, replaying its
+      rollback chain.
+    tools:
+      - kickside.automation.agent:recurring_tasks
+      - kickside.automation.agent:automations_read
+      - kickside.automation.agent:automations_manage

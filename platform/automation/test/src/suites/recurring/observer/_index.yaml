@@ -1,0 +1,9 @@
+version: "1.0"
+namespace: kickside.core.zz_delete_lease_test
+entries:
+  - name: observer
+    kind: function.lua
+    meta: { type: kickside.retention.owner }
+    source: file://../lease_cleanup_observer.lua
+    method: run
+    modules: [sql, process]

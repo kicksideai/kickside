@@ -1,0 +1,43 @@
+version: "1.0"
+namespace: kickside.core.security
+
+# Module-owned access policy for the core product endpoints. Declared here so the
+# grant travels with the slice; the role group that receives it is injected by the
+# user_security_scope requirement, keeping the slice app-agnostic. Per-user
+# ownership is enforced behind the endpoints.
+entries:
+  - name: lifecycle_actor_delegation
+    kind: security.policy
+    meta:
+      type: security.policy_binding
+      surface: kickside.core.lifecycle.boot
+      intent: system_lifecycle_runtime
+      comment: The boot provisioner may mint the system:lifecycle actor; nothing else.
+    groups:
+      - wippy.security:process
+    policy:
+      resources:
+        - system:lifecycle
+      actions:
+        - security.actor.create
+      effect: allow
+
+  # The converger re-runs a component's thread materialization under its
+  # OWNER's reconstructed identity. Attaching a custom security context to a
+  # function call is gated as action funcs.security on the fixed "security"
+  # resource, so that exact capability is granted to the process group here.
+  - name: lifecycle_converge_delegation
+    kind: security.policy
+    meta:
+      type: security.policy_binding
+      surface: kickside.core.lifecycle.boot
+      intent: system_lifecycle_runtime
+      comment: Boot processes may carry a reconstructed owner identity into function calls (converge_thread).
+    groups:
+      - wippy.security:process
+    policy:
+      resources:
+        - security
+      actions:
+        - funcs.security
+      effect: allow

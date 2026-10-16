@@ -1,0 +1,47 @@
+version: "1.0"
+namespace: kickside.ui
+entries:
+  - name: public_branding_settings_contract
+    kind: security.policy
+    meta:
+      comment: The UI shell may open only the settings contract (and its canonical binding) for its namespace reads (branding title/logo and navigation controls).
+    policy:
+      resources:
+        - kickside.settings:settings
+        - kickside.settings:settings_binding
+        - get_namespace
+      actions:
+        - contract.get
+        - contract.open
+        - contract.call
+      effect: allow
+
+  - name: public_branding_settings_registry
+    kind: security.policy
+    meta:
+      comment: Public branding may discover declared setting definitions needed to resolve title/logo defaults.
+    policy:
+      resources:
+        - kickside.*
+      actions:
+        - registry.find
+      effect: allow
+
+  - name: public_branding_settings_cache
+    kind: security.policy
+    meta:
+      comment: Public branding may read only the warmed settings cache, not DB/admin/write surfaces.
+    policy:
+      resources:
+        - kickside.settings:cache
+      actions:
+        - store.get
+        - store.key.get
+      effect: allow
+
+  - name: public_logo_storage
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [registry.get, db.get, fs.get]
+      effect: allow

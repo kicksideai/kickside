@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: keeper.hub
+
+entries:
+  - name: token_provider
+    kind: contract.definition
+    meta:
+      # meta.type: test marks a runnable suite, and the runner tries to execute
+      # anything carrying it. This is the contract the harness stubs, not a suite.
+      comment: Harness stub for the keeper.hub token provider contract port.
+    methods:
+      - name: get_token
+        input_schemas:
+          - definition: '{"type":"object"}'
+            format: application/schema+json
+        output_schemas:
+          - definition: '{"type":"object","properties":{"token":{"type":"string"}}}'
+            format: application/schema+json

@@ -1,0 +1,9 @@
+organization: kickside
+module: sync-harness
+type: application
+description: Standalone runnable harness that boots kickside/sync and its component/contract dependencies, then runs Sync's native Automation suites.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

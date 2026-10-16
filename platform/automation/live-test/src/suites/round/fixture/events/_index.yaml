@@ -1,0 +1,15 @@
+version: '1.0'
+namespace: kickside.automation.round.fixture.events
+entries:
+- name: source.received
+  kind: registry.entry
+  meta:
+    type: kickside.core.threads.event
+  schema:
+    type: object
+- name: source.changed
+  kind: registry.entry
+  meta:
+    type: kickside.core.threads.event
+  schema:
+    type: object

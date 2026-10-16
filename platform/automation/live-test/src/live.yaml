@@ -1,0 +1,18 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: round_live_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+  source: file://test_src/suites/round/live_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    round_harness: kickside.automation:round_harness

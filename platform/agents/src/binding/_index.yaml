@@ -1,0 +1,30 @@
+version: "1.0"
+namespace: kickside.agents.binding
+
+entries:
+  - name: delete_agent_func
+    kind: function.lua
+    source: file://delete_agent_func.lua
+    method: handle
+
+  - name: agent_status_func
+    kind: function.lua
+    meta:
+      comment: Returns status for a user agent component
+    source: file://agent_status_func.lua
+    modules:
+      - ctx
+    imports:
+      component: kickside.component:component
+    method: handle
+
+  - name: user_agents_func
+    kind: library.lua
+    source: file://user_agents_func.lua
+    modules: [registry]
+    imports:
+      component: kickside.component:component
+      component_envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility

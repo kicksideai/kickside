@@ -1,0 +1,56 @@
+version: "1.0"
+namespace: kickside.knowledge.retrieval
+
+entries:
+  - name: kb_search
+    kind: library.lua
+    meta: { comment: Control-plane KB query facade — resolves a KB and delegates to the engine's queryable binding. Single inbound query seam; retrieval is entirely the engine's concern. }
+    source: file://kb_search.lua
+    modules: [contract, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
+
+  # Agentic query driver: answers via a tool-calling agent over the KB. A
+  # function (invoked by funcs.call) so its dataflow runtime stays in its own
+  # pool, off the answering/HTTP import closure.
+  - name: agentic_query
+    kind: function.lua
+    meta: { comment: Agentic (dataflow) KB query driver — runs the KB's query agent with a retrieval tool to produce a grounded answer. }
+    source: file://agentic_query.lua
+    method: run
+    imports:
+      flow: userspace.dataflow.flow:flow
+
+  # Answering layer: retrieve + produce an answer via the selected query driver.
+  - name: kb_answer
+    kind: library.lua
+    meta: { comment: KB Ask — retrieval (kb_search) plus answer generation via the per-KB query_driver (agentic dataflow agent or single-shot synthesis). }
+    source: file://kb_answer.lua
+    modules: [funcs]
+    imports:
+      llm: wippy.llm:llm
+      kb_search: kickside.knowledge.retrieval:kb_search
+      model_failure: kickside.contract:model_failure
+
+  # Built-in fallback agent for the agentic query driver.
+  - name: kb_query_agent
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      title: Knowledge Base Q&A
+    prompt: |
+      You answer the user's question using a single knowledge base. One KB is
+      already bound, so you never need a kb_id. Use RetrieveKB to fetch the
+      passages that answer the question, refining the query across calls when
+      the first result is too broad or incomplete.
+
+      Base your answer ONLY on retrieved content — never on prior knowledge. If the
+      KB does not contain the answer, say so plainly rather than guessing. Be
+      concise and direct, and prefer concrete facts. When you have enough, return
+      the final answer.
+    model: class:fast
+    max_tokens: 1024
+    tools:
+      - kickside.knowledge.traits:kb_retrieve_tool

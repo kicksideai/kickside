@@ -1,0 +1,8 @@
+organization: kickside
+module: realtime-dispatch
+type: library
+description: Bounded audience dispatch through the selected realtime owner
+license: LicenseRef-KickSide-Community-1.0
+exclude: ["test/**", "app:**", "app.**:**"]
+exclude_meta:
+  type: [test, test_helper, test_support]

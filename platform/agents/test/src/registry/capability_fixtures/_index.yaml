@@ -1,0 +1,311 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/agents. Provides the host resources the agents
+# module and its deps require (app:db, app:processes, app:api, env storage, a
+# permissive actor scope) and boots component/contract so the co-located
+# *_test.lua suites run in isolation. Harness-only; excluded from publish.
+
+entries:
+  - name: capability_user
+    kind: security.policy
+    meta:
+      comment: Test-only normal-user scope; otherwise permissive so the exact Keeper discovery denial is isolated.
+    groups:
+      - app:capability_user
+    policy:
+      resources:
+        - kickside.agents.registry:*
+        - kickside.agents:*
+        - kickside.component:*
+        - app:db
+      actions: '*'
+      effect: allow
+
+  - name: capability_user_keeper_forbid
+    kind: security.policy
+    meta:
+      comment: Test-only normal-user denial for the public-but-admin-scoped Keeper capability.
+    groups:
+      - app:capability_user
+    policy:
+      resources:
+        - keeper.hub.tools:administrator_probe
+      actions:
+        - registry.get
+        - funcs.call
+      effect: deny
+
+  - name: fixture_system_agent
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      name: fixture
+      title: Fixture Agent
+    prompt: A fixture system agent for the agents harness suite.
+    model: class:fast
+    temperature: 0.25
+    max_tokens: 1234
+    traits:
+      - wippy.agent.traits:time_aware
+
+  - name: fixture_public_system_agent
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      name: fixture_public
+      title: Public Fixture Agent
+      public: true
+    prompt: A public fixture system agent for the agents harness suite.
+    model: class:fast
+    temperature: 0.25
+
+  - name: checkpoint_policy_model
+    kind: registry.entry
+    meta:
+      type: llm.model
+      name: checkpoint-policy-model
+      title: Checkpoint Policy Fixture Model
+      capabilities: [generate]
+      class: [checkpoint-policy]
+      priority: 100
+    max_tokens: 262144
+    output_tokens: 8000
+    providers:
+      - id: fixture:provider
+        provider_model: checkpoint-policy-model
+
+  - name: checkpoint_small_model
+    kind: registry.entry
+    meta:
+      type: llm.model
+      name: checkpoint-small-model
+      capabilities: [generate]
+      class: [checkpoint-small]
+      priority: 100
+    max_tokens: 32768
+    output_tokens: 8000
+    providers:
+      - id: fixture:provider
+        provider_model: checkpoint-small-model
+
+  - name: fast_policy_model
+    kind: registry.entry
+    meta: {type: llm.model, name: fast-policy-model, class: [fast], capabilities: [generate], priority: 100}
+    max_tokens: 262144
+    output_tokens: 8000
+    providers: [{id: 'fixture:provider', provider_model: fast-policy-model}]
+
+  - name: unspecified_limits_model
+    kind: registry.entry
+    meta: {type: llm.model, name: unspecified-limits-model, capabilities: [generate]}
+    providers: [{id: 'fixture:provider', provider_model: unspecified-limits-model}]
+
+  - name: fixture_memory_provider
+    kind: registry.entry
+    meta:
+      type: agent.memory_provider
+      title: Fixture Memory Provider
+      implementation_id: app.fixture:memory
+      order: 1
+
+  - name: dep.kickside.agents
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Agents mounted as the single package root; qualified parameters wire every host-owned requirement in its transitive
+        graph.
+    component: kickside/agents
+    parameters:
+    - name: kickside.agents:api_router
+      value: app:api
+    - name: kickside.agents:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.automation:target_db
+      value: app:db
+    - name: kickside.automation:api_router
+      value: app:api
+    - name: kickside.automation:ui_server
+      value: app:gateway
+    - name: kickside.workflows:target_db
+      value: app:db
+    - name: kickside.workflows:api_router
+      value: app:api
+    - name: kickside.workflows:ui_server
+      value: app:gateway
+    - name: kickside.transform:api_router
+      value: app:api
+    - name: kickside.transform:ui_server
+      value: app:gateway
+    - name: kickside.transform:env_storage
+      value: app:env_storage
+    - name: kickside.transform.security:user_security_scope
+      value: app:user
+    - name: kickside.models:target_db
+      value: app:db
+    - name: kickside.models:api_router
+      value: app:api
+    - name: kickside.models:ui_server
+      value: app:gateway
+    - name: kickside.models:process_host
+      value: app:processes
+    - name: kickside.memory:ui_server
+      value: app:gateway
+    - name: kickside.users:env_storage
+      value: app:env_storage
+    - name: kickside.users:public_router
+      value: app:api_public
+    - name: kickside.users:api_router
+      value: app:api
+    - name: kickside.users:ui_server
+      value: app:gateway
+    - name: kickside.users:target_db
+      value: app:db
+    - name: kickside.users:user_security_scope
+      value: app:user
+    - name: kickside.users:admin_security_scope
+      value: app:user
+    - name: kickside.users:login_role_resource
+      value: app:*
+    - name: kickside.settings:target_db
+      value: app:db
+    - name: kickside.settings:api_router
+      value: app:api
+    - name: kickside.settings:ui_server
+      value: app:gateway
+    - name: kickside.uploads:database_resource
+      value: app:db
+    - name: kickside.uploads:storage_id
+      value: app:uploads
+    - name: kickside.uploads:env_storage
+      value: app:env_storage
+    - name: kickside.uploads:api_router
+      value: app:api
+    - name: kickside.uploads:ui_server
+      value: app:gateway
+    - name: kickside.uploads.security:user_security_scope
+      value: app:user
+    - name: kickside.connection:api_router
+      value: app:api
+    - name: kickside.connection:ui_server
+      value: app:gateway
+    - name: wippy.llm:env_storage
+      value: app:env_storage
+    - name: wippy.llm:process_host
+      value: app:processes
+    - name: wippy.relay:user_security_scope
+      value: app:user
+    - name: wippy.relay:env_storage
+      value: app:env_storage
+    - name: wippy.relay:application_host
+      value: app:processes
+    - name: wippy.views:api_router
+      value: app:api_public
+    - name: wippy.views:env_storage
+      value: app:env_storage
+    - name: wippy.session:api_router
+      value: app:api
+    - name: wippy.session:env_storage
+      value: app:env_storage
+    - name: wippy.session:database_resource
+      value: app:db
+    - name: wippy.session:default_host
+      value: app:processes
+    - name: wippy.session:delegation_func_id
+      value: app:delegate_capture
+    - name: userspace.dataflow:target_db
+      value: app:db
+    - name: userspace.dataflow:process_host
+      value: app:processes
+    - name: userspace.dataflow:api_router
+      value: app:api
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.projections:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:env_storage
+      value: app:env_storage
+    - name: kickside.core.projections:env_storage
+      value: app:env_storage
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: kickside.core.jobs:api_router
+      value: app:api
+    - name: kickside.core.scheduler:env_storage
+      value: app:env_storage
+    - name: kickside.core.scheduler:process_host
+      value: app:processes
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies dependency migrations on boot.
+    component: wippy/bootloader
+    parameters:
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+    - name: wippy.migration:app_db
+      value: app:db
+    version: '*'
+
+  - name: dep.kickside.memory_fixture
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Test-only provider fixture for memory_runtime_test; Agents itself does not depend on a concrete memory provider.
+    component: kickside/memory
+    parameters:
+    - name: kickside.memory:ui_server
+      value: app:gateway
+
+  - name: dep.kickside.models_fixture
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Test-only model catalog fixture for the Agents discovery suites; Agents remains catalog-provider agnostic.
+    component: kickside/models
+    parameters:
+    - name: kickside.models:target_db
+      value: app:db
+    - name: kickside.models:api_router
+      value: app:api
+    - name: kickside.models:ui_server
+      value: app:gateway
+    - name: kickside.models:process_host
+      value: app:processes

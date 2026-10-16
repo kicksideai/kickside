@@ -1,0 +1,99 @@
+version: '1.0'
+namespace: app.skill_errors
+entries:
+- name: http_status_test
+  kind: function.lua
+  source: file://http_status_test.lua
+  method: run
+  meta: { type: test, suite: skill_error_contract }
+  imports:
+    test: wippy.test:test
+    create_api: app.skill_errors:create_api
+    refine_api: app.skill_errors:refine_api
+    delete_api: app.skill_errors:delete_api
+    get_api: app.skill_errors:get_api
+    versions_api: app.skill_errors:versions_api
+    list_api: app.skill_errors:list_api
+    file_api: app.skill_errors:file_api
+    http_fixture: app.skill_errors:http_fixture
+    security_fixture: app.skill_errors:security_fixture
+    funcs_fixture: app.skill_errors:funcs_fixture
+- name: http_fixture
+  kind: library.lua
+  source: file://api_http_fixture.lua
+- name: security_fixture
+  kind: library.lua
+  source: file://api_security_fixture.lua
+- name: funcs_fixture
+  kind: library.lua
+  source: file://api_funcs_fixture.lua
+- name: create_api
+  kind: library.lua
+  source: file://create_api_source.lua
+  modules: [json]
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+- name: refine_api
+  kind: library.lua
+  source: file://refine_api_source.lua
+  modules: [json]
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+- name: delete_api
+  kind: library.lua
+  source: file://delete_api_source.lua
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+- name: get_api
+  kind: library.lua
+  source: file://get_api_source.lua
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+- name: versions_api
+  kind: library.lua
+  source: file://versions_api_source.lua
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+- name: list_api
+  kind: library.lua
+  source: file://list_api_source.lua
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+    query_params: kickside.skills.api:query_params
+- name: file_api
+  kind: library.lua
+  source: file://file_api_source.lua
+  imports:
+    http: app.skill_errors:http_fixture
+    security: app.skill_errors:security_fixture
+    funcs: app.skill_errors:funcs_fixture
+    http_errors: kickside.contract:http_errors
+    query_params: kickside.skills.api:query_params
+- name: access_errors_test
+  kind: function.lua
+  source: file://access_errors_test.lua
+  method: run
+  meta: { type: test, suite: skill_error_contract }
+  modules: [uuid]
+  imports:
+    test: wippy.test:test
+    test_identity: app:test_identity
+    http_errors: kickside.contract:http_errors

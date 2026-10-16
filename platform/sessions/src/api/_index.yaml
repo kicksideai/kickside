@@ -1,0 +1,40 @@
+version: "1.0"
+namespace: kickside.sessions.api
+
+entries:
+  - name: start_token
+    kind: function.lua
+    meta:
+      comment: Packs one session start-token for restarting a chat with the same agent.
+    source: file://start_token.lua
+    modules: [http, security]
+    imports:
+      start_tokens: wippy.session:start_tokens
+    method: handler
+    pool: { size: 4 }
+
+  - name: start_token.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: start_token
+    path: /sessions/start-token
+
+  - name: favorite
+    kind: function.lua
+    meta:
+      comment: Toggle a session favorite flag (stored in the session public_meta).
+    source: file://favorite.lua
+    modules: [http, security]
+    imports:
+      session_writer: wippy.session.persist:writer
+      session_repo: wippy.session.persist:session_repo
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: favorite.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: favorite
+    path: /sessions/favorite

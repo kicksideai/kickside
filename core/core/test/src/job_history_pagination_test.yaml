@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: app
+entries:
+- name: job_history_pagination_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: job_history_pagination
+  source: file://job_history_pagination_test.lua
+  method: run
+  modules: [uuid]
+  imports:
+    test: wippy.test:test
+    history: kickside.core.threads:job_history

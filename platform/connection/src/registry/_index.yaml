@@ -1,0 +1,197 @@
+version: "1.0"
+namespace: kickside.connection.registry
+
+# Canonical implementation of the kickside.connection:connections contract.
+# Single source file (connections.lua) provides all 7 methods; each contract
+# method maps to one function.lua entry that selects the right method via
+# the `method:` field.
+
+entries:
+  # ─── Per-method dispatchers ─────────────────────────────────────────
+  - name: register
+    kind: function.lua
+    meta:
+      comment: connections registry — register
+    source: file://connections.lua
+    method: register
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: find
+    kind: function.lua
+    meta:
+      comment: connections registry — find
+    source: file://connections.lua
+    method: find
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: upsert
+    kind: function.lua
+    meta:
+      comment: connections registry — upsert
+    source: file://connections.lua
+    method: upsert
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: update
+    kind: function.lua
+    meta:
+      comment: connections registry — update
+    source: file://connections.lua
+    method: update
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: delete
+    kind: function.lua
+    meta:
+      comment: connections registry — delete
+    source: file://connections.lua
+    method: delete
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: list
+    kind: function.lua
+    meta:
+      comment: connections registry — list
+    source: file://connections.lua
+    method: list
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: validate
+    kind: function.lua
+    meta:
+      comment: connections registry — validate
+    source: file://connections.lua
+    method: validate
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  # ─── Canonical binding ──────────────────────────────────────────────
+  - name: connections_registry
+    kind: contract.binding
+    meta:
+      title: Connections Registry
+      comment: Canonical orchestrator for kickside.connection:connections
+      tags: [connections, registry, canonical]
+    contracts:
+      - contract: kickside.connection:connections
+        default: true
+        methods:
+          register: kickside.connection.registry:register
+          find: kickside.connection.registry:find
+          upsert: kickside.connection.registry:upsert
+          update: kickside.connection.registry:update
+          delete: kickside.connection.registry:delete
+          list: kickside.connection.registry:list
+          validate: kickside.connection.registry:validate
+
+  # ─── reply_providers: per-method dispatchers ────────────────────────
+  - name: rp_create
+    kind: function.lua
+    meta: { comment: "reply_providers — create" }
+    source: file://reply_providers.lua
+    method: create
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: rp_find
+    kind: function.lua
+    meta: { comment: "reply_providers — find" }
+    source: file://reply_providers.lua
+    method: find
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: rp_upsert
+    kind: function.lua
+    meta: { comment: "reply_providers — upsert" }
+    source: file://reply_providers.lua
+    method: upsert
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: rp_update
+    kind: function.lua
+    meta: { comment: "reply_providers — update" }
+    source: file://reply_providers.lua
+    method: update
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: rp_delete
+    kind: function.lua
+    meta: { comment: "reply_providers — delete" }
+    source: file://reply_providers.lua
+    method: delete
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  - name: rp_list
+    kind: function.lua
+    meta: { comment: "reply_providers — one offset page filtered by provider, name and text" }
+    source: file://reply_providers.lua
+    method: list
+    modules: [contract, registry, security]
+    imports:
+      component: kickside.component:component
+      conn_types: kickside.connection:types
+      envelope: kickside.component:envelope
+
+  # ─── reply_providers binding ────────────────────────────────────────
+  - name: reply_providers_registry
+    kind: contract.binding
+    meta:
+      title: Reply Providers Registry
+      comment: Canonical orchestrator for kickside.connection:reply_providers
+      tags: [reply_providers, registry, canonical]
+    contracts:
+      - contract: kickside.connection:reply_providers
+        default: true
+        methods:
+          create: kickside.connection.registry:rp_create
+          find: kickside.connection.registry:rp_find
+          upsert: kickside.connection.registry:rp_upsert
+          update: kickside.connection.registry:rp_update
+          delete: kickside.connection.registry:rp_delete
+          list: kickside.connection.registry:rp_list

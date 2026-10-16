@@ -1,0 +1,93 @@
+version: "1.0"
+namespace: kickside.core.threads.api
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: list_threads_test
+    kind: function.lua
+    meta:
+      title: List Threads Picker Item
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: thread_item labels a row by its component title, then attrs title, then id.
+    source: file://list_threads_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      list_threads: kickside.core.threads.api:list_threads
+
+  - name: register_projection_api_test
+    kind: function.lua
+    meta:
+      title: HTTP Projection Registration Identity
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: The HTTP-registered projection identity is captured from the caller and rooted in the thread's component; a supplied identity is refused.
+    source: file://register_projection_api_test.lua
+    method: run
+    modules:
+      - uuid
+      - json
+      - sql
+      - security
+      - funcs
+      - contract
+    imports:
+      test: wippy.test:test
+
+  - name: thread_access_test
+    kind: function.lua
+    meta:
+      title: Thread Access Gate
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: IDOR gate — owner allowed at READ/WRITE, non-member denied 403, missing thread 404.
+    source: file://thread_access_test.lua
+    method: run
+    modules:
+      - uuid
+      - security
+      - funcs
+      - contract
+    imports:
+      test: wippy.test:test
+
+  - name: thread_access_lookup_test
+    kind: function.lua
+    meta:
+      title: Thread Access Gate Lookup
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: IDOR gate lookup branches — empty/unknown id and a component-less thread are 404.
+    source: file://thread_access_lookup_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - time
+    imports:
+      test: wippy.test:test
+      thread_access: kickside.core.threads.api:thread_access
+
+  - name: orphan_thread_adoption_test
+    kind: function.lua
+    meta:
+      title: Orphan Thread Adoption
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: An operator adopts a maintenance-owned thread, then reads and deletes it through the threads contract.
+    source: file://orphan_thread_adoption_test.lua
+    method: run
+    modules:
+      - uuid
+      - security
+      - contract
+    imports:
+      test: wippy.test:test
+

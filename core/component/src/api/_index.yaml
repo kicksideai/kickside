@@ -1,0 +1,93 @@
+version: "1.0"
+namespace: kickside.component.api
+
+# Generic, component-level share API. Any component-backed resource (skills,
+# agents, …) reuses these endpoints, so sharing has one implementation. ADMIN is
+# enforced by the service; the share UI discovers principals via the directory
+# seam, keeping this decoupled from any user backend. The endpoints attach to the
+# host-wired api_router (auth + endpoint_firewall).
+
+entries:
+  - name: http_context
+    kind: library.lua
+    meta: { comment: "Require the HTTP context that endpoint handlers need." }
+    source: file://http_context.lua
+
+  - name: access_model
+    kind: function.lua
+    meta: { comment: "GET /components/access-model — canonical capability vocabulary." }
+    source: file://access_model.lua
+    modules: [http]
+    imports:
+      component_types: kickside.component:types
+      http_context: kickside.component.api:http_context
+    method: handler
+
+  - name: access_model.endpoint
+    kind: http.endpoint
+    meta: { router: "" }
+    method: GET
+    func: access_model
+    path: /components/access-model
+
+  - name: list_component_access
+    kind: function.lua
+    meta: { comment: "GET /component-access/grants/{id} — list grants (ADMIN)." }
+    source: file://list_component_access.lua
+    modules: [http, security]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      http_context: kickside.component.api:http_context
+    method: handler
+
+  - name: list_component_access.endpoint
+    kind: http.endpoint
+    meta: { router: "" }
+    method: GET
+    func: list_component_access
+    path: /component-access/grants/{id}
+
+  - name: share_component
+    kind: function.lua
+    meta: { comment: "POST /component-access/share/{id} — grant/revoke (ADMIN, last-admin guarded)." }
+    source: file://share_component.lua
+    modules: [http, json, security]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      http_context: kickside.component.api:http_context
+    method: handler
+
+  - name: share_component.endpoint
+    kind: http.endpoint
+    meta: { router: "" }
+    method: POST
+    func: share_component
+    path: /component-access/share/{id}
+
+  - name: adopt_component
+    kind: function.lua
+    meta: { comment: "POST /component-access/adopt/{id} — adopt a component no principal holds access to (instance operator)." }
+    source: file://adopt_component.lua
+    modules: [http, security]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      component: kickside.component:component
+      http_context: kickside.component.api:http_context
+    method: handler
+
+  # Operator-only: no .endpoint suffix, so member endpoint policies never
+  # admit it; the router firewall admits it only to scopes that allow every
+  # endpoint, and the service checks component.adopt.
+  - name: adopt_component.endpoint
+    kind: http.endpoint
+    meta: { router: "" }
+    method: POST
+    func: adopt_component
+    path: /component-access/adopt/{id}

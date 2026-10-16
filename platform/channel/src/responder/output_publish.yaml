@@ -1,0 +1,10 @@
+version: '1.0'
+namespace: kickside.channel.responder
+entries:
+- name: thread_status_publish
+  kind: security.policy
+  meta: { private: true, service_only: true }
+  policy:
+    actions: threads.output.publish
+    effect: allow
+    resources: kickside.channel.responder.events:status.changed

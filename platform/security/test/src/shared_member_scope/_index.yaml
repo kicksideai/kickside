@@ -1,0 +1,41 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: shared_member_scope_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://test.lua
+    method: run
+    modules: [registry, security, time]
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:registry_fixture
+      projection: kickside.security.service:scope_projection
+
+  - name: shared_member_contributor
+    kind: security.policy
+    meta:
+      member_scope: kickside.contract.http:user_security_scope
+      includes: [app:shared_member_runtime]
+    groups: []
+    policy:
+      actions: access
+      resources: [shared.module:list.endpoint]
+      effect: allow
+
+  - name: shared_member_runtime
+    kind: security.policy
+    meta: {private: true}
+    groups: []
+    policy:
+      actions: funcs.call
+      resources: shared.module:view
+      effect: allow
+
+  - name: independent_member_contributor
+    kind: security.policy
+    groups: []
+    policy:
+      actions: access
+      resources: independent.module:list.endpoint
+      effect: allow

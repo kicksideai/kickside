@@ -1,0 +1,124 @@
+version: '1.0'
+namespace: app
+entries:
+- name: principal_resolution_fixture
+  kind: library.lua
+  source: file://principal_resolution_fixture.lua
+- name: principal_resolution_security
+  kind: library.lua
+  source: file://principal_resolution_security.lua
+  imports:
+    fixture: app:principal_resolution_fixture
+- name: principal_resolution_execution
+  kind: library.lua
+  source: file://principal_resolution_execution.lua
+  imports:
+    execution: kickside.execution:execution_identity
+    fixture: app:principal_resolution_fixture
+- name: principal_resolution_crud
+  kind: library.lua
+  source: file://principal_resolution_crud.lua
+  imports:
+    fixture: app:principal_resolution_fixture
+- name: principal_resolution_reader
+  kind: library.lua
+  source: file://principal_resolution_reader.lua
+- name: principal_resolution_authorization
+  kind: library.lua
+  source: file://principal_resolution_authorization.lua
+- name: principal_resolution_component
+  kind: library.lua
+  source: file://principal_resolution_component.lua
+- name: principal_resolution_natural_key
+  kind: library.lua
+  source: file://principal_resolution_natural_key.lua
+- name: principal_resolution_writer
+  kind: library.lua
+  source: file://principal_resolution_writer.lua
+  imports:
+    fixture: app:principal_resolution_fixture
+- name: principal_resolution_common_source
+  kind: library.lua
+  source: file://principal_resolution_common_source.lua
+  modules:
+  - sql
+  imports:
+    component_identity: kickside.core.threads:component_identity
+    execution_identity: app:principal_resolution_execution
+    threads_env: kickside.core.threads:env
+    threads_notify: kickside.core.threads:notify
+    security: app:principal_resolution_security
+    error_envelope: kickside.contract:error_envelope
+- name: principal_resolution_common
+  kind: library.lua
+  source: file://principal_resolution_common.lua
+  imports:
+    common: app:principal_resolution_common_source
+    fixture: app:principal_resolution_fixture
+- name: principal_resolution_resource_source
+  kind: library.lua
+  source: file://principal_resolution_resource_source.lua
+  modules:
+  - crypto
+  - sql
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    contract_common: app:principal_resolution_common
+    contract_events: kickside.core.threads:contract_events
+    contract_event_authorization: app:principal_resolution_authorization
+    contract_resource_crud: kickside.core.threads:contract_resource_crud
+    natural_upsert: kickside.core.threads:natural_upsert
+    threads_reader: app:principal_resolution_reader
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_crud: app:principal_resolution_crud
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: principal_resolution_events_source
+  kind: library.lua
+  source: file://principal_resolution_events_source.lua
+  modules:
+  - sql
+  - json
+  - registry
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    committed_error: kickside.contract:committed_error
+    error_envelope: kickside.contract:error_envelope
+    contract_common: app:principal_resolution_common
+    threads_reader: kickside.core.threads.persist:reader
+    threads_writer: app:principal_resolution_writer
+    threads_thread_crud: app:principal_resolution_crud
+    threads_teardown: kickside.core.threads.persist:teardown
+    component_client: app:principal_resolution_component
+    contract_event_authorization: app:principal_resolution_authorization
+    security: app:principal_resolution_security
+- name: principal_resolution_natural_source
+  kind: library.lua
+  source: file://principal_resolution_natural_source.lua
+  modules:
+  - time
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    committed_error: kickside.contract:committed_error
+    natural_key: app:principal_resolution_natural_key
+    contract_common: app:principal_resolution_common
+    threads_thread_crud: app:principal_resolution_crud
+    threads_reader: kickside.core.threads.persist:reader
+    threads_component: kickside.core.threads:component
+    error_envelope: kickside.contract:error_envelope
+- name: principal_resolution_test
+  kind: function.lua
+  source: file://principal_resolution_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_principal_resolution
+  imports:
+    test: wippy.test:test
+    fixture: app:principal_resolution_fixture
+    common: app:principal_resolution_common_source
+    resource: app:principal_resolution_resource_source
+    events: app:principal_resolution_events_source
+    natural: app:principal_resolution_natural_source
+    canonical_json: kickside.contract:canonical_json
+    execution: kickside.execution:execution_identity

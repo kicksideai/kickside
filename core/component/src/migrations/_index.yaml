@@ -1,0 +1,132 @@
+version: "1.0"
+namespace: kickside.component.migrations
+
+entries:
+  # kickside.component.migrations:01_create_components_table
+  - name: 01_create_components_table
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - components
+        - kickside
+      comment: Create kickside_components table for user component registry
+      target_db: ""
+      timestamp: "2025-06-14T10:00:00Z"
+    source: file://01_create_components_table.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  # kickside.component.migrations:02_create_component_meta_table
+  - name: 02_create_component_meta_table
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - components
+        - kickside
+        - metadata
+      comment: Create kickside_component_meta table for flexible key-value metadata storage
+      target_db: ""
+      timestamp: "2025-06-14T10:05:00Z"
+    source: file://02_create_component_meta_table.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  # kickside.component.migrations:03_create_component_access_table
+  - name: 03_create_component_access_table
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - components
+        - kickside
+        - access
+        - permissions
+      comment: Create kickside_component_access table for bitmask-based permission control
+      target_db: ""
+      timestamp: "2025-06-14T10:10:00Z"
+    source: file://03_create_component_access_table.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 07_identity_fence
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - components
+        - kickside
+        - identity
+      comment: Component identity fence (identity_generation/identity_hash) and execution identity audit
+      target_db: ""
+      timestamp: "2026-09-25T00:00:00Z"
+    source: file://07_identity_fence.lua
+    modules: [json]
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  # kickside.component.migrations:08_derived_acl
+  - name: 08_derived_acl
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - components
+        - kickside
+        - access
+      comment: Indexed component ancestry (kickside_component_ancestor), direct grants only, typed grant subjects
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-09-25T17:00:14Z"
+    source: file://08_derived_acl.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 11_declaration_fence
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - components
+        - kickside
+        - automation
+      comment: Component declaration fence for validated automation declaration commands (DDL freeze component 07)
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-09-27T00:00:01Z"
+    source: file://11_declaration_fence.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 12_thread_reap
+    kind: function.lua
+    meta:
+      type: migration
+      tags: [components, kickside, gc]
+      comment: Durable retry pointer for primary-thread purge after component deletion.
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-09-27T00:00:02Z"
+    source: file://12_thread_reap.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 13_unique_component_meta
+    kind: function.lua
+    meta:
+      type: migration
+      tags: [components, kickside, metadata]
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-06T00:00:00Z"
+    source: file://13_unique_component_meta.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

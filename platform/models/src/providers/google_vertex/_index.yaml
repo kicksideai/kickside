@@ -1,0 +1,52 @@
+version: "1.0"
+namespace: kickside.models.providers.google_vertex
+
+entries:
+  - name: token_engine
+    kind: library.lua
+    meta:
+      comment: Refreshes Vertex credentials and derives each exact token refresh deadline.
+    source: file://token_engine.lua
+    modules: [base64, crypto, env, hash, http_client, json, logger, store, time]
+    imports:
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      models_types: kickside.models:models_types
+
+  - name: vertex_token_supervisor
+    kind: process.lua
+    meta:
+      comment: Event-driven Google Vertex token supervisor for model provider profiles.
+    source: file://token_supervisor.lua
+    method: main
+    modules: [channel, logger, process, time]
+    imports:
+      token_engine: kickside.models.providers.google_vertex:token_engine
+      models_types: kickside.models:models_types
+
+  - name: vertex_token_supervisor.service
+    kind: process.service
+    process: kickside.models.providers.google_vertex:vertex_token_supervisor
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_attempts: 0
+      security:
+        groups:
+          - wippy.security:process
+
+  - name: google_vertex.validate
+    kind: function.lua
+    meta:
+      comment: Provider-declared profile validation for Google Vertex (rejects ambiguous auth).
+    source: file://validate.lua
+    method: handler
+
+  - name: google_vertex.on_change
+    kind: function.lua
+    meta:
+      comment: Provider-declared profile normalization for Google Vertex (derives project from service-account credentials).
+    source: file://normalize.lua
+    modules: [base64, json]
+    method: handler

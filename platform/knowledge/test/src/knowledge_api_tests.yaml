@@ -1,0 +1,62 @@
+version: "1.0"
+namespace: kickside.knowledge.api
+
+entries:
+  - name: query_params_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://query_params_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      query_params: kickside.knowledge.api:query_params
+
+  - name: upload_complete_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope without process messaging authority, as a group principal holds.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security, registry.get, registry.find, env.get, db.get]
+      effect: allow
+
+  - name: upload_complete_reply_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://upload_complete_reply_test.lua
+    method: run
+    modules: [funcs, security, uuid, channel, time, process]
+    imports:
+      test: wippy.test:test
+
+  - name: upload_meta_boundary_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://upload_meta_boundary_test.lua
+    method: run
+    modules: [funcs, security, sql, uuid]
+    imports:
+      test: wippy.test:test
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+
+  - name: update_consistency_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: knowledge
+      comment: Failure-injection coverage for compensated KB config and metadata updates.
+    source: file://update_consistency_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      update_consistency: kickside.knowledge.api:update_consistency
+
+  - name: search_error_classification_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://search_error_classification_test.lua
+    method: run
+    modules: [http]
+    imports:
+      test: wippy.test:test
+      search: kickside.knowledge.api:search

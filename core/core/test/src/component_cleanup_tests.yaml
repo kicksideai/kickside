@@ -1,0 +1,76 @@
+version: '1.0'
+namespace: app
+entries:
+- name: component_cleanup_fixture
+  kind: library.lua
+  source: file://component_cleanup_fixture.lua
+  modules:
+  - sql
+- name: component_cleanup_common
+  kind: library.lua
+  source: file://component_cleanup_common.lua
+  imports:
+    common: kickside.core.threads:contract_common
+    fixture: app:component_cleanup_fixture
+- name: component_cleanup_reader
+  kind: library.lua
+  source: file://component_cleanup_reader.lua
+  imports:
+    fixture: app:component_cleanup_fixture
+- name: component_cleanup_crud
+  kind: library.lua
+  source: file://component_cleanup_crud.lua
+  imports:
+    fixture: app:component_cleanup_fixture
+- name: component_cleanup_source
+  kind: library.lua
+  source: file://component_cleanup_source.lua
+  modules:
+  - crypto
+  - sql
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    contract_common: app:component_cleanup_common
+    contract_events: kickside.core.threads:contract_events
+    contract_event_authorization: kickside.core.threads:contract_event_authorization
+    contract_resource_crud: kickside.core.threads:contract_resource_crud
+    natural_upsert: kickside.core.threads:natural_upsert
+    threads_reader: app:component_cleanup_reader
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_crud: app:component_cleanup_crud
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: component_cleanup_test
+  kind: function.lua
+  source: file://component_cleanup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_component_cleanup
+  imports:
+    test: wippy.test:test
+    fixture: app:component_cleanup_fixture
+    api: app:component_cleanup_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+- name: component_cleanup_retry_target
+  kind: function.lua
+  source: file://component_cleanup_retry_target.lua
+  method: run
+  imports:
+    fixture: app:component_cleanup_fixture
+    api: app:component_cleanup_source
+- name: component_cleanup_retry_test
+  kind: function.lua
+  source: file://component_cleanup_retry_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_component_cleanup_retry
+  modules:
+  - sql
+  - uuid
+  - funcs
+  imports:
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock

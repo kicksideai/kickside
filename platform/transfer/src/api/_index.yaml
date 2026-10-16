@@ -1,0 +1,56 @@
+version: "1.0"
+namespace: kickside.transfer.api
+
+entries:
+  - name: list_exportable
+    kind: function.lua
+    meta:
+      comment: List the actor's own components whose impl binding is exportable (declares portable_schema or implements kickside.contract:portable).
+    source: file://list_exportable.lua
+    modules: [http, security, registry, contract]
+    imports:
+      consts: kickside.transfer:consts
+    method: handler
+
+  - name: list_exportable.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_exportable
+    path: /transfer/exportable
+
+  - name: export
+    kind: function.lua
+    meta:
+      comment: POST /transfer/export — pack selected components into a KXB1 download.
+    source: file://export.lua
+    modules: [http, json, security, fs]
+    imports:
+      orchestrator: kickside.transfer:orchestrator
+    method: handler
+
+  - name: export.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: export
+    path: /transfer/export
+
+  - name: import
+    kind: function.lua
+    meta:
+      comment: POST /transfer/import — multipart upload of a KXB1 bundle; streams to scratch, reconstructs (batch-atomic), removes the upload.
+    source: file://import.lua
+    modules: [http, security, fs, uuid]
+    imports:
+      orchestrator: kickside.transfer:orchestrator
+      consts: kickside.transfer:consts
+      portable_io: kickside.component.portability:portable_io
+    method: handler
+
+  - name: import.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: import
+    path: /transfer/import

@@ -1,0 +1,108 @@
+version: "1.0"
+namespace: kickside.channel.sink
+
+# Channel sink: a kickside.data:writable binding that posts content to a channel
+# (Discord, Slack, …) via the connection's reply provider. Its config UI is the
+# generalized wc-channel-picker (connection + channel in one), so a data flow can
+# deliver pulled items into a chosen room with no per-provider glue.
+
+entries:
+  - name: channel_send_write
+    kind: function.lua
+    meta:
+      comment: kickside.data:writable.write — post content to {connection_id, channel_id} via the reply provider.
+    source: file://channel_sink.lua
+    method: write
+    imports:
+      writable_sink: kickside.data:writable_sink
+      reply_sender: kickside.connection:reply_sender
+
+  # The post SINK. It implements kickside.data:writable; its published port (below)
+  # makes it the single post sink the poller catalog offers. The write method IS the
+  # backing -- the poller opens this binding's writable directly and calls
+  # write({config, content}). This one sink serves BOTH channel and dm: reply_sender
+  # posts to any {connection_id, resource_id}, so there is no separate dm sink.
+  - name: channel_sink
+    kind: contract.binding
+    meta:
+      title: Send Channel Message
+      delivery: at_most_once
+      input_shape: content
+      icon: tabler:hash
+      comment: Post each item into a chosen connected channel.
+      group: Channels
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.channel.sink:channel_send_write
+
+  # Published store port. An append_only store: the kickside.connection:reply_provider
+  # contract exposes send_reply / update_reply / send_status only -- posted messages
+  # cannot be deleted, so this port declares no delete operation and its computed
+  # store_tier stays append_only. The primary picker owns a compound destination: one
+  # selection writes every key listed under `writes` into the config ({connection_id,
+  # channel_id, channel_name}); the write handler requires connection_id + channel_id.
+  - name: channel_post
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Send Channel Message
+      comment: Post a message into a selected connected channel.
+      icon: tabler:hash
+    binding: kickside.channel.sink:channel_sink
+    operations:
+      upsert: {}
+    input_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "content": { "type": "string", "description": "Message content to post. Required." },
+          "content_type": { "type": "string", "description": "Accepted for envelope compatibility; ignored by this destination." },
+          "metadata": { "type": "object", "description": "Accepted for envelope compatibility; ignored by this destination." }
+        },
+        "required": ["content"] }
+    config_schema:
+      channel_id:
+        picker: wc-channel-picker
+        required: true
+        title: Channel
+        writes: [connection_id, channel_id, channel_name]
+    output_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": { "type": "boolean" },
+          "result": { "type": "string", "enum": ["created", "updated", "deleted", "noop"] },
+          "dest_refs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": { "dest_ref": { "type": "object" } },
+              "required": ["dest_ref"]
+            }
+          },
+          "dest_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "connection_id": { "type": "string" },
+              "channel_id": { "type": "string" },
+              "message_ref": { "type": "string" }
+            },
+            "required": ["connection_id", "channel_id"]
+          },
+          "retry_after_ms": { "type": "integer", "minimum": 0 },
+          "error": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "retriable": { "type": "boolean" },
+              "scope": { "type": "string" }
+            },
+            "required": ["code", "message", "retriable", "scope"]
+          }
+        },
+        "required": ["success"] }

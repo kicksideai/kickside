@@ -1,0 +1,1 @@
+../../src/persist/declaration_fence.lua

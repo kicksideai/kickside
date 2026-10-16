@@ -1,0 +1,27 @@
+version: "1.0"
+namespace: kickside.plugins.confluence
+
+# Stub confluence connection binding. The connections registry resolves
+# provider=confluence to this binding (meta.provider).
+
+entries:
+  - name: confluence_connection
+    kind: contract.binding
+    meta:
+      title: Confluence
+      provider: confluence
+      class:
+        - connection
+    contracts:
+      - contract: kickside.connection:connection
+        context_required:
+          - component_id
+        methods:
+          get_status: kickside.plugins.stubs:get_status
+          test_connection: kickside.plugins.stubs:test_connection
+          discover_resources: kickside.plugins.stubs:discover_resources
+      - contract: kickside.contract:deletable
+        context_required:
+          - component_id
+        methods:
+          delete: kickside.plugins.stubs:delete

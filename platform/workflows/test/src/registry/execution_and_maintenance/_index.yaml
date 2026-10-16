@@ -1,0 +1,358 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/workflows. Provides the host resources the compiler,
+# version plane, run launcher, and automation kind require (app:db, routers, process
+# host, env storage, a permissive scope) and boots the automation + dataflow stack so
+# its harness-owned suites run in isolation. The module loads once through its
+# dependency replacement. Test source lives in this harness under suites/.
+# Harness-only; excluded from publish.
+
+entries:
+  - name: run_as_workflow_security
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_run_as_security
+      group: KickSide Workflows
+    source: file://../../suites/run_as_security_test.lua
+    method: run
+    modules: [funcs, json, security, uuid]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+
+  - name: run_as_workflow_security_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+    source: file://../../suites/run_as_security_test.lua
+    method: actor_run
+    modules: [funcs, json, security, uuid]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+
+  - name: run_as_workflow_launch_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+    source: file://../../suites/run_as_launch_probe.lua
+    method: launch
+    imports:
+      runs: app:runs_fixture
+
+  - name: runs_test_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Executes run cases with a real selected user actor and suite scope.
+    source: file://../../suites/runs_test.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: engine_linear
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only runtime helper for the live dataflow engine execution suite.
+    source: file://../../suites/engine_execution_helper.lua
+    method: linear
+    modules: [ctx]
+
+  - name: engine_run_context
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only helper that returns the dataflow function execution context run identity.
+    source: file://../../suites/engine_execution_helper.lua
+    method: run_context
+    modules: [ctx]
+
+  - name: engine_decide
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only branch decision helper for the live dataflow engine execution suite.
+    source: file://../../suites/engine_execution_helper.lua
+    method: decide
+    modules: [ctx]
+
+  - name: engine_arm_a
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only true-arm helper for the live dataflow engine execution suite.
+    source: file://../../suites/engine_execution_helper.lua
+    method: arm_a
+    modules: [ctx]
+
+  - name: engine_arm_b
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only false-arm helper for the live dataflow engine execution suite.
+    source: file://../../suites/engine_execution_helper.lua
+    method: arm_b
+    modules: [ctx]
+
+  - name: engine_item
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only for-each item helper for the live dataflow engine execution suite.
+    source: file://../../suites/engine_execution_helper.lua
+    method: item
+    modules: [ctx]
+
+  - name: engine_item_or_fail
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only for-each item failure helper for the live dataflow engine execution suite.
+    source: file://../../suites/engine_execution_helper.lua
+    method: item_or_fail
+    modules: [ctx]
+
+  - name: engine_lane_guard
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only lane-guard-shaped output helper for transform subscript coverage.
+    source: file://../../suites/engine_execution_helper.lua
+    method: lane_guard
+    modules: [ctx]
+
+  - name: engine_compose_brief
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only compose-brief helper for transform subscript coverage.
+    source: file://../../suites/engine_execution_helper.lua
+    method: compose_brief
+    modules: [ctx]
+
+  - name: engine_await_arm
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Test-only no-op arm target for the generic external Await provider.
+    source: file://../../suites/engine_execution_test_seams.lua
+    method: await_arm
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      workflow_repo: kickside.workflows.repo:repo
+      published_catalog: kickside.workflows.catalog:published_catalog
+      agent_compiler: wippy.agent.compiler:compiler
+      component: kickside.component:component
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: engine_execution_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_1_engine
+      group: KickSide Workflows
+      comment: Live engine execution — runs after fixture-only suites because its durable dataflow actors share the harness process host and DB.
+    source: file://../../suites/engine_execution_test.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: maintenance_event_listener
+    kind: process.lua
+    source: file://../../suites/maintenance_event_listener.lua
+    method: main
+    modules: [process, channel]
+
+  - name: maintenance_live_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_2_maintenance
+      group: KickSide Workflows
+      comment: Runs the real maintenance loop on a completed Dataflow and awaits its durable lifecycle event.
+    source: file://../../suites/maintenance_live_test.lua
+    method: run
+    modules: [process, sql, time, uuid, channel, json, funcs, security]
+    imports:
+      test: wippy.test:test
+      admission: kickside.workflows.runs:admission
+      workflow: kickside.workflows:workflow
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      compiler: kickside.workflows.compiler:compiler
+      client: userspace.dataflow:client
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.workflows:types
+
+  - name: maintenance_live_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Runs the real maintenance-loop assertion under a live user identity.
+    source: file://../../suites/maintenance_live_test.lua
+    method: actor_run
+    modules: [process, sql, time, uuid, channel, json, funcs, security]
+    imports:
+      test: wippy.test:test
+      admission: kickside.workflows.runs:admission
+      workflow: kickside.workflows:workflow
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      compiler: kickside.workflows.compiler:compiler
+      client: userspace.dataflow:client
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.workflows:types
+
+  - name: engine_execution_flow_control_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_1_engine
+      group: KickSide Workflows
+      comment: Live engine execution of branches, Awaits, for_each items and failure ports — runs after fixture-only suites because its durable dataflow actors share the harness process host and DB.
+    source: file://../../suites/engine_branch_and_await.lua
+    method: run_flow_control
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: engine_execution_seam
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound live engine helper for Await node execution tests.
+    source: file://../../suites/engine_execution_test_seams.lua
+    method: seam
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      workflow_repo: kickside.workflows.repo:repo
+      published_catalog: kickside.workflows.catalog:published_catalog
+      agent_compiler: wippy.agent.compiler:compiler
+      component: kickside.component:component
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: coverage_gauntlet_builders
+    kind: library.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Graph vocabulary shared by the compile and live gauntlet suites.
+    source: file://../../suites/coverage_gauntlet_builders.lua
+
+  - name: maintenance_process_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Deterministic maintenance wake, deadline, idle, boot publication coverage.
+    source: file://../../suites/maintenance_process_test.lua
+    method: run
+    modules: [uuid, json, process, channel]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      maintenance_loop: kickside.workflows.runs:maintenance_loop
+      maintenance_schedule: kickside.workflows.runs:maintenance_schedule
+      maintenance_wake: kickside.workflows.runs:maintenance_wake
+      policy_config: kickside.workflows:policy_config
+      run_time: kickside.workflows.runs:run_time

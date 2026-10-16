@@ -1,0 +1,72 @@
+version: "1.0"
+namespace: kickside.channel.migrations
+
+# The production Channel migrations, bound to the harness database. The
+# root kickside.channel:target_db requirement injects target_db in a real
+# install; this harness binds it directly.
+entries:
+  - name: 01_channel
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: app:db
+      comment: Shared chat session map table
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-22T00:00:01Z"
+    source: file://src_link/migrations/01_channel.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 02_admission
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: app:db
+      comment: Protected DM session execution identity admissions
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-26T00:00:01Z"
+    source: file://src_link/migrations/02_admission.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 03_session_archives
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: app:db
+      comment: Preserve pointers from rotated chat sessions to their history
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-26T00:00:02Z"
+    source: file://src_link/migrations/03_session_archives.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 09_conversation_cleanup_counts
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: app:db
+      comment: Durable uncertainty totals across bounded conversation owner pages
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-27T00:00:05Z"
+    source: file://src_link/migrations/09_conversation_cleanup_counts.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 11_capacity
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: app:db
+      comment: Conversation owner rows, session owner map and accepted-turn owners
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-27T00:00:07Z"
+    source: file://src_link/migrations/11_capacity.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

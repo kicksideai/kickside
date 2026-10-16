@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.identity
+
+entries:
+  - name: link_service_test
+    kind: function.lua
+    meta: { type: test, suite: identity }
+    source: file://link_service_test.lua
+    method: run
+    modules: [sql, time, uuid]
+    imports:
+      test: wippy.test:test
+      link_service: kickside.identity:link_service
+      unlink_response: kickside.identity.api:unlink_response
+      identity_consts: kickside.identity:identity_consts
+      agent_ref: kickside.agents:agent_ref
+      component: kickside.component:component

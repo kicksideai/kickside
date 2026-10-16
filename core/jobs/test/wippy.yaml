@@ -1,0 +1,7 @@
+organization: kickside
+module: jobs-harness
+type: application
+description: Standalone application harness that boots kickside/jobs with kickside/core and runs its test suites.
+directories:
+  modules: .wippy
+  src: .

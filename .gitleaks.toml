@@ -1,0 +1,92 @@
+# Extends the default gitleaks rules with allowlists for values that match
+# secret patterns but carry no secret.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "UUID identifiers"
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$''']
+
+[[allowlists]]
+description = "Header-only JWT test tokens"
+regexTarget = "secret"
+regexes = ['''^eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9\.[a-z]+$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/identity/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/mcp/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/security/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Literal replacement password in the users unit suite"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/users/test/suites/user_cases/users_basic_reads_credentials_and_groups_test\.lua$''']
+regexes = ['''^replacement\-secret\-123$''']
+
+[[allowlists]]
+description = "Literal replacement password in the users unit suite"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/users/test/suites/user_cases/users_basic_reads_credentials_and_groups_test\.lua$''']
+regexes = ['''^replacement\-secret\-123$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/identity/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/mcp/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/security/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Literal replacement password in the users unit suite"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/users/test/suites/user_cases/users_basic_reads_credentials_and_groups_test\.lua$''']
+regexes = ['''^replacement\-secret\-123$''']
+
+[[allowlists]]
+description = "Literal replacement password in the users unit suite"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/users/test/suites/user_cases/users_basic_reads_credentials_and_groups_test\.lua$''']
+regexes = ['''^replacement\-secret\-123$''']
+
+[[allowlists]]
+description = "Reviewed existing dummy credential in the Skills unit harness"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/skills/test/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']

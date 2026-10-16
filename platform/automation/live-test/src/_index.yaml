@@ -1,0 +1,206 @@
+version: '1.0'
+namespace: app
+entries:
+- name: db
+  kind: db.sql.sqlite
+  foreign_keys: true
+  meta:
+    comment: Automation suite database; a per-run file the harness names through vars.sqlite_path
+      (.wippy.yaml), so the migrated schema survives the registry version changes
+      these suites apply.
+  file: ${sqlite_path}
+- name: env_storage
+  kind: env.storage.file
+  meta:
+    type: envstorage
+  file_path: ./.wippy/test.env
+  auto_create: true
+- name: processes
+  kind: process.host
+  lifecycle:
+    auto_start: true
+- name: gateway
+  kind: http.service
+  meta:
+    comment: Test HTTP server.
+  addr: :0
+  lifecycle:
+    auto_start: true
+- name: api
+  kind: http.router
+  meta:
+    comment: Test API router.
+    server: gateway
+  prefix: /api
+- name: api_public
+  kind: http.router
+  meta:
+    comment: Separate public router for wippy/views to avoid route collisions with
+      app:api.
+    server: gateway
+  prefix: /public
+- name: user
+  kind: security.policy
+  meta:
+    comment: Permissive scope the automation suites run their scoped actors under.
+  groups:
+  - automation_test
+  policy:
+    resources: '*'
+    actions: '*'
+    effect: allow
+- name: thread_user_append
+  kind: security.policy
+  meta:
+    comment: Narrow normal-user capability for output-spoofing regression coverage.
+  policy:
+    resources: '*'
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.security
+    - db.get
+    - registry.get
+    - funcs.call
+    - funcs.security
+    - security.policy_group.get
+    effect: allow
+- name: dep.kickside.automation
+  kind: ns.dependency
+  version: '*'
+  meta:
+    comment: Automation mounted as the single package root; qualified parameters wire every host-owned requirement in its
+      transitive graph.
+  component: kickside/automation
+  parameters:
+  - name: kickside.component:target_db
+    value: app:db
+  - name: kickside.component:api_router
+    value: app:api
+  - name: kickside.component:lifecycle_impl
+    value: kickside.core.lifecycle:component_lifecycle_impl
+  - name: kickside.core:target_db
+    value: app:db
+  - name: kickside.core.lifecycle:process_host
+    value: app:processes
+  - name: kickside.core.lifecycle:user_lifecycle_grant
+    value:
+      subject_id: app:user
+      subject_type: group
+      access_mask: 2
+  - name: kickside.core.lifecycle:admin_lifecycle_grant
+    value:
+      subject_id: app:user
+      subject_type: group
+      access_mask: 3
+  - name: kickside.core.retention:process_host
+    value: app:processes
+  - name: kickside.core.threads:process_host
+    value: app:processes
+  - name: kickside.core.retention:api_router
+    value: app:api
+  - name: kickside.core.threads:api_router
+    value: app:api
+  - name: kickside.core.projections:api_router
+    value: app:api
+  - name: kickside.core.retention:user_security_scope
+    value: app:user
+  - name: kickside.core.threads:user_security_scope
+    value: app:user
+  - name: kickside.core.jobs:target_db
+    value: app:db
+  - name: kickside.core.jobs:process_host
+    value: app:processes
+  - name: wippy.migration:app_db
+    value: app:db
+  - name: wippy.llm:process_host
+    value: app:processes
+  - name: wippy.llm:env_storage
+    value: app:env_storage
+  - name: wippy.relay:user_security_scope
+    value: app:user
+  - name: wippy.relay:env_storage
+    value: app:env_storage
+  - name: wippy.relay:application_host
+    value: app:processes
+  - name: wippy.session:api_router
+    value: app:api
+  - name: wippy.session:database_resource
+    value: app:db
+  - name: wippy.session:default_host
+    value: app:processes
+  - name: wippy.session:env_storage
+    value: app:env_storage
+  - name: wippy.session:delegation_func_id
+    value: userspace.dataflow.session:delegate
+  - name: wippy.views:api_router
+    value: app:api_public
+  - name: wippy.views:env_storage
+    value: app:env_storage
+  - name: kickside.automation:target_db
+    value: app:db
+  - name: kickside.automation:api_router
+    value: app:api
+  - name: kickside.automation:ui_server
+    value: app:gateway
+
+- name: dep.wippy.bootloader
+  kind: ns.dependency
+  version: '*'
+  meta:
+    comment: Bootloader applies every dep's migrations on boot.
+  component: wippy/bootloader
+  parameters:
+  - name: wippy.bootloader:application_host
+    value: app:processes
+  - name: wippy.bootloader:env_storage
+    value: app:env_storage
+- name: dep.wippy.test
+  kind: ns.dependency
+  component: wippy/test
+  version: '*'
+- name: dep.kickside.realtime
+  kind: ns.dependency
+  component: kickside/realtime
+  version: '*'
+- name: scope_resolver_stub
+  kind: function.lua
+  meta:
+    comment: Test-only kickside.contract:scope_resolver implementation so harness
+      actors satisfy execution-identity capture.
+  source: file://test_src/scope_resolver_stub.lua
+  modules:
+  - security
+  - sql
+  method: resolve
+  imports:
+    execution_identity: kickside.execution:execution_identity
+- name: scope_resolver_binding
+  kind: contract.binding
+  meta:
+    comment: Automation harness resolver; production binds this in kickside/users.
+  contracts:
+  - contract: kickside.contract:scope_resolver
+    default: true
+    methods:
+      resolve: app:scope_resolver_stub
+- name: direct_identity_set
+  kind: function.lua
+  meta:
+    comment: Test-only direct component SET_EXECUTION_IDENTITY under the calling user.
+  source: file://test_src/direct_identity_set.lua
+  imports:
+    component: kickside.component:component
+  method: run
+- name: delete_automation_component_probe
+  kind: function.lua
+  meta:
+    comment: Test-only actor/scope seam for DELETE's real component access-error regression.
+  source: file://test_src/delete_automation_component_probe.lua
+  modules:
+  - security
+  imports:
+    component: kickside.component:component
+    delete_automation: kickside.automation.api:delete
+  method: run

@@ -1,0 +1,3 @@
+organization: kickside
+module: app-health-test
+description: Standalone harness for the application-owned readiness endpoint.

@@ -1,0 +1,367 @@
+version: "1.0"
+namespace: app.deps
+
+entries:
+  - version: "*"
+    name: agent_onboarding
+    kind: ns.dependency
+    component: kickside/agent-onboarding
+    parameters:
+      - name: kickside.agent_onboarding:ui_server
+        value: app:gateway
+  # app.deps:agent
+  - version: "*"
+    name: agent
+    kind: ns.dependency
+    meta: {}
+    component: wippy/agent
+
+  # app.deps:bootloader
+  - version: "*"
+    name: bootloader
+    kind: ns.dependency
+    meta: {}
+    component: wippy/bootloader
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app.env:store
+
+  # app.deps:dataflow
+  - version: "*"
+    name: dataflow
+    kind: ns.dependency
+    meta: {}
+    component: wippy/dataflow
+    parameters:
+      - name: userspace.dataflow:target_db
+        value: app:db
+
+  # app.deps:facade
+  - version: "*"
+    name: facade
+    kind: ns.dependency
+    meta: {}
+    component: wippy/facade
+    parameters:
+      - name: server
+        value: app:gateway
+      - name: router
+        value: app:api.public
+      - name: fe_mode
+        value: managed
+      - name: host_config_layout
+        value: |
+          {
+            "breakpoints": { "md": 768, "lg": 1280 },
+            "layouts": {
+              "default": {
+                "direction": "horizontal",
+                "children": [
+                  { "panel": "main", "size": "1fr", "main": true, "fixed": true },
+                  {
+                    "panel": "artifact",
+                    "size": "0px",
+                    "display": "drawer-right",
+                    "drawerSize": { "width": "320px" }
+                  }
+                ]
+              },
+              "md": {
+                "direction": "horizontal",
+                "children": [
+                  { "panel": "main", "size": "1fr", "main": true, "minSize": "360px", "fixed": true },
+                  {
+                    "panel": "artifact",
+                    "size": "42%",
+                    "minSize": "360px",
+                    "maxSize": "720px",
+                    "dividerBefore": "none",
+                    "collapsible": true,
+                    "collapsed": true,
+                    "collapseSize": "0px"
+                  }
+                ]
+              },
+              "lg": {
+                "direction": "horizontal",
+                "children": [
+                  { "panel": "main", "size": "1fr", "main": true, "minSize": "480px", "fixed": true },
+                  {
+                    "panel": "artifact",
+                    "size": "520px",
+                    "minSize": "400px",
+                    "maxSize": "800px",
+                    "dividerBefore": "none",
+                    "collapsible": true,
+                    "collapsed": true,
+                    "collapseSize": "0px"
+                  }
+                ]
+              }
+            },
+            "modals": {
+              "artifact-modal": { "kind": "artifact", "id": "pending" }
+            },
+            "panels": {
+              "main": { "kind": "page", "id": "app.views:main" },
+              "artifact": {
+                "kind": "component",
+                "tagName": "kickside-artifact-panel"
+              }
+            },
+            "coordinators": {
+              "compat": {
+                "kind": "builtin",
+                "id": "@HOST/compat-coordinator",
+                "props": {
+                  "artifactPanel": false,
+                  "chatPanel": false,
+                  "routeSync": true,
+                  "wsActions": false
+                }
+              },
+              "artifact": {
+                "kind": "component",
+                "tagName": "kickside-artifact-coordinator"
+              }
+            }
+          }
+      - name: app_title
+        value: KickSide
+      - name: app_name
+        value: KickSide
+      - name: app_icon
+        value: /app/kickside-icon.svg
+      - name: show_admin
+        value: "false"
+      - name: hide_nav_bar
+        value: "true"
+      - name: allow_additional_tags
+        value: |
+          {
+            "svg": ["xmlns", "viewbox", "width", "height", "role", "aria-label", "fill", "stroke"],
+            "g": ["fill", "stroke", "stroke-width", "transform", "font-family", "font-size", "font-weight", "text-anchor"],
+            "rect": ["x", "y", "width", "height", "rx", "ry", "fill", "stroke", "stroke-width", "opacity", "data-series"],
+            "path": ["d", "fill", "stroke", "stroke-width", "transform", "opacity"],
+            "line": ["x1", "y1", "x2", "y2", "stroke", "stroke-width"],
+            "polyline": ["points", "fill", "stroke", "stroke-width"],
+            "polygon": ["points", "fill", "stroke", "stroke-width"],
+            "circle": ["cx", "cy", "r", "fill", "stroke", "stroke-width"],
+            "ellipse": ["cx", "cy", "rx", "ry", "fill", "stroke", "stroke-width"],
+            "text": ["x", "y", "dx", "dy", "fill", "font-family", "font-size", "font-weight", "text-anchor", "transform"],
+            "tspan": ["x", "y", "dx", "dy", "fill", "font-size", "font-weight"],
+            "title": [],
+            "desc": []
+          }
+      - name: login_path
+        value: /login
+      - name: session_type
+        value: persistent
+      - name: history_mode
+        value: browser
+      - name: theme_persist
+        value: cookie
+      - name: theme_storage_key
+        value: "@wippy-theme-mode"
+      - name: api_routes
+        value: |
+          {
+            "pages": { "@prefix": "/api/v1/views/pages" },
+            "components": { "@prefix": "/api/v1/views/components" }
+          }
+      - name: content_fs
+        value: app:app_fs
+      - name: custom_css
+        value: "fs://custom-css.facade.generated.css"
+      - name: host_custom_css
+        value: ""
+      - name: children_custom_css
+        value: "fs://children-custom-css.facade.generated.css"
+      - name: css_variables
+        value: "fs://css-variables.facade.json"
+
+  # app.deps:keeper
+  - version: "*"
+    name: keeper
+    kind: ns.dependency
+    meta: {}
+    component: keeper/keeper
+    parameters:
+      - name: keeper:api_router
+        value: app:api
+      - name: keeper:app_db
+        value: app:db
+      - name: keeper:admin_scope
+        value: app.security:admin
+      - name: keeper:mcp_group_resolver
+        value: kickside.users.directory:directory_groups
+      - name: keeper:auth_token_store
+        value: kickside.users.security:tokens
+      - name: keeper:env_storage
+        value: app.env:store
+      - name: keeper:public_gateway
+        value: app:gateway
+
+  # app.deps:kickside_agents
+  - version: '*'
+    name: kickside_agents
+    kind: ns.dependency
+    meta: {}
+    component: kickside/agents
+    parameters:
+    - name: kickside.agents:api_router
+      value: app:api
+    - name: kickside.agents:ui_server
+      value: app:gateway
+
+  - version: '*'
+    name: kickside_automation
+    kind: ns.dependency
+    meta: {}
+    component: kickside/automation
+    parameters:
+    - name: kickside.automation:api_router
+      value: app:api
+    - name: kickside.automation:target_db
+      value: app:db
+    - name: kickside.automation:ui_server
+      value: app:gateway
+
+  - version: "*"
+    name: kickside_blocks
+    kind: ns.dependency
+    meta: {}
+    component: kickside/blocks
+    parameters:
+      - name: kickside.blocks:process_host
+        value: app:processes
+
+  # app.deps:kickside_channel
+  - version: "*"
+    name: kickside_channel
+    kind: ns.dependency
+    meta: {}
+    component: kickside/channel
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: kickside.channel:process_host
+        value: app:processes
+      - name: kickside.channel:ui_server
+        value: app:gateway
+
+  # app.deps:kickside_component
+  - version: '*'
+    name: kickside_component
+    kind: ns.dependency
+    meta: {}
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - version: '*'
+    name: kickside_connection
+    kind: ns.dependency
+    meta: {}
+    component: kickside/connection
+    parameters:
+    - name: api_router
+      value: app:api
+    - name: kickside.connection:ui_server
+      value: app:gateway
+
+  - version: '*'
+    name: kickside_contract
+    kind: ns.dependency
+    meta: {}
+    component: kickside/contract
+    parameters:
+    - name: kickside.contract:host_credential_guard
+      value: kickside.users.binding:credential_eligibility
+    - name: kickside.contract.http:user_security_scope
+      value: app.security:unassigned_endpoints
+
+  - version: '*'
+    name: kickside_core
+    kind: ns.dependency
+    meta: {}
+    component: kickside/core
+    parameters:
+    - name: kickside.core.retention:user_security_scope
+      value: app.security:user
+    - name: kickside.core.threads:user_security_scope
+      value: app.security:user
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app.security:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app.security:admin
+        subject_type: group
+        access_mask: 11
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+
+  - version: '*'
+    name: kickside_jobs
+    kind: ns.dependency
+    meta: {}
+    component: kickside/jobs
+    parameters:
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - version: "*"
+    name: kickside_sso
+    kind: ns.dependency
+    meta: {}
+    component: kickside/sso
+    parameters:
+      - name: kickside.sso:credential_eligibility
+        value: kickside.users.binding:credential_eligibility
+      - name: kickside.sso:target_db
+        value: app:db
+      - name: kickside.sso:public_api_router
+        value: app:api.public
+      - name: kickside.sso:api_router
+        value: app:api
+      - name: kickside.sso:ui_server
+        value: app:gateway
+
+  - version: "*"
+    name: kickside_sso_google
+    kind: ns.dependency
+    meta: {}
+    component: kickside/sso-google
+
+  # The upload pipeline discovers rasterizers by capability. Keep the canonical
+  # PDF rasterizer as an explicit application root so sparse/scanned PDFs work
+  # without requiring a separate Hub install.
+  - version: "*"
+    name: pdf2image
+    kind: ns.dependency
+    meta: {}
+    component: kickside/pdf2image

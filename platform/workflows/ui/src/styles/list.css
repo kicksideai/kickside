@@ -1,0 +1,241 @@
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-modal-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+/* ══ LIST ════════════════════════════════════════════════════════════════ */
+.wf-list { position: absolute; inset: 0; overflow: auto; background: var(--p-content-background); color: var(--p-text-color); }
+/* Workflow-list composition. PrimeVue owns all standard controls and overlays. */
+.kx { font-family: inherit; color: var(--p-text-color); background: var(--p-content-background); height: 100%; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+.kx-count { font-size: 12.5px; color: var(--p-text-muted-color); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+.kx-search { display: flex; align-items: center; }
+.kx-search-ico { width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kx-search-input { width: 220px; max-width: 40vw; }
+
+/* PrimeVue's SelectButton already draws a segmented control; a gap between the
+   segments breaks it into loose chips. Own placement only, not appearance. */
+.kx-seg { flex: none; }
+
+.kx-body { flex: 1; min-height: 0; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px; container-type: inline-size; }
+
+.kx-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--p-content-border-color); border-radius: 14px; overflow: hidden; background: var(--p-content-background); box-shadow: var(--wf-elev-1); }
+.kx-row {
+  border: 0; border-bottom: 1px solid var(--p-content-border-color); background: transparent;
+  color: var(--p-text-color); font: inherit; text-align: left;
+}
+.kx-row:last-child { border-bottom: 0; }
+
+.kx-input { width: 100%; }
+
+/* PrimeVue Dialog owns chrome, focus, motion, and overlay order. The dialog pt
+   zeroes PrimeVue's content inset, so head/body/foot own their spacing. */
+.kx-modal { width: min(460px, calc(100vw - 32px)); max-width: 100%; max-height: 90vh; }
+/* Scoped under `.kx-modal` on purpose, matching connection and knowledge.
+   The module's CSS is injected into the shadow root first and the theme's
+   PrimeVue sheet is appended to the same root afterwards (webcomponent-core
+   `injectInlineCss`, then `loadHostCss`), so at equal specificity the theme
+   wins on document order: a bare `.kx-modal-head` loses its padding to
+   `.p-dialog-header`, and `.kx-modal-foot` lost its padding-top entirely,
+   which is why the footer buttons sat flush against the divider. Every Dialog
+   in this module puts `kx-modal` on the root, and PrimeVue renders header and
+   footer as direct children, so the child combinator reaches them. */
+.kx-modal > .kx-modal-head { padding: 16px 18px; border-bottom: 1px solid var(--p-content-border-color); display: flex; align-items: center; gap: 12px; }
+.kx-modal-head-sub {
+  /* These subtitles are full sentences, not labels, so they wrap instead of
+     truncating - an ellipsis here would cut the sentence. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.kx-modal-body { padding: 16px 18px; overflow-y: auto; min-height: 0; }
+.kx-modal > .kx-modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--p-content-border-color); }
+.kx-field { display: flex; flex-direction: column; gap: 6px; }
+.kx-modal-body .kx-field + .kx-field { margin-top: 14px; }
+.kx-field-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-field-opt { margin-left: 6px; font-weight: 500; color: var(--p-text-muted-color); }
+.wf-create-place {
+  display: flex; align-items: center; gap: 6px; margin: 14px 0 0;
+  font-size: 12.5px; color: var(--p-text-muted-color);
+}
+.wf-create-place svg { width: 14px; height: 14px; flex: none; }
+.wf-table-head, .wf-row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.7fr) minmax(130px, 1.1fr) minmax(96px, .85fr) minmax(104px, .7fr) minmax(104px, .7fr) minmax(80px, .5fr) 36px;
+  align-items: center; gap: 12px; min-width: 900px;
+}
+/* The bordered table card is the scroll region: the list mount is pinned to a definite
+   height by the canvas frame, so the rows scroll inside the card while the column header
+   stays put — rather than clipping under a body that can never overflow. */
+.wf-table { overflow: auto; }
+.wf-table-head {
+  position: sticky; top: 0; z-index: var(--wf-layer-list-header);
+  padding: 9px 12px; color: var(--p-text-muted-color); font-size: 11px; font-weight: 750;
+  letter-spacing: .04em; text-transform: uppercase; border-bottom: 1px solid var(--p-content-border-color);
+  background: color-mix(in srgb, var(--p-text-color) 3%, var(--p-content-background));
+}
+.wf-row { width: 100%; min-height: 58px; flex: 0 0 auto; padding: 10px 12px; cursor: pointer; transition: background .13s var(--wf-ease); }
+.wf-row:hover { background: color-mix(in srgb, var(--p-text-color) 4%, transparent); }
+.wf-row-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.wf-row-icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex: none;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  color: var(--p-text-muted-color); background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
+}
+.wf-row-icon svg { width: 16px; height: 16px; }
+.wf-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wf-row-name { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.wf-row-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; font-weight: 700; }
+.wf-row-sub, .wf-row-updated { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--wf-muted); font-size: 12px; }
+.wf-lastrun { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; font-weight: 600; }
+.wf-lastrun > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-lastrun svg { width: 15px; height: 15px; flex: none; }
+.wf-lastrun.is-ok { color: color-mix(in srgb, var(--p-success-500) 50%, var(--p-text-color)); }
+.wf-lastrun.is-error { color: color-mix(in srgb, var(--wf-danger) 50%, var(--p-text-color)); }
+.wf-lastrun.is-pending { color: color-mix(in srgb, var(--p-warn-500) 50%, var(--p-text-color)); }
+.wf-lastrun.is-empty { color: var(--wf-muted); font-weight: 500; }
+.wf-last-run-cause { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; color: color-mix(in srgb, var(--wf-danger) 60%, var(--p-text-color)); }
+.wf-pill .wf-pill-ico { width: 12px; height: 12px; }
+
+/* W18 label filter in the header chrome */
+.wf-label-filter { display: inline-flex; align-items: center; gap: 4px; }
+.wf-label-filter-ico { width: 15px; height: 15px; color: var(--p-text-muted-color); flex: none; }
+.wf-label-select { min-width: 136px; }
+
+/* W18 grouped-by-label header row */
+.wf-group-head {
+  display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 9px 12px; min-width: 900px;
+  background: color-mix(in srgb, var(--p-text-color) 4%, var(--p-content-background));
+  border-bottom: 1px solid var(--p-content-border-color);
+  color: var(--p-text-color); font-size: 12px; font-weight: 700;
+}
+.wf-group-head svg { width: 15px; height: 15px; color: var(--p-text-muted-color); flex: none; }
+.wf-group-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-group-count {
+  font-size: 11px; font-weight: 700; color: var(--p-text-muted-color);
+  padding: 1px 7px; border-radius: 6px; background: color-mix(in srgb, var(--p-text-color) 8%, transparent);
+}
+
+/* W18 per-row labels cell: chips + inline add/remove editor */
+.wf-labels-cell { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; cursor: default; }
+.wf-label-chip {
+  display: inline-flex; align-items: center; gap: 2px; max-width: 100%;
+  padding: 2px 3px 2px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  color: color-mix(in srgb, var(--p-text-color) 78%, transparent);
+  background: color-mix(in srgb, var(--p-text-color) 8%, transparent);
+}
+.wf-label-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+.wf-label-input { width: 110px; }
+
+/* Location column: the immediate parent container name, absent cleanly when unplaced. */
+.wf-loc-cell { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--p-text-muted-color); font-size: 12.5px; }
+.wf-loc-ico { width: 14px; height: 14px; flex: none; }
+.wf-loc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Per-row overflow menu (Export). */
+.wf-row-actions { position: relative; display: inline-flex; align-items: center; justify-content: flex-end; }
+/* The row actions menu rides the shared AnchoredPanel (placement + dismissal);
+   this styles only the menu chrome. */
+.wf-row-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+.wf-row-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.wf-row-menu-item:hover:not(:disabled) { background: var(--p-content-hover-background); }
+.wf-row-menu-item:disabled { opacity: 0.55; cursor: default; }
+.wf-row-menu-sep { height: 1px; margin: 4px 6px; background: var(--p-content-border-color); }
+.wf-row-menu-item--danger { color: var(--p-danger-500); }
+
+/* Below the seven-column comfort width the list becomes a compact information card,
+   not a horizontally-scrolled desktop table. Every secondary value keeps its label and
+   the action menu remains in the same predictable top-right position. */
+@container (max-width: 860px) {
+  .wf-table { overflow: hidden; }
+  .wf-table-head { display: none; }
+  .wf-row {
+    min-width: 0; padding: 12px;
+    grid-template-columns: minmax(0, 1fr) auto 32px;
+    grid-template-areas:
+      "main status actions"
+      "main lastrun actions"
+      "labels labels labels"
+      "location updated updated";
+    align-items: start; gap: 7px 12px;
+  }
+  .wf-row-main { grid-area: main; }
+  .wf-labels-cell { grid-area: labels; }
+  .wf-loc-cell { grid-area: location; }
+  .wf-status-cell { grid-area: status; }
+  .wf-lastrun { grid-area: lastrun; }
+  .wf-row-updated { grid-area: updated; }
+  .wf-row-actions { grid-area: actions; }
+  .wf-group-head { min-width: 0; }
+  .wf-row-actions { align-self: start; }
+  .wf-labels-cell, .wf-loc-cell, .wf-status-cell, .wf-lastrun, .wf-row-updated {
+    min-width: 0;
+  }
+  .wf-labels-cell::before, .wf-loc-cell::before, .wf-status-cell::before,
+  .wf-lastrun::before, .wf-row-updated::before {
+    content: attr(data-label); flex: none;
+    color: var(--p-text-muted-color); font-size: 10px; font-weight: 750;
+    letter-spacing: .045em; line-height: 1.6; text-transform: uppercase;
+  }
+  .wf-status-cell, .wf-lastrun, .wf-row-updated, .wf-loc-cell {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .wf-loc-cell.is-empty { display: none; }
+  .wf-row-updated { justify-self: end; }
+}
+
+@container (max-width: 520px) {
+  .wf-row {
+    grid-template-columns: minmax(0, 1fr) 32px;
+    grid-template-areas:
+      "main actions"
+      "status status"
+      "lastrun lastrun"
+      "labels labels"
+      "location location"
+      "updated updated";
+  }
+  .wf-row-main { align-items: flex-start; }
+  .wf-row-updated { justify-self: start; }
+}
+
+/* Delete confirm modal */
+.wf-del-modal { width: min(400px, calc(100vw - 32px)); }
+.kx-modal-head-icon.wf-del-icon { background: color-mix(in srgb, var(--p-danger-500) 14%, transparent); color: var(--p-danger-500); }
+.wf-del-note { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--p-text-color); }
+.wf-del-note strong { font-weight: 700; }
+
+/* Import modal: PrimeVue owns the file picker; the pasted export remains resizable. */
+.wf-import-upload { align-self: flex-start; }
+.wf-import-text { width: 100%; resize: vertical; min-height: 150px; line-height: 1.5; }
+
+.wf-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.wf-row-skeleton {
+  min-height: 58px; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--p-text-color) 5%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%; animation: wf-shimmer 1.4s infinite;
+}
+@keyframes wf-shimmer { to { background-position: -200% 0; } }
+.wf-empty-title { font-size: 17px; font-weight: 720; margin: 0 0 6px; }
+.wf-empty-sub { font-size: var(--wf-fs-body); color: var(--wf-muted); margin: 0 0 18px; max-width: 360px; line-height: 1.5; }

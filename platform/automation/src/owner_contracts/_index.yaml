@@ -1,0 +1,56 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: owner_gc
+    kind: library.lua
+    meta:
+      comment: Fenced automation component owner teardown across drives, pins, slots, rollback and owned SQL rows.
+    source: file://../owner_gc.lua
+    modules: [sql, json]
+    imports:
+      automation_db: kickside.automation:automation_db
+      drive: kickside.automation:drive
+      command: kickside.automation:command
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+      slot_purge: kickside.core.jobs.persist:slot_purge
+      automations_lib: kickside.automation:automation
+
+  - name: owned_resource
+    kind: contract.definition
+    meta:
+      title: Automation-Owned Resource
+      comment: Resolve and tear down an automation owner for a resource identified by declared kind/id ownership metadata.
+    methods:
+      - name: teardown_owner
+        description: Input { resource_kind, resource_id, options? }. Deletes every automation that cannot outlive the resource — umbrellas declaring it via meta.owned_resources and bindings addressed at it — through the canonical delete dispatch. Returns { found, owner_ids, results?, error? }.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "resource_kind": { "type": "string" }, "resource_id": { "type": "string" }, "options": { "type": "object" } }, "required": ["resource_kind", "resource_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "found": { "type": "boolean" }, "owner_ids": { "type": "array", "items": { "type": "string" } }, "results": { "type": "array" }, "error": { "type": "string" } } }
+            format: application/schema+json
+
+  - name: owned_resource_binding
+    kind: contract.binding
+    meta:
+      title: Automation-Owned Resource Binding
+      comment: Allows resource modules to delegate direct child deletes to their owning automation without importing automation internals.
+      tags: [automation, owned_resource, teardown]
+    contracts:
+      - contract: kickside.automation:owned_resource
+        default: true
+        methods:
+          teardown_owner: kickside.automation.binding:owned_resource_teardown
+
+  - name: noop_delete
+    kind: function.lua
+    meta:
+      comment: Automation deletable owner teardown, retained at the installed kinds' historical function id.
+    source: file://../binding/noop_delete.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      owner_gc: kickside.automation:owner_gc

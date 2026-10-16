@@ -1,0 +1,68 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: declaration_references_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../declaration_references_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    declaration_references: kickside.automation:declaration_references
+- name: declaration_writer_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../declaration_writer_test.lua
+  method: run
+  security:
+    actor:
+      id: writer_operator
+    policies:
+      - app:user
+  modules: [sql, funcs, uuid]
+  imports:
+    test: wippy.test:test
+    command: kickside.automation:command
+    drive: kickside.automation:drive
+    types: kickside.automation:types
+    component: kickside.component:component
+- name: declaration_writer_verify
+  kind: function.lua
+  meta:
+    test_fixture: true
+    comment: Harness-only entry for exercising the declaration writer's pending-command verification.
+  source: file://../../src_link/declaration_writer.lua
+  method: verify
+  modules: [sql]
+  security:
+    actor:
+      id: system:kickside.automation.declaration
+    policies:
+      - kickside.automation.security:declaration_writer
+      - kickside.automation.security:declaration_deferred_resolution
+      - kickside.automation.security:round_worker_actor
+  imports:
+    types: kickside.automation:types
+    command: kickside.automation:command
+    component: kickside.component:component
+    component_command: kickside.component:component_command
+    declaration_authority: kickside.automation:declaration_authority
+    declaration_references: kickside.automation:declaration_references
+    core_db: kickside.core:db
+    drive: kickside.automation:drive
+    retention_pin: kickside.core.retention:pin
+
+- name: declaration_native_authority_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://../declaration_native_authority_test.lua
+  method: run
+  modules: [registry, security]
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    execution_identity: kickside.execution:execution_identity

@@ -1,0 +1,87 @@
+version: '1.0'
+namespace: app
+entries:
+- name: worker_idle_native_source
+  kind: library.lua
+  source: file://worker_idle_native_source.lua
+  modules:
+  - sql
+  - registry
+  - logger
+  - time
+  - channel
+  - events
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    error_envelope: kickside.contract:error_envelope
+    registry_version: kickside.core.jobs:registry_version
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    claim_execution: kickside.core.jobs.persist:claim_execution
+    reclaim: kickside.core.jobs.persist:reclaim
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    lease: kickside.core.jobs.persist:lease_heartbeat
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    worker_completion: kickside.core.jobs.service:worker_completion
+    lease_release: kickside.core.jobs:lease_release
+    process: app:worker_idle_native_process
+- name: worker_idle_native_real
+  kind: library.lua
+  source: file://worker_idle_native_real.lua
+  modules:
+  - sql
+  - registry
+  - logger
+  - time
+  - channel
+  - process
+  - events
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    error_envelope: kickside.contract:error_envelope
+    registry_version: kickside.core.jobs:registry_version
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    claim_execution: kickside.core.jobs.persist:claim_execution
+    reclaim: kickside.core.jobs.persist:reclaim
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    lease: kickside.core.jobs.persist:lease_heartbeat
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    worker_completion: kickside.core.jobs.service:worker_completion
+    lease_release: kickside.core.jobs:lease_release
+- name: worker_idle_native_fixture
+  kind: library.lua
+  source: file://worker_idle_native_fixture.lua
+- name: worker_idle_native_process
+  kind: library.lua
+  source: file://worker_idle_native_process.lua
+  imports:
+    fixture: app:worker_idle_native_fixture
+- name: worker_idle_native_test
+  kind: function.lua
+  source: file://worker_idle_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: jobs_worker_idle_native
+  modules:
+  - process
+  - channel
+  - time
+  imports:
+    test: wippy.test:test
+    worker: app:worker_idle_native_source
+    real_worker: app:worker_idle_native_real
+    fixture: app:worker_idle_native_fixture
+    config: kickside.core.jobs:config
+    canonical_json: kickside.contract:canonical_json

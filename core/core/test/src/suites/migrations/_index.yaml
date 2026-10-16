@@ -1,0 +1,58 @@
+version: "1.0"
+namespace: kickside.core.migration_tests
+
+entries:
+  - name: encoding_migration_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_core }
+    source: file://encoding_migration_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      migration_scratch: kickside.core.migration_tests:migration_scratch
+
+  - name: migration_scratch
+    kind: library.lua
+    source: file://migration_scratch.lua
+    modules: [sql, funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: retention_pins_migration_test
+    kind: function.lua
+    meta:
+      title: Core Migration 07
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Migrations
+      comment: Core migration 07 up, down and re-up on a scratch database built from the real core migrations, both engines.
+    source: file://retention_pins_migration_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      migration_scratch: kickside.core.migration_tests:migration_scratch
+
+  - name: thread_subjects_migration_test
+    kind: function.lua
+    meta:
+      title: Core Migration 09
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Migrations
+    source: file://thread_subjects_migration_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      migration_scratch: kickside.core.migration_tests:migration_scratch

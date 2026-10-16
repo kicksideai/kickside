@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.uploads
+entries:
+  - name: upload_completed
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Upload Completed
+      comment: Start after a file finishes processing and is ready to use.
+      icon: tabler:upload
+    binding: kickside.uploads:uploads_component
+    event: kickside.uploads.events:upload.completed
+
+  # Ingest a remote attachment reference (a provider message attachment, etc.) into
+  # the upload pipeline -- download the bytes, run them through the uploads lib, tag
+  # the upload with its thread. A pure uploads concern; consumers (the channel bridge)
+  # import it from here.

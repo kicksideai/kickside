@@ -1,0 +1,66 @@
+{
+  "name": "@kickside/settings-ui",
+  "version": "0.1.0",
+  "specification": "wippy-component-1.0",
+  "title": "KickSide Settings",
+  "description": "Admin settings editor web component for kickside/settings.",
+  "browser": "dist/index.js",
+  "files": [
+    "dist/",
+    "src/",
+    "package.json"
+  ],
+  "type": "module",
+  "dependencies": {
+    "@kickside/ui-kit": "*",
+    "@wippy-fe/shared": "*",
+    "@wippy-fe/theme": "*",
+    "@wippy-fe/webcomponent-core": "*",
+    "@wippy-fe/webcomponent-vue": "*",
+    "primevue": "4.5.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vue/test-utils": "^2.4.11",
+    "@wippy-fe/proxy": "*",
+    "@wippy-fe/vite-plugin": "*",
+    "happy-dom": "^20.10.6",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.9",
+    "vue": "^3.5.0",
+    "vue-tsc": "^3.3.8"
+  },
+  "peerDependencies": {
+    "@wippy-fe/proxy": "*",
+    "vue": "^3.5.0"
+  },
+  "wippy": {
+    "description": "Admin settings editor mounted by the host as <kickside-settings>. It fetches the block list from GET /api/v1/settings/blocks (declared kickside.settings:block entries plus auto-blocks for every settings namespace with a visible definition) and renders a grouped left-nav plus a content pane: a block with a component_tag mounts that bespoke editor web component by tag, while a block with a namespace renders the generic per-value-type settings form scoped to it. The optional route attribute deep-links to a block by key; when unset or unknown the first block is selected. The bundle's separate provider.js entry ships <kickside-settings-provider>, a shared config-driven provider settings card that takes a JSON config attribute ({ namespace, title?, icon?, help? }) and renders that namespace's declared settings. Neither element emits custom events beyond the standard bridge lifecycle events (load, unload, error). All settings lists every visible declaration across namespaces in a searchable Owner, Setting and Value table, using the same controls and save/reset operations as section editors.",
+    "tagName": "kickside-settings",
+    "type": "component",
+    "props": {
+      "type": "object",
+      "properties": {
+        "route": {
+          "type": "string",
+          "default": "",
+          "description": "Deep-link to a settings block by key. Unset selects the first block."
+        }
+      }
+    },
+    "scripts": {
+      "build": "build"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "workspaces": [
+    "./.wippy/npm/@*/*"
+  ]
+}

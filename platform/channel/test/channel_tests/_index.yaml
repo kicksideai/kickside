@@ -1,0 +1,201 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: conversation_gc_binding_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://../conversation_gc_binding_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      receive_fixture: app:receive_fixture
+      persist: app:persist
+      cleanup_conversation: app:cleanup_conversation
+      session_service_stub: app:session_service_stub
+
+  - name: conversation_gc_page_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../conversation_gc_page_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      persist: app:persist
+      receive_fixture: app:receive_fixture
+      channel_conversation: app:channel_conversation
+
+  - name: bridge_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../bridge_policy_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      reply_policy: app:reply_policy
+
+  - name: bridge_turn_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../bridge_turn_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      bridge_support: app:bridge_support
+      test_state: app:test_state
+      session_service: app:session_service_stub
+
+  - name: receive_fixture
+    kind: library.lua
+    source: file://../receive_fixture.lua
+    modules: [sql, time, json]
+    imports:
+      test: wippy.test:test
+      receive: app:receive
+      test_state: app:test_state
+      execution_ref: app:execution_ref
+      real_dm: app:real_dm
+      reply_sender_stub: app:reply_sender_stub
+      reply_admission: app:reply_admission
+      persist: app:persist
+
+  - name: receive_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../receive_test.lua
+    method: run
+    modules: [sql, time, json]
+    imports:
+      channel_conversation: app:channel_conversation
+      test: wippy.test:test
+      retention_policy_stub: app:retention_policy_stub
+      trace_context_stub: app:trace_context_stub
+      publication: app:publication
+      threads_capture_stub: app:threads_capture_stub
+      receive: app:receive
+      test_state: app:test_state
+      execution_ref: app:execution_ref
+      real_dm: app:real_dm
+      reply_sender_stub: app:reply_sender_stub
+      reply_admission: app:reply_admission
+      persist: app:persist
+      turn_recovery: app:turn_recovery
+      receive_fixture: app:receive_fixture
+      cleanup_conversation: app:cleanup_conversation
+      session_service_stub: app:session_service_stub
+
+  - name: conversation_owner_test
+    kind: function.lua
+    meta: { type: test, suite: channel, timeout: 120s }
+    source: file://../conversation_owner_test.lua
+    method: run
+    modules: [sql, time, channel]
+    imports:
+      test: wippy.test:test
+      channel_conversation: app:channel_conversation
+      receive_fixture: app:receive_fixture
+      retention_policy_stub: app:retention_policy_stub
+      test_state: app:test_state
+      trace_context_stub: app:trace_context_stub
+      reply_sender_stub: app:reply_sender_stub
+      session_service_stub: app:session_service_stub
+      cleanup_conversation: app:cleanup_conversation
+      persist: app:persist
+      turn_recovery: app:turn_recovery
+      channel_retention: app:channel_retention
+      channel_retention_tick: app:channel_retention_tick
+
+  - name: receive_dm_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../receive_dm_test.lua
+    method: run
+    modules: [sql, time, json]
+    imports:
+      test: wippy.test:test
+      receive: app:receive
+      test_state: app:test_state
+      execution_ref: app:execution_ref
+      real_dm: app:real_dm
+      reply_sender_stub: app:reply_sender_stub
+      reply_admission: app:reply_admission
+      persist: app:persist
+      turn_recovery: app:turn_recovery
+      receive_fixture: app:receive_fixture
+
+  - name: inject_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../inject_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      inject: app:inject
+      test_state: app:test_state
+
+  - name: responder_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../responder_test.lua
+    method: run
+    imports:
+      component: app:component_fixture
+      test: wippy.test:test
+      responder: app:responder
+      test_state: app:test_state
+
+  - name: responder_projection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../responder_projection_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      responder_projection: app:responder_projection
+
+  - name: channel_sink_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: channel
+    source: file://../channel_sink_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      channel_sink: app:channel_sink
+      reply_sender_stub: app:reply_sender_stub
+      test_state: app:test_state
+
+  - name: identity_unlink_gc_test
+    kind: function.lua
+    meta: { type: test, suite: channel }
+    source: file://../identity_unlink_gc_test.lua
+    method: run
+    modules: [sql, uuid, channel]
+    imports:
+      conversation_gc: app:conversation_gc
+      turn_recovery: app:turn_recovery
+      test: wippy.test:test
+      link_service: app:identity_link_service
+      cleanup_conversation: app:cleanup_conversation
+      channel_cleanup_finalize: app:complete_unlink
+      channel_conversation: app:channel_conversation
+      persist: app:persist
+      receive_fixture: app:receive_fixture

@@ -1,0 +1,60 @@
+version: "1.0"
+namespace: kickside.channel.events
+
+# Event-type entries for the channel chat thread. message.inbound is published to
+# automations through the channel_message_received source port; the remaining
+# events are internal/audit, so their schemas are read from their emit sites.
+entries:
+  # Emit site: platform/channel/src/thread_bridge.lua:117 (append_inbound body).
+  - name: message.inbound
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        text: { type: string }
+        provider: { type: string }
+        reply_component_id: { type: string }
+        reply_resource_id: { type: string }
+        channel_id: { type: string }
+        external_user_id: { type: string }
+        external_username: { type: string }
+        external_display_name: { type: string }
+        external_message_id: { type: string }
+        attachments: { type: array }
+        file_uuids: { type: array }
+      required: [text, provider]
+
+  # Emit site: platform/channel/src/service/bridge.lua:449 (append_reply_event, reply_sent_event).
+  - name: reply.sent
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        text: { type: string }
+        status: { type: string }
+        message_ref: { type: string }
+        component_id: { type: string }
+        resource_id: { type: string }
+      required: [status]
+
+  # Emit site: platform/channel/src/service/bridge.lua:440 (append_reply_event, reply_failed_event).
+  - name: reply.failed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        text: { type: string }
+        status: { type: string }
+        error: { type: string }
+        component_id: { type: string }
+        resource_id: { type: string }
+      required: [status, error]

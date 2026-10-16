@@ -1,0 +1,289 @@
+version: '1.0'
+namespace: app
+entries:
+- name: live_cancellation_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_core, group: KickSide Core / Jobs}
+  source: file://live_cancellation_test.lua
+  method: run
+  modules: [sql, uuid, process, time, channel]
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    jobs: kickside.core.jobs:jobs
+    job_fixture: app:job_fixture
+    worker_child: kickside.core.jobs.service:worker_child
+    worker: kickside.core.jobs.service:loop
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: dispatch_context_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://dispatch_context_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: completion_contract_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://completion_contract_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: execute_job_routing_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://execute_job_routing_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: claim_dispatch_finalize_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://claim_dispatch_finalize_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    reclaim: kickside.core.jobs.persist:reclaim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: proc_supervision_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://proc_supervision_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    reclaim: kickside.core.jobs.persist:reclaim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: live_supervision_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://live_supervision_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: child_termination_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Execution routing, child supervision, and job finalization.
+  source: file://child_termination_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  - security
+  - events
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lease_status: kickside.core.jobs.persist:lease_status
+    worker: kickside.core.jobs.service:loop
+    worker_pool: kickside.core.jobs.service:worker_pool
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_child: kickside.core.jobs.service:worker_child
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    jobs: kickside.core.jobs:jobs
+    worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+    job_fixture: app:job_fixture
+    config: kickside.core.jobs:config
+- name: unattributed_resource_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Resources created by an unattributed job target are refused.
+  source: file://unattributed_resource_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+    job_fixture: app:job_fixture
+
+- name: native_cancel_contract_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_core, group: KickSide Core / Jobs}
+  source: file://native_cancel_contract_test.lua
+  method: run
+  modules: [process, time, channel]
+  imports:
+    test: wippy.test:test

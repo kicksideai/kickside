@@ -1,0 +1,31 @@
+version: "1.0"
+namespace: kickside.knowledge
+
+entries:
+  - name: engines_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_engines }
+    source: file://engines_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      engines: kickside.knowledge:engines
+
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: knowledge_packaging
+      comment: Locks the standalone dependency boundary and optional engine discovery.
+    source: file://packaging_test.lua
+    method: run
+    modules: [registry]
+    imports: { test: wippy.test:test }
+
+  - name: contract_surface_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_packaging }
+    source: file://contract_surface_test.lua
+    method: run
+    modules: [registry]
+    imports: { test: wippy.test:test }

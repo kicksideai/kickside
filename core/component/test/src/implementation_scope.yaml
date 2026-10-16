@@ -1,0 +1,32 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: implementation_scope_test
+    kind: function.lua
+    meta: {type: test, suite: component_implementation_scope}
+    source: file://implementation_scope_test.lua
+    method: run
+    modules: [sql, uuid, time, funcs, security]
+    imports: {test: "wippy.test:test"}
+  - name: implementation_scope_probe
+    kind: function.lua
+    source: file://implementation_scope_probe.lua
+    method: run
+    modules: [sql, security]
+    imports:
+      component_reader: kickside.component.persist:component_reader
+      ops: kickside.component.persist:component_ops
+  - name: implementation_scope_runtime
+    kind: security.policy
+    groups: [app:implementation_scope]
+    policy:
+      actions: [funcs.call, funcs.security, db.get, env.get]
+      resources: '*'
+      effect: allow
+  - name: implementation_scope_visible
+    kind: security.policy
+    groups: [app:implementation_scope]
+    policy:
+      actions: [registry.get, registry.find]
+      resources: ["scope.visible:component", "kickside.component:*"]
+      effect: allow

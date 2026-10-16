@@ -1,0 +1,8 @@
+version: "1.0"
+namespace: kickside.channel.events
+entries:
+  - name: message.inbound
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+

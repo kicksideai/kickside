@@ -1,0 +1,179 @@
+version: "1.0"
+namespace: kickside.security.api
+
+# API layer: the read model (scope/policy catalog) + the admin HTTP endpoints for
+# scopes and policies, plus the security_scopes contract binding. Endpoints attach
+# to the firewalled api_router; admin-only by absence from the user allowlist.
+
+entries:
+  - name: projection_status
+    kind: function.lua
+    source: file://projection_status.lua
+    method: handler
+    modules: [http, security]
+    security:
+      policies: [kickside.security.service:group_set_registry_read, kickside.security.service:group_set_db]
+    imports:
+      api_errors: kickside.security.api:errors
+      scope_projection: kickside.security.service:scope_projection
+  - name: projection_status.endpoint
+    kind: http.endpoint
+    method: GET
+    func: projection_status
+    path: /security/projection
+
+  - name: delegation_save_http
+    kind: function.lua
+    source: file://delegation.lua
+    method: handler_save
+    modules: [http, json]
+    security:
+      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_validate_call]
+    imports:
+      delegation: kickside.security:delegation
+      api_errors: kickside.security.api:errors
+  - name: delegation_save.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    path: /security/delegations
+    func: delegation_save_http
+  - name: delegation_revoke_http
+    kind: function.lua
+    source: file://delegation.lua
+    method: handler_revoke
+    modules: [http, json]
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
+    imports:
+      delegation: kickside.security:delegation
+      api_errors: kickside.security.api:errors
+  - name: delegation_revoke.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    path: /security/delegations
+    func: delegation_revoke_http
+  - name: delegation_list_http
+    kind: function.lua
+    source: file://delegation.lua
+    method: handler_list
+    modules: [http, json]
+    imports:
+      delegation: kickside.security:delegation
+      api_errors: kickside.security.api:errors
+  - name: delegation_list.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    path: /security/delegations
+    func: delegation_list_http
+  - name: errors
+    kind: library.lua
+    source: file://errors.lua
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+
+  # ─── Scope/policy read model ─────────────────────────────────────────
+  - name: scope_catalog
+    kind: library.lua
+    meta:
+      comment: Read model merging policies, built-in groups, registry scopes, and DB customs; classifies internal/private.
+    source: file://scope_catalog.lua
+    modules: [registry]
+    imports:
+      security_consts: kickside.security:security_consts
+      scope_store: kickside.security.persist:scope_store
+      security_types: kickside.security:security_types
+
+  - name: list_scopes
+    kind: function.lua
+    meta: { comment: GET /security/scopes — merged scope/role catalog. }
+    source: file://list_scopes.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      api_errors: kickside.security.api:errors
+      scope_catalog: kickside.security.api:scope_catalog
+
+  - name: list_scopes.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_scopes
+    path: /security/scopes
+
+  # kickside.contract:security_scopes binding — the normalized assignable-scope
+  # catalog as a contract, so consumers (user editor) depend on the port, not on
+  # this module's endpoints. Admin-gated inside the impl. Implementation lives in
+  # binding/ (contract func, no endpoint) — see src/binding/_index.yaml.
+  - name: security_scopes_binding
+    kind: contract.binding
+    meta:
+      title: Security Scope Catalog
+      comment: Default implementation of kickside.contract:security_scopes.
+    contracts:
+      - contract: kickside.contract:security_scopes
+        default: true
+        methods:
+          list: kickside.security.binding:list_scopes_func
+
+  - name: list_policies
+    kind: function.lua
+    meta: { comment: GET /security/policies — public policy catalog (grants). }
+    source: file://list_policies.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      api_errors: kickside.security.api:errors
+      scope_catalog: kickside.security.api:scope_catalog
+
+  - name: list_policies.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_policies
+    path: /security/policies
+
+  - name: save_scope
+    kind: function.lua
+    meta: { comment: POST /security/scopes — create/update a DB custom scope. }
+    source: file://save_scope.lua
+    method: handler
+    modules: [http, json, security]
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
+    imports:
+      api_errors: kickside.security.api:errors
+      scope_store: kickside.security.persist:scope_store
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: save_scope.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: save_scope
+    path: /security/scopes
+
+  - name: delete_scope
+    kind: function.lua
+    meta:
+      comment: Remove a DB custom scope by slug (DELETE /security/scopes).
+    source: file://delete_scope.lua
+    method: handler
+    modules: [http, security]
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
+    imports:
+      api_errors: kickside.security.api:errors
+      scope_store: kickside.security.persist:scope_store
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: delete_scope.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_scope
+    path: /security/scopes

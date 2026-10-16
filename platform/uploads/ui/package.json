@@ -1,0 +1,60 @@
+{
+  "name": "@kickside/uploads-ui",
+  "version": "0.1.0",
+  "specification": "wippy-component-1.0",
+  "title": "KickSide Uploads",
+  "description": "File-uploads page web component for the native kickside/uploads backend.",
+  "browser": "dist/index.js",
+  "files": [
+    "dist/",
+    "src/",
+    "package.json"
+  ],
+  "type": "module",
+  "dependencies": {
+    "@kickside/ui-kit": "*",
+    "@wippy-fe/shared": "*",
+    "@wippy-fe/theme": "*",
+    "@wippy-fe/webcomponent-core": "*",
+    "@wippy-fe/webcomponent-vue": "*",
+    "primevue": "4.5.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vue/test-utils": "^2.4.11",
+    "@wippy-fe/proxy": "*",
+    "@wippy-fe/vite-plugin": "*",
+    "happy-dom": "^20.10.6",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.9",
+    "vue": "^3.5.0",
+    "vue-tsc": "^3.3.8"
+  },
+  "peerDependencies": {
+    "@wippy-fe/proxy": "*",
+    "vue": "^3.5.0"
+  },
+  "wippy": {
+    "description": "Full-page file-management web component (tag kickside-uploads) that renders the user's uploaded files over the native kickside/uploads HTTP API: a server-paginated, searchable, status-filterable file list with drag-and-drop and file-picker upload, a per-file detail panel listing derived artifacts (the converted-markdown primary plus extracted parts loaded one page at a time), and delete with confirmation. It takes no host-driven attributes \u2014 wippy.props is intentionally empty; mount the bare tag inside an authenticated host and it fetches all data itself through the proxy api client. Live stats and list invalidation come from subscribing to the uploads component's public meta summary (subscribeComponentMeta) instead of polling. The component emits no custom events of its own; all interaction stays inside it.",
+    "tagName": "kickside-uploads",
+    "type": "component",
+    "props": {
+      "type": "object",
+      "properties": {}
+    },
+    "scripts": {
+      "build": "build"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "workspaces": [
+    "./.wippy/npm/@*/*"
+  ]
+}

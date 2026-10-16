@@ -1,0 +1,276 @@
+version: "1.0"
+namespace: app.component_suites.persist
+
+entries:
+  - name: access_subjects_test
+    kind: function.lua
+    meta:
+      title: Component Access Subjects Test
+      type: test
+      suite: component_access_subjects
+      group: Components
+      comment: Access-subject expansion fails closed without actor identity.
+    source: file://access_subjects_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      access_subjects: kickside.component.persist:access_subjects
+
+  - name: patch_context_test
+    kind: function.lua
+    meta:
+      title: Component Patch Context Test
+      type: test
+      suite: component_patch_context
+      group: Components
+      comment: PATCH_CONTEXT merges keys without clobbering unrelated private context.
+    source: file://patch_context_test.lua
+    method: run
+    modules: [sql, uuid, time, json]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      component_types: kickside.component:types
+
+  - name: meta_lock_order_test
+    kind: function.lua
+    meta:
+      title: Component Meta Lock Order Test
+      type: test
+      suite: component_meta_lock_order
+      group: Components
+      comment: Public meta writers lock the component row before its meta rows, so crossing writers never deadlock.
+    source: file://meta_lock_order_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+
+  - name: whitelist_gate_test
+    kind: function.lua
+    meta:
+      title: Component Whitelist Gate Test
+      type: test
+      suite: component_whitelist_gate
+      group: Components
+      comment: Injected access filters confine reads and point checks to whitelisted subtrees.
+    source: file://whitelist_gate_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      placement: kickside.component.persist:placement
+      access_subjects: kickside.component.persist:access_subjects
+      component_reader: kickside.component.persist:component_reader
+      ops: kickside.component.persist:component_ops
+      read_port: kickside.component.persist:read_port
+
+  - name: component_reader_test
+    kind: function.lua
+    meta:
+      title: Component Reader Test
+      type: test
+      suite: component_reader
+      group: Components
+      comment: Component reader filtering and access control.
+    source: file://component_reader_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      component_reader: kickside.component.persist:component_reader
+      test: wippy.test:test
+
+  - name: effective_access_test
+    kind: function.lua
+    meta:
+      title: Component Effective Access Test
+      type: test
+      suite: component_effective_access
+      group: Components
+      comment: Effective access is the bitwise union of every grant across the actor's subjects and sources, on the read path, the reported access_level and the point gate.
+    source: file://effective_access_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      access_subjects: kickside.component.persist:access_subjects
+      component_reader: kickside.component.persist:component_reader
+      ops: kickside.component.persist:component_ops
+      component: kickside.component:component
+
+  - name: ops_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_identity_boundary
+      comment: Runtime-owned context keys, SET_EXECUTION_IDENTITY fence and audit, v1 classification.
+    source: file://ops_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, json, uuid, time, contract, process, channel]
+    imports:
+      test: wippy.test:test
+      lifecycle_stub: app:component_lifecycle_test_impl
+      ops: kickside.component.persist:component_ops
+      component_command: kickside.component:component_command
+      component_client: kickside.component:component
+      placement_ops: kickside.component.persist:placement_ops
+      context_ops: kickside.component.persist:context_ops
+      identity_ops: kickside.component.persist:identity_ops
+
+  - name: owner_id_format_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_owner_id_format
+      comment: Creator id format gate; canonical and maintenance creators, typed INVALID otherwise.
+    source: file://owner_id_format_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, uuid, funcs, security]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      placement_ops: kickside.component.persist:placement_ops
+
+  - name: maintenance_create_probe
+    kind: function.lua
+    meta:
+      comment: Creates one component as a framework maintenance creator in the caller-bound frame.
+    source: file://maintenance_create_probe.lua
+    method: run
+    modules: [sql]
+    imports:
+      ops: kickside.component.persist:component_ops
+      placement_ops: kickside.component.persist:placement_ops
+
+  - name: maintenance_owner_denied
+    kind: security.policy
+    meta:
+      comment: Denies framework maintenance ownership, as an unattributed dispatcher frame does.
+    policy:
+      resources: '*'
+      actions: component.own.maintenance
+      effect: deny
+
+  - name: identity_audit_expiry_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_identity_audit_expiry
+      timeout: 120s
+      comment: Identity audits grow past the former per-owner count and only age expiry prunes published ones.
+    source: file://identity_audit_expiry_test.lua
+    method: run
+    security:
+      actor: { id: "owner-1" }
+      policies: [app:test_scope_policy]
+    modules: [sql, json, uuid, time]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      component_command: kickside.component:component_command
+      context_ops: kickside.component.persist:context_ops
+      audit_retention: kickside.component.persist:audit_retention
+      audit_policy: kickside.component.persist:audit_policy
+
+  - name: owner_gc_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_owner_gc
+      timeout: 120s
+      comment: Component delete removes declaration and identity audit owner rows.
+    source: file://owner_gc_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, uuid, time, process, channel]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      retention: kickside.component:retention
+      lifecycle_stub: app:component_lifecycle_test_impl
+      audit_policy: kickside.component.persist:audit_policy
+
+  - name: audit_restart_probe
+    kind: process.lua
+    meta:
+      comment: Fresh supervised process reads retained identity audits after a prior process exits.
+    source: file://audit_restart_probe.lua
+    method: run
+    modules: [sql]
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+      groups: [wippy.security:process]
+
+  - name: declaration_state_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_identity_boundary
+      comment: Fenced declaration, private plan and public metadata commit together.
+    source: file://declaration_state_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, json, uuid, time, funcs, security]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+
+  - name: access_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_derived_acl
+      timeout: "300s"
+      comment: ACL-01/ACL-02 — direct grants only, effective access derived through the indexed ancestor relation, typed subjects, immediate revocation and inherited notification.
+    source: file://access_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, uuid, time, json, contract, security]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      component_reader: kickside.component.persist:component_reader
+      component_client: kickside.component:component
+      access_ops: kickside.component.persist:access_ops
+      share_subject: kickside.component:share_subject
+
+  - name: meta_unique_migration_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_meta_migration
+    source: file://meta_unique_migration_test.lua
+    method: run
+    modules: [sql, funcs, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: owned_meta_floor
+    kind: registry.entry
+    meta:
+      type: kickside.component.owned_meta_key
+      key: test.owner.retry_at_ms
+
+  - name: owned_meta_floor_test
+    kind: function.lua
+    meta: {type: test, suite: component_owned_meta_floor}
+    source: file://owned_meta_floor_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops

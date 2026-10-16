@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.workflows.schema
+
+entries:
+  - name: schema_json
+    kind: library.lua
+    meta:
+      comment: JSON Schema object/array normalization for Wippy JSON encoding boundaries.
+    source: file://schema_json.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
+
+  - name: schema_validate
+    kind: library.lua
+    meta:
+      comment: Minimal JSON Schema validator for Start input and workflow-tool argument checks.
+    source: file://schema_validate.lua
+    modules: [json]

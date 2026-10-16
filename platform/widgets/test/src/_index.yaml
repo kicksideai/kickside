@@ -1,0 +1,60 @@
+version: '1.0'
+namespace: app
+entries:
+- name: db
+  kind: db.sql.sqlite
+  file: "${sqlite_path}"
+- name: processes
+  kind: process.host
+  lifecycle:
+    auto_start: false
+- name: gateway
+  kind: http.service
+  addr: :19040
+  lifecycle:
+    auto_start: false
+- name: api
+  kind: http.router
+  meta:
+    server: app:gateway
+  prefix: /api
+- name: dep.test
+  kind: ns.dependency
+  component: wippy/test
+  version: '*'
+- name: dep.module
+  kind: ns.dependency
+  component: kickside/widgets
+  version: '*'
+  parameters:
+  - name: kickside.widgets:ui_server
+    value: app:gateway
+  - name: kickside.widgets:api_router
+    value: app:api
+- name: resolver_registry
+  kind: library.lua
+  source: file://resolver_registry.lua
+- name: resolver_subject
+  kind: library.lua
+  source: file://create_view_resolver.lua
+  imports:
+    http: app:resolver_http
+    security: app:resolver_security
+    registry: app:resolver_registry
+- name: create_view_errors_test
+  kind: function.lua
+  meta: {type: test}
+  source: file://create_view_errors_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    resolver: app:resolver_subject
+    resolver_registry: app:resolver_registry
+    http: app:resolver_http
+
+- name: resolver_http
+  kind: library.lua
+  source: file://resolver_http.lua
+- name: resolver_security
+  kind: library.lua
+  source: file://resolver_security.lua

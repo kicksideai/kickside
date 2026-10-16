@@ -1,0 +1,8 @@
+organization: kickside
+module: self-reflection-one-scope-harness
+type: application
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

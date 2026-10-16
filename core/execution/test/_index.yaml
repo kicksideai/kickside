@@ -1,0 +1,137 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: dep.wippy.test
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Test runner the identity suite imports and `wippy test` discovers it through.
+    component: wippy/test
+
+  - name: dep.kickside.execution
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Execution identity definitions exercised by this harness.
+    component: kickside/execution
+
+  - name: execution_identity_test
+    kind: function.lua
+    meta:
+      title: Execution Identity
+      type: test
+      suite: kickside_execution
+      comment: Principal codec, actor keys, delegation vectors, capture, live resolve, bind and run_as.
+    source: file://execution_identity_test.lua
+    method: run
+    modules:
+      - funcs
+      - security
+      - json
+    imports:
+      test: wippy.test:test
+      execution_identity: kickside.execution:execution_identity
+      native_capture_probe: app:native_capture_probe
+
+  - name: identity_capture_scope
+    kind: security.policy
+    meta:
+      comment: Native frame for the admitted-identity capture guard. It permits the probe and one action only.
+    policy:
+      resources:
+        - app:native_capture_probe
+        - identity:restricted
+      actions:
+        - funcs.call
+        - identity.capture.restricted
+      effect: allow
+
+  - name: native_capture_probe
+    kind: function.lua
+    meta:
+      comment: Captures the server-written execution identity and evaluates the native bound scope.
+    source: file://native_capture_probe.lua
+    method: capture
+    modules:
+      - security
+    imports:
+      execution_identity: kickside.execution:execution_identity
+
+  - name: trace_test
+    kind: function.lua
+    meta:
+      title: Trace Context
+      type: test
+      suite: kickside_execution
+      comment: trace_context begin/inherit/row normalization vocabulary and correlation tokens.
+    source: file://trace_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      trace: kickside.execution:trace
+
+  - name: authority_native_fixture
+    kind: library.lua
+    source: file://authority_native_fixture.lua
+
+  - name: authority_native_json
+    kind: library.lua
+    source: file://authority_native_json.lua
+    modules: [json]
+    imports: {fixture: app:authority_native_fixture}
+
+  - name: authority_native_source
+    kind: library.lua
+    source: file://authority_native_source.lua
+    imports:
+      json: app:authority_native_json
+      identity_failure: kickside.execution:identity_failure
+
+  - name: authority_native_test
+    kind: function.lua
+    meta: {type: test, suite: execution_authority_native}
+    source: file://authority_native_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      authority: app:authority_native_source
+      production: kickside.execution:authority_snapshot
+      fixture: app:authority_native_fixture
+
+  - name: encoder_native_fixture
+    kind: library.lua
+    source: file://encoder_native_fixture.lua
+
+  - name: encoder_native_json
+    kind: library.lua
+    source: file://encoder_native_json.lua
+    modules: [json]
+    imports: {fixture: app:encoder_native_fixture}
+
+  - name: encoder_native_codec
+    kind: library.lua
+    source: file://encoder_native_codec.lua
+    imports: {json: app:encoder_native_json}
+
+  - name: encoder_native_identity
+    kind: library.lua
+    source: file://encoder_native_identity.lua
+    modules: [security, funcs, contract]
+    imports:
+      identity_failure: kickside.execution:identity_failure
+      identity_codec: app:encoder_native_codec
+      identity_restrictions: kickside.execution:identity_restrictions
+      authority_snapshot: kickside.execution:authority_snapshot
+
+  - name: encoder_native_test
+    kind: function.lua
+    meta: {type: test, suite: execution_encoder_native}
+    source: file://encoder_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      identity: app:encoder_native_identity
+      production: kickside.execution:execution_identity
+      fixture: app:encoder_native_fixture

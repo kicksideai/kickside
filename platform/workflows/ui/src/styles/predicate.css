@@ -1,0 +1,10 @@
+.wf-predicate { display: grid; gap: 8px; }
+.wf-predicate-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.wf-predicate-row label { display: grid; gap: 4px; min-width: 0; }
+.wf-predicate-row label > span { color: var(--wf-muted); font-size: var(--wf-fs-meta); font-weight: 650; }
+.wf-predicate-advanced { display: grid; gap: 4px; }
+.wf-predicate.is-compact .wf-predicate-row { gap: 6px; }
+.wf-branch-outcomes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.wf-branch-outcomes p { display: grid; gap: 2px; margin: 0; padding: 9px 10px; border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius-sm); background: var(--wf-surface); }
+.wf-branch-outcomes strong { color: var(--p-text-color); font-size: var(--wf-fs-body); }
+.wf-branch-outcomes span { color: var(--wf-muted); font-size: var(--wf-fs-meta); line-height: 1.35; }

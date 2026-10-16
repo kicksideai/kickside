@@ -1,0 +1,159 @@
+version: "1.0"
+namespace: kickside.core.projections.api
+
+entries:
+  # Admin endpoints over the projection engine. The router on each .endpoint is
+  # injected by the slice's api_router requirement (path .meta.router) declared in
+  # ../_index.yaml, so the host wires it without a central edit.
+
+  - name: register_projection
+    kind: function.lua
+    meta:
+      comment: Define/redefine a projection + cursor on a thread.
+    source: file://register_projection.lua
+    method: handler
+    modules:
+      - http
+      - json
+      - sql
+      - env
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      core_db: kickside.core:db
+      worker: kickside.core.projections.persist:worker
+      writer: kickside.core.projections.persist:writer
+      thread_access: kickside.core.threads.api:thread_access
+      execution_identity: kickside.execution:execution_identity
+
+  - name: register_projection_request
+    kind: library.lua
+    meta:
+      comment: The request logic of POST /threads/{id}/projections, with the caller's identity captured server-side.
+    source: file://register_projection.lua
+    modules:
+      - http
+      - json
+      - sql
+      - env
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      core_db: kickside.core:db
+      worker: kickside.core.projections.persist:worker
+      writer: kickside.core.projections.persist:writer
+      thread_access: kickside.core.threads.api:thread_access
+      execution_identity: kickside.execution:execution_identity
+
+  - name: register_projection.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /threads/{id}/projections. Router injected by api_router requirement.
+    method: POST
+    path: /threads/{id}/projections
+    func: register_projection
+
+  - name: remove_projection
+    kind: function.lua
+    meta:
+      comment: Delete a projection and cascade its cursors.
+    source: file://remove_projection.lua
+    method: handler
+    modules:
+      - http
+      - json
+      - sql
+      - env
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      core_db: kickside.core:db
+      writer: kickside.core.projections.persist:writer
+      thread_access: kickside.core.threads.api:thread_access
+
+  - name: remove_projection.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /threads/{id}/projections/remove. Router injected by api_router requirement.
+    method: POST
+    path: /threads/{id}/projections/remove
+    func: remove_projection
+
+  - name: pause_projection
+    kind: function.lua
+    meta:
+      comment: Pause a projection cursor.
+    source: file://pause_projection.lua
+    method: handler
+    modules:
+      - http
+      - json
+      - sql
+      - env
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      core_db: kickside.core:db
+      writer: kickside.core.projections.persist:writer
+      thread_access: kickside.core.threads.api:thread_access
+
+  - name: pause_projection.endpoint
+    kind: http.endpoint
+    meta:
+      comment: PUT /threads/{id}/projections/pause. Router injected by api_router requirement.
+    method: PUT
+    path: /threads/{id}/projections/pause
+    func: pause_projection
+
+  - name: resume_projection
+    kind: function.lua
+    meta:
+      comment: Resume a paused/failed projection cursor.
+    source: file://resume_projection.lua
+    method: handler
+    modules:
+      - http
+      - json
+      - sql
+      - env
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      core_db: kickside.core:db
+      writer: kickside.core.projections.persist:writer
+      thread_access: kickside.core.threads.api:thread_access
+
+  - name: resume_projection.endpoint
+    kind: http.endpoint
+    meta:
+      comment: PUT /threads/{id}/projections/resume. Router injected by api_router requirement.
+    method: PUT
+    path: /threads/{id}/projections/resume
+    func: resume_projection
+
+  - name: list_projection_cursors
+    kind: function.lua
+    meta:
+      comment: List a thread's projections and cursors.
+    source: file://list_projection_cursors.lua
+    method: handler
+    modules:
+      - http
+      - sql
+      - env
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      core_db: kickside.core:db
+      http_params: kickside.contract:http_params
+      reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      thread_access: kickside.core.threads.api:thread_access
+
+  - name: list_projection_cursors.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /threads/{id}/projections. Router injected by api_router requirement.
+    method: GET
+    path: /threads/{id}/projections
+    func: list_projection_cursors

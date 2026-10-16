@@ -1,0 +1,91 @@
+version: "1.0"
+namespace: kickside.inbox.events
+
+# Event-type entries for the inbox component thread. item.created / item.resolved
+# schemas are the published event output faces. item.deleted is an internal cleanup
+# event with its schema declared from the emit site.
+entries:
+  - name: delivery.claimed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        operation: { type: string }
+        item_id: { type: string }
+        payload: {}
+      required: [operation, item_id, payload]
+
+  - name: item.created
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        id: { type: string }
+        item_type: { type: string }
+        title: { type: string }
+        content: { description: Item content payload; shape depends on the item type. }
+        metadata: { type: object }
+        source_id: { type: string }
+        priority: { type: string }
+        actor_id: { type: string }
+        created_at: { type: number }
+      required: [id, item_type, title]
+
+  - name: item.version
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        id: { type: string }
+        item_type: { type: string }
+        title: { type: string }
+        content: {}
+        metadata: { type: object }
+        source_id: { type: string }
+        priority: { type: string }
+        delivery_key: { type: string }
+      required: [id, item_type, title, delivery_key]
+
+  - name: item.resolved
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string }
+        action:
+          type: string
+          description: Action accepted from the canonical inbox.item_type declaration.
+        resolution_id:
+          type: string
+          description: Stable logical resolution id supplied to an idempotent callback.
+        resolved_by: { type: string }
+        resolved_at: { type: number }
+        form:
+          type: object
+          description: Values validated and submitted with the action.
+      required: [id, status, action, resolution_id, resolved_by, resolved_at]
+
+  # Emitted by persist/events.lua when an item is deleted.
+  - name: item.deleted
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        id: { type: string }
+      required: [id]

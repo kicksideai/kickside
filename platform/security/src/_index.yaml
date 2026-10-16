@@ -1,0 +1,233 @@
+version: "1.0"
+namespace: kickside.security
+
+# Root of the security slice: shared vocabulary, the requirement interface, the
+# DB resolver, and the UI mount. The layers live in sub-namespaces and import
+# this root, never the reverse:
+#   kickside.security.persist  — DB CRUD for custom scopes (sql only)
+#   kickside.security.service  — the supervised projector (spawns; registry write)
+#   kickside.security.api      — read model + HTTP endpoints
+#   kickside.security.migrations — schema
+
+entries:
+  - name: dep.kickside.execution
+    kind: ns.dependency
+    version: '*'
+    component: kickside/execution
+  - name: delegation_validator
+    kind: ns.requirement
+    default: ""
+    meta:
+      value_kind: function.lua
+      description: Optional host validation of live ordinary-user delegation targets and execution roots; empty keeps generated saves unavailable.
+    targets:
+      - entry: kickside.security:delegation_config
+        path: .meta.validator
+      - entry: kickside.security:delegation_validate_call
+        path: ".policy.resources +="
+  - name: delegation_validate_call
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: funcs.call
+      resources: []
+      effect: allow
+  - name: delegation_config
+    kind: registry.entry
+    meta: {validator: ""}
+  - name: delegation
+    kind: library.lua
+    source: file://delegation.lua
+    modules: [registry, security, funcs, time]
+    imports:
+      execution_identity: kickside.execution:execution_identity
+      scope_catalog: kickside.security.api:scope_catalog
+      trigger_reconcile: kickside.security:trigger_reconcile
+  - name: policy_composition
+    kind: library.lua
+    source: file://policy_composition.lua
+    modules: [registry, security]
+
+  - name: sessions_invalidator
+    kind: ns.requirement
+    meta:
+      value_kind: function.lua
+      description: Optional host session revocation function for group changes.
+    default: ""
+    targets:
+      - entry: kickside.security:composition_config
+        path: .meta.sessions_invalidator
+
+  - name: delegation_fencer
+    kind: ns.requirement
+    meta:
+      value_kind: function.lua
+      description: Fences delegated group authority while retaining live sessions.
+    default: kickside.users.persist:delegation_fencer
+    targets:
+      - entry: kickside.security:composition_config
+        path: .meta.delegation_fencer
+
+  - name: composition_config
+    kind: registry.entry
+    meta: {sessions_invalidator: "", delegation_fencer: ""}
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Security
+      comment: App-owned scope and policy administration. Scopes are security.scope declarations (custom scopes are DB-backed and projected to the registry); package policies stay declared by their owning package and the app composes scopes from public policies. Exposed to consumers via the kickside.contract:security_scopes port.
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    component: kickside/contract
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    component: wippy/migration
+
+  # ─── Requirement interface ───────────────────────────────────────────
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the admin security endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the admin security endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.security.api:projection_status.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:list_scopes.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:list_policies.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:save_scope.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:delete_scope.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:delegation_save.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:delegation_revoke.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:delegation_list.endpoint
+        path: .meta.router
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the security UI static mount attaches to.
+      description: HTTP server the security UI static mount attaches to.
+    targets:
+      - entry: kickside.security:ui_static
+        path: .meta.server
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      value_kind: db.sql
+      comment: SQL database backing kickside_security_scopes (custom scopes).
+      description: SQL database backing kickside_security_scopes (custom scopes).
+    targets:
+      - entry: kickside.security.migrations:01_security_scopes
+        path: .meta.target_db
+      - entry: kickside.security.migrations:04_group_sets
+        path: .meta.target_db
+      - entry: kickside.security.migrations:05_group_set_revisions
+        path: .meta.target_db
+      - entry: kickside.security:db_config
+        path: .meta.db_id
+      - entry: kickside.security.service:group_set_db
+        path: ".policy.resources +="
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host the scope projection service runs on.
+      description: Process host the scope projection service runs on.
+    targets:
+      - entry: kickside.security.service:scope_projection.service
+        path: .host
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured security DB id (rewritten by the target_db requirement).
+
+  # ─── Shared vocabulary ───────────────────────────────────────────────
+  - name: security_consts
+    kind: library.lua
+    meta:
+      comment: Scope and policy kinds, internal classification, custom-scope namespace, and db id resolver.
+    source: file://consts.lua
+    modules: [registry]
+
+  - name: trigger_reconcile
+    kind: library.lua
+    source: file://trigger_reconcile.lua
+    modules: [channel, time, funcs]
+    imports:
+      security_consts: kickside.security:security_consts
+
+  - name: security_types
+    kind: library.lua
+    meta: { comment: "Scope row, policy summary, and catalog view types." }
+    source: file://types.lua
+
+  # ─── UI mount (the kickside-security web component) ───────────────────
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-security web component bundle.
+    directory: ./static
+    auto_init: true
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-security
+    fs: kickside.security:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .map: application/json
+
+  - name: security_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: security_view
+      title: Security
+      description: Roles and scopes admin web component (no props). Lists built-in and registry scopes read-only and lets admins compose DB-backed custom scopes from public policies in a two-pane builder; saved scopes are projected as security.scope registry entries.
+      announced: true
+      tag_name: kickside-security
+      base_path: kickside-security
+      entry_point: index.js
+      icon: tabler:shield-lock
+
+  - name: tab.security
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Roles, scopes, and policy composition.
+    key: security
+    label: Security
+    icon: tabler:shield-lock
+    order: 20
+    render: component
+    component_tag: kickside-security
+    access: kickside.security.api:save_scope.endpoint
+
+  - name: policy_coverage
+    kind: library.lua
+    source: file://policy_coverage.lua
+    modules: [registry]
+    imports:
+      canonical_json: kickside.contract:canonical_json

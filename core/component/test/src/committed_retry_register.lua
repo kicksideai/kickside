@@ -1,0 +1,1 @@
+../../src/binding/register_component_func.lua

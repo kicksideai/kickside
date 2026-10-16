@@ -1,0 +1,72 @@
+version: "1.0"
+logmanager:
+  stream_to_events: true
+  propagate_downstream: true
+# Core projection tests claim the same durable jobs slots the worker service
+# claims: the suites own every claim, so the harness starts no live jobs worker
+# (a live worker would race each claim, wake and fold the suites assert on).
+override:
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
+  "kickside.core.retention.service:sweeper.service:lifecycle.auto_start": false
+  # A killed reservation owner can close the last SQLite connection; a file
+  # keeps committed counters and schema available to its restarted process.
+  "app:db:file": "${sqlite_path}"
+  "app:sql_transient_first:file": "${sqlite_path}.native_transient"
+  "app:sql_transient_second:file": "${sqlite_path}.native_transient"
+  "kickside.core.projections:policy:meta.apply.batch_size": 23
+  "kickside.core.projections:policy:meta.proc.max_execution": 11m
+workspace:
+  replacements:
+    kickside/realtime: ../../../platform/realtime
+    kickside/realtime-dispatch: ../../realtime-dispatch
+    kickside/core: ..
+    kickside/component: ../../component
+    kickside/contract: ../../contract
+    kickside/jobs: ../../jobs
+    kickside/execution: ../../execution
+vars:
+  sqlite_path: ./.wippy/core-test.sqlite
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_core
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8
+      "app:migration_db:kind": db.sql.postgres
+      "app:migration_db:host": "${pg_host}"
+      "app:migration_db:port": "${pg_port}"
+      "app:migration_db:database": "${pg_database}_mig"
+      "app:migration_db:username": "${pg_username}"
+      "app:migration_db:password": "${pg_password}"
+      "app:migration_db:options.sslmode": disable
+      "app:migration_db:pool.max_open": 4
+      "app:migration_db:pool.max_idle": 2
+      "app:sql_transient_first:kind": "db.sql.postgres"
+      "app:sql_transient_first:host": "${pg_host}"
+      "app:sql_transient_first:port": "${pg_port}"
+      "app:sql_transient_first:database": "${pg_database}_transient"
+      "app:sql_transient_first:username": "${pg_username}"
+      "app:sql_transient_first:password": "${pg_password}"
+      "app:sql_transient_first:options.sslmode": "disable"
+      "app:sql_transient_first:pool.max_open": 1
+      "app:sql_transient_first:pool.max_idle": 1
+      "app:sql_transient_second:kind": "db.sql.postgres"
+      "app:sql_transient_second:host": "${pg_host}"
+      "app:sql_transient_second:port": "${pg_port}"
+      "app:sql_transient_second:database": "${pg_database}_transient"
+      "app:sql_transient_second:username": "${pg_username}"
+      "app:sql_transient_second:password": "${pg_password}"
+      "app:sql_transient_second:options.sslmode": "disable"
+      "app:sql_transient_second:pool.max_open": 1
+      "app:sql_transient_second:pool.max_idle": 1

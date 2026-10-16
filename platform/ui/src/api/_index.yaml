@@ -1,0 +1,224 @@
+version: "1.0"
+namespace: kickside.ui.api
+
+entries:
+  # ─── Nav API ─────────────────────────────────────────────────────────
+  - name: list_nav
+    kind: function.lua
+    meta:
+      comment: GET /nav/list — effective navigation contributed by the nav providers plus system controls.
+    source: file://list_nav.lua
+    method: handler
+    modules: [http, contract, registry, security, logger]
+    imports:
+      nav: kickside.ui:nav
+      nav_providers: kickside.ui:nav_providers
+      nav_badges: kickside.ui:nav_badges
+      splash: kickside.ui:splash
+      ui_types: kickside.ui:types
+      branding: kickside.ui:branding
+
+  - name: list_nav.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: GET
+    func: list_nav
+    path: /nav/list
+
+  - name: list_contributions
+    kind: function.lua
+    meta:
+      comment: GET /ui/contributions?types= — declarative UI contributions of the requested ui.* types.
+    source: file://list_contributions.lua
+    method: handler
+    modules: [http, registry]
+    imports:
+      contributions: kickside.ui:contributions
+
+  - name: list_contributions.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: GET
+    func: list_contributions
+    path: /ui/contributions
+
+  # ─── Shell discovery: System tabs + account menu ─────────────────────
+  # Owned by the shell module so the app stays a thin host. Both discover the
+  # caller-visible ui.* contributions (settings_tab / account_item) and normalize
+  # the display fields. /settings/tabs is admin-only via the router firewall (the
+  # System surface); /account/items is the per-user avatar menu.
+  - name: list_settings_tabs
+    kind: function.lua
+    meta:
+      comment: GET /settings/tabs — the declared System tabs, ordered.
+    source: file://list_settings_tabs.lua
+    method: handler
+    modules: [http]
+    imports:
+      shell: kickside.ui:shell_discovery
+
+  - name: list_settings_tabs.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: GET
+    func: list_settings_tabs
+    path: /settings/tabs
+
+  - name: list_account_items
+    kind: function.lua
+    meta:
+      comment: GET /account/items — the declared account-menu entries, ordered.
+    source: file://list_account_items.lua
+    method: handler
+    modules: [http]
+    imports:
+      shell: kickside.ui:shell_discovery
+
+  - name: list_account_items.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: GET
+    func: list_account_items
+    path: /account/items
+
+  # ─── Splash (full-screen, once per user or once per instance) ────────
+  - name: mark_splash_seen
+    kind: function.lua
+    meta:
+      comment: POST /ui/splash/{id}/seen — record that the caller dismissed a splash, per user or per instance by the splash scope.
+    source: file://mark_splash_seen.lua
+    method: handler
+    modules: [http]
+    imports:
+      splash: kickside.ui:splash
+
+  - name: mark_splash_seen.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: POST
+    func: mark_splash_seen
+    path: /ui/splash/{id}/seen
+
+  # DELETE re-shows the splash (replay setup / re-test) by clearing the seen mark.
+  - name: mark_splash_unseen.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: DELETE
+    func: mark_splash_seen
+    path: /ui/splash/{id}/seen
+
+  # DELETE /ui/splash/seen (no id) resets instance completion for admins.
+  # Personal splashes keep their per-user completion. This backs the Appearance
+  # "Show setup again" action.
+  - name: reset_splashes.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: DELETE
+    func: mark_splash_seen
+    path: /ui/splash/seen
+
+  - name: nav_changed_broadcast
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the nav configuration writer announce nav.changed to every connected client.
+    policy:
+      resources: kickside.realtime:nav.changed
+      actions: realtime.broadcast
+      effect: allow
+
+  - name: set_config
+    kind: function.lua
+    meta:
+      comment: PUT /nav/config — set nav system controls.
+    source: file://set_config.lua
+    method: handler
+    modules: [http, json, security, contract]
+    imports:
+      ui_types: kickside.ui:types
+    security:
+      policies:
+        - kickside.ui.api:nav_changed_broadcast
+
+  - name: set_config.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: PUT
+    func: set_config
+    path: /nav/config
+
+  # POST /nav/logo — multipart logo upload (admin). Validates image type/size,
+  # stores bytes in the UI table, returns the public URL.
+  - name: upload_logo
+    kind: function.lua
+    meta:
+      comment: POST /nav/logo — upload the current branding logo (admin).
+    source: file://upload_logo.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      ui_types: kickside.ui:types
+      branding: kickside.ui:branding
+
+  - name: upload_logo.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: POST
+    func: upload_logo
+    path: /nav/logo
+
+  # GET /branding (public) — title + logo for the login page and app boot.
+  - name: get_branding
+    kind: function.lua
+    meta:
+      comment: GET /branding — public title + logo_url read for pre-auth surfaces.
+    source: file://get_branding.lua
+    method: handler
+    modules: [http, contract]
+    imports:
+      ui_types: kickside.ui:types
+      branding: kickside.ui:branding
+    security:
+      actor:
+        id: kickside.ui.api:get_branding
+      policies:
+        - kickside.ui:public_branding_settings_contract
+        - kickside.ui:public_branding_settings_registry
+        - kickside.ui:public_branding_settings_cache
+        - kickside.ui:public_logo_storage
+
+  - name: get_branding.endpoint
+    kind: http.endpoint
+    meta:
+      router: ""
+    method: GET
+    func: get_branding
+    path: /branding
+
+  - name: get_logo
+    kind: function.lua
+    source: file://get_logo.lua
+    method: handler
+    modules: [http]
+    imports:
+      branding: kickside.ui:branding
+    security:
+      actor: {id: kickside.ui.api:get_logo}
+      policies:
+        - kickside.ui:public_logo_storage
+
+  - name: get_logo.endpoint
+    kind: http.endpoint
+    meta: {router: ""}
+    method: GET
+    path: /branding/logo
+    func: get_logo

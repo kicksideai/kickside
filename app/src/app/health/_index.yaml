@@ -1,0 +1,39 @@
+version: "1.0"
+namespace: app.health
+
+entries:
+  - name: db_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.health
+      intent: public_health_runtime
+      comment: The readiness probe may open only the application database.
+    policy:
+      resources: app:db
+      actions:
+        - db.get
+      effect: allow
+
+  - name: serve
+    kind: function.lua
+    meta:
+      comment: Reports readiness after a round trip to the application database.
+    source: file://serve.lua
+    security:
+      actor:
+        id: app.health:serve
+      policies:
+        - app.health:db_access
+    modules:
+      - http
+      - sql
+    method: handler
+
+  - name: endpoint
+    kind: http.endpoint
+    meta:
+      router: app:api.public
+    method: GET
+    func: serve
+    path: /health

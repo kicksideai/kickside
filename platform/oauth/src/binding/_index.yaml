@@ -1,0 +1,229 @@
+version: "1.0"
+namespace: kickside.oauth.binding
+
+entries:
+  # kickside.oauth.binding:delete_connection_func
+  - name: delete_connection_func
+    kind: function.lua
+    meta:
+      comment: Delete OAuth connection and clean up all data
+      tags:
+        - oauth
+        - delete
+        - cleanup
+    source: file://delete_connection_func.lua
+    modules:
+      - ctx
+      - security
+    imports:
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      refresh_schedule: kickside.oauth:refresh_schedule
+    method: handle
+
+  # kickside.oauth.binding:get_access_token_func
+  - name: get_access_token_func
+    kind: function.lua
+    meta:
+      comment: Get current access token for OAuth connection
+      tags:
+        - oauth
+        - token
+        - access
+    source: file://get_access_token_func.lua
+    modules:
+      - ctx
+      - time
+    imports:
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+      token_refresh_core: kickside.oauth:token_refresh_core
+    method: handle
+
+  # kickside.oauth.binding:get_connection_status_func
+  - name: get_connection_status_func
+    kind: function.lua
+    meta:
+      comment: Get OAuth connection status for component interface
+      tags:
+        - oauth
+        - status
+        - component
+    source: file://get_connection_status_func.lua
+    modules:
+      - ctx
+      - time
+    imports:
+      component: kickside.component:component
+      oauth_types: kickside.oauth:oauth_types
+    method: handle
+
+  # kickside.oauth.binding:get_info_func
+  - name: get_info_func
+    kind: function.lua
+    meta:
+      comment: Get OAuth connection information and metadata
+      tags:
+        - oauth
+        - connection
+        - info
+    source: file://get_info_func.lua
+    modules:
+      - ctx
+      - time
+    imports:
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_types: kickside.oauth:oauth_types
+    method: handle
+
+  # kickside.oauth.binding:handle_callback_func
+  - name: handle_callback_func
+    kind: function.lua
+    meta:
+      comment: Handle OAuth callback for any provider using context
+      tags:
+        - oauth
+        - callback
+        - token-exchange
+    source: file://handle_callback_func.lua
+    modules:
+      - http_client
+      - json
+      - time
+      - ctx
+      - logger
+    imports:
+      form: kickside.oauth:form
+      creds: kickside.oauth:creds
+      provider_errors: kickside.oauth:provider_errors
+    method: handle
+
+  # kickside.oauth.binding:init_oauth_func
+  - name: init_oauth_func
+    kind: function.lua
+    meta:
+      comment: Initialize OAuth flow for any provider using context
+      tags:
+        - oauth
+        - initialization
+        - pkce
+    source: file://init_oauth_func.lua
+    modules:
+      - ctx
+      - time
+      - hash
+      - crypto
+      - logger
+      - base64
+    imports:
+      creds: kickside.oauth:creds
+    method: handle
+
+  # kickside.oauth.binding:refresh_token_func
+  - name: refresh_token_func
+    kind: function.lua
+    meta:
+      comment: Refresh OAuth access token using refresh token for any provider using context
+      tags:
+        - oauth
+        - refresh
+        - token
+    source: file://refresh_token_func.lua
+    modules:
+      - http_client
+      - json
+      - ctx
+      - logger
+    imports:
+      form: kickside.oauth:form
+      creds: kickside.oauth:creds
+      provider_errors: kickside.oauth:provider_errors
+    method: handle
+
+  # kickside.oauth.binding:get_component_contract_func
+  - name: get_component_contract_func
+    kind: function.lua
+    meta:
+      comment: Get component contract ID for OAuth component registration
+      tags:
+        - oauth
+        - providers
+        - discovery
+        - component
+        - contract
+    source: file://get_component_contract_func.lua
+    modules:
+      - registry
+    imports:
+      provider_registry: kickside.oauth.discovery:provider_registry
+    method: handle
+
+  # kickside.oauth.binding:get_connector_contract_func
+  - name: get_connector_contract_func
+    kind: function.lua
+    meta:
+      comment: Get connector contract implementation and context for a provider
+      tags:
+        - oauth
+        - providers
+        - discovery
+        - connector
+        - contract
+    source: file://get_connector_contract_func.lua
+    modules:
+      - registry
+    imports:
+      provider_registry: kickside.oauth.discovery:provider_registry
+    method: handle
+
+  # kickside.oauth.binding:get_provider_info_func
+  - name: get_provider_info_func
+    kind: function.lua
+    meta:
+      comment: Get detailed information about a specific OAuth provider
+      tags:
+        - oauth
+        - providers
+        - discovery
+        - registry
+    source: file://get_provider_info_func.lua
+    modules:
+      - registry
+    imports:
+      provider_registry: kickside.oauth.discovery:provider_registry
+    method: handle
+
+  # kickside.oauth.binding:list_available_providers_func
+  - name: list_available_providers_func
+    kind: function.lua
+    meta:
+      comment: List all available OAuth providers for connection
+      tags:
+        - oauth
+        - providers
+        - discovery
+        - registry
+    source: file://list_available_providers_func.lua
+    modules:
+      - registry
+      - json
+    imports:
+      provider_registry: kickside.oauth.discovery:provider_registry
+    method: handle
+
+  # kickside.oauth.binding:provider_discovery_impl
+  - name: provider_discovery_impl
+    kind: contract.binding
+    meta:
+      comment: Default implementation of OAuth provider discovery contract
+      tags:
+        - oauth
+        - providers
+        - discovery
+        - implementation
+    contracts:
+      - contract: kickside.oauth.discovery:provider_discovery
+        default: true
+        methods:
+          get_component_contract: kickside.oauth.binding:get_component_contract_func
+          get_connector_contract: kickside.oauth.binding:get_connector_contract_func
+          get_provider_info: kickside.oauth.binding:get_provider_info_func
+          list_available_providers: kickside.oauth.binding:list_available_providers_func

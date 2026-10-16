@@ -1,0 +1,369 @@
+version: "1.0"
+namespace: kickside.component
+
+entries:
+  - name: placement_rules
+    kind: library.lua
+    source: file://placement_rules.lua
+    modules: [registry]
+
+  - name: placement_validation
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 1
+    source: file://placement_rules.lua
+    method: run
+    modules: [registry]
+
+  - name: policy
+    kind: registry.entry
+    meta:
+      comment: Identity audit retention window and per-row size limit.
+      limits:
+        max_row_bytes: 4194304
+      retention:
+        identity_audits: 30d
+
+  - name: retention
+    kind: function.lua
+    meta:
+      type: kickside.retention.owner
+      comment: Retry durable primary-thread reaps after component deletion.
+    source: file://retention.lua
+    method: run
+    security:
+      actor: { id: system:kickside.component.retention }
+      policies: [kickside.component:retention_db_access]
+    imports:
+      component_command: kickside.component:component_command
+      teardown: kickside.component.persist:teardown
+      pending_delete: kickside.component.persist:pending_delete
+      audit_retention: kickside.component.persist:audit_retention
+
+  - name: retention_db_access
+    kind: security.policy
+    meta:
+      comment: Let component retention reopen its configured database and the core thread database.
+    policy:
+      resources: '*'
+      actions: [db.get]
+      effect: allow
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Component
+      comment: Component service and registry for user-owned resources
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # The consuming host wires target_db via ns.dependency. Its targets inject the
+  # db resource into every migration entry's .meta.target_db. The consuming app
+  # must supply the resource explicitly; the package owns no host resource ids.
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the kickside_components tables.
+    targets:
+      - entry: kickside.component.migrations:01_create_components_table
+        path: .meta.target_db
+      - entry: kickside.component.migrations:02_create_component_meta_table
+        path: .meta.target_db
+      - entry: kickside.component.migrations:03_create_component_access_table
+        path: .meta.target_db
+      - entry: kickside.component.migrations:07_identity_fence
+        path: .meta.target_db
+      - entry: kickside.component.migrations:08_derived_acl
+        path: .meta.target_db
+      - entry: kickside.component.migrations:11_declaration_fence
+        path: .meta.target_db
+      - entry: kickside.component.migrations:12_thread_reap
+        path: .meta.target_db
+      - entry: kickside.component.migrations:13_unique_component_meta
+        path: .meta.target_db
+      - entry: kickside.component:db_config
+        path: .meta.db_id
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured component database id (rewritten by target_db).
+      db_id: ""
+
+  # kickside.component:component
+  - name: types
+    kind: library.lua
+    source: file://types.lua
+    modules:
+      - registry
+
+  - name: access_policy
+    kind: library.lua
+    meta:
+      comment: Validate component access masks and typed share subjects at API boundaries.
+    source: file://access_policy.lua
+    imports:
+      component_types: kickside.component:types
+
+  - name: envelope
+    kind: library.lua
+    meta:
+      comment: The component_service result envelope. Service bindings build classified failures with it; the client decodes them into typed errors.
+    source: file://envelope.lua
+    imports:
+      component_types: kickside.component:types
+      error_envelope: kickside.contract:error_envelope
+
+  # kickside.component:component
+  - name: component
+    kind: library.lua
+    meta:
+      comment: Component client library for secure component access with validation
+      tags:
+        - component
+        - library
+        - access
+    source: file://component.lua
+    modules:
+      - contract
+      - security
+      - sql
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      envelope: kickside.component:envelope
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      component_ops: kickside.component.persist:component_ops
+      teardown: kickside.component.persist:teardown
+      meta_service: kickside.component:meta_service
+      autoinit: kickside.component:autoinit
+      component_command: kickside.component:component_command
+      context_policy: kickside.component:context_policy
+      identity_access: kickside.component:identity_access
+
+  - name: identity_access
+    kind: library.lua
+    meta:
+      comment: Component identity receipt and live principal access checks.
+    source: file://identity_access.lua
+    modules: [sql]
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      access_ops: kickside.component.persist:access_ops
+      error_envelope: kickside.contract:error_envelope
+
+  - name: context_policy
+    kind: library.lua
+    source: file://context.lua
+    modules: [security, contract, sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+      component_reader: kickside.component.persist:component_reader
+      access_policy: kickside.component:access_policy
+      envelope: kickside.component:envelope
+      read_port: kickside.component.persist:read_port
+      execution_identity: kickside.execution:execution_identity
+
+  - name: component_command
+    kind: library.lua
+    source: file://command.lua
+    modules: [sql, security, contract]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      component_ops: kickside.component.persist:component_ops
+      component_lifecycle: kickside.component:component_lifecycle
+
+  - name: meta_service
+    kind: library.lua
+    meta:
+      comment: Secured public component meta writer and component-scoped realtime fanout.
+    source: file://meta_service.lua
+    modules:
+      - sql
+      - time
+      - security
+      - contract
+      - registry
+      - funcs
+    imports:
+      component_command: kickside.component:component_command
+      committed_error: kickside.contract:committed_error
+      autoinit: kickside.component:autoinit
+      envelope: kickside.component:envelope
+      component_ops: kickside.component.persist:component_ops
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      component_lifecycle: kickside.component:component_lifecycle
+
+  # Component fanout reaches the stored audience under this component-owned
+  # realtime authority, added to the caller's scope inside notify_access only;
+  # the caller names the component, never its recipients.
+  - name: realtime_notify
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the component fanout notify the users its stored grants admit.
+    policy:
+      resources: kickside.realtime:user:*
+      actions: realtime.notify
+      effect: allow
+
+  - name: notification_contracts
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: [kickside.contract:realtime_batch, kickside.contract:realtime, kickside.contract:group_members]
+      actions: contract.get
+      effect: allow
+
+  - name: notification_implementations
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: '*'
+      actions: contract.open
+      effect: allow
+
+  - name: notification_methods
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: [members, notify]
+      actions: contract.call
+      effect: allow
+
+  - name: notify_access
+    kind: function.lua
+    meta:
+      private: true
+      comment: Component-scoped realtime fanout to the users whose stored grants carry the required access.
+    source: file://meta_service.lua
+    method: fanout
+    modules:
+      - sql
+      - time
+      - security
+      - contract
+      - registry
+      - funcs
+    imports:
+      component_command: kickside.component:component_command
+      committed_error: kickside.contract:committed_error
+      autoinit: kickside.component:autoinit
+      envelope: kickside.component:envelope
+      component_ops: kickside.component.persist:component_ops
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      component_lifecycle: kickside.component:component_lifecycle
+    security:
+      policies:
+        - kickside.component:realtime_notify
+        - kickside.component:notification_contracts
+        - kickside.component:notification_implementations
+        - kickside.component:notification_methods
+
+  # kickside.component:autoinit
+  - name: autoinit
+    kind: library.lua
+    meta:
+      comment: Idempotent per-actor provisioning of declared workspace components (reads component-kind bindings carrying a meta.provision block).
+    source: file://autoinit.lua
+    modules:
+      - registry
+      - crypto
+
+  - name: component_lifecycle
+    kind: library.lua
+    meta:
+      comment: Thin component CRUD seam to canonical lifecycle implementation (created/updated/deleted), passing the active transaction by reference.
+    source: file://component_lifecycle.lua
+    imports:
+      envelope: kickside.component:envelope
+      lifecycle_impl: kickside.component:component_lifecycle_unwired
+
+  - name: lifecycle_impl
+    kind: ns.requirement
+    meta:
+      comment: Host-selected component lifecycle implementation; standalone installs fail closed through the package-owned unwired implementation.
+    default: kickside.component:component_lifecycle_unwired
+    targets:
+      - entry: kickside.component:component_lifecycle
+        path: .imports.lifecycle_impl
+
+  - name: component_lifecycle_unwired
+    kind: library.lua
+    meta:
+      comment: Fails closed when a host has not wired the component lifecycle implementation; core and tests override this import.
+    source: file://component_lifecycle_unwired.lua
+
+  - name: lifecycle
+    kind: contract.definition
+    meta:
+      comment: Internal component lifecycle contract. Implementations append canonical component lifecycle events and may attach declared child.lifecycle projections.
+      tags:
+        - components
+        - lifecycle
+    methods:
+      - name: created
+        description: Append `kickside.component.events:created` for a component created in the caller's active transaction, and write its primary thread row in that transaction when the registration carries one.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true, "properties": { "component_id":{"type":"string"}, "impl_id":{"type":"string"}, "meta":{"type":"object"}, "thread":{"type":"object"} } }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "event_id":{"type":"string"}, "error":{"type":"string"} }, "required":["success"] }'
+      - name: updated
+        description: Append `kickside.component.events:updated` for a component updated in the caller's active transaction.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true, "properties": { "component_id":{"type":"string"}, "meta":{"type":"object"}, "changed":{"type":"object"} } }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "event_id":{"type":"string"}, "error":{"type":"string"} }, "required":["success"] }'
+      - name: deleted
+        description: Append `kickside.component.events:deleted` for a component deleted in the caller's active transaction.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true, "properties": { "component_id":{"type":"string"} } }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "event_id":{"type":"string"}, "error":{"type":"string"} }, "required":["success"] }'
+
+  # A declaration-fenced component (one created through the privileged create
+  # path) belongs to its declaration owner's command stream. Its execution
+  # identity changes only for a pending set_execution_identity command that owner confirms; the
+  # owner module binds this contract.
+  - name: declaration_owner
+    kind: contract.definition
+    meta:
+      comment: The declaration owner of a fenced component confirms that a SET_EXECUTION_IDENTITY is its pending set_execution_identity command.
+      tags:
+        - components
+        - identity
+    methods:
+      - name: verify_identity_command
+        description: Confirm the owner's pending set_execution_identity command for this component, operator and principal.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": false, "required":["automation_id","component_id","command_id","operator_id","principal","expected_identity_generation"], "properties": { "automation_id":{"type":"string"}, "component_id":{"type":"string"}, "command_id":{"type":"string"}, "operator_id":{"type":"string"}, "principal":{"type":"object"}, "expected_identity_generation":{"type":"integer"} } }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "valid":{"type":"boolean"}, "automation_id":{"type":"string"}, "reason":{"type":"string"} }, "required":["valid"] }'
+
+  # kickside.component:component_service
+
+  - name: share_subject
+    kind: library.lua
+    source: file://share_subject.lua
+    modules: [contract]
+    imports:
+      access_policy: kickside.component:access_policy

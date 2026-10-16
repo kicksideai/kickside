@@ -1,0 +1,184 @@
+version: '1.0'
+logmanager:
+  stream_to_events: true
+  propagate_downstream: true
+security:
+  strict_mode: true
+registry:
+  enable_history: true
+  history_type: sqlite
+  history_path: ./.wippy/registry.db
+  event_wait_timeout: 120s
+  dispatch_internal_kinds:
+  - registry.entry
+  - ns.requirement
+  - ns.dependency
+  - ns.definition
+  - security.scope
+vars:
+  instance_data_dir: ./.wippy
+  local_port: 8085
+  local_public_api_url: http://localhost:8085
+  local_sqlite_file: ./.wippy/app.db
+  bootstrap_admin_email: ''
+  bootstrap_admin_password: ''
+  quickstart_admin_email: admin@kickside.local
+  quickstart_admin_password: kickside-admin
+  postgres_host: ''
+  postgres_port: 5432
+  postgres_database: ''
+  postgres_username: ''
+  postgres_password: ''
+  postgres_sslmode: require
+  postgres_history_dsn: ''
+  postgres_history_schema: wippy_registry
+override:
+  app:data_dir:directory: ${instance_data_dir}
+  app:uploads:directory: ${instance_data_dir}/uploads
+  app:tmp:directory: ${instance_data_dir}/tmp
+  app:branding_fs:directory: ${instance_data_dir}/branding
+  app.env:defaults:values.KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL: ${bootstrap_admin_email}
+  app.env:defaults:values.KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD: ${bootstrap_admin_password}
+  kickside.users.security:tokens:data.token_key_env: ENCRYPTION_KEY
+  kickside.users.security:tokens:data.token_key: ''
+  kickside.users.api:login:data.security.actor.id: app.auth:login
+profiles:
+  workspace: {}
+  quickstart:
+    override:
+      app:gateway:addr: :${local_port}
+      app.env:defaults:values.PUBLIC_API_URL: ${local_public_api_url}
+      app:db:kind: db.sql.sqlite
+      app:db:file: ${local_sqlite_file}
+      app.env:defaults:values.KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL: ${quickstart_admin_email}
+      app.env:defaults:values.KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD: ${quickstart_admin_password}
+  bootstrap_admin:
+    override:
+      app.env:defaults:values.KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL: ${bootstrap_admin_email}
+      app.env:defaults:values.KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD: ${bootstrap_admin_password}
+  local:
+    override:
+      app:gateway:addr: :${local_port}
+      app.env:defaults:values.PUBLIC_API_URL: ${local_public_api_url}
+  sqlite:
+    override:
+      app:db:kind: db.sql.sqlite
+      app:db:file: ${local_sqlite_file}
+  postgres:
+    registry:
+      history_type: postgres
+      history_dsn: ${postgres_history_dsn}
+      history_schema: ${postgres_history_schema}
+    override:
+      app:db:kind: db.sql.postgres
+      app:db:host: ${postgres_host}
+      app:db:host_env: KICKSIDE_PG_HOST
+      app:db:port: ${postgres_port}
+      app:db:port_env: KICKSIDE_PG_PORT
+      app:db:database: ${postgres_database}
+      app:db:database_env: KICKSIDE_PG_DATABASE
+      app:db:username: ${postgres_username}
+      app:db:username_env: KICKSIDE_PG_USERNAME
+      app:db:password: ${postgres_password}
+      app:db:password_env: KICKSIDE_PG_PASSWORD
+      app:db:pool.max_open: 64
+      app:db:pool.max_idle: 16
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_WORKERS_POSTGRES: '16'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_MAX_WORKERS: '256'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_CLAIMERS_POSTGRES: '1'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_MAX_CLAIMERS: '128'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_HEARTBEAT_INTERVAL: 10s
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_HEARTBEAT_FLUSH_INTERVAL: 15s
+      app.env:defaults:values.KICKSIDE_PROJECTION_PROC_RELEASE_RETRY_SECONDS: '30'
+      app.env:defaults:values.KICKSIDE_UPLOADS_PROCESSING_LEASE_SECONDS: '900'
+      app:db:options.sslmode: ${postgres_sslmode}
+  postgres_large:
+    registry:
+      history_type: postgres
+      history_dsn: ${postgres_history_dsn}
+      history_schema: ${postgres_history_schema}
+    override:
+      app:db:kind: db.sql.postgres
+      app:db:host: ${postgres_host}
+      app:db:host_env: KICKSIDE_PG_HOST
+      app:db:port: ${postgres_port}
+      app:db:port_env: KICKSIDE_PG_PORT
+      app:db:database: ${postgres_database}
+      app:db:database_env: KICKSIDE_PG_DATABASE
+      app:db:username: ${postgres_username}
+      app:db:username_env: KICKSIDE_PG_USERNAME
+      app:db:password: ${postgres_password}
+      app:db:password_env: KICKSIDE_PG_PASSWORD
+      app:db:pool.max_open: 128
+      app:db:pool.max_idle: 32
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_WORKERS_POSTGRES: '64'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_MAX_WORKERS: '1024'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_CLAIMERS_POSTGRES: '1'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_MAX_CLAIMERS: '256'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_HEARTBEAT_INTERVAL: 10s
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_HEARTBEAT_FLUSH_INTERVAL: 30s
+      app.env:defaults:values.KICKSIDE_PROJECTION_PROC_RELEASE_RETRY_SECONDS: '30'
+      app.env:defaults:values.KICKSIDE_UPLOADS_PROCESSING_LEASE_SECONDS: '1800'
+      app:db:options.sslmode: ${postgres_sslmode}
+  postgres_enterprise:
+    registry:
+      history_type: postgres
+      history_dsn: ${postgres_history_dsn}
+      history_schema: ${postgres_history_schema}
+    override:
+      app:db:kind: db.sql.postgres
+      app:db:host: ${postgres_host}
+      app:db:host_env: KICKSIDE_PG_HOST
+      app:db:port: ${postgres_port}
+      app:db:port_env: KICKSIDE_PG_PORT
+      app:db:database: ${postgres_database}
+      app:db:database_env: KICKSIDE_PG_DATABASE
+      app:db:username: ${postgres_username}
+      app:db:username_env: KICKSIDE_PG_USERNAME
+      app:db:password: ${postgres_password}
+      app:db:password_env: KICKSIDE_PG_PASSWORD
+      app:db:pool.max_open: 256
+      app:db:pool.max_idle: 64
+      app:processes:host.max_processes: 12000
+      app:processes:host.workers: 64
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_WORKERS_POSTGRES: '512'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_MAX_WORKERS: '5000'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_CLAIMERS_POSTGRES: '1'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_MAX_CLAIMERS: '512'
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_HEARTBEAT_INTERVAL: 10s
+      app.env:defaults:values.KICKSIDE_PROJECTION_RUNNER_HEARTBEAT_FLUSH_INTERVAL: 60s
+      app.env:defaults:values.KICKSIDE_PROJECTION_PROC_RELEASE_RETRY_SECONDS: '30'
+      app.env:defaults:values.KICKSIDE_UPLOADS_PROCESSING_LEASE_SECONDS: '3600'
+      app:db:options.sslmode: ${postgres_sslmode}
+workspace:
+  replacements:
+    kickside/agent-onboarding: ../../components/agent-onboarding
+    kickside/agents: ../platform/agents
+    kickside/automation: ../platform/automation
+    kickside/blocks: ../platform/blocks
+    kickside/channel: ../platform/channel
+    kickside/component: ../core/component
+    kickside/connection: ../platform/connection
+    kickside/contract: ../core/contract
+    kickside/core: ../core/core
+    kickside/jobs: ../core/jobs
+    kickside/sso: ../../components/sso
+    kickside/sso-google: ../../providers/sso-google
+    kickside/pdf2image: ../../converters/pdf2image
+    kickside/dashboard: ../../components/dashboard
+    kickside/hub: ../platform/hub
+    kickside/identity: ../platform/identity
+    kickside/inbox: ../platform/inbox
+    kickside/models: ../platform/models
+    kickside/oauth: ../platform/oauth
+    kickside/realtime: ../platform/realtime
+    kickside/security: ../platform/security
+    kickside/sessions: ../platform/sessions
+    kickside/settings: ../platform/settings
+    kickside/sync: ../platform/sync
+    kickside/transform: ../platform/transform
+    kickside/ui: ../platform/ui
+    kickside/users: ../platform/users
+    kickside/widgets: ../platform/widgets
+    kickside/renderers: ../platform/renderers
+    kickside/uploads: ../platform/uploads

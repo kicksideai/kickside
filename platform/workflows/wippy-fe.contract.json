@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "module": "kickside/workflows",
+  "sharedUiPackage": null,
+  "customComposites": [
+    {
+      "id": "workflows.canvas.auto-map-reveal",
+      "source": {
+        "path": "ui/src/app/canvas/AutoMapReveal.vue",
+        "sha256": "710FB0C6477A3E5785141C331373846D61FE68B50F6FEC3691C50CF3F4019695"
+      },
+      "semanticRole": "Graph-anchored explanation and persistent trace for fields that were mapped automatically while creating a connection.",
+      "affordance": "A named PrimeVue reveal button at the affected edge opens the field mapping explanation; settled traces retain named PrimeVue dismiss controls.",
+      "rejectedPrimeVueCompositions": [
+        {
+          "composition": "Popover",
+          "reason": "PrimeVue Popover requires a DOM trigger target, while this surface follows a virtual VueFlow edge midpoint through pan, zoom, and collision-aware placement."
+        },
+        {
+          "composition": "Toast",
+          "reason": "A global notification would detach the explanation from the affected edge and cannot preserve the source-to-target field geometry."
+        }
+      ],
+      "primeVueVisualSibling": {
+        "component": "Button",
+        "usage": "PrimeVue Button owns activation, focus, severity, radius, border, surface, and dismiss-control visuals inside the graph-positioned composite."
+      },
+      "inheritedRuntimeProperties": [
+        "PrimeVue Button keyboard activation and theme focus treatment",
+        "PrimeVue severity, disabled, border, surface, radius, and typography tokens",
+        "Module reduced-motion media-query behavior"
+      ],
+      "invariantProperties": [
+        "Placement remains anchored to the current rendered edge midpoint.",
+        "Each explanation retains its source and target field names.",
+        "Opening and dismissing are exposed through named PrimeVue buttons.",
+        "The composite introduces no raw control or local button appearance system."
+      ],
+      "novelGeometry": "The composite is projected from VueFlow graph coordinates and must track a virtual edge midpoint; no PrimeVue overlay composition owns that geometry.",
+      "accessibilityEvidence": [
+        {
+          "path": "ui/src/app/canvas/AutoMapReveal.test.ts",
+          "assertion": "The reveal and settled-trace actions render as enabled, named native buttons through PrimeVue and emit their public actions."
+        },
+        {
+          "path": "ui/src/app/canvas/authoring-cleanup.test.ts",
+          "assertion": "The retained reveal surface is a PrimeVue button and has no manual role, tabindex, or keydown activation contract."
+        }
+      ],
+      "visualEvidence": [
+        {
+          "kind": "rendered-dom-snapshot",
+          "path": "ui/src/app/canvas/__snapshots__/AutoMapReveal.test.ts.snap",
+          "scenario": "Reveal and settled-trace variants render mapping pairs and their PrimeVue-managed controls."
+        }
+      ]
+    },
+    {
+      "id": "workflows.canvas.edge-intent-popover",
+      "source": {
+        "path": "ui/src/app/canvas/EdgeIntentPopover.vue",
+        "sha256": "FC24E13DAE74186FEEBFB4D7F36A4878597C85B5535149A2C76542A00C55907A"
+      },
+      "semanticRole": "Nonmodal graph-anchored editor for resolving an ambiguous connection intent before the workflow graph is mutated.",
+      "affordance": "A named nonmodal region appears beside the proposed edge, focuses its PrimeVue input, previews validation state, and provides named PrimeVue accept and cancel actions.",
+      "rejectedPrimeVueCompositions": [
+        {
+          "composition": "Popover",
+          "reason": "PrimeVue Popover requires a DOM trigger target, while the editor is positioned from a virtual connection midpoint and collision-adjusted canvas coordinates."
+        },
+        {
+          "composition": "Dialog",
+          "reason": "A modal dialog would trap focus, obscure the canvas, and remove the spatial context needed to understand which proposed connection is being resolved."
+        }
+      ],
+      "primeVueVisualSibling": {
+        "component": "Popover",
+        "usage": "The composite follows PrimeVue Popover surface semantics while PrimeVue InputText, Button, and Message own all interactive and status presentation."
+      },
+      "inheritedRuntimeProperties": [
+        "PrimeVue InputText focus, invalid, disabled, and theme behavior",
+        "PrimeVue Button keyboard activation, loading, disabled, severity, and theme behavior",
+        "PrimeVue Message validation and status presentation",
+        "Module reduced-motion media-query behavior"
+      ],
+      "invariantProperties": [
+        "Placement remains anchored to the proposed connection midpoint.",
+        "The named nonmodal region focuses the intent input on entry.",
+        "Escape cancels the proposal without mutating the graph.",
+        "Only an accepted valid intent creates the connection.",
+        "Superseded validation requests cannot overwrite current state."
+      ],
+      "novelGeometry": "The composite follows an uncommitted VueFlow connection represented only by graph coordinates; it has no stable DOM target for a library overlay anchor.",
+      "accessibilityEvidence": [
+        {
+          "path": "ui/src/app/canvas/EdgeIntentPopover.test.ts",
+          "assertion": "The editor exposes a named nonmodal region, focuses the input on entry, supports Escape cancellation, and preserves named accept and cancel actions."
+        },
+        {
+          "path": "ui/src/app/canvas/overlay-placement.test.ts",
+          "assertion": "Collision-aware placement preserves the graph-coordinate relationship at viewport boundaries."
+        }
+      ],
+      "visualEvidence": [
+        {
+          "kind": "rendered-dom-snapshot",
+          "path": "ui/src/app/canvas/__snapshots__/EdgeIntentPopover.test.ts.snap",
+          "scenario": "Editing, validation, acceptance, and cancellation states render with PrimeVue-managed controls and messages."
+        }
+      ]
+    }
+  ]
+}

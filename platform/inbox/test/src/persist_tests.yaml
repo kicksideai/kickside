@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.inbox.persist
+
+entries:
+  - name: projection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Inbox projection worker contract covering create, resolve, delete, idempotency, metadata, and edge cases.
+    source: file://projection_test.lua
+    method: run
+    modules: [funcs, json]
+    imports:
+      test: wippy.test:test
+      inbox_types: kickside.inbox:inbox_types

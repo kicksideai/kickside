@@ -1,0 +1,7 @@
+organization: kickside
+module: uploads-harness
+type: application
+description: Standalone application harness that boots kickside/uploads and runs its test suites.
+directories:
+  modules: .wippy
+  src: .

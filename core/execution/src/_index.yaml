@@ -1,0 +1,63 @@
+version: "1.0"
+namespace: kickside.execution
+
+# Leaf module owning the execution identity primitive (IDENTITY-1, amendment
+# IDENTITY-1a). It depends on no KickSide module; core, component, users and
+# every other consumer depend on it. The Users-owned scope resolver is reached
+# at runtime through the kickside.contract:scope_resolver contract id.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Execution
+      comment: Execution identity — principal codec, actor keys, delegation encoding, and the live capture/resolve/bind/run_as path.
+
+  - name: execution_identity
+    kind: library.lua
+    meta:
+      comment: Execution identity v2 — capture, validate, resolve, bind and run_as under the selected principal.
+    source: file://execution_identity.lua
+    modules:
+      - security
+      - funcs
+      - contract
+    imports:
+      identity_failure: kickside.execution:identity_failure
+      identity_codec: kickside.execution:identity_codec
+      identity_restrictions: kickside.execution:identity_restrictions
+      authority_snapshot: kickside.execution:authority_snapshot
+
+  - name: identity_restrictions
+    kind: library.lua
+    meta:
+      comment: Resolve live credential and external-link restrictions for a stored execution identity.
+    source: file://identity_restrictions.lua
+    imports:
+      authority_snapshot: kickside.execution:authority_snapshot
+
+  - name: identity_codec
+    kind: library.lua
+    meta:
+      comment: Execution identity row codec and delegation encoding.
+    source: file://identity_codec.lua
+    modules: [json]
+
+  - name: trace
+    kind: library.lua
+    meta:
+      comment: Execution trace context — canonical trace_context vocabulary, row codec and correlation token.
+    source: file://trace.lua
+    modules:
+      - uuid
+
+  - name: authority_snapshot
+    kind: library.lua
+    source: file://authority_snapshot.lua
+    modules: [json]
+    imports: {identity_failure: kickside.execution:identity_failure}
+
+  - name: identity_failure
+    kind: library.lua
+    source: file://identity_failure.lua

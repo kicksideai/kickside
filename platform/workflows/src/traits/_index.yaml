@@ -1,0 +1,125 @@
+version: "1.0"
+namespace: kickside.workflows.traits
+
+# Agent capabilities over workflow management (kickside.workflows.agent's
+# read/write tools). Split into a read-only reader and a reader+writer manager so
+# a read-only MCP credential is mintable independently of a write-capable one.
+# Running published workflows stays on the separate flow_access trait.
+
+entries:
+  - name: reader
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Workflows Reader
+      public: true
+      icon: tabler:route-square
+      comment: Reads workflows, their folded definitions, versions, and portable exports, without changing anything.
+      tags: [flows, tools]
+    prompt: |
+      You can inspect workflows with the **WorkflowsRead** tool: `catalog` returns
+      the authoring vocabulary (node kinds, command names, the Blocks that run as
+      steps, and the published workflows callable as sub-flows), `list` shows the
+      actor's workflows (pass published=true to keep only publishable targets),
+      `read` returns JSON `content` pages of one workflow's folded definition state (params, nodes, edges,
+      notes, layout, head_seq), `versions` lists its published versions newest
+      first, and `export` returns the published Flow as a portable artifact that
+      WorkflowsManage `import` accepts elsewhere. Decode JSON `content` pages and
+      follow their byte offsets for read and export. Follow `next_offset` for
+      catalog and list pages. Workflow ids are the ids `list`
+      returns. Use `runs` with a workflow id to list its durable runs. Pass a
+      returned run_id to `run_detail` to inspect status, input, output and nodes,
+      `events` for a paged timeline, or `export_run` for its redacted record.
+      `node_data` takes a def_node_id from run_detail.nodes as node_id.
+      These actions require READ access. Execute workflows through RunFlow.
+
+      A workflow is a graph of nodes. `node.kind` comes from a small closed set —
+      there is no `agent` or `llm` kind. Every executable step is `kind: "block"`
+      with `node.ref` naming a Block from the catalog, so an AI step is a block
+      node whose ref is an agent Block. Read `catalog` before reasoning about a
+      definition; describe only kinds, refs and Blocks it actually returned.
+    tools:
+      - kickside.workflows.agent:flows_read
+
+  - name: manager
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Workflows Manager
+      public: true
+      icon: tabler:route
+      comment: Creates, imports, edits, publishes, restores, and deletes workflows.
+      tags: [flows, tools]
+    prompt: |
+      You can inspect and manage workflows with the **WorkflowsRead** and
+      **WorkflowsManage** tools.
+
+      **Start with `WorkflowsRead` action=catalog.** It is the only source of the
+      authoring vocabulary, and guessing at that vocabulary is the usual way an
+      attempt fails. It returns full `catalog` records with `section` and `id`.
+      Follow `next_offset` for more rows. Select one record directly with
+      `catalog_id="<section>:<id>"`; it returns as `item`. The sections contain:
+
+      - `node_kinds` — every value `node.kind` accepts, each with its role, the
+        config fields the compiler allows (and which are required), and the ports
+        an edge may leave it from. The set is closed and small. **There is no
+        `agent` and no `llm` kind.**
+      - `blocks` — the executable steps. Copy `ref` verbatim into `node.ref`.
+        An AI step is an agent Block here; a web search, a CRM read and so on are
+        each their own Block. `input_schema` says what the step consumes,
+        `config_schema` what `node.config` may hold, `ports` which `source_port`
+        an edge may leave it from.
+      - `commands` — the exact `type` strings `apply` accepts. Copy them
+        verbatim; the layout ones are hyphenated (`layout.set-position`) while
+        the rest use dots.
+      - `flows` — published workflows callable as a `kind: "flow"` node; copy
+        `flow_ref` into that node's `config.flow_ref`.
+
+      **The shape of a workflow.** Exactly one `start` and one `finish`; an
+      `error` boundary is optional. Boundary contracts live in config:
+      `start.config.input_schema`, `finish.config.output_schema`,
+      `error.config.error_schema` — each a JSON Schema object, all required
+      before publish. Every executable step is `kind: "block"` carrying only
+      `ref` and `config`; a block node must not carry schemas, labels or icons,
+      since those are read from its declaration. Edges join nodes by
+      `source_id`/`target_id`, name a `source_port` when the source declares more
+      than one, and may carry a `transform`: an expr-lang object expression over
+      `output`, the upstream result, such as `{ report: output, id: output.id }`.
+
+      Read `catalog_id="examples:publishable"` for a complete command batch, built from this
+      environment's own Blocks, that publishes as-is. Copy it and change the parts
+      you mean to change. It looks like this, with `ref` naming a real Block:
+
+      ```json
+      [
+        {"type": "node.add", "body": {"id": "start", "kind": "start", "title": "Start",
+          "config": {"input_schema": {"type": "object", "properties": {"email": {"type": "string"}}}}}},
+        {"type": "node.add", "body": {"id": "step", "kind": "block", "ref": "<a ref from a selected blocks record>", "title": "Do the work"}},
+        {"type": "node.add", "body": {"id": "finish", "kind": "finish", "title": "Finish",
+          "config": {"output_schema": {"type": "object", "properties": {"summary": {"type": "string"}}}}}},
+        {"type": "edge.add", "body": {"id": "e1", "source_id": "start", "source_port": "out", "target_id": "step"}},
+        {"type": "edge.add", "body": {"id": "e2", "source_id": "step", "target_id": "finish"}}
+      ]
+      ```
+
+      To branch, add a `branch` node with `config.predicate` and leave it twice —
+      one edge with `"source_port": "true"`, one with `"false"`. To call another
+      workflow, add a `flow` node whose `config.flow_ref` is copied from
+      a selected `flows` record. To reshape what a step receives, put a `transform` on its
+      incoming edge, for example `"transform": "{ query: output.email }"`.
+
+      **The loop to follow.** `create` a draft (or `import` an exported artifact),
+      `apply` a command batch, then `publish`. `apply` takes `commands` as
+      `{type, body}` rows; read the current state first and reference existing
+      node ids. `publish` compiles and refuses with structured errors naming the
+      node — read them literally, fix that node, publish again; a refusal is
+      information, not a dead end. `restore` turns a frozen version into a fresh
+      draft. Verify every write by reading state or versions back, and report only
+      actual tool output.
+
+      **If you cannot express something,** say which step you could not build and
+      what the catalog offered instead. Never invent a node kind, a Block ref or a
+      command name, and never leave a half-built draft behind.
+    tools:
+      - kickside.workflows.agent:flows_read
+      - kickside.workflows.agent:flows_manage

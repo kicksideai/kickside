@@ -1,0 +1,60 @@
+version: "1.0"
+namespace: kickside.models.api
+
+# Read-only model-discovery HTTP API. These endpoints attach to the host-wired
+# api_router (auth + endpoint_firewall enforced there) and remain available to
+# normal authenticated users. Admin/provider-profile and model-card editor
+# endpoints live under kickside.models.api.admin.
+
+entries:
+  - name: list_models
+    kind: function.lua
+    meta:
+      comment: "GET /models/list[?capability=generate|embed|<cap>] — models by capability (default generate) with title/provider/class/capabilities/dimensions."
+    source: file://list_models.lua
+    modules: [http]
+    imports:
+      models: kickside.models.catalog:model_catalog
+    method: handler
+
+  - name: list_models.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_models
+    path: /models/list
+
+  - name: list_model_classes
+    kind: function.lua
+    meta:
+      comment: GET /models/classes — model classes (fast/balanced/…) with their members.
+    source: file://list_model_classes.lua
+    modules: [http]
+    imports:
+      models: kickside.models.catalog:model_catalog
+      classes_read_model: kickside.models.classes:read_model
+    method: handler
+
+  - name: list_model_classes.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_model_classes
+    path: /models/classes
+
+  - name: models_by_name
+    kind: function.lua
+    meta:
+      comment: "GET /models/by-name?models=a,b — resolve names or class:<name> refs to name/title/description."
+    source: file://get_models_by_name.lua
+    modules: [http]
+    imports:
+      models: kickside.models.catalog:model_catalog
+    method: handler
+
+  - name: models_by_name.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: models_by_name
+    path: /models/by-name

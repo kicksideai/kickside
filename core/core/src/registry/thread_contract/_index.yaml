@@ -1,0 +1,290 @@
+version: "1.0"
+namespace: kickside.core
+
+entries:
+  - name: thread
+    kind: contract.binding
+    meta:
+      title: Thread
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: threads
+    kind: contract.definition
+    meta:
+      title: Thread Registry
+      comment: Find/create/delete kickside threads and manage their projections.
+    methods:
+      - name: create
+        description: Create a thread. Registers the thread's component (owner-granted) and writes the row.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"id\": { \"type\": \"string\", \"description\": \"Optional thread id; generated when omitted.\" },\n    \"thread_class\": { \"type\": \"string\", \"description\": \"Thread class (default conversation).\" },\n    \"title\": { \"type\": \"string\", \"description\": \"Display title stored on the component meta.\" },\n    \"parent_id\": { \"type\": \"string\", \"description\": \"Optional parent component id to place under.\" },\n    \"attrs\": { \"type\": \"object\", \"description\": \"Open JSON attributes stored on the thread.\" }\n  },\n  \"default\": {}\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"component_id\": { \"type\": \"string\" },\n    \"thread\": { \"type\": \"object\" },\n    \"rollback\": { \"type\": \"object\" }\n  },\n  \"required\": [\"thread_id\", \"component_id\", \"thread\"]\n}\n"
+      - name: ensure_thread
+        description: Attach a thread to an existing component-first component (idempotent). Auto-applies the kind's declared projections/retention via impl_id.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"component_id\": { \"type\": \"string\", \"description\": \"Existing component to attach a thread to.\" },\n    \"thread_class\": { \"type\": \"string\", \"description\": \"Thread class.\" },\n    \"impl_id\": { \"type\": \"string\", \"description\": \"Kind binding id whose declared projections/retention apply.\" },\n    \"title\": { \"type\": \"string\" },\n    \"attrs\": { \"type\": \"object\" }\n  },\n  \"required\": [\"component_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"thread\": { \"type\": \"object\" },\n    \"created\": { \"type\": \"boolean\" }\n  },\n  \"required\": [\"thread_id\", \"thread\"]\n}\n"
+      - name: emit
+        description: Append an event to a component's primary thread (thread_id == component_id). Creates the thread with its declared projections on first touch, then appends. Callers pass only the component id.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"component_id\": { \"type\": \"string\", \"description\": \"The component whose primary thread receives the event.\" },\n    \"type\": { \"type\": \"string\", \"description\": \"Event type.\" },\n    \"body\": { \"type\": \"object\", \"description\": \"Event body.\" },\n    \"role\": { \"type\": \"string\", \"description\": \"Event role (default system).\" },\n    \"impl_id\": { \"type\": \"string\", \"description\": \"Component kind binding id; applies its declared projections on first touch.\" },\n    \"thread_class\": { \"type\": \"string\" }\n  },\n  \"required\": [\"component_id\", \"type\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object", "properties": { "event": { "type": "object" }, "seq": { "type": "integer" } } }
+      - name: purge
+        description: Reap a component's primary thread + cascade (events/projections/cursors/retention/edges) without touching the component row. The component-driven delete cascade. Idempotent (no thread = no-op).
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object", "properties": { "purged": { "type": "boolean" }, "thread_id": { "type": "string" } } }
+      - name: find
+        description: Lookup a thread by id. Returns null when absent or the actor cannot read it.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" } },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": [\"object\", \"null\"],\n  \"description\": \"The thread row, or null when not found / not accessible.\"\n}\n"
+      - name: upsert
+        description: Idempotent get-or-create. Natural key is thread_id or the immutable byte-exact (thread_class, external_ref) tuple; existing thread ids are preserved.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\", \"description\": \"Explicit id to upsert by.\" },\n    \"thread_class\": { \"type\": \"string\" },\n    \"external_ref\": { \"type\": \"string\", \"description\": \"Immutable natural key with thread_class; later metadata edits do not rename it.\" },\n    \"attrs\": { \"type\": \"object\" }\n  },\n  \"default\": {}\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread\": { \"type\": \"object\" },\n    \"thread_id\": { \"type\": \"string\" },\n    \"created\": { \"type\": \"boolean\" },\n    \"rollback\": { \"type\": [\"object\", \"null\"] }\n  },\n  \"required\": [\"thread\", \"thread_id\", \"created\"]\n}\n"
+      - name: update
+        description: Patch a thread's state, thread_class, and/or attrs. Requires WRITE access.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"state\": { \"type\": \"string\", \"enum\": [\"open\", \"closed\", \"archived\", \"error\"] },\n    \"thread_class\": { \"type\": \"string\" },\n    \"attrs\": { \"type\": [\"object\", \"string\"], \"description\": \"Object or pre-encoded JSON string.\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" }, \"thread\": { \"type\": \"object\" } },\n  \"required\": [\"thread_id\", \"thread\"]\n}\n"
+      - name: delete
+        description: Remove a thread, cascade its kickside_* rows, and delete its component. Requires DELETE access.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" } },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" }, \"deleted\": { \"type\": \"boolean\" } },\n  \"required\": [\"thread_id\", \"deleted\"]\n}\n"
+      - name: list
+        description: List the threads the actor can read, optionally filtered by thread_class. Access-filtered by the component contract.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_class\": { \"type\": \"string\" },\n    \"limit\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 1000, \"default\": 100 }\n  },\n  \"default\": {}\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"threads\": { \"type\": \"array\", \"items\": { \"type\": \"object\" } } },\n  \"required\": [\"threads\"]\n}\n"
+      - name: list_events
+        description: Read one page of a thread's event log after a READ access check. Newest-first by default; window via before/from_seq/to_seq/limit/ascending/event_type. A from_seq at or below the prune boundary returns no events and a source_gap with the earliest available sequence.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"before\": { \"type\": \"integer\" },\n    \"from_seq\": { \"type\": \"integer\" },\n    \"to_seq\": { \"type\": \"integer\" },\n    \"limit\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 1000, \"default\": 200 },\n    \"ascending\": { \"type\": \"boolean\" },\n    \"event_type\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"events\": { \"type\": \"array\", \"items\": { \"type\": \"object\" } },\n    \"max_pruned_seq\": { \"type\": \"integer\", \"minimum\": 0 },\n    \"next_seq\": { \"type\": \"integer\", \"minimum\": 0 },\n    \"source_gap\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"max_pruned_seq\": { \"type\": \"integer\", \"minimum\": 1 },\n        \"earliest_seq\": { \"type\": \"integer\", \"minimum\": 2 }\n      },\n      \"required\": [\"max_pruned_seq\", \"earliest_seq\"]\n    }\n  },\n  \"required\": [\"events\", \"max_pruned_seq\", \"next_seq\"]\n}\n"
+      - name: prune_boundary
+        description: Return a thread's highest pruned event sequence and no event content. The caller's scope must hold threads.prune_boundary.read on the thread's class; a missing thread is NOT_FOUND.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"max_pruned_seq\": { \"type\": \"integer\", \"minimum\": 0 }\n  },\n  \"required\": [\"thread_id\", \"max_pruned_seq\"]\n}\n"
+      - name: find_event_by_external
+        description: Resolve one event by its exact durable external identity after a READ access check. A missing external_version matches only an unversioned event.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"event_type\": { \"type\": \"string\" },\n    \"external_source\": { \"type\": \"string\" },\n    \"external_id\": { \"type\": \"string\" },\n    \"external_version\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\", \"event_type\", \"external_source\", \"external_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"event\": { \"type\": [\"object\", \"null\"] } },\n  \"required\": [\"event\"]\n}\n"
+      - name: append_events
+        description: Append typed events to a thread through the durable event writer. Requires WRITE access; bodies are structured JSON.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"events\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": { \"type\": \"string\" },\n          \"seq\": { \"type\": \"integer\" },\n          \"type\": { \"type\": \"string\" },\n          \"role\": { \"type\": \"string\" },\n          \"body\": { \"type\": \"object\" },\n          \"content\": { \"type\": \"object\" },\n          \"external\": { \"type\": \"object\" },\n          \"trace_context\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"trace_id\": { \"type\": \"string\" },\n              \"run_id\": { \"type\": \"string\" },\n              \"caused_by_event_id\": { \"type\": \"string\" },\n              \"correlation_key\": { \"type\": \"string\" }\n            }\n          },\n          \"created_at\": { \"type\": \"string\" }\n        }\n      },\n      \"minItems\": 1\n    }\n  },\n  \"required\": [\"thread_id\", \"events\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"inserted\": { \"type\": \"integer\" },\n    \"duplicates\": { \"type\": \"integer\" },\n    \"max_seq\": { \"type\": \"integer\" }\n  },\n  \"required\": [\"thread_id\", \"inserted\", \"duplicates\", \"max_seq\"]\n}\n"
+      - name: append_event
+        description: Append one typed event to a thread through append_events. Requires WRITE access.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"event\": { \"type\": \"object\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"inserted\": { \"type\": \"integer\" },\n    \"duplicates\": { \"type\": \"integer\" },\n    \"max_seq\": { \"type\": \"integer\" }\n  },\n  \"required\": [\"thread_id\", \"inserted\", \"duplicates\", \"max_seq\"]\n}\n"
+      - name: list_children
+        description: List the threads parented to thread_id, after a READ check on the parent.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"limit\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 1000 }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"children\": { \"type\": \"array\", \"items\": { \"type\": \"object\" } } },\n  \"required\": [\"children\"]\n}\n"
+      - name: list_edges
+        description: List a thread's relationship edges, after a READ check.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"limit\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 1000 }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"edges\": { \"type\": \"array\", \"items\": { \"type\": \"object\" } } },\n  \"required\": [\"edges\"]\n}\n"
+      - name: list_classes
+        description: List the distinct thread classes present.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object", "default": {}, "properties": { "limit": { "type": "integer", "minimum": 1, "maximum": 1000 }, "cursor": { "type": "string" } } }
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"classes\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }, \"next_cursor\": { \"type\": \"string\" } },\n  \"required\": [\"classes\"]\n}\n"
+      - name: register_projection
+        description: Define a projection + cursor on a thread. Requires WRITE access. Reversible via remove_projection.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"kind\": { \"type\": \"string\" },\n    \"projection_key\": { \"type\": \"string\" },\n    \"cursor_key\": { \"type\": \"string\" },\n    \"worker_ref\": { \"type\": \"string\", \"description\": \"func:// or proc:// worker the cursor advances through.\" },\n    \"worker_runtime\": { \"type\": \"string\" },\n    \"worker_input_mode\": { \"type\": \"string\" },\n    \"worker_config\": { \"type\": \"object\" },\n    \"batch_size\": { \"type\": \"integer\" },\n    \"start_seq\": { \"type\": \"integer\" },\n    \"reset\": { \"type\": \"boolean\" }\n  },\n  \"required\": [\"thread_id\", \"kind\", \"worker_ref\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"projection_id\": { \"type\": \"string\" },\n    \"projection\": { \"type\": \"object\" },\n    \"rollback\": { \"type\": [\"object\", \"null\"] }\n  },\n  \"required\": [\"thread_id\", \"projection_id\", \"projection\"]\n}\n"
+      - name: list_projections
+        description: List projection definitions and cursors after READ access. Each array reports exhaustion and its own continuation cursor.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "thread_id": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                  },
+                  "projections_cursor": {
+                    "type": "string"
+                  },
+                  "cursors_cursor": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "thread_id"
+                ]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "thread_id": {
+                    "type": "string"
+                  },
+                  "event_count": {
+                    "type": "integer"
+                  },
+                  "projections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "cursors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "projections_has_more": {
+                    "type": "boolean"
+                  },
+                  "projections_cursor": {
+                    "type": "string"
+                  },
+                  "cursors_has_more": {
+                    "type": "boolean"
+                  },
+                  "cursors_cursor": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "thread_id",
+                  "event_count",
+                  "projections",
+                  "cursors",
+                  "count"
+                ]
+              }
+      - name: get_projection_cursor
+        description: Read one projection and cursor at their declared address. Requires READ access; absence returns NOT_FOUND.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object", "properties": {
+                "thread_id": { "type": "string", "minLength": 1 },
+                "kind": { "type": "string", "minLength": 1 },
+                "projection_key": { "type": "string" }, "cursor_key": { "type": "string" }
+              }, "required": ["thread_id", "kind"] }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object", "properties": {
+                "thread_id": { "type": "string" }, "projection": { "type": "object" }, "cursor": { "type": "object" }
+              }, "required": ["thread_id", "projection", "cursor"] }
+      - name: catch_up_projection
+        description: Wake one projection slot and wait for its cursor after a READ check. The optional RFC3339 deadline bounds the wait; expiry returns a retriable failure. Used by durable writers for projection-backed read-after-write consistency.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"kind\": { \"type\": \"string\" },\n    \"projection_key\": { \"type\": \"string\" },\n    \"cursor_key\": { \"type\": \"string\" },\n    \"max_ticks\": { \"type\": \"integer\", \"minimum\": 1, \"maximum\": 1000, \"default\": 20 },\n    \"deadline\": { \"type\": \"string\", \"format\": \"date-time\", \"description\": \"The caller's deadline; the wait ends there with a retriable failure.\" }\n  },\n  \"required\": [\"thread_id\", \"kind\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"event_count\": { \"type\": \"integer\" },\n    \"projection_id\": { \"type\": \"string\" },\n    \"cursor_id\": { \"type\": \"string\" },\n    \"status\": { \"type\": \"string\" },\n    \"last_seq\": { \"type\": \"integer\" },\n    \"target_seq\": { \"type\": \"integer\" },\n    \"processed\": { \"type\": \"integer\" },\n    \"ticks\": { \"type\": \"integer\" },\n    \"max_ticks\": { \"type\": \"integer\" },\n    \"done\": { \"type\": \"boolean\" },\n    \"reason\": { \"type\": \"string\" },\n    \"error\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\", \"projection_id\", \"cursor_id\", \"ticks\", \"max_ticks\"]\n}\n"
+      - name: pause_projection
+        description: Pause a projection cursor by cursor_id or natural address. Requires WRITE access.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"cursor_id\": { \"type\": \"string\" },\n    \"kind\": { \"type\": \"string\" },\n    \"projection_key\": { \"type\": \"string\" },\n    \"cursor_key\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"cursor_id\": { \"type\": \"string\" },\n    \"projection_id\": { \"type\": \"string\" },\n    \"status\": { \"type\": \"string\" },\n    \"already_paused\": { \"type\": \"boolean\" }\n  },\n  \"required\": [\"thread_id\", \"cursor_id\", \"projection_id\", \"status\"]\n}\n"
+      - name: resume_projection
+        description: Resume recoverable cursors and wake when state changes; active cursors keep their status. Requires WRITE access.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"cursor_id\": { \"type\": \"string\" },\n    \"kind\": { \"type\": \"string\" },\n    \"projection_key\": { \"type\": \"string\" },\n    \"cursor_key\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"cursor_id\": { \"type\": \"string\" },\n    \"projection_id\": { \"type\": \"string\" },\n    \"status\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\", \"cursor_id\", \"projection_id\", \"status\"]\n}\n"
+      - name: remove_projection
+        description: Delete a projection definition and its cursors. Requires WRITE access.
+        input_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"projection_id\": { \"type\": \"string\" },\n    \"kind\": { \"type\": \"string\" },\n    \"projection_key\": { \"type\": \"string\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"
+        output_schemas:
+          - format: application/schema+json
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": { \"type\": \"string\" },\n    \"projection_id\": { \"type\": \"string\" },\n    \"removed_cursors\": { \"type\": \"integer\" }\n  },\n  \"required\": [\"thread_id\"]\n}\n"

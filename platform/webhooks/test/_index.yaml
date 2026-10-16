@@ -1,0 +1,288 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/webhooks. Provides app:db + routers, runs the
+# webhooks + core + component migrations via the bootloader, and lets the suite drive
+# the validator + ingress (with a stubbed repo). Loads the module via directories.src.
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: webhooks_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://suites/webhooks_test.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      component: kickside.component:component
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: test_repo_call
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Actor-bound repo call seam used by the webhooks management tests.
+    source: file://suites/webhooks_test.lua
+    method: repo_call
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      component: kickside.component:component
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the webhooks suite.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    addr: :19127
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Authenticated API router.
+      server: gateway
+    prefix: /api
+
+  - name: api.public
+    kind: http.router
+    meta:
+      comment: Public router (the webhook ingress endpoint mounts here).
+      server: gateway
+    prefix: /public
+
+  - name: webhooks_suite_policy
+    kind: security.policy
+    meta:
+      comment: Harness policy granting the suite full access in isolation.
+    groups: [webhooks_test]
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: output_spoof_allow
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.kickside.webhooks
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Webhooks mounted as the single package root; this harness supplies every host and transitive seam.
+    component: kickside/webhooks
+    parameters:
+    - name: kickside.webhooks:target_db
+      value: app:db
+    - name: kickside.webhooks:api_router
+      value: app:api
+    - name: kickside.webhooks:public_router
+      value: app:api.public
+    - name: kickside.webhooks:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: webhooks_test
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: webhooks_test
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:webhooks_suite_policy
+    - name: kickside.core.threads:user_security_scope
+      value: app:webhooks_suite_policy
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: kickside.core.scheduler:env_storage
+      value: app:env_storage
+    - name: kickside.core.scheduler:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies the webhooks + core + component migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:webhooks_suite_policy
+
+  - name: http_errors_test
+    kind: function.lua
+    source: file://http_errors_test.lua
+    method: run
+    meta: { type: test, suite: webhooks_http_errors }
+    imports:
+      test: wippy.test:test
+      update_api: kickside.webhooks.api:update_webhook
+      revoke_api: kickside.webhooks.api:revoke_webhook
+      delete_api: kickside.webhooks.api:delete_webhook
+      list_api: kickside.webhooks.api:list_webhooks
+
+  - name: webhook_directory_groups
+    kind: function.lua
+    source: file://directory_fixture.lua
+    method: groups
+    modules: [sql]
+
+  - name: webhook_directory_search
+    kind: function.lua
+    source: file://directory_fixture.lua
+    method: search
+    modules: [sql]
+
+  - name: webhook_directory_resolve
+    kind: function.lua
+    source: file://directory_fixture.lua
+    method: resolve
+    modules: [sql]
+
+  - name: webhook_directory_exists
+    kind: function.lua
+    source: file://directory_fixture.lua
+    method: exists
+    modules: [sql]
+
+  - name: webhook_directory
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:directory
+        default: true
+        methods:
+          groups: app:webhook_directory_groups
+          search: app:webhook_directory_search
+          resolve: app:webhook_directory_resolve
+          exists: app:webhook_directory_exists
+
+  - name: list_paging_test
+    kind: function.lua
+    source: file://list_paging_test.lua
+    method: run
+    meta: { type: test, suite: webhooks_paging }
+    modules: [sql, uuid, security, funcs]
+    imports:
+      test: wippy.test:test
+      traced_repo: app:list_traced_repo
+      trace_sql: app:list_trace_sql
+
+  - name: list_trace_sql
+    kind: library.lua
+    source: file://list_trace_sql.lua
+    modules: [sql]
+
+  - name: list_traced_repo
+    kind: library.lua
+    source: file://list_repo_source.lua
+    modules: [hash, crypto, uuid, time, json, contract, security]
+    imports:
+      sql: app:list_trace_sql
+      component: kickside.component:component
+      component_read_port: kickside.component.persist:read_port
+      component_query: kickside.component.persist:component_query
+      implementation_access: kickside.component.persist:implementation_access
+      webhook_consts: kickside.webhooks:consts
+      webhook_types: kickside.webhooks:types
+      webhook_security: kickside.webhooks.ingress:security_core
+
+  - name: list_trace_probe
+    kind: function.lua
+    source: file://list_paging_test.lua
+    method: probe
+    modules: [sql, uuid, security, funcs]
+    imports:
+      test: wippy.test:test
+      traced_repo: app:list_traced_repo
+      trace_sql: app:list_trace_sql

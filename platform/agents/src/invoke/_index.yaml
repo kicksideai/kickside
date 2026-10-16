@@ -1,0 +1,56 @@
+version: "1.0"
+namespace: kickside.agents.invoke
+
+# Agent invoke endpoint. agent_invoke.write is the kickside.data:writable backing:
+# writing a message to a chosen agent runs it once and returns its output.
+
+entries:
+  - name: agent_invoke_runtime
+    kind: library.lua
+    meta:
+      comment: Agent invoke endpoint module; write() resolves and runs the target agent.
+    source: file://agent_invoke.lua
+    modules: [contract, json, registry, security]
+    imports:
+      flow: userspace.dataflow.flow:flow
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      agent_ref: kickside.agents:agent_ref
+      capability_context: kickside.agents.traits:capability_context
+      tool_visibility: kickside.agents.registry:tool_visibility
+      writable_sink: kickside.data:writable_sink
+      checkpoint_policy: kickside.agents:checkpoint_policy
+
+  - name: agent_invoke_write
+    kind: function.lua
+    meta:
+      comment: kickside.data:writable.write — run the configured agent on the written message.
+    source: file://agent_invoke.lua
+    method: write
+    modules: [contract, json, registry, security]
+    imports:
+      flow: userspace.dataflow.flow:flow
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      agent_ref: kickside.agents:agent_ref
+      capability_context: kickside.agents.traits:capability_context
+      tool_visibility: kickside.agents.registry:tool_visibility
+      writable_sink: kickside.data:writable_sink
+      checkpoint_policy: kickside.agents:checkpoint_policy
+
+  - name: agent_invoke
+    kind: function.lua
+    meta:
+      comment: Pipe transform - run the configured agent on the input and return the full structured output.
+    source: file://agent_invoke.lua
+    method: invoke
+    modules: [contract, json, registry, security]
+    imports:
+      flow: userspace.dataflow.flow:flow
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      agent_ref: kickside.agents:agent_ref
+      capability_context: kickside.agents.traits:capability_context
+      tool_visibility: kickside.agents.registry:tool_visibility
+      writable_sink: kickside.data:writable_sink
+      checkpoint_policy: kickside.agents:checkpoint_policy

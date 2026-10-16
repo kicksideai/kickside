@@ -1,0 +1,650 @@
+version: '1.0'
+namespace: app
+entries:
+- name: uploads_architecture_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_architecture_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_background_jobs_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_background_jobs_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_component_ownership_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_component_ownership_test.lua
+  security:
+    actor: { id: uploads-harness }
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_durable_failures_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_durable_failures_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    jobs_lifecycle: kickside.core.jobs.persist:lifecycle
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_event_callbacks_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_event_callbacks_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_filtered_metadata_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_filtered_metadata_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_gateway_completion_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_gateway_completion_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_hydrated_documents_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_hydrated_documents_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_identical_blob_cleanup_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_identical_blob_cleanup_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_indexed_parts_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_indexed_parts_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_lifecycle_deletion_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_lifecycle_deletion_test.lua
+  security:
+    actor: { id: uploads-harness }
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_metadata_ingest_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_metadata_ingest_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_network_trace_context_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_network_trace_context_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run
+- name: uploads_operation_archive_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_uploads
+    comment: Checks the uploads UI and upload-type registry declarations.
+  source: file://uploads_operation_archive_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+  method: run

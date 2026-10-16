@@ -1,0 +1,59 @@
+version: '1.0'
+namespace: app
+entries:
+- name: authorization_release_fixture
+  kind: library.lua
+  source: file://authorization_release_fixture.lua
+- name: authorization_release_source
+  kind: library.lua
+  source: file://authorization_release_source.lua
+  modules:
+  - sql
+  - uuid
+  - json
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    threads_writer: kickside.core.threads.persist:writer
+    component_client: app:authorization_release_component
+    core_types: kickside.core:types
+    contract_common: app:authorization_release_common
+    registry: app:authorization_release_registry
+    security: app:authorization_release_security
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: authorization_release_registry
+  kind: library.lua
+  source: file://authorization_release_registry.lua
+  imports:
+    fixture: app:authorization_release_fixture
+- name: authorization_release_security
+  kind: library.lua
+  source: file://authorization_release_security.lua
+  imports:
+    fixture: app:authorization_release_fixture
+- name: authorization_release_component
+  kind: library.lua
+  source: file://authorization_release_component.lua
+  imports:
+    fixture: app:authorization_release_fixture
+    real: kickside.component:component
+- name: authorization_release_common
+  kind: library.lua
+  source: file://authorization_release_common.lua
+  imports:
+    fixture: app:authorization_release_fixture
+    real: kickside.core.threads:contract_common
+- name: authorization_release_test
+  kind: function.lua
+  source: file://authorization_release_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_authorization_release
+  modules:
+  - sql
+  imports:
+    test: wippy.test:test
+    fixture: app:authorization_release_fixture
+    api: app:authorization_release_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

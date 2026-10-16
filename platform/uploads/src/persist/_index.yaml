@@ -1,0 +1,175 @@
+version: "1.0"
+namespace: kickside.uploads.persist
+
+entries:
+  - name: artifact_schema
+    kind: library.lua
+    meta:
+      comment: Structural upload artifact schemas and lightweight validators for processor packages.
+    source: file://artifact_schema.lua
+
+  - name: artifact_content_repo
+    kind: library.lua
+    meta:
+      comment: Repository for artifact blobs and individual artifact records.
+    source: file://artifact_content_repo.lua
+    modules: [json, time, uuid, hash, sql]
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      artifact_schema: kickside.uploads.persist:artifact_schema
+      artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+
+  - name: artifact_parts_repo
+    kind: library.lua
+    meta:
+      comment: Repository for artifact collections, extracted parts, primary content, and chunks.
+    source: file://artifact_parts_repo.lua
+    modules: [json, time, uuid, sql]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      artifact_schema: kickside.uploads.persist:artifact_schema
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+
+  - name: artifact_cleanup_repo
+    kind: library.lua
+    meta:
+      comment: Repository for artifact blob orphan collection and per-upload artifact teardown.
+    source: file://artifact_cleanup_repo.lua
+    modules: [sql]
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      uploads_resources: kickside.uploads.binding:uploads_resources
+
+  - name: upload_record_repo
+    kind: library.lua
+    meta:
+      comment: Repository for creating, updating, and deleting upload records.
+    source: file://upload_record_repo.lua
+    modules: [json, time, sql]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      persisted_json: kickside.contract:persisted_json
+
+  - name: processing_intent_repo
+    kind: library.lua
+    meta:
+      comment: Durable processing enqueue acknowledgement owned by uploads.
+    source: file://processing_intent_repo.lua
+    modules: [time, sql]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+
+  - name: upload_query_repo
+    kind: library.lua
+    meta:
+      comment: Repository for upload lookup, filtering, and list/count queries.
+    source: file://upload_query_repo.lua
+    modules: [sql]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      persisted_json: kickside.contract:persisted_json
+
+  - name: upload_tokens
+    kind: library.lua
+    meta:
+      comment: Encrypted token packing for upload completion callbacks, including actor_id/actor_context and optional trace_context.
+    source: file://upload_tokens.lua
+    modules: [crypto, base64, json, env]
+
+  - name: upload_read_model
+    kind: library.lua
+    meta:
+      comment: Projection-owned uploads lifecycle materialization table and paginated reader.
+    source: file://upload_read_model.lua
+    modules: [json, time, sql]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      types: kickside.uploads:types
+      persisted_json: kickside.contract:persisted_json
+      upload_type: kickside.uploads:upload_type
+
+      read_model_owner_delete: kickside.uploads.persist:read_model_owner_delete
+  # Foreground user-operation appends. Durable
+  # processing milestones are emitted by the core job engine.
+  - name: uploads_events
+    kind: library.lua
+    meta:
+      comment: Upload lifecycle event vocabulary and foreground user-operation appends.
+    source: file://events.lua
+    modules: [logger]
+    imports:
+      types: kickside.uploads:types
+      component: kickside.component:component
+
+  - name: uploads_projection_worker
+    kind: function.lua
+    meta:
+      type: projection.worker
+      comment: Uploads read-model projection worker — folds upload.completed/deleted into the uploads component summary and public meta.
+    source: file://upload_projection.lua
+    method: run
+    modules: [funcs]
+    imports:
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_response: kickside.uploads.api:upload_response
+
+  # Owner delivery runs under this function's realtime notify authority; the
+  # projection names the committed upload, never its recipient.
+  - name: notify_owner
+    kind: function.lua
+    meta:
+      private: true
+      comment: Sends one committed upload transition to the stored upload owner on upload:<uuid>.
+    source: file://upload_notify.lua
+    method: run
+    modules: [contract]
+    imports:
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      types: kickside.uploads:types
+    security:
+      policies:
+        - kickside.uploads.security:upload_notify
+
+  - name: read_model_retention
+    kind: library.lua
+    source: file://read_model_retention.lua
+    modules:
+    - sql
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+
+  - name: cleanup_principal
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Delete a principal's uploads through their storage-owning delete path.
+    security:
+      policies:
+      - kickside.uploads:thread_deleted_publish
+    source: file://cleanup_principal.lua
+    method: run
+    imports:
+      upload_lib: kickside.uploads:uploads
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+
+  - name: read_model_owner_delete
+    kind: library.lua
+    source: file://read_model_owner_delete.lua
+    modules:
+    - sql
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      types: kickside.uploads:types
+
+  - name: publish_summary
+    kind: function.lua
+    meta: { private: true }
+    source: file://publish_summary.lua
+    method: run
+    security:
+      policies:
+        - kickside.uploads.security:projection_public_meta
+    imports:
+      component: kickside.component:component

@@ -1,0 +1,56 @@
+/* Focus baseline for plain HTML elements inside a web component shadow root.
+
+   The platform contract is the token set, not this file:
+   `--p-focus-ring-{width,style,color,offset}` and `--p-focus-ring-shadow`,
+   declared in app/static/css-variables.facade.json. Everything that draws a
+   focus ring - here, in custom/*.css for PrimeVue, and in a component's own
+   stylesheet - reads those tokens. Changing the ring anywhere in the app is a
+   change to a token, never to a rule.
+
+   Scope of THIS file is deliberately narrow: bare `button`, `input`, `a` and
+   friends that a component renders without a class of its own, so nothing is
+   ever left with the browser default. It carries NO component class names.
+   A global list of class-name exceptions is the anti-pattern the Wippy frontend
+   guidance calls out by name, and the reason is practical: the theme cannot
+   know whether a given component class draws a border, so it guesses, and a
+   wrong guess
+   is a doubled ring. The component knows. It owns the rule.
+
+   A component that needs something other than the baseline styles its own
+   selectors with these tokens, and expresses a genuine variant through a
+   documented attribute (`:host([data-focus="..."])`) with component-local
+   aliases - not by adding itself here. */
+
+/* Bordered - the border goes primary and the halo carries it; no outline, so it
+   can never stack with one.
+
+   Only element types that ALWAYS draw a border are asserted here. Text entry
+   rings on `:focus` rather than `:focus-visible` because you need to see where
+   you are typing however you got there, including by click. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+textarea:focus,
+select:focus {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* Bare - nothing to highlight, so the ring is an offset outline and no halo.
+
+   `button` belongs here, which is not obvious. A bare `<button>` is borderless
+   far more often than not - a toolbar icon, a close affordance, a row of the
+   nav rail - and the bordered treatment on one of those paints a halo around
+   an edge that does not exist, while its `outline: none` suppresses the only
+   ring it could have had. A button that DOES draw a box says so in its own
+   rule: `.p-button` in custom/40-button.css, `.kx-card` in the modules that
+   have one. Both out-specify this, and both set `outline: none`. */
+button:focus-visible,
+summary:focus-visible,
+a[href]:focus-visible,
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible,
+input[type='range']:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+  box-shadow: none;
+}

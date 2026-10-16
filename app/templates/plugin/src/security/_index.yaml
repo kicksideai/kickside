@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: acme.starter.security
+
+
+entries:
+  - name: module_access
+    kind: security.policy
+    meta:
+      title: Starter
+      surface: acme.starter
+      intent: module_access
+      includes: [acme.starter.security:module_runtime]
+    groups: []
+    policy:
+      resources:
+      - acme.starter.api:get_status.endpoint
+      actions: access
+      effect: allow
+  - name: module_runtime
+    kind: security.policy
+    meta: {private: true}
+    groups: []
+    policy:
+      resources: ["acme.starter:*", "acme.starter.api:*"]
+      actions: [registry.get, registry.find, funcs.call, funcs.security,
+                contract.get, contract.open, contract.call,
+                contract.implementations, contract.security]
+      effect: allow

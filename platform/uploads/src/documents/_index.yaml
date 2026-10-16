@@ -1,0 +1,90 @@
+version: "1.0"
+namespace: kickside.uploads.documents
+
+entries:
+  - name: dependency.doc2md
+    kind: ns.dependency
+    meta:
+      comment: Pure Doc2MD WebAssembly converter used by the document upload wrapper.
+    component: kickside/doc2md
+    version: '>=0.8.11'
+
+  - name: env.document_image_artifacts_enabled
+    kind: env.variable
+    meta:
+      comment: Enable extracted image artifacts for document uploads by default.
+      icon: tabler:photo
+      private: true
+    default: "true"
+    variable: KICKSIDE_UPLOADS_DOCUMENT_IMAGE_ARTIFACTS_ENABLED
+
+  - name: setting.max_upload_bytes
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Maximum accepted document upload size, clamped to the converter input ceiling.
+    namespace: kickside.uploads.documents
+    key: max_upload_bytes
+    value_type: int
+    default: 125829120
+    title: Maximum document size (bytes)
+    category: Limits
+    order: 10
+    description: Maximum document upload size in bytes (clamped to the converter's hard input ceiling).
+    scope: global
+    editable: true
+    visible: true
+
+  # Document upload settings are surfaced through the consolidated Files & Uploads
+  # block (kickside.settings:block.storage), which claims this namespace — so this
+  # module declares no standalone block of its own.
+
+  - name: processor
+    kind: function.lua
+    meta:
+      type: processor
+      comment: Upload-pipeline processor that converts supported document uploads to Markdown artifacts.
+    source: file://processor.lua
+    modules:
+      - fs
+      - env
+      - hash
+      - contract
+    imports:
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      doc2md: kickside.convert.doc2md:doc2md
+    method: process
+    pool:
+      type: static
+      size: 4
+      workers: 4
+
+  - name: types.documents
+    kind: registry.entry
+    meta:
+      title: Document Files
+      type: upload.type
+      comment: PDF, Word, PowerPoint, Excel, RTF, text/Markdown, and SPSS files converted to Markdown via Doc2MD.
+    type_key: documents
+    priority: 90
+    extensions: [pdf, docx, doc, dot, pptx, ppt, pps, xlsx, xlsm, xlsb, xls, rtf, txt, md, markdown, sav]
+    mime_types:
+      - application/pdf
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.presentationml.presentation
+      - application/vnd.ms-powerpoint
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      - application/vnd.ms-excel.sheet.macroEnabled.12
+      - application/vnd.ms-excel.sheet.binary.macroEnabled.12
+      - application/vnd.ms-excel
+      - application/rtf
+      - text/rtf
+      - text/plain
+      - text/markdown
+      - text/x-markdown
+      - application/x-spss-sav
+      - application/x-spss
+    pipeline:
+      - title: Converting to Markdown
+        func: kickside.uploads.documents:processor

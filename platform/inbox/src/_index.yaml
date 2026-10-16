@@ -1,0 +1,274 @@
+version: "1.0"
+namespace: kickside.inbox
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Inbox
+      comment: Central review/approval inbox. Items are immutable events on the owner's inbox component thread; item types are declarative registry entries (meta.type inbox.item_type) that each name a web component to render them, so any module adds an item type (and its own component) without touching the inbox. Public summary counts live in component meta and use canonical component.meta.changed realtime. The inbox component emits thread-stream item.created/resolved/deleted events, while kickside.inbox.sink:inbox_sink is the canonical writable workflow destination for posting items. Flow/HIL correlation rides on trace_context, not inbox-specific workflow fields.
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Thread runtime used by Inbox-owned review delivery.
+    component: kickside/core
+
+  # The inbox is event-sourced on the kickside.core thread engine (one inbox thread
+  # per owner; items are immutable events reduced on read). It has no DB of its own
+  # and no migrations — the thread engine owns persistence. The owner's inbox thread
+  # is the owner's autoinit "kickside.inbox" component, provisioned on login and reaped
+  # by the owner-delete cascade on user deletion.
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the inbox endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: Authenticated HTTP router the inbox endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.inbox.api:list_inbox.endpoint
+        path: .meta.router
+      - entry: kickside.inbox.api:list_item_types.endpoint
+        path: .meta.router
+      - entry: kickside.inbox.api:create_item.endpoint
+        path: .meta.router
+      - entry: kickside.inbox.api:resolve_item.endpoint
+        path: .meta.router
+      - entry: kickside.inbox.api:delete_item.endpoint
+        path: .meta.router
+
+  # ─── Inbox page UI (self-served web component) ──────────────────────
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the inbox UI static mount attaches to.
+      description: HTTP server the inbox UI static mount attaches to.
+    targets:
+      - entry: kickside.inbox:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-inbox web component bundles.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-inbox
+    fs: kickside.inbox:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: inbox_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: inbox_view
+      title: Inbox
+      description: >-
+        Master/detail inbox surface: Pending/Resolved/All folders, an item
+        list, and a detail pane that renders the selected item through its
+        item type's declared component tag (native content/fields fallback), with
+        live counts from the owner inbox component's public meta.
+      announced: true
+      tag_name: kickside-inbox
+      base_path: kickside-inbox
+      entry_point: index.js
+
+  - name: inbox_notice_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: inbox_notice_view
+      title: Notice
+      description: >-
+        Built-in detail renderer for notice inbox items: reads its content and
+        data-meta attributes and renders escaped text plus a label/value table
+        from the data-meta JSON fields array.
+      tag_name: kickside-inbox-notice
+      base_path: kickside-inbox
+      entry_point: notice.js
+      auto_register: false
+      announced: true
+
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /inbox
+      route_name: inbox
+      title: Inbox
+      comment: Items delivered for your review and action.
+      icon: tabler:inbox
+      order: 40
+      render: component
+      component_tag: kickside-inbox
+      # Live actionable count on the nav item: the per-user inbox component
+      # (component_id == its primary thread) carries pending_count in public meta.
+      # No boolean urgency meta key exists on the inbox component, so tone_field is
+      # omitted for v1 (never inferred from the count).
+      badge:
+        source: component_meta
+        component: { scope: actor, cardinality: singleton, impl_id: kickside.inbox:inbox_binding }
+        field: pending_count
+        field_type: integer
+        style: count
+        hide_zero: true
+        tone: accent
+
+  # ─── Declarative item types (meta.type inbox.item_type) ──────────────
+  # The base reference item type: a plain notice card. Copy this entry + its web
+  # component to add a new item type owned by a different module.
+  - name: item_type.notice
+    kind: registry.entry
+    meta:
+      type: inbox.item_type
+      value: notice
+      actions: [dismiss]
+      title: Notice
+      icon: tabler:info-circle
+      color: blue
+      category: general
+      severity: info
+      component_tag: kickside-inbox-notice
+      component_base_path: kickside-inbox
+
+  # An item type with no component renders with the host's built-in card.
+  - name: item_type.system
+    kind: registry.entry
+    meta:
+      type: inbox.item_type
+      value: system
+      actions: [approve, reject, dismiss]
+      title: System
+      icon: tabler:settings
+      color: gray
+      category: system
+      severity: secondary
+
+  # ─── Domain libraries ────────────────────────────────────────────────
+  - name: inbox_types
+    kind: library.lua
+    meta: { comment: "Canonical inbox item, query, contract response, and vocabulary exports for the event-sourced inbox." }
+    source: file://types.lua
+
+  - name: inbox_item_types
+    kind: library.lua
+    meta: { comment: Discover declarative inbox.item_type entries + their render metadata. }
+    source: file://item_types.lua
+    modules: [registry]
+    imports:
+      inbox_types: kickside.inbox:inbox_types
+
+  - name: inbox_resolve
+    kind: library.lua
+    meta: { comment: "Validates and applies a declared action synchronously, then appends the terminal resolution event after the idempotent callback succeeds." }
+    source: file://resolve.lua
+    modules: [funcs, security]
+    imports:
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_types: kickside.inbox:inbox_types
+      inbox_item_types: kickside.inbox:inbox_item_types
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      inbox_events: kickside.inbox.persist:inbox_events
+
+  # The inbox kind binding doubles as its provision declaration: on login the workspace
+  # plugin materializes one inbox component+thread per user (id = component_id(user,
+  # "kickside.inbox")) with one-week event retention. The declared projection is auto-applied
+  # on that thread (provision + create), folding item events into its read-model body;
+  # inbox_events appends events and reads that body. Kind, declaration, projection, and
+  # runtime are one component.
+  - name: inbox_binding
+    kind: contract.binding
+    meta:
+      title: Inbox
+      comment: Inbox items as they are created or resolved.
+      icon: tabler:inbox
+      class:
+        - kickside.inbox
+      component:
+        manage: { view: kickside.inbox:inbox_view, deep_link: true }
+      events:
+        input: []
+        output:
+          - type: kickside.inbox.events:item.created
+          - type: kickside.inbox.events:item.version
+          - type: kickside.inbox.events:item.resolved
+          - type: kickside.inbox.events:item.deleted
+          - type: kickside.inbox.events:delivery.claimed
+      provision:
+        scope: user
+      retention:
+        event_days: 7
+        drain_aware: true
+      projections:
+        - kind: "kickside.inbox:items"
+          worker_ref: "func://kickside.inbox.persist:projection_worker"
+          input_mode: prefetch_events
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  # Published ports. Each references an event-type entry this component emits on its
+  # own thread; the output face derives from the event entry's schema. item.deleted
+  # is internal cleanup with no port. Per-user singleton (provision scope: user):
+  # one inbox per user, so no instance picker -- the install resolves the thread
+  # from the installing actor + the binding's class.
+  - name: item_created
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Inbox Item Created
+      comment: Start when a new item is added to the inbox.
+      icon: tabler:inbox
+    binding: kickside.inbox:inbox_binding
+    event: kickside.inbox.events:item.created
+
+  - name: item_resolved
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Inbox Item Resolved
+      comment: Start when an inbox item is marked resolved.
+      icon: tabler:inbox
+    binding: kickside.inbox:inbox_binding
+    event: kickside.inbox.events:item.resolved
+
+  # User deletion is handled by the kickside.core thread/component owner-delete
+  # cascade: the owner's inbox thread is a user-owned component and is reaped with
+  # the user, so the inbox needs no bespoke user.deleted handler.
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.blocks
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Typed Block composition, durable parking, and Signal resume for Inbox review.
+    component: kickside/blocks
+
+  - name: dep.kickside.execution
+    kind: ns.dependency
+    component: kickside/execution
+    version: "*"

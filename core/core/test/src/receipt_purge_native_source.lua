@@ -1,0 +1,1 @@
+../../src/write_receipt_purge.lua

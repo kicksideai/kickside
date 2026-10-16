@@ -1,0 +1,99 @@
+version: "1.0"
+namespace: app.security
+
+# Host-owned authorization fixtures the scope catalog reads. In production these
+# live in the application (app/src/app/security); the harness declares the same
+# shapes so the catalog suite exercises real discovery: role descriptors give the
+# app.security:* groups their labels, and the policies below carry those groups.
+# ingress.endpoint_access is the meta.internal grant that classifies
+# app.security:ingress as an internal scope.
+
+entries:
+  - name: role_admin
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: Administrator
+      comment: Full access to every app, keeper, and management surface. Assign sparingly.
+    role_id: app.security:admin
+    protected: true
+
+  - name: role_user
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: User
+      comment: Standard signed-in member. Grants the product surfaces every package contributes to the user scope.
+    role_id: app.security:user
+    protected: true
+
+  # No meta.internal here: the ingress scope is classified internal by the
+  # meta.internal policy that carries the group, which is what the suite asserts.
+  - name: role_ingress
+    kind: registry.entry
+    meta:
+      type: kickside.security.role
+      title: Ingress (system)
+      comment: Internal HTTP ingress scope. System-managed and never assigned to users.
+    role_id: app.security:ingress
+    protected: true
+
+  - name: test_admin
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.root
+      intent: root_admin
+      comment: Root administrator access for the security harness.
+    groups:
+      - app.security:admin
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: user.app_shell_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.shell
+      intent: authenticated_endpoint_access
+      comment: Authenticated app shell endpoints that are safe for every normal user.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - app.api.websocket:*
+      actions: access
+      effect: allow
+
+  - name: user.runtime_registry_read
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.registry
+      intent: trusted_product_runtime
+      comment: Read-only registry discovery for product metadata.
+    groups:
+      - app.security:user
+    policy:
+      resources: '*'
+      actions:
+        - registry.find
+        - registry.get
+      effect: allow
+
+  - name: ingress.endpoint_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.ingress
+      intent: endpoint_access
+      comment: Ingress scopes may enter HTTP endpoints only; registry/system mutations are not part of this action surface.
+      internal: true
+    groups:
+      - app.security:ingress
+    policy:
+      resources: '*'
+      actions: access
+      effect: allow

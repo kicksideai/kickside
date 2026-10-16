@@ -1,0 +1,47 @@
+version: '1.0'
+namespace: kickside.webhooks.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Webhooks
+    surface: kickside.webhooks
+    intent: module_access
+    includes:
+    - kickside.webhooks.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.webhooks.api:create_webhook.endpoint
+    - kickside.webhooks.api:delete_webhook.endpoint
+    - kickside.webhooks.api:list_webhooks.endpoint
+    - kickside.webhooks.api:revoke_webhook.endpoint
+    - kickside.webhooks.api:update_webhook.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.webhooks:*
+    - kickside.webhooks.api:*
+    - kickside.webhooks.api.public:*
+    - kickside.webhooks.binding:*
+    - kickside.webhooks.events:*
+    - kickside.webhooks.ingress:*
+    - kickside.webhooks.migrations:*
+    - kickside.webhooks.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

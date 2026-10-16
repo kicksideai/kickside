@@ -1,0 +1,7 @@
+organization: kickside
+module: automation-harness
+type: application
+description: Standalone runnable harness that boots kickside/automation (and its component/contract deps) and runs its co-located *_test.lua suites.
+directories:
+  modules: .wippy
+  src: .

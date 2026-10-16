@@ -1,0 +1,108 @@
+version: "1.0"
+namespace: kickside.inbox.api
+
+entries:
+  - name: list_inbox
+    kind: function.lua
+    meta: { comment: GET /inbox — the user's inbox items. }
+    source: file://list_inbox.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      inbox_types: kickside.inbox:inbox_types
+      inbox_events: kickside.inbox.persist:inbox_events
+
+  - name: list_inbox_lib
+    kind: library.lua
+    source: file://list_inbox.lua
+    modules: [http, json, security]
+    imports:
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      inbox_types: kickside.inbox:inbox_types
+      inbox_events: kickside.inbox.persist:inbox_events
+
+  - name: list_inbox.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_inbox
+    path: /inbox
+
+  - name: list_item_types
+    kind: function.lua
+    meta: { comment: GET /inbox/item-types — declared item types and render metadata. }
+    source: file://list_item_types.lua
+    method: handler
+    modules: [http, registry]
+    imports:
+      inbox_item_types: kickside.inbox:inbox_item_types
+
+  - name: list_item_types.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_item_types
+    path: /inbox/item-types
+
+  - name: create_item
+    kind: function.lua
+    meta: { comment: POST /inbox — enqueue an item. }
+    security:
+      policies:
+      - kickside.inbox.security:create_output_publish
+    source: file://create_item.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      inbox_types: kickside.inbox:inbox_types
+      inbox_writer: kickside.inbox.persist:inbox_writer
+
+  - name: create_item.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_item
+    path: /inbox
+
+  - name: resolve_item
+    kind: function.lua
+    meta: { comment: "POST /inbox/{id}/{action} — approve/reject/dismiss." }
+    security:
+      policies:
+      - kickside.inbox.security:resolve_output_publish
+    source: file://resolve_item.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      inbox_resolve: kickside.inbox:inbox_resolve
+      http_errors: kickside.contract:http_errors
+
+  - name: resolve_item.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: resolve_item
+    path: /inbox/{id}/{action}
+
+  - name: delete_item
+    kind: function.lua
+    meta: { comment: "DELETE /inbox/{id} — permanently remove an item." }
+    security:
+      policies:
+      - kickside.inbox.security:delete_output_publish
+    source: file://delete_item.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      http_errors: kickside.contract:http_errors
+
+  - name: delete_item.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_item
+    path: /inbox/{id}

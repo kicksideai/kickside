@@ -1,0 +1,51 @@
+version: '1.0'
+namespace: kickside.dm.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Dm
+    surface: kickside.dm
+    intent: module_access
+    includes:
+    - kickside.dm.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.dm:*
+    - kickside.dm.agents:*
+    - kickside.dm.events:*
+    - kickside.dm.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.dm:*
+    - kickside.dm.agents:*
+    - kickside.dm.events:*
+    - kickside.dm.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

@@ -1,0 +1,43 @@
+version: "1.0"
+workspace:
+  replacements:
+    kickside/security: ../../security
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/blocks: ..
+    kickside/component: ../../../core/component
+    kickside/contract: ../../../core/contract
+    kickside/core: ../../../core/core
+    kickside/execution: ../../../core/execution
+    kickside/jobs: ../../../core/jobs
+    kickside/users: ../../users
+    kickside/settings: ../../settings
+override:
+  "app:db:file": "${sqlite_path}"
+  "kickside.blocks:await:meta.default_host": app:processes
+vars:
+  sqlite_path: ./.proof/native-wait.db
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_blocks
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8
+
+registry:
+  dispatch_internal_kinds:
+    - registry.entry
+    - ns.requirement
+    - ns.dependency
+    - ns.definition
+    - security.scope

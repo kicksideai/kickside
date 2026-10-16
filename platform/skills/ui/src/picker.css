@@ -1,0 +1,27 @@
+@import "@wippy-fe/theme/theme-config.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Skill picker — the Skills trait config panel. Universal --p-* theme only so it
+   renders inside the agent editor's shadow DOM in any host. The list/typeahead UI
+   now lives inside the nested <wc-multiselect> (its own shadow root); this sheet
+   styles only the panel shell, the shared MultiSelectField wrapper, and the hint. */
+.sp { font-family: inherit; color: var(--p-text-color); display: flex; flex-direction: column; gap: 10px; }
+
+/* Layout wrapper the shared MultiSelectField emits around <wc-multiselect>. */
+.kx-msfield { display: block; width: 100%; }
+
+/* Fallback shown when the picker element fails to load. */
+.kx-group-empty {
+  font-size: 12.5px; color: var(--p-text-muted-color); padding: 14px 12px; text-align: center;
+  border: 1px dashed var(--p-content-border-color); border-radius: 11px;
+}
+
+/* Muted explanatory note under the picker. */
+.sp-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); }

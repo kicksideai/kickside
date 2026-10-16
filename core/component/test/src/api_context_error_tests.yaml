@@ -1,0 +1,14 @@
+version: "1.0"
+namespace: app.component_api_context_error_test
+entries:
+  - name: api_context_error_test
+    kind: function.lua
+    meta: { type: test, suite: component_api_context_error }
+    source: file://api_context_error_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      access_model: kickside.component.api:access_model
+      list_access: kickside.component.api:list_component_access
+      share_component: kickside.component.api:share_component
+      adopt_component: kickside.component.api:adopt_component

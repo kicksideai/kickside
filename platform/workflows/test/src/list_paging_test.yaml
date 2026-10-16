@@ -1,0 +1,11 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: list_paging_test
+    kind: function.lua
+    meta: {type: test, suite: workflows}
+    source: file://suites/list_paging_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo

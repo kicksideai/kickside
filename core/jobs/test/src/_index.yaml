@@ -1,0 +1,3779 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for the kickside/jobs module. Explicitly maps the module's
+# host requirements and mounts kickside/core so the jobs suites drive the real
+# projection/thread/catch-up stack. Provides env storage + bootloader so
+# the modules boot, run their migrations, and execute harness-owned suites in
+# isolation. Excluded from publish (see wippy.yaml).
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: Jobs suite database; a per-run file the harness names through vars.sqlite_path (.wippy.yaml), so the migrated schema survives the registry version changes these suites apply.
+    file: "${sqlite_path}"
+
+  - name: private_queue_attempt_budget_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_claim_fence_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_claim_selection_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_concurrency_claim_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_concurrency_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_execute_job_routing_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_heartbeat_reclaim_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_claim_sequence_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_run_history_reclaim_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_idle_report_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_pool_registration_and_timers_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_proc_supervision_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_termination_recovery_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_transitions_revocation_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_worker_recycle_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_worker_supervision_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: queue_isolation_a
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: queue_isolation_b
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: job_fixture
+    kind: library.lua
+    meta:
+      comment: Own-row leasing on the shared queue and the private queue for claim-selection suites.
+    source: file://job_fixture.lua
+    modules: [sql, uuid, process]
+    imports:
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      config: kickside.core.jobs:config
+      wake: kickside.core.jobs.persist:wake
+
+  - name: worker_db_scaffold
+    kind: library.lua
+    meta:
+      comment: Shared DB and enqueue helpers for the worker suites.
+    source: file://suites/service/worker_parts/worker_db_scaffold.lua
+    modules: [sql, uuid]
+    imports:
+      job_fixture: app:job_fixture
+
+  - name: uploads
+    kind: fs.directory
+    meta:
+      comment: Harness-owned temporary filesystem for jobs tests.
+    directory: ./.wippy/uploads
+    auto_init: true
+
+  # ─── Projection worker fixtures ──────────────────────────────────────
+  # func:// and proc:// projection workers the scheduler dispatch/reclaim suites
+  # register cursors against (the proc worker only has to resolve through
+  # worker.validate; the scheduler excludes it from inline dispatch).
+  - name: test_count_worker
+    kind: function.lua
+    meta:
+      type: projection.worker
+      title: Test Count Worker
+      comment: Test-only projection worker; counts events into the projection body.
+    source: file://test_count_worker.lua
+    method: run
+    modules:
+      - json
+
+  - name: test_proc_worker
+    kind: process.lua
+    meta:
+      type: projection.worker
+      title: Test Proc Worker
+      comment: Test-only proc:// projection worker; counts events into the projection body.
+    source: file://test_proc_worker.lua
+    method: run
+    modules:
+      - json
+      - security
+
+  # ─── Job worker fixtures ─────────────────────────────────────────────
+  # func:// and proc:// worker_ref targets driven by jobs.service's worker_test
+  # for dispatch coverage.
+  - name: generic_job_target
+    kind: function.lua
+    meta:
+      comment: Test-only generic worker_ref target for jobs.worker dispatch coverage.
+      options:
+        retry:
+          max_attempts: 3
+          initial_delay: 1
+          jitter: 0
+    source: file://generic_job_target.lua
+    method: run
+    modules:
+      - security
+      - time
+      - channel
+      - sql
+      - json
+
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: concurrency_probe
+    kind: process.lua
+    meta:
+      comment: Concurrent enqueue and batch-claim test requester.
+    source: file://concurrency_probe.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+    imports:
+      jobs: kickside.core.jobs:jobs
+      claim: kickside.core.jobs.persist:claim
+
+  - name: job_sleep_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker that sleeps a configurable interval; exercises the supervised spawn/terminate path.
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: job_crash_probe
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Marks its first attempt before the harness kills the execution child.
+    source: file://job_crash_probe.lua
+    method: run
+    modules: [sql, process]
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: jobs_service_probe_loop
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Records its service PID and runs the real jobs worker pool root for restart evidence.
+    source: file://jobs_service_probe_loop.lua
+    method: run
+    modules: [sql, uuid, process, registry, logger, time, channel, events]
+    imports:
+      worker_pool: kickside.core.jobs.service:worker_pool
+
+  - name: awaited_job_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      job_class: awaited
+      comment: A job other jobs wait on; its declared class reserves its worker capacity.
+    source: file://awaited_job_probe.lua
+    method: run
+
+  - name: awaiting_job_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Holds its worker until the awaited job it names is done, like a synchronous projection consumer.
+    source: file://awaiting_job_probe.lua
+    method: run
+    modules: [sql, time]
+
+  - name: jobs_cancelled_loop
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Cancels itself before entering the real worker loop to exercise startup drain ordering.
+    source: file://jobs_cancelled_loop.lua
+    method: run
+    modules: [process]
+    imports:
+      worker: kickside.core.jobs.service:loop
+
+  - name: jobs_pool_root
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Runs the real jobs worker pool root under a test-owned process.service.
+    source: file://jobs_pool_root.lua
+    method: run
+    modules: [sql, process, registry, logger, time, channel, events]
+    imports:
+      worker_pool: kickside.core.jobs.service:worker_pool
+
+  - name: live_job_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Reports the real claiming worker to its waiting test process.
+    source: file://live_job_probe.lua
+    method: run
+    modules: [sql, process, channel, time]
+
+  - name: jobs_pool_subscription_probe
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Fails pool registry subscription so the service restart is observable.
+    source: file://jobs_pool_subscription_probe.lua
+    method: run
+    modules: [sql, uuid, process, channel, time]
+    imports:
+      worker_pool: kickside.core.jobs.service:worker_pool
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  # ─── Host resources ──────────────────────────────────────────────────
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope for jobs tests (grants db access to the test actor).
+    groups:
+      - core_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: test_scope_policy
+    kind: security.policy
+    meta:
+      comment: Permissive scope the projection/catch-up suites run their scoped actors under.
+    groups:
+      - core_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  # ─── Scope resolver ──────────────────────────────────────────────────
+  # kickside/core binds no default scope_resolver (production binds it in
+  # kickside/users); the harness provides a permissive stub so core actors resolve.
+  - name: scope_resolver_stub
+    kind: function.lua
+    meta:
+      comment: Test-only kickside.contract:scope_resolver implementation for core actors.
+    source: file://scope_resolver_stub.lua
+    modules: [security]
+    method: resolve
+
+  - name: scope_resolver_binding
+    kind: contract.binding
+    meta:
+      comment: Jobs harness resolver; production binds this in kickside/users.
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        default: true
+        methods:
+          resolve: app:scope_resolver_stub
+
+  # kickside/jobs loads once through the dependency replacement; the mappings above
+  # are owned by this harness rather than leaking test resource ids into the package.
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader configuration for testing.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: dep.kickside.jobs
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Jobs mounted as a root so its mandatory host requirements are exercised.
+    component: kickside/jobs
+    parameters:
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - name: dep.wippy.migration
+    version: "*"
+    kind: ns.dependency
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  # Harness-owned tests copied from the production module.
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      title: Jobs Packaging Mount
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Packaging
+      comment: jobs src entries resolve under injected requirements; the worker is the single owner, no phantom factory, the loop process exists.
+    source: file://suites/packaging_test.lua
+    method: run
+    modules:
+      - registry
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+
+  # Durable leased-job engine, split into layers: the persistence primitives
+  # (claim/lease/lifecycle, effect-intent executors) live under
+  # kickside.core.jobs.persist; the worker process + its supervised service live
+  # under kickside.core.jobs.service. This root keeps only the shared vocabulary
+  # both layers read — the state machines, the env-tunable knobs, and the entity
+  # shapes.
+
+  # ─── Libraries ───────────────────────────────────────────────────────
+  - name: config_test
+    kind: function.lua
+    meta:
+      title: Job Config
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: The kickside.core.jobs:policy shape, its validation and the loaded runtime values.
+    source: file://suites/config_test.lua
+    method: run
+    modules:
+      - registry
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+
+  - name: jobs_signal_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope without process messaging authority, as a group principal holds; Jobs signals reach their recipients through Jobs identities.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, registry.get, registry.find, env.get, db.get]
+      effect: allow
+
+  - name: jobs_signal_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Publishes one lease release or execution revocation in the caller's frame.
+    source: file://jobs_signal_probe.lua
+    method: run
+    imports:
+      lease_release: kickside.core.jobs:lease_release
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: service_signal_test
+    kind: function.lua
+    meta:
+      title: Jobs Service Signals
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Lease releases and execution revocations reach their recipients from a principal without process messaging authority.
+    source: file://suites/service_signal_test.lua
+    method: run
+    modules: [uuid, security, funcs, process, channel, time]
+    imports:
+      test: wippy.test:test
+      lease_release: kickside.core.jobs:lease_release
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: delivery_notification_test
+    kind: function.lua
+    meta:
+      title: Job Delivery Notifications
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Pool notices after durable transition commits and cross-owner migration order.
+    source: file://suites/persist/delivery_notification_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - time
+      - process
+      - channel
+      - registry
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      jobs: kickside.core.jobs:jobs
+
+  - name: wake_clock_test
+    kind: function.lua
+    meta:
+      title: Job Wake Clock
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Control wakes store an absolute instant under a non-UTC PostgreSQL session.
+    source: file://suites/persist/wake_clock_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      wake: kickside.core.jobs.persist:wake
+
+  - name: wake_recovery_test
+    kind: function.lua
+    meta:
+      title: Job Wake Recovery
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Reclaim a crashed continuation without losing fan-out demand.
+    source: file://suites/persist/wake_recovery_test.lua
+    method: run
+    modules: [sql, uuid, process, channel, time]
+    imports:
+      test: wippy.test:test
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      reclaim: kickside.core.jobs.persist:reclaim
+      wake: kickside.core.jobs.persist:wake
+      config: kickside.core.jobs:config
+      job_fixture: app:job_fixture
+
+  - name: lease_test
+    kind: function.lua
+    meta:
+      title: Job Lease
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Lease extend for the owner, lost-lease guard, start arg validation.
+    source: file://suites/persist/lease_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+    imports:
+      test: wippy.test:test
+      lease: kickside.core.jobs.persist:lease_heartbeat
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      job_fixture: app:job_fixture
+  - name: worker_pulse_test
+    kind: function.lua
+    meta:
+      title: Job Worker Heartbeat Isolation
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Heartbeat writes do not wait on the worker's job marker.
+    source: file://suites/service/worker_pulse_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+  - name: worker_recycle_test
+    kind: function.lua
+    meta:
+      title: Job Worker Recycle Fences
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Registry-version notices and immediate fenced release of unstarted assignments.
+    source: file://suites/service/worker_recycle_test.lua
+    method: run
+    modules: [sql, uuid, process]
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      claim: kickside.core.jobs.persist:claim
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
+  - name: worker_pool_drain_test
+    kind: function.lua
+    meta:
+      title: Job Pool Drain Ordering
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Confirms active and retired loop exits before closing the pool or upgrading its code.
+    source: file://suites/service/worker_pool_drain_test.lua
+    method: run
+    modules: [sql, process]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
+
+  - name: worker_pool_version_test
+    kind: function.lua
+    meta:
+      title: Job Pool Registry Version Handoff
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Preserves new-version idle slots across registry commit ordering.
+    source: file://suites/service/worker_pool_version_test.lua
+    method: run
+    modules: [sql, process]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+
+  - name: awaited_capacity_test
+    kind: function.lua
+    meta:
+      title: Job Pool Awaited Capacity
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: An awaited job runs while every general slot is held by a job waiting on it.
+    source: file://suites/service/awaited_capacity_test.lua
+    method: run
+    modules: [sql, uuid, time, registry]
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+      jobs: kickside.core.jobs:jobs
+
+  - name: worker_pool_claim_test
+    kind: function.lua
+    meta:
+      title: Job Pool Claim Failures
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Marker conflicts retire their slot; other claim failures retry on backoff.
+    source: file://suites/service/worker_pool_claim_test.lua
+    method: run
+    modules: [sql, process, time, uuid, events, channel, logger]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
+      clock: kickside.core.jobs:clock
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+
+  - name: idle_report_test
+    kind: function.lua
+    meta:
+      title: Job Assignment Epoch Fences
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Stale idle notices and repeat claims cannot overwrite a live assignment.
+    source: file://suites/service/idle_report_test.lua
+    method: run
+    modules: [sql, uuid, process]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      claim: kickside.core.jobs.persist:claim
+      reclaim: kickside.core.jobs.persist:reclaim
+      job_fixture: app:job_fixture
+      worker_fence: kickside.core.jobs.service:worker_fence
+
+  - name: builtin_test
+    kind: function.lua
+    meta:
+      title: Job Built-ins
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: The wake continuation through the supervised execution child.
+    source: file://suites/service/builtin_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_child: kickside.core.jobs.service:worker_child
+      jobs: kickside.core.jobs:jobs
+      wake: kickside.core.jobs.persist:wake
+      job_fixture: app:job_fixture
+
+  - name: deadline_clock_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+    source: file://suites/service/deadline_clock_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: loop_test
+    kind: function.lua
+    meta:
+      title: Job Loop Lifecycle
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Real loop exit, restart, and heartbeat refresh under supervision.
+    source: file://suites/service/loop_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - time
+      - process
+      - channel
+      - registry
+      - events
+      - logger
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      reclaim: kickside.core.jobs.persist:reclaim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_child: kickside.core.jobs.service:worker_child
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      job_fixture: app:job_fixture
+      jobs: kickside.core.jobs:jobs
+
+  - name: recovery_test
+    kind: function.lua
+    meta:
+      title: Job Continuation Recovery
+      type: test
+      timeout: 120s
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Crash inside the continuation transaction and mixed retained paths.
+    source: file://suites/persist/recovery_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - time
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      wake: kickside.core.jobs.persist:wake
+      job_types: kickside.core.jobs:types
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+      sweeper: kickside.core.retention:sweeper
+      repo: kickside.core.retention.persist:repo
+      job_fixture: app:job_fixture
+
+  - name: killprobe_test
+    kind: function.lua
+    meta:
+      title: Job Kill Probe
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Temporary isolation probe for the max_execution kill path.
+    source: file://suites/service/killprobe_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+    imports:
+      test: wippy.test:test
+      job_types: kickside.core.jobs:types
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_child: kickside.core.jobs.service:worker_child
+      job_fixture: app:job_fixture
+
+  - name: concurrency_test
+    kind: function.lua
+    meta:
+      title: P1 Concurrent Gates
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+    source: file://suites/persist/concurrency_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - process
+      - channel
+      - time
+    imports:
+      test: wippy.test:test
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      job_fixture: app:job_fixture
+      config: kickside.core.jobs:config
+
+  - name: queue_isolation_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+    source: file://queue_isolation_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      job_fixture: app:job_fixture
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      claim: kickside.core.jobs.persist:claim
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: supervision_child
+    kind: process.lua
+    meta: { type: projection.worker }
+    source: file://supervision_child.lua
+    method: run
+  - name: projection_supervision_probe
+    kind: function.lua
+    source: file://projection_supervision_probe.lua
+    method: run
+    modules: [process]
+    imports:
+      projection_worker: kickside.core.projections.persist:worker
+  - name: supervision_boundary_test
+    kind: function.lua
+    meta: { type: test, suite: supervision_boundary }
+    source: file://supervision_boundary_test.lua
+    method: run
+    modules: [funcs]
+    imports: { test: 'wippy.test:test' }
+
+  - name: supervision_pair_test
+    kind: function.lua
+    meta: { type: test, suite: supervision_boundary }
+    source: file://supervision_pair_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: unattributed_thread_target
+    kind: function.lua
+    meta:
+      comment: Test-only job target that creates a thread without binding an owner identity.
+    source: file://unattributed_thread_target.lua
+    method: run
+    modules: [contract]
+
+  - name: jobs_frame_dispatch_probe
+    kind: function.lua
+    meta:
+      comment: Test-only probe that dispatches a leased job in the caller-bound frame.
+    source: file://jobs_frame_dispatch_probe.lua
+    method: run
+    modules: [sql]
+    imports:
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+
+  - name: migration_native_04_jobs
+    kind: library.lua
+    source: file://migration_native_04_jobs.lua
+    imports:
+      migration: wippy.migration:core
+
+  - name: migration_native_07_job_slots
+    kind: library.lua
+    source: file://migration_native_07_job_slots.lua
+    imports:
+      migration: wippy.migration:core
+
+  - name: migration_native_14_worker_pulse
+    kind: library.lua
+    source: file://migration_native_14_worker_pulse.lua
+    imports:
+      migration: wippy.migration:core
+
+  - name: migration_native_19_thread_cleanup
+    kind: library.lua
+    source: file://migration_native_19_thread_cleanup.lua
+    imports:
+      migration: wippy.migration:core
+
+  - name: migration_native_20_dispatch_requests
+    kind: library.lua
+    source: file://migration_native_20_dispatch_requests.lua
+    imports:
+      migration: wippy.migration:core
+
+  - name: migration_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_1_sqlite_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_04_jobs_sqlite_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_1_sqlite_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_04_jobs_postgres_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_1_postgres_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_04_jobs_postgres_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_1_postgres_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_07_job_slots_sqlite_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_2_sqlite_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_07_job_slots_sqlite_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_2_sqlite_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_07_job_slots_postgres_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_2_postgres_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_07_job_slots_postgres_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_2_postgres_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_14_worker_pulse_sqlite_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_3_sqlite_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_14_worker_pulse_sqlite_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_3_sqlite_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_14_worker_pulse_postgres_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_3_postgres_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_14_worker_pulse_postgres_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_3_postgres_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_19_thread_cleanup_sqlite_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_4_sqlite_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_19_thread_cleanup_sqlite_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_4_sqlite_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_19_thread_cleanup_postgres_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_4_postgres_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_19_thread_cleanup_postgres_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_4_postgres_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_20_dispatch_requests_sqlite_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_5_sqlite_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_20_dispatch_requests_sqlite_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_5_sqlite_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_20_dispatch_requests_postgres_up_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_5_postgres_up
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: migration_native_20_dispatch_requests_postgres_down_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_migration_native}
+    source: file://migration_native_test.lua
+    method: run_5_postgres_down
+    imports:
+      test: wippy.test:test
+      migration_1: app:migration_native_04_jobs
+      migration_2: app:migration_native_07_job_slots
+      migration_3: app:migration_native_14_worker_pulse
+      migration_4: app:migration_native_19_thread_cleanup
+      migration_5: app:migration_native_20_dispatch_requests
+
+  - name: pool_nudge_native_fixture
+    kind: library.lua
+    source: file://pool_nudge_native_fixture.lua
+
+  - name: pool_nudge_native_process_adapter
+    kind: library.lua
+    source: file://pool_nudge_native_process_adapter.lua
+    modules: [process]
+    imports:
+      fixture: app:pool_nudge_native_fixture
+
+  - name: pool_nudge_native_source
+    kind: library.lua
+    source: file://pool_nudge_native_source.lua
+    imports:
+      process: app:pool_nudge_native_process_adapter
+      config: kickside.core.jobs:config
+
+  - name: pool_nudge_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_pool_nudge_native}
+    source: file://pool_nudge_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      nudge: app:pool_nudge_native_source
+      fixture: app:pool_nudge_native_fixture
+
+  - name: worker_marker_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_worker_marker_native}
+    source: file://worker_marker_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      marker: kickside.core.jobs.persist:worker_marker
+
+  - name: thread_fence_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_fence_native}
+    source: file://thread_fence_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fence: kickside.core.jobs.persist:thread_fence
+
+  - name: supervisor_native_fixture
+    kind: library.lua
+    source: file://supervisor_native_fixture.lua
+
+  - name: supervisor_native_process_adapter
+    kind: library.lua
+    source: file://supervisor_native_process_adapter.lua
+    modules: [process]
+    imports:
+      fixture: app:supervisor_native_fixture
+
+  - name: supervisor_native_source
+    kind: library.lua
+    source: file://supervisor_native_source.lua
+    modules: [time, channel, funcs]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      process: app:supervisor_native_process_adapter
+      clock: kickside.core.jobs:clock
+
+  - name: supervisor_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_supervisor_native}
+    source: file://supervisor_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      supervisor: app:supervisor_native_source
+      fixture: app:supervisor_native_fixture
+
+  - name: completion_native_fixture
+    kind: library.lua
+    source: file://completion_native_fixture.lua
+    modules: [sql, time]
+    imports:
+      native_clock: kickside.core.jobs:clock
+
+  - name: completion_native_sql_adapter
+    kind: library.lua
+    source: file://completion_native_sql_adapter.lua
+    modules: [sql]
+
+  - name: completion_native_clock_adapter
+    kind: library.lua
+    source: file://completion_native_adapter.lua
+    imports:
+      fixture: app:completion_native_fixture
+
+  - name: completion_native_time_adapter
+    kind: library.lua
+    source: file://completion_native_adapter.lua
+    imports:
+      fixture: app:completion_native_fixture
+
+  - name: completion_native_config_adapter
+    kind: library.lua
+    source: file://completion_native_adapter.lua
+    imports:
+      fixture: app:completion_native_fixture
+
+  - name: completion_native_row_bytes_adapter
+    kind: library.lua
+    source: file://completion_native_adapter.lua
+    imports:
+      fixture: app:completion_native_fixture
+
+  - name: completion_native_worker_marker_adapter
+    kind: library.lua
+    source: file://completion_native_adapter.lua
+    imports:
+      fixture: app:completion_native_fixture
+
+  - name: completion_native_source
+    kind: library.lua
+    source: file://completion_native_source.lua
+    modules: [uuid]
+    imports:
+      job_types: kickside.core.jobs:types
+      sql: app:completion_native_sql_adapter
+      clock: app:completion_native_clock_adapter
+      time: app:completion_native_time_adapter
+      config: app:completion_native_config_adapter
+      row_bytes: app:completion_native_row_bytes_adapter
+      worker_marker: app:completion_native_worker_marker_adapter
+
+  - name: completion_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_completion_native}
+    source: file://completion_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      completion: app:completion_native_source
+      fixture: app:completion_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: completion_native_test_dependencies_2
+    kind: function.lua
+    meta: {type: test, suite: jobs_completion_native}
+    source: file://completion_native_test.lua
+    method: run_dependencies_2
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      completion: app:completion_native_source
+      fixture: app:completion_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: completion_native_test_dependencies_3
+    kind: function.lua
+    meta: {type: test, suite: jobs_completion_native}
+    source: file://completion_native_test.lua
+    method: run_dependencies_3
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      completion: app:completion_native_source
+      fixture: app:completion_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: completion_native_test_dependencies_4
+    kind: function.lua
+    meta: {type: test, suite: jobs_completion_native}
+    source: file://completion_native_test.lua
+    method: run_dependencies_4
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      completion: app:completion_native_source
+      fixture: app:completion_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: completion_native_test_proofs
+    kind: function.lua
+    meta: {type: test, suite: jobs_completion_native}
+    source: file://completion_native_test.lua
+    method: run_proofs
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      completion: app:completion_native_source
+      fixture: app:completion_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: start_fence_native_fixture
+    kind: library.lua
+    source: file://start_fence_native_fixture.lua
+
+  - name: start_fence_native_sql_adapter
+    kind: library.lua
+    source: file://start_fence_native_sql_adapter.lua
+    modules: [sql]
+    imports:
+      fixture: app:start_fence_native_fixture
+
+  - name: start_fence_native_marker_adapter
+    kind: library.lua
+    source: file://start_fence_native_marker_adapter.lua
+    imports:
+      fixture: app:start_fence_native_fixture
+
+  - name: start_fence_native_source
+    kind: library.lua
+    source: file://start_fence_native_source.lua
+    imports:
+      sql: app:start_fence_native_sql_adapter
+      job_types: kickside.core.jobs:types
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_marker: app:start_fence_native_marker_adapter
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: start_fence_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_start_fence_native}
+    source: file://start_fence_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      fence: app:start_fence_native_source
+      fixture: app:start_fence_native_fixture
+
+  - name: start_fence_native_test_dependencies_2
+    kind: function.lua
+    meta: {type: test, suite: jobs_start_fence_native}
+    source: file://start_fence_native_test.lua
+    method: run_dependencies_2
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      fence: app:start_fence_native_source
+      fixture: app:start_fence_native_fixture
+
+  - name: start_fence_native_test_dependencies_3
+    kind: function.lua
+    meta: {type: test, suite: jobs_start_fence_native}
+    source: file://start_fence_native_test.lua
+    method: run_dependencies_3
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      fence: app:start_fence_native_source
+      fixture: app:start_fence_native_fixture
+
+  - name: start_fence_native_test_cleanup
+    kind: function.lua
+    meta: {type: test, suite: jobs_start_fence_native}
+    source: file://start_fence_native_test.lua
+    method: run_cleanup
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      fence: app:start_fence_native_source
+      fixture: app:start_fence_native_fixture
+
+  - name: start_fence_native_test_proofs
+    kind: function.lua
+    meta: {type: test, suite: jobs_start_fence_native}
+    source: file://start_fence_native_test.lua
+    method: run_proofs
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      fence: app:start_fence_native_source
+      fixture: app:start_fence_native_fixture
+
+  - name: listing_native_fixture
+    kind: library.lua
+    source: file://listing_native_fixture.lua
+
+  - name: listing_native_sql_adapter
+    kind: library.lua
+    source: file://listing_native_sql_adapter.lua
+    modules: [sql]
+    imports: {fixture: app:listing_native_fixture}
+
+  - name: listing_native_source
+    kind: library.lua
+    source: file://listing_native_source.lua
+    modules: [uuid]
+    imports: {sql: app:listing_native_sql_adapter}
+
+  - name: listing_native_test_dependencies_1
+    kind: function.lua
+    meta: {type: test, suite: jobs_listing_native}
+    source: file://listing_native_test.lua
+    method: dependencies_1
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      listing: app:listing_native_source
+      fixture: app:listing_native_fixture
+
+  - name: listing_native_test_dependencies_2
+    kind: function.lua
+    meta: {type: test, suite: jobs_listing_native}
+    source: file://listing_native_test.lua
+    method: dependencies_2
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      listing: app:listing_native_source
+      fixture: app:listing_native_fixture
+
+  - name: listing_native_test_proofs
+    kind: function.lua
+    meta: {type: test, suite: jobs_listing_native}
+    source: file://listing_native_test.lua
+    method: proofs
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      listing: app:listing_native_source
+      fixture: app:listing_native_fixture
+
+  - name: awaited_catalog_native_fixture
+    kind: library.lua
+    source: file://awaited_catalog_native_fixture.lua
+
+  - name: awaited_catalog_native_registry_adapter
+    kind: library.lua
+    source: file://awaited_catalog_native_registry_adapter.lua
+    modules: [registry]
+    imports: {fixture: app:awaited_catalog_native_fixture}
+
+  - name: awaited_catalog_native_source
+    kind: library.lua
+    source: file://awaited_catalog_native_source.lua
+    imports:
+      registry: app:awaited_catalog_native_registry_adapter
+      job_types: kickside.core.jobs:types
+
+  - name: awaited_catalog_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_awaited_catalog_native}
+    source: file://awaited_catalog_native_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      catalog: app:awaited_catalog_native_source
+      fixture: app:awaited_catalog_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: heartbeat_native_fixture
+    kind: library.lua
+    source: file://heartbeat_native_fixture.lua
+
+  - name: heartbeat_native_sql_adapter
+    kind: library.lua
+    source: file://heartbeat_native_sql_adapter.lua
+    modules: [sql]
+    imports: {fixture: app:heartbeat_native_fixture}
+
+  - name: heartbeat_native_process_adapter
+    kind: library.lua
+    source: file://heartbeat_native_process_adapter.lua
+    modules: [process]
+    imports: {fixture: app:heartbeat_native_fixture}
+
+  - name: heartbeat_native_channel_adapter
+    kind: library.lua
+    source: file://heartbeat_native_channel_adapter.lua
+    modules: [process]
+
+  - name: heartbeat_native_config_adapter
+    kind: library.lua
+    source: file://heartbeat_native_config_adapter.lua
+
+  - name: heartbeat_native_source
+    kind: library.lua
+    source: file://heartbeat_native_source.lua
+    modules: [time, logger]
+    imports:
+      sql: app:heartbeat_native_sql_adapter
+      process: app:heartbeat_native_process_adapter
+      channel: app:heartbeat_native_channel_adapter
+      config: app:heartbeat_native_config_adapter
+      clock: kickside.core.jobs:clock
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: heartbeat_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_heartbeat_native}
+    source: file://heartbeat_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      heartbeat: app:heartbeat_native_source
+      fixture: app:heartbeat_native_fixture
+
+  - name: deadline_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_deadline_native}
+    source: file://deadline_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+
+  - name: pool_boundary_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_pool_boundary_native}
+    source: file://pool_boundary_native_test.lua
+    method: run
+    modules: [sql, process]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+
+  - name: lease_release_native_fixture
+    kind: library.lua
+    source: file://lease_release_native_fixture.lua
+
+  - name: lease_release_native_process
+    kind: library.lua
+    source: file://lease_release_native_process.lua
+    modules: [process]
+    imports: {fixture: app:lease_release_native_fixture}
+
+  - name: lease_release_native_funcs
+    kind: library.lua
+    source: file://lease_release_native_funcs.lua
+    imports: {fixture: app:lease_release_native_fixture}
+
+  - name: lease_release_native_source
+    kind: library.lua
+    source: file://lease_release_native_source.lua
+    imports:
+      process: app:lease_release_native_process
+      funcs: app:lease_release_native_funcs
+
+  - name: lease_release_native_test
+    kind: function.lua
+    source: file://lease_release_native_test.lua
+    method: run
+    meta: {type: test, suite: lease_release_native}
+    modules: [process]
+    imports:
+      test: wippy.test:test
+      release: app:lease_release_native_source
+      fixture: app:lease_release_native_fixture
+
+  - name: worker_completion_native_fixture
+    kind: library.lua
+    source: file://worker_completion_native_fixture.lua
+
+  - name: worker_completion_native_lifecycle
+    kind: library.lua
+    source: file://worker_completion_native_adapter.lua
+    imports:
+      fixture: app:worker_completion_native_fixture
+
+  - name: worker_completion_native_completion
+    kind: library.lua
+    source: file://worker_completion_native_adapter.lua
+    imports:
+      fixture: app:worker_completion_native_fixture
+
+  - name: worker_completion_native_release
+    kind: library.lua
+    source: file://worker_completion_native_adapter.lua
+    imports:
+      fixture: app:worker_completion_native_fixture
+
+  - name: worker_completion_native_source
+    kind: library.lua
+    source: file://worker_completion_native_source.lua
+    modules: [sql]
+    imports:
+      job_types: kickside.core.jobs:types
+      lifecycle: app:worker_completion_native_lifecycle
+      completion: app:worker_completion_native_completion
+      lease_release: app:worker_completion_native_release
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+
+  - name: worker_completion_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_worker_completion_native}
+    source: file://worker_completion_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      worker: app:worker_completion_native_source
+      fixture: app:worker_completion_native_fixture
+
+  - name: slot_purge_native_fixture
+    kind: library.lua
+    source: file://slot_purge_native_fixture.lua
+
+  - name: slot_purge_native_sql
+    kind: library.lua
+    source: file://slot_purge_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:slot_purge_native_fixture
+
+  - name: slot_purge_native_source
+    kind: library.lua
+    source: file://slot_purge_native_source.lua
+    imports:
+      sql: app:slot_purge_native_sql
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      run_status: kickside.core.jobs:run_status
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: slot_purge_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_slot_purge_native}
+    source: file://slot_purge_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      purge: app:slot_purge_native_source
+      fixture: app:slot_purge_native_fixture
+
+  - name: row_mutations_native_fixture
+    kind: library.lua
+    source: file://row_mutations_native_fixture.lua
+    imports:
+      native: kickside.core.jobs.persist:row_bytes
+
+  - name: row_mutations_native_sql
+    kind: library.lua
+    source: file://row_mutations_native_sql.lua
+    imports:
+      fixture: app:row_mutations_native_fixture
+
+  - name: row_mutations_native_source
+    kind: library.lua
+    source: file://row_mutations_native_source.lua
+    imports:
+      sql: app:row_mutations_native_sql
+      row_bytes: app:row_mutations_native_fixture
+
+  - name: row_mutations_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_row_mutations_native}
+    source: file://row_mutations_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      mutations: app:row_mutations_native_source
+      fixture: app:row_mutations_native_fixture
+
+  - name: retention_native_fixture
+    kind: library.lua
+    source: file://retention_native_fixture.lua
+
+  - name: retention_native_source
+    kind: library.lua
+    source: file://retention_native_source.lua
+    modules: [sql, time]
+    imports:
+      run_status: kickside.core.jobs:run_status
+      config: kickside.core.jobs:config
+      clock: kickside.core.jobs:clock
+      thread_teardown: app:retention_native_fixture
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: retention_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_native}
+    source: file://retention_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      retention: app:retention_native_source
+      fixture: app:retention_native_fixture
+
+  - name: cancellation_native_fixture
+    kind: library.lua
+    source: file://cancellation_native_fixture.lua
+    imports:
+      native: kickside.core.jobs.persist:row_bytes
+
+  - name: cancellation_native_sql
+    kind: library.lua
+    source: file://cancellation_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:cancellation_native_fixture
+
+  - name: cancellation_native_source
+    kind: library.lua
+    source: file://cancellation_native_source.lua
+    imports:
+      sql: app:cancellation_native_sql
+      clock: kickside.core.jobs:clock
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      row_bytes: app:cancellation_native_fixture
+      row_mutations: app:cancellation_native_mutations
+      worker_marker: app:cancellation_native_marker
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: cancellation_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_cancellation_native}
+    source: file://cancellation_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cancellation: app:cancellation_native_source
+      fixture: app:cancellation_native_fixture
+
+  - name: cancellation_native_mutations
+    kind: library.lua
+    source: file://cancellation_native_mutations.lua
+    imports:
+      fixture: app:cancellation_native_fixture
+
+  - name: cancellation_native_marker
+    kind: library.lua
+    source: file://cancellation_native_marker.lua
+    imports:
+      fixture: app:cancellation_native_fixture
+
+  - name: thread_cleanup_native_fixture
+    kind: library.lua
+    source: file://thread_cleanup_native_fixture.lua
+
+  - name: thread_cleanup_native_json
+    kind: library.lua
+    source: file://thread_cleanup_native_json.lua
+    modules: [json]
+    imports:
+      fixture: app:thread_cleanup_native_fixture
+
+  - name: thread_cleanup_native_source
+    kind: library.lua
+    source: file://thread_cleanup_native_source.lua
+    modules: [sql]
+    imports:
+      json: app:thread_cleanup_native_json
+      clock: kickside.core.jobs:clock
+      config: kickside.core.jobs:config
+      thread_fence: app:thread_cleanup_native_fixture
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: thread_cleanup_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+  - name: thread_cleanup_native_test_receipts
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run_receipts
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+  - name: thread_cleanup_native_test_reclaim
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run_reclaim
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+  - name: thread_cleanup_native_test_ack
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run_ack
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+  - name: thread_cleanup_native_test_selected
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run_selected
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+
+  - name: thread_cleanup_native_test_replay
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run_replay
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+
+  - name: thread_cleanup_native_test_reclaim_selected
+    kind: function.lua
+    meta: {type: test, suite: jobs_thread_cleanup_native}
+    source: file://thread_cleanup_native_test.lua
+    method: run_reclaim_selected
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      cleanup: app:thread_cleanup_native_source
+      fixture: app:thread_cleanup_native_fixture
+
+  - name: retention_native_test_jobs
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_native}
+    source: file://retention_native_test.lua
+    method: jobs
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      retention: app:retention_native_source
+      fixture: app:retention_native_fixture
+
+  - name: retention_native_test_workers
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_native}
+    source: file://retention_native_test.lua
+    method: workers
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      retention: app:retention_native_source
+      fixture: app:retention_native_fixture
+
+  - name: retention_native_test_wake
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_native}
+    source: file://retention_native_test.lua
+    method: wake
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      retention: app:retention_native_source
+      fixture: app:retention_native_fixture
+
+  - name: retention_native_test_receipts
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_native}
+    source: file://retention_native_test.lua
+    method: receipts
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      retention: app:retention_native_source
+      fixture: app:retention_native_fixture
+
+  - name: retention_native_test_fences
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_native}
+    source: file://retention_native_test.lua
+    method: fences
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      retention: app:retention_native_source
+      fixture: app:retention_native_fixture
+
+  - name: lease_status_native_fixture
+    kind: library.lua
+    source: file://lease_status_native_fixture.lua
+    modules: [sql]
+
+  - name: lease_status_native_source
+    kind: library.lua
+    source: file://lease_status_native_source.lua
+    imports:
+      sql: app:lease_status_native_fixture
+      clock: kickside.core.jobs:clock
+      job_types: kickside.core.jobs:types
+
+  - name: lease_status_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_lease_status_native}
+    source: file://lease_status_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      lease: app:lease_status_native_source
+      fixture: app:lease_status_native_fixture
+
+  - name: row_bytes_native_fixture
+    kind: library.lua
+    source: file://row_bytes_native_fixture.lua
+    modules: [json]
+
+  - name: row_bytes_native_source
+    kind: library.lua
+    source: file://row_bytes_native_source.lua
+    modules: [sql]
+    imports:
+      json: app:row_bytes_native_fixture
+
+  - name: row_bytes_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_row_bytes_native}
+    source: file://row_bytes_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      bytes: app:row_bytes_native_source
+      fixture: app:row_bytes_native_fixture
+
+  - name: row_bytes_native_test_check
+    kind: function.lua
+    meta: {type: test, suite: jobs_row_bytes_native}
+    source: file://row_bytes_native_test.lua
+    method: check
+    imports:
+      test: wippy.test:test
+      bytes: app:row_bytes_native_source
+      fixture: app:row_bytes_native_fixture
+
+  - name: row_bytes_native_test_update
+    kind: function.lua
+    meta: {type: test, suite: jobs_row_bytes_native}
+    source: file://row_bytes_native_test.lua
+    method: update
+    imports:
+      test: wippy.test:test
+      bytes: app:row_bytes_native_source
+      fixture: app:row_bytes_native_fixture
+
+  - name: enqueue_native_fixture
+    kind: library.lua
+    source: file://enqueue_native_fixture.lua
+    modules: [json]
+    imports:
+      config: kickside.core.jobs:config
+
+  - name: enqueue_native_sql
+    kind: library.lua
+    source: file://enqueue_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_source
+    kind: library.lua
+    source: file://enqueue_native_source.lua
+    modules: [uuid]
+    imports:
+      sql: app:enqueue_native_sql
+      json: app:enqueue_native_json_adapter
+      clock: app:enqueue_native_clock_adapter
+      job_types: kickside.core.jobs:types
+      config: app:enqueue_native_config_adapter
+      trace_context: app:enqueue_native_trace_context_adapter
+      thread_fence: app:enqueue_native_thread_fence_adapter
+      row_bytes: app:enqueue_native_row_bytes_adapter
+      listing: kickside.core.jobs.persist:listing
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: enqueue_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_enqueue_native}
+    source: file://enqueue_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      enqueue: app:enqueue_native_source
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_test_fresh
+    kind: function.lua
+    meta: {type: test, suite: jobs_enqueue_native}
+    source: file://enqueue_native_test.lua
+    method: fresh
+    imports:
+      test: wippy.test:test
+      enqueue: app:enqueue_native_source
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_test_existing
+    kind: function.lua
+    meta: {type: test, suite: jobs_enqueue_native}
+    source: file://enqueue_native_test.lua
+    method: existing
+    imports:
+      test: wippy.test:test
+      enqueue: app:enqueue_native_source
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_test_race
+    kind: function.lua
+    meta: {type: test, suite: jobs_enqueue_native}
+    source: file://enqueue_native_test.lua
+    method: race
+    imports:
+      test: wippy.test:test
+      enqueue: app:enqueue_native_source
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_test_standalone
+    kind: function.lua
+    meta: {type: test, suite: jobs_enqueue_native}
+    source: file://enqueue_native_test.lua
+    method: standalone
+    imports:
+      test: wippy.test:test
+      enqueue: app:enqueue_native_source
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_test_fresh_tail
+    kind: function.lua
+    meta: {type: test, suite: jobs_enqueue_native}
+    source: file://enqueue_native_test.lua
+    method: fresh_tail
+    imports:
+      test: wippy.test:test
+      enqueue: app:enqueue_native_source
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_json_adapter
+    kind: library.lua
+    source: file://enqueue_native_adapter.lua
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_clock_adapter
+    kind: library.lua
+    source: file://enqueue_native_adapter.lua
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_config_adapter
+    kind: library.lua
+    source: file://enqueue_native_adapter.lua
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_trace_context_adapter
+    kind: library.lua
+    source: file://enqueue_native_adapter.lua
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_thread_fence_adapter
+    kind: library.lua
+    source: file://enqueue_native_adapter.lua
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: enqueue_native_row_bytes_adapter
+    kind: library.lua
+    source: file://enqueue_native_adapter.lua
+    imports:
+      fixture: app:enqueue_native_fixture
+
+  - name: reclaim_native_fixture
+    kind: library.lua
+    source: file://reclaim_native_fixture.lua
+    imports:
+      native: kickside.core.jobs.persist:row_bytes
+      transition: kickside.core.jobs.persist:lifecycle
+      job_types: kickside.core.jobs:types
+
+  - name: reclaim_native_sql
+    kind: library.lua
+    source: file://reclaim_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_source
+    kind: library.lua
+    source: file://reclaim_native_source.lua
+    imports:
+      sql: app:reclaim_native_sql
+      job_types: kickside.core.jobs:types
+      config: app:reclaim_native_config
+      lifecycle: app:reclaim_native_lifecycle
+      row_bytes: app:reclaim_native_row_bytes
+      worker_marker: app:reclaim_native_worker_marker
+      proc_supervisor: app:reclaim_native_proc_supervisor
+      lease_release: app:reclaim_native_lease_release
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: reclaim_native_test
+    kind: function.lua
+    modules: [sql]
+    meta: {type: test, suite: jobs_reclaim_native}
+    source: file://reclaim_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      reclaim: app:reclaim_native_source
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_test_terminated
+    kind: function.lua
+    modules: [sql]
+    meta: {type: test, suite: jobs_reclaim_native}
+    source: file://reclaim_native_test.lua
+    method: terminated
+    imports:
+      test: wippy.test:test
+      reclaim: app:reclaim_native_source
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_test_live
+    kind: function.lua
+    modules: [sql]
+    meta: {type: test, suite: jobs_reclaim_native}
+    source: file://reclaim_native_test.lua
+    method: live
+    imports:
+      test: wippy.test:test
+      reclaim: app:reclaim_native_source
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_test_confirmed
+    kind: function.lua
+    modules: [sql]
+    meta: {type: test, suite: jobs_reclaim_native}
+    source: file://reclaim_native_test.lua
+    method: confirmed
+    imports:
+      test: wippy.test:test
+      reclaim: app:reclaim_native_source
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_test_one
+    kind: function.lua
+    modules: [sql]
+    meta: {type: test, suite: jobs_reclaim_native}
+    source: file://reclaim_native_test.lua
+    method: one
+    imports:
+      test: wippy.test:test
+      reclaim: app:reclaim_native_source
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_test_many
+    kind: function.lua
+    modules: [sql]
+    meta: {type: test, suite: jobs_reclaim_native}
+    source: file://reclaim_native_test.lua
+    method: many
+    imports:
+      test: wippy.test:test
+      reclaim: app:reclaim_native_source
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_lease_release
+    kind: library.lua
+    source: file://reclaim_native_lease_release.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_config
+    kind: library.lua
+    source: file://reclaim_native_dependency.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_lifecycle
+    kind: library.lua
+    source: file://reclaim_native_dependency.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_row_bytes
+    kind: library.lua
+    source: file://reclaim_native_dependency.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_worker_marker
+    kind: library.lua
+    source: file://reclaim_native_dependency.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: reclaim_native_proc_supervisor
+    kind: library.lua
+    source: file://reclaim_native_dependency.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: scope_native_fixture
+    kind: library.lua
+    source: file://scope_native_fixture.lua
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  - name: scope_native_sql
+    kind: library.lua
+    source: file://scope_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:scope_native_fixture
+
+  - name: scope_native_source
+    kind: library.lua
+    source: file://scope_native_source.lua
+    imports:
+      sql: app:scope_native_sql
+      config: app:scope_native_config
+      lifecycle: app:scope_native_lifecycle
+      lifecycle_cancel: app:scope_native_lifecycle_cancel
+      lifecycle_enqueue: app:scope_native_lifecycle_enqueue
+      lease_status: app:scope_native_lease_status
+      wake: app:scope_native_wake
+      clock: app:scope_native_clock
+      completion: app:scope_native_completion
+      retention: app:scope_native_retention
+      thread_teardown: app:scope_native_thread_teardown
+      api_scope: app:scope_native_api_scope
+      lease_release: app:scope_native_lease_release
+      claim: app:scope_native_claim
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: scope_native_config
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_lifecycle
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_lifecycle_cancel
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_lifecycle_enqueue
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_lease_status
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_wake
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_clock
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_completion
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_retention
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_thread_teardown
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_api_scope
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_lease_release
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_claim
+    kind: library.lua
+    source: file://scope_native_dependency.lua
+    imports:
+      fixture: app:scope_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: scope_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_scope_native}
+    source: file://scope_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      jobs: app:scope_native_source
+      fixture: app:scope_native_fixture
+
+  - name: scope_native_test_lease
+    kind: function.lua
+    meta: {type: test, suite: jobs_scope_native}
+    source: file://scope_native_test.lua
+    method: lease
+    imports:
+      test: wippy.test:test
+      jobs: app:scope_native_source
+      fixture: app:scope_native_fixture
+
+  - name: scope_native_test_sweep
+    kind: function.lua
+    meta: {type: test, suite: jobs_scope_native}
+    source: file://scope_native_test.lua
+    method: sweep
+    imports:
+      test: wippy.test:test
+      jobs: app:scope_native_source
+      fixture: app:scope_native_fixture
+
+  - name: scope_native_test_page
+    kind: function.lua
+    meta: {type: test, suite: jobs_scope_native}
+    source: file://scope_native_test.lua
+    method: page
+    imports:
+      test: wippy.test:test
+      jobs: app:scope_native_source
+      fixture: app:scope_native_fixture
+
+  - name: scope_retry_probe
+    kind: function.lua
+    source: file://scope_retry_probe.lua
+    method: run
+    imports:
+      jobs: app:scope_native_source
+      fixture: app:scope_native_fixture
+
+  - name: scope_native_retry_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_scope_retry}
+    source: file://scope_native_retry_test.lua
+    method: run
+    modules: [sql, funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: transaction_native_fixture
+    kind: library.lua
+    source: file://transaction_native_fixture.lua
+
+  - name: transaction_native_sql
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_config
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_lifecycle
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_lifecycle_cancel
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_lifecycle_enqueue
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_wake
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_clock
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_completion
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_lease_status
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_retention
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_thread_teardown
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_api_scope
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_lease_release
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_claim
+    kind: library.lua
+    source: file://transaction_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:transaction_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: transaction_native_source
+    kind: library.lua
+    source: file://transaction_native_source.lua
+    imports:
+      sql: app:transaction_native_sql
+      config: app:transaction_native_config
+      lifecycle: app:transaction_native_lifecycle
+      lifecycle_cancel: app:transaction_native_lifecycle_cancel
+      lifecycle_enqueue: app:transaction_native_lifecycle_enqueue
+      wake: app:transaction_native_wake
+      clock: app:transaction_native_clock
+      completion: app:transaction_native_completion
+      lease_status: app:transaction_native_lease_status
+      retention: app:transaction_native_retention
+      thread_teardown: app:transaction_native_thread_teardown
+      api_scope: app:transaction_native_api_scope
+      lease_release: app:transaction_native_lease_release
+      claim: app:transaction_native_claim
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: transaction_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_public_transaction_native}
+    source: file://transaction_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      jobs: app:transaction_native_source
+      fixture: app:transaction_native_fixture
+
+  - name: transaction_native_test_cancel
+    kind: function.lua
+    meta: {type: test, suite: jobs_public_transaction_native}
+    source: file://transaction_native_test.lua
+    method: cancel
+    imports:
+      test: wippy.test:test
+      jobs: app:transaction_native_source
+      fixture: app:transaction_native_fixture
+
+  - name: transaction_native_test_complete
+    kind: function.lua
+    meta: {type: test, suite: jobs_public_transaction_native}
+    source: file://transaction_native_test.lua
+    method: complete
+    imports:
+      test: wippy.test:test
+      jobs: app:transaction_native_source
+      fixture: app:transaction_native_fixture
+
+  - name: health_native_fixture
+    kind: library.lua
+    source: file://health_native_fixture.lua
+    modules: [sql]
+
+  - name: health_native_sql
+    kind: library.lua
+    source: file://health_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+
+  - name: health_native_config
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_lifecycle
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_lifecycle_cancel
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_lifecycle_enqueue
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_wake
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_clock
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_completion
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_lease_status
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_retention
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_thread_teardown
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_api_scope
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_lease_release
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_claim
+    kind: library.lua
+    source: file://health_native_dependency.lua
+    modules: [sql]
+    imports:
+      fixture: app:health_native_fixture
+      lifecycle_types: kickside.core.jobs.persist:lifecycle
+
+  - name: health_native_source
+    kind: library.lua
+    source: file://health_native_source.lua
+    imports:
+      sql: app:health_native_sql
+      config: app:health_native_config
+      lifecycle: app:health_native_lifecycle
+      lifecycle_cancel: app:health_native_lifecycle_cancel
+      lifecycle_enqueue: app:health_native_lifecycle_enqueue
+      wake: app:health_native_wake
+      clock: app:health_native_clock
+      completion: app:health_native_completion
+      lease_status: app:health_native_lease_status
+      retention: app:health_native_retention
+      thread_teardown: app:health_native_thread_teardown
+      api_scope: app:health_native_api_scope
+      lease_release: app:health_native_lease_release
+      claim: app:health_native_claim
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: health_native_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_health_native}
+    source: file://health_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      jobs: app:health_native_source
+      fixture: app:health_native_fixture
+
+  - name: lease_native_fixture
+    kind: library.lua
+    source: file://lease_native_fixture.lua
+  - name: lease_native_dependency
+    kind: library.lua
+    source: file://lease_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:lease_native_fixture
+  - name: lease_native_sql
+    kind: library.lua
+    source: file://lease_native_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:lease_native_fixture
+  - name: lease_native_process
+    kind: library.lua
+    source: file://lease_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:lease_native_fixture
+  - name: lease_native_lifecycle
+    kind: library.lua
+    source: file://lease_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:lease_native_fixture
+  - name: lease_native_row_bytes
+    kind: library.lua
+    source: file://lease_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:lease_native_fixture
+  - name: lease_native_source
+    kind: library.lua
+    source: file://lease_native_source.lua
+    modules:
+    - logger
+    - time
+    - channel
+    imports:
+      sql: app:lease_native_sql
+      process: app:lease_native_process
+      config: app:lease_native_dependency
+      lifecycle: app:lease_native_lifecycle
+      row_bytes: app:lease_native_row_bytes
+      job_types: kickside.core.jobs:types
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: lease_native_test
+    kind: function.lua
+    source: file://lease_native_test.lua
+    method: run
+    meta:
+      type: test
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lease: app:lease_native_source
+      fixture: app:lease_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: lease_native_test_dispatch
+    kind: function.lua
+    source: file://lease_native_test.lua
+    method: dispatch
+    meta:
+      type: test
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lease: app:lease_native_source
+      fixture: app:lease_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: lease_native_test_start
+    kind: function.lua
+    source: file://lease_native_test.lua
+    method: start
+    meta:
+      type: test
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lease: app:lease_native_source
+      fixture: app:lease_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: run_history_native_fixture
+    kind: library.lua
+    source: file://run_history_native_fixture.lua
+  - name: run_history_native_sql
+    kind: library.lua
+    source: file://run_history_native_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:run_history_native_fixture
+  - name: run_history_native_clock
+    kind: library.lua
+    source: file://run_history_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:run_history_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: run_history_native_config
+    kind: library.lua
+    source: file://run_history_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:run_history_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: run_history_native_lifecycle_enqueue
+    kind: library.lua
+    source: file://run_history_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:run_history_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: run_history_native_row_bytes
+    kind: library.lua
+    source: file://run_history_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:run_history_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: run_history_native_source
+    kind: library.lua
+    source: file://run_history_native_source.lua
+    modules:
+    - time
+    - uuid
+    imports:
+      sql: app:run_history_native_sql
+      clock: app:run_history_native_clock
+      config: app:run_history_native_config
+      lifecycle_enqueue: app:run_history_native_lifecycle_enqueue
+      row_bytes: app:run_history_native_row_bytes
+      job_types: kickside.core.jobs:types
+      row_mutations: kickside.core.jobs.persist:row_mutations
+      worker_marker: kickside.core.jobs.persist:worker_marker
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: run_history_native_test
+    kind: function.lua
+    source: file://run_history_native_test.lua
+    method: run
+    meta:
+      type: test
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:run_history_native_source
+      fixture: app:run_history_native_fixture
+  - name: run_history_native_test_existing
+    kind: function.lua
+    source: file://run_history_native_test.lua
+    method: existing
+    meta:
+      type: test
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:run_history_native_source
+      fixture: app:run_history_native_fixture
+  - name: run_history_native_test_finalize
+    kind: function.lua
+    source: file://run_history_native_test.lua
+    method: finalize
+    meta:
+      type: test
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:run_history_native_source
+      fixture: app:run_history_native_fixture
+
+  - name: transition_native_fixture
+    kind: library.lua
+    source: file://transition_native_fixture.lua
+  - name: transition_native_sql
+    kind: library.lua
+    source: file://transition_native_sql.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+  - name: transition_native_clock
+    kind: library.lua
+    source: file://transition_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: transition_native_config
+    kind: library.lua
+    source: file://transition_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: transition_native_lifecycle_enqueue
+    kind: library.lua
+    source: file://transition_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: transition_native_row_bytes
+    kind: library.lua
+    source: file://transition_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: transition_native_row_mutations
+    kind: library.lua
+    source: file://transition_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: transition_native_worker_marker
+    kind: library.lua
+    source: file://transition_native_dependency.lua
+    modules:
+    - sql
+    imports:
+      fixture: app:transition_native_fixture
+      native: kickside.core.jobs.persist:lifecycle_enqueue
+  - name: transition_native_source
+    kind: library.lua
+    source: file://transition_native_source.lua
+    modules:
+    - time
+    - uuid
+    imports:
+      sql: app:transition_native_sql
+      clock: app:transition_native_clock
+      config: app:transition_native_config
+      lifecycle_enqueue: app:transition_native_lifecycle_enqueue
+      row_bytes: app:transition_native_row_bytes
+      row_mutations: app:transition_native_row_mutations
+      worker_marker: app:transition_native_worker_marker
+      job_types: kickside.core.jobs:types
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: transition_native_test
+    kind: function.lua
+    source: file://transition_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_transition_native
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:transition_native_source
+      fixture: app:transition_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: transition_native_test_complete
+    kind: function.lua
+    source: file://transition_native_test.lua
+    method: complete
+    meta:
+      type: test
+      suite: jobs_transition_native
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:transition_native_source
+      fixture: app:transition_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: transition_native_test_complete_tx
+    kind: function.lua
+    source: file://transition_native_test.lua
+    method: complete_tx
+    meta:
+      type: test
+      suite: jobs_transition_native
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:transition_native_source
+      fixture: app:transition_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: transition_native_test_fail
+    kind: function.lua
+    source: file://transition_native_test.lua
+    method: fail
+    meta:
+      type: test
+      suite: jobs_transition_native
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:transition_native_source
+      fixture: app:transition_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: transition_native_test_fail_tx
+    kind: function.lua
+    source: file://transition_native_test.lua
+    method: fail_tx
+    meta:
+      type: test
+      suite: jobs_transition_native
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:transition_native_source
+      fixture: app:transition_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: transition_native_test_fail_retry
+    kind: function.lua
+    source: file://transition_native_test.lua
+    method: fail_retry
+    meta:
+      type: test
+      suite: jobs_transition_native
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      lifecycle: app:transition_native_source
+      fixture: app:transition_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: rowset_native_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: jobs_rowset_native
+    source: file://rowset_native_test.lua
+    method: run
+    modules:
+    - sql
+    imports:
+      test: wippy.test:test
+      boundary: kickside.core.jobs.persist:sql_boundary
+      health: app:health_native_source
+      health_fixture: app:health_native_fixture
+      lease: app:lease_native_source
+      lease_fixture: app:lease_native_fixture
+
+  - name: wake_native_fixture
+    kind: library.lua
+    source: file://wake_native_fixture.lua
+  - name: wake_native_sql
+    kind: library.lua
+    source: file://wake_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:wake_native_fixture
+  - name: wake_native_clock
+    kind: library.lua
+    source: file://wake_native_dependency.lua
+    imports:
+      fixture: app:wake_native_fixture
+  - name: wake_native_lifecycle
+    kind: library.lua
+    source: file://wake_native_dependency.lua
+    imports:
+      fixture: app:wake_native_fixture
+  - name: wake_native_config
+    kind: library.lua
+    source: file://wake_native_dependency.lua
+    imports:
+      fixture: app:wake_native_fixture
+  - name: wake_native_row_bytes
+    kind: library.lua
+    source: file://wake_native_dependency.lua
+    imports:
+      fixture: app:wake_native_fixture
+  - name: wake_native_funcs
+    kind: library.lua
+    source: file://wake_native_dependency.lua
+    imports:
+      fixture: app:wake_native_fixture
+  - name: wake_native_source
+    kind: library.lua
+    source: file://wake_native_source.lua
+    imports:
+      sql: app:wake_native_sql
+      clock: app:wake_native_clock
+      lifecycle: app:wake_native_lifecycle
+      config: app:wake_native_config
+      row_bytes: app:wake_native_row_bytes
+      funcs: app:wake_native_funcs
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: wake_native_test
+    kind: function.lua
+    source: file://wake_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_wake_native
+    imports:
+      test: wippy.test:test
+      wake: app:wake_native_source
+      fixture: app:wake_native_fixture
+
+  - name: wake_proof_test
+    kind: function.lua
+    source: file://wake_proof_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_wake_proof
+    imports:
+      test: wippy.test:test
+      wake: app:wake_native_source
+      fixture: app:wake_native_fixture
+
+  - name: claim_native_fixture
+    kind: library.lua
+    source: file://claim_native_fixture.lua
+  - name: claim_native_sql
+    kind: library.lua
+    source: file://claim_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:claim_native_fixture
+  - name: claim_native_config
+    kind: library.lua
+    source: file://claim_native_dependency.lua
+    imports:
+      fixture: app:claim_native_fixture
+  - name: claim_native_lifecycle
+    kind: library.lua
+    source: file://claim_native_dependency.lua
+    imports:
+      fixture: app:claim_native_fixture
+  - name: claim_native_thread_fence
+    kind: library.lua
+    source: file://claim_native_dependency.lua
+    imports:
+      fixture: app:claim_native_fixture
+  - name: claim_native_lifecycle_cancel
+    kind: library.lua
+    source: file://claim_native_dependency.lua
+    imports:
+      fixture: app:claim_native_fixture
+  - name: claim_native_row_bytes
+    kind: library.lua
+    source: file://claim_native_dependency.lua
+    imports:
+      fixture: app:claim_native_fixture
+  - name: claim_native_source
+    kind: library.lua
+    source: file://claim_native_source.lua
+    modules: [uuid]
+    imports:
+      sql: app:claim_native_sql
+      job_types: kickside.core.jobs:types
+      config: app:claim_native_config
+      lifecycle: app:claim_native_lifecycle
+      thread_fence: app:claim_native_thread_fence
+      lifecycle_cancel: app:claim_native_lifecycle_cancel
+      row_bytes: app:claim_native_row_bytes
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: claim_native_test
+    kind: function.lua
+    source: file://claim_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_claim_native
+    imports:
+      test: wippy.test:test
+      claim: app:claim_native_source
+      fixture: app:claim_native_fixture
+
+  - name: private_queue_claim_exclusion_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+  - name: claim_exclusion_test
+    kind: function.lua
+    source: file://claim_exclusion_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_claim_exclusion
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      claim: kickside.core.jobs.persist:claim
+      native: app:claim_native_source
+      fixture: app:claim_native_fixture
+      job_fixture: app:job_fixture
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      error_envelope: kickside.contract:error_envelope
+
+  - name: claim_proof_test
+    kind: function.lua
+    source: file://claim_proof_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_claim_proof
+    imports:
+      test: wippy.test:test
+      claim: app:claim_native_source
+      fixture: app:claim_native_fixture
+
+  - name: child_native_fixture
+    kind: library.lua
+    source: file://child_native_fixture.lua
+  - name: child_native_process
+    kind: library.lua
+    source: file://child_native_process.lua
+    modules: [process]
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_sql
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_config
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_lease_status
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_lifecycle_cancel
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_worker_fence
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_proc_supervisor
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_worker_dispatch
+    kind: library.lua
+    source: file://child_native_dependency.lua
+    imports:
+      fixture: app:child_native_fixture
+  - name: child_native_source
+    kind: library.lua
+    source: file://child_native_source.lua
+    modules: [logger, time]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      job_types: kickside.core.jobs:types
+      process: app:child_native_process
+      sql: app:child_native_sql
+      config: app:child_native_config
+      lease_status: app:child_native_lease_status
+      lifecycle_cancel: app:child_native_lifecycle_cancel
+      worker_fence: app:child_native_worker_fence
+      proc_supervisor: app:child_native_proc_supervisor
+      worker_dispatch: app:child_native_worker_dispatch
+  - name: child_native_test
+    kind: function.lua
+    source: file://child_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_child_native
+    imports:
+      test: wippy.test:test
+      child: app:child_native_source
+      fixture: app:child_native_fixture
+
+  - name: supervision_cause_fixture
+    kind: library.lua
+    source: file://supervision_cause_fixture.lua
+  - name: supervision_cause_process
+    kind: library.lua
+    source: file://supervision_cause_process.lua
+    imports:
+      fixture: app:supervision_cause_fixture
+  - name: supervision_cause_source
+    kind: library.lua
+    source: file://supervision_cause_source.lua
+    modules: [time, channel, funcs]
+    imports:
+      clock: kickside.core.jobs:clock
+      process: app:supervision_cause_process
+      error_envelope: kickside.contract:error_envelope
+  - name: supervision_cause_test
+    kind: function.lua
+    source: file://supervision_cause_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_supervision_cause
+    imports:
+      test: wippy.test:test
+      supervisor: app:supervision_cause_source
+      fixture: app:supervision_cause_fixture
+
+  - name: worker_fence_native_fixture
+    kind: library.lua
+    source: file://worker_fence_native_fixture.lua
+  - name: worker_fence_native_sql
+    kind: library.lua
+    source: file://worker_fence_native_sql.lua
+    modules: [sql]
+    imports:
+      fixture: app:worker_fence_native_fixture
+  - name: worker_fence_native_config
+    kind: library.lua
+    source: file://worker_fence_native_dependency.lua
+    imports:
+      fixture: app:worker_fence_native_fixture
+  - name: worker_fence_native_lifecycle
+    kind: library.lua
+    source: file://worker_fence_native_dependency.lua
+    imports:
+      fixture: app:worker_fence_native_fixture
+  - name: worker_fence_native_row_bytes
+    kind: library.lua
+    source: file://worker_fence_native_dependency.lua
+    imports:
+      fixture: app:worker_fence_native_fixture
+  - name: worker_fence_native_worker_marker
+    kind: library.lua
+    source: file://worker_fence_native_dependency.lua
+    imports:
+      fixture: app:worker_fence_native_fixture
+  - name: worker_fence_native_source
+    kind: library.lua
+    source: file://worker_fence_native_source.lua
+    imports:
+      sql: app:worker_fence_native_sql
+      job_types: kickside.core.jobs:types
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      config: app:worker_fence_native_config
+      lifecycle: app:worker_fence_native_lifecycle
+      row_bytes: app:worker_fence_native_row_bytes
+      worker_marker: app:worker_fence_native_worker_marker
+  - name: worker_fence_native_test
+    kind: function.lua
+    source: file://worker_fence_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_worker_fence_native
+    imports:
+      test: wippy.test:test
+      fence: app:worker_fence_native_source
+      fixture: app:worker_fence_native_fixture
+
+  - name: release_native_test
+    kind: function.lua
+    source: file://release_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_release_native
+    imports:
+      test: wippy.test:test
+      child: app:child_native_source
+      child_fixture: app:child_native_fixture
+      heartbeat: app:heartbeat_native_source
+      heartbeat_fixture: app:heartbeat_native_fixture
+
+  - name: lease_heartbeat_native_time
+    kind: library.lua
+    source: file://lease_heartbeat_native_time.lua
+    modules: [time]
+    imports:
+      fixture: app:lease_native_fixture
+
+  - name: lease_heartbeat_native_process
+    kind: library.lua
+    source: file://lease_heartbeat_native_process.lua
+    modules: [process]
+    imports:
+      fixture: app:lease_native_fixture
+
+  - name: lease_heartbeat_native_channel
+    kind: library.lua
+    source: file://lease_heartbeat_native_channel.lua
+    modules: [process]
+    imports:
+      fixture: app:lease_native_fixture
+
+  - name: lease_heartbeat_native_supervisor
+    kind: library.lua
+    source: file://lease_heartbeat_native_supervisor.lua
+    modules: [time]
+    imports:
+      fixture: app:lease_native_fixture
+
+  - name: lease_heartbeat_native_source
+    kind: library.lua
+    source: file://lease_heartbeat_native_source.lua
+    modules: [logger]
+    imports:
+      sql: app:lease_native_sql
+      time: app:lease_heartbeat_native_time
+      process: app:lease_heartbeat_native_process
+      channel: app:lease_heartbeat_native_channel
+      config: app:lease_native_dependency
+      lifecycle: app:lease_native_lifecycle
+      row_bytes: app:lease_native_row_bytes
+      job_types: kickside.core.jobs:types
+      proc_supervisor: app:lease_heartbeat_native_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: lease_heartbeat_native_test
+    kind: function.lua
+    source: file://lease_heartbeat_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_lease_heartbeat_native
+    imports:
+      test: wippy.test:test
+      lease: app:lease_heartbeat_native_source
+      fixture: app:lease_native_fixture
+
+  - name: child_exit_native_test
+    kind: function.lua
+    source: file://child_exit_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_child_exit_native
+    imports:
+      test: wippy.test:test
+      child: app:child_native_source
+      fixture: app:child_native_fixture
+      job_types: kickside.core.jobs:types
+
+  - name: dispatch_outcome_native_test
+    kind: function.lua
+    source: file://dispatch_outcome_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_dispatch_outcome_native
+    imports:
+      test: wippy.test:test
+      dispatch: kickside.core.jobs.service:worker_dispatch
+      job_types: kickside.core.jobs:types
+
+  - name: supervision_outcome_native_test
+    kind: function.lua
+    source: file://supervision_outcome_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_supervision_outcome_native
+    imports:
+      test: wippy.test:test
+      supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: dispatch_cause_native_fixture
+    kind: library.lua
+    source: file://dispatch_cause_native_fixture.lua
+  - name: dispatch_cause_native_registry
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_security
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_funcs
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_process
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_config
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_lifecycle
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_proc_supervisor
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_wake
+    kind: library.lua
+    source: file://dispatch_cause_native_dependency.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+  - name: dispatch_cause_native_source
+    kind: library.lua
+    source: file://dispatch_cause_native_source.lua
+    modules: [sql, logger, time]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      job_types: kickside.core.jobs:types
+      registry: app:dispatch_cause_native_registry
+      security: app:dispatch_cause_native_security
+      funcs: app:dispatch_cause_native_funcs
+      process: app:dispatch_cause_native_process
+      config: app:dispatch_cause_native_config
+      lifecycle: app:dispatch_cause_native_lifecycle
+      proc_supervisor: app:dispatch_cause_native_proc_supervisor
+      wake: app:dispatch_cause_native_wake
+  - name: dispatch_cause_native_test
+    kind: function.lua
+    source: file://dispatch_cause_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_dispatch_cause_native
+    imports:
+      test: wippy.test:test
+      dispatch: app:dispatch_cause_native_source
+      fixture: app:dispatch_cause_native_fixture
+
+  - name: config_boundary_native_fixture
+    kind: library.lua
+    source: file://config_boundary_native_fixture.lua
+  - name: config_boundary_native_source
+    kind: library.lua
+    source: file://config_boundary_native_source.lua
+    modules: [time]
+    imports:
+      registry_version: kickside.core.jobs:registry_version
+      registry: app:config_boundary_native_fixture
+      job_types: kickside.core.jobs:types
+  - name: config_boundary_native_test
+    kind: function.lua
+    source: file://config_boundary_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_config_boundary_native
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      config: app:config_boundary_native_source
+      fixture: app:config_boundary_native_fixture
+
+  - name: registry_version_native_fixture
+    kind: library.lua
+    source: file://registry_version_native_fixture.lua
+
+  - name: registry_version_native_source
+    kind: library.lua
+    source: file://registry_version_native_source.lua
+    modules:
+    - sql
+    - logger
+    - time
+    - channel
+    - process
+    - events
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      registry_version: kickside.core.jobs:registry_version
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      reclaim: kickside.core.jobs.persist:reclaim
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      lease: kickside.core.jobs.persist:lease_heartbeat
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+      worker_fence: kickside.core.jobs.service:worker_fence
+      worker_child: kickside.core.jobs.service:worker_child
+      worker_completion: kickside.core.jobs.service:worker_completion
+      lease_release: kickside.core.jobs:lease_release
+      registry: app:registry_version_native_fixture
+
+  - name: registry_version_native_test
+    kind: function.lua
+    source: file://registry_version_native_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_registry_version_native
+    imports:
+      test: wippy.test:test
+      worker: app:registry_version_native_source
+      fixture: app:registry_version_native_fixture
+
+  - name: sql_transaction_boundary_test
+    kind: function.lua
+    source: file://sql_transaction_boundary_test.lua
+    method: run
+    meta:
+      type: test
+      suite: jobs_sql_transaction_boundary
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: sql_dialect_boundary_test
+    kind: function.lua
+    source: file://sql_dialect_boundary_test.lua
+    method: run
+    meta: {type: test, suite: jobs_sql_dialect_boundary}
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      boundary: kickside.core.jobs.persist:sql_boundary

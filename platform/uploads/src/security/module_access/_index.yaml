@@ -1,0 +1,61 @@
+version: '1.0'
+namespace: kickside.uploads.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Uploads
+    surface: kickside.uploads
+    intent: module_access
+    includes:
+    - kickside.uploads.security:module_runtime
+    - kickside.uploads.security:uploads_endpoint_access
+    - kickside.uploads.security:uploads_resource_access
+    - kickside.convert.doc2md.security:module_access
+  groups: []
+  policy:
+    resources:
+    - kickside.uploads.api:artifact_raw_handler.endpoint
+    - kickside.uploads.api:artifacts_handler.endpoint
+    - kickside.uploads.api:complete_handler.endpoint
+    - kickside.uploads.api:delete_handler.endpoint
+    - kickside.uploads.api:get_handler.endpoint
+    - kickside.uploads.api:list_handler.endpoint
+    - kickside.uploads.api:presigned_handler.endpoint
+    - kickside.uploads.api:raw_handler.endpoint
+    - kickside.uploads.api:upload_handler.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.uploads:*
+    - kickside.uploads.api:*
+    - kickside.uploads.archive:*
+    - kickside.uploads.binding:*
+    - kickside.uploads.documents:*
+    - kickside.uploads.env:*
+    - kickside.uploads.events:*
+    - kickside.uploads.images:*
+    - kickside.uploads.migrations:*
+    - kickside.uploads.persist:*
+    - kickside.uploads.rasterize:*
+    - kickside.uploads.security:*
+    - kickside.uploads.service:*
+    - kickside.uploads.text:*
+    - kickside.uploads.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

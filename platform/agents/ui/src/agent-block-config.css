@@ -1,0 +1,26 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@widgets/picker-base.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host {
+  display: block;
+  color: var(--p-text-color);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.kx-agent-block { display: grid; gap: .8rem; }
+.kx-agent-block__modes { display: flex; flex-wrap: wrap; gap: .75rem; margin: 0; padding: 0; border: 0; }
+.kx-agent-block__modes legend { margin-bottom: .45rem; color: var(--p-text-muted-color); font-size: .8rem; }
+.kx-agent-block__modes label { display: inline-flex; align-items: center; gap: .4rem; }
+.kx-agent-block__field { display: grid; gap: .3rem; font-size: .85rem; }
+.kx-agent-block__field > span { font-weight: 600; }
+.kx-agent-block__field small { color: var(--p-text-muted-color); }
+.kx-agent-block__control { width: 100%; }
+.kx-agent-block__loading { display: flex; align-items: center; gap: .5rem; color: var(--p-text-muted-color); }
+.kx-agent-block__spinner { width: 1rem; height: 1rem; }
+wc-agent-picker { display: block; min-width: 0; }

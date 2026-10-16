@@ -1,0 +1,3 @@
+organization: kickside
+module: agents
+description: Test-owned user-agent reference seam for the Identity unit harness.

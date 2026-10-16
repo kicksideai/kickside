@@ -1,0 +1,53 @@
+version: '1.0'
+namespace: app
+entries:
+- name: find_release_fixture
+  kind: library.lua
+  source: file://find_release_fixture.lua
+- name: find_release_common
+  kind: library.lua
+  source: file://find_release_common.lua
+  imports:
+    common: kickside.core.threads:contract_common
+    fixture: app:find_release_fixture
+- name: find_release_source
+  kind: library.lua
+  source: file://find_release_source.lua
+  modules:
+  - crypto
+  - sql
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    contract_common: app:find_release_common
+    contract_events: kickside.core.threads:contract_events
+    contract_event_authorization: app:principal_resolution_authorization
+    contract_resource_crud: kickside.core.threads:contract_resource_crud
+    natural_upsert: kickside.core.threads:natural_upsert
+    threads_reader: app:find_release_reader
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_crud: app:find_release_crud
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: find_release_test
+  kind: function.lua
+  source: file://find_release_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_find_release
+  imports:
+    test: wippy.test:test
+    fixture: app:find_release_fixture
+    resource: app:find_release_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+- name: find_release_reader
+  kind: library.lua
+  source: file://find_release_reader.lua
+  imports:
+    fixture: app:find_release_fixture
+- name: find_release_crud
+  kind: library.lua
+  source: file://find_release_crud.lua
+  imports:
+    fixture: app:find_release_fixture

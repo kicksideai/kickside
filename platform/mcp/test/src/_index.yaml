@@ -1,0 +1,661 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/mcp. Provides app:db + routers, runs the mcp +
+# component migrations via the bootloader, registers a dummy tool the suite grants
+# to a seeded credential, and lets the suite drive the repo + dispatcher. The mcp
+# suite (src/persist/repo_test.lua) loads via directories.src=../src.
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+
+  - name: limited_owner
+    kind: security.policy
+    groups: [app:limited_owner]
+    policy:
+      resources: [kickside.mcp:*, kickside.mcp.*, app:dummy_allowed, app:db, security, context]
+      actions: [registry.get, registry.find, funcs.call, funcs.security, funcs.context, db.get]
+      effect: allow
+
+  - name: dummy_allowed
+    kind: function.lua
+    meta: { type: tool, llm_alias: dummy_allowed }
+    source: file://dummy_tool.lua
+    method: handler
+    modules: [ctx]
+
+  - name: hidden_prompt
+    kind: registry.entry
+    meta: { type: mcp.prompt, title: HiddenPrompt, prompt: Private module prompt }
+
+  - name: definition
+    kind: ns.definition
+    meta: { title: MCP Test Harness }
+
+  # Harness user store + the scope_resolver binding over it. Production binds
+  # kickside.contract:scope_resolver in kickside/users; the harness answers the same
+  # contract from a table the suites seed with owner status and group memberships.
+  - name: subjects
+    kind: library.lua
+    meta: { comment: Harness subject store -- owner id, account status, current group memberships. }
+    source: file://subjects.lua
+    modules: [sql, json]
+
+  - name: scope_resolver_stub
+    kind: function.lua
+    meta:
+      comment: Harness kickside.contract:scope_resolver implementation over the harness subject store.
+    source: file://scope_resolver_stub.lua
+    modules: [security]
+    method: resolve
+    imports:
+      subjects: app:subjects
+
+  - name: scope_resolver_binding
+    kind: contract.binding
+    meta:
+      comment: MCP harness resolver; production binds this in kickside/users.
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        default: true
+        methods:
+          resolve: app:scope_resolver_stub
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the mcp suite.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: uploads
+    kind: fs.directory
+    meta:
+      comment: Test-owned upload storage.
+    directory: ./static
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Authenticated API router.
+      server: gateway
+    prefix: /api
+
+  - name: api.public
+    kind: http.router
+    meta:
+      comment: Public router (the /mcp endpoint mounts here).
+      server: gateway
+    prefix: /public
+
+  - name: mcp_suite_policy
+    kind: security.policy
+    groups: [app:mcp_suite_policy]
+    meta:
+      comment: Harness policy granting the suite full access in isolation.
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: resolver_binding_open
+    kind: security.policy
+    meta: { comment: Harness relocation of the Users scope resolver binding. }
+    policy:
+      resources: [app:scope_resolver_binding]
+      actions: [contract.open]
+      effect: allow
+
+  - name: dep.kickside.mcp
+    kind: ns.dependency
+    version: '*'
+    component: kickside/mcp
+    parameters:
+    - name: kickside.mcp:target_db
+      value: app:db
+    - name: kickside.mcp:api_router
+      value: app:api
+    - name: kickside.mcp:public_router
+      value: app:api.public
+    - name: kickside.mcp:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:mcp_suite_policy
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:mcp_suite_policy
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:mcp_suite_policy
+    - name: kickside.core.threads:user_security_scope
+      value: app:mcp_suite_policy
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.llm:env_storage
+      value: app:env_storage
+    - name: wippy.llm:process_host
+      value: app:processes
+
+  - name: dep.kickside.uploads
+    kind: ns.dependency
+    version: '*'
+    component: kickside/uploads
+    parameters:
+      - name: kickside.uploads:api_router
+        value: app:api
+      - name: kickside.uploads:ui_server
+        value: app:gateway
+      - name: wippy.session:env_storage
+        value: app:env_storage
+      - name: wippy.session:database_resource
+        value: app:db
+      - name: wippy.session:default_host
+        value: app:processes
+      - name: wippy.session:api_router
+        value: app:api
+      - name: wippy.session:checkpoint_function_id
+        value: wippy.session.funcs:checkpoint
+      - name: wippy.relay:env_storage
+        value: app:env_storage
+      - name: wippy.relay:application_host
+        value: app:processes
+      - name: wippy.views:env_storage
+        value: app:env_storage
+      - name: wippy.views:api_router
+        value: app:api.public
+      - name: kickside.uploads:database_resource
+        value: app:db
+      - name: kickside.uploads:env_storage
+        value: app:env_storage
+      - name: kickside.uploads:storage_id
+        value: app:uploads
+      - name: kickside.uploads.security:user_security_scope
+        value: app:mcp_suite_policy
+
+
+  - name: dep.kickside.component
+    kind: ns.dependency
+    version: '*'
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - name: dep.kickside.core
+    kind: ns.dependency
+    version: '*'
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:mcp_suite_policy
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:mcp_suite_policy
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:mcp_suite_policy
+    - name: kickside.core.threads:user_security_scope
+      value: app:mcp_suite_policy
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - name: dep.wippy.migration
+    kind: ns.dependency
+    version: '*'
+    component: wippy/migration
+    parameters:
+      - { name: wippy.migration:app_db, value: app:db }
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Host wiring for the standalone test harness.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: wippy.migration:app_db
+        value: app:db
+
+  # A trait (capability pack) bundling the dummy tool, so the suite can prove
+  # runtime activation: a credential allowed this trait sees nothing until use_trait.
+  - name: trait_dummy
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: dummy_pack
+      public: true
+      comment: Harness trait bundling the dummy tool.
+      tags: [test, dummy]
+    prompt: "Use the declared fixture tool."
+    tools:
+      - app:dummy_tool
+
+  # A trait declaring its tools by namespace wildcard, the shape module traits use
+  # (e.g. kickside.uploads.traits:file_manager -> kickside.uploads.traits:*).
+  - name: trait_wildcard
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: wildcard_pack
+      public: true
+      comment: Harness trait bundling every tool in app.wildcard.
+      tags: [test, wildcard]
+    tools:
+      - app.wildcard:*
+
+  # A tool the suite grants to a credential so the surface has something to expose.
+  - name: schema_tool
+    kind: function.lua
+    meta:
+      type: tool
+      llm_alias: schema_probe
+      input_schema:
+        $defs:
+          ids: { type: array, items: { type: string, pattern: '^id:' } }
+        type: object
+        properties:
+          ids: { $ref: '#/$defs/ids' }
+        required: [ids]
+        additionalProperties: false
+    source: file://dummy_tool.lua
+    method: handler
+    modules: [ctx]
+
+  - name: dummy_tool
+    kind: function.lua
+    meta:
+      type: tool
+      llm_alias: dummy
+      output_schema: '{"type":"object","properties":{"ok":{"type":"boolean"}}}'
+      llm_description: Echoes its arguments; a harness tool for the MCP suite.
+      # Intentionally no input_schema: exercises the no-argument MCP object schema.
+    source: file://dummy_tool.lua
+    method: handler
+    modules: [ctx]
+
+
+  # Reads a component through the access-filtered service, so the folder-scope e2e
+  # suite can prove a credential's tools/call is confined to its whitelisted subtree.
+  - name: probe_tool
+    kind: function.lua
+    meta:
+      type: tool
+      llm_alias: probe_component
+      llm_description: Reports whether a component id is visible to the caller; invalid input or failed lookups return a typed tool error.
+      output_schema: { type: object, required: [found], properties: { found: { type: boolean } } }
+      input_schema:
+        type: object
+        properties:
+          component_id: { type: string }
+    source: file://probe_tool.lua
+    method: handler
+    imports:
+      component: kickside.component:component
+
+  # Resolves a named scope by id under the actor the caller binds; reproduces the
+  # deep-hop re-resolution of the MCP session scope under a no-groups principal.
+  - name: scope_probe
+    kind: function.lua
+    meta: { comment: Harness probe — security.named_scope(scope_id) under the bound actor. }
+    source: file://scope_probe.lua
+    method: handler
+    modules: [security]
+
+  # Runs mcp_security.invoke under whatever actor + scope the caller binds; the suite
+  # binds the serve_mcp endpoint actor and exactly its policy set, so the dispatcher
+  # path is proven with the endpoint's real capabilities.
+  - name: endpoint_invoke_probe
+    kind: function.lua
+    meta: { comment: Harness probe — mcp_security.invoke under the bound actor and scope. }
+    source: file://endpoint_invoke_probe.lua
+    method: handler
+    imports:
+      mcp_security: kickside.mcp:mcp_core_security
+    modules: [security]
+
+  # Mints a credential under the invoking actor, so the suite can exercise mint's
+  # owner-visibility validation of the whitelist.
+  - name: mint_func
+    kind: function.lua
+    meta: { comment: Harness wrapper to mint a credential under a chosen actor for the mint-validation suite. }
+    source: file://mint_func.lua
+    method: handler
+    imports:
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: oauth_grant_func
+    kind: function.lua
+    meta: { comment: Harness wrapper running the OAuth consent grant under the invoking actor for the flow suite. }
+    source: file://oauth_grant_func.lua
+    method: handler
+    modules: [security]
+    imports:
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+
+  - name: catalog_failure_stub
+    kind: library.lua
+    source: file://catalog_failure_stub.lua
+
+  - name: tool_resolver_failure_stub
+    kind: library.lua
+    source: file://catalog_failure_stub.lua
+
+  - name: traits_error_fixture
+    kind: library.lua
+    source: file://traits_fixture.lua
+    imports:
+      registry: app:catalog_failure_stub
+      mcp_consts: kickside.mcp:consts
+      tool_resolver: app:tool_resolver_failure_stub
+
+  - name: surface_error_fixture
+    kind: library.lua
+    source: file://surface_fixture.lua
+    imports:
+      registry: app:catalog_failure_stub
+      mcp_consts: kickside.mcp:consts
+      mcp_traits: app:traits_error_fixture
+      canonical_json: kickside.contract:canonical_json
+    modules: [json]
+
+  - name: meta_error_fixture
+    kind: library.lua
+    source: file://meta_fixture.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      keyset: kickside.contract:keyset
+      mcp_consts: kickside.mcp:consts
+      mcp_traits: app:traits_error_fixture
+      mcp_surface: app:surface_error_fixture
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: catalog_errors_test
+    kind: function.lua
+    meta: { type: test, suite: mcp }
+    source: file://catalog_errors_test.lua
+    method: run
+    modules: [sql, json, uuid]
+    security:
+      actor: { id: system:mcp_catalog_test }
+      policies: [app:mcp_suite_policy]
+    imports:
+      test: wippy.test:test
+      presets_fixture: app:presets_error_fixture
+      presets_endpoint: app:presets_http_error_fixture
+      http_state: app:oauth_http_state
+      traits_fixture: app:traits_error_fixture
+      surface_fixture: app:surface_error_fixture
+      meta_fixture: app:meta_error_fixture
+      repo: kickside.mcp.persist:repo
+
+  - name: meta_tool_list_test
+    kind: function.lua
+    meta: { type: test, suite: mcp_meta_tools }
+    source: file://meta_tool_list_test.lua
+    method: run
+    modules: [registry]
+    security:
+      actor: { id: system:mcp_meta_tool_list_test }
+      policies: [app:mcp_suite_policy]
+    imports:
+      test: wippy.test:test
+      meta_tools: kickside.mcp:mcp_meta_tools
+      surface: kickside.mcp:mcp_surface
+
+  - name: session_deny_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: mcp_session_deny_policy
+    source: file://session_deny_policy_test.lua
+    method: run
+    modules:
+    - security
+    - registry
+    imports:
+      test: wippy.test:test
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:mcp_suite_policy
+
+  - name: transport_state
+    kind: library.lua
+    source: file://transport_state.lua
+  - name: oauth_http_state
+    kind: library.lua
+    source: file://oauth_http_state.lua
+  - name: oauth_http_fixture
+    kind: library.lua
+    source: file://fixtures/oauth_endpoints.lua
+    modules: [env, security, json]
+    imports:
+      http: app:oauth_http_state
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      public_url: app:transport_public_url
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+  - name: oauth_http_test
+    kind: function.lua
+    meta: { type: test, suite: mcp_oauth_http }
+    source: file://oauth_http_test.lua
+    method: run
+    modules: [sql]
+    security:
+      actor: { id: system:mcp_oauth_http_test }
+      policies: [app:mcp_suite_policy]
+    imports:
+      test: wippy.test:test
+      endpoints: app:oauth_http_fixture
+      state: app:oauth_http_state
+      flow: kickside.mcp.oauth:flow
+      oauth_repo: kickside.mcp.oauth:repo
+      create: app:create_http_fixture
+      update: app:update_http_fixture
+  - name: create_http_fixture
+    kind: library.lua
+    source: file://fixtures/create_credential.lua
+    modules: [json, env, security]
+    imports:
+      http: app:oauth_http_state
+      mcp_repo: kickside.mcp.persist:repo
+      mcp_presets: kickside.mcp:mcp_presets
+      public_url: app:transport_public_url
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+  - name: transport_dispatcher
+    kind: library.lua
+    source: file://transport_dispatcher.lua
+  - name: transport_public_url
+    kind: library.lua
+    source: file://transport_dispatcher.lua
+  - name: transport_handler_fixture
+    kind: library.lua
+    source: file://fixtures/serve_mcp.lua
+    modules: [uuid]
+    imports:
+      http: app:transport_state
+      mcp_dispatcher: app:transport_dispatcher
+      public_url: app:transport_public_url
+  - name: transport_test
+    kind: function.lua
+    meta: { type: test }
+    source: file://transport_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      handler_fixture: app:transport_handler_fixture
+      transport_state: app:transport_state
+
+  - name: legacy_users_schema
+    kind: function.lua
+    meta: {type: migration, target_db: "app:db", depends_on: ["ns:wippy.migration"], timestamp: "2024-01-01T00:00:00Z"}
+    source: file://legacy_users_schema.lua
+    method: migrate
+    imports:
+      migration: wippy.migration:migration
+  - name: update_http_fixture
+    kind: library.lua
+    source: file://fixtures/update_credential.lua
+    modules: [json, security]
+    imports:
+      http: app:oauth_http_state
+      mcp_repo: kickside.mcp.persist:repo
+      mcp_presets: kickside.mcp:mcp_presets
+      credential_policy: kickside.mcp.persist:credential_policy
+  - name: presets_error_fixture
+    kind: library.lua
+    source: file://fixtures/presets.lua
+    imports:
+      registry: app:catalog_failure_stub
+      mcp_consts: kickside.mcp:consts
+      mcp_traits: app:traits_error_fixture
+  - name: presets_http_error_fixture
+    kind: library.lua
+    source: file://fixtures/list_presets.lua
+    modules: [security]
+    imports:
+      http: app:oauth_http_state
+      mcp_presets: app:presets_error_fixture
+  - name: preset_limited
+    kind: registry.entry
+    meta:
+      type: mcp.preset
+      title: Limited fixture
+      tool_ids: [app:dummy_tool]
+
+  - name: oauth_admission_test
+    kind: function.lua
+    meta: { type: test }
+    source: file://oauth_admission_test.lua
+    method: run
+    modules: [sql, json, time, uuid]
+    imports:
+      test: wippy.test:test
+      repo: kickside.mcp.oauth:repo
+      endpoints: app:oauth_http_fixture
+      state: app:oauth_http_state
+      flow: kickside.mcp.oauth:flow
+      unavailable: app:registration_unavailable_endpoints
+      quota: kickside.mcp.persist:credential_quota
+
+  - name: registration_unavailable_flow
+    kind: library.lua
+    source: file://registration_unavailable.lua
+    modules: [json]
+
+  - name: registration_unavailable_endpoints
+    kind: library.lua
+    source: file://fixtures/oauth_endpoints.lua
+    modules: [env, security, json]
+    imports:
+      http: app:oauth_http_state
+      mcp_oauth_flow: app:registration_unavailable_flow
+      public_url: app:transport_public_url
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts

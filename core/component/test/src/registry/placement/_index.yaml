@@ -1,0 +1,83 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: placement_declaration_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_placement_declaration
+    source: file://../../placement_declaration_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      rules: kickside.component:placement_rules
+
+  - name: placement_rules_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: component_placement_rules
+      timeout: 120s
+    source: file://../../placement_rules_test.lua
+    method: run
+    security:
+      actor: { id: "system:automation" }
+      policies: [app:test_scope_policy]
+    modules: [sql, uuid, contract, security, channel, time, json]
+    imports:
+      test: wippy.test:test
+      ops: kickside.component.persist:component_ops
+      command: kickside.component:component_command
+      autoinit: kickside.component:autoinit
+
+  - name: placement_provisioned
+    kind: contract.binding
+    meta:
+      class: [placement_provisioned]
+      provision: { scope: user }
+      placement:
+        parents: [root]
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: app:autoinit_test_status }
+
+  - name: placement_parent
+    kind: contract.binding
+    meta:
+      class: [placement_parent]
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: app:autoinit_test_status }
+
+  - name: placement_child
+    kind: contract.binding
+    meta:
+      class: [placement_child]
+      placement:
+        parents: ["app:placement_parent"]
+      portable_schema:
+        context: true
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: app:autoinit_test_status }
+
+  - name: placement_fixed
+    kind: contract.binding
+    meta:
+      class: [placement_fixed]
+      placement:
+        parents: ["app:placement_parent"]
+        fixed: true
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: app:autoinit_test_status }
+
+  - name: placement_root
+    kind: contract.binding
+    meta:
+      class: [placement_root]
+      placement:
+        parents: [root]
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: app:autoinit_test_status }

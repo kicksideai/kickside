@@ -1,0 +1,6 @@
+.wippy/
+*.db
+*.db-wal
+*.db-shm
+.idea/
+.DS_Store

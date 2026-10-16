@@ -1,0 +1,50 @@
+# Changelog
+
+## 0.2.2 (2026-10-09)
+
+- Keep the email-grant migration independent of later user schema, so updates from older installs apply (33436d34d).
+
+## 0.2.1 (2026-10-09)
+
+- fix(mcp): retain issuing authority and revoke reduced delegations (fd9953e90)
+- Preserve native Users administrative failures and classify stable codes (013eede85)
+- Build frontend assets with the current published UI Kit stylesheet.
+
+## 0.2.0 (2026-10-08)
+
+- test: guard user-visible issue behavior through the browser (dd2f3d834)
+- fix(identity): include live group metadata in authorizer evaluation (259f008e3)
+- fix(users): preserve the numeric group-update revocation result (7f9234a75)
+- fix(identity): check reduction fences for every live group scope (0f79e3e9e)
+- fix(users): preserve sessions for membership expansions and no-ops (62a385d25)
+- fix: evaluate deferred delegation in live authorizer scope (9671d4ed6)
+- Reserve session authority metadata and guard membership token retention (e5c4d8b8e)
+- build: rebuild bundles from source (6c884fef9)
+- chore: refresh locks to latest published dependencies (243b4bdff)
+- fix(users): enroll default groups under the account lock order (92f382bec)
+- fix(users): order session invalidation on account row locks (38d7153e7)
+- Remove session token-data rewrite; access expansions keep sessions, new access arrives at next login (d4c5e888d)
+- Complete Users management: scoped System tabs, scope catalog and declared memberships (829cb91b7)
+- Gate System navigation and settings tabs by their declared capabilities (c39276bbe)
+- Preserve member tokens and refresh native grants on access expansions (9980e8ede)
+- Declare selectable Users management and gate shell contributions by capability (ffc32f170)
+- Default module member requirements to platform Members (a05332552)
+- Issue sessions from current account generation after policy reconciliation (6eac2a9ac)
+- Keep wildcard sessions whose excluded actions a change cannot grant (00465b116)
+- Fence enrolled groups before native scope projection (d457201d1)
+- Resolve the native group projector as a fresh Users dependency (e6561d734)
+- Mint and recover one named scope for every membership set (80d837cbd)
+- Enforce component module authority and preserve unchanged unrestricted sessions (072f7e01a)
+- Declare module access bundles and invalidate changed group sessions (602c31f9d)
+- feat: project native policy groups and app membership defaults (bffdd401a)
+- Execute registered API, transform, policy and picker test cases (e319c69c8)
+- Keep cluster name and directory read authority in owning modules (97da56fd2)
+- users: supply the member database selector grant through host scope (f330f0ad1)
+- users: search the complete principal directory with continuation (6b8444608)
+- users: preserve whole account membership at authentication boundaries (5b7e84f57)
+- fix(users): own group member expansion runtime identity (2de942be0)
+- Bind Keeper MCP authentication to live Users groups (7a2c5c9e6)
+
+## 0.1.51
+
+Current published Hub version.

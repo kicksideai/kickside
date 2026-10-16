@@ -1,0 +1,521 @@
+version: "1.0"
+namespace: kickside.automation
+
+# The generic automation engine. A type is a contract.binding (meta.type =
+# kickside.automation) implementing `installable` + `kickside.contract:deletable`;
+# an instance is a `components` row. The engine never knows resource kinds —
+# install bodies provision via domain contracts and record reversible rollback
+# steps; delete replays them. Controls are explicit meta.actions methods. The
+# visual data-flow/workload surface is built from declared port entries; it is not a
+# separate Flow runtime.
+
+entries:
+  - name: connection_capacity
+    kind: library.lua
+    source: file://connection_capacity.lua
+    modules: [contract]
+    imports:
+      capacity_executor: kickside.contract:capacity_executor
+
+
+  - name: failure_classification
+    kind: library.lua
+    meta:
+      comment: Shared error carrier for typed runtime errors, returned envelopes, raised failures, and pullable/writable DataErrors.
+    source: file://failure_classification.lua
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Automation
+      comment: Generic install/control/uninstall engine for the unified automation model. Component-backed instances, id-based rollback, metadata-declared controls, and source/sink ports for graphable flows. Domain types are contributed by their own modules.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the automation endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the automation endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.automation.api:list_types.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:list_sources.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:list_sinks.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:list.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:install.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:install_selected.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:delete.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:read_state.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:read_config.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:reconfigure.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:update_meta.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:call_action.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:status.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:history.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:health.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:set_execution_identity.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:get_execution_identity.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:drive_control.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:export.endpoint
+        path: .meta.router
+      - entry: kickside.automation.api:import.endpoint
+        path: .meta.router
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing automation binding artifact tables.
+      description: SQL database resource backing automation binding artifact tables.
+    targets:
+      - entry: kickside.automation.migrations:06_trigger_item_ledger
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:10_drive_schema
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:11_delivery_provenance
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:12_delivery_history
+        path: .meta.target_db
+      - entry: kickside.automation:db_config
+        path: .meta.db_id
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured automation DB id (rewritten by the target_db requirement).
+
+  # ─── Automations control UI (self-served web component) ──────────────
+  # The page web component renders the installed-automation list + install
+  # flow over the automation HTTP API; it ships and serves its own built
+  # bundle, so installing this module also installs its control surface.
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the automations UI static mount attaches to.
+      description: HTTP server the automations UI static mount attaches to.
+    targets:
+      - entry: kickside.automation:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-automation-manager web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-automation-manager
+    fs: kickside.automation:ui_fs
+    options:
+      # Stable bundle names — without revalidation the browser caches them hard
+      # and never picks up rebuilds (matches the other view modules).
+      cache: "no-cache"
+
+  - name: manual_task_launcher_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      title: Launch manual task
+      announced: true
+      auto_register: true
+      tag_name: wc-manual-task-launcher
+      base_path: kickside-automation-manager
+      entry_point: manual_task_launcher.js
+    props:
+      type: object
+      properties:
+        target: {type: string, default: ""}
+        parent: {type: string, default: ""}
+        title: {type: string, default: "Manual task"}
+
+  - name: execution_identity_editor_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      title: Execution account
+      announced: true
+      auto_register: true
+      tag_name: wc-execution-identity-editor
+      base_path: kickside-automation-manager
+      entry_point: execution_identity_editor.js
+    props:
+      type: object
+      properties:
+        root: {type: string, default: ""}
+
+  - name: automations_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: automations_view
+      title: Automations
+      announced: true
+      auto_register: true
+      tag_name: kickside-automation-manager
+      base_path: kickside-automation-manager
+      entry_point: index.js
+    props:
+      type: object
+      properties:
+        mode:
+          type: string
+          default: ""
+          description: Set to "create" for the workspace create surface or "component" for a component-scoped list.
+        parent-id:
+          type: string
+          default: ""
+          description: Workspace folder for newly installed Automations; empty places them at root.
+        component-id:
+          type: string
+          default: ""
+          description: Optional owning component used to scope rows and place newly created Automations.
+        input:
+          type: string
+          default: ""
+          description: Initial declared install inputs as a JSON object, supplied by the owning component.
+        type-id:
+          type: string
+          default: ""
+          description: Optional opaque registry automation type id to preselect; its declared create view is mounted without domain-specific handling.
+
+  # A second registration of the manager's create mode. Wippy loads index.js
+  # with this entry's declare-tag, so the same element class owns both tags.
+  - name: binding_config_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: binding_config_view
+      title: Connect a Trigger
+      announced: true
+      auto_register: true
+      tag_name: kickside-automation-binding-config
+      base_path: kickside-automation-manager
+      entry_point: index.js
+    props:
+      type: object
+      properties:
+        mode:
+          type: string
+          default: create
+          description: Open the generic automation install flow.
+        parent-id:
+          type: string
+          default: ""
+          description: Workspace folder for the new Automation.
+        type-id:
+          type: string
+          default: ""
+          description: Optional Automation type to preselect.
+
+  # The flagship trigger editor: one web component for Trigger Spec v2
+  # (kickside.trigger:trigger_spec_schema) every consumer embeds as
+  # inputs.trigger. Composes the source catalog ("When"), the source's declared
+  # instance picker + option fields, schedule form, event filter, and history —
+  # carrying the declared poll bounds and delivery retry delay through an edit,
+  # validated per edit with the kinds' install rules, emitted as `change`
+  # { spec, valid, error? }.
+  - name: trigger_config_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: trigger_config_view
+      title: Trigger configuration
+      announced: true
+      auto_register: true
+      tag_name: kickside-trigger-config
+      base_path: kickside-automation-manager
+      entry_point: trigger_config.js
+      icon: tabler:bolt
+    props:
+      type: object
+      properties:
+        value:
+          type: string
+          default: ""
+          description: Current Trigger Spec v2 as a JSON object string. Empty starts a fresh spec; non-empty seeds every section (edit mode).
+        allowed:
+          type: string
+          default: "timer,source"
+          description: CSV of offered trigger families in consumer terms — "timer" (the "On a schedule" row) and/or "source" (the source catalog).
+        source-classes:
+          type: string
+          default: ""
+          description: Optional CSV of source classes; when set, only bindings declaring one of these classes are offered.
+        history-default:
+          type: string
+          description: Optional owner-provided initial History. Missing history is unready; the control surface must not choose a replay boundary.
+        disabled:
+          type: boolean
+          default: false
+          description: Disable all edits.
+        reconfigure:
+          type: boolean
+          default: false
+          description: "Editing an installed trigger: structural fields (source, instance, options, filter, history) render locked; cadence stays editable."
+
+  # Module-owned nav entry: installing this module adds the Automations surface
+  # to the nav; uninstalling removes it. The host bundle renders route_name
+  # "automations" by mounting the web component by tag.
+
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /automations
+      route_name: automations
+      title: Automations
+      comment: Scheduled, event-driven, and graphable source-to-sink automations.
+      icon: tabler:bolt
+      order: 50
+      render: component
+      component_tag: kickside-automation-manager
+
+  # ─── Workspace "+" aggregate ─────────────────────────────────────────
+  # ONE "Automation" entry in the workspace create picker. Its create popup is the
+  # Automations install surface (type catalog -> per-type form -> install), so the
+  # individual installable types (meta.type = kickside.automation) never appear as
+  # their own "+" kinds. No component is registered under this binding: it is a pure
+  # create-surface launcher; installed automations are managed on the Automations nav.
+
+  - name: automation_create_kind
+    kind: contract.binding
+    meta:
+      class: automation
+      icon: tabler:bolt
+      color: "#8b5cf6"
+      title: Automation
+      comment: Add an automation — responders, schedules, and source-to-sink data flows.
+      component:
+        create: { view: kickside.automation:automations_view, surface: popup }
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: kickside.core.threads:thread_status }
+
+  # ─── Contracts ───────────────────────────────────────────────────────
+  # The contract DEFINITIONS this engine consumes live in the shared kickside/
+  # contract module so domain modules can declare automation-type bindings
+  # without a load-dependency on this engine:
+  #   * kickside.contract:installable    — install(validated_input) -> { state, public_state?, metadata }
+  #   * kickside.contract:runtime_reader — list_runtime / get_runtime with frozen execution identity
+  #   * kickside.contract:deletable      — undo
+  # A type is a contract.binding (meta.type = kickside.automation) implementing
+  # installable + deletable; optional controls are published via binding meta.actions.
+  # The engine binds runtime_reader (below) and discovers the install method by name.
+
+  - name: runtime_reader_binding
+    kind: contract.binding
+    meta:
+      title: Automation Runtime Reader Binding
+      comment: Canonical reader hubs/workers open to enumerate automations with execution identity.
+      tags: [automation, runtime, reader, canonical]
+    contracts:
+      - contract: kickside.contract:runtime_reader
+        default: true
+        methods:
+          list: kickside.automation.binding:runtime_reader_list
+          get: kickside.automation.binding:runtime_reader_get
+
+  - name: source_delete_fence_binding
+    kind: contract.binding
+    meta:
+      comment: Block event drives before the source thread discards protected events.
+    contracts:
+      - contract: kickside.core:source_delete_fence
+        default: true
+        methods:
+          fence: kickside.automation.binding:source_delete_fence
+
+  # ─── Engine ──────────────────────────────────────────────────────────
+
+  - name: declaration_references
+    kind: library.lua
+    meta:
+      comment: Resolve only x-reference annotated kind input fields into durable reference records.
+    source: file://declaration_references.lua
+
+  - name: declaration_authority
+    kind: library.lua
+    meta:
+      comment: Live operator and execution-subject validation for annotated automation references.
+    source: file://declaration_authority.lua
+    modules: [registry, security]
+    imports:
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+
+  - name: declaration_writer_create
+    kind: function.lua
+    meta:
+      comment: Framework system actor creating an automation component for its pending install command (design v4 §6.3).
+      private: true
+    source: file://declaration_writer.lua
+    method: create
+    modules: [sql]
+    security:
+      actor:
+        id: system:kickside.automation.declaration
+      policies:
+        - kickside.automation.security:declaration_writer
+        - kickside.automation.security:declaration_deferred_resolution
+        - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
+    imports:
+      drive: kickside.automation:drive
+      types: kickside.automation:types
+      command: kickside.automation:command
+      component: kickside.component:component
+      component_command: kickside.component:component_command
+      declaration_authority: kickside.automation:declaration_authority
+      declaration_references: kickside.automation:declaration_references
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+
+  - name: declaration_writer_create_selected
+    kind: function.lua
+    meta:
+      comment: Framework system actor creating an automation component for its pending install command (design v4 §6.3).
+      private: true
+    source: file://declaration_writer.lua
+    method: create_selected
+    modules: [sql]
+    security:
+      actor:
+        id: system:kickside.automation.declaration
+      policies:
+        - kickside.automation.security:declaration_writer
+        - kickside.automation.security:declaration_deferred_resolution
+        - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
+    imports:
+      drive: kickside.automation:drive
+      types: kickside.automation:types
+      command: kickside.automation:command
+      component: kickside.component:component
+      component_command: kickside.component:component_command
+      declaration_authority: kickside.automation:declaration_authority
+      declaration_references: kickside.automation:declaration_references
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+
+  - name: declaration_writer_apply
+    kind: function.lua
+    meta:
+      comment: Framework system actor applying a pending reconfigure command's declaration to its component (design v4 §6.3).
+      private: true
+    source: file://declaration_writer.lua
+    method: apply
+    modules: [sql]
+    security:
+      actor:
+        id: system:kickside.automation.declaration
+      policies:
+        - kickside.automation.security:declaration_writer
+        - kickside.automation.security:declaration_deferred_resolution
+        - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
+    imports:
+      drive: kickside.automation:drive
+      types: kickside.automation:types
+      command: kickside.automation:command
+      component: kickside.component:component
+      component_command: kickside.component:component_command
+      declaration_authority: kickside.automation:declaration_authority
+      declaration_references: kickside.automation:declaration_references
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+
+  - name: identity_writer
+    kind: function.lua
+    meta:
+      comment: The identity command's executor entry — resolves the operator's live frame as the trusted deferred owner and applies the identity there.
+      private: true
+    source: file://identity_writer.lua
+    modules: [registry, sql]
+    method: write
+    security:
+      actor:
+        id: system:kickside.automation.identity_writer
+      policies:
+        - kickside.automation.security:identity_writer_defer
+        - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
+    imports:
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      declaration_references: kickside.automation:declaration_references
+      declaration_authority: kickside.automation:declaration_authority
+      command: kickside.automation:command
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+
+  - name: identity_apply
+    kind: function.lua
+    meta:
+      comment: Applies a selected execution identity through the component's SET_EXECUTION_IDENTITY under the operator's frame.
+      private: true
+    source: file://identity_writer.lua
+    modules: [registry, sql]
+    method: apply
+    security:
+      policies:
+        - kickside.automation.security:identity_command_evaluation
+    imports:
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      declaration_references: kickside.automation:declaration_references
+      declaration_authority: kickside.automation:declaration_authority
+      command: kickside.automation:command
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+
+  - name: declaration_owner_verify
+    kind: function.lua
+    meta:
+      comment: Confirms the automation's pending set_execution_identity command for a component SET_EXECUTION_IDENTITY (OWNERSHIP A16).
+      private: true
+    source: file://declaration_writer.lua
+    method: verify_identity_command
+    modules: [sql]
+    imports:
+      drive: kickside.automation:drive
+      types: kickside.automation:types
+      command: kickside.automation:command
+      component: kickside.component:component
+      component_command: kickside.component:component_command
+      declaration_authority: kickside.automation:declaration_authority
+      declaration_references: kickside.automation:declaration_references
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+
+  - name: task_target
+    kind: library.lua
+    source: file://task_target.lua
+    modules: [registry]
+    imports:
+      automations_lib: kickside.automation:automation
+      engine_schema: kickside.automation.engine:schema
+      round_write: kickside.automation:round_write
+      canonical_json: kickside.contract:canonical_json

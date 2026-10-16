@@ -1,0 +1,106 @@
+version: '1.0'
+namespace: app
+entries:
+- name: access_diagnostics_register_source
+  kind: library.lua
+  meta:
+    comment: The request logic of POST /threads/{id}/projections, with the caller's
+      identity captured server-side.
+  source: file://access_diagnostics_register_source.lua
+  modules:
+  - http
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    worker: app:access_diagnostics_worker
+    writer: kickside.core.projections.persist:writer
+    thread_access: app:access_diagnostics_gate
+    execution_identity: kickside.execution:execution_identity
+    sql: app:access_diagnostics_sql
+- name: access_diagnostics_fixture
+  kind: library.lua
+  source: file://access_diagnostics_fixture.lua
+  imports:
+    access: kickside.core.threads.api:thread_access
+- name: access_diagnostics_sql
+  kind: library.lua
+  source: file://access_diagnostics_sql.lua
+  imports:
+    fixture: app:access_diagnostics_fixture
+  modules:
+  - sql
+- name: access_diagnostics_worker
+  kind: library.lua
+  source: file://access_diagnostics_worker.lua
+  imports:
+    fixture: app:access_diagnostics_fixture
+- name: access_diagnostics_gate
+  kind: library.lua
+  source: file://access_diagnostics_gate.lua
+  imports:
+    fixture: app:access_diagnostics_fixture
+- name: access_diagnostics_test
+  kind: function.lua
+  source: file://access_diagnostics_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_access_diagnostics
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    fixture: app:access_diagnostics_fixture
+    access: kickside.core.threads.api:thread_access
+    http_errors: kickside.contract:http_errors
+    canonical_json: kickside.contract:canonical_json
+    register: app:access_diagnostics_register_source
+    pause: kickside.core.projections.api:pause_projection
+    resume: app:access_diagnostics_resume_source
+    remove: app:access_diagnostics_remove_source
+    list: kickside.core.projections.api:list_projection_cursors
+    retention_read: kickside.core.retention.api:get_thread_retention
+    retention_write: kickside.core.retention.api:upsert_thread_retention
+- name: access_diagnostics_resume_source
+  kind: library.lua
+  source: file://access_diagnostics_resume_source.lua
+  modules:
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    writer: app:access_diagnostics_writer
+    thread_access: app:access_diagnostics_gate
+    http: app:access_diagnostics_http
+    sql: app:access_diagnostics_sql
+- name: access_diagnostics_remove_source
+  kind: library.lua
+  source: file://access_diagnostics_remove_source.lua
+  modules:
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    writer: app:access_diagnostics_writer
+    thread_access: app:access_diagnostics_gate
+    http: app:access_diagnostics_http
+    sql: app:access_diagnostics_sql
+- name: access_diagnostics_http
+  kind: library.lua
+  source: file://access_diagnostics_http.lua
+  modules:
+  - http
+  imports:
+    fixture: app:access_diagnostics_fixture
+- name: access_diagnostics_writer
+  kind: library.lua
+  source: file://access_diagnostics_writer.lua
+  imports:
+    fixture: app:access_diagnostics_fixture

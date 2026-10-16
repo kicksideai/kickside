@@ -1,0 +1,17 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+  - name: round_history_storage_test
+    kind: function.lua
+    source: file://history_storage_test.lua
+    method: run
+    meta:
+      type: test
+      suite: kickside_automation_history
+    modules: [json, uuid, sql]
+    imports:
+      test: wippy.test:test
+      round_harness: kickside.automation:round_harness
+      round_history: kickside.automation:round_history
+      round_commit: kickside.automation:round_commit
+      automation_db: kickside.automation:automation_db

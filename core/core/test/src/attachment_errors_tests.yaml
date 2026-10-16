@@ -1,0 +1,53 @@
+version: '1.0'
+namespace: app
+entries:
+- name: attachment_errors_fixture
+  kind: library.lua
+  source: file://attachment_errors_fixture.lua
+- name: attachment_errors_source
+  kind: library.lua
+  source: file://attachment_errors_source.lua
+  modules:
+  - sql
+  - uuid
+  imports:
+    clock: kickside.core.jobs:clock
+    threads_consts: kickside.core.threads:consts
+    threads_normalize: kickside.core.threads.persist:normalize
+    threads_component: kickside.core.threads:component
+    core_types: kickside.core:types
+    autoinit: kickside.component:autoinit
+    proj_writer: kickside.core.projections.persist:writer
+    retention_repo: app:attachment_errors_retention
+    threads_writer: kickside.core.threads.persist:writer
+    threads_teardown: app:attachment_errors_teardown
+    threads_thread_row: kickside.core.threads.persist:thread_row
+    natural_key: kickside.core.threads.persist:natural_key
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: attachment_errors_test
+  kind: function.lua
+  source: file://attachment_errors_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_attachment_errors
+  imports:
+    test: wippy.test:test
+    fixture: app:attachment_errors_fixture
+    api: app:attachment_errors_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+    resource: app:component_cleanup_source
+    cleanup_fixture: app:component_cleanup_fixture
+- name: attachment_errors_retention
+  kind: library.lua
+  source: file://attachment_errors_retention.lua
+  imports:
+    fixture: app:attachment_errors_fixture
+- name: attachment_errors_teardown
+  kind: library.lua
+  source: file://attachment_errors_teardown.lua
+  imports:
+    fixture: app:attachment_errors_fixture

@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: kickside.users.profile
+entries:
+- name: profile_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    actions: access
+    resources:
+    - kickside.users.api:get_profile.endpoint
+    - kickside.users.api:put_profile.endpoint
+    effect: allow

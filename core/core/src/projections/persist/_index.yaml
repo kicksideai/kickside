@@ -1,0 +1,85 @@
+version: "1.0"
+namespace: kickside.core.projections.persist
+
+entries:
+  # Persistence + engine layer of the projections slice: projection/cursor reads
+  # and writes, the catch-up loop, and the generic worker boundary it drives.
+  # Shared vocabulary (types) and the runtime policy reader live in the slice root
+  # (kickside.core.projections).
+
+  - name: worker
+    kind: library.lua
+    meta:
+      comment: Worker_ref parse/validate + generic func:// / proc:// worker invocation (supervised proc execution).
+    source: file://worker.lua
+    modules:
+      - sql
+      - json
+      - funcs
+      - registry
+      - security
+      - process
+      - time
+    imports:
+      types: kickside.core.projections:types
+      execution_identity: kickside.execution:execution_identity
+      trace_context: kickside.execution:trace
+      persisted_json: kickside.contract:persisted_json
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      projection_policy: kickside.core.projections:policy_config
+      error_envelope: kickside.contract:error_envelope
+      job_types: kickside.core.jobs:types
+
+  - name: reader
+    kind: library.lua
+    meta:
+      comment: Projection + cursor reads (list, get, find_cursor).
+    source: file://reader.lua
+    modules:
+      - sql
+    imports:
+      types: kickside.core.projections:types
+
+  - name: register
+    kind: library.lua
+    meta:
+      comment: Projection registration and cursor slot creation in one transaction.
+    source: file://register.lua
+    modules: [sql, json, uuid]
+    imports:
+      clock: kickside.core.jobs:clock
+      types: kickside.core.projections:types
+      core_types: kickside.core:types
+      execution_identity: kickside.execution:execution_identity
+      job_lifecycle: kickside.core.jobs.persist:lifecycle
+      jobs_wake: kickside.core.jobs.persist:wake
+      retention_notifier: kickside.core.retention:notifier
+      persisted_json: kickside.contract:persisted_json
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+
+  - name: writer
+    kind: library.lua
+    meta:
+      comment: Projection + cursor writes (register, remove, pause, resume).
+    source: file://writer.lua
+    modules:
+      - sql
+    imports:
+      clock: kickside.core.jobs:clock
+      register: kickside.core.projections.persist:register
+      job_lifecycle: kickside.core.jobs.persist:lifecycle
+      job_lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      jobs_wake: kickside.core.jobs.persist:wake
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      retention_notifier: kickside.core.retention:notifier
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+
+  - name: page_cursor
+    kind: library.lua
+    source: file://page_cursor.lua
+    modules: [json, base64]
+    imports:
+      canonical_json: kickside.contract:canonical_json

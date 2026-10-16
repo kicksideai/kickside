@@ -1,0 +1,37 @@
+version: "1.0"
+namespace: kickside.transform.security
+
+# Module-owned access policy for the transform assist/snippet endpoints. Declared
+# here so the grant travels with the slice; the user group is injected by the
+# user_security_scope requirement (the host wires its authenticated user group),
+# so groups ships empty. Access-only — the handlers run the generator under the
+# caller's own actor/scope, which already carries funcs.call over kickside.*.
+entries:
+  - name: code_execution_call
+    kind: security.policy
+    meta:
+      comment: The code transform kind calls the sandboxed executor; the actor running transform.apply needs funcs.call on that one entry (the executor self-holds eval.*). Granted to the same user group so /validate + /assist can exercise a code transform.
+    groups: []
+    policy:
+      resources:
+        - kickside.code_execution:run_code
+      actions:
+        - funcs.call
+      effect: allow
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach the transform assist/snippet endpoints.
+      description: Application security group that may reach the transform assist/snippet endpoints.
+    targets:
+    - entry: kickside.transform.security:code_execution_call
+      path: .groups +=
+    - entry: kickside.transform.security:module_access
+      path: .groups +=
+    - entry: kickside.transform.security:module_runtime
+      path: .groups +=
+    - entry: kickside.transform.security:transform_endpoint_access
+      path: .groups +=

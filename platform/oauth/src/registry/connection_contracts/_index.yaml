@@ -1,0 +1,147 @@
+version: "1.0"
+namespace: kickside.oauth
+entries:
+  - name: oauth_connection
+    kind: contract.binding
+    meta:
+      title: OAuth Connection
+      comment: OAuth connection component for authenticated access to external providers
+      tags:
+        - oauth
+        - connection
+        - authentication
+        - token
+      class:
+        - connection
+        - oauth_connection
+    contracts:
+      - contract: kickside.oauth:oauth_connection_contract
+        context_required:
+          - component_id
+        default: true
+        methods:
+          get_access_token: kickside.oauth.binding:get_access_token_func
+          get_info: kickside.oauth.binding:get_info_func
+      - contract: kickside.contract:deletable
+        context_required:
+          - component_id
+        methods:
+          delete: kickside.oauth.binding:delete_connection_func
+      - contract: kickside.contract:component
+        context_required:
+          - component_id
+        methods:
+          get_status: kickside.oauth.binding:get_connection_status_func
+
+  # kickside.oauth:oauth_connection_contract
+  - name: oauth_connection_contract
+    kind: contract.definition
+    meta:
+      comment: OAuth connection contract for managing authenticated connections to external providers
+      tags:
+        - oauth
+        - connection
+        - token
+        - authentication
+    methods:
+      - name: get_access_token
+        description: |
+          Get current access token and expiration information. If the stored
+          access token is expired, refresh it once through the provider connector
+          before returning. Returns an error when refresh fails or the token is
+          invalid.
+          A provider passes rejected_access_token after an API 401 to refresh
+          once even before local expiry. If another caller already replaces that
+          token, return the current token without another refresh.
+          Calling: get_access_token({ rejected_access_token = "rejected-token" })
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "rejected_access_token": { "type":"string", "minLength":1 } }, "additionalProperties": true }'
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "description": "Whether token retrieval was successful"
+                  },
+                  "access_token": {
+                    "type": "string",
+                    "description": "Current access token"
+                  },
+                  "token_type": {
+                    "type": "string",
+                    "description": "Token type (usually Bearer)"
+                  },
+                  "expires_at": {
+                    "type": "integer",
+                    "description": "Unix timestamp when token expires"
+                  },
+                  "is_expired": {
+                    "type": "boolean",
+                    "description": "Whether the token is currently expired"
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Error message if retrieval failed"
+                  }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+      - name: get_info
+        description: |
+          Get detailed OAuth connection information and metadata.
+          Calling: get_info()
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "description": "OAuth provider name"
+                  },
+                  "connection_name": {
+                    "type": "string",
+                    "description": "User-defined connection name"
+                  },
+                  "connection_description": {
+                    "type": "string",
+                    "description": "Connection description"
+                  },
+                  "scopes_granted": {
+                    "type": "string",
+                    "description": "Space-separated granted scopes"
+                  },
+                  "connection_state": {
+                    "type": "string",
+                    "description": "Current connection state"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "description": "When connection was created"
+                  },
+                  "last_token_refresh": {
+                    "type": "string",
+                    "description": "When token was last refreshed"
+                  },
+                  "user_profile": {
+                    "type": "object",
+                    "description": "User profile from OAuth provider",
+                    "properties": {
+                      "provider_user_id": {"type": "string"},
+                      "email": {"type": "string"},
+                      "display_name": {"type": "string"},
+                      "username": {"type": "string"},
+                      "avatar_url": {"type": "string"}
+                    }
+                  }
+                },
+                "required": ["provider", "connection_name", "connection_state", "created_at"]
+              }
+            format: application/schema+json

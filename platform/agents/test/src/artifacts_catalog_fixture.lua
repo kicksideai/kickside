@@ -1,0 +1,1 @@
+../../src/traits/build_artifacts_catalog.lua

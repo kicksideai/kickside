@@ -1,0 +1,5 @@
+.wippy/
+*.log
+test-out.txt
+.local/
+.local-test-out.txt

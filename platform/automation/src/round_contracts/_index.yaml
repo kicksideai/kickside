@@ -1,0 +1,277 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: round
+    kind: function.lua
+    meta:
+      comment: The drive slot worker (A21) — one round per attempt through the round runner.
+      private: true
+    source: file://../round/worker.lua
+    method: run
+    security:
+      actor:
+        id: system:kickside.automation.round
+      policies:
+        - kickside.automation.security:round_worker_defer
+        - kickside.automation.security:round_worker_actor
+    imports:
+      round_runner: kickside.automation:round_runner
+
+  - name: round_runner
+    kind: library.lua
+    meta:
+      comment: The automation round — recover, stamp, acquire, deliver, fenced commit, rearm (design v5 §4.1-4.4).
+    source: file://../round/round.lua
+    modules: [sql, json, time, registry, logger]
+    imports:
+      component: kickside.component:component
+      automation_db: kickside.automation:automation_db
+      drive: kickside.automation:drive
+      jobs: kickside.core.jobs:jobs
+      execution_identity: kickside.execution:execution_identity
+      automations_lib: kickside.automation:automation
+      runtime_policy: kickside.automation:runtime_policy
+      slot: kickside.automation:slot
+      round_provenance: kickside.automation:round_provenance
+      round_position: kickside.automation:round_position
+      round_claim: kickside.automation:round_claim
+      round_ledger: kickside.automation:round_ledger
+      round_outcome: kickside.automation:round_outcome
+      round_reconcile: kickside.automation:round_reconcile
+      round_commit: kickside.automation:round_commit
+
+  - name: round_write
+    kind: library.lua
+    meta:
+      comment: The round's preparation/write library a kind's round consumer calls — delivery keys, prepared output, the fence before every send, sink semantics, classified writes (design v5 §4.2, §4.6).
+    source: file://../round/write.lua
+    modules: [sql, json, registry, funcs]
+    imports:
+      connection_capacity: kickside.automation:connection_capacity
+      delivery_identity: kickside.automation:delivery_identity
+      jobs: kickside.core.jobs:jobs
+      automation_db: kickside.automation:automation_db
+      drive: kickside.automation:drive
+      failure_classification: kickside.automation:failure_classification
+      automations_lib: kickside.automation:automation
+      round_ledger: kickside.automation:round_ledger
+      round_commit: kickside.automation:round_commit
+      round_prepared: kickside.automation:round_prepared
+      runtime_policy: kickside.automation:runtime_policy
+      canonical_json: kickside.contract:canonical_json
+
+  - name: round_prepared
+    kind: library.lua
+    meta:
+      comment: Replay-unsafe prepared output persisted under the round's fence before its write.
+    source: file://../round/prepared.lua
+    modules: [json, sql]
+    imports:
+      round_provenance: kickside.automation:round_provenance
+      automation_db: kickside.automation:automation_db
+      round_commit: kickside.automation:round_commit
+      drive: kickside.automation:drive
+      row_size: kickside.core:row_size
+      runtime_policy: kickside.automation:runtime_policy
+
+  - name: round_claim
+    kind: library.lua
+    meta:
+      comment: Round stamp — occupancy, pause/block, schedule due time and the persisted timer occurrence (design v5 §4.2).
+    source: file://../round/claim.lua
+    modules: [sql, json]
+    imports:
+      drive: kickside.automation:drive
+      cadence: kickside.automation:cadence
+      failure_classification: kickside.automation:failure_classification
+      round_ledger: kickside.automation:round_ledger
+
+  - name: round_ledger
+    kind: library.lua
+    meta:
+      comment: The round's item delivery ledger — due redelivery, outcomes, unresolved count change (design v5 §5.2).
+    source: file://../round/ledger.lua
+    modules: [json, sql, time]
+    imports:
+      drive: kickside.automation:drive
+      row_limit: kickside.automation:row_limit
+      delivery_identity: kickside.automation:delivery_identity
+      canonical_json: kickside.contract:canonical_json
+
+  - name: prepared_retention
+    kind: library.lua
+    meta:
+      comment: Bounded dispatcher prune of aged prepared output after its recovery owner is absent.
+    source: file://../prepared_retention.lua
+
+  - name: receipt_retention
+    kind: library.lua
+    meta:
+      comment: Bounded dispatcher prune of aged receipts after their recovery owner is absent.
+    source: file://../receipt_retention.lua
+    imports:
+
+  - name: round_outcome
+    kind: library.lua
+    meta:
+      comment: Round outcomes — failure phase, capped jittered backoff, item merge, consumer outcome lists to ledger outcomes and receipts (design v5 §4.4, §5.2).
+    source: file://../round/outcome.lua
+    imports:
+      delivery_identity: kickside.automation:delivery_identity
+      drive: kickside.automation:drive
+      failure_classification: kickside.automation:failure_classification
+      round_ledger: kickside.automation:round_ledger
+
+  - name: round_reconcile
+    kind: library.lua
+    meta:
+      comment: Reconciliation over receipts — pass stamps per enumerated key page, stale receipt sweep as delete items, pass completion (A33).
+    source: file://../round/reconcile.lua
+    modules: [uuid]
+    imports:
+      round_ledger: kickside.automation:round_ledger
+
+  - name: round_commit
+    kind: library.lua
+    meta:
+      comment: The round's fenced automation-DB commit and failure settlement (design v5 §4.2).
+    source: file://../round/commit.lua
+    modules: [sql, json]
+    imports:
+      round_history: kickside.automation:round_history
+      row_limit: kickside.automation:row_limit
+      drive: kickside.automation:drive
+      round_ledger: kickside.automation:round_ledger
+      round_reconcile: kickside.automation:round_reconcile
+
+  - name: round_history
+    kind: library.lua
+    source: file://../round/history.lua
+    modules: [json, sql]
+    imports:
+      row_limit: kickside.automation:row_limit
+
+  - name: round_acquire
+    kind: function.lua
+    meta:
+      comment: One bounded page from a drive's source (event, collection, timer), run under the automation's execution identity.
+      private: true
+    source: file://../round/pull.lua
+    method: acquire
+    modules: [funcs, contract, security]
+    imports:
+      connection_capacity: kickside.automation:connection_capacity
+      failure_classification: kickside.automation:failure_classification
+      automations_lib: kickside.automation:automation
+
+  - name: round_deliver
+    kind: function.lua
+    meta:
+      comment: Delivers one page to the kind's round consumer under the automation's execution identity.
+      private: true
+    source: file://../round/deliver.lua
+    method: deliver
+    imports:
+      drive: kickside.automation:drive
+      component: kickside.component:component
+      failure_classification: kickside.automation:failure_classification
+
+  - name: delivery_identity
+    kind: library.lua
+    meta:
+      comment: Canonical collision-safe record and source-change delivery identities.
+    source: file://../round/identity.lua
+
+  - name: round_position
+    kind: library.lua
+    meta:
+      comment: Source event positions and bounded collection-pass continuation.
+    source: file://../round/position.lua
+    imports:
+      round_outcome: kickside.automation:round_outcome
+
+  - name: round_authority
+    kind: function.lua
+    meta:
+      private: true
+    source: file://../round/authority.lua
+    modules: [registry]
+    method: check
+    security:
+      actor:
+        id: system:kickside.automation.round
+      policies:
+        - kickside.automation.security:round_worker_defer
+        - kickside.automation.security:round_worker_actor
+    imports:
+      automations_lib: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+      round_write: kickside.automation:round_write
+      component: kickside.component:component
+      round_provenance: kickside.automation:round_provenance
+  - name: round_authority_write
+    kind: function.lua
+    meta:
+      private: true
+    source: file://../round/authority.lua
+    modules: [registry]
+    method: write
+    security:
+      actor:
+        id: system:kickside.automation.round
+      policies:
+        - kickside.automation.security:round_worker_defer
+        - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
+    imports:
+      automations_lib: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+      round_write: kickside.automation:round_write
+      component: kickside.component:component
+      round_provenance: kickside.automation:round_provenance
+  - name: round_authority_compute
+    kind: function.lua
+    meta:
+      private: true
+    source: file://../round/authority.lua
+    modules: [registry]
+    method: compute
+    security:
+      actor:
+        id: system:kickside.automation.round
+      policies:
+        - kickside.automation.security:round_worker_defer
+        - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
+    imports:
+      automations_lib: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+      round_write: kickside.automation:round_write
+      component: kickside.component:component
+      round_provenance: kickside.automation:round_provenance
+
+  - name: round_sink_effect
+    kind: function.lua
+    meta:
+      private: true
+    source: file://../round/authority.lua
+    method: sink
+    modules: [registry]
+    imports:
+      automations_lib: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+      round_write: kickside.automation:round_write
+      component: kickside.component:component
+      round_provenance: kickside.automation:round_provenance
+
+  - name: round_provenance
+    kind: library.lua
+    source: file://../round/provenance.lua
+    modules: [json, sql]
+    imports:
+      round_ledger: kickside.automation:round_ledger
+      automation_db: kickside.automation:automation_db
+      component: kickside.component:component
+      round_commit: kickside.automation:round_commit
+      drive: kickside.automation:drive
+      row_limit: kickside.automation:row_limit

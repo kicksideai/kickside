@@ -1,0 +1,100 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_webhooks_test_webhook_ingress
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://../../suites/webhooks_test_webhook_ingress.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: tsplit_webhooks_test_webhook_repo_resolve
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://../../suites/webhooks_test_webhook_repo_resolve.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: tsplit_webhooks_test_webhook_repo_management_1
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://../../suites/webhooks_test_webhook_repo_management_1.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: tsplit_webhooks_test_webhook_repo_management_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://../../suites/webhooks_test_webhook_repo_management_2.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: tsplit_webhooks_test_webhook_repo_management_3
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://../../suites/webhooks_test_webhook_repo_management_3.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      security_core: kickside.webhooks.ingress:security_core
+
+  - name: tsplit_webhooks_test_webhook_repo_management_4
+    kind: function.lua
+    meta:
+      type: test
+      suite: webhooks
+    source: file://../../suites/webhooks_test_webhook_repo_management_4.lua
+    method: run
+    modules: [hash, sql, json, time, uuid, security, funcs, http_client, registry]
+    imports:
+      test: wippy.test:test
+      validator: kickside.webhooks.ingress:validator
+      ingress: kickside.webhooks.ingress:ingress
+      consts: kickside.webhooks:consts
+      repo: kickside.webhooks:repo
+      security_core: kickside.webhooks.ingress:security_core

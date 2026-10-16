@@ -1,0 +1,209 @@
+version: "1.0"
+namespace: kickside.workflows.runs.events
+
+# Flow lifecycle events. Their source is always one exact Flow reference; generic
+# runnable aliases do not cross this public boundary.
+entries:
+  # Emit sites: platform/workflows/src/runs/launch.lua (RUNNING transition).
+  - name: started
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      additionalProperties: false
+      properties:
+        run_id: { type: string }
+        flow_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: flow }
+            id: { type: string, minLength: 1 }
+            version: { type: integer, minimum: 1 }
+          required: [kind, id, version]
+        draft_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: flow }
+            id: { type: string, minLength: 1 }
+            def_seq: { type: integer, minimum: 0 }
+          required: [kind, id, def_seq]
+        automation_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: automation }
+            id: { type: string, minLength: 1 }
+            revision: { type: integer, minimum: 1 }
+          required: [kind, id, revision]
+        status: { type: string, enum: [running] }
+        dataflow_id: { type: string }
+        trigger_id: { type: string }
+        invocation_id: { type: string }
+        started_at: { type: string }
+        trace_context:
+          type: object
+          additionalProperties: true
+          properties:
+            trace_id: { type: string }
+            run_id: { type: string }
+            caused_by_event_id: { type: string }
+            correlation_key: { type: string }
+            hops: { type: integer }
+        origin:
+          type: object
+          properties:
+            type: { type: string }
+            id: { type: string }
+          required: [type, id]
+      required: [run_id, status, started_at]
+      oneOf:
+        - required: [flow_ref]
+        - required: [draft_ref]
+
+  # Emit sites: platform/workflows/src/runs/completion.lua (COMPLETED terminal transition).
+  - name: finished
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      additionalProperties: false
+      properties:
+        run_id: { type: string }
+        flow_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: flow }
+            id: { type: string, minLength: 1 }
+            version: { type: integer, minimum: 1 }
+          required: [kind, id, version]
+        draft_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: flow }
+            id: { type: string, minLength: 1 }
+            def_seq: { type: integer, minimum: 0 }
+          required: [kind, id, def_seq]
+        automation_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: automation }
+            id: { type: string, minLength: 1 }
+            revision: { type: integer, minimum: 1 }
+          required: [kind, id, revision]
+        status: { type: string, enum: [completed] }
+        dataflow_id: { type: string }
+        trigger_id: { type: string }
+        invocation_id: { type: string }
+        started_at: { type: string }
+        ended_at: { type: string }
+        duration_ms: { type: integer, minimum: 0 }
+        output_ref:
+          type: object
+          additionalProperties: true
+        output_sample:
+          description: Bounded sample of Flow output for event-trigger mapping.
+        authority_identity:
+          description: Authority identity reference for the Flow execution.
+        trace_context:
+          type: object
+          additionalProperties: true
+          properties:
+            trace_id: { type: string }
+            run_id: { type: string }
+            caused_by_event_id: { type: string }
+            correlation_key: { type: string }
+            hops: { type: integer }
+        origin:
+          type: object
+          properties:
+            type: { type: string }
+            id: { type: string }
+          required: [type, id]
+      required: [run_id, status, started_at, ended_at]
+      oneOf:
+        - required: [flow_ref]
+        - required: [draft_ref]
+
+  # Emit sites: platform/workflows/src/runs/completion.lua (FAILED/CANCELLED/TERMINATED terminal transition).
+  - name: failed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      additionalProperties: false
+      properties:
+        run_id: { type: string }
+        flow_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: flow }
+            id: { type: string, minLength: 1 }
+            version: { type: integer, minimum: 1 }
+          required: [kind, id, version]
+        draft_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: flow }
+            id: { type: string, minLength: 1 }
+            def_seq: { type: integer, minimum: 0 }
+          required: [kind, id, def_seq]
+        automation_ref:
+          type: object
+          additionalProperties: false
+          properties:
+            kind: { const: automation }
+            id: { type: string, minLength: 1 }
+            revision: { type: integer, minimum: 1 }
+          required: [kind, id, revision]
+        status: { type: string, enum: [failed, cancelled, terminated] }
+        dataflow_id: { type: string }
+        trigger_id: { type: string }
+        invocation_id: { type: string }
+        started_at: { type: string }
+        ended_at: { type: string }
+        duration_ms: { type: integer, minimum: 0 }
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+          required: [code, message]
+        output_ref:
+          type: object
+          additionalProperties: true
+        output_sample:
+          description: Bounded sample of Flow output for event-trigger mapping.
+        authority_identity:
+          description: Authority identity reference for the Flow execution.
+        trace_context:
+          type: object
+          additionalProperties: true
+          properties:
+            trace_id: { type: string }
+            run_id: { type: string }
+            caused_by_event_id: { type: string }
+            correlation_key: { type: string }
+            hops: { type: integer }
+        origin:
+          type: object
+          properties:
+            type: { type: string }
+            id: { type: string }
+          required: [type, id]
+      required: [run_id, status, started_at, ended_at, error]
+      oneOf:
+        - required: [flow_ref]
+        - required: [draft_ref]

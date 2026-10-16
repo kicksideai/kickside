@@ -1,0 +1,53 @@
+version: "1.0"
+namespace: kickside.hub.test
+
+entries:
+  - name: requirement_review_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_hub}
+    source: file://requirement_review_test.lua
+    modules: [json, registry]
+    imports:
+      test: wippy.test:test
+      resolver: kickside.hub.instruments:requirement_resolution_runtime
+      planner: keeper.hub:planner
+    method: run
+
+  - name: requirement_resolution_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_hub
+      comment: Proves server-side re-planning and strict intersection of AI output with authoritative candidates.
+    source: file://requirement_resolution_test.lua
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      resolver: kickside.hub.instruments:requirement_resolution_runtime
+    method: run
+
+  - name: requirement_evidence_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_hub
+      comment: Proves exact artifact opening, bounded registry inspection, and read-only evidence behavior.
+    source: file://requirement_evidence_test.lua
+    imports:
+      test: wippy.test:test
+      evidence: kickside.hub.instruments:requirement_evidence_runtime
+    method: run
+
+  - name: recommendations_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_hub
+      comment: Validates the grounded recommendation request, invocation, and HTTP contract.
+    source: file://recommendations_test.lua
+    modules: [json, registry]
+    imports:
+      test: wippy.test:test
+      agent_invoke: kickside.agents.invoke:agent_invoke_runtime
+      recommendations: kickside.hub.instruments:recommendations_runtime
+    method: run

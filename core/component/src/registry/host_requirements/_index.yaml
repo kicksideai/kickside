@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.component
+entries:
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the component share endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.component.api:access_model.endpoint
+        path: .meta.router
+      - entry: kickside.component.api:list_component_access.endpoint
+        path: .meta.router
+      - entry: kickside.component.api:share_component.endpoint
+        path: .meta.router
+      - entry: kickside.component.api:adopt_component.endpoint
+        path: .meta.router

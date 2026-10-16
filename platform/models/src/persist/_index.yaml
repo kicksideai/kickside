@@ -1,0 +1,52 @@
+version: "1.0"
+namespace: kickside.models.persist
+
+entries:
+  - name: repo
+    kind: library.lua
+    meta:
+      comment: Persistence for model provider profiles and DB-backed cards -- SQL, the write-through snapshot, and the profile.changed broadcast.
+    source: file://repo.lua
+    modules: [sql, uuid, funcs, process]
+    imports:
+      models_types: kickside.models:models_types
+      models_cache: kickside.models.service:models_cache
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+
+  # Profile change delivery runs under the models identity: writing principals
+  # need no process messaging authority.
+  - name: profile_changed_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the profile change signal message the registered profile.changed subscriber.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: profile_changed_signal
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one committed profile change to the registered profile.changed subscriber.
+    source: file://repo.lua
+    method: deliver_profile_changed
+    modules: [sql, uuid, funcs, process]
+    imports:
+      models_types: kickside.models:models_types
+      models_cache: kickside.models.service:models_cache
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+    security:
+      actor:
+        id: kickside.models.persist:profile_changed_signal
+      policies:
+        - kickside.models.persist:profile_changed_transport
+
+  - name: models_secrets
+    kind: library.lua
+    meta: { comment: "AES encryption for provider profile secrets, keyed by ENCRYPTION_KEY." }
+    source: file://secrets.lua
+    modules: [crypto, base64, env]

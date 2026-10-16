@@ -1,0 +1,123 @@
+/* KickSide card vocabulary.
+ *
+ * Five modules render this card - agents, knowledge, mcp, skills, webhooks -
+ * and eight of its selectors were already byte-identical in all five. The
+ * bodies below are that shared body, in the order agents declared it.
+ *
+ * Four selectors differed, and none of them was drift: each is a real need of
+ * the module that has it, so each stays a documented local override after the
+ * import rather than being flattened away.
+ *
+ *   .kx-card-name    mcp and skills reserve 64px on the right, webhooks 72px,
+ *                    so the name clears the action buttons pinned top-right.
+ *   .kx-card-meta    webhooks wraps its meta row.
+ *   .kx-card-actions mcp shows its actions at rest (opacity .7) instead of on
+ *                    hover, which is why its name reserves that space.
+ *   .kx-card-desc    webhooks shows a monospace URL on one line instead of the
+ *                    two-line clamp.
+ *
+ * `.kx-card-desc` here carries both `-webkit-line-clamp` and the standard
+ * `line-clamp`; mcp and skills already shipped both, and the other three gain
+ * the standard property with no change in rendering.
+ *
+ * Focus is the bordered treatment from the canon, matching kx-button.css.
+ *
+ * Note for adopters: a CSS `@import` must precede all other rules, so this
+ * sheet lands first and a module's own rule wins at equal specificity.
+ * Adopting means DELETING the local rules, not just importing.
+ */
+
+.kx-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px;
+  cursor: pointer;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 14px;
+  background: var(--p-content-background);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+
+.kx-card:hover {
+  border-color: color-mix(in srgb, var(--p-primary-color) 40%, var(--p-content-border-color));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--p-text-color) 8%, transparent);
+  transform: translateY(-1px);
+}
+
+.kx-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kx-card-id {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.kx-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--p-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kx-card-meta {
+  display: flex;
+  gap: 6px;
+}
+
+.kx-card-desc {
+  font-size: 12px;
+  color: var(--p-text-muted-color);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 17px;
+}
+
+/* Pinned top-right and revealed on hover, so the card reads as content until
+   the pointer says otherwise. The background is the card's own, masking the
+   name that runs underneath. */
+.kx-card-actions {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity .12s;
+  background: var(--p-content-background);
+  border-radius: 8px;
+}
+
+.kx-card:hover .kx-card-actions,
+.kx-card:focus-within .kx-card-actions {
+  opacity: 1;
+}
+
+/* The card itself lifts on hover. The theme gives every button the same lift,
+   so a button inside a card would travel twice for one pointer movement - the
+   card moving under it is the feedback, and the button repeating it reads as a
+   judder. Sizing is left to PrimeVue: card actions pass size="small". */
+.kx-card .p-button:not(:disabled):hover {
+  transform: none;
+}
+
+.kx-card:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}

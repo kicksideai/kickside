@@ -1,0 +1,20 @@
+version: "1.0"
+namespace: kickside.workflows.catalog
+
+entries:
+  - name: block_catalog
+    kind: library.lua
+    meta:
+      comment: Projects the canonical explicit and virtual-tool Block catalog into Flow compiler and visual-editor descriptors.
+    source: file://block_catalog.lua
+    imports:
+      blocks: kickside.blocks:blocks
+
+  - name: published_catalog
+    kind: library.lua
+    meta:
+      comment: Canonical actor-scoped published Workflow discovery shared by automation binding, the destination picker, and the broad Run Workflow agent face.
+    source: file://published_catalog.lua
+    imports:
+      version_read: kickside.workflows.repo:version_read
+      workflow_repo: kickside.workflows.repo:repo

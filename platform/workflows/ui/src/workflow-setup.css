@@ -1,0 +1,8 @@
+@import './styles/tokens.css';
+@import './styles/nodes.css';
+@import './styles/reduced-motion.css';
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;

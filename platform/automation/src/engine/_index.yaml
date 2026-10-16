@@ -1,0 +1,218 @@
+version: "1.0"
+namespace: kickside.automation.engine
+
+entries:
+  - name: engine
+    kind: library.lua
+    meta:
+      comment: Explicitly constructed automation engine — composes the engine parts over the injected dependencies.
+    source: file://engine.lua
+    imports:
+      engine_support: kickside.automation.engine:support
+      engine_declared: kickside.automation.engine:declared
+      engine_pins: kickside.automation.engine:pins
+      engine_install: kickside.automation.engine:install
+      engine_catalog: kickside.automation.engine:catalog
+      engine_ports: kickside.automation.engine:ports
+      engine_sink_writer: kickside.automation.engine:sink_writer
+      engine_state: kickside.automation.engine:state
+      engine_state_write: kickside.automation.engine:state_write
+      engine_artifact: kickside.automation.engine:artifact
+      engine_actions: kickside.automation.engine:actions
+      engine_control: kickside.automation.engine:control
+      engine_selected_install: kickside.automation.engine:selected_install
+      engine_observe: kickside.automation.engine:observe
+      engine_recovery: kickside.automation.engine:recovery
+      engine_controls: kickside.automation.engine:controls
+
+  - name: support
+    kind: library.lua
+    meta:
+      comment: "Automation engine vocabulary and pure helpers: reserved private-context keys, registry entry readers, portable-input copy/merge."
+    source: file://support.lua
+    modules: [json]
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.automation:types
+
+  - name: drive_plan
+    kind: library.lua
+    meta:
+      comment: "The drives a declaration creates: the main drive over the declared source, its reconcile drive."
+    source: file://drive_plan.lua
+
+  - name: declaration
+    kind: library.lua
+    meta:
+      comment: "Automation declaration validation: install results, rollback chains and the declared main source."
+    source: file://declaration.lua
+    imports:
+      types: kickside.automation:types
+      drive: kickside.automation:drive
+
+  - name: schema
+    kind: library.lua
+    meta:
+      comment: "Automation declared-schema validation: public-state schema fields, values and read projection; install-input schema."
+    source: file://schema.lua
+    modules: [json]
+
+  - name: pins
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: install retention pins — start position, lowering, failed-install release behind tombstones."
+    source: file://pins.lua
+    imports:
+      engine_drive_plan: kickside.automation.engine:drive_plan
+      engine_support: kickside.automation.engine:support
+
+  - name: slot_repair
+    kind: library.lua
+    meta:
+      comment: "Drive slot provisioning and the dispatcher wake it shares with declared/pins (A52 no polling)."
+    source: file://slot_repair.lua
+
+  - name: declared
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: install and reconfigure commands over the automation's drives, applied through the declaration writer."
+    source: file://declared.lua
+    imports:
+      engine_drive_plan: kickside.automation.engine:drive_plan
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+      engine_slot_repair: kickside.automation.engine:slot_repair
+
+  - name: install
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: install runner, install_type over the install command and the declaration writer, rollback replay."
+    source: file://install.lua
+    imports:
+      engine_drive_plan: kickside.automation.engine:drive_plan
+      engine_declaration: kickside.automation.engine:declaration
+      engine_schema: kickside.automation.engine:schema
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: catalog
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: type catalog, declared actions and lifecycle methods, public-state schemas, view components."
+    source: file://catalog.lua
+    imports:
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: ports
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: port catalog (sources, sinks, triggers) and port resolution."
+    source: file://ports.lua
+    imports:
+      engine_schema: kickside.automation.engine:schema
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: sink_writer
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: the sink writer opened over a writable port binding, with classified write results."
+    source: file://sink_writer.lua
+    imports:
+      connection_capacity: kickside.automation:connection_capacity
+      engine_support: kickside.automation.engine:support
+      failure_classification: kickside.automation:failure_classification
+
+  - name: state
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: installed and runtime listings, public/private/trigger state reads, delivery options, config."
+    source: file://state.lua
+    imports:
+      engine_schema: kickside.automation.engine:schema
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: state_write
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: public state, patch_state, portable input and trigger state writes."
+    source: file://state_write.lua
+    imports:
+      engine_declaration: kickside.automation.engine:declaration
+      engine_schema: kickside.automation.engine:schema
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: artifact
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: portable artifact export and import."
+    source: file://artifact.lua
+    imports:
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: actions
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: type-to-action composition, call_action, reconfigure, uninstall/delete, resource ownership."
+    source: file://actions.lua
+    imports:
+      engine_support: kickside.automation.engine:support
+      types: kickside.automation:types
+
+  - name: control
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: execution-identity change through the command stream and the component SET_EXECUTION_IDENTITY path."
+    source: file://control.lua
+    imports:
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+
+  - name: controls
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: drive controls through the command stream — pause, resume, run_now, replay, resync."
+    source: file://controls.lua
+    imports:
+      round_provenance: kickside.automation:round_provenance
+      delivery_identity: kickside.automation:delivery_identity
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+
+  - name: recovery
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: pending command recovery and the command dispatcher pass (wake, acknowledge, slot repair)."
+    source: file://recovery.lua
+    imports:
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+
+  - name: observe
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: paginated status and caller-scoped health over drive and command state."
+    source: file://observe.lua
+    imports:
+      types: kickside.automation:types
+      engine_support: kickside.automation.engine:support
+      history_reader: kickside.automation.engine:history_reader
+
+  - name: history_reader
+    kind: library.lua
+    source: file://history.lua
+    modules: [json]
+    imports:
+      round_provenance: kickside.automation:round_provenance
+
+  - name: selected_install
+    kind: library.lua
+    source: file://selected_install.lua
+    imports:
+      engine_slot_repair: kickside.automation.engine:slot_repair
+      engine_support: kickside.automation.engine:support

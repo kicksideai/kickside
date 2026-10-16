@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: kickside.ui
+entries:
+  - name: nav_badges
+    kind: library.lua
+    meta: { comment: "Resolve declared nav badges against live component meta via an injected read port — one query per request for all badged impl_ids. Pure (no component import); list_nav owns the ui->component edge, keeping nav.effective pure." }
+    source: file://../../nav_badges.lua
+    imports:
+      ui_types: kickside.ui:types
+
+  - name: contributions
+    kind: library.lua
+    meta: { comment: "Generic UI-contribution discovery — normalize registry entries of any ui.* meta.type (commands, future kinds)." }
+    source: file://../../contributions.lua
+    imports:
+      shell: kickside.ui:shell_discovery
+
+  - name: shell_discovery
+    kind: library.lua
+    meta:
+      comment: Shared validators + access-gated registry discovery for navigation, System tabs and the account menu.
+    source: file://../../shell_discovery.lua
+    modules: [registry, security]
+
+  # ─── Splash (full-screen, once per user or once per instance) ────────
+  # The per-user seen list for user-scoped splashes: a json field on the profile,
+  # so "seen once" is stored server-side and follows the user across devices
+  # (never client/local storage).

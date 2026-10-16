@@ -1,0 +1,917 @@
+version: "1.0"
+namespace: kickside.automation.agent
+
+# Agent-tool surface for automation management, so MCP-connected agents can manage
+# automations the same way the product UI's HTTP API does. Read/write split into
+# two tools so a read-only MCP credential is mintable. Each handler checks for an
+# authenticated actor and calls automations_lib directly; per-row authorization is
+# enforced by the library's own access-masked component queries, not here.
+
+entries:
+  - name: automations_read
+    kind: function.lua
+    meta:
+      type: tool
+      title: Automations Read
+      mcp:
+        required_scopes: [state.read]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "list installed automations, list installable types, inspect one type, list the source/sink catalog, inspect one catalog entry, read one automation's full config, export one as a portable artifact, page one automation's drive and command status, or report the caller's automation health",
+              "enum": ["list", "types", "type", "catalog", "catalog_entry", "read_config", "export", "status", "health"]
+            },
+            "id": { "type": "string", "description": "Automation component id, type id, or catalog entry id, according to action. Required for type, catalog_entry, read_config, export and status." },
+            "direction": { "type": "string", "enum": ["source", "sink"], "description": "catalog_entry: the direction returned by catalog." },
+            "class": { "type": "string", "description": "Optional meta.class filter for list (e.g. automation)." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "list, types, catalog and health delivery failures: records per page; default 25." },
+            "cursor": { "type": "string", "description": "list, types, catalog and health: the next_cursor of the previous page." },
+            "page_token": { "type": "string", "description": "status: the next_page_token of the previous page." },
+            "page_size": { "type": "integer", "minimum": 1, "maximum": 1000, "description": "status: drives per page (default 50)." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Envelope for every action. success is true on success. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "count": {"type": "integer", "description": "list/types: number of rows returned."},
+            "automations": {
+              "type": "array",
+              "description": "list: compact automation summaries (id, type, title, class, owner, ownership, dates, availability). Read full config and status with their detail actions.",
+              "items": {"type": "object"}
+            },
+            "types": {
+              "type": "array",
+              "description": "types: compact automation type summaries. Use type with an id for its descriptions, schemas and controls.",
+              "items": {"type": "object"}
+            },
+            "type": {"type": "object", "description": "type: one complete automation type descriptor, including schemas and controls."},
+            "sources": {"type": "array", "description": "catalog: compact kickside.data source summaries.", "items": {"type": "object"}},
+            "sinks": {
+              "type": "array",
+              "description": "catalog: compact kickside.data destination-binding summaries. Use catalog_entry for its description and schemas.",
+              "items": {"type": "object"}
+            },
+            "entry": {"type": "object", "description": "catalog_entry: one complete source or sink descriptor, including schemas."},
+            "id": {"type": "string", "description": "read_config: the automation id echoed back."},
+            "config": {
+              "type": "object",
+              "description": "read_config: the automation's full editable install config; reconfigure accepts the same shape under its _portable_input key when present."
+            },
+            "artifact": {
+              "type": "object",
+              "description": "export: the portable automation declaration, importable elsewhere via automations_manage import."
+            },
+            "drives": {
+              "type": "array",
+              "description": "status: one page of drives in drive_key order (phase, fences, counters, last error).",
+              "items": {"type": "object"}
+            },
+            "commands": {"type": "object", "description": "status: the command generation and the pending command, if any."},
+            "ledger_counts": {
+              "type": "object",
+              "description": "status: unresolved and uncertain item counts across the automation's drives."
+            },
+            "delivery_failures": {
+              "description": "health: compact failure summaries (automation_id, count). status: the complete selected automation failure detail, including last_error.",
+              "oneOf": [
+                {"type": "array", "items": {"type": "object"}},
+                {"type": "object"}
+              ]
+            },
+            "next_page_token": {"type": "string", "description": "status: pass as page_token for the next page; absent on the last page."},
+            "next_cursor": {"type": "string", "description": "list/types/catalog/health: pass as cursor for the next page; absent on the last page."},
+            "health": {
+              "type": "object",
+              "description": "health: aggregate counters over the caller's readable automations and one compact, paged delivery_failures page; pass next_cursor as cursor for the next page."
+            }
+          },
+          "required": ["success"]
+        }
+      llm_alias: AutomationsRead
+      llm_description: "Read automations: list compact installed automation, type, source/sink, and health delivery-failure summaries in pages of 25 by default (limit at most 100); pass next_cursor as cursor for the next page. Use type or catalog_entry with the selected id for schemas and controls; use read_config, export, or status for one automation's full detail. For recurring tasks use RecurringTasks action=list for summaries or action=get for schedules, targets, runs and errors. Read-only. Failures return no result and a typed tool error with a clear message."
+    source: file://automations_read.lua
+    modules: [security]
+    imports:
+      tool_result: kickside.contract:tool_result
+      keyset: kickside.contract:keyset
+      automations_lib: kickside.automation:automation
+    method: handler
+
+  - name: automations_manage
+    kind: function.lua
+    meta:
+      type: tool
+      title: Automations Manage
+      mcp:
+        required_scopes: [state.write]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "install",
+                "reconfigure",
+                "pause",
+                "resume",
+                "run",
+                "call",
+                "import",
+                "uninstall",
+                "set_execution_identity",
+                "control"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Type id returned by AutomationsRead types."
+            },
+            "input": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Type-specific install input: copy the inputs schema from AutomationsRead action=types. Reconfigure uses read_config.config._portable_input. For recurring schedules use RecurringTasks create instead."
+            },
+            "parent_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1
+            },
+            "args": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Arguments from the catalog action/control schema; defaults to {}."
+            },
+            "artifact": {
+              "$ref": "#/$defs/automation_artifact"
+            },
+            "input_overrides": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Type-specific install input: copy the inputs schema from AutomationsRead action=types. Reconfigure uses read_config.config._portable_input. For recurring schedules use RecurringTasks create instead."
+            },
+            "options": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Per-type delete options from meta.delete_options in the types catalog."
+            },
+            "principal": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "group",
+                    "service"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "request_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected_identity_generation": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "supersede_request_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "control": {
+              "type": "string",
+              "enum": [
+                "pause",
+                "resume",
+                "run_now",
+                "replay",
+                "resync",
+                "discard"
+              ]
+            },
+            "drive_key": {
+              "type": "string",
+              "minLength": 1
+            },
+            "keys": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "from": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "resolve_identity": {
+              "type": "object",
+              "description": "Explicit ADMIN resolution of unproven legacy deliveries during replay; captured delivery identities remain immutable.",
+              "properties": {
+                "identity_generation": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "delivery_keys": {
+                  "type": "array",
+                  "maxItems": 200,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              "required": [
+                "identity_generation"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "install"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Type id returned by AutomationsRead types."
+                },
+                "input": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "description": "Type-specific install input: copy the inputs schema from AutomationsRead action=types. Reconfigure uses read_config.config._portable_input. For recurring schedules use RecurringTasks create instead."
+                },
+                "parent_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "type",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "reconfigure"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "input": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "description": "Type-specific install input: copy the inputs schema from AutomationsRead action=types. Reconfigure uses read_config.config._portable_input. For recurring schedules use RecurringTasks create instead."
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "pause"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "resume"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "run"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "call"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "method": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "args": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "description": "Arguments from the catalog action/control schema; defaults to {}."
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "import"
+                },
+                "artifact": {
+                  "$ref": "#/$defs/automation_artifact"
+                },
+                "parent_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "input_overrides": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "description": "Type-specific install input: copy the inputs schema from AutomationsRead action=types. Reconfigure uses read_config.config._portable_input. For recurring schedules use RecurringTasks create instead."
+                }
+              },
+              "required": [
+                "action",
+                "artifact"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "uninstall"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "description": "Per-type delete options from meta.delete_options in the types catalog."
+                }
+              },
+              "required": [
+                "action",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "set_execution_identity"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "principal": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "user",
+                        "group",
+                        "service"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "expected_identity_generation": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "supersede_request_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "principal",
+                "request_id",
+                "expected_identity_generation"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "control"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "control": {
+                  "type": "string",
+                  "enum": [
+                    "pause",
+                    "resume",
+                    "run_now",
+                    "replay",
+                    "resync",
+                    "discard"
+                  ]
+                },
+                "drive_key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "keys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "from": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resolve_identity": {
+                  "type": "object",
+                  "description": "Explicit ADMIN resolution of unproven legacy deliveries during replay; captured delivery identities remain immutable.",
+                  "properties": {
+                    "identity_generation": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "delivery_keys": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "required": [
+                    "identity_generation"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "control"
+              ],
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "control": {
+                        "enum": [
+                          "replay",
+                          "resync",
+                          "discard"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "control"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "request_id"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "control": {
+                        "const": "discard"
+                      }
+                    },
+                    "required": [
+                      "control"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "keys"
+                    ],
+                    "properties": {
+                      "keys": {
+                        "minItems": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "$defs": {
+            "automation_artifact": {
+              "type": "object",
+              "properties": {
+                "apiVersion": {
+                  "type": "string",
+                  "const": "kickside.automation/v1"
+                },
+                "kind": {
+                  "type": "string",
+                  "const": "Automation"
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
+                },
+                "spec": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "input": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Type-specific install input: copy the inputs schema from AutomationsRead action=types. Reconfigure uses read_config.config._portable_input. For recurring schedules use RecurringTasks create instead."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "input"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "apiVersion",
+                "kind",
+                "spec"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Envelope for every action. success is true when the call completed. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "id": {"type": "string", "description": "The affected automation's component id."},
+            "type": {"type": "string", "description": "install/import: the installed automation type id."},
+            "metadata": {"type": "object", "description": "install: the installed component's title/description metadata."},
+            "created": {"description": "install/import: a type-specific created-resource summary, when the type reports one."},
+            "method": {
+              "type": "string",
+              "description": "pause/resume/run/call: the dispatched action method name (run dispatches the generic run_now drive control)."
+            },
+            "result": {"description": "pause/resume/run/call: the dispatched action's successful returned value, unmodified."},
+            "replayed": {"type": "integer", "description": "uninstall: number of rollback steps successfully replayed."},
+            "replay_failed": {"type": "integer", "description": "uninstall: number of rollback steps that failed to replay."},
+            "request_id": {"type": "string", "description": "set_execution_identity: the request id."},
+            "generation": {
+              "type": "integer",
+              "description": "set_execution_identity: the automation command generation of the identity change."
+            },
+            "state": {"type": "string", "description": "set_execution_identity: succeeded on completion."},
+            "identity_generation": {"type": "integer", "description": "set_execution_identity: the resulting identity generation."}
+          },
+          "required": ["success"]
+        }
+      llm_alias: AutomationsManage
+      llm_description: "Manage automation installs and controls. For recurring tasks and schedules (every minute, hourly, daily, or cron), use RecurringTasks create with schedule and target; it needs no data source. Install, reconfigure, pause, resume, manually run, import, or uninstall automations, or set_execution_identity the execution identity an automation runs as (ADMIN; principal plus request_id and expected_identity_generation; supersede_request_id explicitly replaces a named authority-blocked pending command while preserving installed configuration and retained work). Discover installable types with automations_read (action=types) before install; reconfigure takes the same input shape read_config returns under _portable_input; changing a data sync's destination requires reinstalling rather than reconfigure; run wakes the main drive through generic run_now, independently of type-declared actions; paused drives remain paused. The types catalog exposes controls plus type-declared actions; call accepts either with args. Failures return no result and a typed tool error with a clear message."
+    source: file://automations_manage.lua
+    modules: [security]
+    imports:
+      tool_result: kickside.contract:tool_result
+      automations_lib: kickside.automation:automation
+    method: handler
+
+  - name: recurring_tasks
+    kind: function.lua
+    meta:
+      type: tool
+      title: Recurring Tasks
+      mcp:
+        required_scopes: [state.read]
+        action_scopes:
+          create: state.write
+          pause: state.write
+          resume: state.write
+          update: state.write
+          delete: state.write
+          run_now: state.write
+      llm_alias: RecurringTasks
+      llm_description: 'Schedule and manage component-shared recurring tasks. create takes schedule
+        {type: interval|cron, expression} and target: workflow {flow_ref: {kind: flow,id,version},
+        input}, agent {agent_id,prompt}, or action {port,config,input} from the writable
+        catalog. Before selecting an action target, call AutomationsRead action=catalog
+        and inspect the sink port config_schema and input_schema. Set target.port to
+        its declared port id, target.config to its configuration and target.input to
+        its per-run input object; config never replaces input. Copy every required field
+        from the port input_schema into target.input even when a similarly named field
+        also appears in target.config. Include every user-requested output field,
+        including optional fields, in the appropriate target.config or target.input
+        object. The task title names the schedule; it does not set action output fields.
+        target.input is required for action targets even
+        when empty. No data source needed. Use RecurringTasks action=list or action=get
+        to read recurring schedules and targets. list/get show owned and READ-shared tasks, owner_id/is_owner, last/next
+        run and errors; list returns compact task summaries in pages of 25 by default (limit at most 100) and next_cursor, passed as cursor, for the next page; get returns a task''s complete target, schedule, runs and errors; update replaces schedule or target; pause/resume/delete/run_now
+        use id. UTC schedules. run_now keeps paused tasks paused. Default execution
+        is the creator; sharee edits preserve the stored execution identity. Optional group requires authorized selection. READ views config/status; WRITE edits and controls; ADMIN manages sharing and deletion (also requires the independent DELETE capability).'
+      input_schema: |
+        {
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "create",
+                "list",
+                "get",
+                "pause",
+                "resume",
+                "update",
+                "delete",
+                "run_now"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "description": "Task id for get or changes."
+            },
+            "title": {
+              "type": "string"
+            },
+            "schedule": {
+              "type": "object",
+              "required": [
+                "type",
+                "expression"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "cron",
+                    "interval"
+                  ]
+                },
+                "expression": {
+                  "type": "string",
+                  "description": "UTC cron (five fields) or positive interval, e.g. 15m, 1h."
+                }
+              },
+              "description": "Required on create. Omit on update to preserve the existing schedule."
+            },
+            "target": {
+              "type": "object",
+              "title": "Target",
+              "additionalProperties": false,
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "workflow",
+                    "agent",
+                    "action"
+                  ]
+                },
+                "flow_ref": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "id",
+                    "version"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "flow"
+                    },
+                    "id": {
+                      "type": "string",
+                      "x-reference": {
+                        "kind": "flow",
+                        "access": "READ"
+                      }
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                "agent_id": {
+                  "type": "string",
+                  "x-reference": {
+                    "kind": "agent",
+                    "access": "READ"
+                  }
+                },
+                "prompt": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "port": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Action target: declared writable port id from AutomationsRead action=catalog."
+                },
+                "config": {
+                  "type": "object",
+                  "description": "Action target: port configuration matching its config_schema. This does not replace the per-run input object."
+                },
+                "input": {
+                  "type": "object",
+                  "description": "Per-run payload matching the selected port input_schema. Include all required fields and every user-requested field, even when optional. Task metadata does not configure action output. Required for action targets, including an empty object when the port needs no input fields."
+                }
+              },
+              "description": "Required on create. Omit on update to preserve the existing target. Workflow requires flow_ref; agent requires agent_id and prompt; action requires port and input. The server validates each selected target before saving."
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "create only, defaults true."
+            },
+            "parent_id": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "list only: tasks per page; default 25."
+            },
+            "cursor": {
+              "type": "string",
+              "description": "list only: the next_cursor of the previous page."
+            },
+            "principal": {
+              "type": "object",
+              "description": "create only: optional authorized group; calling user is the default. Group selection requires live membership and delegation.",
+              "required": [
+                "kind",
+                "id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "group"
+                },
+                "id": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "id": {"type": "string"},
+            "task": {"type": "object", "description": "get and successful mutations: the complete task, including target configuration and input."},
+            "tasks": {"type": "array", "description": "list: compact task summaries; use get for a complete task.", "items": {"type": "object"}},
+            "count": {"type": "integer"},
+            "result": {"type": "object"},
+            "next_cursor": {"type": "string", "description": "list: pass as cursor for the next page; absent on the last page."}
+          }
+        }
+    source: file://recurring_tasks.lua
+    method: handler
+    modules:
+    - security
+    - uuid
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      keyset: kickside.contract:keyset
+      failure_classification: kickside.automation:failure_classification
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component

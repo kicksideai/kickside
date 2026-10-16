@@ -1,0 +1,423 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/workflows. Provides the host resources the compiler,
+# version plane, run launcher, and automation kind require (app:db, routers, process
+# host, env storage, a permissive scope) and boots the automation + dataflow stack so
+# its harness-owned suites run in isolation. The module loads once through its
+# dependency replacement. Test source lives in this harness under suites/.
+# Harness-only; excluded from publish.
+
+entries:
+  - name: definitions_api_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Flow artifact HTTP helpers — published READ export and new-draft import.
+    source: file://../../suites/definitions_api_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+      types: kickside.workflows:types
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      definitions_api: kickside.workflows.api:definitions_api
+      flow_contract: kickside.blocks:flow_contract
+
+  - name: definitions_api_seam
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound setup and import seam for Flow artifact API tests.
+    source: file://../../suites/definitions_api_test.lua
+    method: seam
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+      types: kickside.workflows:types
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      definitions_api: kickside.workflows.api:definitions_api
+      flow_contract: kickside.blocks:flow_contract
+
+  # ─── Flow component binding (authoring identity and teardown only) ──────
+  - name: workflow_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Definition engine — batch validation atomicity, in-batch refs, cascade remove, layout viewport, seq monotonicity + isolation, delete purge.
+    source: file://../../suites/workflow_test.lua
+    method: run
+    modules: [sql, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      version_publish: kickside.workflows.repo:version_publish
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: undo_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Undo/redo — inverse construction, id preservation, stack cap, redo clearing, DB replay.
+    source: file://../../suites/undo_test.lua
+    method: run
+    modules: [sql, json, uuid, funcs, process, security, channel, time]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      workflow_inverse: kickside.workflows:workflow_inverse
+      undo: kickside.workflows.undo:undo
+      types: kickside.workflows:types
+
+  - name: undo_restart_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Workflow undo history is durable and covers every committed write.
+    source: file://../../suites/undo_restart_test.lua
+    method: run
+    modules: [sql, json, uuid, funcs, process, security, channel, time]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      store: kickside.workflows.store:store
+      workflow_state: kickside.workflows:workflow_state
+      workflow_inverse: kickside.workflows:workflow_inverse
+      undo: kickside.workflows.undo:undo
+      types: kickside.workflows:types
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: undo_access_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Workflow undo history is durable and covers every committed write.
+    source: file://../../suites/undo_restart_test.lua
+    method: access_probe
+    modules: [sql, json, uuid, funcs, process, security, channel, time]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      store: kickside.workflows.store:store
+      workflow_state: kickside.workflows:workflow_state
+      workflow_inverse: kickside.workflows:workflow_inverse
+      undo: kickside.workflows.undo:undo
+      types: kickside.workflows:types
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: workflow_signal_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope without process messaging authority, as a group principal holds; workflow signals reach their processes through workflows identities.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security,
+        db.get, registry.get, registry.find, env.get, process.spawn, process.host]
+      effect: allow
+
+  - name: workflow_signal_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Runs the maintenance wake in the caller's frame.
+    source: file://../../suites/maintenance_wake_probe.lua
+    method: run
+    imports:
+      maintenance_wake: kickside.workflows.runs:maintenance_wake
+
+  - name: versions_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Versions — publish folds+compiles+allocates head+1, refuses an invalid graph, enforces the size cap, appends the version.published marker, and lists/gets.
+    source: file://../../suites/versions_test.lua
+    method: run
+    modules: [sql, json, uuid, funcs, env]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      block_catalog: kickside.workflows.catalog:block_catalog
+      canonical_json: kickside.contract:canonical_json
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+
+  - name: kind_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Flow component purity — authoring identity, management, deletion, lifecycle event declarations, and the separate Automation creation surface.
+    source: file://../../suites/kind_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      types: kickside.workflows:types
+
+  - name: destination_bindings_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Workflow deletion releases the automations addressed at it before the definition tables are purged.
+    source: file://../../suites/destination_bindings_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      destination_bindings: kickside.workflows.binding:destination_bindings
+
+  - name: admission_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Admission, recovery, capacity, and terminal publication invariants.
+    source: file://../../suites/admission_test.lua
+    method: run
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      run_writable: kickside.workflows.runs:run_writable
+      maintenance: kickside.workflows.runs:maintenance
+      admission: kickside.workflows.runs:admission
+      store: kickside.workflows.store:store
+      admission_scaffold: app:admission_scaffold
+
+  - name: admission_payload_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Admission rejects a creation payload above the owner-policy byte cap.
+    source: file://../../suites/admission_payload_policy_test.lua
+    method: run
+    modules: [uuid, json, registry]
+    imports:
+      test: wippy.test:test
+      admission: kickside.workflows.runs:admission
+      store: kickside.workflows.store:store
+      policy_config: kickside.workflows:policy_config
+      run_time: kickside.workflows.runs:run_time
+      launch_budget: kickside.workflows.runs:launch_budget
+
+  - name: utc_timestamp_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Admission and definition timestamps are written in canonical UTC.
+    source: file://../../suites/utc_timestamp_test.lua
+    method: run
+    modules: [time]
+    imports:
+      test: wippy.test:test
+      store_state: kickside.workflows.store:store_state
+      admission: kickside.workflows.runs:admission
+
+  - name: launch_reconciliation_live_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Published Dataflow status, crash recovery, and idempotent terminal publication.
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: run
+    modules: &native_reconciliation_modules [uuid, json, funcs, security, time, process, channel]
+    imports: &native_reconciliation_imports
+      retention: userspace.dataflow.retention:sweeper
+      engine_api: kickside.workflows.runs:engine_api
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      compiler: kickside.workflows.compiler:compiler
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      client: userspace.dataflow:client
+      run_state: kickside.workflows.runs:runs_state
+      runs: app:runs_fixture
+      store: kickside.workflows.store:store
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.workflows:types
+
+  - name: launch_reconciliation_live_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound real Dataflow reconciliation assertions.
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: actor_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: native_admission_recovery_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: admission_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: native_admission_recovery_actor_run
+    kind: function.lua
+    meta: { type: test_helper, private: true, environment: test }
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: admission_actor_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: native_capacity_recovery_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: capacity_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: native_capacity_recovery_actor_run
+    kind: function.lua
+    meta: { type: test_helper, private: true, environment: test }
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: capacity_actor_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: native_publication_recovery_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: publication_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: native_publication_recovery_actor_run
+    kind: function.lua
+    meta: { type: test_helper, private: true, environment: test }
+    source: file://../../suites/launch_reconciliation_live_test.lua
+    method: publication_actor_run
+    modules: *native_reconciliation_modules
+    imports: *native_reconciliation_imports
+
+  - name: run_writable_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Writable run reference, validation, and normalized input contract.
+    source: file://../../suites/run_writable_test.lua
+    method: run
+    modules: [json, registry]
+    imports:
+      test: wippy.test:test
+      run_writable: kickside.workflows.runs:run_writable
+
+  - name: runs_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../suites/runs_test.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: runs_simulate_seam
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-bound simulate seam used by the workflow runs suite.
+    source: file://../../suites/runs_test.lua
+    method: seam
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: dc10_crash_caller
+    kind: process.lua
+    source: file://../../suites/dc10_crash_caller.lua
+    method: main
+    modules: [process, channel, time]
+    imports:
+      client: userspace.dataflow:client
+      engine_api: kickside.workflows.runs:engine_api
+      admission: kickside.workflows.runs:admission
+      store: kickside.workflows.store:store

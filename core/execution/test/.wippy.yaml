@@ -1,0 +1,10 @@
+version: "1.0"
+workspace:
+  replacements:
+    kickside/execution: ..
+vars:
+  execution_pg_gate: false
+profiles:
+  postgres:
+    vars:
+      execution_pg_gate: true

@@ -1,0 +1,194 @@
+version: '1.0'
+namespace: app
+entries:
+- name: sessions_http_error_test
+  kind: function.lua
+  source: file://sessions_http_error_test.lua
+  method: run
+  meta:
+    type: test
+    suite: sessions_http
+  modules:
+  - http
+  - security
+  imports:
+    test: wippy.test:test
+    adapter: kickside.sessions.api:favorite
+    session_writer: wippy.session.persist:writer
+    session_repo: wippy.session.persist:session_repo
+    canonical_json: kickside.contract:canonical_json
+- name: http_error_env
+  kind: env.storage.file
+  file_path: ./.wippy/session-test.env
+  auto_create: true
+  meta:
+    type: envstorage
+- name: gateway
+  kind: http.service
+  addr: :0
+  lifecycle:
+    auto_start: false
+- name: api
+  kind: http.router
+  prefix: /sessions-test
+  meta:
+    server: gateway
+  middleware:
+  - token_auth
+  options:
+    token_store: kickside.users.security:tokens
+  post_middleware:
+  - endpoint_firewall
+- name: http_error_scope
+  kind: security.policy
+  groups:
+  - sessions_test
+  policy:
+    resources: '*'
+    actions: '*'
+    effect: allow
+- name: contract_dependency
+  kind: ns.dependency
+  component: kickside/contract
+  version: '*'
+  parameters: []
+- name: sessions_dependency
+  kind: ns.dependency
+  component: kickside/sessions
+  version: '*'
+  parameters:
+  - name: kickside.sessions:api_router
+    value: app:api
+  - name: kickside.sessions:ui_server
+    value: app:gateway
+  - name: wippy.session:api_router
+    value: app:api
+  - name: wippy.session:env_storage
+    value: app:http_error_env
+  - name: wippy.session:delegation_func_id
+    value: app:session_test_delegate
+  - name: wippy.bootloader:application_host
+    value: app:processes
+  - name: wippy.bootloader:env_storage
+    value: app:http_error_env
+  - name: wippy.relay:application_host
+    value: app:processes
+  - name: wippy.relay:env_storage
+    value: app:http_error_env
+  - name: wippy.relay:user_security_scope
+    value: app:http_error_scope
+  - name: wippy.migration:app_db
+    value: app:db
+  - name: wippy.views:api_router
+    value: app:api
+  - name: wippy.views:env_storage
+    value: app:http_error_env
+- name: session_test_delegate
+  kind: function.lua
+  source: return { run = function() return nil, errors.new({ message = "delegation
+    is unavailable in the Sessions HTTP harness", kind = errors.UNAVAILABLE }) end
+    }
+  method: run
+- name: users_dependency
+  kind: ns.dependency
+  component: kickside/users
+  version: '*'
+  parameters:
+  - name: kickside.users:env_storage
+    value: app:http_error_env
+  - name: kickside.users:public_router
+    value: app:http_error_public_router
+  - name: kickside.users:api_router
+    value: app:api
+  - name: kickside.users:ui_server
+    value: app:gateway
+  - name: kickside.users:target_db
+    value: app:db
+  - name: kickside.users:user_security_scope
+    value: app:http_error_scope
+  - name: kickside.users:admin_security_scope
+    value: app:http_error_scope
+  - name: kickside.users:login_role_resource
+    value: app:*
+  - name: kickside.settings:target_db
+    value: app:db
+  - name: kickside.settings:api_router
+    value: app:api
+  - name: kickside.settings:ui_server
+    value: app:gateway
+  - name: kickside.component:target_db
+    value: app:db
+  - name: kickside.component:api_router
+    value: app:api
+  - name: kickside.component:lifecycle_impl
+    value: kickside.core.lifecycle:component_lifecycle_impl
+  - name: kickside.core:target_db
+    value: app:db
+  - name: kickside.core.lifecycle:process_host
+    value: app:processes
+  - name: kickside.core.lifecycle:user_lifecycle_grant
+    value:
+      subject_id: sessions_test
+      subject_type: group
+      access_mask: 2
+  - name: kickside.core.lifecycle:admin_lifecycle_grant
+    value:
+      subject_id: sessions_test
+      subject_type: group
+      access_mask: 3
+  - name: kickside.core.retention:process_host
+    value: app:processes
+  - name: kickside.core.threads:process_host
+    value: app:processes
+  - name: kickside.core.retention:api_router
+    value: app:api
+  - name: kickside.core.threads:api_router
+    value: app:api
+  - name: kickside.core.projections:api_router
+    value: app:api
+  - name: kickside.core.retention:user_security_scope
+    value: app:http_error_scope
+  - name: kickside.core.threads:user_security_scope
+    value: app:http_error_scope
+  - name: kickside.core.jobs:target_db
+    value: app:db
+  - name: kickside.core.jobs:process_host
+    value: app:processes
+- name: dep.wippy.bootloader
+  kind: ns.dependency
+  component: wippy/bootloader
+  version: '*'
+  parameters:
+  - name: wippy.bootloader:application_host
+    value: app:processes
+  - name: wippy.bootloader:env_storage
+    value: app:http_error_env
+- name: dep.wippy.views
+  kind: ns.dependency
+  component: wippy/views
+  version: '*'
+  parameters:
+  - name: api_router
+    value: app:api
+  - name: env_storage
+    value: app:http_error_env
+- name: dep.wippy.session
+  kind: ns.dependency
+  component: wippy/session
+  version: '*'
+  parameters:
+  - name: api_router
+    value: app:api
+  - name: database_resource
+    value: app:db
+  - name: default_host
+    value: app:processes
+  - name: env_storage
+    value: app:http_error_env
+  - name: delegation_func_id
+    value: app:session_test_delegate
+- name: http_error_public_router
+  kind: http.router
+  prefix: /sessions-public
+  meta:
+    server: gateway

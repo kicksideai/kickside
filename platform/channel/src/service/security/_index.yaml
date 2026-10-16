@@ -1,0 +1,12 @@
+version: "1.0"
+namespace: kickside.channel.service
+
+entries:
+  - name: bridge_registry
+    kind: security.policy
+    policy:
+      resources: kickside.channel.bridge:*
+      actions:
+        - process.registry.register.consistent
+        - process.registry.unregister.consistent
+      effect: allow

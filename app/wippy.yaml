@@ -1,0 +1,45 @@
+organization: kickside
+module: kickside
+type: application
+description: KickSide — modular AI workspace. Ships the runnable shell and core services; administrators add optional capabilities from the Hub during or after setup.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - app
+  - workspace
+publish:
+  profiles:
+    include:
+      - quickstart
+      - bootstrap_admin
+      - local
+      - sqlite
+      - postgres
+      - postgres_large
+      - postgres_enterprise
+  runtime:
+    sections:
+      - security
+      - registry
+      - logmanager
+      - override
+exclude_meta:
+  type:
+    - test
+    - test_dependency
+    - test_helper
+    - test_support
+exclude:
+  - ".wippy/**"
+  - "wippy.lock"
+  - "test/**"
+  - "tests/**"
+  - "test-support/**"
+embed:
+  - app:app_fs
+
+directories:
+  modules: .wippy
+  src: ./src

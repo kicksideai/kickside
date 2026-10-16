@@ -1,0 +1,254 @@
+version: "1.0"
+namespace: kickside.webhooks
+
+# KickSide webhooks. A webhook is a thread-backed component (class kickside.webhooks)
+# the user mints: it returns a secured public URL and stores a JSON-schema for its
+# inbound payloads. The public endpoint verifies the secret, validates the body
+# against that schema, and appends it as an event on the webhook's thread. Because
+# the webhook is a declared trigger source (a published port entry), it appears in the data-flow
+# source catalog and the existing poller trigger machinery drains it -- no new drain.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Webhooks
+      comment: User-minted, secret-secured, schema-validated public webhook endpoints that act as data-flow trigger sources.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the webhooks table.
+      description: SQL database resource backing the webhooks table.
+    targets:
+      - entry: kickside.webhooks.migrations:01_webhooks
+        path: .meta.target_db
+      - entry: kickside.webhooks:db_config
+        path: .meta.db_id
+      - entry: kickside.webhooks.security:endpoint_db_access
+        path: .policy.resources
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured webhooks DB id (rewritten by the target_db requirement).
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the webhook-management endpoints attach to. Must enforce session auth.
+      description: Authenticated HTTP router the webhook-management endpoints attach to. Must enforce session auth.
+    targets:
+      - entry: kickside.webhooks.api:create_webhook.endpoint
+        path: .meta.router
+      - entry: kickside.webhooks.api:list_webhooks.endpoint
+        path: .meta.router
+      - entry: kickside.webhooks.api:update_webhook.endpoint
+        path: .meta.router
+      - entry: kickside.webhooks.api:revoke_webhook.endpoint
+        path: .meta.router
+      - entry: kickside.webhooks.api:delete_webhook.endpoint
+        path: .meta.router
+
+  - name: public_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Public (unauthenticated) HTTP router the ingress endpoint attaches to. The ingress handler enforces the secret itself.
+      description: Public (unauthenticated) HTTP router the ingress endpoint attaches to. The ingress handler enforces the secret itself.
+    targets:
+      - entry: kickside.webhooks.api.public:post_hook.endpoint
+        path: .meta.router
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the webhook management UI static bundle attaches to.
+      description: HTTP server the webhook management UI static bundle attaches to.
+    targets:
+      - entry: kickside.webhooks:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built webhook management web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-webhooks
+    fs: kickside.webhooks:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: webhooks_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: webhooks_view
+      title: Webhooks
+      description: Webhook management surface — lists the user's minted webhooks with status and subscriber counts, and opens a detail modal to rename, edit the payload schema, copy the ingress URL, revoke, or delete. Fetches its own data over /api/v1/webhooks; takes no props.
+      announced: true
+      tag_name: kickside-webhooks
+      base_path: kickside-webhooks
+      entry_point: index.js
+      icon: tabler:webhook
+
+  - name: webhook_create_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: webhook_create_view
+      title: Create webhook
+      description: Flush webhook create form mounted inside the management modal and the data-flow component picker's create panel. Mints a webhook and reveals its secret and ingress URL exactly once; emits `created` (id/thread_id/webhook_id/title) only when the user presses Done, and `close` to dismiss.
+      announced: true
+      tag_name: kickside-webhook-create
+      base_path: kickside-webhooks
+      entry_point: create.js
+      icon: tabler:webhook
+
+  - name: webhook_detail_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: webhook_detail_view
+      title: Webhook detail
+      description: Read-only detail panel for a selected webhook, mounted by a data-flow source's `detail` view — shows the public ingress URL to hand the sender and a readable view of the validated payload schema. Takes the webhook id on `value`/`config` as a bare id or a JSON object string {thread_id}.
+      announced: true
+      tag_name: kickside-webhook-detail
+      base_path: kickside-webhooks
+      entry_point: detail.js
+      icon: tabler:webhook
+
+  - name: tab.webhooks
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Webhook endpoints — create, edit schemas, and revoke.
+    key: webhooks
+    label: Webhooks
+    icon: tabler:webhook
+    order: 45
+    render: component
+    component_tag: kickside-webhooks
+    access: kickside.webhooks.api:list_webhooks.endpoint
+
+  # ─── Shared libraries ────────────────────────────────────────────────
+  - name: consts
+    kind: library.lua
+    meta: { comment: "Stable vocabulary — table name, secret shape, thread class, inbound event type." }
+    source: file://consts.lua
+
+  - name: types
+    kind: library.lua
+    meta: { comment: DB binding (db_id). }
+    source: file://types.lua
+    modules: [registry]
+
+  - name: repo
+    kind: library.lua
+    meta: { comment: Webhook persistence — mint/resolve/list/revoke + append-as-actor. }
+    source: file://persist/repo.lua
+    modules: [sql, hash, crypto, uuid, time, json, contract, security]
+    imports:
+      component_read_port: kickside.component.persist:read_port
+      component_query: kickside.component.persist:component_query
+      implementation_access: kickside.component.persist:implementation_access
+      webhook_consts: kickside.webhooks:consts
+      webhook_types: kickside.webhooks:types
+      webhook_security: kickside.webhooks.ingress:security_core
+      component: kickside.component:component
+
+  # ─── Source declaration: the data-flow trigger source ────────────────
+  # The webhook kind publishes an events port over its thread, so the source catalog
+  # lists "Webhook" and the picker selects a minted webhook instance. The trigger
+  # projection then drains each inbound event through transform -> sink.
+  - name: webhook_kind
+    kind: contract.binding
+    meta:
+      title: Webhook
+      icon: tabler:webhook
+      comment: A secured webhook delivered an inbound event, validated against its schema.
+      class:
+        - kickside.webhooks
+      component:
+        create:
+          view: kickside.webhooks:webhook_create_view
+        manage:
+          view: kickside.webhooks:webhooks_view
+      group: Webhooks
+      events:
+        input: []
+        output:
+          - type: "kickside.webhooks.events:webhook.inbound"
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: kickside.webhooks.binding:delete_webhook_func
+      - contract: kickside.trigger:source_schema
+        methods:
+          describe: kickside.webhooks.binding:describe_schema_func
+
+  # Published port over the validated inbound webhook stream. The static output face
+  # is the event entry's generic payload schema; the concrete shape of a given
+  # occurrence is the selected webhook instance's own schema, read from the instance
+  # at selection time (never a port field).
+  - name: webhook_received
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Webhook Received
+      comment: Start when a selected webhook receives a valid request.
+      icon: tabler:webhook
+    binding: kickside.webhooks:webhook_kind
+    event: kickside.webhooks.events:webhook.inbound
+    config_schema:
+      thread_id:
+        picker: wc-component-picker
+        required: true
+        title: Webhook
+        # The picked webhook's ingress URL + payload schema render in a compact
+        # detail panel so the sender URL and payload shape are visible in the
+        # data-flow create form.
+        detail: kickside-webhook-detail
+        # Lets the picker list offer per-row deletion, gated server-side (409
+        # webhook_in_use) when the webhook still backs data flows.
+        delete_endpoint: /api/v1/webhooks
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Event-sourced on the core thread engine (thread upsert, event append, status).
+    component: kickside/core
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration

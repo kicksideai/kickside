@@ -1,0 +1,92 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: resync_lock_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_resync_lock
+    comment: Deterministic pin-receipt writer versus event-resync completion interleaving.
+  source: file://../resync_lock_test.lua
+  method: run
+  modules: [sql, uuid, time, channel]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    controls: kickside.automation.engine:controls
+    control_fixture: kickside.automation:control_fixture
+- name: command_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Command stream — reserve, replay, conflicts, finalize, receipts, one-transaction controls, supersede, deferral, concurrency.
+  source: file://../command_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - time
+  - channel
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+- name: control_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Execution-identity change through the command stream, and the status/health read model over drive and command state.
+  source: file://../control_test.lua
+  method: run
+  modules:
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    control_fixture: kickside.automation:control_fixture
+- name: control_fixture
+  kind: library.lua
+  meta:
+    comment: Engine fixtures over real drive and command rows with stubbed component, funcs and caller seams.
+  source: file://../control_fixture.lua
+  modules:
+  - sql
+  imports:
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    types: kickside.automation:types
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+
+- name: control_initiation_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../control_initiation_test.lua
+  method: run
+  modules: [uuid]
+  imports:
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    command: kickside.automation:command
+    controls: kickside.automation.engine:controls
+    drive: kickside.automation:drive
+    control_fixture: kickside.automation:control_fixture
+
+- name: history_reader_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_history_reader
+  source: file://../history_reader_test.lua
+  method: run
+  modules: [uuid, json, sql]
+  imports:
+    test: wippy.test:test
+    control_fixture: kickside.automation:control_fixture
+    control_api: kickside.automation.api:control

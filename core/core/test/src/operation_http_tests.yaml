@@ -1,0 +1,175 @@
+version: '1.0'
+namespace: app
+entries:
+- name: operation_http_register_source
+  kind: library.lua
+  source: file://operation_http_register_source.lua
+  modules:
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    worker: app:operation_http_worker
+    writer: app:operation_http_writer
+    thread_access: app:operation_http_thread_access
+    execution_identity: app:operation_http_execution_identity
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_pause_source
+  kind: library.lua
+  source: file://operation_http_pause_source.lua
+  modules:
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    writer: app:operation_http_writer
+    thread_access: app:operation_http_thread_access
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_resume_source
+  kind: library.lua
+  source: file://operation_http_resume_source.lua
+  modules:
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    writer: app:operation_http_writer
+    thread_access: app:operation_http_thread_access
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_remove_source
+  kind: library.lua
+  source: file://operation_http_remove_source.lua
+  modules:
+  - json
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    writer: app:operation_http_writer
+    thread_access: app:operation_http_thread_access
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_list_source
+  kind: library.lua
+  source: file://operation_http_list_source.lua
+  modules:
+  - env
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    http_params: kickside.contract:http_params
+    reader: app:operation_http_reader
+    page_cursor: app:operation_http_page_cursor
+    thread_access: app:operation_http_thread_access
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_retention_read_source
+  kind: library.lua
+  source: file://operation_http_retention_read_source.lua
+  modules: []
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    repo: app:operation_http_repo
+    ret_consts: kickside.core.retention:consts
+    thread_access: app:operation_http_thread_access
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_retention_write_source
+  kind: library.lua
+  source: file://operation_http_retention_write_source.lua
+  modules:
+  - json
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    http_errors: kickside.contract:http_errors
+    core_db: kickside.core:db
+    repo: app:operation_http_repo
+    thread_access: app:operation_http_thread_access
+    http: app:operation_http_http
+    sql: app:operation_http_sql
+- name: operation_http_fixture
+  kind: library.lua
+  source: file://operation_http_fixture.lua
+  imports:
+    access: kickside.core.threads.api:thread_access
+- name: operation_http_execution_identity
+  kind: library.lua
+  source: file://operation_http_execution_identity.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_http
+  kind: library.lua
+  source: file://operation_http_http.lua
+  imports:
+    fixture: app:operation_http_fixture
+  modules:
+  - http
+- name: operation_http_page_cursor
+  kind: library.lua
+  source: file://operation_http_page_cursor.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_reader
+  kind: library.lua
+  source: file://operation_http_reader.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_repo
+  kind: library.lua
+  source: file://operation_http_repo.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_sql
+  kind: library.lua
+  source: file://operation_http_sql.lua
+  imports:
+    fixture: app:operation_http_fixture
+  modules:
+  - sql
+- name: operation_http_thread_access
+  kind: library.lua
+  source: file://operation_http_thread_access.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_worker
+  kind: library.lua
+  source: file://operation_http_worker.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_writer
+  kind: library.lua
+  source: file://operation_http_writer.lua
+  imports:
+    fixture: app:operation_http_fixture
+- name: operation_http_test
+  kind: function.lua
+  source: file://operation_http_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_operation_http
+  imports:
+    test: wippy.test:test
+    fixture: app:operation_http_fixture
+    http_errors: kickside.contract:http_errors
+    canonical_json: kickside.contract:canonical_json
+    register: app:operation_http_register_source
+    pause: app:operation_http_pause_source
+    resume: app:operation_http_resume_source
+    remove: app:operation_http_remove_source
+    list: app:operation_http_list_source
+    retention_read: app:operation_http_retention_read_source
+    retention_write: app:operation_http_retention_write_source

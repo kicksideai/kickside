@@ -1,0 +1,297 @@
+version: "1.0"
+namespace: kickside.agents.traits
+
+# Built-in agent capabilities contributed by the agents module. The redirect trait is
+# the control-change ("base") capability: a hidden Redirect tool that hands the
+# chat to another agent via the runtime _control directive, plus a
+# dynamic-prompt build func that injects the configured target agents + the
+# per-target comment so the agent knows who to hand off to and when.
+#
+# Configured per agent through trait_contexts (the Redirects tab in the editor):
+#   trait_contexts["kickside.agents.traits:redirect"] = {
+#     targets = { { agent_id = "user_agent:<uuid>", comment = "for billing questions" }, ... }
+#   }
+
+entries:
+  - name: artifacts
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Artifacts
+      public: true
+      icon: tabler:assembly
+      comment: Creates persistent standalone or inline rich-content artifacts in chat.
+      tags: [artifacts, content, tools]
+    build_func_id: kickside.agents.traits:build_artifacts_catalog
+    prompt: |
+      You have the CreateArtifact tool to create rich content artifacts that
+      persist with the session and can render in artifact surfaces.
+
+      ## Content modes
+
+      1. Text mode: pass `title` and `content`; `content_type` defaults to text/markdown
+         (`text/markdown` or `text/html`). Use this for documents, formatted
+         text, tables, code, and generated HTML. For a chart, set
+         `content_type: text/html` and provide a complete self-contained HTML
+         document with an SVG chart containing the actual data, labels, and axes.
+         Draw the chart directly in SVG; do not send Chart.js JSON or code fences.
+         A chart configuration alone does not render a chart.
+      2. Component tag mode: pass `title`, `tag_name`, and `props`. Only use a
+          tag listed in the auto-registered component catalog below. Do not set
+          `content_type` in this mode.
+      3. Package mode: pass `title`, `resource_kind`, and `resource_id` from the
+         approved catalog, plus `props` for components when needed. The tool
+         constructs package JSON from the live registry. Never provide or
+         invent package JSON yourself.
+
+      Choose exactly one content mode. Create artifacts with CreateArtifact.
+      Use only approved component tags in tool arguments and only the returned
+      artifact embed tag in reply text when instructions are requested.
+
+      ## Display modes
+
+      `instructions: false` is the default. The artifact is the main answer.
+      Reply with plain prose and do not add an artifact tag. A successful tool
+      call means the artifact was queued; do not claim that a chat card is
+      visible unless the current client actually shows one.
+
+      With `instructions: true`, the artifact appears in the reply only when
+      you copy the exact <artifact id="..."/> tag from the developer instruction
+      inserted after the successful tool result. Include that tag verbatim at
+      the intended position, outside code blocks, quotes, and backticks.
+      Use the returned id; never invent an artifact id.
+
+      ## Render mode
+
+      `render` controls how the displayed artifact is drawn, independently of
+      whether it needs an embed tag. Omit it for `inline` rendering in the thread — that
+      is the right default for documents and prose. Use `standalone` for something
+      the reader opens deliberately rather than reads in place, and
+      `inline-interactive` for a component or page that needs a live frame.
+
+      The optional `preview` is a short sentence shown before the artifact loads.
+    tools:
+      - kickside.agents.traits:create_artifact
+
+  - name: build_artifacts_catalog
+    kind: function.lua
+    meta:
+      comment: Builds the live component and page catalog appended to the Artifacts capability prompt.
+    source: file://build_artifacts_catalog.lua
+    imports:
+      component_registry: wippy.views:component_registry
+      page_registry: wippy.views:page_registry
+    method: execute
+
+  - name: create_artifact
+    kind: function.lua
+    meta:
+      type: tool
+      title: Create Artifact
+      icon: tabler:assembly
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Title for the artifact",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "content": {
+              "type": "string",
+              "description": "Text mode only: non-empty HTML or Markdown content.",
+              "minLength": 1,
+              "maxLength": 1048576
+            },
+            "content_type": {
+              "type": "string",
+              "description": "Text mode only, required: text/html for HTML documents, text/markdown for Markdown.",
+              "enum": ["text/html", "text/markdown"]
+            },
+            "tag_name": {
+              "type": "string",
+              "description": "Component tag mode only: an approved auto-registered tag from the capability catalog.",
+              "pattern": "^[a-z][a-z0-9]*-[a-z0-9-]+$",
+              "maxLength": 120
+            },
+            "resource_kind": {
+              "type": "string",
+              "description": "Package mode resource type from the capability catalog.",
+              "enum": ["component", "page"]
+            },
+            "resource_id": {
+              "type": "string",
+              "description": "Package mode registry ID from the capability catalog.",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$"
+            },
+            "props": {
+              "type": "object",
+              "description": "Props passed to a tag-mode or component-package artifact."
+            },
+            "preview": {
+              "type": "string",
+              "description": "Optional one-sentence description shown before the artifact loads.",
+              "maxLength": 500
+            },
+            "instructions": {
+              "type": "boolean",
+              "description": "false (default) creates a standalone artifact; true returns an opaque inline embed token to paste verbatim into the reply.",
+              "default": false
+            },
+            "render": {
+              "type": "string",
+              "description": "How the artifact is drawn in the thread. inline (default) renders the content; standalone renders a button that opens it; inline-interactive embeds it in a sandboxed frame. Independent of instructions.",
+              "enum": ["inline", "standalone", "inline-interactive"]
+            }
+          },
+          "required": ["title"],
+          "oneOf": [
+            {
+              "required": ["content"],
+              "not": { "anyOf": [
+                { "required": ["tag_name"] },
+                { "required": ["resource_kind"] },
+                { "required": ["resource_id"] }
+              ] }
+            },
+            {
+              "required": ["tag_name"],
+              "not": { "anyOf": [
+                { "required": ["content"] },
+                { "required": ["content_type"] },
+                { "required": ["resource_kind"] },
+                { "required": ["resource_id"] }
+              ] }
+            },
+            {
+              "required": ["resource_kind", "resource_id"],
+              "not": { "anyOf": [
+                { "required": ["content"] },
+                { "required": ["content_type"] },
+                { "required": ["tag_name"] }
+              ] }
+            }
+          ],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "message": {"type": "string"},
+            "_control": {
+              "type": "object",
+              "properties": {
+                "artifacts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": {"type": "string"},
+                      "content": {"type": "string"},
+                      "content_type": {"type": "string", "enum": ["text/html", "text/markdown", "application/json"]},
+                      "display_type": {"type": "string", "enum": ["standalone", "inline"]},
+                      "type": {"type": "string", "enum": ["inline", "standalone", "inline-interactive"]},
+                      "preview": {"type": "string"},
+                      "instructions": {"type": "boolean"}
+                    },
+                    "required": ["title", "content", "content_type", "display_type", "preview", "instructions"],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "required": ["success"],
+          "description": "Successful tool result. Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: CreateArtifact
+      llm_description: |
+        Create a persistent rich-content artifact in chat. Use title + content
+        for Markdown/HTML, title + tag_name + props for an approved
+        auto-registered component, or title + resource_kind + resource_id for
+        an approved registry-backed package. instructions=false creates a
+        standalone artifact; instructions=true yields an opaque inline embed
+        instruction after the tool succeeds.
+        Failures return no result and a typed tool error with a clear message.
+    source: file://create_artifact.lua
+    modules: [json]
+    imports:
+      tool_result: kickside.contract:tool_result
+      canonical_json: kickside.contract:canonical_json
+      component_registry: wippy.views:component_registry
+      bundled_meta: wippy.views:bundled_meta
+      page_registry: wippy.views:page_registry
+    method: handler
+    pool:
+      size: 2
+
+  - name: redirect
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Redirect
+      public: true
+      icon: tabler:arrow-forward-up
+      comment: Hands the chat off to another agent, which then takes over.
+      tags: [agents, routing]
+      # Assignable like any trait (so the agent API accepts it), but the editor
+      # hides it from the Capabilities picker — it's configured via the Redirects
+      # tab instead.
+      # Configured via the Redirects tab in the agent editor (target agents +
+      # per-target comments), folded into the prompt by init_redirect.
+    build_func_id: kickside.agents.traits:init_redirect
+    prompt: |
+      You can hand this chat off to another agent using the **Redirect**
+      tool. After redirecting, the other agent takes over — you do not continue.
+
+      Use it when the user's request is better served by one of your redirect
+      targets (listed below if configured). Pass the target's id to `switch`.
+    tools:
+      - kickside.agents.traits:redirect_action
+
+  - name: init_redirect
+    kind: function.lua
+    meta:
+      comment: Redirect capability build func — folds the configured target agents + comments into the prompt.
+    source: file://init_redirect.lua
+    method: execute
+    imports:
+      component: kickside.component:component
+      agent_ref: kickside.agents:agent_ref
+
+  - name: delegate
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Delegation
+      comment: Delegates self-contained subtasks to specialized sub-agents with the delegate tool.
+      tags: [agents, routing]
+      # Private: never offered in the Capabilities picker. It is attached
+      # automatically by the agent resolver whenever an agent has delegates, with
+      # a context carrying the resolved delegate targets. init_delegate folds the
+      # delegation semantics + target list into the prompt so the agent knows a
+      # delegate is an isolated subtask call, not a handoff.
+      private: true
+    build_func_id: kickside.agents.traits:init_delegate
+    prompt: |
+      You can delegate self-contained subtasks to specialized sub-agents using
+      the delegate tools available to you. A delegate runs in its own isolated
+      context: it does not see this chat and works only from the input
+      you pass it. It performs the subtask and returns its result to you.
+      Delegation is not a handoff -- you stay in control of the chat and
+      continue using the returned result.
+
+  - name: init_delegate
+    kind: function.lua
+    meta:
+      comment: Delegate capability build func -- folds the resolved delegate targets into the prompt.
+    source: file://init_delegate.lua
+    method: execute

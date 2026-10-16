@@ -1,0 +1,368 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: install_basics_and_rollback_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://install_basics_and_rollback_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: rollback_replay_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://rollback_replay_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: installed_views_and_errors_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://installed_views_and_errors_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: state_reads_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://state_reads_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: state_patches_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://state_patches_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: reconfigure_actions_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://reconfigure_actions_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: reconfigure_catalog_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://reconfigure_catalog_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: reconfigure_transforms_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://reconfigure_transforms_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: schedule_declaration_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://schedule_declaration_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: schedule_public_state_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://schedule_public_state_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: schedule_input_validation_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://schedule_input_validation_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: result_shape_and_isolation_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://result_shape_and_isolation_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: automation_type_catalog_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://automation_type_catalog_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: sink_catalog_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://sink_catalog_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+    catalog_fixture: kickside.automation:catalog_fixture
+- name: source_catalog_and_database_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://source_catalog_and_database_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+    catalog_fixture: kickside.automation:catalog_fixture
+- name: owner_lookup_and_contracts_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://owner_lookup_and_contracts_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: action_access_and_composition_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://action_access_and_composition_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: action_collection_and_identity_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://action_collection_and_identity_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - registry
+  - json
+  - uuid
+  imports:
+    test: wippy.test:test
+    declaration_authority: kickside.automation:declaration_authority
+    types: kickside.automation:types
+    binding_validation: kickside.automation:binding_validation
+    execution_identity: kickside.execution:execution_identity
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: catalog_fixture
+  kind: library.lua
+  source: file://catalog_fixture.lua

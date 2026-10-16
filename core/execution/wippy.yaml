@@ -1,0 +1,24 @@
+organization: kickside
+module: execution
+type: library
+description: KickSide execution identity — the one principal codec, delegation encoding and live run-as path
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - identity
+  - execution
+  - delegation
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "test/**"
+  - "test:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app:**"
+  - "app.**:**"

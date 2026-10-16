@@ -1,0 +1,294 @@
+version: "1.0"
+namespace: kickside.data
+
+entries:
+  # ─── Creating the target a load needs ────────────────────────────────
+  # loadable refuses to create -- a target exists before a load, or there is no
+  # load -- and this is the other half. It is a separate contract rather than two
+  # more methods on loadable because accepting rows and changing a schema are
+  # different rights: a receiver that takes rows must not have to pretend it can
+  # issue DDL, and a host that binds one for loads has not thereby handed it
+  # schema authority. A receiver that binds both answers loadable.describe with
+  # supports.can_define = true.
+  #
+  # There is no type vocabulary in this contract, and that is the decision it is
+  # built around. A receiver publishes its own through types(), with the options
+  # each type accepts, and the caller -- an agent reading a spreadsheet, a person
+  # filling a form -- chooses from what that receiver actually offers. A closed
+  # list here would be one of two things: the smallest set every store can
+  # express, or a promise some store keeps only by widening it, and a password
+  # silently stored as text is not a password. What a caller may depend on is the
+  # answer instead of the vocabulary: define reports what it did, and
+  # loadable.describe then describes those columns in its own closed coercion
+  # enum, which is what a producer coerces values to.
+  #
+  # Reading an existing target's shape is loadable.describe's job, not a third
+  # method here: a receiver that can define is expected to bind both.
+  - name: definable
+    kind: contract.definition
+    meta:
+      title: Definable Data Sink
+      tags: [data, sink, schema, define, ddl]
+      comment: Create or alter the target a load writes into. The receiver owns and publishes its type vocabulary; the caller picks from it.
+    methods:
+      - name: types
+        description: |
+          The column types this receiver can create, as it names them. A caller chooses from this
+          answer and nothing else: a type absent here is a type define refuses.
+
+          options_schema, when present, is the JSON Schema of that type's per-column options -- the
+          values an enum accepts, a password policy, a precision. A caller MAY fill it and MUST NOT
+          send keys it does not declare. bulk_writable = false marks a type no bulk load can fill:
+          defining such a column is allowed and sometimes right, but rows loaded through
+          kickside.data:loadable will never carry it, so a caller designing an import should not
+          choose one. It is advisory -- the target's own describe is what states which columns a
+          load may write.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "types": {
+                    "type": "array",
+                    "description": "Every column type this receiver can create, in the order it wants them offered.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "title"],
+                      "properties": {
+                        "name": { "type": "string", "minLength": 1, "description": "What define expects in a column's type." },
+                        "title": { "type": "string", "minLength": 1, "description": "What a person choosing it reads." },
+                        "description": { "type": "string", "description": "What it is for, in terms a caller deciding between two types can act on." },
+                        "options_schema": { "type": "object", "description": "JSON Schema of this type's per-column options. Absent means the type takes none." },
+                        "bulk_writable": { "type": "boolean", "description": "False when no bulk load can fill a column of this type." }
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["types"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "types": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: define
+        description: |
+          Create the target, or bring the one that already exists up to these columns. Exactly one of
+          target and code: target names an existing target to alter, code proposes the local name of a
+          new one and the receiver answers with the full id it published for it. The namespace of a
+          target belongs to the receiver; a caller never composes one.
+
+          dry_run = true answers what it would do and writes nothing. That answer is what a person
+          approving a schema change reads, so a define that cannot proceed names every reason at once
+          in details.blockers -- each { code, message, column? } -- rather than the first one it hit.
+          Well-known blocker codes: unsupported_type, unsupported_option, invalid_code, code_taken,
+          type_conflict, key_unknown_column, period_conflict, immutable.
+
+          Adding a column to a target that already holds rows is an addition, never a retype: the rows
+          already there have nothing to put in a column that did not exist, so such a column is
+          optional however insistently it was asked for. A receiver that cannot add one without
+          rewriting the rows refuses instead of rewriting them.
+
+          describe, when present, is what loadable.describe answers for the target once this
+          definition is applied: the columns, their storage types and the key. A dry run carries it
+          for a target that does not exist yet, so a caller can check rows against it before anything
+          is created. A receiver that cannot say leaves it out.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["columns"],
+                "oneOf": [
+                  { "required": ["target"], "not": { "required": ["code"] } },
+                  { "required": ["code", "title"], "not": { "required": ["target"] } }
+                ],
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^[^\\s:]+:[^\\s:]+$",
+                    "description": "An existing target to bring up to these columns."
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Local name for a target that does not exist yet. The receiver decides whether it is usable and answers with the full id."
+                  },
+                  "title": { "type": "string", "minLength": 1, "description": "What a person calls it. Required when creating." },
+                  "columns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "type"],
+                      "properties": {
+                        "name": { "type": "string", "minLength": 1 },
+                        "type": { "type": "string", "minLength": 1, "description": "A name types() answered with." },
+                        "nullable": { "type": "boolean" },
+                        "role": {
+                          "type": "string",
+                          "enum": ["period"],
+                          "description": "The same role loadable.describe reports: the axis replace_scope.period_in replaces by. At most one column may carry it."
+                        },
+                        "options": { "type": "object", "description": "Values for this type's options_schema." }
+                      }
+                    }
+                  },
+                  "key": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 },
+                    "description": "Columns naming one row's identity, in loadable's sense: a non-empty key is what makes commit refuse duplicates."
+                  },
+                  "dry_run": { "type": "boolean", "description": "Answer what would happen and write nothing." }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$", "description": "The id a load names. For a creation this is the receiver's answer to code." },
+                  "created": { "type": "boolean", "description": "True when the target did not exist; false when an existing one was brought up to the columns." },
+                  "planned": { "type": "boolean", "description": "True when dry_run answered and nothing was written." },
+                  "changes": {
+                    "type": "array",
+                    "description": "What was done, or would be. Empty means the target already matched.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["action"],
+                      "properties": {
+                        "action": {
+                          "type": "string",
+                          "minLength": 1,
+                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, key_set, period_set."
+                        },
+                        "column": { "type": "string" },
+                        "detail": { "type": "string" }
+                      }
+                    }
+                  },
+                  "describe": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["columns", "key", "columns_version"],
+                    "description": "What loadable.describe answers for this target once the definition is applied.",
+                    "properties": {
+                      "columns": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["name", "type", "nullable"],
+                          "properties": {
+                            "name": { "type": "string", "minLength": 1 },
+                            "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                            "format": { "type": "string" },
+                            "role": { "type": "string", "enum": ["period"] },
+                            "nullable": { "type": "boolean" }
+                          }
+                        }
+                      },
+                      "key": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                      "columns_version": { "type": "string", "minLength": 1 },
+                      "limits": { "type": "object", "description": "As loadable.describe answers them." },
+                      "supports": { "type": "object", "description": "As loadable.describe answers them." }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["target", "created", "changes"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "changes": false, "describe": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }

@@ -1,0 +1,43 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The control is PrimeVue's Select — trigger, overlay, option rows and filter box
+   are styled by the facade `.p-select*` chrome and `--p-*` tokens. Only the custom
+   slot content is styled here. */
+.cn-select { width: 100%; display: flex; }
+
+/* #value slot: current selection (icon + label) or the placeholder. */
+/* `flex`, not `inline-flex`. This span is the Select's #value slot, so it sits
+   inside the theme's `.p-select-label`, which is `display: block`. As an
+   atomic inline it aligns on that label's text baseline, and the line box then
+   has to hold both the 16px icon and the strut's leading below the baseline -
+   which renders the control ~3.5px taller than an input with the same padding.
+   Block-level removes the strut and the baseline alignment with it.
+
+   Do NOT fix this by making `.p-select-label` a flex container: that disables
+   its `text-overflow: ellipsis`, which is what truncates every select whose
+   label holds plain text. Truncation here lives on `.cn-val-label`. */
+.cn-val { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cn-val-ico { width: 16px; height: 16px; color: var(--p-text-muted-color); flex-shrink: 0; }
+.cn-val-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cn-val-muted { color: var(--p-text-muted-color); }
+/* The raw id, when it must show at all (resolution failed), rides as a small
+   monospace secondary detail — it never stands in for the label itself. */
+.cn-val-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+.cn-ph { color: var(--p-text-muted-color); }
+
+/* #option slot: icon + label with an optional provider meta pinned to the end. */
+.cn-opt-ico { width: 16px; height: 16px; color: var(--p-text-muted-color); flex-shrink: 0; }
+.cn-opt-label { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.cn-opt-meta { font-size: 11px; color: var(--p-text-muted-color); flex-shrink: 0; }
+
+/* #empty slot. */
+.cn-empty { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--p-text-muted-color); }

@@ -1,0 +1,37 @@
+version: '1.0'
+namespace: app
+entries:
+- name: mutation_proof_test
+  kind: function.lua
+  source: file://mutation_proof_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_mutation_proof
+  imports:
+    test: wippy.test:test
+    fixture: app:resource_mutations_fixture
+    api: app:resource_mutations_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+- name: mutation_proof_retry_target
+  kind: function.lua
+  source: file://mutation_proof_retry_target.lua
+  method: run
+  imports:
+    api: app:resource_mutations_source
+    fixture: app:resource_mutations_fixture
+- name: mutation_proof_retry_test
+  kind: function.lua
+  source: file://mutation_proof_retry_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_mutation_proof_retry
+  modules:
+  - funcs
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock

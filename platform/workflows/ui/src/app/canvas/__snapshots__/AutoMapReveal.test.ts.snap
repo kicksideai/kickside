@@ -1,0 +1,17 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AutoMapReveal accessibility contract > keeps the settled trace operable through named PrimeVue buttons > settled automatic mapping trace 1`] = `
+"<div class="wf-automap">
+  <!-- Reveal moment: the system did this, here's what it did. -->
+  <!-- Persistent trace: the WHY, on demand. -->
+  <div class="wf-automap-trace"><button class="p-button p-component p-button-secondary p-button-rounded p-button-text wf-automap-tracebtn" data-p="rounded text" type="button" aria-label="Mapped automatically — view" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Mapped automatically — view" pc1="" data-pc-section="root"><i data-icon="tabler:wand" aria-hidden="true"></i><span class="wf-automap-tracelbl">Mapped automatically — view</span></button><button class="p-button p-component p-button-secondary p-button-rounded p-button-text wf-automap-tracex" data-p="rounded text" type="button" aria-label="Dismiss automatic mapping explanation" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc2="" data-pc-section="root"><i data-icon="tabler:x" aria-hidden="true"></i></button>
+    <!--v-if-->
+  </div>
+</div>"
+`;
+
+exports[`AutoMapReveal accessibility contract > uses a PrimeVue button for the reveal action and exposes its result > automatic mapping reveal 1`] = `
+"<div class="wf-automap">
+  <!-- Reveal moment: the system did this, here's what it did. --><button class="p-button p-component p-button-secondary p-button-outlined wf-automap-card" data-p="outlined" type="button" aria-label="Mapped automatically. Mapped 1 field by name and type.. Open mapping" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc0="" data-pc-section="root"><span class="wf-automap-hd"><i data-icon="tabler:wand" aria-hidden="true"></i><span class="wf-automap-title">Mapped automatically</span><span class="wf-automap-count">Mapped 1 field by name and type.</span></span><span class="wf-automap-pairs"><span class="wf-automap-pair" title="Email matches by name and type."><code class="wf-automap-src">email</code><i data-icon="tabler:arrow-right" aria-hidden="true"></i><code class="wf-automap-tgt">Email</code></span></span><span class="wf-automap-hint">Click to open the full mapper.</span></button>
+</div>"
+`;

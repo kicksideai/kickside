@@ -1,0 +1,128 @@
+version: "1.0"
+namespace: kickside.core.retention
+
+# Retention slice. Owns kickside_retention_policy CRUD and Core event/receipt
+# pruning. The owner policy lives in kickside.core:policy.
+
+entries:
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # Runtime DB access resolves the root target_db-injected db_config.
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host the supervised retention sweeper runs on.
+    targets:
+      - entry: kickside.core.retention.service:sweeper.service
+        path: .host
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Security scope the retention upsert endpoint reads the acting actor under.
+    targets:
+      - entry: kickside.core.retention.api:upsert_thread_retention.endpoint
+        path: .meta.scope
+      - entry: kickside.core.security:module_access
+        path: .groups +=
+      - entry: kickside.core.security:module_runtime
+        path: .groups +=
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the retention policy endpoints attach to.
+    targets:
+      - entry: kickside.core.retention.api:get_thread_retention.endpoint
+        path: .meta.router
+      - entry: kickside.core.retention.api:upsert_thread_retention.endpoint
+        path: .meta.router
+
+  # ─── Constant vocabulary ─────────────────────────────────────────────
+  - name: consts
+    kind: library.lua
+    meta:
+      comment: Policy table name, archive modes, and enforced retention defaults.
+    source: file://consts.lua
+
+  # ─── Engine libraries ────────────────────────────────────────────────
+  - name: sweeper
+    kind: library.lua
+    meta:
+      comment: Prune Core-owned events and committed write receipts under Core policy.
+    source: file://sweeper.lua
+    modules:
+      - sql
+      - time
+    imports:
+      clock: kickside.core.jobs:clock
+      prune: kickside.core.retention:prune
+      receipt_purge: kickside.core:write_receipt_purge
+      retention_policy: kickside.core:policy_config
+
+  - name: notifier
+    kind: library.lua
+    meta:
+      comment: Wake the Core retention service after committed eligibility changes.
+    source: file://notifier.lua
+    modules: [process, funcs]
+
+  # Change delivery runs under the retention identity: producers commit
+  # eligibility changes under their own actors and need no process messaging
+  # authority.
+  - name: notify_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the retention notifier message the registered sweeper process.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: notify_access
+    kind: security.policy
+    meta:
+      comment: Lets a narrowly scoped producer publish retention changes through the retention identity.
+    policy:
+      resources: kickside.core.retention:notify
+      actions: funcs.call
+      effect: allow
+
+  - name: notify
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one committed retention change to the registered sweeper process.
+    source: file://notifier.lua
+    method: deliver
+    modules: [process, funcs]
+    security:
+      actor:
+        id: kickside.core.retention:notify
+      policies:
+        - kickside.core.retention:notify_transport
+
+  - name: pin
+    kind: library.lua
+    meta:
+      comment: Retention pins with command/pin generation fences and tombstones (design v4 §4.9).
+    source: file://pin.lua
+    modules:
+      - sql
+      - time
+    imports:
+      retention_policy: kickside.core:policy_config
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: prune
+    kind: library.lua
+    meta:
+      comment: Batched event prune under the thread lock; advances max_pruned_seq (design v4 §4.9).
+    source: file://prune.lua
+    modules:
+      - sql

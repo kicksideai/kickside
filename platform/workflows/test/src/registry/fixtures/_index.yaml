@@ -1,0 +1,334 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/workflows. Provides the host resources the compiler,
+# version plane, run launcher, and automation kind require (app:db, routers, process
+# host, env storage, a permissive scope) and boots the automation + dataflow stack so
+# its harness-owned suites run in isolation. The module loads once through its
+# dependency replacement. Test source lives in this harness under suites/.
+# Harness-only; excluded from publish.
+
+entries:
+  - name: scope_resolver_stub
+    kind: function.lua
+    meta:
+      comment: Test-only kickside.contract:scope_resolver implementation for execution identity capture.
+    source: file://../../scope_resolver_stub.lua
+    modules: [security]
+    method: resolve
+
+  - name: scope_resolver_binding
+    kind: contract.binding
+    meta:
+      comment: Opt-in harness resolver override resolving the ambient test actor; kickside/users now provides the default binding.
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        methods:
+          resolve: app:scope_resolver_stub
+
+  - name: directory_search_stub
+    kind: function.lua
+    meta:
+      comment: Test-only principal search over the currently provisioned workflow actor.
+    source: file://../../directory_stub.lua
+    modules: [security]
+    method: search
+
+  - name: directory_resolve_stub
+    kind: function.lua
+    meta:
+      comment: Test-only principal resolution over the currently provisioned workflow actor.
+    source: file://../../directory_stub.lua
+    modules: [security]
+    method: resolve
+
+  - name: directory_exists_stub
+    kind: function.lua
+    meta:
+      comment: Test-only principal existence check over the currently provisioned workflow actor.
+    source: file://../../directory_stub.lua
+    modules: [security]
+    method: exists
+
+  - name: directory_groups_stub
+    kind: function.lua
+    meta:
+      comment: Test-only live group memberships of the currently provisioned workflow actor.
+    source: file://../../directory_stub.lua
+    modules: [security]
+    method: groups
+
+  - name: directory_binding
+    kind: contract.binding
+    meta:
+      comment: Opt-in harness directory override over the ambient test actor; kickside/users now provides the default binding.
+    contracts:
+      - contract: kickside.contract:directory
+        methods:
+          search: app:directory_search_stub
+          resolve: app:directory_resolve_stub
+          exists: app:directory_exists_stub
+          groups: app:directory_groups_stub
+
+  # Harness-only model used by engine_execution_test's inline-agent proof. The
+  # raw agent spec is emitted by the workflows compiler; no registry agent is
+  # declared here, which keeps the assertion honest.
+  - name: inline_agent_generate
+    kind: function.lua
+    meta:
+      type: llm_function
+      private: true
+      environment: test
+      test_only: true
+      comment: Deterministic generator that verifies inline arena instructions.
+    source: file://../../inline_agent_generate.lua
+    method: handler
+
+  - name: inline_agent_driver
+    kind: contract.binding
+    meta:
+      private: true
+      environment: test
+      test_only: true
+      comment: Harness LLM driver for inline-agent execution.
+    contracts:
+      - contract: wippy.llm:generator
+        methods:
+          generate: app:inline_agent_generate
+
+  - name: inline_agent_provider
+    kind: registry.entry
+    meta:
+      type: llm.provider
+      name: inline-agent-test
+      title: Inline Agent Test Provider
+      private: true
+      environment: test
+      test_only: true
+    driver:
+      id: app:inline_agent_driver
+
+  - name: inline_agent_model
+    kind: registry.entry
+    meta:
+      type: llm.model
+      name: inline-agent-test-model
+      title: Inline Agent Test Model
+      private: true
+      environment: test
+      test_only: true
+    providers:
+      - id: app:inline_agent_provider
+        provider_model: inline-agent-test-model
+
+  - name: block.test_external_wait
+    kind: registry.entry
+    meta:
+      type: kickside.block
+      title: External wait test fixture
+      private: true
+      environment: test
+      test_only: true
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: { type: object, additionalProperties: true }
+        config:
+          type: object
+          additionalProperties: false
+          properties:
+            signal_id: { type: string }
+        output:
+          type: object
+          additionalProperties: true
+          properties:
+            outcome: { type: string, enum: [continue, stop] }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+          additionalProperties: false
+        ports:
+          - { id: then, label: Continue, direction: out, condition: "output.outcome == 'continue'" }
+          - { id: else, label: Stop, direction: out, condition: "output.outcome == 'stop'" }
+          - { id: failed, label: Failed, direction: out }
+        presentation:
+          category: Tests
+        execution:
+          kind: wait
+          arm_id: app:engine_await_arm
+
+  - name: block.engine_linear
+    kind: registry.entry
+    meta: &test_block_meta { type: kickside.block, private: true, environment: test, test_only: true }
+    data: { block: { api_version: kickside.block/v1, input: &object_schema { type: object, additionalProperties: true }, config: *object_schema, output: *object_schema, ports: &result_port [{ id: result, direction: out }], execution: { kind: function, function_id: app:engine_linear } } }
+
+  # The only harness Block declared public: the agent catalog lists exactly the
+  # Blocks an author may reference, so a fixture on each side of that filter
+  # keeps both the row shape and the exclusion honest.
+  - name: block.engine_public_step
+    kind: registry.entry
+    meta: { type: kickside.block, public: true, title: Public Test Step, environment: test, test_only: true }
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: *object_schema
+        config: *object_schema
+        output: *object_schema
+        ports: *result_port
+        presentation: { category: Testing, blurb: A public Block the agent catalog may offer. }
+        execution: { kind: function, function_id: app:engine_linear }
+
+  - name: block.engine_lane_guard
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_lane_guard } } }
+
+  - name: block.engine_lane_guard_or_fail
+    kind: registry.entry
+    meta: *test_block_meta
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: *object_schema
+        config: *object_schema
+        output: *object_schema
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+          additionalProperties: false
+        ports: [{ id: result, direction: out }, { id: failed, direction: out }]
+        execution: { kind: function, function_id: app:engine_lane_guard }
+
+  - name: block.engine_compose_brief
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_compose_brief } } }
+
+  - name: block.engine_run_context
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_run_context } } }
+
+  - name: block.engine_decide
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_decide } } }
+
+  - name: block.engine_arm_a
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_arm_a } } }
+
+  - name: block.engine_arm_b
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_arm_b } } }
+
+  - name: block.engine_item
+    kind: registry.entry
+    meta: *test_block_meta
+    data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_item } } }
+
+  - name: block.engine_item_or_fail
+    kind: registry.entry
+    meta: *test_block_meta
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: *object_schema
+        config: *object_schema
+        output: *object_schema
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+          additionalProperties: false
+        ports: [{ id: result, direction: out }, { id: failed, direction: out }]
+        execution: { kind: function, function_id: app:engine_item_or_fail }
+
+  - name: block.coverage_cycle_step
+    kind: registry.entry
+    meta: *test_block_meta
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: *object_schema
+        config: *object_schema
+        output: *object_schema
+        ports: *result_port
+        execution: { kind: function, function_id: app:coverage_cycle_step }
+
+  - name: block.configurable_agent
+    kind: registry.entry
+    meta: *test_block_meta
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: *object_schema
+        config:
+          type: object
+          properties:
+            agent_id: { type: string }
+            instructions: { type: string }
+            name: { type: string }
+            model: { type: string }
+            tools: { type: array }
+            exit_schema: { type: object }
+            tool_calling: { type: string }
+            context: { type: object }
+          additionalProperties: false
+        output: *object_schema
+        ports: *result_port
+        execution:
+          kind: agent
+          mode: config
+
+  # Harness-owned tests copied from the production module.
+  - name: block_catalog_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Unified Block catalog projects public tools with exact identity and schemas while excluding private descriptors.
+    source: file://../../suites/block_catalog_test.lua
+    method: run
+    imports:
+      block_catalog: kickside.workflows.catalog:block_catalog
+      test: wippy.test:test
+
+  - name: migration_schema_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Greenfield baseline creates exactly the current Flow tables, columns, and indexes.
+    source: file://../../suites/migration_schema_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+
+
+  - name: tool_outcome
+    kind: function.lua
+    meta: { type: tool, public: true, test_only: true, environment: test, input_schema: { type: object, additionalProperties: true }, output_schema: { type: object, additionalProperties: true } }
+    source: file://../../suites/engine_execution_helper.lua
+    method: tool_outcome
+    modules: [ctx]
+
+  - name: tool_count_files
+    kind: function.lua
+    meta: { type: tool, public: true, test_only: true, environment: test }
+    source: file://../../suites/engine_execution_helper.lua
+    method: linear
+    modules: [ctx]

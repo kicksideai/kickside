@@ -1,0 +1,5 @@
+organization: kickside
+module: mcp-harness
+description: Standalone runnable harness that boots kickside/mcp (+ component) and runs its suite.
+directories:
+  src: .

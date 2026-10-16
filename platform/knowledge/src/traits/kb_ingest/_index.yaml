@@ -1,0 +1,281 @@
+version: "1.0"
+namespace: kickside.knowledge.traits.kb_ingest
+
+entries:
+  - name: fetch_url
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    meta:
+      type: tool
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      llm_alias: FetchUrl
+      llm_description: |
+        Fetch content from a URL and queue it for the active knowledge base. By default, all content is stored as a durable ingestion event and only a confirmation is returned. For web pages, sanitizes and queues the text content. For PDFs and binary files, uploads and waits for processing to complete. Set embed=false to get raw text content back instead of queueing. Use extract_prompt to pre-filter content through an LLM before queueing.
+        Failures return no result and a typed tool error with a clear message.
+      title: Fetch URL
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "url": {"type": "string", "description": "URL to fetch and queue"},
+            "kb_id": {"type": "string", "description": "Target KB UUID (optional if set in context)"},
+            "embed": {"type": "boolean", "description": "Queue content for KB ingestion (default: true). Set false to get raw text back."},
+            "extract_prompt": {"type": "string", "description": "LLM prompt to pre-filter/reformat content as markdown before queueing."},
+            "extract_model": {"type": "string", "description": "Optional model for extraction"},
+            "wait": {"type": "boolean", "description": "Wait for file processing to complete (default: true)"},
+            "external_id": {"type": "string", "description": "Stable external content id for idempotent replacement"},
+            "external_version": {"type": "string", "description": "Optional source version for this content"},
+            "metadata": {"type": "object", "description": "Optional document metadata carried into the durable KB event"},
+            "source_ref": {"type": "object", "description": "Optional source reference carried into the durable KB event"}
+          },
+          "required": ["url"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Fetch/ingest result envelope. The shape depends on status: \"queued\" (text or processed file queued for KB ingestion), \"fetched\" (embed=false — raw extracted text returned, nothing queued), or \"uploaded_pending_kb_enqueue\" (binary uploaded with wait=false; the upload-completion callback queues ingestion). Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "description": "True when the fetch/ingest step succeeded", "const": true},
+            "status": {"type": "string", "description": "One of queued, fetched, or uploaded_pending_kb_enqueue"},
+            "message": {"type": "string", "description": "Human-readable status message"},
+            "kb_id": {"type": "string", "description": "Target KB id"},
+            "source_url": {"type": "string", "description": "The URL that was fetched"},
+            "content": {"type": "string", "description": "Extracted text; present only when status is fetched (embed=false)"},
+            "content_type": {"type": "string", "description": "MIME type of the extracted/stored content"},
+            "content_length": {"type": "integer", "description": "Byte length of the queued text content"},
+            "title": {"type": "string", "description": "Extracted or derived document title"},
+            "filename": {"type": "string", "description": "Derived filename when the URL resolved to a binary/PDF file"},
+            "upload_id": {"type": "string", "description": "Upload id when the URL resolved to a binary/PDF file"},
+            "thread_id": {"type": "string", "description": "Durable ingestion thread id"},
+            "projection_id": {"type": "string", "description": "Id of the projection worker materializing the event"},
+            "cursor_id": {"type": "string", "description": "Ingestion cursor id (processed-upload path)"},
+            "external_source": {"type": "string", "description": "External source identifier (processed-upload path)"},
+            "external_id": {"type": "string", "description": "Stable external content id for idempotent replacement"},
+            "external_version": {"type": "string", "description": "Source version recorded for this content"},
+            "trace_context": {"type": "object", "description": "Trace context propagated into the durable KB event"},
+            "source_ref": {"type": "object", "description": "Source reference stored with the materialized document"}
+          },
+          "required": ["success"]
+        }
+    source: file://fetch_url.lua
+    method: handle
+    modules: [ctx, json, html, http_client, security, process, channel, time, uuid]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      upload_lib: kickside.uploads:uploads
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      execution_identity: kickside.execution:execution_identity
+      trace_context: kickside.execution:trace
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      net_safety: kickside.uploads:net_safety
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: embed_content
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    meta:
+      type: tool
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      llm_alias: EmbedContent
+      llm_description: |
+        Queue text content for the active knowledge base. The content is stored as a durable ingestion event and materialized by the KB projection worker. Can be called multiple times to queue different pieces of content.
+        Failures return no result and a typed tool error with a clear message.
+      title: Embed Content
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "content": {"type": "string", "description": "Text content to embed"},
+            "title": {"type": "string", "description": "Optional title for the content"},
+            "content_type": {"type": "string", "description": "MIME type (default: text/plain)"},
+            "external_id": {"type": "string", "description": "Stable external content id for idempotent replacement"},
+            "external_version": {"type": "string", "description": "Optional source version for this content"},
+            "metadata": {"type": "object", "description": "Optional document metadata carried into the durable KB event"},
+            "source_ref": {"type": "object", "description": "Optional source reference carried into the durable KB event"},
+            "kb_id": {"type": "string", "description": "Target KB UUID (optional if set in context)"}
+          },
+          "required": ["content"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Enqueue result envelope. On success the text is queued as a durable KB ingestion event, materialized later by the projection worker. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "description": "True when the content was enqueued", "const": true},
+            "status": {"type": "string", "description": "Enqueue status; \"queued\" on success"},
+            "kb_id": {"type": "string", "description": "Target KB id the content was queued into"},
+            "thread_id": {"type": "string", "description": "Durable ingestion thread id for this enqueue"},
+            "projection_id": {"type": "string", "description": "Id of the projection worker materializing the event"},
+            "external_id": {"type": "string", "description": "Stable external content id used for idempotent replacement"},
+            "external_version": {"type": "string", "description": "Source version recorded for this content"},
+            "trace_context": {"type": "object", "description": "Trace context propagated into the durable KB event"},
+            "source_ref": {"type": "object", "description": "Source reference stored with the materialized document"},
+            "content_length": {"type": "integer", "description": "Byte length of the queued content"}
+          },
+          "required": ["success"]
+        }
+    source: file://embed_content.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: delete_content
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_deleted_publish
+    meta:
+      type: tool
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      llm_alias: DeleteContent
+      llm_description: |
+        Queue deletion of previously ingested content from the active knowledge base by external_id, upload_id, source_url, or a stored reference source_ref. The delete is stored as a durable ingestion event and materialized by the KB projection worker.
+        Failures return no result and a typed tool error with a clear message.
+      title: Delete Content
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "external_id": {"type": "string", "description": "External content id returned by EmbedContent/FetchUrl"},
+            "external_version": {"type": "string", "description": "Optional deletion marker version"},
+            "upload_id": {"type": "string", "description": "Upload id to delete, addressed as upload:<id>"},
+            "source_url": {"type": "string", "description": "Source URL to delete, addressed as url:<url>"},
+            "reference_component_id": {"type": "string", "description": "Referenced component id, addressed as reference:<component_id>:<context_hash>"},
+            "reference_context": {"type": "object", "description": "Reference context used with reference_component_id"},
+            "source_ref": {"type": "object", "description": "Stored source_ref from the materialized document metadata"},
+            "kb_id": {"type": "string", "description": "Target KB UUID (optional if set in context)"}
+          }
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Enqueue result envelope. On success a deletion marker is queued as a durable KB ingestion event, materialized later by the projection worker. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "description": "True when the deletion was enqueued", "const": true},
+            "status": {"type": "string", "description": "Enqueue status; \"queued\" on success"},
+            "kb_id": {"type": "string", "description": "Target KB id the deletion was queued against"},
+            "thread_id": {"type": "string", "description": "Durable ingestion thread id for this enqueue"},
+            "projection_id": {"type": "string", "description": "Id of the projection worker materializing the deletion"},
+            "external_id": {"type": "string", "description": "External content id the deletion marker addresses"},
+            "external_version": {"type": "string", "description": "Deletion marker version recorded"},
+            "trace_context": {"type": "object", "description": "Trace context propagated into the durable KB event"}
+          },
+          "required": ["success"]
+        }
+    source: file://delete_content.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      source_ref_builder: kickside.core.provenance:source_ref
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: select_kb
+    kind: function.lua
+    meta:
+      type: tool
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      llm_alias: SelectKB
+      llm_description: |
+        Select a knowledge base as the active target for content ingestion. After calling this, all subsequent embed operations will target this KB.
+        Failures return no result and a typed tool error with a clear message.
+      title: Select Knowledge Base
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "kb_id": {"type": "string", "description": "Knowledge base UUID to select"}
+          },
+          "required": ["kb_id"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Result of selecting the active ingestion KB. On success kb_id becomes the session's active target via the _control context directive, so subsequent ingest tools default to it. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "description": "True when the KB was selected", "const": true},
+            "kb_id": {"type": "string", "description": "The selected knowledge base id"},
+            "message": {"type": "string", "description": "Human-readable confirmation message"},
+            "_control": {
+              "type": "object",
+              "description": "Runtime control directive that stores kb_id as session.kb_id so later ingest tools target this KB"
+            }
+          },
+          "required": ["success"]
+        }
+    source: file://select_kb.lua
+    method: handle
+    modules: [ctx, json]
+    imports:
+      component: kickside.component:component
+
+  - name: kb_ingest
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Knowledge Base Ingestion
+      public: true
+      comment: Fetches a URL and ingests its content into a chosen knowledge base.
+      icon: tabler:database-import
+      tags:
+        - knowledge
+        - ingestion
+        - url
+      context_schema:
+        type: object
+        required: [kb_id]
+        properties:
+          kb_id:
+            type: string
+            title: Active knowledge base
+            role: picker
+            web_component: wc-kb-picker
+          extract_prompt:
+            type: string
+            title: Extraction prompt
+            role: value
+        additionalProperties: false
+    prompt: |-
+      You can fetch content from URLs, embed text directly, and select target knowledge bases.
+
+      Tools:
+      - FetchUrl: Fetch a URL and embed it directly into the active KB. Works for web pages,
+        PDFs, and binary files. Content is embedded automatically without returning it to you.
+        Set embed=false only if you need to inspect the raw text before embedding.
+      - EmbedContent: Embed text content directly into the active KB. Use for content you
+        compose or transform yourself. Can be called multiple times.
+      - DeleteContent: Delete previously queued content by external_id, upload_id, source_url, or stored source_ref.
+      - SelectKB: Switch the active target knowledge base for subsequent operations.
+
+      Use SelectKB first to choose a target KB, then use FetchUrl or EmbedContent as needed.
+      For a file already uploaded or attached to chat, activate Knowledge Base Writer
+      and pass its upload id to EmbedToKB as upload_id. This preserves the complete
+      processed document and its source; copying ViewFiles text into EmbedContent
+      creates a separate text document and can lose content from bounded previews.
+    tools:
+      - kickside.knowledge.traits.kb_ingest:fetch_url
+      - kickside.knowledge.traits.kb_ingest:embed_content
+      - kickside.knowledge.traits.kb_ingest:delete_content
+      - kickside.knowledge.traits.kb_ingest:select_kb

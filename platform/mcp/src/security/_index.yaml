@@ -1,0 +1,228 @@
+version: "1.0"
+namespace: kickside.mcp.security
+
+# The scope an MCP credential principal runs tools under. It is deliberately
+# coarse: the real authorization is the component access model (the principal acts
+# as its owner with the owner's current group memberships, narrowed by the
+# credential's whitelist) plus the per-credential tool allowlist enforced in the
+# dispatcher. This scope only lets a surfaced tool function execute; what data it
+# can touch is bounded by the owner's grants.
+entries:
+  - name: credential_eligibility_call
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      resources: [kickside.contract:host_credential_eligibility]
+      actions: [funcs.call, registry.find]
+      effect: allow
+
+  # The allow-base of the MCP credential principal's runtime scope. This policy and
+  # session_deny_control_plane below are BOTH tagged into the group
+  # kickside.mcp.security:session; that group IS the named scope MCP invoke binds
+  # (security.named_scope("kickside.mcp.security:session") loads all policies in the
+  # group). Group resolution is independent of the actor's own groups -- the credential
+  # principal binds it without being a member -- and re-resolves by id at any funcs
+  # depth, so it survives a deep contract hop with the deny hardening intact. No user
+  # carries this group, so the broad allow never applies except when this named scope
+  # is explicitly bound. A security.scope ENTRY is intentionally avoided: resolving one
+  # authorizes the actor against each referenced policy's group, which the credential
+  # principal is not a member of.
+  - name: session
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: Allow-base of the MCP credential principal scope (group kickside.mcp.security:session). Component access + tool allowlist are the real gates.
+    groups:
+      - kickside.mcp.security:session
+    policy:
+      resources:
+        - "*"
+      actions:
+        - "*"
+      effect: allow
+
+  # Deny hardening: even though component access bounds DATA, the session scope is
+  # broad, so explicitly forbid the dangerous capabilities a surfaced tool must never
+  # reach via an MCP principal. Deny wins over the allow above.
+  #   - registry mutation + security/access administration (control plane).
+  #   - cross-tenant DATA escalations the broad session scope would otherwise satisfy,
+  #     since the credential runs AS its actor and the whitelist only confines COMPONENT
+  #     access. Each of these is a security.can(...) capability a surfaced tool could hit:
+  #       * "list_all" — the component read port grants UNSCOPED / read-as-another-user
+  #         component reads when security.can("list_all", components) passes, bypassing the
+  #         access table AND the whitelist. Denying it leaves only the normal scoped path.
+  #       * "view_all" — uploads (and similar) list every user's data under this capability.
+  #       * "realtime.broadcast" — a scoped credential must never broadcast to all users.
+  #       * "component.adopt" — operator adoption of a component no principal holds access
+  #         to is security/access administration; it stays with authenticated operator sessions.
+  #     Normal scoped reads do not need any of these, so denying them is reject-only.
+  - name: session_deny_control_plane
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: An MCP principal may never mutate the registry, administer security/access (component.adopt), or read/broadcast across tenants (list_all/view_all/realtime.broadcast), regardless of its surfaced tools.
+    groups:
+      - kickside.mcp.security:session
+    policy:
+      resources:
+        - "*"
+      actions:
+        - "registry.apply"
+        - "registry.delete"
+        - "security.admin"
+        - "access.admin"
+        - "list_all"
+        - "view_all"
+        - "realtime.broadcast"
+        - "component.adopt"
+      effect: deny
+
+  # The public /mcp endpoint runs unauthenticated; before it can resolve a bearer
+  # token (and stamp usage) it must open the configured database. This grants only
+  # db.get on that requirement-bound resource to the handler's own actor. The actual tool execution that
+  # follows runs under the synthesized credential principal + session scope above.
+  - name: endpoint_public_url
+    kind: security.policy
+    meta:
+      private: true
+      comment: Public MCP handlers read only the deployment public authority.
+    policy:
+      resources: [PUBLIC_API_URL]
+      actions: [env.get]
+      effect: allow
+
+  - name: endpoint_db_access
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: The public MCP endpoint may open the configured database to resolve a bearer token and record usage.
+    policy:
+      actions:
+        - db.get
+      effect: allow
+
+  # After resolving a bearer token, the dispatcher rebuilds the credential owner's
+  # actor -- the owner's live claims and group memberships from
+  # kickside.contract:scope_resolver -- to run tools as them. Minting that actor needs
+  # security.actor.create, like the login endpoint mints the authenticated user. The
+  # actor's groups feed component access only; runtime policy is the session scope, and
+  # the credential's access_filter narrows the owner's component reach.
+  - name: endpoint_actor_create
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: The public MCP endpoint may synthesize the resolved credential's actor + its runtime session scope to run tools as them.
+    policy:
+      resources: '*'
+      actions:
+        - security.actor.create
+        - security.scope.create
+        - security.policy.get
+        # named_scope resolves the session policy GROUP, and the live owner resolution
+        # (execution_identity.resolve_subject) recovers the owner's group-derived scope
+        # to prove it is reconstructable; resolving a group needs
+        # security.policy_group.get (as the login endpoint resolves app.security:* role
+        # scopes). Read-only resolution; tools run only under the MCP session group.
+        - security.policy_group.get
+      effect: allow
+
+  - name: endpoint_deferred_execution
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: Public MCP bearer endpoint may resolve only its own stored credential identity.
+    policy:
+      resources:
+        - kickside.mcp.api:serve_mcp
+      actions:
+        - kickside.execution.defer
+      effect: allow
+
+  - name: endpoint_identity_resolver
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: MCP endpoint may open only the canonical Users scope resolver for stored credential identities.
+    policy:
+      resources:
+        - kickside.contract:scope_resolver
+        - kickside.users:scope_resolver_binding
+      actions:
+        - contract.get
+        - contract.open
+      effect: allow
+
+  - name: endpoint_identity_call
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: MCP endpoint may invoke only the canonical scope resolver method.
+    policy:
+      resources: [resolve]
+      actions: [contract.call]
+      effect: allow
+
+  - name: endpoint_identity_binding
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: MCP endpoint may bind the canonical resolver to its authenticated endpoint frame.
+    policy:
+      resources:
+        - security
+      actions:
+        - contract.security
+      effect: allow
+
+  # Minting the credential actor (endpoint_actor_create) only builds the actor; running
+  # a tool func UNDER it needs funcs.security (custom security context) + funcs.call --
+  # the same grant every authenticated user tool-call holds via app.security:user. App
+  # and plugin namespaces are intentionally not enumerated here: the credential's exact
+  # surfaced-tool allowlist, reconstructed owner actor, named deny-hardened session
+  # scope, and component access_filter are the authority. Namespaces are deployment data
+  # and may have any name.
+  - name: endpoint_runtime_exec
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: The public MCP endpoint may execute only the credential's surfaced tool funcs under the synthesized credential actor and deny-hardened session scope.
+    policy:
+      resources:
+        - "*"
+      actions:
+        - funcs.call
+        - funcs.security
+        - funcs.context
+      effect: allow
+
+  # The dispatcher's meta-tools (find_traits / list_traits / list_tools) discover the
+  # PUBLIC trait + tool catalog from the registry to build the credential's surface.
+  # That discovery runs under this endpoint actor, so it needs read-only registry
+  # access. Writes stay denied by session_deny_control_plane (registry.apply/delete).
+  - name: endpoint_registry_read
+    kind: security.policy
+    meta:
+      private: true
+      internal: true
+      comment: The public MCP endpoint may read the registry to discover the public trait/tool catalog it surfaces.
+    policy:
+      resources: '*'
+      actions:
+        - registry.find
+        - registry.get
+      effect: allow
+
+  # Module-owned access policy for the credential-management endpoints (an actor
+  # mints + manages its own bearer credentials). Declared here so the grant travels
+  # with the slice; the user group is injected by the user_security_scope
+  # requirement (the host wires its authenticated user group), so groups ships
+  # empty. The public /mcp endpoint is on the open router and is unaffected.

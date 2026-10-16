@@ -1,0 +1,269 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: platform_manager
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Platform Manager
+      public: true
+      icon: tabler:layout-dashboard
+      comment: Discovers platform capabilities and creates or updates agents and connections through canonical registries.
+      tags: [agents, platform, management, connections, components]
+    prompt: |
+      You can manage platform resources with the **Platform** tool.
+
+      Use `list_traits`, `list_tools`, `list_component_kinds`, `list_components`,
+      `list_agents`, `list_connection_providers`, and `list_connections` to inspect
+      what exists before changing anything. Use `upsert_agent` and
+      `upsert_connection` for idempotent creation or reuse. For connections, choose a `provider` from
+      `list_connection_providers`; the provider binding owns validation and
+      resource discovery.
+
+      Result conventions:
+      - Discovery actions return a plural array named after the resource
+        (`traits`, `tools`, `component_kinds`, `components`,
+        `connection_providers`, `connections`, `reply_provider_kinds`, or
+        `reply_providers`).
+      - Mutation actions return the owning registry's record; use its
+        `component_id` (or the nested `agent`, `connection` or
+        `reply_provider` record's) for follow-up update/delete/attach/validate calls.
+      - Do not invent provider keys, component classes, or port names. Discover
+        them from the registry-backed list actions first.
+    tools:
+      - kickside.agents.traits:platform_manager_tool
+
+  - name: platform_manager_support
+    kind: library.lua
+    meta:
+      comment: Shared Platform action validation, contracts, and row helpers.
+    source: file://../../platform_manager_support.lua
+    modules: [contract, funcs, security]
+    imports:
+      agent_ref: kickside.agents:agent_ref
+
+  - name: platform_manager_discovery
+    kind: library.lua
+    meta:
+      comment: Registry and contract-backed Platform discovery actions.
+    source: file://../../platform_manager_discovery.lua
+    modules: [registry]
+    imports:
+      tool_result: kickside.contract:tool_result
+      component: kickside.component:component
+      agent_ref: kickside.agents:agent_ref
+      capability_context: kickside.agents.traits:capability_context
+      platform_manager_support: kickside.agents.traits:platform_manager_support
+      keyset: kickside.contract:keyset
+
+  - name: platform_manager_agents
+    kind: library.lua
+    meta:
+      comment: Platform agent create, update, delete, and link actions.
+    source: file://../../platform_manager_agents.lua
+    imports:
+      tool_result: kickside.contract:tool_result
+      platform_manager_support: kickside.agents.traits:platform_manager_support
+
+  - name: platform_manager_connections
+    kind: library.lua
+    meta:
+      comment: Platform connection and reply-provider mutation actions.
+    source: file://../../platform_manager_connections.lua
+    imports:
+      tool_result: kickside.contract:tool_result
+      platform_manager_support: kickside.agents.traits:platform_manager_support
+
+  - name: platform_manager_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Platform
+      mcp:
+        required_scopes: [state.read, state.write]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list_traits",
+                "list_tools",
+                "list_component_kinds",
+                "list_components",
+                "list_agents",
+                "upsert_agent",
+                "update_agent",
+                "delete_agent",
+                "attach_kb",
+                "detach_kb",
+                "attach_tool",
+                "detach_tool",
+                "list_connection_providers",
+                "list_connections",
+                "upsert_connection",
+                "update_connection",
+                "delete_connection",
+                "validate_connection",
+                "list_reply_provider_kinds",
+                "list_reply_providers",
+                "upsert_reply_provider",
+                "update_reply_provider",
+                "delete_reply_provider"
+              ]
+            },
+            "q": { "type": "string", "description": "Optional case-insensitive substring filter for list actions." },
+            "fields": { "type": "array", "items": { "type": "string" }, "description": "Optional extra fields for a list row. Default rows are compact summaries. list_tools supports comment, llm_description, input_schema, output_schema, modules; list_traits supports description, context_schema, tools; list_agents supports description; component lists support description, meta; provider kinds support description, classes, reply, config_schema; component kinds support description, component." },
+            "namespace": { "type": "string", "description": "Optional namespace prefix for capabilities or tools." },
+            "tag": { "type": "string", "description": "Optional capability/tool tag filter." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Page size: default 25 for cursor-paged lists, 50 for offset-paged lists." },
+            "offset": { "type": "integer", "minimum": 0, "description": "list_components, list_agents, list_connections, list_reply_providers: the next_offset of the previous page." },
+            "cursor": { "type": "string", "description": "list_traits, list_tools, list_component_kinds, list_connection_providers, list_reply_provider_kinds: the next_cursor of the previous page." },
+            "component_id": { "type": "string", "description": "Component id for update/delete/attach actions." },
+            "agent_id": { "type": "string", "description": "Agent id; user_agent:<uuid> is accepted." },
+            "class": { "type": "string", "description": "Component class filter for list_components." },
+            "provider": { "type": "string", "description": "Connection provider key such as discord or jira." },
+            "name": { "type": "string", "description": "Agent, connection, or reply-provider name." },
+            "description": { "type": "string" },
+            "public": { "type": "boolean", "description": "Show the agent in workflow and agent pickers. Omitted defaults to private." },
+            "model": { "type": "string" },
+            "prompt": { "type": "string" },
+            "traits": { "type": "array", "items": { "type": "string" } },
+            "trait_contexts": { "type": "object" },
+            "trait_agent_options": { "type": "object" },
+            "agent_options": { "type": "object" },
+            "tools": { "type": "array", "items": { "type": "string" } },
+            "tool_id": { "type": "string" },
+            "kb_id": { "type": "string", "description": "attach_kb/detach_kb: the KB bound as the agent's memory (recalled automatically each turn). KBs searched by the Knowledge Base Reader trait go in trait_contexts[\"kickside.knowledge.traits:kb_reader\"].kb_ids." },
+            "auth": { "type": "object", "description": "Provider private_context for connection creation." },
+            "validate": { "type": "boolean", "description": "Validate a connection immediately on create/upsert." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Discovery actions return a plural array named after the resource; mutation actions return the owning registry's record. Invalid requests and unavailable services return no result and a typed tool error; a registry that refuses the operation returns success false with its error.",
+          "properties": {
+            "success": {"type": "boolean", "const": false, "description": "Present only when the owning registry refuses the operation."},
+            "error": {"type": "string", "description": "Present with success false: the owning registry's refusal."},
+            "traits": {
+              "type": "array",
+              "description": "list_traits: compact matching public capabilities; fields may request description, context_schema, or tools.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "title": {"type": "string"},
+                  "context_requirements": {"type": "string"},
+                  "icon": {"type": "string"},
+                  "tags": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "tools": {
+              "type": "array",
+              "description": "list_tools: compact tool rows (id, title, llm_alias, tags); fields may request comment, llm_description, input_schema, output_schema, or modules. 25 per page by default.",
+              "items": {"type": "object"}
+            },
+            "next_cursor": {"type": "string", "description": "list_traits, list_tools, list_component_kinds, list_connection_providers, list_reply_provider_kinds: pass as cursor for the next page; absent on the last page."},
+            "next_offset": {"type": "integer", "description": "list_components, list_agents, list_connections, list_reply_providers: pass as offset for the next page; absent on the last page."},
+            "component_kinds": {
+              "type": "array",
+              "description": "list_component_kinds: compact contract.binding component kinds; fields may request description or component.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "title": {"type": "string"},
+                  "icon": {"type": "string"},
+                  "class": {},
+                  "group": {"type": "string"},
+                  "contracts": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "components": {
+              "type": "array",
+              "description": "list_components: compact instantiated-component rows; fields may request description or meta.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "component_id": {"type": "string"},
+                  "impl_id": {"type": "string"},
+                  "created_at": {},
+                  "updated_at": {},
+                  "access_level": {},
+                  "title": {"type": "string"},
+                  "class": {"type": "string"},
+                  "provider": {"type": "string"},
+                  "status": {"type": "string"}
+                }
+              }
+            },
+            "agents": {
+              "type": "array",
+              "description": "list_agents: compact reachable-agent rows; fields may request description.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "component_id": {"type": "string"},
+                  "agent_id": {"type": "string", "description": "user_agent:<uuid> reference for the agent."},
+                  "title": {"type": "string"},
+                  "status": {"type": "string"},
+                  "model": {"type": "string"}
+                }
+              }
+            },
+            "connection_providers": {
+              "type": "array",
+              "description": "list_connection_providers: compact provider binding rows; fields may request description, classes, reply, or config_schema.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "provider": {"type": "string"},
+                  "title": {"type": "string"},
+                  "icon": {"type": "string"},
+                  "class": {"type": "string"},
+                  "contracts": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "reply_provider_kinds": {
+              "type": "array",
+              "description": "list_reply_provider_kinds: compact reply provider binding rows; fields may request description, classes, reply, or config_schema.",
+              "items": {"type": "object"}
+            },
+            "connections": {
+              "type": "array",
+              "description": "list_connections: compact connection rows; fields may request description or meta.",
+              "items": {"type": "object"}
+            },
+            "reply_providers": {
+              "type": "array",
+              "description": "list_reply_providers: compact reply provider rows; fields may request description or meta.",
+              "items": {"type": "object"}
+            },
+            "component_id": {"type": "string", "description": "update_*, delete_*, attach_*, detach_*: the component the registry changed."},
+            "created": {"type": "boolean", "description": "upsert_*: true when the registry created the record, false when it reused one by name."},
+            "agent": {"type": "object", "description": "upsert_agent: the agent component row."},
+            "connection": {"type": "object", "description": "upsert_connection: the connection component row."},
+            "reply_provider": {"type": "object", "description": "upsert_reply_provider: the reply provider component row."},
+            "rollback": {"type": "object", "description": "upsert_*: the registry's rollback step for a created record."},
+            "ok": {"type": "boolean", "description": "validate_connection: whether the provider accepted the connection."},
+            "details": {"description": "validate_connection: the provider's validation details."}
+          }
+        }
+      llm_alias: Platform
+      llm_description: "Discover compact, paged summaries of capabilities, tools, component kinds, components, agents, connection providers, connections, and reply providers. Use fields to request a supported larger field for a selected list row. Create or update agents and connections through canonical registries. Invalid requests return a typed tool error; a registry refusal returns success false with its error."
+    source: file://../../platform_manager.lua
+    imports:
+      tool_result: kickside.contract:tool_result
+      platform_manager_support: kickside.agents.traits:platform_manager_support
+      platform_manager_discovery: kickside.agents.traits:platform_manager_discovery
+      platform_manager_agents: kickside.agents.traits:platform_manager_agents
+      platform_manager_connections: kickside.agents.traits:platform_manager_connections
+    method: handler

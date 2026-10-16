@@ -1,0 +1,20 @@
+/* One height for the controls that sit on a row together.
+
+   Select, InputText and Button all take the theme's 0.5rem padding - 6.5px at
+   this app's 13px root, not the 8px the `--p-*-padding-y` tokens claim, which
+   the theme does not read. What differs is the line box: the Select's label is
+   a block that inherits the app's 1.5 line-height, while an <input> and a
+   <button> compute `line-height: normal` (~15.5px at 13px) and land 3-4px
+   short. Uploads had all three on one row at 30.5 / 34.5 / 31.5 before this.
+
+   Kept here rather than in 30-inputtext.css and 40-button.css because it is one
+   decision about control geometry, not two coincidentally equal values. The
+   Select is not listed: it already resolves to the same line box through its
+   label, and adding it would restyle a flex container that has nothing to fix.
+
+   A surface that wants a smaller control passes PrimeVue's `size` prop, which
+   scales from this: `p-button-sm` at 12px font resolves to an 18px line box. */
+.p-inputtext.p-component,
+.p-button.p-component {
+  line-height: 1.5;
+}

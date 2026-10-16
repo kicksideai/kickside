@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_execution_identity_test_execution_live_authority
+    kind: function.lua
+    meta:
+      title: Execution Identity
+      type: test
+      suite: kickside_execution
+      comment: Principal codec, actor keys, delegation vectors, capture, live resolve, bind and run_as.
+    source: file://../../execution_identity_test_execution_live_authority.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      execution_identity: kickside.execution:execution_identity

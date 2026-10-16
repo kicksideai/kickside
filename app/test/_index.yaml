@@ -1,0 +1,124 @@
+version: "1.0"
+namespace: app
+
+# Test-only harness entries. Production app security declarations live in
+# ../src/app/security and are loaded by this harness without app publish filters.
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource used by the PostgreSQL profile wiring.
+    file: "${sqlite_path}"
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: pg_test
+    kind: pg.scope
+    lifecycle:
+      auto_start: true
+    meta:
+      comment: Process-group scope under test.
+
+  - name: pg_worker
+    kind: process.lua
+    meta:
+      comment: Test worker that joins a group and forwards broadcasts to its parent.
+    source: file://pg_worker.lua
+    method: run
+    modules:
+      - pg
+
+  - name: pg_group_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: pg_groups
+      comment: Verifies pg process groups (join/leave/get_members/broadcast/monitor) in this runtime.
+    source: file://pg_group_test.lua
+    method: run
+    modules:
+      - pg
+      - time
+    imports:
+      test: wippy.test:test
+
+  - name: endpoint_policy_gateway
+    kind: http.service
+    addr: :19261
+    lifecycle:
+      auto_start: false
+  - name: endpoint_policy_router
+    kind: http.router
+    meta:
+      server: app:endpoint_policy_gateway
+    middleware: [token_auth]
+    options:
+      token_store: kickside.users.security:tokens
+    post_middleware: [endpoint_firewall]
+    prefix: /member-policy
+  - name: endpoint_policy_handler
+    kind: function.lua
+    source: return {run = function() return true end}
+    method: run
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app.security:legacy_members
+
+  - name: default_members
+    namespace: app.composition
+    kind: registry.entry
+    meta: {type: kickside.security.group_composition}
+    group_id: app.security:members
+    groups: [app.security:user, kickside.security.groups:members]
+
+  - name: dep.kickside.renderers
+    kind: ns.dependency
+    component: kickside/renderers
+    version: '*'
+    parameters:
+    - {name: ui_server, value: app:endpoint_policy_gateway}
+    - {name: kickside.renderers:api_router, value: app:endpoint_policy_router}
+    - {name: kickside.renderers:user_security_scope, value: kickside.security.groups:members}
+
+  - name: dep.kickside.connection
+    kind: ns.dependency
+    component: kickside/connection
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:endpoint_policy_router}
+    - {name: ui_server, value: app:endpoint_policy_gateway}
+
+  - name: dep.kickside.mcp_client
+    kind: ns.dependency
+    component: kickside/mcp-client
+    version: '*'
+    parameters:
+    - {name: process_host, value: app.security:processes}
+    - {name: api_router, value: app:endpoint_policy_router}
+    - {name: ui_server, value: app:endpoint_policy_gateway}
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    meta:
+      comment: Users resolves group scopes through the security module; the harness binds it to its own resources.
+    parameters:
+    - {name: api_router, value: app:endpoint_policy_router}
+    - {name: ui_server, value: app:endpoint_policy_gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app.security:processes}

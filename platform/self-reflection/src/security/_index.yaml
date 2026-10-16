@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: kickside.self_reflection.security
+
+entries:
+  - name: self_reflection_access
+    kind: security.policy
+    meta:
+      comment: Grants execution of the optional Self Reflection tool.
+    groups: []
+    policy:
+      resources:
+        - kickside.self_reflection.traits:self_reflection_tool
+      actions: access
+      effect: allow
+
+  - name: admin_scope
+    kind: ns.requirement
+    meta:
+      value_kind: security.scope
+      comment: Application administrator security group allowed to execute the Self Reflection tool.
+      description: Application administrator security group allowed to execute the Self Reflection tool.
+    targets:
+      - entry: kickside.self_reflection.security:self_reflection_access
+        path: ".groups +="
+
+  - name: forbid_scope
+    kind: ns.requirement
+    default: ""
+    meta:
+      value_kind: security.scope
+      comment: Host security scope without Self Reflection discovery. Discovery follows group grants; the optional tool policy records this scope as excluded and never grants it.
+      description: Host security scope without Self Reflection discovery.
+    targets:
+      - entry: kickside.self_reflection.security:tool_access
+        path: ".meta.excluded_scope"

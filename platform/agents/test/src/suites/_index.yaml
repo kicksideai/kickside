@@ -1,0 +1,421 @@
+version: '1.0'
+namespace: app.agents_suites
+entries:
+- name: agent_resolver_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://agent_resolver_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - funcs
+  - security
+  - contract
+- name: agents_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://agents_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+  imports:
+    test: wippy.test:test
+- name: agent_portability_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agent_portability
+  source: file://agent_portability_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - uuid
+  - security
+  - contract
+  imports:
+    test: wippy.test:test
+- name: agents_api_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://agents_api_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+- name: session_contract_actions_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: session_contract_actions
+  source: file://session_contract_actions_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  imports:
+    lifecycle_runtime: wippy.agent:lifecycle_runtime
+    message_handlers: wippy.session.process:message_handlers
+    test: wippy.test:test
+    tool_caller: wippy.agent.tools:caller
+- name: kickside_agents_api__query_params_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/query_params_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    query_params: kickside.agents.api:query_params
+- name: kickside_agents_api__errors_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/errors_test.lua
+  method: run
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    http_errors: kickside.contract:http_errors
+- name: kickside_agents_api__list_user_agents_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/list_user_agents_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    list_user_agents: kickside.agents.api:list_user_agents
+- name: kickside_agents_api__get_user_agent_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/get_user_agent_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    get_user_agent: kickside.agents.api:get_user_agent
+- name: kickside_agents_api__get_agents_by_name_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/get_agents_by_name_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - crypto
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+- name: kickside_agents_api__list_agents_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/list_agents_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    list_agents: kickside.agents.api:list_agents
+    agents_by_name: kickside.agents.api:agents_by_name
+- name: kickside_agents_api__list_tools_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/list_tools_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    list_tools: kickside.agents.api:list_tools
+- name: kickside_agents_api__list_memory_options_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/list_memory_options_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    list_memory_options: kickside.agents.api:list_memory_options_lib
+- name: kickside_agents_binding__agent_status_func_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+    comment: User-agent component status reflects public meta with a default active state.
+  source: file://binding/agent_status_func_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - contract
+  - funcs
+  - json
+  - sql
+  - uuid
+- name: kickside_agents_binding__user_agents_update_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://binding/user_agents_update_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    user_agents: kickside.agents.binding:user_agents_func
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+- name: kickside_agents_binding__user_agents_shared_read_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+    comment: READ share reads an agent's config; update stays WRITE-gated; strangers stay denied.
+  source: file://binding/user_agents_shared_read_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - uuid
+  - time
+  - funcs
+  - security
+- name: kickside_agents_binding__user_agents_create_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://binding/user_agents_create_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    user_agents: kickside.agents.binding:user_agents_func
+    agent_types: kickside.agents:types
+- name: kickside_agents_invoke__invoke_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://invoke/agent_invoke_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    agent_invoke: kickside.agents.invoke:agent_invoke_runtime
+  modules: [registry]
+- name: kickside_agents_invoke__authorization_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://invoke/agent_invoke_authorization_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    agent_invoke: kickside.agents.invoke:agent_invoke_runtime
+- name: kickside_agents_invoke__run_as_security_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_run_as_security
+  source: file://invoke/run_as_security_test.lua
+  method: run
+  modules: [funcs, security]
+  imports:
+    test: wippy.test:test
+- name: kickside_agents_invoke__run_as_security_actor_run
+  kind: function.lua
+  meta:
+    type: test_helper
+    private: true
+    environment: test
+  source: file://invoke/run_as_security_test.lua
+  method: actor_run
+  modules: [funcs, security]
+  imports:
+    test: wippy.test:test
+- name: kickside_agents_invoke__run_as_probe
+  kind: function.lua
+  meta:
+    type: test_helper
+    private: true
+    environment: test
+  source: file://invoke/run_as_probe.lua
+  method: invoke
+  modules: [security]
+  imports:
+    agent_invoke: kickside.agents.invoke:agent_invoke_runtime
+- name: kickside_agents_registry__agents_registry_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_registry_suite
+  source: file://registry/agents_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+  - json
+  imports:
+    test: wippy.test:test
+- name: kickside_agents_registry__tool_schema_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: tool_schema
+  source: file://registry/tool_schema_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    tool_schema: kickside.agents.registry:tool_schema
+- name: kickside_agents_registry__tool_visibility_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: tool_visibility
+  source: file://registry/tool_visibility_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    tool_visibility: kickside.agents.registry:tool_visibility
+    capability_visibility: kickside.agents.registry:capability_visibility
+- name: kickside_agents_registry__tools_registry_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: tools_registry_suite
+  source: file://registry/tools_test.lua
+  method: run
+  modules:
+  - uuid
+  - contract
+  - registry
+  imports:
+    test: wippy.test:test
+- name: kickside_agents_traits__master_traits_test
+  kind: function.lua
+  meta:
+    title: Master Traits Logic Test
+    type: test
+    suite: kickside_agents
+    group: Agents / Traits
+    comment: Namespace allow-list matching + the curator's id-set activation math.
+  source: file://traits/master_traits_test.lua
+  modules:
+  - registry
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+    master_ns: kickside.agents.traits:master_ns
+    id_set: kickside.agents.traits:id_set
+    curator_specs: kickside.agents.traits:curator_specs
+    capability_context: kickside.agents.traits:capability_context
+  method: run
+- name: kickside_agents_traits__composer_catalog_test
+  kind: function.lua
+  meta:
+    title: Composer Traits Catalog Test
+    type: test
+    suite: kickside_agents
+    group: Agents / Capabilities
+    comment: Composer catalog projection exposes public traits and context_schema.
+  source: file://traits/composer_catalog_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    composer_catalog: kickside.agents.traits:composer_catalog
+- name: kickside_agents_traits__agents_action_test
+  kind: function.lua
+  meta:
+    title: Agents Roster Tool Test
+    type: test
+    suite: kickside_agents
+    group: Agents / Traits
+    comment: Agents tool list action works through real funcs actor/scope/context, including async session-style execution.
+  source: file://traits/agents_action_test.lua
+  modules:
+  - sql
+  - json
+  - uuid
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+  method: run
+- name: kickside_agents_traits__platform_manager_test
+  kind: function.lua
+  meta:
+    title: Platform Manager Capability Test
+    type: test
+    suite: kickside_agents
+    group: Agents / Capabilities
+    comment: Platform manager tool uses canonical registries for discovery and idempotent agent upsert.
+  source: file://traits/platform_manager_test.lua
+  method: run
+  modules:
+  - uuid
+  - funcs
+  - registry
+  - security
+  imports:
+    test: wippy.test:test
+    agent_ref: kickside.agents:agent_ref
+- name: kickside_agents_traits__artifacts_test
+  kind: function.lua
+  meta:
+    title: Artifacts Capability Test
+    type: test
+    suite: kickside_agents
+    group: Agents / Capabilities
+    comment: Capability-only tool exposure, standalone and inline controls, and catalog rejection for CreateArtifact.
+  source: file://traits/artifacts_test.lua
+  method: run
+  modules:
+  - funcs
+  - registry
+  - security
+  imports:
+    test: wippy.test:test
+- name: agents_title_contract_authority_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_title_contract_authority
+    timeout: 30s
+  source: file://agents_title_contract_authority_test.lua
+  method: run
+  modules: [sql, json, crypto, funcs, security]
+  imports:
+    test: wippy.test:test

@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: app
+entries:
+- name: append_response_test
+  kind: function.lua
+  source: file://append_response_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_append_response
+  imports:
+    test: wippy.test:test
+    fixture: app:append_finalization_fixture
+    api: app:append_finalization_source

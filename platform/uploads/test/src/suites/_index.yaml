@@ -1,0 +1,14 @@
+version: "1.0"
+namespace: app.uploads_suites
+
+entries:
+  - name: attachment_ingest_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: attachment_ingest
+    source: file://attachment_ingest_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      attachment_ingest: kickside.uploads:attachment_ingest

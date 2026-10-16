@@ -1,0 +1,20 @@
+version: "1.0"
+namespace: kickside.oauth.security
+
+# Module-owned access policy for the oauth product endpoints. Declared here so the
+# grant travels with the slice; the role group that receives it is injected by the
+# user_security_scope requirement (the app wires app.security:user), keeping the
+# slice app-agnostic. Per-user ownership is enforced behind the endpoints.
+entries:
+  - name: refresh_defer
+    kind: security.policy
+    policy:
+      resources: [kickside.oauth:refresh_connection]
+      actions: [kickside.execution.defer]
+      effect: allow
+  - name: refresh_actor
+    kind: security.policy
+    policy:
+      resources: ['*']
+      actions: [security.actor.create]
+      effect: allow

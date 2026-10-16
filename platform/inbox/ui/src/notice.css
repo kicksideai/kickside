@@ -1,0 +1,47 @@
+:host {
+  display: block;
+  color: inherit;
+  font-family: inherit;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.content {
+  margin: 0;
+  color: var(--p-text-color, currentColor);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.fields {
+  overflow: hidden;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 10px;
+}
+
+.field {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--p-content-border-color);
+  font-size: 13px;
+}
+
+.field:last-child {
+  border-bottom: 0;
+}
+
+.label {
+  color: var(--p-text-muted-color);
+}
+
+.value {
+  color: var(--p-text-color, currentColor);
+  font-weight: 600;
+  text-align: right;
+}

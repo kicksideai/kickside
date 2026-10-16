@@ -1,0 +1,26 @@
+organization: kickside
+module: jobs
+type: library
+description: KickSide durable leased-job engine and projection scheduler — jobs service/api/persist/workers, effect-intent machinery, and the leased cursor scheduler
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - jobs
+  - scheduler
+  - effects
+  - engine
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "test/**"
+  - "test:**"
+  - "app:**"
+  - "app.env:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

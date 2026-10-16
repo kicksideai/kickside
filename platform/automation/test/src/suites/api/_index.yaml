@@ -1,0 +1,73 @@
+version: '1.0'
+namespace: kickside.automation.api
+entries:
+- name: artifact_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: Portable automation artifacts preserve transforms, omit runtime identity, and import with explicit destination placement.
+  source: file://artifact_test.lua
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    export_automation: kickside.automation.api:export
+    import_automation: kickside.automation.api:import
+  method: run
+- name: call_action_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: The action wrapper surfaces an in-band handler failure ({success=false}) as an error instead of masking it as
+      a 200 success.
+  source: file://call_action_test.lua
+  modules:
+  - http
+  - security
+  - registry
+  imports:
+    test: wippy.test:test
+    call_action: kickside.automation.api:call_action
+  method: run
+- name: delete_automation_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: HTTP DELETE routes bindings through their kind teardown, retains installable component teardown envelopes, and preserves
+      opaque missing/denied responses.
+  source: file://delete_automation_test.lua
+  modules:
+  - funcs
+  - security
+  - uuid
+  imports:
+    test: wippy.test:test
+    delete_automation: kickside.automation.api:delete
+  method: run
+- name: errors_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: Automation API errors use the code/message envelope and code-to-status map only.
+  source: file://errors_test.lua
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    api_errors: kickside.automation.api:errors
+  method: run
+- name: control_api_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: automation
+    comment: HTTP envelopes for automation status, health and execution-identity change.
+  source: file://control_test.lua
+  imports:
+    test: wippy.test:test
+    control_api: kickside.automation.api:control
+  method: run

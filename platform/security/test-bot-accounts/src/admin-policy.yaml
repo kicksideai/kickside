@@ -1,0 +1,23 @@
+version: '1.0'
+namespace: app.security
+entries:
+- name: admin.all_access
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.root
+    intent: root_admin
+    comment: Root administrator access. Keeper and app-management surfaces are reachable
+      only through this scope. Thread output publication is a module service capability
+      and stays outside human administration.
+  groups:
+  - app.security:admin
+  policy:
+    resources: '*'
+    actions: '*'
+    effect: allow
+    conditions:
+    - field: action
+      operator: nin
+      value:
+      - threads.output.publish

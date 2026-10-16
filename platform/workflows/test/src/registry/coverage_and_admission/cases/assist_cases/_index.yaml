@@ -1,0 +1,68 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_assist_test_workflow_assist_schema
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Assist — shared mapping/schema generation validates model output; persisted edges require WRITE while binding drafts require target-workflow READ.
+    source: file://../../../../suites/assist_test_workflow_assist_schema.lua
+    method: run
+    modules: [security, funcs, json]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+      component: kickside.component:component
+
+  - name: tsplit_assist_test_config_schema_assist_1
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Assist — shared mapping/schema generation validates model output; persisted edges require WRITE while binding drafts require target-workflow READ.
+    source: file://../../../../suites/assist_review_controls.lua
+    method: run
+    modules: [security, funcs, json]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+      component: kickside.component:component
+
+  - name: tsplit_assist_test_config_schema_assist_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Assist — shared mapping/schema generation validates model output; persisted edges require WRITE while binding drafts require target-workflow READ.
+    source: file://../../../../suites/assist_expression_context.lua
+    method: run
+    modules: [security, funcs, json]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+      component: kickside.component:component
+
+  - name: tsplit_assist_test_config_projection_and_validation
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Assist — shared mapping/schema generation validates model output; persisted edges require WRITE while binding drafts require target-workflow READ.
+    source: file://../../../../suites/assist_test_config_projection_and_validation.lua
+    method: run
+    modules: [security, funcs, json]
+    imports:
+      test: wippy.test:test
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+      component: kickside.component:component

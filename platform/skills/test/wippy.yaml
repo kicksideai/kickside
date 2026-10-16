@@ -1,0 +1,7 @@
+organization: kickside
+module: skills-test
+type: application
+description: Standalone application harness that boots kickside/skills and runs its harness-owned test suites.
+directories:
+  modules: .wippy
+  src: .

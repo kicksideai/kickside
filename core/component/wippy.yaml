@@ -1,0 +1,26 @@
+organization: kickside
+module: component
+type: library
+description: Component service and registry for user-owned resources
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - component
+  - registry
+  - access-control
+  - ownership
+  - hierarchy
+  - placement
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "test/**"
+  - "test:**"
+  - "app:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

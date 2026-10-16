@@ -1,0 +1,103 @@
+version: "1.0"
+namespace: kickside.automation.recurring
+entries:
+  - name: task_lib
+    kind: library.lua
+    source: file://task.lua
+    modules: [ctx, time]
+    imports:
+      automations_lib: kickside.automation:automation
+      cadence: kickside.automation:cadence
+      task_target: kickside.automation:task_target
+  - name: install
+    kind: function.lua
+    source: file://task.lua
+    method: install
+    modules: [ctx, time]
+    imports:
+      automations_lib: kickside.automation:automation
+      cadence: kickside.automation:cadence
+      task_target: kickside.automation:task_target
+  - name: reconfigure
+    kind: function.lua
+    source: file://task.lua
+    method: reconfigure
+    modules: [ctx, time]
+    imports:
+      automations_lib: kickside.automation:automation
+      cadence: kickside.automation:cadence
+      task_target: kickside.automation:task_target
+  - name: deliver
+    kind: function.lua
+    source: file://consumer.lua
+    method: deliver
+    imports:
+      recurring_task: kickside.automation.recurring:task_lib
+      round_write: kickside.automation:round_write
+      failure_classification: kickside.automation:failure_classification
+  - name: configurable
+    kind: contract.definition
+    meta: { title: Recurring task configuration }
+    methods:
+      - { name: reconfigure, description: Update this task's schedule and target. }
+  - name: task
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: Recurring task
+      comment: Run a published workflow, an agent prompt, or a declared writable action on a UTC schedule.
+      icon: tabler:calendar-repeat
+      class: automation
+      reconfigurable: true
+      exportable: true
+      actions: [{ name: reconfigure }]
+      inputs:
+        type: object
+        additionalProperties: false
+        required: [schedule, target]
+        properties:
+          title: { type: string, title: Title }
+          enabled: { type: boolean, title: Enabled }
+          schedule:
+            type: object
+            title: Schedule (UTC)
+            additionalProperties: false
+            required: [type, expression]
+            properties:
+              type: { type: string, enum: [cron, interval] }
+              expression: { type: string, minLength: 1 }
+          target:
+            type: object
+            title: Target
+            additionalProperties: false
+            required: [kind]
+            properties:
+              kind: { type: string, enum: [workflow, agent, action] }
+              flow_ref:
+                type: object
+                additionalProperties: false
+                required: [kind, id, version]
+                properties:
+                  kind: { type: string, const: flow }
+                  id: { type: string, x-reference: { kind: flow, access: READ } }
+                  version: { type: integer, minimum: 1 }
+              agent_id: { type: string, x-reference: { kind: agent, access: READ } }
+              prompt: { type: string, minLength: 1 }
+              port: { type: string, minLength: 1 }
+              config: { type: object }
+              input: { type: object }
+      public_state_schema:
+        fields:
+          - { key: when, type: text, label: When, role: subtitle }
+          - { key: enabled, type: boolean, label: Enabled }
+    contracts:
+      - contract: kickside.contract:component
+        methods: { get_status: kickside.core.threads:thread_status }
+      - contract: kickside.contract:installable
+        methods: { install: kickside.automation.recurring:install }
+      - contract: kickside.automation.recurring:configurable
+        methods: { reconfigure: kickside.automation.recurring:reconfigure }
+      - contract: kickside.trigger:round_consumer
+        methods: { deliver: kickside.automation.recurring:deliver }
+      - contract: kickside.contract:deletable
+        methods: { delete: kickside.automation:noop_delete }

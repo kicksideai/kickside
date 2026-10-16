@@ -1,0 +1,1 @@
+../../src/projections/persist/register.lua

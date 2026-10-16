@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: app
+entries:
+- name: lease_deadline_native_test
+  kind: function.lua
+  source: file://lease_deadline_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: jobs_lease_deadline_native
+  imports:
+    test: wippy.test:test
+    lease: app:lease_native_source
+    fixture: app:lease_native_fixture

@@ -1,0 +1,34 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: composer_catalog
+    kind: library.lua
+    meta:
+      comment: Composer catalog projection for public agent capabilities.
+    source: file://../../composer_catalog.lua
+    modules: [registry]
+
+  - name: composer_traits_catalog_rows
+    kind: function.lua
+    meta:
+      comment: Composer catalog projection rows for public agent capabilities.
+    source: file://../../composer_catalog.lua
+    method: traits
+    modules: [registry]
+
+  - name: composer_traits_catalog
+    kind: registry.entry
+    meta:
+      type: kickside.composer.catalog
+      catalog: traits
+      title: Agent capabilities
+      comment: Public agent capabilities the composer can attach to generated agents.
+      projection_ref: kickside.agents.traits:composer_traits_catalog_rows
+      row_schema:
+        type: object
+        required: [id, title, description]
+        properties:
+          id: { type: string }
+          title: { type: string }
+          description: { type: string }
+          context_schema: { type: object }

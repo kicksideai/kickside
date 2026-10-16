@@ -1,0 +1,3 @@
+organization: kickside
+module: dm-test
+description: Standalone harness that boots the kickside/dm lease ledger and exercises the CAS state machine.

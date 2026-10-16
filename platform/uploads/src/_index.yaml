@@ -1,0 +1,425 @@
+version: "1.0"
+namespace: kickside.uploads
+
+# Upload UI, preview endpoints, upload type declarations, and processor wrappers.
+# Pure converters, such as kickside/doc2md, stay below this layer; upload-specific
+# artifact policy lives here.
+
+entries:
+  - name: retention
+    kind: function.lua
+    meta:
+      type: kickside.retention.owner
+      comment: Reclaim deleted upload projection rows after core prunes their delete events.
+    source: file://retention.lua
+    method: run
+    modules: [time, contract]
+    security:
+      actor: { id: system:kickside.uploads.retention }
+      policies: [kickside.uploads.security:retention_db_access, kickside.uploads.security:retention_prune_boundary]
+    imports:
+      uploads_retention_policy: kickside.uploads:retention_policy
+      upload_read_model_retention: kickside.uploads.persist:read_model_retention
+      artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+
+  - name: retention_policy
+    kind: library.lua
+    source: file://retention_policy.lua
+    modules: [registry]
+
+  - name: policy
+    kind: registry.entry
+    meta:
+      retention:
+        deleted_read_model: "30d"
+        batch_deleted_read_model: 500
+        orphan_blob: "30d"
+        batch_orphan_blob: 100
+      comment: Upload storage and read-model retention policy.
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Uploads
+      comment: KickSide-owned upload API, storage pipeline, upload type declarations, processors, artifacts, and file-management tools.
+
+  # Lowest-priority catch-all so EVERY upload resolves a type (and therefore runs the
+  # universally-dropped-in stages). Specific types (documents/archive) outrank it on
+  # their own mime/ext; anything else lands here with no conversion of its own. The
+  # ".*" mime is matched as a Lua pattern by upload_type, so it accepts all uploads.
+  - name: types.generic
+    kind: registry.entry
+    meta:
+      title: Generic File
+      type: upload.type
+      comment: Any file with no specialised processor; stored as-is and exposed to universal stages.
+    type_key: generic
+    priority: 0
+    extensions: []
+    mime_types:
+      - ".*"
+    pipeline: []
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dependency.contract
+    kind: ns.dependency
+    meta:
+      comment: Shared KickSide contract definitions implemented by the upload content provider.
+    component: kickside/contract
+    version: '*'
+
+  - name: dependency.migration
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for KickSide upload tables.
+    component: wippy/migration
+    version: '*'
+
+  - name: database_resource
+    kind: ns.requirement
+    meta:
+      comment: Database resource for KickSide upload metadata and derived content.
+      description: Database resource for KickSide upload metadata and derived content.
+    targets:
+      - entry: kickside.uploads.env:database_resource
+        path: .default
+      - entry: kickside.uploads.migrations:01_create_uploads_table
+        path: .meta.target_db
+      - entry: kickside.uploads.migrations:02_create_upload_read_model
+        path: .meta.target_db
+      - entry: kickside.uploads.migrations:04_create_artifact_tables
+        path: .meta.target_db
+      - entry: kickside.uploads.migrations:05_scope_archive_deduplication
+        path: .meta.target_db
+
+  - name: storage_id
+    kind: ns.requirement
+    meta:
+      value_kind: fs.directory
+      comment: Filesystem storage resource for original uploaded bytes.
+      description: Filesystem storage resource for original uploaded bytes.
+    targets:
+      - entry: kickside.uploads.env:storage_id
+        path: .default
+
+  - name: storage_s3
+    kind: ns.requirement
+    meta:
+      comment: S3 cloud storage resource for presigned uploads.
+      description: S3 cloud storage resource for presigned uploads.
+    default: ""
+    targets:
+      - entry: kickside.uploads.env:storage_s3
+        path: .default
+
+  - name: env_storage
+    kind: ns.requirement
+    meta:
+      value_kind: env.storage
+      comment: Environment variable storage for upload settings.
+      description: Environment variable storage for upload settings.
+    targets:
+      - entry: kickside.uploads.env:database_resource
+        path: .storage
+      - entry: kickside.uploads.env:storage_id
+        path: .storage
+      - entry: kickside.uploads.env:storage_s3
+        path: .storage
+      - entry: kickside.uploads.documents:env.document_image_artifacts_enabled
+        path: .storage
+
+  - name: document_image_artifacts_enabled
+    kind: ns.requirement
+    meta:
+      comment: Enable extracted image artifacts for document uploads by default.
+      description: Enable extracted image artifacts for document uploads by default.
+    default: "true"
+    targets:
+      - entry: kickside.uploads.documents:env.document_image_artifacts_enabled
+        path: .default
+
+  - name: archive_max_zip_bytes
+    kind: ns.requirement
+    meta:
+      comment: Maximum archive (zip) size in bytes the transparent unpacker reads into memory.
+      description: Maximum archive (zip) size in bytes the transparent unpacker reads into memory.
+    default: "2147483648"
+    targets:
+      - entry: kickside.uploads.archive:config
+        path: .meta.max_zip_bytes
+
+  # Authorization lives in the kickside.uploads.security slice (the canonical
+  # <module>.security pattern): an access-only policy over the upload endpoint
+  # namespaces, with the user group injected through its user_security_scope
+  # requirement.
+
+  # ─── Uploads page UI (self-served web component) ──────────────────────
+  # The page web component renders the file list + drag-drop upload over the
+  # native kickside/uploads HTTP API; it ships and serves its own built bundle.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the uploads UI static mount attaches to.
+      description: HTTP server the uploads UI static mount attaches to.
+    targets:
+      - entry: kickside.uploads:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-uploads web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-uploads
+    fs: kickside.uploads:ui_fs
+    options:
+      cache: "no-cache"
+
+  - name: uploads_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: uploads_view
+      title: Uploads
+      announced: true
+      tag_name: kickside-uploads
+      base_path: kickside-uploads
+      entry_point: index.js
+
+  - name: settings_storage_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: settings_storage_view
+      title: Files & Uploads Settings
+      announced: true
+      tag_name: kickside-settings-storage
+      base_path: kickside-settings
+      entry_point: storage.js
+      auto_register: false
+      secure: false
+
+  # Module-owned nav entry: installing this module adds the Uploads surface to the
+  # nav; uninstalling removes it. The host bundle already knows how to render
+  # route_name "uploads" (mounts the kickside-uploads web component by tag).
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /uploads
+      route_name: uploads
+      title: Uploads
+      comment: Files your agents can read and process.
+      icon: tabler:files
+      order: 60
+      render: component
+      component_tag: kickside-uploads
+
+  # ─── Inline preview endpoints ─────────────────────────────────────────
+  # Serve original bytes and artifact bytes so the Uploads UI can render a file
+  # preview through the shared wc-resource-view viewer. Attach to the firewalled
+  # /api/v1 router.
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the upload preview endpoints attach to.
+      description: HTTP router the upload preview endpoints attach to.
+    targets:
+      - entry: kickside.uploads.api:complete_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:delete_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:get_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:list_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:presigned_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:upload_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:raw_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:artifacts_handler.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.api:artifact_raw_handler.endpoint
+        path: .meta.router
+
+  - name: content_provider
+    kind: contract.binding
+    meta:
+      comment: Upload-backed implementation of KickSide content provider and resource registry contracts.
+      tags: [content, provider, resource, registry, uploads, binding]
+    contracts:
+      - contract: kickside.contract:content_provider
+        context_required:
+          - upload_id
+        methods:
+          get_content: kickside.uploads.binding:get_content_func
+          get_info: kickside.uploads.binding:get_info_func
+      - contract: kickside.contract:resource_registry
+        methods:
+          count: kickside.uploads.binding:count_resources_func
+          list: kickside.uploads.binding:list_resources_func
+
+  - name: file_provider
+    kind: contract.binding
+    meta:
+      comment: Implementation of the session-owned wippy.session:file_provider contract over the upload repository, so chat message attachments resolve to filename/size/type.
+      tags: [uploads, session, file_provider, binding]
+    contracts:
+      - contract: wippy.session:file_provider
+        default: true
+        methods:
+          get_info: kickside.uploads.binding:file_provider_func
+
+  - name: metadata_sanitizer
+    kind: library.lua
+    meta:
+      comment: Removes internal upload metadata fields before API/tool exposure.
+    source: file://metadata_sanitizer.lua
+    imports:
+      execution_identity: kickside.execution:execution_identity
+
+  - name: setting.process_max_execution_ms
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Hard wall-clock ceiling for one upload processing attempt; the supervising job worker terminates a run that exceeds it.
+    namespace: kickside.uploads
+    key: process_max_execution_ms
+    value_type: int
+    default: 600000
+    title: Processing time limit (ms)
+    category: Limits
+    order: 20
+    description: Maximum milliseconds a single upload processing attempt (conversion + OCR) may run before the job worker terminates it and retries.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: settings.block.storage
+    kind: registry.entry
+    meta:
+      type: kickside.settings:block
+      comment: Consolidated settings block for file storage, uploads, documents, and rasterization.
+    key: storage
+    title: Files & Uploads
+    icon: tabler:files
+    group: Content
+    order: 60
+    component_tag: kickside-settings-storage
+    namespaces:
+      - kickside.uploads
+      - kickside.uploads.documents
+      - kickside.uploads.rasterize
+    config:
+      namespaces:
+        - kickside.uploads
+        - kickside.uploads.documents
+        - kickside.uploads.rasterize
+
+  - name: net_safety
+    kind: library.lua
+    meta:
+      comment: SSRF URL guard + fetched-content cap shared by the uploads and knowledge fetch_url tools.
+    source: file://net_safety.lua
+
+  - name: pipeline
+    kind: library.lua
+    meta:
+      comment: Library for upload processing pipeline functions.
+    source: file://pipeline.lua
+    modules: [logger, hash, security, funcs]
+    imports:
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_type: kickside.uploads:upload_type
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      types: kickside.uploads:types
+      execution_identity: kickside.execution:execution_identity
+      jobs: kickside.core.jobs:jobs
+
+  - name: uploads
+    kind: library.lua
+    meta:
+      comment: Library for handling file uploads to configured storage backends.
+    source: file://uploads.lua
+    modules: [uuid, time, hash, logger]
+    imports:
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_type: kickside.uploads:upload_type
+      artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      uploads_events: kickside.uploads.persist:uploads_events
+      types: kickside.uploads:types
+      pipeline_lib: kickside.uploads:pipeline
+      upload_mime: kickside.uploads:uploads_mime
+      uploads_tokens: kickside.uploads:uploads_tokens
+      uploads_presigned: kickside.uploads:uploads_presigned
+      execution_identity: kickside.execution:execution_identity
+      jobs: kickside.core.jobs:jobs
+      process_worker: kickside.uploads.service:process_worker
+
+  - name: delete_owned
+    kind: function.lua
+    source: file://delete_owned.lua
+    method: run
+    modules: [security]
+    imports:
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_lib: kickside.uploads:uploads
+
+  - name: uploads_mime
+    kind: library.lua
+    meta:
+      comment: Upload filename and MIME classification.
+    source: file://uploads_mime.lua
+    imports:
+      upload_type: kickside.uploads:upload_type
+
+  - name: uploads_tokens
+    kind: library.lua
+    meta:
+      comment: Callback token and trace handling for upload admission and deduplication.
+    source: file://uploads_tokens.lua
+    modules: [logger]
+    imports:
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      pipeline_lib: kickside.uploads:pipeline
+      upload_tokens: kickside.uploads.persist:upload_tokens
+
+  - name: uploads_presigned
+    kind: library.lua
+    meta:
+      comment: Presigned object upload lifecycle attached to the uploads library.
+    source: file://uploads_presigned.lua
+
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Upload component identity and lifecycle event vocabulary.
+    source: file://types.lua
+    imports:
+      autoinit: kickside.component:autoinit
+
+  # The uploads store declares itself as a per-user provisioned component: on login the
+  # workspace plugin materializes one "uploads" component+thread per user (id =
+  # component_id(user, "uploads")) with one-week event retention; the uploads lib projects
+  # kickside.uploads.events:* onto that same thread. The kind binding doubles as the
+  # provision declaration, so the kind and the runtime are one component.

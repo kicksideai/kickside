@@ -1,0 +1,5 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@widgets/app/pickerselect.css";
+@tailwind base;
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }

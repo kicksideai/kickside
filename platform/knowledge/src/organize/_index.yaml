@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: kickside.knowledge.organize
+
+# The workspace onboarding organize component: turn a set of dropped+uploaded files
+# into an organized, ingested knowledge base. Hexagonal — the orchestrator depends
+# on a planner adapter (fast model) and reuses existing seams (knowledge_bases
+# contract for create, the canonical upload ingest core for file-ref ingest). It
+# never reads file content; the KB owns content + embedding.
+
+entries:
+  - name: planner
+    kind: library.lua
+    meta: { comment: "Fast-model planner: name the KB + assign title/category per file (by filename, no content)." }
+    source: file://planner.lua
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+
+  - name: organizer
+    kind: library.lua
+    meta: { comment: "Organize orchestrator: plan -> create KB -> ingest every file by reference." }
+    source: file://organizer.lua
+    modules: [contract, security]
+    imports:
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      ingest_upload: kickside.knowledge.api:ingest_upload
+      planner: kickside.knowledge.organize:planner

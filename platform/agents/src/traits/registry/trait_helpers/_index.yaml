@@ -1,0 +1,90 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: redirect_action
+    kind: function.lua
+    meta:
+      type: tool
+      title: Redirect
+      mcp:
+        required_scopes: [state.read, state.write]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "list the redirect targets or switch to one", "enum": ["list", "switch"] },
+            "agent_id": { "type": "string", "description": "Agent id to hand off to (e.g. user_agent:UUID). Required for switch." },
+            "fields": { "type": "array", "items": { "type": "string", "enum": ["description"] }, "description": "list only: optional larger row fields. Default rows are compact summaries; description returns the full agent description." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "list: agents per page; default 25." },
+            "cursor": { "type": "string", "description": "list: the next_cursor of the previous page." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "agents": {
+              "type": "array",
+              "description": "list: compact redirect targets in agent_id order, each { agent_id, name }. Request fields=[description] for descriptions.",
+              "items": {"type": "object"}
+            },
+            "count": {"type": "integer", "description": "list: number of agents in this page."},
+            "next_cursor": {"type": "string", "description": "list: pass as cursor for the next page; absent on the last page."},
+            "message": {"type": "string", "description": "switch: confirmation naming the agent the chat is being redirected to."},
+            "_control": {
+              "type": "object",
+              "description": "switch: runtime control directive that hands the session to the target agent.",
+              "properties": {
+                "config": {
+                  "type": "object",
+                  "properties": {"agent": {"type": "string", "description": "Agent id that takes over the chat."}}
+                }
+              }
+            }
+          },
+          "description": "Successful tool result. Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: Redirect
+      llm_description: "List the agents this one can hand off to, or switch the chat to one of them (control transfers; this agent does not continue). Failures return no result and a typed tool error with a clear message."
+    source: file://../../redirect_action.lua
+    modules: [security]
+    imports:
+      component: kickside.component:component
+      agent_types: kickside.agents:types
+      agent_ref: kickside.agents:agent_ref
+      keyset: kickside.contract:keyset
+    method: handler
+
+  # ─── Master agent traits ─────────────────────────────────────────────
+  # Two composable capabilities for "master"/orchestrator agents. Both take an
+  # optional namespace allow-list in their trait_contexts that bounds what they can
+  # reach ([] or ["*"] = unrestricted):
+  #   trait_contexts["kickside.agents.traits:trait_curator"] = { namespaces = [...] }
+  #   trait_contexts["kickside.agents.traits:agent_roster"]  = { namespaces = [...] }
+
+  - name: id_set
+    kind: library.lua
+    meta: { comment: "Id-set helpers (parse/has/add/remove/union) for the master traits' dynamic id lists." }
+    source: file://../../id_set.lua
+
+  - name: capability_context
+    kind: library.lua
+    meta: { comment: "Trait context_schema validation and human-readable context summaries for dynamic capability activation." }
+    source: file://../../capability_context.lua
+    modules: [json]
+    imports:
+      canonical_json: kickside.contract:canonical_json
+
+  - name: validate_trait_context
+    kind: function.lua
+    meta:
+      title: Validate Capability Context
+      comment: Validates a proposed trait_contexts entry against the target capability's declared context_schema.
+    source: file://../../validate_trait_context.lua
+    modules: [registry]
+    imports:
+      capability_context: kickside.agents.traits:capability_context
+    method: handler

@@ -1,0 +1,46 @@
+version: "1.0"
+namespace: kickside.automation.binding
+
+# Binding-facing runtime helpers: the runtime reader the automation bindings
+# expose to workloads and the owned-resource teardown seam. The delete-path
+# The noop_delete function keeps its historical kickside.automation id
+# (wired into installed bindings and referenced by dependent modules).
+
+entries:
+  - name: source_delete_fence
+    kind: function.lua
+    meta:
+      comment: Fence a surviving event drive against source-thread deletion.
+    source: file://source_delete_fence.lua
+    method: fence
+    modules: [sql]
+    imports:
+      automation_db: kickside.automation:automation_db
+
+  - name: runtime_reader_list
+    kind: function.lua
+    meta:
+      comment: runtime_reader.list_runtime — installed automations + execution identity.
+    source: file://runtime_reader.lua
+    method: list_runtime
+    imports:
+      automations_lib: kickside.automation:automation
+
+  - name: runtime_reader_get
+    kind: function.lua
+    meta:
+      comment: runtime_reader.get_runtime — one installed automation + execution identity.
+    source: file://runtime_reader.lua
+    method: get_runtime
+    imports:
+      automations_lib: kickside.automation:automation
+
+  - name: owned_resource_teardown
+    kind: function.lua
+    meta:
+      comment: owned_resource.teardown_owner — find declared resource owner and uninstall it through the canonical rollback path.
+    source: file://teardown_owner_func.lua
+    method: teardown_owner
+    modules: [registry, funcs, logger]
+    imports:
+      automations_lib: kickside.automation:automation

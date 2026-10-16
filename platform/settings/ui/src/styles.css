@@ -1,0 +1,280 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element and the WippyVueElement mount wrapper must carry a definite
+   height, or the inner height:100% chain collapses to content height and the
+   surface overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Settings surface. Styled only with the universal --p-* theme vocabulary so it
+   renders correctly inside the shadow DOM of any Wippy host (no SPA-local tokens). */
+.ks {
+  --system-surface-gutter: var(--kickside-system-surface-gutter, 24px);
+  font-family: inherit;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ks-loading, .ks-empty {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--p-text-muted-color); font-size: 13px; padding: 24px;
+}
+.ks-err {
+  margin: 14px var(--system-surface-gutter) 0; padding: 9px 12px; border-radius: 10px; font-size: 13px;
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent);
+  color: var(--p-danger-600, var(--p-danger-500));
+}
+
+/* Two-pane Settings shell: a scrollable block nav on the left, a scrollable
+   content pane on the right. Each scrolls independently; the shell itself does
+   not, so the nav stays put while a long form scrolls. */
+.ks-shell { flex: 1; min-height: 0; display: flex; align-items: stretch; }
+
+.ks-nav {
+  flex: 0 0 232px; min-width: 0; overflow-y: auto; overflow-x: hidden;
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 14px;
+  border-right: 1px solid var(--p-content-border-color);
+}
+.ks-nav-section { display: flex; flex-direction: column; gap: 2px; }
+.ks-nav-group {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--p-text-muted-color); margin: 2px 0 4px 10px;
+}
+.ks-nav-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 8px 10px; border: none; border-radius: 8px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500;
+  color: var(--p-text-color); background: transparent;
+  transition: background .15s, color .15s;
+}
+.ks-nav-item:hover { background: color-mix(in srgb, var(--p-text-color) 7%, transparent); }
+.ks-nav-item-active {
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
+  color: var(--p-primary-color);
+}
+.ks-nav-ico { flex: 0 0 auto; width: 18px; height: 18px; }
+.ks-nav-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ks-pane {
+  flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden;
+  padding: 18px var(--system-surface-gutter) 28px;
+}
+/* A bespoke block is a shadow-DOM web component that already owns its own
+   surface gutter + sticky toolbar (.ap-bar/.ap-cards). The pane must go flush
+   so its gutter is not doubled -- otherwise the card sits ~48px from the edge
+   while the generic form sits at 24px. */
+.ks-pane-flush { padding: 0; }
+
+.ks-about { padding: 24px var(--system-surface-gutter); color: var(--p-text-color); font-family: inherit; }
+.ks-about-facts { display: grid; gap: 16px; margin: 0 0 24px; }
+.ks-about-facts > div { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 12px; }
+.ks-about-facts dt { color: var(--p-text-muted-color); }
+.ks-about-facts dd { margin: 0; }
+.ks-about a { color: var(--p-primary-color); text-decoration: underline; }
+.ks-about-runtime { margin-bottom: 28px; }
+.ks-about-runtime span { color: var(--p-text-muted-color); margin-left: 8px; }
+.ks-about h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.ks-about-notices { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13px; line-height: 1.6; padding: 18px; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius-md); background: var(--p-content-hover-background); }
+@media (max-width: 640px) { .ks-about-facts > div { grid-template-columns: 1fr; gap: 4px; } }
+
+/* Titled surface for a generic namespace form, so it reads like the bespoke
+   block panels (which render their own header) rather than a bare field list. */
+.ks-pane-head { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; }
+.ks-pane-ico {
+  flex: none; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+  border-radius: 11px; background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color);
+}
+.ks-pane-ico svg { width: 22px; height: 22px; }
+.ks-pane-head-text { min-width: 0; }
+.ks-pane-head-text h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.2px; color: var(--p-text-color); }
+.ks-pane-head-text p { margin: 2px 0 0; font-size: 13px; color: var(--p-text-muted-color); }
+
+.ks-form { display: flex; flex-direction: column; gap: 26px; }
+
+/* A bespoke block editor mounts its own single pane (it is not inside the
+   two-pane shell), so it owns the surface padding + scroll. */
+.ks-pane-solo { flex: 1; min-height: 0; overflow-y: auto; padding: 18px var(--system-surface-gutter) 28px; }
+
+.ks-group { display: flex; flex-direction: column; }
+.ks-group-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 2px; }
+.ks-group-ico { width: 16px; height: 16px; color: var(--p-text-muted-color); }
+.ks-group-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--p-text-muted-color); margin: 0;
+}
+.ks-group-count {
+  font-size: 10px; font-weight: 600; line-height: 1; padding: 2px 7px; border-radius: 999px;
+  background: color-mix(in srgb, var(--p-text-color) 10%, transparent); color: var(--p-text-muted-color);
+}
+.ks-list {
+  border: 1px solid var(--p-content-border-color); border-radius: 14px; overflow: hidden;
+  background: var(--p-content-background);
+}
+/* Flex-wrap (not grid + media query): media queries measure the iframe viewport,
+   not this embedded content area, so they cannot react to the real available
+   width. flex-wrap lets the control drop below the description when the row is
+   genuinely narrow, at any host width. */
+.ks-row {
+  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 24px; padding: 16px;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+.ks-row:last-child { border-bottom: none; }
+.ks-row-main { flex: 1 1 260px; min-width: 0; }
+.ks-row-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ks-title { font-size: 14px; font-weight: 600; color: var(--p-text-color); }
+/* The raw declaration key, kept as a subtle mono chip beside the human title so
+   an operator can still map a control to its underlying setting. */
+.ks-key {
+  font-size: 11px; font-family: ui-monospace, monospace; padding: 1px 6px; border-radius: 6px;
+  background: color-mix(in srgb, var(--p-text-color) 7%, transparent); color: var(--p-text-muted-color);
+}
+/* Sizing is .kx-tag-caps. */
+.ks-tag { background: color-mix(in srgb, var(--p-text-color) 10%, transparent); color: var(--p-text-muted-color); }
+.ks-tag-on { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color); }
+.ks-desc { font-size: 12px; color: var(--p-text-muted-color); margin: 3px 0 0; }
+.ks-hint { font-size: 11px; color: var(--p-text-muted-color); opacity: .85; margin: 3px 0 0; font-family: ui-monospace, monospace; }
+.ks-prov { font-size: 11px; color: var(--p-text-muted-color); opacity: .8; margin-top: 4px; }
+
+/* Row gains a subtle danger wash when its field fails validation. */
+.ks-row-invalid { background: color-mix(in srgb, var(--p-danger-500) 5%, transparent); }
+
+.ks-control { display: flex; flex-direction: column; align-items: stretch; gap: 6px; flex: 0 1 360px; min-width: 0; }
+.ks-field { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.ks-field-err {
+  font-size: 12px; margin: 0; text-align: right;
+  color: var(--p-danger-600, var(--p-danger-500));
+}
+.ks-input {
+  flex: 1 1 180px; min-width: 0; max-width: 100%; padding: 8px 10px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  transition: border-color .15s;
+}textarea.ks-input { flex-basis: 100%; min-height: 88px; font-family: ui-monospace, monospace; resize: vertical; }
+.ks-check { flex: 0 0 auto; }
+.ks-check { width: 18px; height: 18px; accent-color: var(--p-primary-color); }
+.ks-static { font-size: 13px; color: var(--p-text-muted-color); }
+
+/* Enum PrimeVue Select in the generic form row. Matches the native input's
+   flex sizing; PrimeVue's prestyled CSS (primeVueCssUrl) supplies the control's
+   height, border, padding, and background. The invalid modifier tints the border
+   the same danger tone the native select used. */
+.ks-select { flex: 1 1 180px; min-width: 0; max-width: 100%; }
+.ks-select.ks-select-invalid { border-color: var(--p-danger-500); }
+
+/* Inline "Saved" confirmation that fades in beside the control after a write. */
+.ks-saved {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600;
+  color: var(--p-primary-color); white-space: nowrap;
+}
+.ks-saved-tick { font-size: 13px; }
+
+/* A per-setting bespoke editor occupies the whole control column. */
+.ks-row-wc { align-items: stretch; }
+.ks-wc-slot { flex: 1 1 360px; min-width: 0; }
+.ks-wc-slot .kx-wcmount { display: block; }
+
+/* Phone: tighten the gutter, let the control pane take the full row width below
+   its description, and left-align the field so inputs are not pinned to a narrow
+   right edge. */
+@media (max-width: 640px) {
+  .ks { --system-surface-gutter: 16px; }
+  /* Stack the nav above the pane so neither is pinned to a sliver of width. */
+  .ks-shell { flex-direction: column; }
+  .ks-nav {
+    flex: 0 0 auto; max-height: 40%; flex-direction: row; flex-wrap: wrap; gap: 6px;
+    border-right: none; border-bottom: 1px solid var(--p-content-border-color);
+  }
+  .ks-nav-section { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .ks-nav-group { margin: 0 6px 0 2px; }
+  .ks-pane { padding-top: 14px; }
+  .ks-form { gap: 20px; }
+  .ks-row { padding: 14px; }
+  .ks-control { flex: 1 1 100%; }
+  .ks-field { justify-content: flex-start; }
+}
+/* ── Bespoke block-panel chrome (.ap-*) ───────────────────────────────────────
+   A small vocabulary a bespoke settings block (e.g. Files & Uploads) uses to
+   render a miniature card surface with a sticky Save/Discard toolbar — the same
+   look as the Appearance editor, self-contained here so a block panel bundled in
+   this component needs no external stylesheet. Token-driven for light + dark. */
+.ap { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--p-text-color); background: var(--p-content-background); }
+.ap-body { flex: 1; overflow-y: auto; padding: 0 0 28px; }
+.ap-bar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; width: 100%;
+  padding: 12px var(--system-surface-gutter); background: var(--p-content-background);
+  position: sticky; top: 0; z-index: 3; border-bottom: 1px solid var(--p-content-border-color);
+}
+.ap-dirty {
+  display: inline-flex; align-items: center; height: 34px; font-size: 12px; font-weight: 600;
+  color: var(--p-warn-600, var(--p-warn-500)); background: color-mix(in srgb, var(--p-warn-500) 16%, transparent);
+  padding: 0 11px; border-radius: 8px; margin-right: auto;
+}
+.ap-msg { margin: 12px var(--system-surface-gutter) 0; padding: 9px 12px; border-radius: 8px; font-size: 13px; }
+.ap-err { background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-600, var(--p-danger-500)); }
+.ap-loading { display: flex; align-items: center; gap: 8px; color: var(--p-text-muted-color); font-size: 13px; padding: 24px; }
+
+.ap-cards { display: flex; flex-direction: column; gap: 16px; padding: 16px var(--system-surface-gutter) 0; }
+.ap-card { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 14px; padding: 16px 18px; }
+.ap-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--p-text-color); letter-spacing: -.2px; }
+.ap-h svg { width: 17px; height: 17px; color: var(--p-text-muted-color); }
+.ap-sub { font-size: 12.5px; color: var(--p-text-muted-color); margin: 4px 0 12px; }
+.ap-blabel { display: block; font-size: 11.5px; font-weight: 700; color: var(--p-text-muted-color); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 6px; }
+.ap-binput {
+  width: 100%; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background); color: var(--p-text-color); font: inherit; font-size: 13px; box-sizing: border-box;
+}/* Enum/format PrimeVue Select in a bespoke card. Full-width like the native
+   input it replaces; PrimeVue's prestyled CSS supplies height/border/background. */
+.ap-select { width: 100%; }
+.ap-hint { font-size: 11.5px; color: var(--p-text-muted-color); margin: 8px 0 0; }
+
+/* An input trailed by a fixed unit suffix (MB, DPI, sec) and an optional reset. */
+.ap-unit { display: flex; align-items: center; gap: 8px; }
+.ap-unit .ap-binput { flex: 1; min-width: 0; }
+.ap-unit-suffix { font-size: 12px; font-weight: 600; color: var(--p-text-muted-color); flex: 0 0 auto; min-width: 34px; }
+
+/* A labeled toggle row: text on the left, switch on the right. */
+.ap-toggle-row { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.ap-toggle-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ap-toggle-name { font-size: 13px; font-weight: 600; color: var(--p-text-color); }
+.ap-toggle-desc { font-size: 12px; color: var(--p-text-muted-color); }
+
+/* A responsive grid of compact labeled fields. */
+.ap-field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 14px; margin-top: 14px; }
+.ap-fg { min-width: 0; }
+.ap-fg .ap-blabel { margin-top: 0; }
+
+/* Provider settings card (kickside-settings-provider): reuses the shared
+   .ap-card / .ap-h / .ap-sub chrome (full-width, same gutter as the toolbar);
+   these rules add only the per-group and per-field spacing. */
+.pv-group + .pv-group { margin-top: 22px; }
+.pv-group-title {
+  margin: 0 0 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--p-text-muted-color);
+}
+.pv-field { margin-bottom: 16px; }
+.pv-field:last-child { margin-bottom: 0; }
+.pv-field-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pv-reset { margin-left: auto; }
+.pv-toggle { margin-top: 2px; }
+.pv-textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.ks-all-search { margin-bottom: 1rem; }
+.ks-all-table { width: 100%; border-collapse: collapse; text-align: left; }
+.ks-all-table th { padding: 1rem; color: var(--p-text-muted-color); font-weight: 600; }
+.ks-all-table .ks-row { display: table-row; }
+.ks-all-table td { padding: 1rem; vertical-align: top; border-top: 1px solid var(--p-content-border-color); }
+.ks-all-table .ks-control { display: table-cell; }
+.ks-all-table .ks-owner { color: var(--p-text-muted-color); }

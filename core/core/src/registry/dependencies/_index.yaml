@@ -1,0 +1,49 @@
+version: "1.0"
+namespace: kickside.core
+entries:
+  - name: dep.kickside.component
+    # The application lock must pin Component at 0.1.33 or newer: the boot
+    # provisioner reads autoinit.declared_kinds(), which older releases lack.
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+    parameters:
+      - name: kickside.component:lifecycle_impl
+        value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.kickside.jobs
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Durable leased-job engine and internal transaction APIs used by Core thread and projection owners.
+    component: kickside/jobs
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration
+
+  - name: dep.wippy.security
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Actor, scope, and access resolution framework.
+    component: wippy/security

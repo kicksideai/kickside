@@ -1,0 +1,23 @@
+.p-inputtext.p-component {
+  font-size: 13px;
+}
+
+.p-inputtext.p-component:enabled:focus {
+  outline-width: var(--p-inputtext-focus-ring-width);
+  outline-style: var(--p-inputtext-focus-ring-style);
+  outline-color: var(--p-inputtext-focus-ring-color);
+  outline-offset: var(--p-inputtext-focus-ring-offset);
+  box-shadow: var(--p-inputtext-focus-ring-shadow);
+}
+
+/* PrimeVue Textarea is the multiline sibling of InputText. Keep its focus
+   treatment identical even while the upstream component CSS only changes the
+   border color. */
+.p-textarea:enabled:focus {
+  border-color: var(--p-inputtext-focus-border-color);
+  outline-width: var(--p-inputtext-focus-ring-width);
+  outline-style: var(--p-inputtext-focus-ring-style);
+  outline-color: var(--p-inputtext-focus-ring-color);
+  outline-offset: var(--p-inputtext-focus-ring-offset);
+  box-shadow: var(--p-inputtext-focus-ring-shadow);
+}

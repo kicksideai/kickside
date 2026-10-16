@@ -1,0 +1,291 @@
+version: "1.0"
+namespace: app.fixture
+
+# Harness-only data ports for suites that install a real sync through the
+# automation engine: one pullable collection source and one store sink, each a
+# published kickside.automation.port over its own binding.
+entries:
+  - name: records_source
+    kind: contract.binding
+    meta:
+      title: Fixture Records
+      class: [fixture]
+    contracts:
+      - contract: kickside.data:pullable
+        methods:
+          pull: app.fixture:records_pull
+
+  - name: records_pull
+    kind: function.lua
+    meta:
+      comment: Answers every pull with one empty, final page.
+    source: file://ports.lua
+    modules: [ctx]
+    method: pull
+    imports:
+
+
+  - name: records
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Fixture Records
+      comment: A pullable fixture collection.
+    binding: app.fixture:records_source
+
+  - name: record_keys
+    kind: function.lua
+    meta:
+      comment: Lists the fixture records' keys for reconciliation.
+    source: file://ports.lua
+    modules: [ctx]
+    method: record_keys
+    imports:
+
+  - name: keyed_records
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Keyed Records
+      comment: A pullable fixture collection whose keys can be listed for reconciliation.
+    binding: app.fixture:records_source
+    reconcile:
+      pull_keys: app.fixture:record_keys
+
+  - name: store_sink
+    kind: contract.binding
+    meta:
+      title: Fixture Store
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: app.fixture:store_write
+
+  - name: store_write
+    kind: function.lua
+    meta:
+      comment: Accepts every write as a no-op.
+    source: file://ports.lua
+    modules: [ctx]
+    method: write
+    imports:
+
+  - name: store
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Fixture Store
+      comment: A fixture store sink.
+    binding: app.fixture:store_sink
+    operations:
+      upsert: {}
+
+  - name: install_as_user
+    kind: function.lua
+    meta:
+      comment: Installs a sync through the automation engine as the calling user and shares it with the test runner.
+    source: file://install.lua
+    method: install
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+
+  # An events source: a thread component emitting fixture record events.
+  - name: record_feed
+    kind: contract.binding
+    meta:
+      title: Fixture Record Feed
+      class: [fixture]
+      events:
+        input: []
+        output:
+          - type: app.fixture.events:record.arrived
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: schema_record_feed
+    kind: contract.binding
+    meta:
+      title: Schema Record Feed
+      class: [fixture]
+      events:
+        input: []
+        output:
+          - type: app.fixture.events:record.arrived
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.trigger:source_schema
+        methods:
+          describe: app.fixture:source_schema
+
+  - name: source_schema
+    kind: function.lua
+    source: file://ports.lua
+    modules: [ctx]
+    method: source_schema
+
+  - name: record_arrived
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Record Arrived
+      comment: Start on each fixture record event of a selected feed.
+    binding: app.fixture:record_feed
+    event: app.fixture.events:record.arrived
+    config_schema:
+      thread_id:
+        type: string
+        title: Feed
+        picker: wc-component-picker
+        class: fixture
+
+  # A pullable source whose items declare their face (title only), and a store
+  # sink whose writes need content, which its content config can supply.
+  - name: titled_records
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Titled Records
+      comment: A pullable fixture collection whose items carry a title.
+    binding: app.fixture:records_source
+    output_schema: '{ "type": "object", "properties": { "title": { "type": "string" } } }'
+
+  - name: content_store
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Content Store
+      comment: A fixture store whose writes need content.
+    binding: app.fixture:store_sink
+    operations:
+      upsert: {}
+    input_schema: '{ "type": "object", "required": ["content"], "properties": { "content": { "type": "string" }, "title": { "type": "string" } } }'
+    config_schema:
+      content:
+        picker: wc-schema-form
+        type: string
+        title: Message
+        supplies: content
+
+  # Round consumer fixtures: sinks declaring their delivery semantics and input
+  # shape, whose writes are recorded in sync_round_writes, and a replay-unsafe
+  # func transform whose calls are recorded there too.
+  - name: round_write
+    kind: function.lua
+    meta:
+      comment: Records a round sink write and answers it by the input's directive.
+    source: file://round_ports.lua
+    method: write
+    modules: [sql, json]
+    imports:
+
+  - name: round_transform
+    kind: function.lua
+    meta:
+      comment: A replay-unsafe func transform that records every call.
+    source: file://round_ports.lua
+    method: transform
+    modules: [sql, json]
+    imports:
+
+
+  - name: round_record_sink
+    kind: contract.binding
+    meta:
+      title: Round Record Sink
+      delivery: exactly_once
+      input_shape: record
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: app.fixture:round_write
+
+  - name: round_record
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Round Record Sink
+      comment: A record sink with exactly-once delivery.
+    binding: app.fixture:round_record_sink
+    operations:
+      upsert: {}
+      delete: {}
+
+  - name: round_content_sink
+    kind: contract.binding
+    meta:
+      title: Round Content Sink
+      delivery: exactly_once
+      input_shape: content
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: app.fixture:round_write
+
+  - name: round_content
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Round Content Sink
+      comment: A content sink with exactly-once delivery.
+    binding: app.fixture:round_content_sink
+    operations:
+      upsert: {}
+      delete: {}
+
+  - name: round_notify_sink
+    kind: contract.binding
+    meta:
+      title: Round Notify Sink
+      delivery: at_most_once
+      input_shape: record
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: app.fixture:round_write
+
+  - name: round_notify
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Round Notify Sink
+      comment: A record sink with at-most-once delivery.
+    binding: app.fixture:round_notify_sink
+    operations:
+      upsert: {}
+
+  - name: mapped_record
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Mapped Record }
+    binding: app.fixture:round_record_sink
+    operations:
+      upsert: {}
+    input_schema: '{"type":"object","required":["title"],"properties":{"title":{"type":"string"}}}'
+
+  - name: mapped_content
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Mapped Content }
+    binding: app.fixture:round_content_sink
+    operations:
+      upsert: {}
+    input_schema: '{"type":"object","required":["content"],"properties":{"content":{"type":"string"},"title":{"type":"string"}}}'
+    config_schema:
+      content: { type: string, supplies: content }
+
+  - name: personal_record_arrived
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Personal Record Arrived }
+    binding: app.fixture:schema_record_feed
+    event: app.fixture.events:record.arrived
+
+  - name: selected_schema_record
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Selected Schema Record }
+    binding: app.fixture:schema_record_feed
+    event: app.fixture.events:record.arrived
+    config_schema:
+      thread_id: { type: string, picker: wc-component-picker, class: fixture }

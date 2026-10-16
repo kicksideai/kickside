@@ -1,0 +1,6 @@
+organization: kickside
+module: identity-bot-accounts-test
+type: application
+directories:
+  src: src
+  modules: .wippy

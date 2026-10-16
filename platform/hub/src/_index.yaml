@@ -1,0 +1,161 @@
+version: "1.0"
+namespace: kickside.hub
+
+# The module-management surface. A self-contained web component (kickside-hub)
+# that browses the hub, plans transitive installs, binds requirements, and manages
+# installed modules over the keeper hub API. It BUILDS (ui/), SHIPS (static/), and
+# SERVES (its own http.static) its UI, exposed as a view.component the host mounts
+# by tag and declared as a System tab (labeled Modules) via ui.settings_tab —
+# adding the tab is a registry change, no app-side edit. Installed dependency
+# state comes from Keeper's committed registry inventory.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Hub
+      comment: Module catalog / install / uninstall surface (kickside-hub web component, mounted as a System tab labeled Modules).
+
+  - name: dep.keeper
+    kind: ns.dependency
+    meta:
+      comment: Hub uses Keeper's registry-backed dependency inventory and mutation APIs.
+    component: keeper/keeper
+    version: ">=0.5.104"
+
+  - name: dep.kickside.agents
+    kind: ns.dependency
+    meta:
+      comment: Hub's onboarding instruments run one-shot recommendations through the agent invoke runtime.
+    component: kickside/agents
+    version: "*"
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated admin HTTP router the Hub credential endpoints attach to.
+      description: Authenticated admin HTTP router the Hub credential endpoints attach to.
+    targets:
+      - entry: kickside.hub.api:hub_auth_status.endpoint
+        path: .meta.router
+      - entry: kickside.hub.api:hub_auth_set.endpoint
+        path: .meta.router
+      - entry: kickside.hub.api:hub_auth_clear.endpoint
+        path: .meta.router
+      - entry: kickside.hub.api:required_setup_status.endpoint
+        path: .meta.router
+      - entry: kickside.hub.api:required_setup_apply.endpoint
+        path: .meta.router
+      - entry: kickside.hub.instruments:recommendations.endpoint
+        path: .meta.router
+      - entry: kickside.hub.instruments:requirement_resolution.endpoint
+        path: .meta.router
+
+  # ─── Hub UI (self-served web component) ───────────────────────────────
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the hub UI static mount attaches to.
+      description: HTTP server the hub UI static mount attaches to.
+    targets:
+      - entry: kickside.hub:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-hub web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-hub
+    fs: kickside.hub:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: modules_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: modules_view
+      title: Modules
+      description: >-
+        Admin-only modules catalog: browse kickside-tagged modules from the
+        keeper hub, open a module detail page (readme, versions, env vars,
+        dependencies), and install, update, or uninstall with migration
+        preview. Fetches its own data; no props.
+      announced: true
+      tag_name: kickside-hub
+      base_path: kickside-hub
+      entry_point: index.js
+      icon: tabler:package
+
+  - name: onboard_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: onboard_view
+      title: Choose workspace modules
+      description: >-
+        Hub-owned onboarding package menu (tag kickside-onboard-modules). Loads
+        registry-declared capability bundles, supports multi-selection, shows
+        the de-duplicated package queue before one explicit sequential install,
+        accepts optional grounded model-assisted additions from the app host,
+        and emits done and back to drive the host wizard.
+      announced: true
+      auto_register: false
+      tag_name: kickside-onboard-modules
+      base_path: kickside-hub
+      entry_point: onboard.js
+
+  - name: splash.welcome.step.modules
+    kind: registry.entry
+    meta:
+      type: ui.splash.step
+      splash: welcome
+      id: modules
+      order: 20
+      title: Pick your instruments
+      subtitle: Choose capability bundles, review the combined package list, then install them together.
+      component_tag: kickside-onboard-modules
+      optional: true
+
+  - name: tab.modules
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Hub modules — browse / install kickside-tagged modules.
+    key: modules
+    label: Modules
+    icon: tabler:package
+    order: 0
+    render: component
+    component_tag: kickside-hub
+    access: kickside.hub.api:hub_auth_set.endpoint
+
+  # A System-header link out to the Keeper admin UI (cluster/registry control
+  # plane). render: link puts it in the header chrome, not the tab strip.
+  - name: tab.keeper
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Link to the Keeper admin UI (cluster/registry control plane).
+    key: keeper
+    label: Keeper
+    icon: tabler:server-cog
+    order: 30
+    render: link
+    url: /c/keeper:main/
+    access: kickside.hub.api:hub_auth_set.endpoint
+
+  - name: dep.kickside.tool_result_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

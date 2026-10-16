@@ -1,0 +1,40 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_admission_test_admission_authority
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Admission, recovery, capacity, and terminal publication invariants.
+    source: file://../../../../suites/admission_test_admission_authority.lua
+    method: run
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      run_writable: kickside.workflows.runs:run_writable
+      maintenance: kickside.workflows.runs:maintenance
+      admission: kickside.workflows.runs:admission
+      store: kickside.workflows.store:store
+      admission_scaffold: app:admission_scaffold
+
+  - name: tsplit_admission_test_crash_recovery
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Admission, recovery, capacity, and terminal publication invariants.
+    source: file://../../../../suites/admission_test_crash_recovery.lua
+    method: run
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      run_writable: kickside.workflows.runs:run_writable
+      maintenance: kickside.workflows.runs:maintenance
+      admission: kickside.workflows.runs:admission
+      store: kickside.workflows.store:store
+      admission_scaffold: app:admission_scaffold

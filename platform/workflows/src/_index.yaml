@@ -1,0 +1,482 @@
+version: "1.0"
+namespace: kickside.workflows
+
+# KickSide workflows — the definition plane of a visual workflow builder. A workflow
+# is a component (class `workflow`) whose id is the workflow id; its definition lives
+# in a per-workflow event stream (workflow_def_events) projected into four read-model
+# tables. A batch of canvas commands is validated as a whole, folded (in-batch id
+# refs, deduped removes), then appended + projected in one transaction, and the
+# produced events (each with seq) are broadcast on the realtime topic
+# workflow.<workflow_id>. The transactional writer persists inverse-command stacks
+# for undo/redo. Publishing compiles the graph to native Dataflow commands; Automation
+# owns trigger bindings, while this optional module owns visual authoring and Flow runs.
+
+entries:
+
+  - name: policy
+    kind: registry.entry
+    meta:
+      comment: >-
+        Workflow admission, per-row size limits and run retention. Settled runs
+        expire after retention.runs. Definition event history (workflow_def_events)
+        is owner-lifetime data with no retention window; it is deleted with its
+        workflow.
+      limits:
+        creation_payload_bytes: 1048576
+        max_inflight_runs: 25
+        document_bytes: 262144
+        command_bytes: 65536
+        max_row_bytes: 4194304
+      retention:
+        runs: 30d
+      launch:
+        admission_timeout: 5m
+        completion_check:
+          initial: 30s
+          max: 5m
+          batch: 100
+
+  - name: policy_config
+    kind: library.lua
+    meta:
+      comment: Validated runtime reader for the single workflows owner policy.
+    source: file://policy.lua
+    modules: [registry, time]
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Workflows
+      comment: Definition plane of the visual Workflow builder — event-sourced graph editing, publishing, runs, realtime, and undo/redo.
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    component: kickside/core
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    component: kickside/execution
+
+  - name: dep.wippy.dataflow
+    # The application lock must pin Dataflow at 0.7.8 or newer: agent Blocks
+    # rely on engine semantics for the reserved-input split.
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Production Workflow compilation and runs directly create and execute Dataflow graphs.
+    component: wippy/dataflow
+
+  - name: dep.wippy.llm
+    version: '*'
+    kind: ns.dependency
+    component: wippy/llm
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    component: wippy/migration
+
+  - name: dep.wippy.security
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Workflow launches bind the execution actor to the runtime process scope.
+    component: wippy/security
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the workflow definition tables.
+      description: SQL database resource backing the workflow definition tables.
+    targets:
+      - entry: kickside.workflows.migrations:01_workflows
+        path: .meta.target_db
+      - entry: kickside.workflows.migrations:02_definition_state
+        path: .meta.target_db
+      - entry: kickside.workflows.migrations:04_admission_recovery
+        path: .meta.target_db
+      - entry: kickside.workflows.migrations:05_undo_history
+        path: .meta.target_db
+      - entry: kickside.workflows:db_config
+        path: .meta.db_id
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured workflow DB id (rewritten by the target_db requirement).
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the workflow-management endpoints attach to.
+      description: Authenticated HTTP router the workflow-management endpoints attach to.
+    targets:
+      - entry: kickside.workflows.api:create_workflow.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:list_workflows.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:list_published.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:get_state.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:export_definition.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:import_definition.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:get_events.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:apply.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:set_workflow_labels.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:undo.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:redo.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:delete_workflow.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:publish.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:list_versions.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:get_version.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:run.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:simulate.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:list_runs.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:get_run.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:run_node_data.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:run_events.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:run_export.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:diff_versions.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:restore_version.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:assist_edge.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:assist_binding.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:assist_schema.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:assist_config.endpoint
+        path: .meta.router
+      - entry: kickside.workflows.api:blocks_api.endpoint
+        path: .meta.router
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the workflow builder static bundle attaches to.
+      description: HTTP server the workflow builder static bundle attaches to.
+    targets:
+      - entry: kickside.workflows:ui_static
+        path: .meta.server
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host for the workflow maintenance service.
+      description: Process host for the workflow maintenance service.
+    targets:
+      - entry: kickside.workflows.runs:maintenance.service
+        path: .host
+
+  # ─── UI mounts (bundle built by the UI package) ──────────────────────
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built workflow builder web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    fs: kickside.workflows:ui_fs
+    path: /kickside-workflows
+    prefix: /
+    options:
+      cache: "no-cache"
+
+  - name: workflow_builder_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: workflow_builder_view
+      title: Workflow Builder
+      tag_name: kickside-workflow-builder
+      base_path: kickside-workflows
+      entry_point: index.js
+      announced: true
+      auto_register: true
+      icon: tabler:route
+
+  - name: workflow_setup_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: Workflow Setup
+      title: Workflow Setup
+      tag_name: kickside-workflow-setup
+      base_path: kickside-workflows
+      entry_point: workflow_setup.js
+      announced: true
+      auto_register: false
+      icon: tabler:route
+    props:
+      type: object
+      properties:
+        parent-id:
+          type: string
+          default: ""
+          description: Workspace folder the create popup places the workflow under; empty places it at root.
+        submit-nonce:
+          type: string
+          default: ""
+          description: Monotonic host command; each new non-empty value submits the embedded form once.
+
+  # The embed lets any module run a published Flow in place (picker or pinned flow-id,
+  # Start-schema form, live status + Finish
+  # output). auto_register so a consumer can drop the tag into a template without loadByTagName.
+
+  - name: workflow_embed_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: workflow_embed_view
+      title: Workflow Embed
+      tag_name: kickside-workflow-embed
+      base_path: kickside-workflows
+      entry_point: workflow_embed.js
+      announced: true
+      auto_register: true
+      icon: tabler:player-play
+    props:
+      type: object
+      properties:
+        flow-id:
+          type: string
+          description: A published Workflow id to pin. Omit to show the Workflow picker.
+        input:
+          type: string
+          description: Pre-mapped Start input as a JSON object string. Omit to render the Start-schema form.
+        mode:
+          type: string
+          enum: [run, dispatch]
+          description: run (default) runs with live status + Finish output; dispatch fires and confirms without polling.
+        label:
+          type: string
+          description: Action button text. Defaults to "Run Workflow".
+
+  # Reusable component-hosted Flows area. This is a pure UI projection of
+  # component-parented Automations; it owns no runtime or storage.
+
+  - name: component_workflows_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: component_workflows_view
+      title: Workflows
+      tag_name: kickside-component-workflows
+      base_path: kickside-workflows
+      entry_point: component_workflows.js
+      announced: true
+      auto_register: true
+      icon: tabler:route
+    props:
+      type: object
+      required: [component-instance-id]
+      properties:
+        component-instance-id:
+          type: string
+          description: Component whose Automations and target Workflows are managed.
+
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /workflows
+      route_name: workflows
+      title: Workflows
+      label: Workflows
+      comment: Build, publish, and run visual Workflows.
+      icon: tabler:route
+      order: 55
+      render: component
+      component_tag: kickside-workflow-builder
+
+  # ─── Libraries ───────────────────────────────────────────────────────
+
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Stable vocabulary — table names, node kinds, command/event dialect.
+    source: file://types.lua
+    modules: [registry]
+
+  - name: config_schema
+    kind: library.lua
+    meta:
+      comment: Canonical registry-declared workflow-node configuration validator shared by assist, publish, and launch.
+    source: file://config_schema.lua
+    modules: [json]
+
+  - name: workflow_state
+    kind: library.lua
+    meta:
+      comment: In-memory workflow event fold and command validation.
+    source: file://workflow_state.lua
+    modules: [uuid, json]
+    imports:
+      types: kickside.workflows:types
+      mapping: kickside.workflows.execution:mapping
+      policy: kickside.workflows:policy_config
+
+  - name: workflow_inverse
+    kind: library.lua
+    meta:
+      comment: Builds inverse workflow events for undo and redo.
+    source: file://workflow_inverse.lua
+    imports:
+      types: kickside.workflows:types
+      workflow_state: kickside.workflows:workflow_state
+      mapping: kickside.workflows.execution:mapping
+
+  - name: workflow
+    kind: library.lua
+    meta:
+      comment: Workflow persistence, transactional writes, and snapshot reads.
+    source: file://workflow.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      store: kickside.workflows.store:store
+      types: kickside.workflows:types
+      workflow_state: kickside.workflows:workflow_state
+      workflow_inverse: kickside.workflows:workflow_inverse
+      undo: kickside.workflows.undo:undo
+      policy: kickside.workflows:policy_config
+      mapping: kickside.workflows.execution:mapping
+
+  - name: realtime
+    kind: library.lua
+    meta:
+      comment: Broadcast produced events to the workflow's realtime topic via component grant fanout.
+    source: file://realtime.lua
+    imports:
+      types: kickside.workflows:types
+      component: kickside.component:component
+
+  - name: run
+    kind: contract.binding
+    meta:
+      title: Run Workflow
+      comment: Admit one exactly-once run of an exact published Flow.
+      delivery: exactly_once
+      input_shape: record
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.workflows.runs:run_write
+  - name: run_sink
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      recurring_target: workflow
+      title: Run Workflow
+      comment: Run a published Workflow once for each delivered item.
+      icon: tabler:player-play
+    binding: kickside.workflows:run
+    input_schema: '{ "type": "object" }'
+    operations:
+      upsert: {}
+    config_schema:
+      flow_ref:
+        type: object
+        title: Workflow
+        required: true
+        picker: wc-component-picker
+        source: /api/v1/workflows/published
+        value_field: flow_ref
+        additionalProperties: false
+        properties:
+          kind: { type: string, const: flow, required: true }
+          id: { type: string, minLength: 1, required: true }
+          version: { type: integer, minimum: 1, required: true }
+
+  - name: flow_access_trait
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Workflow access
+      public: true
+      icon: tabler:route
+      comment: Shows and runs exact published Workflows available to the acting user.
+      tags: [flows, tools, context]
+    tools:
+      - kickside.workflows.agent:flows_read
+    build_func_id: kickside.workflows.agent:flow_access_build
+    prompt: |
+      Read actor-scoped Flow pages with WorkflowsRead action=list and published=true. Invoke `run_flow`
+      with the exact reference and Start input; report only actual tool output.
+
+  - name: assist
+    kind: library.lua
+    meta:
+      comment: Builder AI assist helpers — structured edge intent, transform, schema, and configuration generation plus validation.
+    source: file://assist.lua
+    modules: [json, expr, time]
+    imports:
+      assist_prompts: kickside.workflows:assist_prompts
+      assist_validate: kickside.workflows:assist_validate
+      assist_edge: kickside.workflows:assist_edge
+      assist_config: kickside.workflows:assist_config
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      mapping: kickside.workflows.execution:mapping
+      schema_json: kickside.workflows.schema:schema_json
+      workflow: kickside.workflows:workflow
+      block_catalog: kickside.workflows.catalog:block_catalog
+      config_schema: kickside.workflows:config_schema
+
+  - name: assist_prompts
+    kind: library.lua
+    source: file://assist/prompts.lua
+
+  - name: assist_validate
+    kind: library.lua
+    source: file://assist/validate.lua
+
+  - name: assist_edge
+    kind: library.lua
+    source: file://assist/edge.lua
+
+  - name: assist_config
+    kind: library.lua
+    source: file://assist/config.lua

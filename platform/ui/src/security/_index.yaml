@@ -1,0 +1,36 @@
+version: "1.0"
+namespace: kickside.ui.security
+
+# Module-owned access policy for the UI shell's user-facing discovery endpoints.
+# Declared here so the grant travels with the slice; the role group that receives
+# it is injected by the user_security_scope requirement, keeping the slice
+# app-agnostic.
+#
+# Enumerated, not kickside.ui:* -- the shell namespace is audience-mixed: the
+# System tabs endpoint (list_settings_tabs) and the appearance/logo writes
+# (set_config, upload_logo) stay admin-only by absence from this allowlist, and
+# get_branding is public. Individual splash marks belong to the user surface:
+# the library gates instance marks on admin access. The id-less instance reset
+# belongs to the administrator surface.
+entries:
+  - name: system_onboarding_access
+    kind: security.policy
+    meta:
+      comment: Host administrators may resolve and reset the system onboarding flow.
+    groups: []
+    policy:
+      resources:
+        - kickside.ui:system_onboarding
+        - kickside.ui.api:reset_splashes.endpoint
+      actions: access
+      effect: allow
+
+  - name: admin_scope
+    kind: ns.requirement
+    meta:
+      value_kind: security.scope
+      comment: Application administrator security group allowed to resolve system onboarding.
+      description: Application administrator security group allowed to resolve system onboarding.
+    targets:
+      - entry: kickside.ui.security:system_onboarding_access
+        path: ".groups +="

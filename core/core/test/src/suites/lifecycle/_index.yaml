@@ -1,0 +1,115 @@
+version: "1.0"
+namespace: kickside.core.lifecycle
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: workspace_plugin_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Lifecycle
+    source: file://workspace_plugin_test.lua
+    method: run
+    modules: [process, security, channel, time, sql, uuid]
+    imports:
+      test: wippy.test:test
+      autoinit: kickside.component:autoinit
+
+  - name: boot_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Lifecycle
+    source: file://boot_test.lua
+    method: run
+    modules: [process, time, channel, registry, events, sql, security, uuid]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      lifecycle_consts: kickside.core.lifecycle:consts
+
+  - name: test_principal_cleanup
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Harness cleanup implementation used to verify registry discovery and dispatch.
+    source: file://principal_cleanup.lua
+    method: run
+
+  - name: reaper_retry_binding
+    kind: contract.binding
+    meta:
+      title: Reaper Retry Fixture
+      class: [lifecycle.reaper.retry]
+      comment: Test component whose cleanup fails once through the real trusted delete path.
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:deletable
+        methods:
+          delete: kickside.core.lifecycle:reaper_retry_delete
+
+  - name: reaper_retry_delete
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Fails the first cleanup for a component id, then succeeds on retry.
+    source: file://reaper_retry_delete.lua
+    method: handle
+    modules: [ctx, sql]
+
+  - name: reaper_report_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Invokes the lifecycle reporter from the caller's actor frame.
+    source: file://reaper_report_probe.lua
+    method: run
+    imports:
+      report: kickside.core.lifecycle:report
+
+  - name: reaper_dispatch_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Runs the projection worker dispatcher inside a supplied system actor frame.
+    source: file://reaper_dispatch_probe.lua
+    method: run
+    imports:
+      projection_worker: kickside.core.projections.persist:worker
+
+  - name: reaper_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Lifecycle
+      comment: A kickside.lifecycle.events:principal.deleted report reaps every component the owner held, idempotently.
+    source: file://reaper_test.lua
+    method: run
+    modules: [sql, uuid, security, contract, funcs]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      provision: kickside.core.threads:provision
+      lifecycle_consts: kickside.core.lifecycle:consts
+      projection_worker: kickside.core.projections.persist:worker
+      framework_events: kickside.core.threads:contract_events
+
+  - name: component_lifecycle_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Lifecycle
+      comment: Component CRUD records canonical created/updated/deleted events through the lifecycle contract.
+    source: file://component_lifecycle_test.lua
+    method: run
+    modules: [sql, uuid, security, contract, time, channel, process]
+    imports:
+      test: wippy.test:test
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      audit_publisher: kickside.core.lifecycle:component_lifecycle_impl

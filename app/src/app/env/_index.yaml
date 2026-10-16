@@ -1,0 +1,122 @@
+version: "1.0"
+namespace: app.env
+
+entries:
+  - name: file
+    kind: env.storage.file
+    auto_create: true
+    file_path: ./.wippy/.env
+    lifecycle:
+      auto_start: true
+
+  - name: os
+    kind: env.storage.os
+    lifecycle:
+      auto_start: true
+
+  # Baked safe defaults so the app boots with no persisted / OS env (e.g. a fresh
+  # `wippy run kickside/kickside`). Read-only fallback: .wippy/.env + OS env still win
+  # (router uses first-match). Secrets and bootstrap credentials are
+  # intentionally NOT shipped — set them via .wippy/.env / OS env / the Settings UI.
+  # Override per deployment with:
+  #   wippy run kickside/kickside -o app.env:defaults:values.PUBLIC_API_URL=...
+  - name: defaults
+    kind: env.storage.static
+    lifecycle:
+      auto_start: true
+    values:
+      PUBLIC_API_URL: "http://localhost:8085"
+      GOV_MANAGED_NAMESPACES: "app.deps"
+      KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL: ""
+      KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD: ""
+      KICKSIDE_USERS_ADMIN_GROUP_ID: app.security:admin
+      KICKSIDE_USERS_DATABASE_RESOURCE: app:db
+      KICKSIDE_USERS_DEFAULT_GROUP_ID: app.security:user
+      KICKSIDE_USERS_TOKEN_EXPIRATION: 24h
+      KICKSIDE_PG_HOST: ""
+      KICKSIDE_PG_PORT: ""
+      KICKSIDE_PG_DATABASE: ""
+      KICKSIDE_PG_USERNAME: ""
+      KICKSIDE_PG_PASSWORD: ""
+      KICKSIDE_SSO_GOOGLE_CLIENT_ID: ""
+      KICKSIDE_SSO_GOOGLE_CLIENT_SECRET: ""
+      KICKSIDE_SSO_MICROSOFT_CLIENT_ID: ""
+      KICKSIDE_SSO_MICROSOFT_CLIENT_SECRET: ""
+      KICKSIDE_SSO_MICROSOFT_TENANT: "organizations"
+      KICKSIDE_SSO_GITHUB_CLIENT_ID: ""
+      KICKSIDE_SSO_GITHUB_CLIENT_SECRET: ""
+      KICKSIDE_SSO_OIDC_ISSUER: ""
+      KICKSIDE_SSO_OIDC_CLIENT_ID: ""
+      KICKSIDE_SSO_OIDC_CLIENT_SECRET: ""
+      KICKSIDE_SSO_ALLOWED_EMAIL_DOMAINS: ""
+      KICKSIDE_SSO_PUBLIC_BASE_PATH: ""
+
+  - name: store
+    kind: env.storage.router
+    lifecycle:
+      auto_start: true
+    storages:
+      - app.env:file
+      - app.env:os
+      - app.env:defaults
+
+  # Postgres connection variables, referenced by the postgres* runtime profiles
+  # via app:db:*_env. Declared here so the db manager can resolve them from the
+  # env store (.wippy/.env / OS env). Unset by default; the app falls back to sqlite.
+  - name: pg_host
+    kind: env.variable
+    meta:
+      comment: Postgres host for the application database.
+    storage: app.env:store
+    variable: KICKSIDE_PG_HOST
+
+  - name: pg_port
+    kind: env.variable
+    meta:
+      comment: Postgres port for the application database.
+    storage: app.env:store
+    variable: KICKSIDE_PG_PORT
+
+  - name: pg_database
+    kind: env.variable
+    meta:
+      comment: Postgres database name for the application database.
+    storage: app.env:store
+    variable: KICKSIDE_PG_DATABASE
+
+  - name: pg_username
+    kind: env.variable
+    meta:
+      comment: Postgres username for the application database.
+    storage: app.env:store
+    variable: KICKSIDE_PG_USERNAME
+
+  - name: pg_password
+    kind: env.variable
+    meta:
+      comment: Postgres password for the application database.
+      private: true
+    storage: app.env:store
+    variable: KICKSIDE_PG_PASSWORD
+
+  - name: serve_public_env
+    kind: function.lua
+    source: file://serve_public_env.lua
+    security:
+      actor:
+        id: app.env:serve_public_env
+      policies:
+        - app.security:public_env.read
+    modules:
+      - http
+      - env
+      - json
+    method: handler
+
+  - name: public_env_endpoint
+    kind: http.endpoint
+    meta:
+      router: app:api.public
+    method: GET
+    func: serve_public_env
+    path: /env/public.js

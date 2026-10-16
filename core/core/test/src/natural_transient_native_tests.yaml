@@ -1,0 +1,38 @@
+version: '1.0'
+namespace: app
+entries:
+- name: natural_transient_native_test
+  kind: function.lua
+  source: file://natural_transient_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_natural_transient_native
+  imports:
+    test: wippy.test:test
+    fixture: app:natural_cleanup_fixture
+    api: app:natural_cleanup_source
+- name: sql_transient_native_probe
+  kind: function.lua
+  source: file://sql_transient_native_probe.lua
+  method: run
+  meta:
+    type: test
+    suite: core_sql_transient_native
+  modules:
+  - sql
+  - json
+  imports:
+    test: wippy.test:test
+- name: sql_transient_first
+  kind: db.sql.sqlite
+  file: ${sqlite_path}.native_transient
+  pool:
+    max_open: 1
+    max_idle: 1
+- name: sql_transient_second
+  kind: db.sql.sqlite
+  file: ${sqlite_path}.native_transient
+  pool:
+    max_open: 1
+    max_idle: 1

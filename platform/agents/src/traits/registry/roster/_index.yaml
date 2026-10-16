@@ -1,0 +1,67 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: master_ns
+    kind: library.lua
+    meta: { comment: "Namespace allow-list for the master traits: bounds which agents/traits a master can reach." }
+    source: file://../../master_ns.lua
+
+  - name: roster_list
+    kind: library.lua
+    meta: { comment: "Reachable-agent enumeration (user + system agents, namespace-filtered) shared by the roster build func and the Agents tool." }
+    source: file://../../roster_list.lua
+    modules: [security, registry]
+    imports:
+      component_lib: kickside.component:component
+      agent_types: kickside.agents:types
+      master_ns: kickside.agents.traits:master_ns
+      agent_ref: kickside.agents:agent_ref
+
+  # Capability manager: discover traits and activate/deactivate them at runtime. The
+  # resolver seeds base_traits (the agent's configured set) so activation never drops
+  # the agent's own traits; the new full set is emitted as a config.traits directive
+  # so the session recompiles and the activated trait's tools + prompt go live.
+  - name: agent_roster
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Agent Roster
+      public: true
+      icon: tabler:users-group
+      comment: Sees the other agents it can reach, to delegate work to them or hand off the chat.
+      tags: [agents, master, routing]
+      web_component: kickside-master-namespace-picker
+      context_schema:
+        type: object
+        properties:
+          namespaces:
+            type: array
+            title: Namespace allow-list
+            role: value
+            items: { type: string }
+        additionalProperties: false
+    build_func_id: kickside.agents.traits:init_agent_roster
+    prompt: |
+      You can reach other agents two ways, and they are different:
+
+      - **Delegate** runs a self-contained subtask on another agent in an isolated
+        context and returns its result to you. You stay in control and continue with
+        the result. Use it to offload a piece of work.
+      - **Redirect** hands this chat off to another agent. That agent takes
+        over and you do not continue. Use it when another agent should own the rest of
+        the chat.
+
+      Use the **Agents** tool: `list` to see who you can reach, `delegate` to offload a
+      subtask, `redirect` to hand off. The reachable agents are listed below.
+    tools:
+      - kickside.agents.traits:agents_action
+
+  - name: init_agent_roster
+    kind: function.lua
+    meta:
+      comment: Agent roster build func -- injects the reachable agents (namespace-scoped) on start.
+    source: file://../../init_agent_roster.lua
+    imports:
+      roster_list: kickside.agents.traits:roster_list
+      master_ns: kickside.agents.traits:master_ns
+    method: execute

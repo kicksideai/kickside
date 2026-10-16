@@ -1,0 +1,133 @@
+version: "1.0"
+namespace: kickside.core.projections.persist
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: returned_authorization_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_core }
+    source: file://returned_authorization_test.lua
+    modules: [sql, uuid, contract, security]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+      invoke: kickside.core.projections:invoke
+      claim: kickside.core.jobs.persist:claim
+    method: run
+  - name: post_commit_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_core }
+    source: file://post_commit_test.lua
+    modules: [sql, uuid]
+    imports:
+      writer: kickside.core.projections.persist:writer
+      invoke: kickside.core.projections:invoke
+      claim: kickside.core.jobs.persist:claim
+      test: wippy.test:test
+    method: run
+  - name: slot_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+    source: file://slot_test.lua
+    modules: [sql, uuid, json]
+    imports:
+      writer: kickside.core.projections.persist:writer
+      apply: kickside.core.projections:apply
+      invoke: kickside.core.projections:invoke
+      claim: kickside.core.jobs.persist:claim
+      job_lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      test: wippy.test:test
+    method: run
+  - name: worker_test
+    kind: function.lua
+    meta:
+      title: Projection Worker
+      type: test
+      suite: kickside_core
+      comment: worker_ref parse/validate + run dispatch over a stub registry.
+    source: file://worker_test.lua
+    modules:
+      - process
+      - sql
+      - uuid
+      - funcs
+      - json
+      - time
+    imports:
+      worker: kickside.core.projections.persist:worker
+      types: kickside.core.projections:types
+      test: wippy.test:test
+      execution_identity: kickside.execution:execution_identity
+    method: run
+
+  - name: policy_test
+    kind: function.lua
+    meta:
+      title: Projection Policy
+      type: test
+      suite: kickside_core
+    source: file://policy_test.lua
+    modules: [registry]
+    imports:
+      policy: kickside.core.projections:policy_config
+      test: wippy.test:test
+    method: run
+
+  - name: reader_test
+    kind: function.lua
+    meta:
+      title: Projection Reader
+      type: test
+      suite: kickside_core
+      comment: list projections/cursors, get one, find_cursor by id and by natural key.
+    source: file://reader_test.lua
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+    imports:
+      reader: kickside.core.projections.persist:reader
+      writer: kickside.core.projections.persist:writer
+      types: kickside.core.projections:types
+      test: wippy.test:test
+    method: run
+  - name: slot_failure_test
+    kind: function.lua
+    meta:
+      title: Projection Slot Failures
+      type: test
+      suite: kickside_core
+      comment: A failing projection records its failure on its cursor and stops re-running.
+    source: file://slot_failure_test.lua
+    modules: [sql, uuid, json]
+    imports:
+      writer: kickside.core.projections.persist:writer
+      invoke: kickside.core.projections:invoke
+      claim: kickside.core.jobs.persist:claim
+      job_lifecycle: kickside.core.jobs.persist:lifecycle
+      jobs: kickside.core.jobs:jobs
+      test: wippy.test:test
+    method: run
+
+  - name: registration_identity_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://registration_identity_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      writer: kickside.core.projections.persist:writer
+      test: wippy.test:test
+
+  - name: control_error_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://control_error_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      writer: kickside.core.projections.persist:writer
+      test: wippy.test:test

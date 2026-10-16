@@ -1,0 +1,32 @@
+# Search guardrails for agent/tooling context. Use explicit paths when these
+# generated or binary assets are actually needed.
+**/.git/**
+**/.wippy/**
+**/node_modules/**
+**/target/**
+**/dist/**
+**/coverage/**
+**/storage/**
+
+**/static/**/*.map
+**/static/**/*.js
+**/static/**/*.css
+**/static*/**/*.map
+**/static*/**/*.js
+**/static*/**/*.css
+**/*.wapp
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.log
+**/*.tsbuildinfo
+
+**/*.pdf
+**/*.zip
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.gif
+**/*.mp4
+**/*.mov

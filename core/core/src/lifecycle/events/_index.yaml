@@ -1,0 +1,29 @@
+version: "1.0"
+namespace: kickside.lifecycle.events
+
+# Event-type entries for the system lifecycle thread. Both are audit events with
+# no port; schema from the shared emit site.
+entries:
+  # Emit site: core/core/src/lifecycle/report.lua:34,50 (body { subject_id = user_id }).
+  - name: principal.deleted
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        subject_id: { type: string }
+      required: [subject_id]
+
+  # Emit site: core/core/src/lifecycle/report.lua:34,57 (body { subject_id = component_id }).
+  - name: component.deleted
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        subject_id: { type: string }
+      required: [subject_id]

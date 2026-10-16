@@ -1,0 +1,60 @@
+# kickside/execution
+
+Principal encoding, delegation, actor context, and execution tracing.
+
+This module installs independently into a [KickSide](https://kickside.ai) host.
+
+## Quick start
+
+In **System → Modules**, select the package from the Wippy Hub and review its
+requirements. For CLI dependency setup, run from the host application directory:
+
+```sh
+wippy add kickside/execution
+wippy install
+```
+
+Apply host bindings and migrations through the application install plan.
+Review the manifest and registry requirements before enabling the module.
+Host resources and security groups bind through the install plan.
+
+## Key concepts
+
+Registry declarations define the public entries, dependencies, and host requirements.
+See the [registry and API reference](src/README.md) for the module contract.
+
+## Requirements
+
+Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+for the contracts declared by the module.
+The identity and trace harness has no SQL storage. Its PostgreSQL profile
+selects the execution authority gate; database behavior belongs to consumers.
+Development uses Make and the Wippy CLI.
+
+## Development
+
+From this module directory:
+
+```sh
+cd test
+wippy install
+cd ..
+make lint
+make test
+cd test
+wippy test --profile postgres
+```
+
+Run consumers with SQLite and PostgreSQL when changing execution or authority
+boundaries that reach persistence.
+
+## Links
+
+- [KickSide](https://kickside.ai)
+- [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+- [Wippy documentation](https://wippy.ai)
+- [Wippy Hub](https://hub.wippy.ai/kickside/execution)
+
+## License
+
+[KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.

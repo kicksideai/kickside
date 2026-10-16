@@ -1,0 +1,173 @@
+/* ══ VUE FLOW CHROME + LIVE WIRE ═════════════════════════════════════════ */
+.wf-flow .vue-flow__nodes > .vue-flow__node { background: transparent; border: 0; padding: 0; box-shadow: none; border-radius: 0; }
+.wf-flow .vue-flow__nodes > .vue-flow__node.selected { box-shadow: none; }/* The container box node is a backdrop only: its whole wrapper is click-through so the
+   interior never swallows a pan, a rubber-band select or a connection drag. The header
+   strip re-enables pointer events on itself (styles.css .wf-container-head). */
+.vue-flow__handle { border: 0; }
+
+.vue-flow__edge-path { stroke: var(--wf-line-strong); stroke-width: 1.5; stroke-linecap: round; transition: stroke .2s var(--wf-ease); }
+[data-theme="dark"] .vue-flow__edge-path,
+.dark .vue-flow__edge-path {
+  stroke: color-mix(in srgb, var(--p-text-color) 48%, var(--wf-line-strong));
+  stroke-width: 1.7;
+}
+.vue-flow__edge.selected .vue-flow__edge-path { stroke: var(--p-primary-color); stroke-width: 2.4; }.vue-flow__edge:focus-visible .vue-flow__edge-path {
+  stroke: var(--p-primary-color);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--p-primary-color) 70%, transparent));
+}
+.vue-flow__edge-text { font-size: 10px; fill: var(--wf-muted); }
+.vue-flow__edge-textbg { fill: var(--wf-panel); }
+
+/* Live wire: traveling data pulses on the active edge, in a calm neutral-teal. */
+.vue-flow__edge.wf-edge--active .vue-flow__edge-path {
+  stroke: var(--wf-teal);
+  stroke-width: 2.2;
+  stroke-dasharray: 5 6;
+  animation: wf-dash 0.6s linear infinite;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--wf-teal) 60%, transparent));
+}
+.vue-flow__edge.wf-edge--done .vue-flow__edge-path { stroke: color-mix(in srgb, var(--p-success-500) 60%, var(--wf-line-strong)); }
+@keyframes wf-dash { to { stroke-dashoffset: -22; } }
+
+/* A schema-mismatched edge reads as "needs mapping": a dashed amber wire, not a block.
+   The per-edge assist chip is the fix; a set transform clears the dash. */
+.vue-flow__edge.wf-edge--needs-map .vue-flow__edge-path {
+  stroke: var(--wf-amber);
+  stroke-dasharray: 5 4;
+}
+.vue-flow__edge.wf-edge--needs-map .vue-flow__edge-marker { fill: var(--wf-amber); }
+
+/* A persisted mapping gap is distinct from an in-progress intent: keep the wire danger
+   tinted and its calm midpoint count visible until every required target field is mapped. */
+.vue-flow__edge.wf-edge--unmapped-required .vue-flow__edge-path {
+  stroke: var(--wf-danger);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+.vue-flow__edge.wf-edge--unmapped-required .vue-flow__edge-marker { fill: var(--wf-danger); }
+.vue-flow__edge.wf-edge--contract-unavailable .vue-flow__edge-path {
+  stroke: var(--wf-amber);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+.vue-flow__edge.wf-edge--contract-unavailable .vue-flow__edge-marker { fill: var(--wf-amber); }
+.wf-edge-completeness-badge {
+  position: absolute; z-index: var(--wf-layer-edge-annotation); pointer-events: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border: 1px solid color-mix(in srgb, var(--wf-danger) 58%, var(--p-content-border-color));
+  border-radius: 6px; background: var(--wf-panel); color: var(--wf-danger);
+  box-shadow: var(--wf-elev-1); font-size: var(--wf-fs-label); font-weight: 700;
+  line-height: 1;
+}
+.wf-edge-completeness-badge.is-contract-unavailable {
+  border-color: color-mix(in srgb, var(--wf-amber) 58%, var(--p-content-border-color));
+  color: var(--wf-amber);
+}
+
+/* Pending intent edge (W11.1): a calm accent-toned dash flows along it while the intent
+   popover is open — the system is "listening", not erroring. A ~220ms rhythm reads as a
+   gentle crawl; the dash period equals the offset so the loop is seamless. */
+.vue-flow__edge.wf-edge--pending .vue-flow__edge-path {
+  stroke: var(--p-primary-color);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  animation: wf-dash-flow 0.22s linear infinite;
+}
+.vue-flow__edge.wf-edge--pending .vue-flow__edge-marker { fill: var(--p-primary-color); }
+@keyframes wf-dash-flow { to { stroke-dashoffset: -11; } }
+
+/* An auto-mapped edge carries a real transform — it reads as a settled, faintly accented
+   wire; the "mapped automatically" trace overlay does the talking. */
+.vue-flow__edge.wf-edge--auto .vue-flow__edge-path {
+  stroke: color-mix(in srgb, var(--p-primary-color) 46%, var(--wf-line-strong));
+  stroke-width: 1.8;
+}
+.vue-flow__edge.wf-edge--auto .vue-flow__edge-marker { fill: color-mix(in srgb, var(--p-primary-color) 46%, var(--wf-line-strong)); }
+
+.vue-flow__controls { border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius-sm); overflow: hidden; box-shadow: 0 4px 14px color-mix(in srgb, var(--p-text-color) 12%, transparent); background: var(--wf-panel); }
+.vue-flow__controls-button { background: var(--wf-panel); border-bottom: 1px solid var(--wf-line-soft); color: var(--wf-muted); width: 26px; height: 26px; }
+.vue-flow__controls-button:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); color: var(--p-text-color); }
+.vue-flow__controls-button svg { fill: currentColor; }
+.vue-flow__minimap {
+  border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius-sm); overflow: hidden;
+  background: var(--wf-panel); box-shadow: 0 4px 14px color-mix(in srgb, var(--p-text-color) 12%, transparent);
+}
+.vue-flow__minimap-mask { fill: color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+.vue-flow__selection { background: color-mix(in srgb, var(--p-primary-color) 8%, transparent); border: 1px solid color-mix(in srgb, var(--p-primary-color) 34%, transparent); }
+.vue-flow__connectionline path { stroke-linecap: round; }
+
+@container (max-width: 1180px) {
+  .vue-flow__minimap { display: none; }
+}
+
+/* ── Motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+  .wfn.is-running .wfn-ring, .wfn.is-awaiting .wfn-ring { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--wfn-hue) 40%, transparent); }
+  .wfn-await-pulse { animation: none; }
+  .vue-flow__edge.wf-edge--active .vue-flow__edge-path { animation: none; stroke-dasharray: none; }
+  /* Reduced motion: the pending edge holds a static dash instead of flowing. */
+  .vue-flow__edge.wf-edge--pending .vue-flow__edge-path { animation: none; }
+  .wf-automap-card, .wf-automap-trace, .wf-intent { animation: none; }
+  .wfn--selected::after { animation: none; }
+  .wf-row-skeleton { animation: none; }
+  /* .spin is handled by @kickside/ui-kit/spin.css, which carries its own
+     reduced-motion block. */
+  .kx-modal { animation: none; }
+}
+
+/* ── Panel: how-it-works blurb, locked identity row, notes ── */
+.wf-panel-how {
+  margin: 2px 2px 4px; padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--p-primary-color) 6%, var(--wf-surface));
+  border: 1px solid var(--wf-line-soft);
+  font-size: var(--wf-fs-meta); color: var(--wf-muted); line-height: 1.5;
+}
+.wf-identity { display: flex; align-items: center; gap: 8px; }
+.wf-identity-ref {
+  flex: 1; min-width: 0; padding: 6px 9px;
+  border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius-sm);
+  background: var(--wf-surface); color: var(--p-text-color);
+  font-family: var(--wf-mono); font-size: var(--wf-fs-meta);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wf-panel-note {
+  display: flex; align-items: center; gap: 6px; margin: 4px 2px;
+  font-size: var(--wf-fs-meta); color: var(--wf-muted);
+}
+.wf-panel-note svg { width: 14px; height: 14px; flex: none; }
+
+/* ── Per-connection assist ── */
+.wf-assist {
+  margin: 8px 2px 4px; padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--p-primary-color) 7%, var(--wf-surface));
+}
+.wf-assist--mismatch {
+  border-color: color-mix(in srgb, var(--wf-danger) 40%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--wf-danger) 8%, var(--wf-surface));
+}
+.wf-assist--ok {
+  border-color: color-mix(in srgb, var(--p-success-500) 34%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--p-success-500) 8%, var(--wf-surface));
+}
+/* Neutral: no schema basis for any claim, so no card, no color — just the plain
+   assist action, unstyled as a status. */
+.wf-assist--neutral { margin: 8px 2px 4px; padding: 0; border: 0; background: transparent; }
+.wf-assist-row { display: flex; align-items: flex-start; gap: 6px; font-size: var(--wf-fs-meta); color: var(--p-text-color); line-height: 1.45; }
+.wf-assist-row svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--wf-accent-fg); }
+.wf-assist--mismatch .wf-assist-row svg { color: var(--wf-danger); }
+.wf-assist--ok .wf-assist-row svg { color: var(--p-success-500); }
+.wf-assist-err { margin: 8px 0 0; font-size: var(--wf-fs-meta); color: var(--p-warn-500); line-height: 1.4; }
+
+/* ── Responsive rails. The palette may overlay while browsing; the inspector retains
+   layout width so opening configuration never covers graph content. Component state
+   keeps the two rails mutually exclusive at this tier. ── */
+@container (max-width: 1180px) {
+  .wf-palette { position: absolute; left: 0; top: 0; bottom: 0; width: min(244px, calc(100% - 56px)); z-index: var(--wf-layer-palette); box-shadow: 0 0 22px color-mix(in srgb, var(--p-text-color) 22%, transparent); }
+  .wf-panel { width: min(312px, calc(100% - 44px)); box-shadow: -8px 0 22px color-mix(in srgb, var(--p-text-color) 10%, transparent); }
+}
+.wf-inspector-drawer .wf-panel { width: 100%; height: 100%; }

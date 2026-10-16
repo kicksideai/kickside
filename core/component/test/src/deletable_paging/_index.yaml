@@ -1,0 +1,37 @@
+version: '1.0'
+namespace: app
+entries:
+- name: deletable_paged_binding
+  kind: contract.binding
+  meta:
+    title: Paged Deletable
+    class:
+    - deletable_paged
+  contracts:
+  - contract: kickside.contract:component
+    methods:
+      get_status: app:autoinit_test_status
+  - contract: kickside.contract:deletable
+    methods:
+      delete: app:deletable_paged_delete
+- name: deletable_paged_delete
+  kind: function.lua
+  source: file://../deletable_paged_delete.lua
+  method: handle
+  modules:
+  - ctx
+  - sql
+- name: deletable_blocked_binding
+  kind: contract.binding
+  contracts:
+  - contract: kickside.contract:component
+    methods:
+      get_status: app:autoinit_test_status
+  - contract: kickside.contract:deletable
+    methods:
+      delete: app:deletable_blocked_delete
+- name: deletable_blocked_delete
+  kind: function.lua
+  source: file://../deletable_blocked_delete.lua
+  method: handle
+  modules: [ctx]

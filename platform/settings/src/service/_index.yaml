@@ -1,0 +1,10 @@
+version: "1.0"
+namespace: kickside.settings.service
+entries:
+  - name: cache_bootloader
+    kind: function.lua
+    source: file://cache_bootloader.lua
+    method: run
+    modules: [store]
+    imports:
+      settings_writer: kickside.settings.persist:settings_writer

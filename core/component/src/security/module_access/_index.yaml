@@ -1,0 +1,74 @@
+version: '1.0'
+namespace: kickside.component.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Component
+    surface: kickside.component
+    intent: module_access
+    includes:
+    - kickside.component.security:module_runtime
+    - kickside.component.security:component_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.component:*
+    - kickside.component.api:*
+    - kickside.component.binding:*
+    - kickside.component.migrations:*
+    - kickside.component.persist:*
+    - kickside.component.portability:*
+    - kickside.component.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: component_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.component.api:access_model.endpoint
+    - kickside.component.api:list_component_access.endpoint
+    - kickside.component.api:share_component.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.component:*
+    - kickside.component.api:*
+    - kickside.component.binding:*
+    - kickside.component.migrations:*
+    - kickside.component.persist:*
+    - kickside.component.portability:*
+    - kickside.component.security:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.component.security:module_access
+    path: .groups +=
+  - entry: kickside.component.security:module_runtime
+    path: .groups +=
+  - entry: kickside.component.security:component_endpoint_access
+    path: .groups +=

@@ -1,0 +1,48 @@
+/* ══ PALETTE ═════════════════════════════════════════════════════════════ */
+.wf-palette {
+  width: 244px; flex: none; display: flex; flex-direction: column; min-height: 0;
+  border-right: 1px solid var(--p-content-border-color); background: var(--wf-panel);
+}
+.wf-palette-search { display: flex; margin: 10px; }
+.wf-palette-search > input { flex: 1 1 auto; min-width: 0; }
+.wf-palette-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 12px; }
+.wf-palette-loading { display: flex; align-items: center; gap: 7px; padding: 14px 8px; color: var(--wf-muted); font-size: var(--wf-fs-meta); }
+.wf-palette-loading svg { width: 15px; height: 15px; }
+.wf-palette-group { margin-bottom: 4px; }
+button.wf-palette-cat {
+  display: grid; grid-template-columns: 13px minmax(0, 1fr) auto; align-items: center; gap: 6px; width: 100%; text-align: left;
+}
+.wf-palette-cat svg { width: 13px; height: 13px; }
+.wf-palette-count { justify-self: end; font-weight: 700; letter-spacing: 0; color: var(--wf-faint); }
+button.wf-palette-subcat {
+  display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 6px; width: 100%; text-align: left;
+}
+.wf-palette-subcat svg { width: 12px; height: 12px; }
+.wf-palette-subcat ~ .wf-palette-item { padding-left: 16px; }
+button.wf-palette-item {
+  display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%;
+  margin-bottom: 2px; text-align: left;
+}
+.wf-palette-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex: none; border-radius: 8px;
+  --ico-hue: var(--wf-muted);
+  color: var(--ico-hue);
+  background: color-mix(in srgb, var(--ico-hue) 14%, var(--wf-surface));
+  border: 1px solid color-mix(in srgb, var(--ico-hue) 26%, transparent);
+}
+.wf-palette-ico svg { width: 16px; height: 16px; }
+.wf-palette-ico--start { --ico-hue: var(--wf-contract-in); }
+.wf-palette-ico--finish { --ico-hue: var(--wf-contract-out); }
+.wf-palette-ico--error { --ico-hue: var(--wf-contract-err); }
+.wf-palette-ico--agent { --ico-hue: var(--wf-violet); }
+.wf-palette-ico--tool, .wf-palette-ico--func { --ico-hue: var(--wf-blue); }
+.wf-palette-ico--cycle, .wf-palette-ico--for_each, .wf-palette-ico--parallel, .wf-palette-ico--signal, .wf-palette-ico--branch, .wf-palette-ico--combine { --ico-hue: var(--wf-teal); }
+.wf-palette-ico--flow { --ico-hue: var(--wf-violet); }
+.wf-palette-ico--note { --ico-hue: var(--wf-paper); }
+.wf-palette-item-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.wf-palette-item-t { font-size: var(--wf-fs-body); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wf-palette-item-s { font-size: var(--wf-fs-meta); color: var(--wf-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wf-palette-empty { padding: 4px 8px 8px; font-size: var(--wf-fs-meta); color: var(--wf-faint); }
+.wf-palette-errors { margin: 8px 4px 0; }
+.wf-palette-errors svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }

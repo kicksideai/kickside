@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.inbox.traits
+
+entries:
+  - name: traits_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: SubmitToInbox enqueues an item onto the inbox thread and rejects a missing title.
+    source: file://traits_test.lua
+    method: run
+    modules: [sql, funcs, security]
+    imports:
+      test: wippy.test:test
+      inbox_submit: kickside.inbox.traits:inbox_submit_tool
+      test_identity: app:test_identity

@@ -1,0 +1,209 @@
+version: "1.0"
+namespace: kickside.core.jobs.service
+
+entries:
+  - name: worker_heartbeat
+    kind: process.lua
+    meta:
+      comment: Fixed-interval durable worker heartbeat independent of job execution.
+    source: file://worker_heartbeat.lua
+    method: main
+    modules:
+      - sql
+      - time
+      - channel
+      - process
+    imports:
+      clock: kickside.core.jobs:clock
+      config: kickside.core.jobs:config
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  # Service layer of the jobs slice: the worker process that claims and executes
+  # durable jobs, plus its supervised process.service. The persistence primitives
+  # it drives live in kickside.core.jobs.persist; shared vocabulary in the slice
+  # root (kickside.core.jobs). The .host on worker.service is injected by the
+  # module's process_host requirement.
+
+  - name: worker_fence
+    kind: library.lua
+    meta:
+      comment: Durable job-row fences for uncertain supervised child termination.
+    source: file://worker_fence.lua
+    modules: [sql]
+    imports:
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      worker_marker: kickside.core.jobs.persist:worker_marker
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: claim_refusal
+    kind: library.lua
+    meta:
+      comment: Typed claim refusals the worker pool tells apart.
+    source: file://claim_refusal.lua
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: worker_dispatch
+    kind: library.lua
+    meta:
+      comment: Job worker-reference resolution and execution routing.
+    source: file://worker_dispatch.lua
+    modules: [sql, funcs, registry, logger, time, process, security]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      wake: kickside.core.jobs.persist:wake
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: worker_child
+    kind: library.lua
+    meta:
+      comment: Registered owner and termination fence for one supervised job child.
+    source: file://worker_child.lua
+    modules: [sql, logger, time, process]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lease_status: kickside.core.jobs.persist:lease_status
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      worker_fence: kickside.core.jobs.service:worker_fence
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+
+  - name: worker_completion
+    kind: library.lua
+    meta:
+      comment: Worker output validation and completion/failure transitions.
+    source: file://worker_completion.lua
+    modules: [sql]
+    imports:
+      lease_release: kickside.core.jobs:lease_release
+      job_types: kickside.core.jobs:types
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.persist:completion
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+
+  - name: worker
+    kind: process.lua
+    meta:
+      comment: Supervised pool root; claims into idle slots and respawns every exited loop.
+    source: file://worker_pool.lua
+    method: main
+    modules: [sql, logger, time, channel, process, events, registry]
+    imports:
+      registry_version: kickside.core.jobs:registry_version
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      claim: kickside.core.jobs.persist:claim
+      reclaim: kickside.core.jobs.persist:reclaim
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      jobs: kickside.core.jobs:jobs
+      retention_schedule: kickside.core.jobs.service:retention_schedule
+      claim_refusal: kickside.core.jobs.service:claim_refusal
+      job_class: kickside.core.jobs:job_class
+      clock: kickside.core.jobs:clock
+
+  - name: worker_pool
+    kind: library.lua
+    meta:
+      comment: The pool root's sizing and respawn pacing.
+    source: file://worker_pool.lua
+    modules: [sql, logger, time, channel, process, events, registry]
+    imports:
+      registry_version: kickside.core.jobs:registry_version
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      claim: kickside.core.jobs.persist:claim
+      reclaim: kickside.core.jobs.persist:reclaim
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      jobs: kickside.core.jobs:jobs
+      retention_schedule: kickside.core.jobs.service:retention_schedule
+      claim_refusal: kickside.core.jobs.service:claim_refusal
+      job_class: kickside.core.jobs:job_class
+      clock: kickside.core.jobs:clock
+
+  - name: retention_schedule
+    kind: library.lua
+    meta:
+      comment: Jobs worker retention cadence and policy-based retry state.
+    source: file://retention_schedule.lua
+    modules: [logger, time]
+
+  - name: loop
+    kind: process.lua
+    meta:
+      comment: One assigned job execution slot.
+    source: file://worker_loop.lua
+    method: run_loop
+    modules: [sql, registry, logger, time, channel, process, events]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      registry_version: kickside.core.jobs:registry_version
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      reclaim: kickside.core.jobs.persist:reclaim
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      lease: kickside.core.jobs.persist:lease_heartbeat
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+      worker_fence: kickside.core.jobs.service:worker_fence
+      worker_child: kickside.core.jobs.service:worker_child
+      worker_completion: kickside.core.jobs.service:worker_completion
+      lease_release: kickside.core.jobs:lease_release
+
+  - name: job_child
+    kind: process.lua
+    meta:
+      comment: One supervised job execution.
+    source: file://worker_loop.lua
+    method: run_job_child
+    modules: [sql, registry, logger, time, channel, process, events]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      registry_version: kickside.core.jobs:registry_version
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      reclaim: kickside.core.jobs.persist:reclaim
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      lease: kickside.core.jobs.persist:lease_heartbeat
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      worker_dispatch: kickside.core.jobs.service:worker_dispatch
+      worker_fence: kickside.core.jobs.service:worker_fence
+      worker_child: kickside.core.jobs.service:worker_child
+      worker_completion: kickside.core.jobs.service:worker_completion
+      lease_release: kickside.core.jobs:lease_release
+
+  - name: worker.service
+    kind: process.service
+    meta:
+      comment: Supervised job worker bound by the module's process_host requirement.
+    process: kickside.core.jobs.service:worker
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_delay: 60s
+        max_attempts: 10
+      security:
+        actor:
+          id: system:kickside.jobs
+        groups:
+          - wippy.security:process

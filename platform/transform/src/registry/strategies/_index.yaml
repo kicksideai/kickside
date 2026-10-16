@@ -1,0 +1,90 @@
+version: "1.0"
+namespace: kickside.transform
+entries:
+  - name: strategy_llm_describe
+    kind: function.lua
+    meta:
+      comment: The llm strategy's describe method.
+    source: file://../../strategy/llm.lua
+    method: bind_describe
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_llm_binding
+    kind: contract.binding
+    meta:
+      type: kickside.transform.strategy
+      strategy: llm
+      replay_safe: false
+    contracts:
+      - contract: kickside.transform:strategy
+        methods:
+          apply: kickside.transform:strategy_llm_apply
+          describe: kickside.transform:strategy_llm_describe
+
+  - name: strategy_code_apply
+    kind: function.lua
+    meta:
+      comment: The code strategy's apply method.
+    source: file://../../strategy/code.lua
+    method: bind_apply
+    modules: [funcs, security]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_code_describe
+    kind: function.lua
+    meta:
+      comment: The code strategy's describe method.
+    source: file://../../strategy/code.lua
+    method: bind_describe
+    modules: [funcs, security]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_code_binding
+    kind: contract.binding
+    meta:
+      type: kickside.transform.strategy
+      strategy: code
+      replay_safe: false
+    contracts:
+      - contract: kickside.transform:strategy
+        methods:
+          apply: kickside.transform:strategy_code_apply
+          describe: kickside.transform:strategy_code_describe
+
+  - name: strategy_func_apply
+    kind: function.lua
+    meta:
+      comment: The func strategy's apply method.
+    source: file://../../strategy/func.lua
+    method: bind_apply
+    modules: [funcs, security]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_func_describe
+    kind: function.lua
+    meta:
+      comment: The func strategy's describe method.
+    source: file://../../strategy/func.lua
+    method: bind_describe
+    modules: [funcs, security]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_func_binding
+    kind: contract.binding
+    meta:
+      type: kickside.transform.strategy
+      strategy: func
+      replay_safe: false
+    contracts:
+      - contract: kickside.transform:strategy
+        methods:
+          apply: kickside.transform:strategy_func_apply
+          describe: kickside.transform:strategy_func_describe

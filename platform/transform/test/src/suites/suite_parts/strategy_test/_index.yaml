@@ -1,0 +1,88 @@
+version: "1.0"
+namespace: kickside.transform
+
+entries:
+
+  - name: tsplit_strategy_test_strategy_contract
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      comment: "Strategy apply contract suite: raw values, present marker, authorization."
+    source: file://../../strategy_test_strategy_contract.lua
+    method: run
+    modules: []
+    imports:
+      test: wippy.test:test
+      llm: wippy.llm:llm
+      apply: kickside.transform:apply
+      strategy_none: kickside.transform:strategy_none
+      strategy_expr: kickside.transform:strategy_expr
+      strategy_llm: kickside.transform:strategy_llm
+      strategy_code: kickside.transform:strategy_code
+      strategy_func: kickside.transform:strategy_func
+      strategy_reference: kickside.transform:strategy_reference
+      strategies: kickside.transform:strategies
+
+  - name: tsplit_strategy_test_llm_strategy
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      comment: "Strategy apply contract suite: raw values, present marker, authorization."
+    source: file://../../strategy_test_llm_strategy.lua
+    method: run
+    modules: []
+    imports:
+      test: wippy.test:test
+      llm: wippy.llm:llm
+      apply: kickside.transform:apply
+      strategy_none: kickside.transform:strategy_none
+      strategy_expr: kickside.transform:strategy_expr
+      strategy_llm: kickside.transform:strategy_llm
+      strategy_code: kickside.transform:strategy_code
+      strategy_func: kickside.transform:strategy_func
+      strategy_reference: kickside.transform:strategy_reference
+      strategies: kickside.transform:strategies
+
+  - name: tsplit_strategy_test_function_strategy
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      comment: "Strategy apply contract suite: raw values, present marker, authorization."
+    source: file://../../strategy_test_function_strategy.lua
+    method: run
+    modules: []
+    imports:
+      test: wippy.test:test
+      llm: wippy.llm:llm
+      apply: kickside.transform:apply
+      strategy_none: kickside.transform:strategy_none
+      strategy_expr: kickside.transform:strategy_expr
+      strategy_llm: kickside.transform:strategy_llm
+      strategy_code: kickside.transform:strategy_code
+      strategy_func: kickside.transform:strategy_func
+      strategy_reference: kickside.transform:strategy_reference
+      strategies: kickside.transform:strategies
+
+  - name: tsplit_strategy_test_code_strategy
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      comment: "Strategy apply contract suite: raw values, present marker, authorization."
+    source: file://../../strategy_test_code_strategy.lua
+    method: run
+    modules: []
+    imports:
+      test: wippy.test:test
+      llm: wippy.llm:llm
+      apply: kickside.transform:apply
+      strategy_none: kickside.transform:strategy_none
+      strategy_expr: kickside.transform:strategy_expr
+      strategy_llm: kickside.transform:strategy_llm
+      strategy_code: kickside.transform:strategy_code
+      strategy_func: kickside.transform:strategy_func
+      strategy_reference: kickside.transform:strategy_reference
+      strategies: kickside.transform:strategies

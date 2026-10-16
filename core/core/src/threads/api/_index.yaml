@@ -1,0 +1,316 @@
+version: "1.0"
+namespace: kickside.core.threads.api
+
+# Thread + event HTTP endpoints. The router + scope on each .endpoint are injected
+# by the slice's api_router / security_scope requirements (declared in
+# ../_index.yaml), so a host wires them without a central edit. Mutating handlers
+# call the threads contract module, which owns DB access, component-contract gates,
+# thread notifications, and scheduler nudges. HTTP remains a thin request/response
+# adapter; the acting actor is read from the security context by the contract.
+
+entries:
+  # ─── Shared access gate ──────────────────────────────────────────────
+  - name: thread_access
+    kind: library.lua
+    meta:
+      comment: Per-thread IDOR gate for /threads/{id}/... sub-endpoints (projections, retention).
+    source: file://thread_access.lua
+    modules:
+      - uuid
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_component: kickside.core.threads:component
+      core_types: kickside.core:types
+      threads_reader: kickside.core.threads.persist:reader
+
+  - name: list_jobs
+    kind: function.lua
+    meta:
+      comment: GET handler — list Jobs rows for threads the current actor can READ.
+    source: file://list_jobs.lua
+    method: handler
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:job_history
+
+  - name: list_jobs.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /jobs, with component access resolved by the Core threads contract.
+    method: GET
+    path: /jobs
+    func: list_jobs
+
+  - name: list_job_runs
+    kind: function.lua
+    meta:
+      comment: GET handler — list Jobs history for threads the current actor can READ.
+    source: file://list_job_runs.lua
+    method: handler
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:job_history
+
+  - name: list_job_runs.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /job-runs, with component access resolved by the Core threads contract.
+    method: GET
+    path: /job-runs
+    func: list_job_runs
+
+  # ─── Thread CRUD ─────────────────────────────────────────────────────
+  - name: create_thread
+    kind: function.lua
+    meta:
+      comment: POST handler — create a thread (registers its component).
+    source: file://create_thread.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_resource
+
+  - name: create_thread.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /threads. Router + scope injected by requirements.
+    method: POST
+    path: /threads
+    func: create_thread
+
+  - name: get_thread
+    kind: function.lua
+    meta:
+      comment: GET handler — load one thread the actor can read.
+    source: file://get_thread.lua
+    method: handler
+    modules: [http]
+    imports:
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_resource
+
+  - name: get_thread.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /threads/{id}. Router + scope injected by requirements.
+    method: GET
+    path: /threads/{id}
+    func: get_thread
+
+  - name: update_thread
+    kind: function.lua
+    meta:
+      comment: PATCH handler — patch state/thread_class/attrs.
+    source: file://update_thread.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_resource
+
+  - name: update_thread.endpoint
+    kind: http.endpoint
+    meta:
+      comment: PATCH /threads/{id}. Router + scope injected by requirements.
+    method: PATCH
+    path: /threads/{id}
+    func: update_thread
+
+  - name: delete_thread
+    kind: function.lua
+    meta:
+      comment: DELETE handler — remove a thread and its component.
+    source: file://delete_thread.lua
+    method: handler
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_resource
+
+  - name: delete_thread.endpoint
+    kind: http.endpoint
+    meta:
+      comment: DELETE /threads/{id}. Router + scope injected by requirements.
+    method: DELETE
+    path: /threads/{id}
+    func: delete_thread
+
+  - name: list_threads
+    kind: function.lua
+    meta:
+      comment: GET handler — list threads the actor can read.
+    source: file://list_threads.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_resource
+      http_params: kickside.contract:http_params
+
+  - name: list_threads.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /threads. Router + scope injected by requirements.
+    method: GET
+    path: /threads
+    func: list_threads
+
+  - name: list_classes
+    kind: function.lua
+    meta:
+      comment: GET handler — the distinct thread_class vocabulary.
+    source: file://list_classes.lua
+    method: handler
+    modules: [http]
+    imports:
+      http_params: kickside.contract:http_params
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_graph
+
+  - name: list_classes.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /thread-classes. Router + scope injected by requirements.
+    method: GET
+    path: /thread-classes
+    func: list_classes
+
+  - name: list_children
+    kind: function.lua
+    meta:
+      comment: GET handler — child threads of a parent (active parent edges).
+    source: file://list_children.lua
+    method: handler
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_graph
+      http_params: kickside.contract:http_params
+
+  - name: list_children.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /threads/{id}/children. Router + scope injected by requirements.
+    method: GET
+    path: /threads/{id}/children
+    func: list_children
+
+  - name: get_graph
+    kind: function.lua
+    meta:
+      comment: GET handler — active graph edges touching a thread.
+    source: file://get_graph.lua
+    method: handler
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_graph
+      http_params: kickside.contract:http_params
+
+  - name: get_graph.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /threads/{id}/graph. Router + scope injected by requirements.
+    method: GET
+    path: /threads/{id}/graph
+    func: get_graph
+
+  # ─── Events ──────────────────────────────────────────────────────────
+  - name: post_message
+    kind: function.lua
+    meta:
+      comment: POST handler — append a message event.
+    source: file://post_message.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_events
+
+  - name: post_message.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /threads/{id}/messages. Router + scope injected by requirements.
+    method: POST
+    path: /threads/{id}/messages
+    func: post_message
+
+  - name: post_event
+    kind: function.lua
+    meta:
+      comment: POST handler — append one typed event.
+    source: file://post_event.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_events
+
+  - name: post_event.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /threads/{id}/events. Router + scope injected by requirements.
+    method: POST
+    path: /threads/{id}/events
+    func: post_event
+
+  - name: list_events
+    kind: function.lua
+    meta:
+      comment: GET handler — a thread's events with a seq window + type filter.
+    source: file://list_events.lua
+    method: handler
+    modules: [http]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_events
+      http_params: kickside.contract:http_params
+
+  - name: list_events.endpoint
+    kind: http.endpoint
+    meta:
+      comment: GET /threads/{id}/events. Router + scope injected by requirements.
+    method: GET
+    path: /threads/{id}/events
+    func: list_events
+
+  - name: ingest_events_batch
+    kind: function.lua
+    meta:
+      comment: POST handler — ingest a batch of events idempotently.
+    source: file://ingest_events_batch.lua
+    method: handler
+    modules: [http, json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      threads_contract: kickside.core.threads:contract_events
+
+  - name: ingest_events_batch.endpoint
+    kind: http.endpoint
+    meta:
+      comment: POST /threads/{id}/events/batch. Router + scope injected by requirements.
+    method: POST
+    path: /threads/{id}/events/batch
+    func: ingest_events_batch
+
+  # ─── Tests ───────────────────────────────────────────────────────────

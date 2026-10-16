@@ -1,0 +1,151 @@
+version: "1.0"
+namespace: kickside.sessions
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Sessions
+      description: A self-contained web component for managing chat sessions (list, rename, resume, restart, preview, delete). Reuses the wippy/session HTTP API for reads/writes and ships one start-token endpoint so a session can be restarted as a fresh chat with the same agent.
+
+  - name: dep.wippy.session
+    version: '*'
+    kind: ns.dependency
+    component: wippy/session
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the session helper endpoints attach to.
+      description: Authenticated HTTP router the session helper endpoints attach to.
+    targets:
+      - entry: kickside.sessions.api:start_token.endpoint
+        path: .meta.router
+      - entry: kickside.sessions.api:favorite.endpoint
+        path: .meta.router
+
+  # ─── UI component (the sessions manager as a Wippy web component) ─────
+  # Sessions is self-contained: it BUILDS (ui/), SHIPS (static/), and SERVES (its
+  # own http.static) the bundle, exposed as a view.component the host mounts by
+  # tag, and declared as a ui.nav_item so it appears in the app navigation.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      description: HTTP server the sessions UI bundle is served from.
+    targets:
+      - entry: kickside.sessions:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta: { comment: Built sessions web component bundle (from ui/). }
+    directory: ./static
+    auto_init: true
+
+  - name: ui_static
+    kind: http.static
+    meta:
+      comment: Serves the sessions web component bundle at /kickside-sessions.
+    path: /kickside-sessions
+    fs: kickside.sessions:ui_fs
+    options:
+      cache: "no-cache"
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .map: application/json
+
+  - name: sessions_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Sessions
+      title: Sessions
+      tag_name: kickside-sessions
+      base_path: kickside-sessions
+      entry_point: index.js
+      auto_register: false
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties:
+        mode:
+          type: string
+          default: manager
+          description: Render the full manager (default) or compact chat sidebar.
+        active-session-id:
+          type: string
+          description: Session currently selected in the app-owned chat panel.
+
+  - name: artifacts_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Artifacts
+      title: Artifacts
+      tag_name: kickside-artifacts
+      base_path: kickside-sessions
+      entry_point: artifacts.js
+      auto_register: false
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties: {}
+
+  - name: artifact_panel_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Artifact Panel
+      title: Artifact Panel
+      tag_name: kickside-artifact-panel
+      base_path: kickside-sessions
+      entry_point: artifact_panel.js
+      auto_register: true
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties: {}
+
+  - name: artifact_coordinator_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Artifact Coordinator
+      title: Artifact Coordinator
+      tag_name: kickside-artifact-coordinator
+      base_path: kickside-sessions
+      entry_point: artifact_coordinator.js
+      auto_register: true
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties: {}
+
+  # App navigation entry. Discovered by platform/ui nav aggregation; the SPA
+  # mounts the kickside-sessions web component by tag. Hide/show and "set as
+  # home" are handled by the existing Appearance editor (no extra wiring).
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /sessions
+      route_name: sessions
+      title: Sessions
+      comment: Your chat sessions — rename, resume, restart, and review.
+      icon: tabler:messages
+      order: 35
+      render: component
+      component_tag: kickside-sessions
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

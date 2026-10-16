@@ -1,0 +1,42 @@
+version: '1.0'
+namespace: app
+entries:
+- name: declaration_cleanup_source
+  kind: library.lua
+  source: file://declaration_cleanup_source.lua
+  modules:
+  - sql
+  - crypto
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    contract_common: app:component_cleanup_common
+    contract_events: app:declaration_cleanup_events
+    contract_event_authorization: app:declaration_cleanup_authorization
+    contract_resource_crud: kickside.core.threads:contract_resource_crud
+    natural_upsert: kickside.core.threads:natural_upsert
+    threads_reader: app:component_cleanup_reader
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_crud: app:component_cleanup_crud
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: declaration_cleanup_authorization
+  kind: library.lua
+  source: file://declaration_cleanup_authorization.lua
+- name: declaration_cleanup_events
+  kind: library.lua
+  source: file://declaration_cleanup_events.lua
+  imports:
+    fixture: app:component_cleanup_fixture
+- name: declaration_cleanup_test
+  kind: function.lua
+  source: file://declaration_cleanup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_declaration_cleanup
+  imports:
+    test: wippy.test:test
+    fixture: app:component_cleanup_fixture
+    api: app:declaration_cleanup_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

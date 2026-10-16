@@ -1,0 +1,696 @@
+version: "1.0"
+namespace: kickside.users
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: token_continuity_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://token_continuity_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, crypto, security, sql, funcs]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: token_continuity_coverage_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://token_continuity_test.lua
+    method: run_coverage
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, crypto, security, sql, funcs]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: token_continuity_operation_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://token_continuity_test.lua
+    method: run_operations
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, crypto, security, sql, funcs]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: token_continuity_fencing_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://token_continuity_test.lua
+    method: run_fencing
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, crypto, security, sql, funcs]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: bot_delegation_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_delegation_effects_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_effects
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_execution_capabilities_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_capabilities
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_execution_process_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_process
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_delegation_host_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_host
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_selection_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_selection
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_lifecycle_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_lifecycle_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, json, funcs, security]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      admin_repo: kickside.users.persist:admin_repo
+      delete_user: kickside.users.api:delete_user
+      lifecycle_report: app:lifecycle_report_stub
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
+  - name: credential_readiness_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://credential_readiness_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, funcs, sql, crypto, security]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session: kickside.users:session
+
+  - name: default_membership_test
+    kind: function.lua
+    meta: { type: test, suite: users }
+    source: file://default_membership_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [contract, registry]
+    imports:
+      default_groups: kickside.users:default_groups
+      user_consts: kickside.users:consts
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+  - name: runtime_env_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://runtime_env_test.lua
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    method: run
+    modules: [env, funcs, security, registry]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: directory_paging_test
+    kind: function.lua
+    meta: { type: test, suite: users }
+    source: file://directory_paging_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [sql, crypto, json, base64, funcs, security]
+    imports:
+      test: wippy.test:test
+      directory: kickside.users.directory:directory_lib
+
+  - name: directory_search_probe_access
+    kind: security.policy
+    groups: [app:directory_catalog_denied]
+    policy:
+      resources: kickside.users.directory:directory_search
+      actions: [access, funcs.call]
+      effect: allow
+
+  - name: directory_catalog_denied
+    kind: security.policy
+    groups: [app:directory_catalog_denied]
+    policy:
+      resources: kickside.contract:security_scopes
+      actions: [contract.get, contract.open]
+      effect: deny
+
+  - name: whole_membership_test
+    kind: function.lua
+    meta: { type: test, suite: users }
+    source: file://whole_membership_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [sql, crypto]
+    imports:
+      test: wippy.test:test
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      provisioning: kickside.users.provisioning:provisioning
+
+  - name: run_as_membership_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: users
+      comment: Membership writers preserve session snapshots for verified expansions and revoke them for reductions.
+    source: file://run_as_membership_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [security, crypto]
+    imports:
+      admin_repo: kickside.users.persist:admin_repo
+      test: wippy.test:test
+      session: kickside.users:session
+      provisioning: kickside.users.provisioning:provisioning
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_users
+      group: KickSide Users
+      comment: Verifies target_db binds every user persistence surface consistently.
+    source: file://packaging_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    modules:
+      - registry
+      - security
+    imports:
+      test: wippy.test:test
+      user_consts: kickside.users:consts
+    method: run
+
+  - name: principal_picker_test
+    kind: function.lua
+    meta: { type: test, suite: users }
+    source: file://principal_picker_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [registry]
+    imports: { test: wippy.test:test }
+
+  - name: principal_gc_test
+    kind: function.lua
+    meta: { type: test, suite: users }
+    source: file://principal_gc_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [sql, security, time]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session_index: kickside.users.persist:session_index
+      delete_principal: kickside.users.persist:delete_principal
+      profile_writer: kickside.users.persist:profile_writer
+
+  - name: login_scope_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: users
+    source: file://login_scope_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules:
+      - registry
+      - http_client
+      - json
+      - security
+      - funcs
+    imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_store: kickside.security.persist:scope_store
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      test: wippy.test:test
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
+  - name: mcp_group_resolver_test
+    kind: function.lua
+    meta: { type: test, suite: users }
+    source: file://mcp_group_resolver_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [funcs, security, crypto]
+    imports:
+      directory: kickside.users.directory:directory_lib
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: session_invalidation_race_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: users
+      comment: Session invalidation, default group enrollment and account deletion serialize on the account row lock and succeed.
+    source: file://session_invalidation_race_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [sql, time, crypto, channel, registry]
+    imports:
+      test: wippy.test:test
+      session_index: kickside.users.persist:session_index
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
+  - name: session_authority_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://session_authority_test.lua
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    method: run
+    modules: [registry, http_client, json, security, funcs]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+
+  - name: delegation_authority_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://delegation_authority_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, security]
+    imports:
+      test: wippy.test:test
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      subject_lookup: kickside.users.binding:subject_lookup
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+
+  - name: bot_auth_exclusion_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_auth_exclusion_test.lua
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    method: run
+    modules: [sql, crypto, security, registry, http_client, json]
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      test: wippy.test:test
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_credentials_repo: kickside.users.persist:user_credentials_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      admin_repo: kickside.users.persist:admin_repo
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      provisioning: kickside.users.provisioning:provisioning
+
+  - name: canonical_email_migration_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://canonical_email_migration_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, funcs, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: bot_selected_install_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_selected_install
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_identity_command_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_identity_commands
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_run_as_candidates_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_candidates
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: bot_admin_creation_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_admin_creation_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, registry, http_client, json]
+    imports:
+      test: wippy.test:test
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+
+  - name: bot_restriction_carrier_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://bot_delegation_test.lua
+    method: run_restrictions
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [sql, crypto, funcs, security, registry, store, json]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+
+  - name: delegation_fencing_failure
+    kind: library.lua
+    source: file://delegation_fencing_failure.lua
+  - name: delegation_fencing_failure_probe
+    kind: function.lua
+    source: file://delegation_fencing_source.lua
+    method: run
+    modules: [logger]
+    imports:
+      user_consts: kickside.users:consts
+      session_index: kickside.users:delegation_fencing_failure
+  - name: delegation_fencing_native_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://delegation_fencing_native_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: custom_session_revoker
+    kind: function.lua
+    source: file://custom_session_revoker.lua
+    method: run
+    modules: [logger]
+    imports:
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+
+  - name: custom_revocation_binding_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://custom_revocation_binding_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, funcs, security, crypto]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session: kickside.users:session
+      scope_store: kickside.security.persist:scope_store
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: password_formats_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_users}
+    source: file://password_formats_test.lua
+    method: run
+    modules: [sql, crypto, hash]
+    security:
+      actor: {id: "app:test_runner"}
+      policies: ["app:test_runtime"]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_credentials_repo: kickside.users.persist:user_credentials_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+  - name: expiry_time
+    kind: library.lua
+    source: file://expiry_time.lua
+    modules: [time]
+  - name: session_subject
+    kind: library.lua
+    source: file://session_subject.lua
+    modules: [security, contract, logger]
+    imports:
+      time: kickside.users:expiry_time
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+      session_metadata: kickside.users:session_metadata
+      user_authority: kickside.users:user_authority
+      user_groups_repo: kickside.users.persist:user_groups_repo
+  - name: session_expiry_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_users}
+    source: file://session_expiry_test.lua
+    method: run
+    modules: [sql, security]
+    security:
+      actor: {id: "app:test_runner"}
+      policies: ["app:test_runtime"]
+    imports:
+      real_session: kickside.users:session
+      user_consts: kickside.users:consts
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      session: kickside.users:session_subject
+      expiry_time: kickside.users:expiry_time

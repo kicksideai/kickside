@@ -1,0 +1,195 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Uploads surface. Styled only with the universal --p-* theme vocabulary so it
+   renders correctly inside the shadow DOM of any Wippy host (no SPA tokens),
+   which is also what makes the uploads implementation swappable per deployment. */
+.kx {
+  font-family: inherit;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.kx-count { font-size: 12.5px; color: var(--p-text-muted-color); display: inline-flex; align-items: center; gap: 5px; }
+.kx-pending { color: var(--p-primary-color); }
+
+.kx-head-actions > .kx-search { width: 200px; max-width: 40vw; }
+/* The status filter is a PrimeVue Select; the facade --p-select-* tokens style its
+   chrome. Keep only the layout that aligns it with the adjacent header controls. */
+.kx-select { font-size: 13px; }
+
+/* The body is the full-width file list; the preview opens as an overlay modal,
+   so selecting a file never reflows or squeezes the list. */
+.kx-body { flex: 1; min-height: 0; display: flex; }
+.kx-main {
+  flex: 1; min-width: 0; min-height: 0; height: 100%; overflow-y: auto;
+  padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px;
+}
+
+.kx-drop {
+  border: 2px dashed var(--p-content-border-color); border-radius: 14px; padding: 28px 20px;
+  text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  transition: border-color .18s, background .18s, transform .18s, box-shadow .18s;
+}
+.kx-drop:hover, .kx-drop.dragover {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 7%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-primary-color) 8%, transparent);
+}
+.kx-drop.busy { cursor: progress; opacity: .7; }
+.kx-drop-ico { width: 30px; height: 30px; color: var(--p-text-muted-color); }
+.kx-drop:hover .kx-drop-ico, .kx-drop.dragover .kx-drop-ico { color: var(--p-primary-color); }
+.kx-drop-title { font-size: 14px; font-weight: 600; color: var(--p-text-color); margin: 4px 0 0; }
+.kx-drop-sub { font-size: 12px; color: var(--p-text-muted-color); margin: 0; }
+.kx-empty-cta { margin-top: 12px; }
+
+.kx-list {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--p-content-border-color);
+}
+
+/* ── Pagination ───────────────────────────────────────────────── */
+.kx-row {
+  position: relative;
+  display: grid; grid-template-columns: 38px minmax(0, 2fr) auto auto auto;
+  align-items: center; gap: 14px; padding: 11px 16px; border-bottom: 1px solid var(--p-content-border-color);
+}
+.kx-row:last-child { border-bottom: none; }
+/* Theme-aware hover: surface-100 is not remapped in the dark palette (it stays a
+   light value), so a text-color mix is used instead — subtle in both themes. */
+.kx-row:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-ficon {
+  width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color);
+}
+.kx-ficon svg { width: 20px; height: 20px; }
+/* Image rows render a real thumbnail of their own bytes in place of the icon. */
+.kx-id { min-width: 0; }
+/* Indeterminate progress for a non-terminal upload — reads as "working". */
+.kx-progress {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px; overflow: hidden;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
+}
+.kx-progress::after {
+  content: ""; position: absolute; inset: 0; width: 36%;
+  background: var(--p-primary-color); border-radius: 2px;
+  animation: kx-indeterminate 1.15s ease-in-out infinite;
+}
+@keyframes kx-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(380%); }
+}
+.kx-name { font-size: 14px; font-weight: 600; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* An upload with no filename falls back to a neutral name; the raw uuid still
+   rides along here, as a small mono secondary — never the primary name itself. */
+.kx-uuid { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 400; color: var(--p-text-muted-color); }
+.kx-sub { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-err-reason { font-size: 12px; color: var(--p-danger-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-type { color: var(--p-text-color); font-weight: 600; }
+/* Sizing is .kx-tag-sm and the fill is the Tag's own severity; this only adds
+   the ring, which derives from whatever ink the severity chose. */
+.kx-badge { border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }
+.kx-badge::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none;
+}
+.kx-badge:has(svg)::before { display: none; }
+/* Tones set only the color; the pill bg/border/dot derive from currentColor so a
+   tone reads correctly in both light and dark. */
+.kx-date { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; }
+
+.kx-actions { display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+.kx-row:hover .kx-actions, .kx-row:focus-within .kx-actions { opacity: 1; }
+
+/* Delete confirmation runs through the host confirm dialog (host.confirm); the
+   facade iframe is sandboxed without allow-modals, so there is no in-component
+   modal to style here. */
+
+/* Preview side panel: a right-docked overlay Drawer. The PrimeVue Drawer supplies
+   the scrim, position, and elevation. The domain selector includes the actual
+   root element so this viewer width beats PrimeVue's positioned default without
+   coupling module CSS to theme-internal selectors. */
+/* Wide enough to read a full document page; the list stays visible as context. */
+/* width lives inline on the drawer root (pt): the portal mounts outside .kx */
+.kx-side-drawer > .kx-side-drawer-content { padding: 0; display: flex; flex-direction: column; min-height: 0; }
+.kx-side {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--p-content-background);
+}
+.kx-pv-head {
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px; flex: none;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+.kx-pv-id { min-width: 0; flex: 1; }
+.kx-pv-name { font-size: 14.5px; font-weight: 650; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-pv-sub { font-size: 12px; color: var(--p-text-muted-color); }
+
+/* Default-view row: the original file plus the converted markdown; clicking swaps
+   the viewer below (the viewer is always shown). */
+.kx-views {
+  display: flex; align-items: center; gap: 6px; flex: none;
+  padding: 8px 12px; border-bottom: 1px solid var(--p-content-border-color);
+}
+.kx-part { flex: none; max-width: 220px; }
+.kx-part-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-part-loading { display: inline-flex; align-items: center; color: var(--p-text-muted-color); padding: 0 4px; }
+.kx-part-loading svg { width: 15px; height: 15px; }
+
+/* Viewer: full-bleed by default so an embedded PDF/image gets all the space;
+   padded only for textual content (markdown) so text never touches the edges. */
+.kx-pv-view { flex: 1; min-height: 0; overflow: auto; padding: 0; }
+.kx-pv-view.kx-pv-padded { padding: 20px 24px; }
+.kx-pv-rv { display: block; width: 100%; height: 100%; }
+
+/* Extracted-parts panel: collapsed by default to a thin bar (the viewer keeps the
+   full height); expands into a bounded, scrollable, paginated grid on demand, so
+   hundreds of page images never overflow into one unusable strip. */
+.kx-parts-panel {
+  flex: none; display: flex; flex-direction: column;
+  border-top: 1px solid var(--p-content-border-color);
+}
+.kx-parts-head {
+  display: flex; align-items: center; gap: 8px; flex: none; padding: 6px 12px;
+}
+.kx-parts-panel.open .kx-parts-head { border-bottom: 1px solid var(--p-content-border-color); }
+.kx-parts-range { font-size: 11.5px; color: var(--p-text-muted-color); margin-left: auto; }
+.kx-parts-pager { display: flex; align-items: center; gap: 4px; }
+.kx-parts-pageno { font-size: 11.5px; color: var(--p-text-muted-color); min-width: 46px; text-align: center; }
+.kx-parts-list {
+  display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px;
+  padding: 10px 14px; overflow-y: auto; max-height: min(34vh, 280px);
+}
+
+@media (max-width: 640px) {
+  /* Drop the date column and collapse trailing columns so the row never
+     overflows; the name takes the freed width. */
+  .kx-row { grid-template-columns: 38px minmax(0, 1fr) auto auto; gap: 10px; padding: 11px 14px; }
+  .kx-date { display: none; }
+  /* Row actions stay visible without hover on touch. */
+  .kx-actions { opacity: 1; }
+}
+
+/* Focus canon: each of these draws a border at rest, so focus lights that
+   border and adds the halo - never an outline. See app/facade-src/README.md. */
+.kx-drop:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}

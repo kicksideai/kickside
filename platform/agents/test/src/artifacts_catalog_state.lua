@@ -1,0 +1,1 @@
+return { components = {}, pages = {} }

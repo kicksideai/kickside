@@ -1,0 +1,19 @@
+/* Automation's own component-scoped manager, mounted inside the Workflow editor and
+   pre-bound to the workflow. This package owns no trigger editor of its own; the width
+   carries the manager's list rather than a single create form. */
+.wf-trigger-modal {
+  width: min(880px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); min-height: 0; overflow: hidden;
+}
+.wf-trigger-description { margin: 0 0 12px; color: var(--wf-muted); line-height: 1.45; }
+.wf-trigger-body {
+  flex: 1 1 auto; min-width: 0; overflow: auto; overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  /* A definite height for the embedded surface: its host sizes to 100%, so an
+     auto-height flex item would collapse it and the list would not appear. */
+  min-height: min(420px, 60dvh);
+}
+.wf-trigger-body > * { display: block; width: 100%; min-width: 0; }
+
+@media (max-width: 520px) {
+  .wf-trigger-modal { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+}

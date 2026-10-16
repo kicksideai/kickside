@@ -1,0 +1,112 @@
+version: "1.0"
+namespace: kickside.knowledge.events
+
+# Event-type entries for the knowledge injection thread. content.upserted schema
+# is the published event output face. content.deleted is an internal reconciliation
+# event with its schema declared from the emit site.
+entries:
+  - name: content.upserted
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        kb_id: { type: string }
+        content: { type: string }
+        content_type: { type: string }
+        title: { type: string }
+        metadata: { type: object }
+        source_ref: { type: object }
+        actor_id: { type: string }
+      required: [kb_id, content, content_type, source_ref]
+
+  # Emit site: thread_ingest.delete_content
+  # (body { kb_id, metadata, source_ref, actor_id }).
+  - name: content.deleted
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        kb_id: { type: string }
+        metadata: { type: object }
+        source_ref: { type: object }
+        actor_id: { type: string }
+      required: [kb_id, source_ref]
+
+  # Private durable key claim for writable deliveries. It is not a content
+  # change and is intentionally absent from the published injection port.
+  - name: delivery.claimed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        kb_id: { type: string }
+        content: { type: string }
+        sink_write: { type: object }
+      required: [kb_id, content, sink_write]
+
+  # Internal graph invalidation event emitted by thread_ingest.append_graph_change.
+  - name: graph.changed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        kb_id: { type: string }
+        reason: { type: string }
+        actor_id: { type: string }
+      required: [kb_id, reason]
+
+  # Finalizer markers emitted by the KB engine source worker after a batch is
+  # materialized. Digest also accepts requests without a source projection;
+  # treatment requests carry the complete source identity.
+  - name: digest.requested
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        kb_id: { type: string }
+        reason: { type: string }
+        user_id: { type: string }
+        source_thread_id: { type: string }
+        source_projection_id: { type: string }
+        source_from_seq: { type: number }
+        source_to_seq: { type: number }
+        source_target_seq: { type: number }
+      required: [kb_id, reason]
+      dependentRequired:
+        source_thread_id: [source_projection_id, source_target_seq]
+        source_projection_id: [source_thread_id, source_target_seq]
+        source_target_seq: [source_thread_id, source_projection_id]
+        source_from_seq: [source_thread_id, source_projection_id, source_target_seq]
+        source_to_seq: [source_thread_id, source_projection_id, source_target_seq]
+
+  - name: treatment.requested
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        kb_id: { type: string }
+        reason: { type: string }
+        source_thread_id: { type: string }
+        source_projection_id: { type: string }
+        source_from_seq: { type: number }
+        source_to_seq: { type: number }
+        source_target_seq: { type: number }
+      required: [kb_id, reason, source_thread_id, source_projection_id, source_target_seq]

@@ -1,0 +1,98 @@
+version: '1.0'
+namespace: kickside.mcp.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Mcp
+    surface: kickside.mcp
+    intent: module_access
+    includes:
+    - kickside.mcp.security:module_runtime
+    - kickside.mcp.security:credential_eligibility_call
+    - kickside.mcp.security:endpoint_identity_resolver
+    - kickside.mcp.security:endpoint_identity_call
+    - kickside.mcp.security:endpoint_identity_binding
+    - kickside.mcp.security:mcp_endpoint_access
+    - kickside.mcp.security:oauth_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.mcp:*
+    - kickside.mcp.api:*
+    - kickside.mcp.migrations:*
+    - kickside.mcp.oauth:*
+    - kickside.mcp.persist:*
+    - kickside.mcp.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: mcp_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    actions: access
+    effect: allow
+    resources:
+    - kickside.mcp.api:create_credential.endpoint
+    - kickside.mcp.api:delete_credential.endpoint
+    - kickside.mcp.api:list_components.endpoint
+    - kickside.mcp.api:list_credentials.endpoint
+    - kickside.mcp.api:list_presets.endpoint
+    - kickside.mcp.api:list_tools.endpoint
+    - kickside.mcp.api:revoke_credential.endpoint
+    - kickside.mcp.api:serve_mcp.delete.endpoint
+    - kickside.mcp.api:serve_mcp.endpoint
+    - kickside.mcp.api:serve_mcp.get.endpoint
+    - kickside.mcp.api:update_credential.endpoint
+- name: oauth_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    actions: access
+    effect: allow
+    resources:
+    - kickside.mcp.oauth:context.endpoint
+    - kickside.mcp.oauth:consent.endpoint
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.mcp:*
+    - kickside.mcp.api:*
+    - kickside.mcp.migrations:*
+    - kickside.mcp.oauth:*
+    - kickside.mcp.persist:*
+    - kickside.mcp.security:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.mcp.security:module_access
+    path: .groups +=
+  - entry: kickside.mcp.security:module_runtime
+    path: .groups +=
+  - entry: kickside.mcp.security:mcp_endpoint_access
+    path: .groups +=
+  - entry: kickside.mcp.security:oauth_endpoint_access
+    path: .groups +=

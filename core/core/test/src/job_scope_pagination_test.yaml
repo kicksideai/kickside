@@ -1,0 +1,15 @@
+version: '1.0'
+namespace: app
+entries:
+- name: job_scope_pagination_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: job_scope_pagination
+  source: file://job_scope_pagination_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    component_scope: kickside.core.threads:component_scope
+    component: kickside.core.threads:component

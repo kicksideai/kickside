@@ -1,0 +1,81 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: gateway
+    kind: http.service
+    addr: :8085
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+
+  - name: api.public
+    kind: http.router
+    meta:
+      server: gateway
+    middleware:
+      - cors
+      - compress
+    options:
+      allow_credentials: "true"
+      allow_headers: Authorization,Content-Type
+      allow_methods: GET,POST,OPTIONS
+      allow_origins: 'https://web-host.wippy.ai'
+      allow_private_network: "false"
+      compress.level: default
+      compress.min.length: "1024"
+    prefix: /api/public
+
+  - name: api
+    kind: http.router
+    meta:
+      credential_admission: host
+      server: gateway
+    middleware:
+      - cors
+      - compress
+      - websocket_relay
+      - token_auth
+    options:
+      allow_credentials: "true"
+      allow_headers: Authorization,Content-Type
+      allow_methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+      allow_origins: 'https://web-host.wippy.ai'
+      allow_private_network: "false"
+      token_store: kickside.users.security:tokens
+      compress.level: default
+      compress.min.length: "1024"
+    post_middleware:
+      - endpoint_firewall
+    prefix: /api/v1/
+
+  - name: api.views
+    kind: http.router
+    meta:
+      credential_admission: host
+      server: gateway
+    middleware:
+      - cors
+      - compress
+      - token_auth
+    options:
+      allow_credentials: "true"
+      allow_headers: Authorization,Content-Type
+      allow_methods: GET,OPTIONS
+      allow_origins: 'https://web-host.wippy.ai'
+      allow_private_network: "false"
+      token_store: kickside.users.security:tokens
+      compress.level: default
+      compress.min.length: "1024"
+    post_middleware:
+      - endpoint_firewall
+    prefix: /api/v1/views
+
+  # Ensures the runtime data dir exists before the DB opens — a fresh checkout
+  # (e.g. `wippy run kickside/kickside` in an empty folder) has no ./.wippy yet.
+  - name: processes
+    kind: process.host
+    host:
+      max_processes: 1000
+      workers: 8
+    lifecycle:
+      auto_start: true

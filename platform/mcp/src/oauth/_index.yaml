@@ -1,0 +1,248 @@
+version: "1.0"
+namespace: kickside.mcp.oauth
+
+# The MCP OAuth authorization server: discovery documents, RFC 7591 dynamic
+# client registration, the consent page, and PKCE code exchange. Tokens are the
+# module's normal hashed credentials — minted at consent under the approving
+# actor, released by the token endpoint. Routers are injected by the root
+# kickside.mcp requirements: register/token/authorize ride the public router,
+# context/consent the authenticated API router, and the well-known documents a
+# root-mounted well-known router.
+
+entries:
+  # RFC 8414/9728 insert /.well-known before the issuer/resource path.
+  # These routes must be outside the /api/public router's prefix.
+  - name: well_known_router
+    kind: http.router
+    prefix: /.well-known
+
+  - name: well_known_resource.standard_endpoint
+    kind: http.endpoint
+    meta: { router: well_known_router }
+    method: GET
+    func: well_known_resource
+    path: /oauth-protected-resource/api/public/mcp
+
+  - name: well_known_resource.root_endpoint
+    kind: http.endpoint
+    meta: { router: "kickside.mcp.oauth:well_known_router" }
+    method: GET
+    func: well_known_resource
+    path: /oauth-protected-resource
+
+  - name: well_known_auth_server.standard_endpoint
+    kind: http.endpoint
+    meta: { router: well_known_router }
+    method: GET
+    func: well_known_auth_server
+    path: /oauth-authorization-server/api/public/mcp/oauth
+
+  - name: well_known_auth_server.root_endpoint
+    kind: http.endpoint
+    meta: { router: "kickside.mcp.oauth:well_known_router" }
+    method: GET
+    func: well_known_auth_server
+    path: /oauth-authorization-server
+
+  - name: repo
+    kind: library.lua
+    meta:
+      comment: OAuth client + single-use authorization-code persistence; codes store only their sha256 and zero their grant on consume.
+    source: file://repo.lua
+    modules: [sql, json, uuid, time, hash, crypto, base64]
+    imports:
+      mcp_types: kickside.mcp:mcp_types
+      persisted_json: kickside.contract:persisted_json
+      credential_quota: kickside.mcp.persist:credential_quota
+      mcp_consts: kickside.mcp:consts
+
+  - name: flow
+    kind: library.lua
+    meta:
+      comment: HTTP-free authorization-server flow — metadata, registration, consent grant (mints the credential), and PKCE-verified exchange.
+    source: file://flow.lua
+    modules: [json, hash, base64, crypto, time, security]
+    imports:
+      mcp_oauth_repo: kickside.mcp.oauth:repo
+      mcp_repo: kickside.mcp.persist:repo
+      credential_eligibility: kickside.mcp:credential_eligibility_check
+      public_url: kickside.mcp:public_url
+
+  - name: well_known_resource
+    kind: function.lua
+    meta: { comment: "GET /.well-known/oauth-protected-resource/api/public/mcp — RFC 9728 resource metadata." }
+    source: file://endpoints.lua
+    method: well_known_resource
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+    security:
+      actor:
+        id: kickside.mcp.oauth:well_known_resource
+      policies:
+        - kickside.mcp.security:endpoint_public_url
+        - kickside.mcp.security:endpoint_db_access
+        - kickside.mcp.security:endpoint_registry_read
+
+  - name: well_known_resource.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: well_known_resource
+    path: /mcp/.well-known/oauth-protected-resource
+
+  - name: well_known_auth_server
+    kind: function.lua
+    meta: { comment: "GET /.well-known/oauth-authorization-server — RFC 8414 authorization-server metadata." }
+    source: file://endpoints.lua
+    method: well_known_auth_server
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+    security:
+      actor:
+        id: kickside.mcp.oauth:well_known_auth_server
+      policies:
+        - kickside.mcp.security:endpoint_public_url
+        - kickside.mcp.security:endpoint_db_access
+        - kickside.mcp.security:endpoint_registry_read
+
+  - name: well_known_auth_server.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: well_known_auth_server
+    path: /mcp/oauth/.well-known/oauth-authorization-server
+
+  - name: register
+    kind: function.lua
+    meta: { comment: "POST /mcp/oauth/register — RFC 7591 dynamic registration of public PKCE clients." }
+    source: file://endpoints.lua
+    method: register
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+    security:
+      actor:
+        id: kickside.mcp.oauth:register
+      policies:
+        - kickside.mcp.security:endpoint_public_url
+        - kickside.mcp.security:endpoint_db_access
+        - kickside.mcp.security:endpoint_registry_read
+
+  - name: register.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: register
+    path: /mcp/oauth/register
+
+  - name: token
+    kind: function.lua
+    meta: { comment: "POST /mcp/oauth/token — form-encoded authorization_code + PKCE exchange releasing the consent-minted credential." }
+    source: file://endpoints.lua
+    method: token
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+    security:
+      actor:
+        id: kickside.mcp.oauth:token
+      policies:
+        - kickside.mcp.security:endpoint_public_url
+        - kickside.mcp.security:endpoint_db_access
+        - kickside.mcp.security:endpoint_registry_read
+        - kickside.mcp.security:credential_eligibility_call
+
+  - name: token.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: token
+    path: /mcp/oauth/token
+
+  - name: authorize
+    kind: function.lua
+    meta: { comment: "GET /mcp/oauth/authorize — serves the self-contained consent page; the page drives context + consent over the authenticated API." }
+    source: file://endpoints.lua
+    method: authorize
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+    security:
+      actor:
+        id: kickside.mcp.oauth:authorize
+      policies:
+        - kickside.mcp.security:endpoint_public_url
+        - kickside.mcp.security:endpoint_db_access
+        - kickside.mcp.security:endpoint_registry_read
+
+  - name: authorize.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: authorize
+    path: /mcp/oauth/authorize
+
+  - name: context
+    kind: function.lua
+    meta: { comment: "GET /mcp/oauth/context — authenticated consent-page helper: validates the authorize query and names the client." }
+    source: file://endpoints.lua
+    method: context
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+
+  - name: context.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: context
+    path: /mcp/oauth/context
+
+  - name: consent
+    kind: function.lua
+    meta: { comment: "POST /mcp/oauth/consent — the approving click; mints the scoped credential under the ambient actor and returns the redirect." }
+    source: file://endpoints.lua
+    method: consent
+    modules: [http, env, security, json]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_oauth_flow: kickside.mcp.oauth:flow
+      mcp_http_headers: kickside.mcp:http_headers
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_consts: kickside.mcp:consts
+
+    security:
+      policies: [kickside.mcp.security:credential_eligibility_call]
+
+  - name: consent.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: consent
+    path: /mcp/oauth/consent

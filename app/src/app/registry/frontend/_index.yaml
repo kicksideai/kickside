@@ -1,0 +1,38 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: app_static
+    kind: http.static
+    meta:
+      server: gateway
+    path: /app
+    fs: app:app_fs
+    middleware:
+      - cors
+    options:
+      cache: "no-cache"
+      allow_origins: 'https://web-host.wippy.ai'
+      allow_methods: GET,HEAD,OPTIONS
+      allow_headers: Content-Type
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .html: text/html
+
+  # The vendored facade SPA static (wippy.facade:static, mounted at path / with
+  # spa: true) is the catch-all that serves the shell index.html for every route no
+  # registered endpoint owns — including unknown /api/* paths. It ships no Cache-Control,
+  # so its 200 + Last-Modified response is heuristically cacheable: a browser that
+  # requests an /api route before that endpoint exists caches the shell HTML and keeps
+  # replaying it once the endpoint goes live (the API call then reads HTML and fails).
+  # Serving the fallback no-store makes every unmatched response non-cacheable, so an API
+  # path can never be cache-poisoned by the shell. Patches the vendored entry's
+  # options.cache in place; SPA fallback for real app routes is unchanged.
+  - name: facade_static_no_store
+    kind: ns.requirement
+    meta:
+      comment: Force the vendored facade SPA fallback to serve every response no-store so unknown /api/* routes are never cache-poisoned by the shell HTML.
+    default: "no-store"
+    targets:
+      - entry: wippy.facade:static
+        path: .options.cache

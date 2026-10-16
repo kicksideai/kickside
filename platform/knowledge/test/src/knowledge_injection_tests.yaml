@@ -1,0 +1,36 @@
+version: "1.0"
+namespace: kickside.knowledge.injection
+
+entries:
+  - name: thread_ingest_identity_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_injection }
+    source: file://thread_ingest_identity_test.lua
+    method: run
+    modules: [contract, funcs, json, security, sql, uuid]
+    imports:
+      fixture_cleanup: app:fixture_cleanup
+      test: wippy.test:test
+      execution_identity: kickside.execution:execution_identity
+      thread_ingest_base: kickside.knowledge.injection:thread_ingest_base
+
+  - name: config_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_injection }
+    source: file://config_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      injection_config: kickside.knowledge.injection:config
+
+  - name: injection_events_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: knowledge_injection
+      comment: Finalizer marker events are declared on the injection thread.
+    source: file://injection_events_test.lua
+    method: run
+    modules: [sql, uuid, security, json, contract, funcs]
+    imports:
+      test: wippy.test:test

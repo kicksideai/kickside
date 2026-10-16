@@ -1,0 +1,20 @@
+/* PrimeVue base utility. PrimeVue's BaseStyle injects .p-hidden-accessible into
+   the iframe document.head at runtime, which never crosses into a shadow root — so
+   every Select/MultiSelect would render its visually-hidden aria-announcement span
+   as visible unstyled text ("No selected item", "N items selected"). Restore it
+   once here so it reaches the shadows too. */
+.p-hidden-accessible {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.p-overflow-hidden { overflow: hidden; }

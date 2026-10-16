@@ -1,0 +1,92 @@
+version: "1.0"
+namespace: kickside.hub.api
+
+# Manual Hub token (native hub.auth seam). The admin pastes a Hub registry
+# token; hub_auth validates and pushes it to the runtime via the native
+# hub.auth API (no restart), so keeper's hub calls resolve private modules.
+# Writes are admin-only (deny user group at the router).
+
+entries:
+  - name: hub_auth_status
+    kind: function.lua
+    meta:
+      comment: GET /hub/auth — current Hub token status.
+    source: file://auth.lua
+    method: status
+    modules: [http, json, hub, logger]
+
+  - name: hub_auth_status.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: hub_auth_status
+    path: /hub/auth
+
+  - name: hub_auth_set
+    kind: function.lua
+    meta:
+      comment: POST /hub/auth — validate and store a Hub token at runtime.
+    source: file://auth.lua
+    method: authenticate
+    modules: [http, json, hub, logger]
+
+  - name: hub_auth_set.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: hub_auth_set
+    path: /hub/auth
+
+  - name: hub_auth_clear
+    kind: function.lua
+    meta:
+      comment: DELETE /hub/auth — clear the stored Hub token.
+    source: file://auth.lua
+    method: logout
+    modules: [http, json, hub, logger]
+
+  - name: hub_auth_clear.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: hub_auth_clear
+    path: /hub/auth
+
+  - name: required_setup_runtime
+    kind: library.lua
+    meta:
+      comment: Validates and dispatches versioned required setup descriptors without accepting arbitrary URLs or function ids.
+    source: file://required_setup.lua
+    modules: [funcs, http, json, registry, security]
+
+  - name: required_setup_status
+    kind: function.lua
+    meta:
+      comment: Resolve and inspect one installed module's required setup descriptor.
+    source: file://required_setup.lua
+    method: status
+    modules: [funcs, http, json, registry, security]
+
+  - name: required_setup_status.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Admin-only required setup status dispatcher.
+    method: GET
+    func: required_setup_status
+    path: /hub/required-setup
+
+  - name: required_setup_apply
+    kind: function.lua
+    meta:
+      comment: Run one installed module's fixed required setup action and return its exact postcondition.
+    source: file://required_setup.lua
+    method: apply
+    modules: [funcs, http, json, registry, security]
+
+  - name: required_setup_apply.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Admin-only required setup Retry dispatcher.
+    method: POST
+    func: required_setup_apply
+    path: /hub/required-setup

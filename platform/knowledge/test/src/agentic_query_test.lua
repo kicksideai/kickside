@@ -1,0 +1,52 @@
+local test = require("test")
+local agentic_query = require("agentic_query")
+local answer_fixture = require("agentic_answer_fixture")
+local registry = require("registry")
+
+-- resolve_agent_ref keeps the picker-owned identity intact, defaulting to the
+-- built-in query agent only when the value is unset.
+local function define_tests()
+    test.describe("agentic_query.resolve_agent_ref", function()
+        test.it("defaults to the built-in agent for nil, empty, or non-string values", function()
+            test.eq(agentic_query.resolve_agent_ref(nil), "kickside.knowledge.retrieval:kb_query_agent")
+            test.eq(agentic_query.resolve_agent_ref(""), "kickside.knowledge.retrieval:kb_query_agent")
+            test.eq(agentic_query.resolve_agent_ref("   "), "kickside.knowledge.retrieval:kb_query_agent")
+            test.eq(agentic_query.resolve_agent_ref(42), "kickside.knowledge.retrieval:kb_query_agent")
+        end)
+
+        test.it("passes a namespaced system agent id through unchanged", function()
+            test.eq(agentic_query.resolve_agent_ref("kickside.agents:some_agent"), "kickside.agents:some_agent")
+        end)
+
+        test.it("passes a component id through unchanged", function()
+            test.eq(agentic_query.resolve_agent_ref("abc-123"), "abc-123")
+        end)
+        test.it("caps the built-in agentic answer at 1024 tokens", function()
+            local agent, err = registry.get("kickside.knowledge.retrieval:kb_query_agent")
+            test.is_nil(err)
+            test.not_nil(agent)
+            test.eq(agent.data.max_tokens, 1024)
+        end)
+        test.it("requests passage content from the compact retrieval tool", function()
+            test.contains(agentic_query.prompt, 'fields: ["content", "meta"]')
+        end)
+        test.it("requires the declared object answer and preserves driver errors", function()
+            local valid, valid_err = answer_fixture.run({ kb_id = "kb", query = "valid" })
+            test.is_nil(valid_err)
+            test.eq(valid.answer, "grounded answer")
+            local scalar, scalar_err = answer_fixture.run({ kb_id = "kb", query = "scalar" })
+            test.is_nil(scalar)
+            test.eq(scalar_err, "agentic query returned invalid answer")
+            local missing, missing_err = answer_fixture.run({ kb_id = "kb", query = "missing" })
+            test.is_nil(missing)
+            test.eq(missing_err, "agentic query returned no answer")
+            local failed, failure_err = answer_fixture.run({ kb_id = "kb", query = "failure" })
+            test.is_nil(failed)
+            test.eq(failure_err, "agentic query failed: agent unavailable")
+        end)
+
+    end)
+end
+
+local run_cases = test.run_cases(define_tests)
+return { run = function(options) return run_cases(options) end }

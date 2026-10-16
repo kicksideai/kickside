@@ -1,0 +1,33 @@
+version: "1.0"
+namespace: kickside.channel.service
+
+# Harness definition of the channel hub signal function: the module's service
+# index is not mounted here, so the harness declares the same entry over the
+# linked source.
+entries:
+
+  - name: hub_signal_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the hub signal message the registered conversation session hub.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: hub_signal_deliver
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one conversation hub message stamped with its origin process.
+    source: file://../src_link/service/hub_signal.lua
+    method: deliver
+    modules: [process, funcs]
+    imports:
+      channel_consts: app:channel_consts
+    security:
+      actor:
+        id: kickside.channel.service:hub_signal_deliver
+      policies:
+        - kickside.channel.service:hub_signal_transport

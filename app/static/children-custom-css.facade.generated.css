@@ -1,0 +1,136 @@
+/* =====================================================================
+   GENERATED — do not edit. Source: app/facade-src/children/*.css
+   Rebuild: make facade-css  (Windows: make.bat facade-css)
+
+   On web-host 1.0.44 custom_css and children_custom_css are delivery-equivalent
+   (both injected into the SPA host document AND every WC shadow root). The split is
+   organizational: PrimeVue .p-* chrome -> custom_css; WC-internal base rules (border
+   reset, .p-hidden-accessible, dark primary-contrast) -> children_custom_css.
+   Assembled from: 00-hidden-accessible.css, 10-border-reset.css, 15-primary-seed-inheritance.css, 20-dark-contrast.css, 20-focus-ring.css
+   ===================================================================== */
+
+/* --- children/00-hidden-accessible.css --- */
+/* PrimeVue base utility. PrimeVue's BaseStyle injects .p-hidden-accessible into
+   the iframe document.head at runtime, which never crosses into a shadow root — so
+   every Select/MultiSelect would render its visually-hidden aria-announcement span
+   as visible unstyled text ("No selected item", "N items selected"). Restore it
+   once here so it reaches the shadows too. */
+.p-hidden-accessible {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.p-overflow-hidden { overflow: hidden; }
+
+/* --- children/10-border-reset.css --- */
+/* Preflight border reset. The theme's prestyled PrimeVue CSS (primeVueCssUrl)
+   omits a Tailwind-style preflight, so its components that `@apply border` set
+   border-width but never border-style and render invisible borders in the shadow
+   root. Restoring the base (width 0, style solid) once here replaces the per-module
+   `*{border-width:0;border-style:solid}` copies each WC used to carry. Module rules
+   using the `border` shorthand set their own style and are unaffected. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--p-content-border-color);
+}
+
+/* --- children/15-primary-seed-inheritance.css --- */
+/* WippyElement mirrors a forced theme class onto its direct shadow container so
+   class-based component styles work inside the shadow. The host theme sheet also
+   declares its default primary palette on that container, which would otherwise
+   replace the facade-configured seed inherited from the web-component host.
+
+   Keep only the canonical seed inherited here. This includes nested web-component
+   hosts, which receive the same forced class before entering their own shadow.
+   The theme sheet continues to own every palette and role formula, so a configured
+   or live-previewed --p-primary recalculates the complete light/dark palette
+   without duplicating generators. */
+:host :is(.w-theme-light, .w-theme-dark) {
+  --p-primary: inherit;
+}
+
+/* --- children/20-dark-contrast.css --- */
+/* Dark-mode primary on-color. theme-config sets dark --p-primary-contrast-color
+   to --p-surface-900 (dark text) — wrong on a green primary CTA (dark-on-green).
+   Force the light on-color so custom --p-primary-color surfaces stay readable in
+   dark. The paired `:root` / `:host` selectors cover pages and WC shadow hosts.
+   This children CSS is delivered to both, so primary CTAs in the
+   shell chrome and inside every WC stay white-on-primary. No !important needed: this
+   children CSS is injected after theme-config, and its dark selectors match
+   the specificity of theme-config's own dark rule, so source order decides in our
+   favour. Replaces the identical per-module @media dark overrides. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.w-theme-light),
+  :host(:not(.w-theme-light)) { --p-primary-contrast-color: var(--p-surface-0); }
+}
+:root.w-theme-dark,
+:host(.w-theme-dark) { --p-primary-contrast-color: var(--p-surface-0); }
+
+/* --- children/20-focus-ring.css --- */
+/* Focus baseline for plain HTML elements inside a web component shadow root.
+
+   The platform contract is the token set, not this file:
+   `--p-focus-ring-{width,style,color,offset}` and `--p-focus-ring-shadow`,
+   declared in app/static/css-variables.facade.json. Everything that draws a
+   focus ring - here, in custom/*.css for PrimeVue, and in a component's own
+   stylesheet - reads those tokens. Changing the ring anywhere in the app is a
+   change to a token, never to a rule.
+
+   Scope of THIS file is deliberately narrow: bare `button`, `input`, `a` and
+   friends that a component renders without a class of its own, so nothing is
+   ever left with the browser default. It carries NO component class names.
+   A global list of class-name exceptions is the anti-pattern the Wippy frontend
+   guidance calls out by name, and the reason is practical: the theme cannot
+   know whether a given component class draws a border, so it guesses, and a
+   wrong guess
+   is a doubled ring. The component knows. It owns the rule.
+
+   A component that needs something other than the baseline styles its own
+   selectors with these tokens, and expresses a genuine variant through a
+   documented attribute (`:host([data-focus="..."])`) with component-local
+   aliases - not by adding itself here. */
+
+/* Bordered - the border goes primary and the halo carries it; no outline, so it
+   can never stack with one.
+
+   Only element types that ALWAYS draw a border are asserted here. Text entry
+   rings on `:focus` rather than `:focus-visible` because you need to see where
+   you are typing however you got there, including by click. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+textarea:focus,
+select:focus {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* Bare - nothing to highlight, so the ring is an offset outline and no halo.
+
+   `button` belongs here, which is not obvious. A bare `<button>` is borderless
+   far more often than not - a toolbar icon, a close affordance, a row of the
+   nav rail - and the bordered treatment on one of those paints a halo around
+   an edge that does not exist, while its `outline: none` suppresses the only
+   ring it could have had. A button that DOES draw a box says so in its own
+   rule: `.p-button` in custom/40-button.css, `.kx-card` in the modules that
+   have one. Both out-specify this, and both set `outline: none`. */
+button:focus-visible,
+summary:focus-visible,
+a[href]:focus-visible,
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible,
+input[type='range']:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+  box-shadow: none;
+}

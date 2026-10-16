@@ -1,0 +1,260 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+  - name: discovery_retains_assignments_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://discovery_retains_assignments_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      model_discovery: kickside.models.discovery:model_discovery
+      reference_registry: kickside.models.discovery:reference_registry
+
+  - name: profile_change_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope without process messaging authority, as a group principal holds.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, registry.get, registry.find, env.get, db.get, store.get]
+      effect: allow
+
+  - name: profile_change_signal_probe
+    kind: function.lua
+    meta: { type: test_helper, comment: Announces one profile change in the caller's frame. }
+    source: file://profile_change_signal_probe.lua
+    method: run
+    imports:
+      models_repo: kickside.models.persist:repo
+
+  - name: profile_change_signal_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://profile_change_signal_test.lua
+    method: run
+    modules: [security, funcs, registry]
+    imports:
+      test: wippy.test:test
+      models_types: kickside.models:models_types
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: vertex_creds_a
+    kind: env.variable
+    meta:
+      comment: Test-only Vertex credential payload A.
+    storage: app:env_storage
+    default: '{"project_id":"vertex-a"}'
+    variable: MODELS_VERTEX_CREDS_A
+
+  - name: vertex_creds_b
+    kind: env.variable
+    meta:
+      comment: Test-only Vertex credential payload B.
+    storage: app:env_storage
+    default: '{"project_id":"vertex-b"}'
+    variable: MODELS_VERTEX_CREDS_B
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the models suite.
+    file: "${sqlite_path}"
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server for model discovery endpoints.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router the models endpoints attach to.
+      server: gateway
+    prefix: /api
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope for the models smoke suite.
+    groups:
+      - models_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: models_smoke_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://models_smoke_test.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      registry_models: wippy.llm.discovery:models
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run
+
+  - name: dep.kickside.models
+    kind: ns.dependency
+    component: kickside/models
+    version: '*'
+    parameters:
+    - name: kickside.models:target_db
+      value: app:db
+    - name: kickside.models:api_router
+      value: app:api
+    - name: kickside.models:ui_server
+      value: app:gateway
+    - name: kickside.models:process_host
+      value: app:processes
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+    - name: wippy.llm:process_host
+      value: app:processes
+    - name: wippy.llm:env_storage
+      value: app:env_storage
+    - name: wippy.migration:app_db
+      value: app:db
+
+  - name: dep.wippy.llm
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: LLM discovery dependency used by the models API functions.
+    component: "wippy/llm"
+    parameters:
+      - name: wippy.llm:env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Bootloader boots the isolated models harness.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: models_list_fixture_state
+    kind: library.lua
+    source: file://models_list_fixture_state.lua
+  - name: models_list_fixture
+    kind: library.lua
+    source: file://fixtures/list_models.lua
+    imports:
+      http: app:models_list_fixture_state
+      models: app:models_catalog_fixture
+  - name: models_list_test
+    kind: function.lua
+    meta: { type: test }
+    source: file://models_list_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      list_fixture: app:models_list_fixture
+      list_fixture_state: app:models_list_fixture_state
+
+  - name: reference_http_fixture
+    kind: library.lua
+    source: file://reference_http_fixture.lua
+
+  - name: reference_openrouter_fixture
+    kind: library.lua
+    source: file://fixtures/reference_openrouter.lua
+    imports:
+      http_client: app:reference_http_fixture
+      discovery_common: kickside.models.discovery:common
+
+  - name: reference_openrouter_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://reference_openrouter_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      reference: app:reference_openrouter_fixture
+      reference_registry: kickside.models.discovery:reference_registry
+      reference_source: kickside.models.discovery:reference.openrouter
+      discovery_common: kickside.models.discovery:common
+
+  - name: models_secret_decode_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://models_secret_decode_test.lua
+    modules: [sql, funcs]
+    method: run
+    imports:
+      test: wippy.test:test
+      catalog_policy: kickside.models.catalog:policy
+      models_secrets: kickside.models.persist:models_secrets
+      models_repo: kickside.models.persist:repo
+      models_cache: kickside.models.service:models_cache
+      fake_http: app:card_save_fake_http
+      admin_handler: app:card_save_admin
+      model_catalog: kickside.models.catalog:model_catalog
+
+  - name: models_catalog_fixture
+    kind: library.lua
+    source: file://models_catalog_fixture.lua

@@ -1,0 +1,9 @@
+organization: kickside
+module: hub-test
+type: application
+description: Standalone runnable harness that boots kickside/hub with local port stubs and checks its UI/provider declarations.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

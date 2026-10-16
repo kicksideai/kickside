@@ -1,0 +1,13 @@
+version: '1.0'
+namespace: app.checkpoint_policy
+entries:
+  - name: test
+    kind: function.lua
+    meta: {type: test, suite: checkpoint_policy}
+    source: file://checkpoint_policy_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      policy: kickside.agents:checkpoint_policy
+      curator: kickside.agents.traits:curator_specs

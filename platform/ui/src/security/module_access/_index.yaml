@@ -1,0 +1,69 @@
+version: '1.0'
+namespace: kickside.ui.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Ui
+    surface: kickside.ui
+    intent: module_access
+    includes:
+    - kickside.ui.security:module_runtime
+    - kickside.ui.security:ui_endpoint_access
+    - kickside.ui:public_branding_settings_contract
+  groups: []
+  policy:
+    resources:
+    - kickside.ui:*
+    - kickside.ui.api:*
+    - kickside.ui.security:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: ui_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.ui.api:list_account_items.endpoint
+    - kickside.ui.api:list_contributions.endpoint
+    - kickside.ui.api:list_nav.endpoint
+    - kickside.ui.api:mark_splash_seen.endpoint
+    - kickside.ui.api:mark_splash_unseen.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.ui:*
+    - kickside.ui.api:*
+    - kickside.ui.security:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.ui.security:module_access
+    path: .groups +=
+  - entry: kickside.ui.security:module_runtime
+    path: .groups +=
+  - entry: kickside.ui.security:ui_endpoint_access
+    path: .groups +=

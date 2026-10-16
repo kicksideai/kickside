@@ -1,0 +1,51 @@
+version: "1.0"
+namespace: app.login
+
+entries:
+  - name: templates
+    kind: template.set
+    meta:
+      comment: KickSide login page templates
+
+  - name: page
+    kind: template.jet
+    meta:
+      content_type: text/html
+      comment: Login page with server-rendered facade theme state
+    source: file://login.jet
+    set: app.login:templates
+
+  - name: theme_read
+    kind: security.policy
+    meta:
+      comment: Allow the login renderer to read facade theme requirements and its template set
+    policy:
+      resources:
+        - wippy.facade:*
+        - app.login:*
+      actions:
+        - registry.get
+        - template.get
+      effect: allow
+
+  - name: handler
+    kind: function.lua
+    source: file://login_jet.lua
+    method: handler
+    modules:
+      - http
+      - registry
+      - templates
+    security:
+      actor:
+        id: app.login:handler
+      policies:
+        - app.login:theme_read
+
+  - name: endpoint
+    kind: http.endpoint
+    meta:
+      router: app:web
+    method: GET
+    func: handler
+    path: /login

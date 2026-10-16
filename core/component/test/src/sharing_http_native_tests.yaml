@@ -1,0 +1,19 @@
+version: '1.0'
+namespace: app
+entries:
+- name: sharing_http_native_test
+  kind: function.lua
+  source: file://sharing_http_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: component_sharing_http_native
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    http_errors: kickside.contract:http_errors
+    share: kickside.component.api:share_component
+    adopt: kickside.component.api:adopt_component
+    list: kickside.component.api:list_component_access

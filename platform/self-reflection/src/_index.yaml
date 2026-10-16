@@ -1,0 +1,23 @@
+version: "1.0"
+namespace: kickside.self_reflection
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Self Reflection
+      comment: Optional read-only agent capability for registry/app introspection.
+
+  - name: reflection
+    kind: library.lua
+    meta:
+      comment: Hexagonal read-only registry introspection core. Accepts a registry port; owns no Wippy modules.
+    source: file://reflection.lua
+    imports:
+      keyset: kickside.contract:keyset
+
+  - name: dep.kickside.tool_result_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

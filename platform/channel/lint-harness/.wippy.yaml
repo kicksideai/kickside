@@ -1,0 +1,20 @@
+version: '1.0'
+directories:
+  modules: .wippy
+  src: .
+workspace:
+  replacements:
+    kickside/channel: ..
+    kickside/agents: ../../agents
+    kickside/automation: ../../automation
+    kickside/component: ../../../core/component
+    kickside/connection: ../../connection
+    kickside/contract: ../../../core/contract
+    kickside/core: ../../../core/core
+    kickside/jobs: ../../../core/jobs
+    kickside/settings: ../../settings
+    kickside/transform: ../../transform
+    kickside/uploads: ../../uploads
+    kickside/users: ../../users
+    kickside/execution: ../../../core/execution
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch

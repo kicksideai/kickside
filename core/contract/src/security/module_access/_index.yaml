@@ -1,0 +1,55 @@
+version: '1.0'
+namespace: kickside.contract.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Contract
+    surface: kickside.contract
+    intent: module_access
+    includes:
+    - kickside.contract.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.contract:*
+    - kickside.contract.http:*
+    - kickside.contract.security:*
+    - kickside.data:*
+    - kickside.data.records:*
+    - kickside.trigger:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.contract:*
+    - kickside.contract.http:*
+    - kickside.contract.security:*
+    - kickside.data:*
+    - kickside.data.records:*
+    - kickside.trigger:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

@@ -1,0 +1,458 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-component-in-tag": true,
+  "separate-pull-requests": false,
+  "bump-minor-pre-major": true,
+  "last-release-sha": "836675850ff2005fd349f276e3831601f37e2f45",
+  "packages": {
+    "core/component": {
+      "component": "component",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "core/component/test",
+        "core/component/test-support",
+        "core/component/tests"
+      ]
+    },
+    "core/contract": {
+      "component": "contract",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "core/contract/test",
+        "core/contract/test-support",
+        "core/contract/tests"
+      ]
+    },
+    "core/core": {
+      "component": "core",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "core/core/test",
+        "core/core/test-support",
+        "core/core/tests"
+      ]
+    },
+    "core/execution": {
+      "component": "execution",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "core/execution/test",
+        "core/execution/test-support",
+        "core/execution/tests"
+      ]
+    },
+    "core/jobs": {
+      "component": "jobs",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "core/jobs/test",
+        "core/jobs/test-support",
+        "core/jobs/tests"
+      ]
+    },
+    "platform/agents": {
+      "component": "agents",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/agents/.wippy",
+        "platform/agents/test",
+        "platform/agents/test-support",
+        "platform/agents/tests",
+        "platform/agents/ui/coverage",
+        "platform/agents/ui/dist",
+        "platform/agents/ui/node_modules"
+      ]
+    },
+    "platform/automation": {
+      "component": "automation",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/automation/.wippy",
+        "platform/automation/live-test",
+        "platform/automation/test",
+        "platform/automation/test-support",
+        "platform/automation/tests",
+        "platform/automation/ui/coverage",
+        "platform/automation/ui/dist",
+        "platform/automation/ui/node_modules"
+      ]
+    },
+    "platform/blocks": {
+      "component": "blocks",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/blocks/.wippy",
+        "platform/blocks/test",
+        "platform/blocks/test-support",
+        "platform/blocks/tests"
+      ]
+    },
+    "platform/channel": {
+      "component": "channel",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/channel/.wippy",
+        "platform/channel/lint-harness",
+        "platform/channel/migration-test",
+        "platform/channel/test",
+        "platform/channel/test-support",
+        "platform/channel/tests",
+        "platform/channel/ui/coverage",
+        "platform/channel/ui/dist",
+        "platform/channel/ui/node_modules"
+      ]
+    },
+    "platform/connection": {
+      "component": "connection",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/connection/.wippy",
+        "platform/connection/test",
+        "platform/connection/test-support",
+        "platform/connection/tests",
+        "platform/connection/ui/coverage",
+        "platform/connection/ui/dist",
+        "platform/connection/ui/node_modules"
+      ]
+    },
+    "platform/dm": {
+      "component": "dm",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/dm/test",
+        "platform/dm/test-support",
+        "platform/dm/tests"
+      ]
+    },
+    "platform/hub": {
+      "component": "hub",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/hub/.wippy",
+        "platform/hub/test",
+        "platform/hub/test-support",
+        "platform/hub/tests",
+        "platform/hub/ui/coverage",
+        "platform/hub/ui/dist",
+        "platform/hub/ui/node_modules"
+      ]
+    },
+    "platform/identity": {
+      "component": "identity",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/identity/.wippy",
+        "platform/identity/test",
+        "platform/identity/test-support",
+        "platform/identity/tests",
+        "platform/identity/ui/coverage",
+        "platform/identity/ui/dist",
+        "platform/identity/ui/node_modules"
+      ]
+    },
+    "platform/inbox": {
+      "component": "inbox",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/inbox/.wippy",
+        "platform/inbox/test",
+        "platform/inbox/test-support",
+        "platform/inbox/tests",
+        "platform/inbox/ui/coverage",
+        "platform/inbox/ui/dist",
+        "platform/inbox/ui/node_modules"
+      ]
+    },
+    "platform/knowledge": {
+      "component": "knowledge",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/knowledge/.wippy",
+        "platform/knowledge/test",
+        "platform/knowledge/test-support",
+        "platform/knowledge/tests",
+        "platform/knowledge/ui/coverage",
+        "platform/knowledge/ui/dist",
+        "platform/knowledge/ui/node_modules"
+      ]
+    },
+    "platform/mcp": {
+      "component": "mcp",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/mcp/.wippy",
+        "platform/mcp/test",
+        "platform/mcp/test-support",
+        "platform/mcp/tests",
+        "platform/mcp/ui/coverage",
+        "platform/mcp/ui/dist",
+        "platform/mcp/ui/node_modules"
+      ]
+    },
+    "platform/models": {
+      "component": "models",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/models/.wippy",
+        "platform/models/test",
+        "platform/models/test-support",
+        "platform/models/tests",
+        "platform/models/ui/coverage",
+        "platform/models/ui/dist",
+        "platform/models/ui/node_modules"
+      ]
+    },
+    "platform/oauth": {
+      "component": "oauth",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/oauth/.wippy",
+        "platform/oauth/test",
+        "platform/oauth/test-support",
+        "platform/oauth/tests",
+        "platform/oauth/ui/coverage",
+        "platform/oauth/ui/dist",
+        "platform/oauth/ui/node_modules"
+      ]
+    },
+    "platform/realtime": {
+      "component": "realtime",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/realtime/test",
+        "platform/realtime/test-support",
+        "platform/realtime/tests"
+      ]
+    },
+    "core/realtime-dispatch": {
+      "component": "realtime-dispatch",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "core/realtime-dispatch/test"
+      ]
+    },
+    "platform/renderers": {
+      "component": "renderers",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/renderers/.wippy",
+        "platform/renderers/test",
+        "platform/renderers/test-support",
+        "platform/renderers/tests",
+        "platform/renderers/ui/coverage",
+        "platform/renderers/ui/dist",
+        "platform/renderers/ui/node_modules"
+      ]
+    },
+    "platform/security": {
+      "component": "security",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/security/.wippy",
+        "platform/security/test",
+        "platform/security/test-support",
+        "platform/security/tests",
+        "platform/security/ui/coverage",
+        "platform/security/ui/dist",
+        "platform/security/ui/node_modules"
+      ]
+    },
+    "platform/self-reflection": {
+      "component": "self-reflection",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/self-reflection/.wippy",
+        "platform/self-reflection/test",
+        "platform/self-reflection/test-support",
+        "platform/self-reflection/tests"
+      ]
+    },
+    "platform/sessions": {
+      "component": "sessions",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/sessions/.wippy",
+        "platform/sessions/test",
+        "platform/sessions/test-support",
+        "platform/sessions/tests",
+        "platform/sessions/ui/coverage",
+        "platform/sessions/ui/dist",
+        "platform/sessions/ui/node_modules"
+      ]
+    },
+    "platform/settings": {
+      "component": "settings",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/settings/.wippy",
+        "platform/settings/test",
+        "platform/settings/test-support",
+        "platform/settings/tests",
+        "platform/settings/ui/coverage",
+        "platform/settings/ui/dist",
+        "platform/settings/ui/node_modules"
+      ]
+    },
+    "platform/skills": {
+      "component": "skills",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/skills/.wippy",
+        "platform/skills/test",
+        "platform/skills/test-support",
+        "platform/skills/tests",
+        "platform/skills/ui/coverage",
+        "platform/skills/ui/dist",
+        "platform/skills/ui/node_modules"
+      ]
+    },
+    "platform/sync": {
+      "component": "sync",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/sync/.wippy",
+        "platform/sync/test",
+        "platform/sync/test-support",
+        "platform/sync/tests",
+        "platform/sync/ui/coverage",
+        "platform/sync/ui/dist",
+        "platform/sync/ui/node_modules"
+      ]
+    },
+    "platform/transfer": {
+      "component": "transfer",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/transfer/.wippy",
+        "platform/transfer/test",
+        "platform/transfer/test-support",
+        "platform/transfer/tests",
+        "platform/transfer/ui/coverage",
+        "platform/transfer/ui/dist",
+        "platform/transfer/ui/node_modules"
+      ]
+    },
+    "platform/transform": {
+      "component": "transform",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/transform/.wippy",
+        "platform/transform/eval",
+        "platform/transform/test",
+        "platform/transform/test-support",
+        "platform/transform/tests",
+        "platform/transform/ui/coverage",
+        "platform/transform/ui/dist",
+        "platform/transform/ui/node_modules"
+      ]
+    },
+    "platform/ui": {
+      "component": "ui",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/ui/.wippy",
+        "platform/ui/test",
+        "platform/ui/test-support",
+        "platform/ui/tests",
+        "platform/ui/ui/coverage",
+        "platform/ui/ui/dist",
+        "platform/ui/ui/node_modules"
+      ]
+    },
+    "platform/ui-kit": {
+      "component": "ui-kit",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "platform/ui-kit/package/package.json",
+          "jsonpath": "$.version"
+        }
+      ],
+      "exclude-paths": [
+        "platform/ui-kit/.wippy",
+        "platform/ui-kit/test",
+        "platform/ui-kit/test-support",
+        "platform/ui-kit/tests"
+      ]
+    },
+    "platform/uploads": {
+      "component": "uploads",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/uploads/.wippy",
+        "platform/uploads/live-test",
+        "platform/uploads/test",
+        "platform/uploads/test-support",
+        "platform/uploads/tests",
+        "platform/uploads/ui/coverage",
+        "platform/uploads/ui/dist",
+        "platform/uploads/ui/node_modules"
+      ]
+    },
+    "platform/users": {
+      "component": "users",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/users/.wippy",
+        "platform/users/test",
+        "platform/users/test-support",
+        "platform/users/tests",
+        "platform/users/ui/coverage",
+        "platform/users/ui/dist",
+        "platform/users/ui/node_modules"
+      ]
+    },
+    "platform/webhooks": {
+      "component": "webhooks",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/webhooks/.wippy",
+        "platform/webhooks/test",
+        "platform/webhooks/test-support",
+        "platform/webhooks/tests",
+        "platform/webhooks/ui/coverage",
+        "platform/webhooks/ui/dist",
+        "platform/webhooks/ui/node_modules"
+      ]
+    },
+    "platform/widgets": {
+      "component": "widgets",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/widgets/.wippy",
+        "platform/widgets/test",
+        "platform/widgets/test-support",
+        "platform/widgets/tests",
+        "platform/widgets/ui/coverage",
+        "platform/widgets/ui/dist",
+        "platform/widgets/ui/node_modules"
+      ]
+    },
+    "platform/workflows": {
+      "component": "workflows",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/workflows/.test-modules",
+        "platform/workflows/.wippy",
+        "platform/workflows/test",
+        "platform/workflows/test-support",
+        "platform/workflows/tests",
+        "platform/workflows/ui/coverage",
+        "platform/workflows/ui/dist",
+        "platform/workflows/ui/node_modules"
+      ]
+    },
+    "app": {
+      "component": "kickside",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "app/.wippy",
+        "app/test",
+        "app/test-support",
+        "app/tests"
+      ]
+    }
+  }
+}

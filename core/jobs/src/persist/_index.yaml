@@ -1,0 +1,290 @@
+version: "1.0"
+namespace: kickside.core.jobs.persist
+
+entries:
+  # Persistence layer of the durable leased-job engine: claim/lease/lifecycle
+  # and wake over kickside_job. Shared vocabulary (types and config) lives
+  # in the slice root (kickside.core.jobs); the worker runtime lives in the
+  # service layer (kickside.core.jobs.service).
+
+  # ─── Libraries ───────────────────────────────────────────────────────
+  - name: lifecycle
+    kind: library.lua
+    meta:
+      comment: Claimed-job transitions, run history, cancellation, and enqueue API.
+    source: file://lifecycle_transition.lua
+    modules:
+      - sql
+      - time
+      - uuid
+    imports:
+      clock: kickside.core.jobs:clock
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      row_mutations: kickside.core.jobs.persist:row_mutations
+      worker_marker: kickside.core.jobs.persist:worker_marker
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: lifecycle_cancel
+    kind: library.lua
+    meta:
+      comment: Atomic cancellation and worker marker release.
+    source: file://lifecycle_cancel.lua
+    modules: [sql]
+    imports:
+      clock: kickside.core.jobs:clock
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      row_mutations: kickside.core.jobs.persist:row_mutations
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      worker_marker: kickside.core.jobs.persist:worker_marker
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: slot_purge
+    kind: library.lua
+    meta:
+      comment: Bounded deletion of an owned job slot and its settled run history.
+    source: file://slot_purge.lua
+    modules: [sql]
+    imports:
+      run_status: kickside.core.jobs:run_status
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: worker_marker
+    kind: library.lua
+    meta:
+      comment: Transaction-scoped worker assignment marker release.
+    source: file://worker_marker.lua
+
+  - name: lifecycle_enqueue
+    kind: library.lua
+    meta:
+      comment: Canonical enqueue identity, payload encoding, and scoped listing.
+    source: file://lifecycle_enqueue.lua
+    modules:
+      - time
+      - sql
+      - json
+      - uuid
+    imports:
+      clock: kickside.core.jobs:clock
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      trace_context: kickside.execution:trace
+      thread_fence: kickside.core.jobs.persist:thread_fence
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      listing: kickside.core.jobs.persist:listing
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: thread_fence
+    kind: library.lua
+    meta:
+      comment: Jobs-owned thread owner-delete fence taken before thread-owned job rows.
+    source: file://thread_fence.lua
+    modules: [sql]
+
+  - name: thread_teardown
+    kind: library.lua
+    meta:
+      comment: Bounded Jobs-owned thread cleanup with durable count receipts.
+    source: file://thread_teardown.lua
+    modules: [sql, json]
+    imports:
+      thread_fence: kickside.core.jobs.persist:thread_fence
+      clock: kickside.core.jobs:clock
+      config: kickside.core.jobs:config
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: row_bytes
+    kind: library.lua
+    source: file://row_bytes.lua
+    modules: [json, sql]
+
+  - name: row_mutations
+    kind: library.lua
+    source: file://row_mutations.lua
+    modules: [sql]
+    imports:
+      row_bytes: kickside.core.jobs.persist:row_bytes
+
+  - name: lease_status
+    kind: library.lua
+    meta:
+      comment: Lease ownership evidence and lost-lease classification.
+    source: file://lease_status.lua
+    modules: [sql]
+    imports:
+      clock: kickside.core.jobs:clock
+      job_types: kickside.core.jobs:types
+
+  - name: claim
+    kind: library.lua
+    meta:
+      comment: Atomic claim-with-lease of due pending jobs.
+    source: file://claim.lua
+    modules:
+      - sql
+      - uuid
+      - time
+    imports:
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      thread_fence: kickside.core.jobs.persist:thread_fence
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: reclaim
+    kind: library.lua
+    meta:
+      comment: Expired-lease reclaim and termination-fence settlement of running jobs.
+    source: file://reclaim.lua
+    modules:
+      - sql
+    imports:
+      lease_release: kickside.core.jobs:lease_release
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      worker_marker: kickside.core.jobs.persist:worker_marker
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: claim_execution
+    kind: library.lua
+    meta:
+      comment: Fenced worker-child start and unstarted-assignment release.
+    source: file://claim_execution.lua
+    modules: [sql]
+    imports:
+      job_types: kickside.core.jobs:types
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_marker: kickside.core.jobs.persist:worker_marker
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: completion
+    kind: library.lua
+    meta:
+      comment: Fenced job completion and run-history record in a caller-owned transaction.
+    source: file://completion.lua
+    modules:
+      - sql
+      - time
+      - uuid
+    imports:
+      clock: kickside.core.jobs:clock
+      config: kickside.core.jobs:config
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      job_types: kickside.core.jobs:types
+      worker_marker: kickside.core.jobs.persist:worker_marker
+
+  - name: retention
+    kind: library.lua
+    meta:
+      comment: Bounded owner-local retention for Jobs tables.
+    source: file://retention.lua
+    modules: [sql, time]
+    imports:
+      run_status: kickside.core.jobs:run_status
+      config: kickside.core.jobs:config
+      clock: kickside.core.jobs:clock
+      thread_teardown: kickside.core.jobs.persist:thread_teardown
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: wake
+    kind: library.lua
+    meta:
+      comment: Bounded durable wake fan-out and continuation acknowledgment.
+    source: file://wake.lua
+    modules:
+      - sql
+      - funcs
+    imports:
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      clock: kickside.core.jobs:clock
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      config: kickside.core.jobs:config
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  # The pool notification runs under the Jobs identity: producers commit wake
+  # demand under their own actors and need no process messaging authority.
+  - name: pool_nudge_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the Jobs pool notifier message the registered worker pool.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: pool_nudge_access
+    kind: security.policy
+    meta:
+      comment: Lets a narrowly scoped producer notify the job worker pool through the Jobs identity.
+    policy:
+      resources: kickside.core.jobs.persist:pool_nudge
+      actions: funcs.call
+      effect: allow
+
+  - name: pool_nudge
+    kind: function.lua
+    meta:
+      private: true
+      comment: Notifies the registered job worker pool after committed wake demand.
+    source: file://pool_nudge.lua
+    method: run
+    modules: [process]
+    security:
+      actor:
+        id: kickside.core.jobs.persist:pool_nudge
+      policies:
+        - kickside.core.jobs.persist:pool_nudge_transport
+    imports:
+      config: kickside.core.jobs:config
+
+  # ─── Processes ───────────────────────────────────────────────────────
+  - name: lease_heartbeat
+    kind: process.lua
+    meta:
+      comment: Linked process that extends a claimed job's lease until cancelled.
+    source: file://lease.lua
+    method: main
+    modules:
+      - sql
+      - logger
+      - time
+      - channel
+      - process
+    imports:
+      row_bytes: kickside.core.jobs.persist:row_bytes
+      job_types: kickside.core.jobs:types
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  # ─── Tests ───────────────────────────────────────────────────────────
+
+  - name: listing
+    kind: library.lua
+    source: file://listing.lua
+    modules: [sql, uuid]
+    meta:
+      comment: Owner-scoped job and run keyset pages and exact job reads.
+
+  - name: sql_boundary
+    kind: library.lua
+    source: file://sql_boundary.lua
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error

@@ -1,0 +1,65 @@
+version: "1.0"
+namespace: kickside.settings.api
+
+entries:
+  - name: get_about
+    kind: function.lua
+    source: file://get_about.lua
+    method: handler
+    modules: [http, registry, system]
+    imports:
+      about_info: kickside.settings:about_info
+
+  - name: get_about.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_about
+    path: /settings/about
+
+  - name: list_settings
+    kind: function.lua
+    meta:
+      comment: GET /settings — declared settings merged with overrides.
+    source: file://list_settings.lua
+    method: handler
+    modules: [http, contract, security]
+
+  - name: list_settings.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_settings
+    path: /settings
+
+  - name: list_blocks
+    kind: function.lua
+    meta:
+      comment: GET /settings/blocks — declared settings blocks plus auto-blocks per visible namespace.
+    source: file://list_blocks.lua
+    method: handler
+    modules: [http, contract, security]
+    imports:
+      settings_blocks: kickside.settings:settings_blocks
+
+  - name: list_blocks.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_blocks
+    path: /settings/blocks
+
+  - name: put_settings
+    kind: function.lua
+    meta:
+      comment: PUT /settings — set/unset overrides (admin only).
+    source: file://put_settings.lua
+    method: handler
+    modules: [http, json, security, contract]
+
+  - name: put_settings.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: put_settings
+    path: /settings

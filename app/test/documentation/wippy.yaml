@@ -1,0 +1,3 @@
+organization: kickside
+module: app-documentation-test
+description: Isolated runtime-shape and behavior harness for the KickSide Wiki reader.

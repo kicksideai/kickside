@@ -1,0 +1,138 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_models_smoke_test_provider_profiles_and_registry_1
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://../../models_smoke_test_provider_profiles_and_registry_1.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run
+
+  - name: tsplit_models_smoke_test_provider_profiles_and_registry_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://../../models_smoke_test_provider_profiles_and_registry_2.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      vertex_token_engine: kickside.models.providers.google_vertex:token_engine
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run
+
+  - name: tsplit_models_smoke_test_provider_adapters
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://../../models_smoke_test_provider_adapters.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      vertex_token_engine: kickside.models.providers.google_vertex:token_engine
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run
+
+  - name: tsplit_models_smoke_test_openai_compat_plain_content_flattening
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://../../models_smoke_test_openai_compat_plain_content_flattening.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run
+
+  - name: tsplit_models_smoke_test_discovery_model_limits_floor
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://../../models_smoke_test_discovery_model_limits_floor.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run
+
+  - name: tsplit_models_smoke_test_openai_compat_plain_driver_contracts
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models
+      comment: Checks the installed model catalog and HTTP endpoint declarations.
+    source: file://../../models_smoke_test_openai_compat_plain_driver_contracts.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+      model_mapper: kickside.models.discovery:mapper
+      models_types: kickside.models:models_types
+      provider_registry: kickside.models.discovery:provider_registry
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      openai_compat_plain_generate: kickside.models.providers.openai_compat_plain:openai_compat_plain.generate
+    method: run

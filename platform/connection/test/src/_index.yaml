@@ -1,0 +1,551 @@
+version: "1.0"
+namespace: app
+
+# The harness mounts Connection and supplies its transitive host requirements.
+# Provider fixtures supply the connection and reply-provider bindings that the
+# application discovers from installed provider plugins.
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+  - name: dep.kickside.automation
+    kind: ns.dependency
+    component: kickside/automation
+    version: '*'
+    parameters:
+      - { name: kickside.automation:target_db, value: app:db }
+      - { name: kickside.automation:api_router, value: app:api }
+      - { name: kickside.automation:ui_server, value: app:gateway }
+
+  - name: capacity_boundary_test
+    kind: function.lua
+    meta: { type: test, suite: connection_capacity_boundary }
+    source: file://capacity_boundary_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security, time]
+    imports:
+      test: wippy.test:test
+
+  - name: capacity_floor_test
+    kind: function.lua
+    meta: { type: test, suite: connection_capacity }
+    source: file://capacity_floor_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security, time]
+    imports:
+      test: wippy.test:test
+
+  - name: capacity_probe
+    kind: function.lua
+    source: file://capacity_probe.lua
+    method: run
+    modules: [funcs, sql]
+    imports:
+      base: kickside.connection:base_connection
+      component: kickside.component:component
+      automation: kickside.automation:automation
+      round_write: kickside.automation:round_write
+      capacity_http: kickside.connection:capacity_http
+
+  - name: capacity_pull
+    kind: function.lua
+    source: file://capacity_provider.lua
+    method: pull
+    modules: [sql]
+  - name: capacity_keys
+    kind: function.lua
+    source: file://capacity_provider.lua
+    method: keys
+    modules: [sql]
+  - name: capacity_write
+    kind: function.lua
+    source: file://capacity_provider.lua
+    method: write
+    modules: [sql]
+  - name: capacity_source_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.data:pullable
+        methods: { pull: app:capacity_pull }
+  - name: capacity_source_port
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Capacity fixture }
+    binding: app:capacity_source_binding
+    output_schema: '{ "type": "object" }'
+  - name: capacity_sink_binding
+    kind: contract.binding
+    meta: { delivery: exactly_once, input_shape: record }
+    contracts:
+      - contract: kickside.data:writable
+        methods: { write: app:capacity_write }
+
+  # The production package excludes test metadata. These test-owned entries
+  # point at the co-located suites while the implementation itself is loaded
+  # only through dep.kickside.connection below.
+  - name: query_params_test
+    kind: function.lua
+    meta: { type: test, suite: connection_query_params }
+    source: file://suites/api/query_params_test.lua
+    imports:
+      test: wippy.test:test
+      query_params: kickside.connection.api:query_params
+    method: run
+
+  - name: state_projection_test
+    kind: function.lua
+    meta: { type: test, suite: connection_status_projection }
+    source: file://suites/api/state_projection_test.lua
+    imports:
+      test: wippy.test:test
+      conn_types: kickside.connection:types
+    method: run
+
+  - name: create_policy_test
+    kind: function.lua
+    meta: { type: test, suite: connection_create_policy }
+    source: file://suites/api/create_policy_test.lua
+    imports:
+      test: wippy.test:test
+      create_policy: kickside.connection.api:create_policy
+    method: run
+
+  - name: discovery_envelope_test
+    kind: function.lua
+    meta: { type: test, suite: connection_discovery_envelope }
+    source: file://suites/api/discovery_envelope_test.lua
+    imports:
+      test: wippy.test:test
+      discovery_envelope: kickside.connection.api:discovery_envelope
+    method: run
+
+  - name: provider_badges_test
+    kind: function.lua
+    meta: { type: test, suite: connection_provider_badges }
+    source: file://suites/api/provider_badges_test.lua
+    imports:
+      test: wippy.test:test
+      provider_badges: kickside.connection.api:provider_badges
+    method: run
+
+  - name: update_policy_test
+    kind: function.lua
+    meta: { type: test, suite: connection_update_policy }
+    source: file://suites/api/update_policy_test.lua
+    imports:
+      test: wippy.test:test
+      update_policy: kickside.connection.api:update_policy
+    method: run
+
+  - name: connections_api_test
+    kind: function.lua
+    meta: { type: test, suite: connections }
+    source: file://suites/api/connections_test.lua
+    method: run
+    modules: [sql, json, uuid, contract, ctx]
+    imports:
+      test: wippy.test:test
+      conn_types: kickside.connection:types
+
+  - name: connections_registry_test
+    kind: function.lua
+    meta: { type: test, suite: connections_registry_suite }
+    source: file://suites/registry/connections_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security]
+    imports:
+      test: wippy.test:test
+
+  - name: reply_providers_test
+    kind: function.lua
+    meta: { type: test, suite: reply_providers_registry_suite }
+    source: file://suites/registry/reply_providers_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security]
+    imports:
+      test: wippy.test:test
+
+  - name: html_text_test
+    kind: function.lua
+    meta: { type: test, suite: html_text }
+    source: file://suites/html_text_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      html_text: kickside.connection:html_text
+
+  - name: reply_sender_test
+    kind: function.lua
+    meta: { type: test, suite: reply_sender }
+    source: file://suites/reply_sender_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      reply_sender: kickside.connection:reply_sender
+
+  - name: base_connection_test
+    kind: function.lua
+    meta: { type: test, suite: connection_base }
+    source: file://suites/base_connection_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      base_connection: kickside.connection:base_connection
+      capacity_http: kickside.connection:capacity_http
+
+  - name: reply_authorization_test
+    kind: function.lua
+    meta: { type: test, suite: reply_sender }
+    source: file://suites/reply_authorization_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      reply_sender: kickside.connection:reply_sender
+
+  - name: channel_sink_reply_fixture
+    kind: library.lua
+    source: file://channel_test_link/reply_sender_stub.lua
+    imports:
+      component: kickside.component:component
+
+  - name: channel_sink_under_test
+    kind: library.lua
+    source: file://channel_src_link/sink/channel_sink.lua
+    imports:
+      writable_sink: kickside.data:writable_sink
+      reply_sender: app:channel_sink_reply_fixture
+
+  - name: channel_sink_access_probe
+    kind: function.lua
+    source: file://channel_sink_access_probe.lua
+    method: run
+    imports:
+      channel_sink: app:channel_sink_under_test
+      reply_sender: app:channel_sink_reply_fixture
+
+  - name: channel_sink_access_test
+    kind: function.lua
+    meta: { type: test, suite: channel_sink_access }
+    source: file://suites/channel_sink_access_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security]
+    imports:
+      test: wippy.test:test
+
+  - name: users_closure_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: harness_users_closure
+      comment: Proves app_users carries the users-module DDL and all registered app:db migrations completed before tests start.
+    source: file://users_closure_test.lua
+    modules: [sql]
+    method: run
+    imports:
+      test: wippy.test:test
+      migration_registry: wippy.migration:registry
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for connection slice tests.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_views
+    kind: http.router
+    meta:
+      comment: Separate router for transitive server-rendered view routes.
+      server: gateway
+    prefix: /views
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the connection suites run their scoped actors under.
+    groups:
+      - conn_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.kickside.connection
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Connection mounted as the single package root; qualified parameters wire every host-owned requirement in its
+        transitive graph.
+    component: kickside/connection
+    parameters:
+    - name: kickside.connection:api_router
+      value: app:api
+    - name: kickside.connection:ui_server
+      value: app:gateway
+    - name: kickside.automation:target_db
+      value: app:db
+    - name: kickside.automation:api_router
+      value: app:api
+    - name: kickside.automation:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.llm:process_host
+      value: app:processes
+    - name: wippy.llm:env_storage
+      value: app:env_storage
+    - name: wippy.relay:user_security_scope
+      value: app:user
+    - name: wippy.relay:env_storage
+      value: app:env_storage
+    - name: wippy.relay:application_host
+      value: app:processes
+    - name: wippy.session:api_router
+      value: app:api
+    - name: wippy.session:database_resource
+      value: app:db
+    - name: wippy.session:default_host
+      value: app:processes
+    - name: wippy.session:env_storage
+      value: app:env_storage
+    - name: wippy.session:delegation_func_id
+      value: userspace.dataflow.session:delegate
+    - name: wippy.views:api_router
+      value: app:api_views
+    - name: wippy.views:env_storage
+      value: app:env_storage
+
+  - name: dep.kickside.users
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Users mounted for its migrations (app_users owns the Session foreign keys); no suite exercises the users API. Single-group harness, so both scopes bind app:user; login shares the spare views router.
+    component: "kickside/users"
+    parameters:
+      - name: kickside.users:env_storage
+        value: app:env_storage
+      - name: kickside.users:public_router
+        value: app:api_views
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - name: kickside.users:target_db
+        value: app:db
+      - name: kickside.users:user_security_scope
+        value: app:user
+      - name: kickside.users:admin_security_scope
+        value: app:user
+      - name: kickside.users:login_role_resource
+        value: app:*
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: endpoints
+    kind: registry.entry
+    endpoints:
+      api: https://enterprise.example.invalid/api/v3
+      socket: wss://gateway.example.invalid/?v=10&encoding=json
+      invalid: ftp://example.invalid/private
+      credentials: https://user:pass@example.invalid
+
+  - name: endpoints_test
+    kind: function.lua
+    meta: { type: test, suite: connection }
+    source: file://endpoints_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      endpoints: kickside.connection:endpoints
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: connection_reason_test
+    kind: function.lua
+    meta: { type: test, suite: connection_reason }
+    source: file://connection_reason_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      handler: app:connection_reason_adapter
+      fixture: app:connection_reason_fixture
+      registry_fixture: app:connection_reason_registry
+      contract_fixture: app:connection_reason_contract
+
+  - name: connection_reason_fixture
+    kind: library.lua
+    source: file://connection_reason_fixture.lua
+    modules: [http]
+  - name: connection_reason_adapter
+    kind: library.lua
+    source: file://list_connections_source.lua
+    imports:
+      http: app:connection_reason_fixture
+      contract: app:connection_reason_contract
+      security: app:connection_reason_security
+      registry: app:connection_reason_registry
+      conn_types: kickside.connection:types
+      query_params: kickside.connection.api:query_params
+      create_policy: kickside.connection.api:create_policy
+
+  - name: connection_reason_contract
+    kind: library.lua
+    source: file://connection_reason_fixture.lua
+    modules: [http]
+
+  - name: connection_reason_security
+    kind: library.lua
+    source: file://connection_reason_fixture.lua
+    modules: [http]
+
+  - name: connection_reason_registry
+    kind: library.lua
+    source: file://connection_reason_fixture.lua
+    modules: [http]
+
+  - name: status_access_test
+    kind: function.lua
+    meta: { type: test, suite: connection_status_access }
+    source: file://suites/api/status_access_test.lua
+    method: run
+    modules: [sql, uuid, contract, security]
+    imports:
+      test: wippy.test:test
+  - name: status_access_handler
+    kind: function.lua
+    source: file://status_access_handler.lua
+    method: get_status
+    imports:
+      base: kickside.connection:base_connection
+  - name: status_access_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.connection:connection
+        context_required: [component_id]
+        methods:
+          get_status: app:status_access_handler
+          test_connection: kickside.plugins.stubs:test_connection
+          discover_resources: kickside.plugins.stubs:discover_resources
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}
+
+  - name: worker_plan_test
+    kind: function.lua
+    meta: {type: test, suite: connection.workers}
+    source: file://worker_plan_test.lua
+    method: run
+    modules: [process, funcs, channel, time]
+    imports:
+      test: wippy.test:test
+      base: kickside.connection:base_connection

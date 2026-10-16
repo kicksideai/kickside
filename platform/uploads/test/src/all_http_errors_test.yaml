@@ -1,0 +1,18 @@
+version: '1.0'
+namespace: app.http_errors_test
+entries:
+- name: all_http_errors_test
+  kind: function.lua
+  source: file://all_http_errors_test.lua
+  method: run
+  meta:
+    type: test
+    suite: all_http_errors_test
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    create_api: kickside.uploads.api:upload_handler
+    complete_api: kickside.uploads.api:complete_handler
+    presign_api: kickside.uploads.api:presigned_handler

@@ -1,0 +1,1 @@
+../../src/binding/export_component_func.lua

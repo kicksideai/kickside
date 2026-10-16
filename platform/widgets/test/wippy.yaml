@@ -1,0 +1,5 @@
+organization: kickside
+module: widgets-test
+directories:
+  src: .
+  modules: .wippy

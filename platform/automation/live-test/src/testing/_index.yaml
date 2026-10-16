@@ -1,0 +1,12 @@
+version: '1.0'
+namespace: kickside.automation.testing
+entries:
+- name: pullable_conformance
+  kind: library.lua
+  meta:
+    comment: Reusable kickside.data:pullable conformance battery for provider test
+      suites.
+  source: file://../test_src/testing/pullable_conformance.lua
+  modules:
+  - registry
+  - json

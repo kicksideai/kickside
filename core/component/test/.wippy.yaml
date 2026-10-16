@@ -1,0 +1,40 @@
+version: "1.0"
+override:
+  "kickside.realtime.dispatch:binding:contracts":
+    - contract: kickside.contract:realtime_batch
+      default: false
+      methods: {notify: "kickside.realtime.dispatch:notify"}
+  "app:db:file": "${sqlite_path}"
+workspace:
+  replacements:
+    kickside/realtime-dispatch: ../../realtime-dispatch
+    kickside/component: ..
+    kickside/contract: ../../contract
+    kickside/execution: ../../execution
+vars:
+  sqlite_path: ":memory:"
+  pg_host: localhost
+  pg_port: 5433
+  pg_metadata_migration_database: kickside_test_component_metadata_migration
+  pg_database: kickside_test_component
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:metadata_migration_db:kind": db.sql.postgres
+      "app:metadata_migration_db:host": "${pg_host}"
+      "app:metadata_migration_db:port": "${pg_port}"
+      "app:metadata_migration_db:database": "${pg_metadata_migration_database}"
+      "app:metadata_migration_db:username": "${pg_username}"
+      "app:metadata_migration_db:password": "${pg_password}"
+      "app:metadata_migration_db:options.sslmode": disable
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8

@@ -1,0 +1,12 @@
+organization: kickside
+module: transform-harness
+type: application
+description: Standalone runnable harness that boots kickside/transform (and its deps) and runs its co-located *_test.lua suites.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true
+workspace:
+  replacements:
+    kickside/transform: ..

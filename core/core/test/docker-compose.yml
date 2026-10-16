@@ -1,0 +1,18 @@
+# Postgres backend for running the core test suites against pg as well as the
+# default in-memory sqlite. Bring up with: docker compose up -d
+# Run pg suites: see README / the -o app:db overrides in the Makefile-style command.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: core-test-pg
+    environment:
+      POSTGRES_USER: kickside
+      POSTGRES_PASSWORD: kickside
+      POSTGRES_DB: kickside_core_test
+    ports:
+      - "55433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kickside -d kickside_core_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20

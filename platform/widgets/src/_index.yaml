@@ -1,0 +1,353 @@
+version: "1.0"
+namespace: kickside.widgets
+
+# Shared UI web components. Each is a self-contained custom element any module can
+# use by tag — the single source of truth for reusable widgets (no per-module
+# copies). They are built as one bundle (the canonical one ui/ -> one ./static ->
+# one mount shape every module follows) and served from /kickside-widgets; each
+# view.component points at its own entry_point within that mount. Consumers ensure
+# the element is registered via the host proxy (loadByTagName) before rendering.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Widgets
+      comment: Shared UI web components reused across modules — icon, model, multiselect, and channel pickers.
+
+  # One server, one filesystem mount, one http.static — every widget below is an
+  # entry within this single bundle (built by widgets/ui into ./static).
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the widgets static bundle attaches to.
+      description: HTTP server the widgets static bundle attaches to.
+    targets:
+      - entry: kickside.widgets:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built shared widgets web component bundle (all widgets, one build).
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-widgets
+    fs: kickside.widgets:ui_fs
+    options:
+      # Stable bundle names — without revalidation the browser caches them hard
+      # and never picks up rebuilds (matches the other view modules).
+      cache: "no-cache"
+
+  # ─── Generic create-view resolver (backs the component picker create-path) ─
+  # Authenticated router the create-view resolver attaches to; must enforce session
+  # auth. The handler reads the registry as the caller (a binding the caller cannot
+  # read is simply absent).
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the create-view resolver endpoint attaches to.
+      description: Authenticated HTTP router the create-view resolver endpoint attaches to.
+    targets:
+      - entry: kickside.widgets.api:create_view_resolver.endpoint
+        path: .meta.router
+
+  # ─── Icon picker ─────────────────────────────────────────────────────
+  - name: icon_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: icon_picker_view
+      title: Icon Picker
+      announced: true
+      auto_register: true
+      tag_name: wc-icon-picker
+      base_path: kickside-widgets
+      entry_point: index.js
+      icon: tabler:mood-smile
+    props:
+      type: object
+      properties:
+        value:
+          type: string
+          default: ""
+          description: Currently selected icon name (e.g. tabler:home).
+        fallback:
+          type: string
+          default: ""
+          description: Icon shown on the trigger when no value is set.
+
+  # ─── Model picker ────────────────────────────────────────────────────
+  - name: model_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: model_picker_view
+      title: Model Picker
+      announced: true
+      auto_register: true
+      tag_name: wc-model-picker
+      base_path: kickside-widgets
+      entry_point: model_picker.js
+      icon: tabler:cpu
+    props:
+      type: object
+      properties:
+        value:
+          type: string
+          default: ""
+          description: Selected model name or a "class:<name>" reference (e.g. class:fast).
+        capability:
+          type: string
+          default: "generate"
+          description: Which models to list — "generate" (default) or "embed" (embedding models, no classes).
+        mode:
+          type: string
+          default: ""
+          description: '"classes" restricts the panel to model classes (portable "class:<name>" refs); empty lists classes and concrete models.'
+
+  # ─── Multi-select (async tag-input over paged, drillable sources) ────
+  - name: multiselect_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: multiselect_view
+      title: Multi-select
+      announced: true
+      auto_register: true
+      tag_name: wc-multiselect
+      base_path: kickside-widgets
+      entry_point: multiselect.js
+      icon: tabler:list-check
+    props:
+      type: object
+      properties:
+        source:
+          type: string
+          default: ""
+          description: List endpoint the picker pages through (e.g. /api/v1/knowledge/list) — GET ?q=&limit=&cursor=&parent_id=, rows under response-key, next_cursor for the following page, optional boolean search declaring server-side search. ?ids=<csv> resolves preselected chips.
+        connection-id:
+          type: string
+          default: ""
+          description: Connection component id whose discovery lists the rows (replaces source). Rows are the provider's resources; selectable/drillable come from the discovery envelope.
+        discover-path:
+          type: string
+          default: "/api/v1/connections/{id}/discover_resources"
+          description: POST endpoint template for a connection's discovery; {id} is the connection id, the body carries q, limit, cursor, parent_id.
+        search:
+          type: string
+          default: "server"
+          description: '"server" sends the search text to the source; "local" filters the loaded pages and says so. A source answering a boolean search overrides it.'
+        page-size:
+          type: integer
+          default: 20
+          description: Rows requested per page (1-1000).
+        drill-key:
+          type: string
+          default: "id"
+          description: Row field sent as parent_id when a drillable row is opened.
+        unselectable-hint:
+          type: string
+          default: "This item cannot be selected."
+          description: Reason shown on rows the source marks non-selectable (and not drillable).
+        id-key:
+          type: string
+          default: "id"
+          description: Item field used as the selected value (e.g. id, skill_id, full_path).
+        label-key:
+          type: string
+          default: "name"
+          description: Item field shown as the label (e.g. name, title).
+        desc-key:
+          type: string
+          default: "description"
+          description: Item field shown as the secondary description line.
+        icon-key:
+          type: string
+          default: "icon"
+          description: Item field holding a Tabler icon name.
+        meta-key:
+          type: string
+          default: ""
+          description: Optional item field shown as a small tag next to the label.
+        selected:
+          type: string
+          default: ""
+          description: Initially selected ids — a JSON array string, a CSV string, or a single id.
+        multi:
+          type: boolean
+          default: true
+          description: Allow multiple selections. When false, a pick replaces the selection.
+        placeholder:
+          type: string
+          default: "Search…"
+          description: Search input placeholder.
+        response-key:
+          type: string
+          default: ""
+          description: Field on the JSON response holding the rows array (auto-detected when empty).
+
+  # ─── Channel picker (aggregated lazy channel tree) ───────────────────
+  - name: channel_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: channel_picker_view
+      title: Channel picker
+      announced: true
+      auto_register: true
+      tag_name: wc-channel-picker
+      base_path: kickside-widgets
+      entry_point: channel_picker.js
+      icon: tabler:hash
+    props:
+      type: object
+      properties:
+        connections-source:
+          type: string
+          default: "/api/v1/connections"
+          description: Endpoint listing connections (the tree roots). Filtered by ?provider= when 'providers' is set.
+        discover-path:
+          type: string
+          default: "/api/v1/connections/{id}/discover_resources"
+          description: POST template for a connection's resources; {id} is the connection component id, the body carries drill-down args.
+        providers:
+          type: string
+          default: ""
+          description: CSV of providers to show as roots (e.g. discord,slack). Empty shows every connection.
+        child-arg:
+          type: string
+          default: "parent_id"
+          description: discover_resources arg key used to drill into a container node (the parent's id).
+        value:
+          type: string
+          default: ""
+          description: Pre-selected channel as a JSON object string {connection_id, channel_id}.
+        placeholder:
+          type: string
+          default: "Select a channel…"
+          description: Text shown when nothing is selected.
+
+  # ─── Connection picker (single connection over the connections API) ──
+  - name: connection_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: connection_picker_view
+      title: Connection picker
+      announced: true
+      auto_register: true
+      tag_name: wc-connection-picker
+      base_path: kickside-widgets
+      entry_point: connection_picker.js
+      icon: tabler:plug-connected
+    props:
+      type: object
+      properties:
+        source:
+          type: string
+          default: "/api/v1/connections"
+          description: Endpoint listing connections. Filtered by ?provider= when 'providers' is set.
+        providers:
+          type: string
+          default: ""
+          description: CSV of providers to show (e.g. discord,slack). Empty shows every connection.
+        provider:
+          type: string
+          default: ""
+          description: Single provider to scope the fetch to (e.g. hubspot); merged with 'providers' when both are set.
+        label:
+          type: string
+          default: ""
+          description: Human noun for this connection field (e.g. "HubSpot connection"), used in the placeholder and when a seeded id cannot be resolved.
+        reply-only:
+          type: string
+          default: "true"
+          description: When "true", lists only channel-capable connections (reply_provider). "false" lists every connection.
+        value:
+          type: string
+          default: ""
+          description: Current selection as a JSON object string {connection_id}.
+        config:
+          type: string
+          default: ""
+          description: Alias of value used by the poller config form — a JSON object string {connection_id}.
+        placeholder:
+          type: string
+          default: "Select a connection…"
+          description: Text shown when nothing is selected.
+
+  # ─── Component picker (one of the user's component instances of a class) ─
+  - name: component_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: component_picker_view
+      title: Component picker
+      announced: true
+      auto_register: true
+      tag_name: wc-component-picker
+      base_path: kickside-widgets
+      entry_point: component_picker.js
+      icon: tabler:message-circle
+    props:
+      type: object
+      properties:
+        source:
+          type: string
+          default: "/api/v1/threads"
+          description: Endpoint listing the user's thread components. Filtered by ?thread_class=.
+        thread-class:
+          type: string
+          default: ""
+          description: Component class to scope the instance list to (meta.thread_class).
+        meta:
+          type: string
+          default: ""
+          comment: JSON object {type:"thread", thread_class}. Supplies thread_class; the poller mount passes it.
+        value:
+          type: string
+          default: ""
+          description: Current selection as a JSON object string {thread_id}.
+        config:
+          type: string
+          default: ""
+          description: Alias of value used by the poller config form — a JSON object string {thread_id}.
+        placeholder:
+          type: string
+          default: ""
+          description: Text shown when nothing is selected. Empty lets the field title drive the prompt.
+
+  # Generic JSON-schema -> form. Shared default config surface for any component
+  # that declares a config_schema but no richer web component of its own.
+  - name: schema_form_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: schema_form_view
+      title: Schema Form
+      announced: true
+      auto_register: true
+      tag_name: wc-schema-form
+      base_path: kickside-widgets
+      entry_point: schema_form.js
+      icon: tabler:forms
+    props:
+      type: object
+      properties:
+        schema:
+          type: object
+          description: JSON Schema describing the config fields (object or JSON string).
+        config:
+          type: object
+          description: Current config values.
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

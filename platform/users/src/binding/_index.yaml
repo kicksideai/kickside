@@ -1,0 +1,110 @@
+version: "1.0"
+namespace: kickside.users.binding
+
+entries:
+  - name: credential_readiness
+    kind: function.lua
+    source: file://../persist/credential_readiness.lua
+    method: check
+    modules: [registry]
+    imports:
+      user_repo_support: kickside.users.persist:user_repo_support
+    security:
+      actor: {id: kickside.users.binding:credential_readiness}
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:credential_inventory_read
+
+  - name: credential_eligibility
+    kind: function.lua
+    meta: {credential_admission: users}
+    source: file://credential_eligibility.lua
+    method: check
+    security:
+      actor: {id: kickside.users.binding:credential_eligibility}
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+
+  # ─── Group members (kickside.contract:group_members) ─────────────────
+  # The reverse of scope_resolver: group id -> member user ids. The component
+  # realtime fanout depends on the contract (not this module) to expand a group
+  # grant into the users who should receive a component notification.
+  - name: group_members_func
+    kind: function.lua
+    meta:
+      comment: kickside.contract:group_members.members -- group id -> member user ids.
+    source: file://group_members_func.lua
+    method: members
+    security:
+      actor:
+        id: kickside.users.binding:group_members_func
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+    imports:
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: scope_resolver_func
+    kind: function.lua
+    meta:
+      comment: kickside.contract:scope_resolver.resolve -- ambient snapshot or delegated explicit subject -> serializable scope params.
+    source: file://scope_resolver_func.lua
+    security:
+      policies:
+        - kickside.users.directory:subject_lookup_access
+        - kickside.users.security:run_as_candidate_evaluation
+    modules:
+      - funcs
+      - security
+    method: resolve
+    imports:
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+
+  # The resolver authorizes under the caller's ambient actor, then reads the
+  # subject through this seam. Callers are arbitrary product processes; the
+  # users store is this module's own, so the lookup carries the Users-owned
+  # runtime policy rather than requiring every caller to hold database
+  # authority over app_users.
+  - name: subject_lookup
+    kind: function.lua
+    meta:
+      comment: Privileged subject lookup backing scope_resolver -- user id -> groups, scope, profile meta.
+      private: true
+    source: file://subject_lookup_func.lua
+    method: lookup
+    security:
+      actor:
+        id: kickside.users.binding:subject_lookup
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:session_group_set_projection
+    imports:
+      consts: kickside.users:consts
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_authority: kickside.users:user_authority
+      session_metadata: kickside.users:session_metadata
+      credential_eligibility: kickside.users.persist:credential_eligibility
+
+  - name: credential_subject_lookup
+    kind: function.lua
+    meta: {private: true, credential_admission: users}
+    source: file://subject_lookup_func.lua
+    method: lookup_credential
+    security:
+      actor: {id: kickside.users.binding:credential_subject_lookup}
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:session_group_set_projection
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      consts: kickside.users:consts
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_authority: kickside.users:user_authority
+      session_metadata: kickside.users:session_metadata

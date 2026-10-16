@@ -1,0 +1,44 @@
+organization: kickside
+module: transform
+type: plugin
+description: KickSide transform — the shared item transform (none|expr|llm|code|func) that maps a source item into sink/endpoint input. Exposed as a library so every automation (poller, webhook, reaction) runs identical transform semantics from one place.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - transform
+  - automation
+embed:
+  - kickside.transform:ui_fs
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "ui/node_modules/**"
+  - "ui/node_modules:**"
+  - "ui/coverage/**"
+  - "ui/coverage:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "ui/dist/**"
+  - "static/*.map"
+  - "static/**/*.map"
+  - "test/stubs/**"
+  - "test/stubs:**"
+  - "src/**/stubs/**"
+  - "src/**/*.spec.ts"
+  - "src/**/*.spec.tsx"
+  - "ui/src/**/*.spec.ts"
+  - "ui/src/**/*.spec.tsx"
+  - "eval/**"
+  - "eval:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

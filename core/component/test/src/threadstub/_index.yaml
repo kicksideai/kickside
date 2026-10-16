@@ -1,0 +1,48 @@
+version: "1.0"
+namespace: kickside.core
+
+# Harness-local kickside.core:threads contract exposing purge + emit, so teardown's
+# primary-thread reap and component.emit_singleton_event's append are real, observable
+# calls in the component test harness (the core threads slice is not loaded here).
+# Defining the contract under the kickside.core namespace matches the id both look up by
+# string.
+
+entries:
+  - name: threads
+    kind: contract.definition
+    meta:
+      comment: Harness stub of kickside.core:threads; declares purge (teardown) and emit (emit_singleton_event).
+    methods:
+      - name: purge
+        description: Reap a component's primary thread; toggled by the thread_purge_ctl control table.
+      - name: emit
+        description: Append an event to a component's primary thread; logged to thread_emit_log for observation.
+
+  - name: threads_purge_stub
+    kind: function.lua
+    meta:
+      comment: Purge implementation backed by the thread_purge_ctl control table.
+    source: file://threads_purge_stub.lua
+    method: purge
+    modules:
+      - sql
+
+  - name: threads_emit_stub
+    kind: function.lua
+    meta:
+      comment: Emit implementation recording each append into the thread_emit_log table.
+    source: file://threads_emit_stub.lua
+    method: emit
+    modules:
+      - sql
+
+  - name: threads_binding
+    kind: contract.binding
+    meta:
+      comment: Default kickside.core:threads binding for the component harness.
+    contracts:
+      - contract: kickside.core:threads
+        default: true
+        methods:
+          purge: kickside.core:threads_purge_stub
+          emit: kickside.core:threads_emit_stub

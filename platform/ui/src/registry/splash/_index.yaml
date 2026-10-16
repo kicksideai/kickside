@@ -1,0 +1,120 @@
+version: "1.0"
+namespace: kickside.ui
+entries:
+  - name: splash
+    kind: library.lua
+    meta: { comment: "Resolve the once-only full-screen splash for the caller. A user-scoped splash is seen once per user (profile field kickside.ui:seen_splashes); an instance-scoped splash is completed once per instance (admin-gated setting kickside.ui:completed_splashes)." }
+    source: file://../../splash.lua
+    modules: [registry, contract, security, funcs]
+    imports:
+      ui_types: kickside.ui:types
+
+  # ─── Facade base-tone resolver ───────────────────────────────────────
+  # Binds the optional wippy.facade:resolver so the facade view-config +
+  # variables.css handlers retone --p-primary-* from the runtime
+  # kickside.ui:primary_color setting. No setting => returns {} => static ramp.
+  - name: field.seen_splashes
+    kind: registry.entry
+    meta: { type: kickside.users.profile:definition }
+    namespace: kickside.ui
+    key: seen_splashes
+    value_type: json
+    default: []
+    description: Splash screens this user has already dismissed.
+    editable: true
+    visibility: self
+
+  # The instance completion list for instance-scoped splashes: a setting, so one
+  # admin completing the instance setup wizard completes it for every admin.
+  - name: setting_completed_splashes
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Instance-scoped splash screens completed for the whole instance.
+    namespace: kickside.ui
+    key: completed_splashes
+    read_access: admin
+    value_type: json
+    default: []
+    description: Instance-scoped splash screens (e.g. the setup wizard) an administrator has completed for this instance.
+    scope: global
+    editable: true
+    visible: false
+
+  # The instance setup wizard. Its steps configure the instance (branding,
+  # modules, model providers, an admin MCP token), so it is instance-scoped: the
+  # SPA mounts it for admins until any admin completes it once.
+  - name: splash.welcome
+    kind: registry.entry
+    meta:
+      type: ui.splash
+      id: welcome
+      title: Welcome to KickSide
+      icon: tabler:sparkles
+      priority: 100
+      audience: admin
+      scope: instance
+
+  # Steps for the welcome splash — each is its own declarative entry; the wizard
+  # shell discovers + orders them. A step may set component_tag to mount its own
+  # web component; otherwise the shell renders its chip/title/subtitle scaffold.
+  - name: splash.welcome.step.workspace
+    kind: registry.entry
+    meta:
+      type: ui.splash.step
+      splash: welcome
+      id: workspace
+      order: 10
+      title: Name your workspace
+      subtitle: This is the name your team sees in the header and on the login screen.
+      field: workspace_name
+      placeholder: e.g. Acme Operations
+
+  - name: splash.welcome.step.logo
+    kind: registry.entry
+    meta:
+      type: ui.splash.step
+      splash: welcome
+      id: logo
+      order: 15
+      chip: "🎨 Branding"
+      title: Add your logo
+      subtitle: Upload a square image. It shows in the header and login screen, and you can change it anytime in Appearance.
+      field: logo
+      optional: true
+
+  - name: splash.welcome.step.models
+    kind: registry.entry
+    meta:
+      type: ui.splash.step
+      splash: welcome
+      id: models
+      order: 18
+      chip: "🧠 AI model"
+      title: Connect your AI model
+      subtitle: Add a provider and pick which model powers each capability. This is what your automations think with.
+      component_tag: kickside-onboard-models
+      optional: true
+
+  - name: splash.welcome.step.mcp
+    kind: registry.entry
+    meta:
+      type: ui.splash.step
+      splash: welcome
+      id: mcp
+      order: 35
+      title: Connect an external agent
+      subtitle: Optionally issue an administrator token so an external AI client, such as Claude, can connect over MCP and use this workspace.
+      field: mcp
+      optional: true
+
+  - name: splash.welcome.step.done
+    kind: registry.entry
+    meta:
+      type: ui.splash.step
+      splash: welcome
+      id: done
+      order: 99
+      title: You're ready to go
+      subtitle: Your workspace is configured. Here's what you set up — you can change any of it later in Settings.
+      field: done

@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.workflows.runtime
+
+# Internal native expansion for exact nested Flow composition.
+
+entries:
+  - name: expand_flow
+    kind: function.lua
+    meta:
+      comment: Expands an exact published Flow into the current Dataflow through native control commands.
+    source: file://expand_flow.lua
+    method: run
+    modules: [ctx, uuid]
+    imports:
+      version_read: kickside.workflows.repo:version_read
+      compiler: kickside.workflows.compiler:compiler
+      schema_validate: kickside.workflows.schema:schema_validate
+      flow_ref: kickside.workflows.execution:flow_ref

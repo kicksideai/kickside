@@ -1,0 +1,79 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-state.css";
+@import "@kickside/ui-kit/kx-tag.css";
+@import "@kickside/ui-kit/kx-tokens.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element needs a definite box so the field lays out inside the shadow DOM of
+   any host. It is compact and grows to content — a host embeds it inline in a form. */
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Styled only with the universal --p-* theme vocabulary so it renders correctly in the
+   shadow DOM of any Wippy host (no SPA tokens, no brand colors). */
+.kx {
+  font-family: inherit;
+  color: var(--p-text-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* one row: strategy select + generate + inline status */
+.kx-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kx-select {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: var(--kx-radius-tag, 8px); cursor: pointer;
+}.kx-gen {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+  border: 1px solid transparent; border-radius: var(--kx-radius-tag, 8px); font: inherit; font-size: 12.5px; font-weight: 600;
+  background: var(--p-primary-color); color: var(--p-button-primary-color); cursor: pointer; transition: filter .15s, opacity .15s;
+}
+.kx-gen:hover:not(:disabled) { filter: brightness(1.05); }
+.kx-gen:disabled { opacity: .55; cursor: default; }
+.kx-gen svg { width: 15px; height: 15px; }
+
+/* Sizing is .kx-tag-sm; this one is set in caps but at label scale. */
+.kx-status { margin-left: auto; text-transform: uppercase; letter-spacing: .02em; }
+.kx-status svg { width: 13px; height: 13px; }
+.kx-ok { color: var(--p-success-600, var(--p-success-500)); background: color-mix(in srgb, var(--p-success-500) 14%, transparent); }
+.kx-bad { color: var(--p-warn-600, var(--p-warn-500)); background: color-mix(in srgb, var(--p-warn-500) 14%, transparent); }
+
+.kx-input {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color); width: 100%;
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: var(--kx-radius-tag, 8px); transition: border-color .15s;
+}
+.kx-input::placeholder { color: var(--p-text-muted-color); }.kx-textarea {
+  height: auto; min-height: 84px; padding: 10px; resize: vertical; line-height: 1.55;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 12.5px; tab-size: 2;
+}
+.kx-code { min-height: 120px; }
+
+.kx-hint { font-size: 12px; color: var(--p-text-muted-color); }
+.kx-hint code {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 11.5px;
+  padding: 0 3px; border-radius: 4px; background: color-mix(in srgb, var(--p-text-color) 8%, transparent);
+}
+.kx-rationale { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--p-text-muted-color); }
+
+.kx-pre {
+  margin: 0; padding: 10px; border-radius: var(--kx-radius-tag, 8px); overflow: auto; max-height: 160px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 12px; line-height: 1.5;
+  color: var(--p-text-color); background: color-mix(in srgb, var(--p-text-color) 5%, transparent);
+}
+.kx-errors {
+  margin: 0; padding: 8px 12px 8px 26px; border-radius: var(--kx-radius-tag, 8px); font-size: 12.5px; line-height: 1.5;
+  color: var(--p-danger-600, var(--p-danger-500)); background: color-mix(in srgb, var(--p-danger-500) 10%, transparent);
+}
+.kx-err {
+  /* No surface gutter to clear here. */
+  margin: 0;
+}
+

@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: row_limit
+    kind: library.lua
+    meta:
+      comment: Refuses one automation row above the encoded row byte limit.
+    source: file://../row_limit.lua
+    imports:
+      runtime_policy: kickside.automation:runtime_policy
+      row_size: kickside.core:row_size
+
+  # ─── Round (design v5 §4.1-4.4) ──────────────────────────────────────

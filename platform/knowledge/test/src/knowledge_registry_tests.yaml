@@ -1,0 +1,24 @@
+version: "1.0"
+namespace: kickside.knowledge.registry
+
+entries:
+  - name: knowledge_bases_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_registry }
+    source: file://knowledge_bases_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+
+  - name: composer_catalog_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: knowledge_registry
+      comment: Composer catalog projection exposes knowledge bases as id/title/description rows.
+    source: file://composer_catalog_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      composer_catalog: kickside.knowledge.registry:composer_catalog

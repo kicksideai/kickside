@@ -1,0 +1,477 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/skills. Provides the host resources the module
+# and its deps require (app:db, app:processes, app:api, and env storage) and boots
+# skills + component + the wippy agent/security baseline so the harness-owned
+# suites run in isolation.
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: dep.kickside.realtime
+    kind: ns.dependency
+    component: kickside/realtime
+    version: '*'
+
+  - name: dep.wippy.relay
+    kind: ns.dependency
+    component: wippy/relay
+    version: '*'
+    parameters:
+      - name: user_security_scope
+        value: app.security:user
+      - name: env_storage
+        value: app:env_storage
+      - name: application_host
+        value: app:processes
+
+  - name: owned_bundle_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_skills}
+    source: file://suites/persist/owned_bundle_test.lua
+    method: run
+    modules: [sql, fs, hash]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+      skill_storage: kickside.skills:storage
+      version_append: kickside.skills:version_append
+      types: kickside.skills:types
+  - name: test_identity
+    kind: library.lua
+    meta:
+      type: test_helper
+      comment: Skills test helper that provisions real users through kickside.users so deferred projection identity is reconstructable.
+    source: file://test_identity.lua
+    modules: [funcs, security]
+
+  - name: query_params_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/api/query_params_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      query_params: kickside.skills.api:query_params
+
+  - name: frontmatter_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/bundle/frontmatter_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      frontmatter: kickside.skills.bundle:frontmatter
+
+  - name: projection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_skills
+      comment: Skills projection folds version events into body and flat public meta.
+    source: file://suites/persist/projection_test.lua
+    method: run
+    modules: [funcs, registry]
+    imports:
+      test: wippy.test:test
+      types: kickside.skills:types
+
+  - name: refine_consistency_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_skills
+      comment: Failure-injection proof for every refine split-write boundary and rollback.
+    source: file://suites/persist/refine_consistency_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      refine_consistency: kickside.skills:refine_consistency
+
+  - name: state_read_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Runs the committed read-model lookup under the test caller's actor and scope.
+    source: file://suites/persist/state_test.lua
+    method: read
+    modules: [uuid, time, sql]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+      skill_state: kickside.skills:state
+
+  - name: state_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_skills
+      comment: Skills state reads only the asynchronously committed materialized body.
+    source: file://suites/persist/state_test.lua
+    method: run
+    modules: [uuid, time, sql]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+      skill_state: kickside.skills:state
+
+  - name: version_append_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_skills
+      comment: Exact-replay and same-version conflict proof for skill event deduplication.
+    source: file://suites/persist/version_append_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      version_append: kickside.skills:version_append
+
+  - name: skill_portability_register
+    kind: function.lua
+    source: file://suites/portability/skill_portability_test.lua
+    method: register_skill
+    modules: [fs, json, sql, uuid, funcs, security, hash]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      bundle_store: kickside.skills.bundle:store
+      portable_io: kickside.component.portability:portable_io
+      test_identity: app:test_identity
+
+  - name: skill_portability_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: skill_portability
+      timeout: 60s
+    source: file://suites/portability/skill_portability_test.lua
+    modules: [fs, json, sql, uuid, funcs, security, hash]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      bundle_store: kickside.skills.bundle:store
+      portable_io: kickside.component.portability:portable_io
+      test_identity: app:test_identity
+    method: run
+
+  - name: skill_runtime_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/runtime/skill_runtime_test.lua
+    method: run
+    modules: [registry, funcs, security, uuid, time]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+
+  - name: storage_config_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_skills
+      comment: Verifies skill bundle writes follow the upload_storage requirement.
+    source: file://suites/storage_config_test.lua
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      skill_storage: kickside.skills:storage
+    method: run
+
+  - name: skill_tool_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/traits/skill_tool_test.lua
+    method: run
+    modules: [funcs, security, uuid, time]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+
+  - name: pinned_skills_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/traits/pinned_skills_test.lua
+    method: run
+    modules: [funcs, security, uuid, time, sql]
+    imports:
+      test: wippy.test:test
+      compiler: wippy.agent.compiler:compiler
+      test_identity: app:test_identity
+
+  - name: curprobe_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/traits/curprobe_test.lua
+    method: run
+    modules: [funcs, security, time, json]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+
+  - name: active_skills_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_skills }
+    source: file://suites/traits/active_skills_test.lua
+    method: run
+    modules: [funcs, security, uuid, time, sql]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for skills slice tests.
+    file: "${sqlite_path}"
+
+  - name: scratch
+    kind: fs.directory
+    meta:
+      comment: Scratch fs the portability suite stages export/import data dirs into.
+    directory: ./storage
+    auto_init: true
+
+  - name: uploads
+    kind: fs.directory
+    meta:
+      comment: Artifact blob storage (app:uploads) the canonical artifact_content_repo writes skill file bytes into.
+    directory: ./storage/uploads
+    auto_init: true
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: Test public API router for wippy/views.
+      server: gateway
+    prefix: /public
+
+  - name: dep.kickside.skills
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Skills mounted as a root with host-owned API, storage, UI, and scope seams supplied by this harness.
+    component: kickside/skills
+    parameters:
+    - name: kickside.skills:api_router
+      value: app:api
+    - name: kickside.skills:upload_storage
+      value: app:uploads
+    - name: kickside.skills:ui_server
+      value: app:gateway
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Core thread/event/projection engine used by skill history.
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app.security:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app.security:admin
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app.security:user
+    - name: kickside.core.threads:user_security_scope
+      value: app.security:user
+
+  - name: dep.kickside.uploads
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Upload artifacts backing bundled skill files.
+    component: kickside/uploads
+    parameters:
+    - name: kickside.uploads:database_resource
+      value: app:db
+    - name: kickside.uploads:storage_id
+      value: app:uploads
+    - name: kickside.uploads:env_storage
+      value: app:env_storage
+    - name: kickside.uploads:api_router
+      value: app:api
+    - name: kickside.uploads:ui_server
+      value: app:gateway
+    - name: kickside.uploads.security:user_security_scope
+      value: app.security:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: "Component backbone \u2014 skills are components."
+    component: kickside/component
+    parameters:
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+
+  - name: dep.kickside.users
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Users — backs the app_users join the access endpoint reads + the share grantee.
+    component: "kickside/users"
+    parameters:
+      - name: kickside.security:target_db
+        value: app:db
+      - name: kickside.security:api_router
+        value: app:api
+      - name: kickside.security:ui_server
+        value: app:gateway
+      - name: kickside.security:process_host
+        value: app:processes
+      - name: kickside.users:env_storage
+        value: app.env:store
+      - name: kickside.users:public_router
+        value: app:api
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - name: kickside.users:target_db
+        value: app:db
+      - name: kickside.users:user_security_scope
+        value: app.security:user
+      - name: kickside.users:admin_security_scope
+        value: app.security:admin
+      - name: kickside.users:login_role_resource
+        value: app.security:*
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.wippy.agent
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Agent — the pinned-skills suite compiles an agent via wippy.agent.compiler.
+    component: "wippy/agent"
+
+  - name: dep.wippy.session
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Session — transitive agent runtime dependency whose env vars need the harness storage backend.
+    component: "wippy/session"
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: env_storage
+        value: app:env_storage
+      - name: delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.wippy.views
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Views — transitive session dependency for artifact rendering.
+    component: "wippy/views"
+    parameters:
+      - name: api_router
+        value: app:api_public
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app.security:user

@@ -1,0 +1,23 @@
+version: "1.0"
+namespace: kickside.ui
+
+# Platform UI surfaces and navigation. The Appearance editor is a self-contained
+# web component (kickside-appearance) that edits navigation appearance (layout,
+# categories, per-surface overrides). This module also owns the nav aggregation
+# backend that discovers ui.nav_item registry entries and serves the effective
+# navigation over the stable /nav endpoints.
+
+entries:
+  - name: dep.kickside.settings
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Provides the settings contract and cache consumed by public branding resolution.
+    component: kickside/settings
+
+  - name: dep.wippy.facade
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Provides the resolver contract and shell handlers extended by the UI branding policies.
+    component: wippy/facade

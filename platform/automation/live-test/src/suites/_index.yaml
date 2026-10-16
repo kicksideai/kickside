@@ -1,0 +1,108 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: automation_test_engine
+  kind: library.lua
+  meta:
+    comment: Isolated Automation engine constructor used by the test suite.
+  source: file://../test_src/suites/automation_engine.lua
+  modules:
+  - contract
+  - funcs
+  - registry
+  - logger
+  - security
+  - uuid
+  - json
+  - sql
+  - time
+  - expr
+  - ctx
+  - hash
+  imports:
+    automation_engine: kickside.automation.engine:engine
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    declaration_references: kickside.automation:declaration_references
+    declaration_authority: kickside.automation:declaration_authority
+    jobs_config: kickside.core.jobs:config
+    types: kickside.automation:types
+    automation_ref: kickside.automation:automation_ref
+    execution_identity: kickside.execution:execution_identity
+    component: kickside.component:component
+    autoinit: kickside.component:autoinit
+    slot: kickside.automation:slot
+    runtime_policy: kickside.automation:runtime_policy
+    failure_classification: kickside.automation:failure_classification
+    round_history: kickside.automation:round_history
+    round_ledger: kickside.automation:round_ledger
+    prepared_retention: kickside.automation:prepared_retention
+    receipt_retention: kickside.automation:receipt_retention
+    round_outcome: kickside.automation:round_outcome
+    canonical_json: kickside.contract:canonical_json
+    automation_db: kickside.automation:automation_db
+    retention_pin: kickside.core.retention:pin
+    core_db: kickside.core:db
+    view_components: wippy.views:component_registry
+- name: automation_retention_restart_probe
+  kind: process.lua
+  meta:
+    comment: Fresh process reads durable automation owner charges after its predecessor
+      exits.
+  source: file://../test_src/suites/retention_restart_probe.lua
+  method: run
+  modules:
+  - sql
+  security:
+    groups:
+    - wippy.security:process
+- name: owner_gc_rollback_probe
+  kind: function.lua
+  meta:
+    comment: Records whether automation deletable forwarded kind-specific rollback
+      options exactly once.
+  source: file://../test_src/suites/owner_gc_rollback_probe.lua
+  method: handle
+  modules:
+  - sql
+- name: round_harness
+  kind: library.lua
+  meta:
+    comment: "Shared harness of the round suites \u2014 installed fixture automations,\
+      \ source thread, drive reads, round seams."
+  source: file://../test_src/suites/round/harness.lua
+  modules:
+  - sql
+  - json
+  - uuid
+  - time
+  - funcs
+  - contract
+  - security
+  - logger
+  - process
+  - channel
+  - events
+  imports:
+    drive: kickside.automation:drive
+    round_runner: kickside.automation:round_runner
+    runtime_policy: kickside.automation:runtime_policy
+    jobs: kickside.core.jobs:jobs
+    jobs_config: kickside.core.jobs:config
+    migration_runner: wippy.migration:runner
+- name: round_live_probe
+  kind: function.lua
+  source: file://../test_src/suites/round/live_probe.lua
+  method: run
+  modules:
+  - process
+  - sql
+- name: round_single_worker_pool
+  kind: process.lua
+  source: file://../test_src/suites/round/single_worker_pool.lua
+  method: main
+  modules:
+  - sql
+  imports:
+    worker_pool: kickside.core.jobs.service:worker_pool
+    config: kickside.core.jobs:config

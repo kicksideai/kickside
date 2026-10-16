@@ -1,0 +1,458 @@
+version: "1.0"
+namespace: kickside.knowledge
+
+entries:
+  - name: dep.kickside.models
+    version: '*'
+    kind: ns.dependency
+    component: kickside/models
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Knowledge
+      comment: Knowledge bases — model-agnostic control plane. KB registry, the kb_store_lifecycle engine seam, ingestion/injection workers, a single query-dispatch facade, and a user-facing CRUD API. Node/edge/graph storage and concept-graph enrichment belong to the KB engine (kb10). Permission-agnostic; all auth is enforced by the host router and the component service.
+
+  # Direct production dependencies. KB engines are intentionally absent: engines
+  # discover this control-plane contract and depend on Knowledge, while Knowledge
+  # discovers installed engines through registry metadata. Adding kb10 here would
+  # both make an optional engine mandatory and create a dependency cycle.
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Knowledge bases are component shells and enforce per-component access.
+    component: kickside/component
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Defines component, data, memory, and KB lifecycle contract surfaces.
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Persists durable ingestion events and provisions engine projections on KB threads.
+    component: kickside/core
+
+  - name: dep.kickside.uploads
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Supplies upload tokens, artifact lookup, upload ingestion, and URL safety policy.
+    component: kickside/uploads
+
+  - name: dep.wippy.agent
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Supplies the agent memory contract implemented by the Knowledge memory provider.
+    component: wippy/agent
+
+  - name: dep.wippy.dataflow
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Runs the isolated agentic query driver.
+    component: wippy/dataflow
+
+  - name: dep.wippy.llm
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Supplies model discovery, prompting, planning, and answer synthesis.
+    component: wippy/llm
+
+  - name: dep.wippy.views
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Resolves engine-declared view components to mountable web components.
+    component: wippy/views
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # The consuming host wires this via ns.dependency. The module is control plane
+  # only — it owns no engine tables (the kb10_* schema lives in the
+  # kickside/kb10 engine module) and persists KBs as
+  # components through kickside.component. Its HTTP endpoints attach to
+  # api_router, which must enforce auth + endpoint_firewall — the handlers do
+  # no authentication of their own; per-KB access is enforced by the component
+  # service via component.validate_access.
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the knowledge endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the knowledge endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.knowledge.api:list_kb.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:list_engines.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:create_kb.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:get_kb.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:delete_kb.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:update_kb.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:upload_token.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:ingest_content.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:delete_content.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:ingest_existing_upload.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:search.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:ask.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:list_embedding_models.endpoint
+        path: .meta.router
+      - entry: kickside.knowledge.api:organize.endpoint
+        path: .meta.router
+
+  # ─── Knowledge page UI (self-served web component) ───────────────────
+  # The page web component renders the KB list + create/browse/delete over the
+  # knowledge HTTP API; it ships and serves its own built bundle.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the knowledge UI static mount attaches to.
+      description: HTTP server the knowledge UI static mount attaches to.
+    targets:
+      - entry: kickside.knowledge:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-knowledge web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-knowledge
+    fs: kickside.knowledge:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: knowledge_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: knowledge_view
+      title: Knowledge
+      description: >-
+        The Knowledge surface (tag kickside-knowledge): lists the knowledge
+        bases and opens a KB detail view that mounts the KB engine's own
+        component. Takes the route prop (the sub-path under /knowledge: "" for
+        the list, "kbId" or "kbId/nodeId" for deep links) and emits navigate
+        with the new sub-path for the shell to reflect into the URL.
+      announced: true
+      tag_name: kickside-knowledge
+      base_path: kickside-knowledge
+      entry_point: index.js
+    props:
+      type: object
+      properties:
+        route:
+          type: string
+          description: Deep-link sub-path under /knowledge ("" = the KB list, "kbId" or "kbId/nodeId" for a KB or in-KB node).
+
+  # KB trait config web component (wc-kb-picker), referenced by the kb_reader and
+  # kb_writer traits' meta.web_component. The agent editor mounts it by tag to
+  # select which knowledge bases the trait's tools are scoped to. Own bundle
+  # (picker.js), served from the same static mount as the surface.
+  - name: kb_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: kb_picker_view
+      title: KB Picker
+      description: >-
+        The kb_reader/kb_writer trait config element (tag wc-kb-picker): the
+        agent editor mounts it by tag to pick which knowledge bases the trait's
+        tools are scoped to. Receives trait context via the config prop ({
+        kb_ids }) and emits config-changed { kb_ids } when the selection changes.
+      tag_name: wc-kb-picker
+      base_path: kickside-knowledge
+      entry_point: picker.js
+      announced: true
+
+  # Full create dialog (kx-kb-create-dialog): engine picker + name/config +
+  # Create/Cancel, mounted by the workspace "+" -> Knowledge Base action. Wraps
+  # KbDialog in create mode; own bundle (kb_create.js), same static mount.
+  - name: kb_create_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: kb_create_view
+      title: New knowledge base
+      description: >-
+        The standalone create-KB dialog (tag kx-kb-create-dialog) the workspace
+        "+" -> Knowledge Base action mounts: an engine picker plus name/config
+        and Create/Cancel, wrapping the shared KB dialog in create mode. Takes
+        the parent-id attr (a workspace parent hint, not threaded) and emits
+        created and close.
+      announced: true
+      auto_register: true
+      tag_name: kx-kb-create-dialog
+      base_path: kickside-knowledge
+      entry_point: kb_create.js
+      icon: tabler:books
+    props:
+      type: object
+      properties:
+        parent-id:
+          type: string
+          description: Workspace parent hint (not threaded — create uses the default location).
+
+  - name: onboard_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: onboard_view
+      title: Add knowledge
+      description: >-
+        The knowledge onboarding wizard step (tag kickside-onboard-knowledge):
+        a variant of the Knowledge surface for the first-run flow that lets the
+        user add a knowledge base inline. Takes no props and emits done and back
+        to drive the host wizard.
+      tag_name: kickside-onboard-knowledge
+      base_path: kickside-knowledge
+      entry_point: onboard.js
+      announced: true
+      auto_register: false
+
+  # Module-owned nav entry: installing this module adds the Knowledge surface to
+  # the nav; uninstalling removes it. The host bundle renders route_name
+  # "knowledge" by mounting the kickside-knowledge web component by tag.
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /knowledge
+      route_name: knowledge
+      title: Knowledge
+      comment: Knowledge bases your agents draw on.
+      icon: tabler:books
+      order: 40
+      render: component
+      component_tag: kickside-knowledge
+
+  - name: types
+    kind: library.lua
+    source: file://types.lua
+
+  - name: stores
+    kind: library.lua
+    meta:
+      comment: Shared opener for the kb_store_lifecycle engine contract (one open seam for the API handlers).
+    source: file://stores.lua
+    modules: [contract, security]
+    imports:
+      util: kickside.knowledge:util
+      engines: kickside.knowledge:engines
+
+  # KB engine discovery + routing. Resolves a kb_type to its impl/query/store
+  # ids and declared read-model projections from registry.find(meta.type =
+  # kickside.kb_engine) entries, so adding/removing an engine needs no central
+  # code edit.
+  - name: engines
+    kind: library.lua
+    source: file://engines.lua
+    modules: [registry]
+    imports:
+      view_components: wippy.views:component_registry
+
+  # Locks the contract split: the kb_store_lifecycle contract must expose only the
+  # four model-agnostic store lifecycle methods and no node/edge/graph operation.
+  # ─── KB store lifecycle contract (control plane → engine seam) ───────
+  # The model-agnostic store lifecycle a KB engine exposes to knowledge's control
+  # plane: create/read/update/delete the per-component engine store row. Node,
+  # edge, embedding, summary and graph operations are the engine's own internal
+  # concern and NEVER cross this seam — the control plane never reads or writes an
+  # engine's data model. kb10 provides the default binding; future engines bind
+  # this contract shape and declare their binding ids in the kb_engine registry.
+  # Every method takes a single DTO and returns (result, error).
+  - name: kb_store_lifecycle
+    kind: contract.definition
+    meta:
+      title: KB Store Lifecycle
+      comment: Per-component engine store lifecycle (create/get/update/delete) a KB engine exposes to the knowledge control plane. Model-agnostic — carries no data-model operations.
+    methods:
+      - name: create_store
+        description: Create the per-component engine store row. Input { component_id, embedding_model, config?, opts? }; config and opts are opaque engine hints the engine interprets (e.g. store shape and any engine-owned seeding). Returns store_id.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "embedding_model": { "type": "string" }, "config": { "type": "object" }, "opts": { "type": "object" } }, "required": ["component_id", "embedding_model"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "store_id": {}, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: get_store
+        description: Fetch the store row for a component. Input { component_id }.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: update_config
+        description: Replace the store config blob for a component. Input { component_id, config }.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "config": { "type": "object" } }, "required": ["component_id", "config"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: delete_store
+        description: Delete the store and all children for a component. Input { component_id }.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } } }
+            format: application/schema+json
+
+  # ─── KB maintenance contract (control plane → optional engine seam) ──
+  # Whole-KB maintenance is optional: engines that support it declare their
+  # binding id as maintenance_binding on the kickside.kb_engine descriptor.
+  # The control plane only schedules durable work and reads its status; it never
+  # performs a long-running rewrite in an agent tool call.
+  - name: maintainable
+    kind: contract.definition
+    meta:
+      title: KB Maintenance
+      comment: Whole-knowledge-base maintenance a KB engine exposes to the knowledge control plane — schedule a resummarize, schedule a re-embed, read the latest run of each.
+    methods:
+      - name: schedule_resummarize
+        description: Schedule regeneration of every document summary in the knowledge base (and the chunk contextual prefixes derived from them) from stored content under current materialization settings, then re-embedding of the affected nodes. The run happens on the engine's queue. Input is empty; the knowledge base is the binding context. Returns the scheduling receipt.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": {} }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "kb_id": { "type": "string" }, "job_id": { "type": "string" }, "scheduled": { "type": "boolean" }, "run": { "type": "object" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: schedule_reembed
+        description: Schedule regeneration of every node vector in the knowledge base from stored content with the knowledge base's own embedding model. The run happens on the engine's queue. Input is empty; the knowledge base is the binding context. Returns the scheduling receipt.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": {} }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "kb_id": { "type": "string" }, "job_id": { "type": "string" }, "scheduled": { "type": "boolean" }, "run": { "type": "object" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: maintenance_status
+        description: The knowledge base's latest run of each type, each with its counters, its terminal status or failure reason, and in_flight — whether the engine still owes it work. A type the knowledge base has never run is absent. Input is empty; the knowledge base is the binding context.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": {} }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "resummarize": { "type": ["object", "null"] }, "reembed": { "type": ["object", "null"] }, "error": { "type": "string" } } }
+            format: application/schema+json
+
+  - name: util
+    kind: library.lua
+    meta:
+      comment: Shared Knowledge string and value helpers.
+    source: file://util.lua
+
+  # ─── Knowledge base registry (templates/admin UI facade) ─────────────
+  - name: knowledge_bases
+    kind: contract.definition
+    meta:
+      title: Knowledge Base Registry
+      comment: Find/provision/update/delete knowledge bases through the installed KB engine registry.
+    methods:
+      - name: create
+        description: Provision a KB. kb_type selects the installed KB engine; if omitted, the default engine is used.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "name": { "type": "string" }, "description": { "type": "string" }, "kb_type": { "type": "string" }, "embedding_model": { "type": "string" }, "config": { "type": "object" }, "icon": { "type": "string" }, "enrichment_agent_id": { "type": "string" } }, "required": ["name", "embedding_model"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "kb_type": { "type": "string" }, "name": { "type": "string" }, "rollback": { "type": "object" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: find
+        description: Lookup by component_id or name.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": ["object", "null"], "properties": { "component_id": { "type": "string" }, "impl_id": { "type": "string" }, "meta": { "type": "object" }, "error": { "type": "string" } } }
+            format: application/schema+json
+      - name: upsert
+        description: Idempotent. Natural key (visible KB name).
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "name": { "type": "string" }, "description": { "type": "string" }, "kb_type": { "type": "string" }, "embedding_model": { "type": "string" }, "config": { "type": "object" }, "icon": { "type": "string" }, "enrichment_agent_id": { "type": "string" } }, "required": ["name"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "kb": { "type": "object" }, "created": { "type": "boolean" }, "rollback": { "type": ["object", "null"] }, "error": { "type": "string" } }, "required": ["kb", "created"] }
+            format: application/schema+json
+      - name: update
+        description: Patch KB metadata. Engine type and embedding model are immutable.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "name": { "type": "string" }, "description": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: delete
+        description: Remove KB and bindings.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "component_id": { "type": "string" }, "error": { "type": "string" } }, "required": ["component_id"] }
+            format: application/schema+json
+      - name: list
+        description: List visible KBs, optionally filtered by kb_type.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "kb_type": { "type": "string" } } }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "array", "items": { "type": "object" } }
+            format: application/schema+json

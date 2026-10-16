@@ -1,0 +1,72 @@
+version: "1.0"
+namespace: kickside.agents.dependencies
+
+# Runtime package dependencies for the agents module.
+entries:
+  - name: dep.kickside.uploads
+    version: '*'
+    kind: ns.dependency
+    component: kickside/uploads
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.wippy.agent
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Agent runtime backing the module agents and tools.
+    component: wippy/agent
+
+  - name: dep.wippy.dataflow
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Work runs as dataflow flows with terminal delivery nodes.
+    component: wippy/dataflow
+
+  - name: dep.wippy.llm
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Large language model calls for transform and agent work.
+    component: wippy/llm
+
+  - name: dep.wippy.relay
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Realtime relay substrate for live updates.
+    component: wippy/relay
+
+  - name: dep.wippy.session
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Session substrate for agent and thread state.
+    component: wippy/session
+
+  - name: dep.wippy.views
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Server-rendered view substrate.
+    component: wippy/views
+
+  - name: dep.kickside.connection
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Resolves external connections and their OAuth credentials.
+    component: kickside/connection

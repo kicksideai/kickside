@@ -1,0 +1,40 @@
+version: "1.0"
+namespace: kickside.realtime.dispatch
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: "*"
+  - name: policy
+    kind: library.lua
+    source: file://policy.lua
+    modules: [security]
+  - name: owner_contract
+    kind: security.policy
+    meta: {private: true}
+    policy: {resources: "kickside.contract:realtime", actions: contract.get, effect: allow}
+  - name: owner_binding
+    kind: security.policy
+    meta: {private: true}
+    policy: {resources: "*", actions: contract.open, effect: allow}
+  - name: owner_notify
+    kind: security.policy
+    meta: {private: true}
+    policy: {resources: notify, actions: contract.call, effect: allow}
+  - name: notify
+    kind: function.lua
+    source: file://dispatch.lua
+    method: notify
+    security:
+      policies: [kickside.realtime.dispatch:owner_contract, kickside.realtime.dispatch:owner_binding, kickside.realtime.dispatch:owner_notify]
+    modules: [contract]
+    imports: {policy: "kickside.realtime.dispatch:policy"}
+  - name: binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:realtime_batch
+        default: true
+        methods: {notify: "kickside.realtime.dispatch:notify"}

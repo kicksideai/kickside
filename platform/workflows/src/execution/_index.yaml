@@ -1,0 +1,34 @@
+version: "1.0"
+namespace: kickside.workflows.execution
+
+entries:
+  - name: mapping
+    kind: library.lua
+    meta:
+      comment: Mapping v1 parser/normalizer for workflow edge transforms.
+    source: file://mapping.lua
+
+  - name: execution
+    kind: library.lua
+    meta:
+      comment: Internal published-workflow execution normalization over native Dataflow launch.
+    source: file://execution.lua
+    imports:
+      runs_launch: kickside.workflows.runs:runs_launch
+      flow_ref: kickside.workflows.execution:flow_ref
+      automation_ref: kickside.automation:automation_ref
+
+  - name: flow_ref
+    kind: library.lua
+    meta:
+      comment: Canonical validator for exact immutable published Workflow references.
+    source: file://flow_ref.lua
+
+  - name: execute
+    kind: function.lua
+    meta:
+      comment: Cross-module workflow execution returning the native Dataflow run handle.
+    source: file://execute_func.lua
+    method: run
+    imports:
+      execution: kickside.workflows.execution:execution

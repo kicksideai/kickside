@@ -1,0 +1,8 @@
+version: "1.0"
+namespace: kickside.component.api
+entries:
+  - name: errors
+    kind: library.lua
+    source: return require("http_errors")
+    imports:
+      http_errors: kickside.contract:http_errors

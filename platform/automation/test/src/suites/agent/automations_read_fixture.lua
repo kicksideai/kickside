@@ -1,0 +1,1 @@
+../../../../src/agent/automations_read.lua

@@ -1,0 +1,23 @@
+version: "1.0"
+namespace: kickside.users.test.security
+
+# Fixed catalog for directory and membership validation tests. The Security
+# module also runs in this harness; its catalog binding is non-default here.
+entries:
+  - name: security_scopes_stub
+    kind: function.lua
+    meta:
+      comment: "kickside.contract:security_scopes — list (harness stub)."
+    source: file://security_scopes_stub.lua
+    method: list
+    modules: [sql, json]
+
+  - name: security_scopes_binding
+    kind: contract.binding
+    meta:
+      comment: Users-harness stub binding for kickside.contract:security_scopes.
+    contracts:
+      - contract: kickside.contract:security_scopes
+        default: true
+        methods:
+          list: kickside.users.test.security:security_scopes_stub

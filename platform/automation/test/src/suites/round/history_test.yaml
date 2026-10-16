@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+  - name: round_history_test
+    kind: function.lua
+    source: file://history_test.lua
+    method: run
+    meta:
+      type: test
+      suite: kickside_automation_history
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      round_harness: kickside.automation:round_harness

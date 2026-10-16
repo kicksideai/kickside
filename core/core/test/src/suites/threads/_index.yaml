@@ -1,0 +1,249 @@
+version: "1.0"
+namespace: kickside.core.threads
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: notify_test
+    kind: function.lua
+    meta:
+      title: Thread Notify
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: audience resolution, topic fanout dedupe, emit validation, hub delivery, and wake nudges.
+    source: file://notify_test.lua
+    modules:
+      - json
+    imports:
+      test: wippy.test:test
+      notify: kickside.core.threads:notify
+      consts: kickside.core.threads:notify_consts
+    method: run
+
+  - name: contract_fixture
+    kind: library.lua
+    source: file://contract_fixture.lua
+    modules: [sql, uuid, security, contract, json, funcs]
+
+  - name: contract_test
+    kind: function.lua
+    meta:
+      title: Threads Contract
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: binding orchestration — create registers a component, list access-filtered, non-member excluded, upsert idempotency, projection rollback.
+    source: file://contract_test.lua
+    method: run
+    modules: [json, uuid, sql]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+      pin: kickside.core.retention:pin
+      retention_repo: kickside.core.retention.persist:repo
+
+  - name: contract_cursor_test
+    kind: function.lua
+    meta:
+      title: Threads Contract Cursors
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: binding orchestration — create registers a component, list access-filtered, non-member excluded, upsert idempotency, projection rollback.
+    source: file://contract_cursor_test.lua
+    method: run
+    modules:
+      - time
+      - funcs
+      - sql
+      - uuid
+      - security
+      - contract
+      - json
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+      cursor_waiters: kickside.core.threads:cursor_waiters
+
+  - name: contract_lifecycle_test
+    kind: function.lua
+    meta:
+      title: Threads Contract Lifecycle
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: binding orchestration — create registers a component, list access-filtered, non-member excluded, upsert idempotency, projection rollback.
+    source: file://contract_lifecycle_test.lua
+    method: run
+    modules:
+      - funcs
+      - sql
+      - uuid
+      - security
+      - contract
+      - json
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+
+  - name: endpoint_resolver_test
+    kind: function.lua
+    meta:
+      title: Endpoint Resolver
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: via URI parsing (scheme/target/{self}-substituted context) + write dispatch across thread, func://, contract://.
+    source: file://endpoint_resolver_test.lua
+    method: run
+    modules:
+      - uuid
+      - security
+      - contract
+      - funcs
+    imports:
+      test: wippy.test:test
+      endpoint_resolver: kickside.core.threads:endpoint_resolver
+
+  - name: events_pullable_test
+    kind: function.lua
+    meta:
+      title: Thread Events Pullable
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: integer-cursor paging, type filter, READ gating, source_gap below the prune boundary.
+    source: file://events_pullable_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - funcs
+      - contract
+      - expr
+    imports:
+      test: wippy.test:test
+
+  - name: projection_address_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://projection_address_test.lua
+    method: run
+    modules: [uuid, sql]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+
+  - name: projection_page_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://projection_page_test.lua
+    method: run
+    modules: [uuid, sql, registry, json]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+
+  - name: projection_catchup_address_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://projection_catchup_address_test.lua
+    method: run
+    modules: [uuid, sql, time]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+      component: kickside.component:component
+      teardown: kickside.core.threads.persist:teardown
+
+  - name: bounded_delete_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://bounded_delete_test.lua
+    method: run
+    modules: [sql, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+
+  - name: cursor_waiter_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Registers a cursor waiter, pauses the projection, and waits for the change in the caller's frame.
+    source: file://cursor_waiter_probe.lua
+    method: run
+    modules: [contract]
+    imports:
+      cursor_waiters: kickside.core.threads:cursor_waiters
+
+  - name: service_delivery_test
+    kind: function.lua
+    meta:
+      title: Threads Service Delivery
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: Cursor progress and realtime updates reach their recipients from a writer without process messaging authority.
+    source: file://service_delivery_test.lua
+    method: run
+    modules: [uuid, security, contract, funcs, process, channel, time]
+    imports:
+      test: wippy.test:test
+      consts: kickside.core.threads:notify_consts
+
+  - name: natural_key_integrity_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://natural_key_integrity_test.lua
+    method: run
+    modules: [sql, crypto, uuid, funcs, security, channel, time]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+      reader: kickside.core.threads.persist:reader
+
+  - name: pre_update_upsert
+    kind: function.lua
+    source: file://pre_update_resource.lua
+    modules:
+    - crypto
+    imports:
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+    method: upsert
+
+  - name: loaded_read_probe
+    kind: function.lua
+    source: file://natural_key_integrity_test.lua
+    method: loaded
+    modules: [sql, crypto, uuid, funcs, security, channel, time]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+      reader: kickside.core.threads.persist:reader
+
+  - name: projection_catchup_scale_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://projection_catchup_scale_test.lua
+    method: run
+    modules: [sql, uuid, time, process, channel, json, fs]
+    imports:
+      test: wippy.test:test
+      fixture: kickside.core.threads:contract_fixture
+
+  - name: component_port_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core, group: KickSide Core / Threads}
+    source: file://component_port_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      component: kickside.core.threads:component

@@ -1,0 +1,366 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-card.css";
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-modal-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+/* Knowledge control surface. Styled only with the universal --p-* theme
+   vocabulary so it renders correctly inside the shadow DOM of any Wippy host
+   (no SPA tokens), which is also what makes the implementation swappable per
+   deployment. */
+.kx {
+  font-family: inherit;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.kx-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 12px 20px; flex-wrap: wrap; flex: none;
+  /* Divider so the bar reads as a header that the engine content sits flush
+     under — no floating white gap above an edge-to-edge engine surface. */
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+.kx-bar-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.kx-bar-r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kx-count { font-size: 12.5px; color: var(--p-text-muted-color); display: inline-flex; align-items: center; gap: 5px; }
+.kx-head-title { font-size: 17px; font-weight: 700; color: var(--p-text-color); margin: 0; }
+
+.kx-title {
+  /* Shorter surface title that truncates rather than wrapping. */
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kx-back {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--p-content-border-color);
+  background: transparent; color: var(--p-text-color); font: inherit; font-size: 12.5px; cursor: pointer;
+  transition: background .15s;
+}
+.kx-back:hover { background: color-mix(in srgb, var(--p-text-color) 9%, transparent); }
+.kx-back svg { width: 15px; height: 15px; }
+
+.kx-search { position: relative; display: flex; align-items: center; }
+.kx-search-ico { position: absolute; left: 10px; width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kx-search-input {
+  height: 34px; width: 220px; max-width: 40vw; padding: 0 10px 0 30px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; transition: border-color .15s;
+}
+
+/* Non-blocking notice (e.g. no engine installed) — informational, not an error. */
+.kx-notice {
+  margin: 0 20px 8px; padding: 10px 12px; border-radius: 10px; font-size: 13px;
+  display: flex; align-items: flex-start; gap: 8px;
+  background: color-mix(in srgb, var(--p-text-color) 6%, transparent);
+  color: var(--p-text-muted-color);
+}
+.kx-notice svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.kx-notice strong { color: var(--p-text-color); }
+.kx-notice-error {
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent);
+  color: var(--p-danger-600, var(--p-danger-500));
+}
+.kx-cat-retry { margin-top: 8px; align-self: flex-start; }
+
+.kx-body { flex: 1; min-height: 0; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+/* An engine-owned detail (manage_ui_id) gets the full area edge-to-edge; the
+   engine surface owns its own insets. */
+.kx-body-bleed { padding: 0; gap: 0; }
+
+/* KB cards — the same card-grid pattern as the Agents and Skills pages. */
+.kx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.kx-card .kx-ficon { width: 38px; height: 38px; border-radius: 11px; flex: none; }
+.kx-card .kx-ficon svg { width: 20px; height: 20px; }
+
+/* open/delete: subtle, top-right, hover-revealed */
+
+.kx-ficon {
+  width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color);
+}
+.kx-ficon svg { width: 20px; height: 20px; }
+.kx-sub { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* KB type pill: sizing is .kx-tag-caps, colour is the engine-declared tone below. */
+.kx-pill { flex: none; }
+
+.kx-stats { display: flex; gap: 10px; margin-top: 3px; flex-wrap: wrap; }
+.kx-stat { font-size: 11.5px; color: var(--p-text-muted-color); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.kx-stat svg { width: 12px; height: 12px; }
+
+.kx-actions { display: flex; gap: 6px; }
+
+/* KB summary: a sparkles icon in the detail header; click for a popover with the
+   maintained auto_summary / auto_description. Opens down-left under the icon. */
+.kx-summary { position: relative; display: inline-flex; }
+.kx-summary-btn.on,
+.kx-summary-btn[aria-expanded="true"] {
+  color: var(--p-primary-color); border-color: color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+.kx-summary-pop {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--p-content-background, var(--p-surface-0));
+  border: 1px solid var(--p-content-border-color); border-radius: 10px;
+  box-shadow: var(--p-dialog-shadow, 0 12px 32px rgba(0, 0, 0, .22));
+}
+.kx-summary-pop-h {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--p-primary-color); margin-bottom: 8px;
+}
+.kx-summary-pop-h svg { width: 14px; height: 14px; flex: none; }
+.kx-summary-pop-sum { margin: 0; font-size: 13px; line-height: 1.5; color: var(--p-text-color); }
+.kx-summary-pop-desc { margin: 8px 0 0; font-size: 12px; line-height: 1.55; color: var(--p-text-muted-color); }
+
+/* Create/edit dialog. The two-pane wizard renders inside a PrimeVue Dialog whose
+   scrim, surface, radius, and shadow come from the `--p-dialog-*` facade tokens (the
+   theme's PrimeVuePlugin patches PrimeVue's shared Portal so the Dialog mounts inline
+   in this shadow root by default). The Dialog is headerless/footerless at the
+   PrimeVue level — the module owns the header/footer/body chrome below — so the
+   content slot fills the surface edge-to-edge. Destructive confirms and the delete
+   prompt run in the host layer via host.confirm. */
+.kx-dialog {
+  --p-dialog-content-padding: 0;
+  /* Shared create-popup size (matches automation + workspace create panel). */
+  width: min(880px, calc(100vw - 40px));
+  height: min(760px, calc(100vh - 40px));
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+}
+.kx-dialog > .kx-dialog-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+/* Cross-fade the right-pane config content when the picked engine changes. */
+.kx-2p-r-body > * { animation: kx-pane-fade .28s ease both; }
+@keyframes kx-pane-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .kx-2p-r-body > * { animation: none; } }
+.kx-dialog > .kx-modal-head {
+  font-size: 15px; font-weight: 700; color: var(--p-text-color); padding: 16px 18px;
+  border-bottom: 1px solid var(--p-content-border-color); display: flex; align-items: center; gap: 12px;
+  flex: none;
+}
+.kx-modal-head svg { width: 18px; height: 18px; }
+/* Header: icon badge + title/subtitle on one line, consistent with the agents
+   and skills editor popups. */
+.kx-2p { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); min-height: 0; flex: 1; overflow: hidden; }
+.kx-2p-l { padding: 18px; overflow-y: auto; min-height: 0; border-right: 1px solid var(--p-content-border-color); }
+.kx-2p-r { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: color-mix(in srgb, var(--p-text-color) 2.5%, var(--p-content-background)); }
+.kx-2p-r-head { padding: 14px 18px 10px; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-2p-r-body { padding: 0 18px 18px; overflow-y: auto; flex: 1; min-height: 0; }
+.kx-2p-r-note { margin: 0; font-size: 12.5px; color: var(--p-text-muted-color); }
+.kx-type-fixed { cursor: default; }
+.kx-foot-err { margin: 0 auto 0 0; max-width: 60%; }
+
+/* Type catalog (left pane): a vertical list of selectable engine cards. */
+.kx-cat-search {
+  display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; margin-bottom: 8px;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; color: var(--p-text-muted-color);
+}
+.kx-cat-search svg { width: 15px; height: 15px; flex: none; }
+.kx-cat-search input { flex: 1; border: none; background: transparent; outline: none; font: inherit; font-size: 13px; color: var(--p-text-color); }
+.kx-cat { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.kx-cat-card {
+  display: flex; align-items: center; gap: 11px; text-align: left; width: 100%; padding: 10px 12px;
+  border: 1px solid var(--p-content-border-color); border-radius: 11px; background: transparent; color: var(--p-text-color);
+  cursor: pointer; transition: border-color .14s, background .14s;
+}
+.kx-cat-card:hover { background: color-mix(in srgb, var(--p-text-color) 5%, transparent); }
+.kx-cat-card.sel { border-color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 9%, transparent); }
+.kx-cat-ico {
+  width: 34px; height: 34px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 11px;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color);
+}
+.kx-cat-ico svg { width: 18px; height: 18px; }
+.kx-cat-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.kx-cat-name { font-size: 13px; font-weight: 600; }
+.kx-cat-desc { font-size: 11.5px; line-height: 1.4; color: var(--p-text-muted-color); }
+.kx-cat-check { width: 17px; height: 17px; flex: none; color: var(--p-primary-color); visibility: hidden; }
+.kx-cat-card.sel .kx-cat-check { visibility: visible; }
+.kx-cat-empty { font-size: 12.5px; color: var(--p-text-muted-color); padding: 4px 2px; }
+
+@media (max-width: 720px) {
+  .kx-2p { grid-template-columns: 1fr; }
+  .kx-2p-l { border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
+}
+.kx-dialog > .kx-modal-foot {
+  display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px;
+  border-top: 1px solid var(--p-content-border-color);
+  flex: none;
+}
+
+/* Forms */
+.kx-form { display: flex; flex-direction: column; gap: 14px; }
+.kx-field { display: flex; flex-direction: column; gap: 5px; }
+.kx-field-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-field-hint-inline { font-weight: 400; color: var(--p-text-muted-color); }
+.kx-input {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; transition: border-color .15s; width: 100%;
+}.kx-input:disabled { opacity: .6; cursor: default; }
+/* Generic-config enum dropdown — PrimeVue Select. The theme's PrimeVuePlugin keeps
+   its overlay in this shadow root, and the control + overlay chrome derive from the
+   `--p-select-*` facade tokens. Just size it to fill the field. */
+.kx-select { width: 100%; }
+.kx-textarea {
+  height: auto; min-height: 80px; padding: 10px; resize: vertical; line-height: 1.5; font-size: 13px;
+}
+
+/* KB type chooser */
+.kx-types { display: flex; gap: 8px; flex-wrap: wrap; }
+.kx-type {
+  flex: 1; min-width: 130px; text-align: left; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--p-content-border-color); background: transparent; color: var(--p-text-color);
+  display: flex; flex-direction: column; gap: 3px; transition: border-color .15s, background .15s;
+}
+.kx-type:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-type.sel { border-color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+.kx-type-name { font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.kx-type-name svg { width: 15px; height: 15px; }
+.kx-type-desc { font-size: 11.5px; color: var(--p-text-muted-color); }
+.kx-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; }
+.kx-option { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.kx-check {
+  height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 10px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 10px;
+}
+.kx-check input { accent-color: var(--p-primary-color); }
+
+/* Mount point for an engine's custom config web component (create_ui_id). */
+.kx-engine-host { display: block; }
+
+/* Detail view */
+.kx-detail-meta { display: flex; flex-direction: column; gap: 6px; max-width: 900px; }
+.kx-detail-desc { font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); white-space: normal; }
+.kx-detail-summary {
+  font-size: 13px; line-height: 1.55; color: var(--p-text-color); padding: 12px 14px;
+  border: 1px solid var(--p-content-border-color); border-radius: 14px; background: var(--p-content-background);
+}
+.kx-detail-summary-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--p-text-muted-color); margin-bottom: 4px; }
+/* Mount point for the KB engine's own detail web component (manage_ui_id).
+   Fills the remaining detail height so the engine UI (e.g. the wiki) can run as a
+   full-height app frame with its own internal scrolling; the mounted element
+   stretches to fill. */
+.kx-detail-host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.kx-detail-host > * { flex: 1; min-height: 0; }
+
+/* Icon picker inline with the Name input (single row). */
+.kx-name-row { display: flex; align-items: center; gap: 8px; }
+.kx-name-row .kx-input { flex: 1; min-width: 0; }
+.kx-name-icon { flex: none; display: block; }
+
+/* ── Onboarding (kickside-onboard-knowledge) ─────────────────────────────── */
+.kn-ob { display: flex; flex-direction: column; gap: 18px; }
+.kn-ob-err { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-700); font-size: 12.5px; }
+.kn-ob-err svg { width: 16px; height: 16px; flex: none; }
+
+.kn-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;
+  padding: 34px 20px; cursor: pointer; text-align: center;
+  border: 1.5px dashed var(--p-content-border-color); border-radius: 14px;
+  background: color-mix(in srgb, var(--p-text-color) 3%, transparent);
+  transition: border-color .15s, background .15s;
+}
+.kn-drop:hover, .kn-drop.over { border-color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 7%, transparent); }
+.kn-drop-ico { width: 30px; height: 30px; color: var(--p-primary-color); }
+.kn-drop-title { font-size: 14px; font-weight: 700; color: var(--p-text-color); }
+.kn-drop-sub { font-size: 12px; color: var(--p-text-muted-color); max-width: 420px; line-height: 1.5; }
+
+.kn-files { display: flex; flex-direction: column; gap: 6px; }
+.kn-file { display: flex; align-items: center; gap: 10px; padding: 8px 11px;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; }
+.kn-file-ico { width: 18px; height: 18px; flex: none; display: grid; place-items: center; color: var(--p-text-muted-color); }
+.kn-file-ico svg { width: 17px; height: 17px; }
+.kn-file.ready .kn-file-ico { color: var(--p-success-500); }
+.kn-file.error .kn-file-ico { color: var(--p-danger-500); }
+.kn-file-name { flex: 1; min-width: 0; font-size: 13px; color: var(--p-text-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kn-file-meta { font-size: 11.5px; color: var(--p-text-muted-color); text-transform: capitalize; }
+.kn-file.error .kn-file-meta { color: var(--p-danger-700); text-transform: none; }
+.kn-file-x { display: grid; place-items: center; padding: 3px; border: 0; background: transparent; color: var(--p-text-muted-color); cursor: pointer; border-radius: 6px; }
+.kn-file-x:hover { background: color-mix(in srgb, var(--p-text-color) 9%, transparent); color: var(--p-text-color); }
+.kn-file-x svg { width: 14px; height: 14px; }
+
+.kn-ob-done { display: flex; align-items: center; gap: 14px; padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--p-success-500) 35%, var(--p-content-border-color)); border-radius: 14px;
+  background: color-mix(in srgb, var(--p-success-500) 8%, transparent); }
+.kn-ob-done-ico { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 11px;
+  background: color-mix(in srgb, var(--p-success-500) 16%, transparent); color: var(--p-success-600, var(--p-success-500)); }
+.kn-ob-done-ico svg { width: 22px; height: 22px; }
+.kn-ob-done-title { font-size: 14px; font-weight: 700; color: var(--p-text-color); }
+.kn-ob-done-sub { font-size: 12.5px; color: var(--p-text-muted-color); margin-top: 2px; line-height: 1.5; }
+
+.kn-ob-foot { display: flex; align-items: center; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--p-content-border-color); }
+.kn-foot-sp { flex: 1; }
+.kn-btn { padding: 11px 20px; border-radius: 8px; border: 0; cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 700; transition: transform .15s, color .15s, filter .15s; }
+.kn-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.kn-ghost { background: transparent; color: var(--p-text-muted-color); }
+.kn-ghost:hover { color: var(--p-text-color); }
+.kn-primary { background: var(--p-primary-color); color: var(--p-button-primary-color); }
+.kn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.kn-primary:disabled { opacity: .5; cursor: default; }
+/* Icon-picker wrapper the shared IconField emits around <wc-icon-picker>. */
+.wc-iconfield { display: inline-block; }
+
+/* Wiki | Graph view switch in the detail bar (kb10 wiki engine). A segmented
+   control sitting with Edit / Share / Delete; the host owns the choice and passes
+   it to the mounted engine UI. */
+.kx-viewseg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 8px; background: color-mix(in srgb, var(--p-text-color) 7%, transparent); }
+.kx-viewseg-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px;
+  border: none; background: transparent; border-radius: 8px; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--p-text-muted-color);
+  transition: background .14s, color .14s;
+}
+.kx-viewseg-btn svg { width: 15px; height: 15px; }
+.kx-viewseg-btn:hover { color: var(--p-text-color); }
+.kx-viewseg-btn.on {
+  background: var(--p-content-background); color: var(--p-primary-color);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--p-text-color) 16%, transparent);
+}
+
+/* The search shell draws the border; the bare input inside it draws none, so
+   the ring belongs to the shell. `:focus-within` is the right trigger here -
+   the box that shows focus is not the node that takes it. */
+.kx-cat-search:focus-within {
+  border-color: var(--p-focus-ring-color);
+  box-shadow: var(--p-focus-ring-shadow);
+}
+.kx-cat-search input:focus { box-shadow: none; }
+
+/* Focus canon: each of these draws a border at rest, so focus lights that
+   border and adds the halo - never an outline. See app/facade-src/README.md. */
+.kx-cat-card:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}

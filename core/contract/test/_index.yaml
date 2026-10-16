@@ -1,0 +1,329 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: writable_sink_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_contract }
+    source: file://writable_sink_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      writable_sink: kickside.data:writable_sink
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the contract test harness.
+    file: "${sqlite_path}"
+
+  - name: dep.wippy.test
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Test runner the smoke suite imports and `wippy test` discovers it through.
+    component: wippy/test
+
+  - name: dep.kickside.contract
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Contract definitions exercised by this harness.
+    component: kickside/contract
+    parameters:
+      - name: kickside.contract.http:user_security_scope
+        value: contract.test:bound_member
+
+  - name: contract_smoke_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_contract
+      comment: Ensures base and data contracts load with JSON method schemas.
+    source: file://contract_smoke_test.lua
+    modules: [registry, json]
+    imports:
+      test: wippy.test:test
+    method: run
+
+  - name: http_params_test
+    kind: function.lua
+    meta:
+      title: HTTP Params
+      type: test
+      suite: kickside_contract
+      comment: Strict integer/bool query-param parsing shared by API endpoints.
+    source: file://http_params_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      http_params: kickside.contract:http_params
+
+  - name: keyset_test
+    kind: function.lua
+    meta:
+      title: Keyset Pages
+      type: test
+      suite: kickside_contract
+      comment: Limit and cursor validation and keyset pages over a keyed collection.
+    source: file://keyset_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      keyset: kickside.contract:keyset
+
+  - name: tool_result_test
+    kind: function.lua
+    meta:
+      title: Tool Results
+      type: test
+      suite: kickside_contract
+      comment: Tool success tables, typed tool failures and structured domain errors.
+    source: file://tool_result_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      tool_result: kickside.contract:tool_result
+
+  - name: canonical_json_test
+    kind: function.lua
+    meta:
+      title: Canonical JSON
+      type: test
+      suite: kickside_contract
+      comment: The one canonical JSON codec every hash and digest uses.
+    source: file://canonical_json_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      canonical_json: kickside.contract:canonical_json
+
+  - name: http_errors_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_contract
+    source: file://http_errors_test.lua
+    method: run
+    modules: [time]
+    imports:
+      test: wippy.test:test
+      http_errors: kickside.contract:http_errors
+      canonical_json: kickside.contract:canonical_json
+
+  - name: model_failure_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_contract
+    source: file://model_failure_test.lua
+    method: run
+    modules: [funcs, security, sql]
+    imports:
+      test: wippy.test:test
+      model_failure: kickside.contract:model_failure
+      http_errors: kickside.contract:http_errors
+
+  - name: model_failure_retry_probe
+    kind: function.lua
+    meta: {type: test_support}
+    source: file://model_failure_retry_probe.lua
+    method: run
+    modules: [sql]
+    security:
+      policies: [app:model_failure_retry_probe_policy]
+    imports:
+      model_failure: kickside.contract:model_failure
+
+  - name: model_failure_retry_probe_policy
+    kind: security.policy
+    meta: {type: test_support}
+    policy:
+      actions: [db.get]
+      resources: [app:db]
+      effect: allow
+
+  - name: persisted_json_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_contract
+    source: file://persisted_json_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      test: wippy.test:test
+      persisted_json: kickside.contract:persisted_json
+
+  - name: deny_user_endpoint
+    kind: security.policy
+    groups: [contract.test:denied_member]
+    policy:
+      actions: access
+      resources: '*'
+      effect: deny
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_contract
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules: [security, registry]
+    imports:
+      test: wippy.test:test
+
+  - name: member_scope_marker
+    kind: security.policy
+    groups: [contract.test:ordinary_member, contract.test:bound_member]
+    policy:
+      actions: contract.test.marker
+      resources: '*'
+      effect: allow
+
+  - name: policy_test_config
+    kind: registry.entry
+    expected_binding: true
+
+  - name: committed_error_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_contract}
+    source: file://committed_error_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      committed_error: kickside.contract:committed_error
+
+  - name: canonical_native_fixture
+    kind: library.lua
+    source: file://canonical_native_fixture.lua
+    modules: [json, hash]
+
+  - name: canonical_native_json_adapter
+    kind: library.lua
+    source: file://canonical_native_json_adapter.lua
+    imports:
+      fixture: app:canonical_native_fixture
+
+  - name: canonical_native_hash_adapter
+    kind: library.lua
+    source: file://canonical_native_hash_adapter.lua
+    imports:
+      fixture: app:canonical_native_fixture
+
+  - name: canonical_native_source
+    kind: library.lua
+    source: file://canonical_native_source.lua
+    imports:
+      json: app:canonical_native_json_adapter
+      hash: app:canonical_native_hash_adapter
+
+  - name: canonical_native_test
+    kind: function.lua
+    meta: {type: test, suite: contract_canonical_native}
+    source: file://canonical_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      codec: app:canonical_native_source
+      fixture: app:canonical_native_fixture
+      native_codec: kickside.contract:canonical_json
+
+  - name: secondary_error_test
+    kind: function.lua
+    meta: {type: test, suite: contract_secondary_errors}
+    source: file://secondary_error_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      envelope: kickside.contract:error_envelope
+
+  - name: annotated_error_test
+    kind: function.lua
+    meta: {type: test, suite: contract_annotated_errors}
+    source: file://annotated_error_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      envelope: kickside.contract:error_envelope
+
+  - name: persisted_cause_native_fixture
+    kind: library.lua
+    source: file://persisted_cause_native_fixture.lua
+
+  - name: persisted_cause_native_json_adapter
+    kind: library.lua
+    source: file://persisted_cause_native_json_adapter.lua
+    modules: [json]
+    imports: {fixture: app:persisted_cause_native_fixture}
+
+  - name: persisted_cause_native_source
+    kind: library.lua
+    source: file://persisted_cause_native_source.lua
+    imports:
+      json: app:persisted_cause_native_json_adapter
+      error_envelope: kickside.contract:error_envelope
+
+  - name: persisted_cause_native_test
+    kind: function.lua
+    meta: {type: test, suite: contract_persisted_cause_native}
+    source: file://persisted_cause_native_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      codec: app:persisted_cause_native_source
+      fixture: app:persisted_cause_native_fixture
+
+  - name: cause_snapshot_test
+    kind: function.lua
+    source: file://cause_snapshot_test.lua
+    method: run
+    meta:
+      type: test
+      suite: contract_cause_snapshot
+    imports:
+      test: wippy.test:test
+      envelope: kickside.contract:error_envelope
+
+  - name: cleanup_error_test
+    kind: function.lua
+    source: file://cleanup_error_test.lua
+    method: run
+    meta:
+      type: test
+      suite: contract_cleanup_composition
+    imports:
+      test: wippy.test:test
+      envelope: kickside.contract:error_envelope
+
+  - name: binding_response_test
+    kind: function.lua
+    source: file://binding_response_test.lua
+    method: run
+    meta:
+      type: test
+      suite: contract_binding_response_native
+    imports:
+      test: wippy.test:test
+      envelope: kickside.contract:error_envelope
+
+  - name: http_response_test
+    kind: function.lua
+    source: file://http_response_test.lua
+    method: run
+    meta: {type: test, suite: http_response_native}
+    imports:
+      test: wippy.test:test
+      http_errors: kickside.contract:http_errors
+      canonical_json: kickside.contract:canonical_json
+
+  - name: credential_eligibility_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_contract}
+    source: file://credential_eligibility_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      credential_eligibility: kickside.contract:credential_eligibility

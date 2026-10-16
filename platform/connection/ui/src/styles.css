@@ -1,0 +1,389 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-modal-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+.conn-page {
+  --bg: var(--p-content-background);
+  --s1: var(--p-content-background);
+  --s2: color-mix(in srgb, var(--p-text-color) 5%, transparent);
+  --s3: color-mix(in srgb, var(--p-text-color) 9%, transparent);
+  --b1: var(--p-content-border-color);
+  --b2: color-mix(in srgb, var(--p-text-color) 22%, var(--p-content-border-color));
+  --t1: var(--p-text-color);
+  --t2: color-mix(in srgb, var(--p-text-color) 78%, transparent);
+  --t3: var(--p-text-muted-color);
+  --t4: color-mix(in srgb, var(--p-text-muted-color) 70%, transparent);
+  --ac: var(--p-primary-color);
+  --acs: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  --gn: var(--p-success-500);
+  --gns: color-mix(in srgb, var(--p-success-500) 13%, transparent);
+  --gnb: var(--p-success-600);
+  --rd: var(--p-danger-600, var(--p-danger-500));
+  --rds: color-mix(in srgb, var(--p-danger-500) 12%, transparent);
+  --am: var(--p-warn-500);
+  --ams: color-mix(in srgb, var(--p-warn-500) 16%, transparent);
+  --amb: var(--p-warn-700, var(--p-warn-600));
+  --r8: 8px;
+  --r-card: 14px;
+  --font-h: inherit;
+  --sh-sm: 0 6px 18px rgba(0,0,0,.08);
+  min-height: 0;
+  color: var(--t1);
+  background: var(--bg);
+  font-family: inherit;
+}
+/* Canonical .kx- header + search, shared with every other kickside page. */
+
+.kx-search { position: relative; display: flex; align-items: center; }
+.kx-search-ico { position: absolute; left: 10px; width: 15px; height: 15px; color: var(--t3); pointer-events: none; }
+.kx-search-input {
+  height: 34px; width: 220px; max-width: 40vw; padding: 0 30px; font: inherit; font-size: 13px;
+  color: var(--t1); background: var(--s1); border: 1px solid var(--b1); border-radius: var(--r8); transition: border-color .15s;
+}.kx-search-input::placeholder { color: var(--t3); }
+.kx-search-input::-webkit-search-cancel-button { display: none; }
+.kx-search-clear {
+  position: absolute; right: 6px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 6px; background: transparent; color: var(--t3); cursor: pointer;
+}
+.kx-search-clear:hover { background: var(--s2); color: var(--t1); }
+.kx-search-clear svg { width: 13px; height: 13px; }
+
+.block-head { margin-bottom: 10px; }
+.lt-section-header { margin: 0; font-size: 12px; line-height: 1.3; font-weight: 750; color: var(--t2); text-transform: uppercase; letter-spacing: .04em; }
+.lt-empty-hero {
+  width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  background: var(--acs); color: var(--ac);
+}
+.lt-empty-hero svg { width: 28px; height: 28px; }
+/* The empty-state hero is not a Tag, so it keeps a class named for the state it
+   is reporting; the colour is the theme's severity ramp, not a KickSide tone. */
+.lt-empty-hero.is-success { background: var(--gns); color: var(--gnb); }
+.lt-empty-hero.is-info { background: var(--acs); color: var(--ac); }
+.lt-empty-hero.is-danger { background: var(--rds); color: var(--rd); }
+.e-title { font-size: 15px; font-weight: 750; color: var(--t1); }
+.e-sub { margin-top: 4px; font-size: 13px; color: var(--t3); }
+.msg.err {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-radius: 10px; font-size: 13px;
+  background: var(--rds); color: var(--rd);
+}
+.msg.err svg { width: 16px; height: 16px; flex: none; }
+.lt-label { font-size: 12.5px; font-weight: 650; color: var(--t1); }
+.lt-input {
+  width: 100%; height: 34px; padding: 0 10px; font: inherit; font-size: 13px;
+  color: var(--t1); background: var(--s1); border: 1px solid var(--b1); border-radius: var(--r8);
+}.e-cta, .ghost-action {
+  height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 0 13px; border-radius: var(--r8); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.e-cta { background: var(--ac); color: var(--p-button-primary-color); border: 1px solid transparent; }
+.e-cta:hover:not(:disabled) { filter: brightness(1.05); }
+.ghost-action { background: transparent; color: var(--t1); border: 1px solid var(--b1); }
+.ghost-action:hover:not(:disabled) { background: var(--s2); }
+.e-cta:disabled, .ghost-action:disabled { opacity: .55; cursor: default; }
+.e-cta svg, .ghost-action svg { width: 16px; height: 16px; }
+
+@keyframes lt-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* Entry fade-up for the connections/providers sections; d1/d2 stagger them. */
+.au { animation: conn-au .32s ease both; }
+.d1 { animation-delay: .06s; }
+.d2 { animation-delay: .12s; }
+@keyframes conn-au { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .au { animation: none; } }
+
+/* Whole-page scroll (matches every other kickside page): the page scrolls as a
+   unit so the scrollbar gutter sits over the header too. A fixed header with an
+   inner-scrolling body would shift the header by the scrollbar width versus the
+   other pages -- the cross-page jump. */
+.conn-page { display: flex; flex-direction: column; height: 100%; overflow-y: auto; overflow-x: hidden; }
+.conn-body { flex: 1; min-height: 0; padding: 20px 24px; }
+.block { margin-bottom: 28px; }
+.conn-loading { font-size: 13px; color: var(--t3); padding: 8px 0; }
+.conn-empty { text-align: center; padding: 36px 16px; }
+.conn-empty .lt-empty-hero { margin: 0 auto 14px; }
+.conn-retry { margin-top: 16px; }
+.live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.live-card {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px;
+  padding: 12px 14px; border-radius: var(--r-card); background: var(--s1); border: 1px solid var(--b1);
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.live-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--b1); }
+.live-card:hover { border-color: var(--b2); box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.live-card.s-live::before { background: var(--gn); }
+.live-card.state-warn::before { background: var(--am); }
+.live-card.state-bad::before { background: var(--rd); }
+.live-card.state-muted::before { background: var(--t4); }
+.lc-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.lc-ico {
+  width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  background: var(--gns); color: var(--gnb); border: 1px solid color-mix(in srgb, var(--gn), transparent 70%);
+}
+.live-card.state-warn .lc-ico { background: var(--ams); color: var(--amb); border-color: color-mix(in srgb, var(--am), transparent 70%); }
+.live-card.state-bad .lc-ico { background: var(--rds); color: var(--rd); border-color: color-mix(in srgb, var(--rd), transparent 70%); }
+.live-card.state-muted .lc-ico { background: var(--s2); color: var(--t3); border-color: var(--b1); }
+.lc-ico svg { width: 20px; height: 20px; }
+.lc-top-r { display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .15s; }
+.live-card:hover .lc-top-r, .live-card:focus-within .lc-top-r { opacity: 1; }
+.lc-add {
+  width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  background: var(--s2); border: 1px solid var(--b1); color: var(--t2); transition: background .15s, color .15s, border-color .15s;
+}
+.lc-add:hover { background: var(--acs); color: var(--ac); border-color: var(--ac); }
+.lc-add.lc-danger:hover, .lc-add.lc-danger.armed { background: var(--rds); color: var(--rd); border-color: color-mix(in srgb, var(--rd) 35%, transparent); }
+.lc-add.lc-danger.armed { opacity: 1; }
+.lc-add svg { width: 15px; height: 15px; }
+.lc-name { font-family: var(--font-h); font-size: 15px; font-weight: 700; color: var(--t1); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-desc { font-size: 12px; color: var(--t2); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lc-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--t2); min-width: 0; }
+.lc-status .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--gn); animation: lt-pulse 2.4s ease-in-out infinite; }
+.lc-status.state-warn .dot { background: var(--am); }
+.lc-status.state-bad .dot { background: var(--rd); }
+.lc-status.state-muted .dot { background: var(--t4); animation: none; }
+.lc-primary { color: var(--gnb); font-weight: 600; }
+.lc-status.state-warn .lc-primary { color: var(--amb); }
+.lc-status.state-bad .lc-primary { color: var(--rd); }
+.lc-status.state-muted .lc-primary { color: var(--t3); }
+.lc-secondary { color: var(--t3); text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.list-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 12px; color: var(--t3); font-size: 12px; flex-wrap: wrap;
+}
+.setup-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.setup-card {
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 72px; padding: 12px 14px;
+  background: var(--s1); border: 1px solid var(--b1); border-radius: var(--r-card); color: inherit; font: inherit; text-align: left; cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s, box-shadow .15s;
+}
+.setup-card:hover { background: var(--s2); border-color: var(--ac); transform: translateY(-1px); box-shadow: var(--sh-sm); }
+.setup-ico { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--s3); color: var(--t2); transition: background .15s, color .15s; }
+.setup-ico svg { width: 20px; height: 20px; }
+.setup-card:hover .setup-ico { background: var(--acs); color: var(--ac); }
+.setup-text { min-width: 0; }
+.setup-name { font-family: var(--font-h); font-size: 14px; font-weight: 700; color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setup-desc { font-size: 12px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setup-arrow { width: 16px; height: 16px; color: var(--t4); transition: color .15s, transform .15s; }
+.setup-card:hover .setup-arrow { color: var(--ac); transform: translateX(2px); }
+
+.connpick {
+  display: grid;
+  gap: 8px;
+  color: var(--p-text-color);
+  font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.connpick-field { display: grid; gap: 6px; }
+.connpick-field span {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--p-text-muted-color);
+}
+.connpick-meta {
+  width: fit-content;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--p-text-muted-color);
+  background: color-mix(in srgb, var(--p-text-color) 6%, transparent);
+}
+.connpick-meta.state-connected {
+  color: var(--p-success-600);
+  background: color-mix(in srgb, var(--p-success-500) 12%, transparent);
+}
+.connpick-meta.state-expired,
+.connpick-meta.state-needs_reauth {
+  color: var(--p-danger-600);
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent);
+}
+.connpick-hint,
+.connpick-error { margin: 0; font-size: 12px; }
+.connpick-hint { color: var(--p-text-muted-color); }
+.connpick-error { color: var(--p-danger-600); }
+
+/* ── Two-pane connect dialog (matches the knowledge / automations popup) ──
+   Left pane: searchable provider catalog. Right pane: the selected provider's
+   configuration (credentials / permissions / its own setup web component). */
+.kx-err {
+  /* Sits flush: the panel around it already carries the gutter. */
+  margin: 0 0 8px;
+}
+.kx-err.inline {
+  margin: 4px 0 0;
+}
+
+.kx-modal { width: 460px; max-width: 100%; max-height: 90vh; background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 14px; box-shadow: var(--p-dialog-shadow);
+  display: flex; flex-direction: column; transition: height .2s ease, max-height .2s ease; }
+.kx-modal-2p { --p-dialog-content-padding: 0; width: 860px; }
+.kx-modal.kx-modal-2p > .kx-dialog-content { padding: 0; display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.kx-modal > .kx-modal-head { font-size: 15px; font-weight: 700; color: var(--p-text-color); padding: 16px 18px;
+  border-bottom: 1px solid var(--p-content-border-color); display: flex; align-items: center; gap: 12px; }
+.kx-modal-head svg { width: 18px; height: 18px; }
+.kx-modal > .kx-modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--p-content-border-color); }
+
+.kx-2p { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); min-height: 0; flex: 1; overflow: hidden; }
+.kx-2p-l { padding: 18px; overflow-y: auto; border-right: 1px solid var(--p-content-border-color); }
+.kx-2p-r { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: color-mix(in srgb, var(--p-text-color) 2.5%, var(--p-content-background)); }
+.kx-2p-r-head { padding: 14px 18px 10px; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--p-text-muted-color); min-height: 12px; }
+.kx-2p-r-body { padding: 0 18px 18px; overflow-y: auto; flex: 1; min-height: 0; }
+.kx-2p-r-note { margin: 0; font-size: 12.5px; color: var(--p-text-muted-color); }
+
+.kx-cat-search { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; margin-bottom: 10px;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; color: var(--p-text-muted-color); }
+.kx-cat-search svg { width: 15px; height: 15px; flex: none; }
+.kx-cat-search input { flex: 1; border: none; background: transparent; outline: none; font: inherit; font-size: 13px; color: var(--p-text-color); }
+.kx-cat-grp-lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--p-text-muted-color); margin: 12px 2px 6px; }
+.kx-cat-grp-lbl:first-of-type { margin-top: 0; }
+.kx-cat { display: flex; flex-direction: column; gap: 6px; }
+.kx-cat-card { display: flex; align-items: center; gap: 11px; text-align: left; width: 100%; padding: 10px 12px;
+  border: 1px solid var(--p-content-border-color); border-radius: 11px; background: transparent; color: var(--p-text-color);
+  cursor: pointer; transition: border-color .14s, background .14s; }
+.kx-cat-card:hover:not(:disabled) { background: color-mix(in srgb, var(--p-text-color) 5%, transparent); }
+.kx-cat-card.sel { border-color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 9%, transparent); }
+.kx-cat-card:disabled { opacity: .55; cursor: default; }
+.kx-cat-ico { width: 34px; height: 34px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color); }
+.kx-cat-ico svg { width: 18px; height: 18px; }
+.kx-cat-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.kx-cat-name { font-size: 13px; font-weight: 600; }
+.kx-cat-desc { font-size: 11.5px; line-height: 1.4; color: var(--p-text-muted-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-cat-check { width: 17px; height: 17px; flex: none; color: var(--p-primary-color); }
+.kx-cat-empty { font-size: 12.5px; color: var(--p-text-muted-color); padding: 4px 2px; }
+
+.kx-form { display: flex; flex-direction: column; gap: 14px; }
+.kx-field { display: flex; flex-direction: column; gap: 5px; }
+.kx-field-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-field-hint-inline { font-weight: 400; color: var(--p-text-muted-color); }
+.kx-input, .kx-select { height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 8px; transition: border-color .15s; width: 100%; color-scheme: light dark; }
+.kx-select option { background: var(--p-content-background); color: var(--p-text-color); }.kx-input:disabled, .kx-select:disabled { opacity: .6; cursor: default; }
+.kx-check { height: 36px; display: inline-flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 10px; cursor: pointer; }
+.kx-check input { accent-color: var(--p-primary-color); }
+
+.kx-engine-wrap { position: relative; min-height: 120px; }
+.kx-engine-host { display: block; min-height: 120px; }
+.kx-engine-host > * { display: block; width: 100%; }
+.kx-engine-state { position: absolute; inset: 0; justify-content: center; }
+.kx-engine-error { display: flex; min-height: 120px; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 20px; text-align: center; color: var(--p-danger-500); font-size: 12.5px; }
+.kx-engine-error button { height: 32px; padding: 0 13px; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: var(--p-content-background); color: var(--p-text-color); font: inherit; font-weight: 600; cursor: pointer; }
+.kx-cfg-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100%; min-height: 180px;
+  text-align: center; color: var(--p-text-muted-color); font-size: 13px; padding: 24px; }
+.kx-cfg-empty svg { width: 28px; height: 28px; opacity: .7; }
+.kx-cfg-state { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--p-text-muted-color); }
+.kx-cfg-state.warn { color: var(--p-text-color); }
+.kx-cfg-state button { font: inherit; font-size: 12px; padding: 5px 11px; border-radius: 8px; border: 1px solid var(--p-primary-color);
+  background: var(--p-primary-color); color: var(--p-button-primary-color); cursor: pointer; }
+
+/* OAuth permission checklist (right pane). */
+.kx-scopes { border: 1px solid var(--p-content-border-color); border-radius: 8px; max-height: 280px; overflow-y: auto; background: var(--p-content-background); }
+.kx-scopes.kx-disabled { opacity: .6; pointer-events: none; }
+.kx-scope { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--p-content-border-color); }
+.kx-scope:last-child { border-bottom: none; }
+.kx-scope input { margin-top: 2px; accent-color: var(--p-primary-color); }
+.kx-scope-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kx-scope-nm { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-scope-desc { font-size: 11.5px; line-height: 1.4; color: var(--p-text-muted-color); }
+
+@media (max-width: 720px) {
+  .kx-modal-2p { width: 560px; }
+  .kx-2p { grid-template-columns: 1fr; }
+  .kx-2p-l { border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
+}
+
+/* ── Onboarding (kickside-onboard-connections) ─────────────────────────── */
+.oc { display: flex; flex-direction: column; gap: 22px; background: transparent; }
+.oc-error {
+  display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 10px;
+  background: var(--rds); color: var(--rd); font-size: 12.5px;
+}
+.oc-error > svg { width: 22px; height: 22px; flex: none; }
+.oc-error-body { flex: 1; min-width: 0; }
+.oc-error-title { font-size: 14px; font-weight: 700; color: var(--t1); }
+.oc-error-sub { margin-top: 3px; font-size: 12.5px; color: var(--t2); word-break: break-word; }
+.oc-loading { display: flex; align-items: center; gap: 8px; color: var(--t3); font-size: 13px; padding: 24px 0; }
+
+.oc-block { display: flex; flex-direction: column; gap: 12px; }
+.oc-head { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--t3); }
+.oc-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.oc-search { position: relative; display: flex; align-items: center; }
+.oc-search input {
+  height: 32px; width: 200px; max-width: 46vw; padding: 0 10px 0 30px; font: inherit; font-size: 13px;
+  color: var(--t1); background: var(--s2); border: 1px solid var(--b1); border-radius: var(--r8); outline: none;
+}.oc-search-ico { position: absolute; left: 9px; width: 15px; height: 15px; color: var(--t3); pointer-events: none; }
+
+.oc-conns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.oc-conn {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+  border: 1px solid var(--b1); border-radius: var(--r8); background: var(--s2);
+}
+.oc-conn-ico { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 6px; background: var(--s3); color: var(--t2); }
+.oc-conn-ico svg { width: 15px; height: 15px; }
+.oc-conn-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--am); }
+.oc-dot.ok { background: var(--gn); }
+
+.oc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.oc-tile {
+  display: flex; align-items: center; gap: 11px; padding: 12px; text-align: left; cursor: pointer;
+  border: 1px solid var(--b1); border-radius: var(--r-card); background: var(--s1);
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.oc-tile:hover { border-color: var(--ac); background: var(--s2); transform: translateY(-1px); }
+.oc-tile.done { border-color: color-mix(in srgb, var(--gn) 40%, var(--b1)); }
+.oc-tile-ico { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--acs); color: var(--ac); }
+.oc-tile-ico svg { width: 19px; height: 19px; }
+.oc-tile-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.oc-tile-name { font-size: 13px; font-weight: 600; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-tile-auth { font-size: 11px; color: var(--t3); }
+.oc-tile-add { width: 16px; height: 16px; flex: none; color: var(--t3); }
+.oc-tile.done .oc-tile-add { color: var(--gn); }
+.oc-empty { font-size: 13px; color: var(--t3); padding: 8px 0; }
+
+.oc-foot { display: flex; align-items: center; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--p-content-border-color); }
+.oc-foot-sp { flex: 1; }
+.oc-btn { padding: 11px 20px; border-radius: var(--r8); border: 0; cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 700; transition: transform .15s, color .15s, filter .15s; }
+.oc-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.oc-ghost { background: transparent; color: var(--p-text-muted-color); }
+.oc-ghost:hover { color: var(--p-text-color); }
+.oc-primary { background: var(--p-primary-color); color: var(--p-button-primary-color); }
+.oc-primary:hover:not(:disabled) { filter: brightness(1.06); }
+.oc-primary:disabled { opacity: .5; cursor: default; }
+
+@media (max-width: 480px) { .oc-conns { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .kx-modal { transition: none; }
+}
+
+/* The search shell draws the border; the bare input inside it draws none, so
+   the ring belongs to the shell. `:focus-within` is the right trigger here -
+   the box that shows focus is not the node that takes it. */
+.kx-cat-search:focus-within {
+  border-color: var(--p-focus-ring-color);
+  box-shadow: var(--p-focus-ring-shadow);
+}
+.kx-cat-search input:focus { box-shadow: none; }
+
+/* Focus canon: each of these draws a border at rest, so focus lights that
+   border and adds the halo - never an outline. See app/facade-src/README.md. */
+.setup-card:focus-visible,
+.kx-cat-card:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}

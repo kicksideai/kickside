@@ -1,0 +1,13 @@
+/* PrimeVue Drawer chrome is host-owned. Keep the shared divider in facade
+   customization so it reaches the host document and component shadow roots. */
+.p-drawer .p-drawer-header {
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.p-drawer .p-drawer-header:empty {
+  display: none;
+}
+
+.p-drawer-content {
+  padding-top: var(--p-drawer-content-padding);
+}

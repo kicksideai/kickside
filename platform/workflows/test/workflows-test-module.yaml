@@ -1,0 +1,3 @@
+organization: kickside
+module: workflows
+description: Test-only Workflows source mirror used to exercise the production module topology.

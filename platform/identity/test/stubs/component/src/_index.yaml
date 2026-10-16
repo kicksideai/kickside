@@ -1,0 +1,11 @@
+version: "1.0"
+namespace: kickside.component
+
+# Provides the kickside.component:component library the link service imports, so
+# the standalone identity harness resolves without vendoring the component module.
+entries:
+  - name: component
+    kind: library.lua
+    meta:
+      comment: Identity-harness stub for component.list_for_subject (empty agent set).
+    source: file://component_stub.lua

@@ -1,0 +1,62 @@
+version: '1.0'
+namespace: kickside.knowledge.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Knowledge
+    surface: kickside.knowledge
+    intent: module_access
+    includes:
+    - kickside.knowledge.security:module_runtime
+    - kickside.knowledge.security:knowledge_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.knowledge.api:ask.endpoint
+    - kickside.knowledge.api:create_kb.endpoint
+    - kickside.knowledge.api:delete_content.endpoint
+    - kickside.knowledge.api:delete_kb.endpoint
+    - kickside.knowledge.api:get_kb.endpoint
+    - kickside.knowledge.api:ingest_content.endpoint
+    - kickside.knowledge.api:ingest_existing_upload.endpoint
+    - kickside.knowledge.api:list_embedding_models.endpoint
+    - kickside.knowledge.api:list_engines.endpoint
+    - kickside.knowledge.api:list_kb.endpoint
+    - kickside.knowledge.api:organize.endpoint
+    - kickside.knowledge.api:search.endpoint
+    - kickside.knowledge.api:update_kb.endpoint
+    - kickside.knowledge.api:upload_token.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.knowledge:*
+    - kickside.knowledge.api:*
+    - kickside.knowledge.binding:*
+    - kickside.knowledge.events:*
+    - kickside.knowledge.injection:*
+    - kickside.knowledge.injection.agents:*
+    - kickside.knowledge.organize:*
+    - kickside.knowledge.registry:*
+    - kickside.knowledge.retrieval:*
+    - kickside.knowledge.security:*
+    - kickside.knowledge.sink:*
+    - kickside.knowledge.traits:*
+    - kickside.knowledge.traits.kb_ingest:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

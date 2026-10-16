@@ -1,0 +1,38 @@
+version: "1.0"
+namespace: kickside.channel
+
+entries:
+  - name: hub_execution_trust
+    kind: security.policy
+    meta:
+      comment: Resolve protected channel and DM execution references before spawning an actor-scoped conversation bridge.
+    groups:
+      - kickside.channel.service:hub_execution
+    policy:
+      resources: '*'
+      actions:
+        - security.actor.create
+        - security.policy_group.get
+        - contract.get
+        - contract.open
+        - contract.call
+        - contract.security
+        - funcs.call
+        - funcs.security
+        - registry.get
+        - env.get
+        - db.get
+      effect: allow
+
+  - name: hub_runtime_meta
+    kind: security.policy
+    groups:
+      - kickside.channel.service:hub_execution
+    policy:
+      resources: '*'
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.impl_id
+          operator: eq
+          value: kickside.channel.responder:channel_responder

@@ -1,0 +1,9 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: component_lifecycle_stub
+    kind: library.lua
+    meta:
+      comment: Uploads-harness component lifecycle implementation; the suite does not boot core threads.
+    source: file://lifecycle_stub.lua

@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.knowledge.sink
+
+entries:
+  - name: kb_embed_sink_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: knowledge_sink
+      comment: Redelivery identity projects the idempotency key into the content event external id.
+    source: file://kb_embed_sink_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security, json, contract, registry]
+    imports:
+      fixture_cleanup: app:fixture_cleanup
+      test: wippy.test:test
+      kb_embed_sink: kickside.knowledge.sink:kb_embed_runtime

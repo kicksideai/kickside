@@ -1,0 +1,349 @@
+version: "1.0"
+namespace: kickside.channel.responder
+
+# The channel-responder automation as its own component. Provider-agnostic: the
+# install form's channel picker spans every connection, so a provider only
+# implements the connection contract -- it never declares its own automation. The
+# shared kickside.channel runtime (hub + bridge) owns the session on a trigger;
+# this component owns the automation TYPE, its install/delete lifecycle, and the
+# install form. install stores routing (connection_id, channel_id, agent_id) and
+# the engine freezes the installer identity.
+
+entries:
+  - name: health
+    kind: library.lua
+    source: file://health.lua
+    modules: [time]
+    imports:
+      component: kickside.component:component
+
+  - name: runtime
+    kind: library.lua
+    meta: { comment: "Generic channel-responder install/delete/status/pause/resume; provider routing state only, engine owns identity." }
+    source: file://responder.lua
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: install
+    kind: function.lua
+    meta: { comment: "installable.install for a channel responder (any provider)." }
+    source: file://responder.lua
+    method: install
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: delete
+    kind: function.lua
+    meta: { comment: "deletable.delete for a channel responder (post-uninstall component unregister)." }
+    source: file://responder.lua
+    method: delete
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: status
+    kind: function.lua
+    meta: { comment: "channel responder action.status — read the public automation state." }
+    source: file://responder.lua
+    method: status
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: read_config
+    kind: function.lua
+    meta: { comment: "channel responder action.read_config — read editable private responder configuration." }
+    source: file://responder.lua
+    method: read_config
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: configure
+    kind: function.lua
+    meta: { comment: "channel responder action.configure — update editable responder behavior while keeping source routing fixed." }
+    source: file://responder.lua
+    method: configure
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: pause
+    kind: function.lua
+    meta: { comment: "channel responder action.pause — stop routing new turns for this responder." }
+    security:
+      policies:
+      - kickside.channel.responder:thread_status_publish
+    source: file://responder.lua
+    method: pause
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: resume
+    kind: function.lua
+    meta: { comment: "channel responder action.resume — resume routing new turns for this responder." }
+    security:
+      policies:
+      - kickside.channel.responder:thread_status_publish
+    source: file://responder.lua
+    method: resume
+    modules: [ctx, contract, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      component: kickside.component:component
+      channel_consts: kickside.channel:consts
+      responder_health: kickside.channel.responder:health
+
+  - name: responder_projection
+    kind: library.lua
+    meta: { comment: Channel responder read-model fold logic (status.changed events to public meta). }
+    source: file://responder_projection.lua
+    imports:
+      component: kickside.component:component
+
+  - name: responder_projection_worker
+    kind: function.lua
+    meta:
+      type: projection.worker
+      comment: Channel responder read-model worker — folds pause/resume status events into component public meta.
+    source: file://responder_projection.lua
+    method: run
+    imports:
+      component: kickside.component:component
+
+  # The canonical install form (custom create_ui web component). Built from
+  # ../ui into ../static, mounted by kickside.channel:ui_static at /kickside-channel.
+  - name: create_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: create_view
+      title: Channel Responder Setup
+      description: >-
+        The canonical channel-responder install form the automation manager
+        mounts as the responder type's create view: pick a channel across every
+        connection and an agent, name the responder, and on submit it installs
+        the automation itself. Reads the type-id attr (empty falls back to the
+        canonical responder type) and parent-id (a non-empty value switches to
+        popup layout); emits automation-installed { success, id?, error? },
+        created { id }, close, submit-state { saving }, and error.
+      announced: true
+      auto_register: false
+      tag_name: kickside-channel-responder-create
+      base_path: kickside-channel
+      entry_point: channel_responder_create.js
+    props:
+      type: object
+      properties:
+        type-id:
+          type: string
+          default: ""
+          description: The automation type (responder binding) id being installed; empty falls back to the canonical responder type.
+        parent-id:
+          type: string
+          default: ""
+          description: Workspace folder the "+" popup places the responder under; a non-empty value switches the form to popup layout.
+        submit-nonce:
+          type: string
+          default: ""
+          description: Monotonic host command; each new non-empty value submits the embedded form once.
+
+  - name: manage_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: manage_view
+      title: Channel Responder Settings
+      description: >-
+        The settings dialog for an already-installed channel responder. Takes
+        the automation id through the config or value object prop ({ id }, the
+        first carrying an id wins) and lets the operator edit the responder's
+        behavior in place; emits change { id, state }, close, and error.
+      announced: true
+      auto_register: false
+      tag_name: kickside-channel-responder-manage
+      base_path: kickside-channel
+      entry_point: channel_responder_manage.js
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          description: "Config-host convention: { id } — the installed responder automation's id."
+        value:
+          type: object
+          description: Alias of config; the first of config/value carrying an id wins.
+
+  - name: channel_responder_contract
+    kind: contract.definition
+    meta:
+      comment: Channel responder runtime controls.
+      tags: [channel, responder]
+    methods:
+      - name: status
+        description: "Calling: status(request)"
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true, "properties": { "status":{"type":"string"}, "channel":{"type":"string"}, "agent":{"type":"string"} } }'
+      - name: read_config
+        description: "Calling: read_config(request)"
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "state":{"type":"object"}, "public_state":{"type":"object"}, "error":{"type":"string"} }, "required":["success"] }'
+      - name: configure
+        description: "Calling: configure(request)"
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true, "properties": { "config":{"type":"object"} } }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "state":{"type":"object"}, "public_state":{"type":"object"}, "error":{"type":"string"} }, "required":["success"] }'
+      - name: pause
+        description: "Calling: pause(request)"
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "status":{"type":"string"}, "paused":{"type":"boolean"}, "error":{"type":"string"} }, "required":["success"] }'
+      - name: resume
+        description: "Calling: resume(request)"
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "status":{"type":"string"}, "paused":{"type":"boolean"}, "error":{"type":"string"} }, "required":["success"] }'
+
+  - name: channel_responder
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: Channel Responder
+      comment: Reply in a channel with one of your agents.
+      icon: tabler:message-2-bolt
+      category: connections
+      class: automation
+      retention:
+        event_days: 30
+        drain_aware: true
+      component:
+        create: { view: kickside.channel.responder:create_view }
+        manage: { view: kickside.channel.responder:manage_view }
+      actions:
+        - name: status
+        - name: read_config
+        - name: configure
+        - name: pause
+        - name: resume
+      inputs:
+        type: object
+        additionalProperties: false
+        required: [connection_id, agent_id, target, channel_id]
+        properties:
+          title: { type: string, title: Name }
+          connection_id: { type: string, title: Connection, minLength: 1, x-reference: { kind: connection, access: READ } }
+          agent_id: { type: string, title: Agent, minLength: 1, x-reference: { kind: agent, access: READ } }
+          agent_name: { type: string, title: Agent name }
+          target: { type: string, title: Scope, enum: [channel], default: channel }
+          channel_id: { type: string, title: Channel, minLength: 1 }
+          channel_name: { type: string, title: Channel name }
+          # Advanced: extra agent capabilities (added on top of the agent's own), each
+          # capability's web_component config, and a free-text context for the channel.
+          traits: { type: array, title: Additional capabilities, items: { type: string, x-reference: { kind: trait, access: READ } } }
+          trait_contexts: { type: object, title: Per-capability context }
+          context: { type: string, title: Context }
+          response_policy:
+            type: object
+            title: Response policy
+            additionalProperties: false
+            properties:
+              mode: { type: string, title: Response mode, enum: [immediate, lazy], default: immediate }
+              wait_seconds: { type: integer, title: Quiet window seconds, minimum: 1, maximum: 120, default: 8 }
+              assessor_model: { type: string, title: Assessment model, default: class:fast }
+              prompt: { type: string, title: Lazy response prompt }
+          session_policy:
+            type: object
+            title: Chat session policy
+            additionalProperties: false
+            properties:
+              rotate_after_idle: { type: boolean, title: Start a new chat after idle, default: true }
+              idle_seconds: { type: integer, title: Idle seconds, minimum: 60, maximum: 2592000, default: 7200 }
+              runtime_idle_seconds: { type: integer, title: Close inactive runtime seconds, minimum: 60, maximum: 86400, default: 600 }
+          # Per-responder chat instruction the channel runtime applies to each
+          # channel turn. The create/manage form surfaces it directly.
+          system_prompt: { type: string, title: System prompt }
+      # connection_id/channel_id are unlabeled routing keys: declared so the engine
+      # writes them into indexed component meta (kickside.channel:receive resolves the
+      # responder by a with_meta lookup), not status cards. The labeled fields render.
+      public_state_schema:
+        fields:
+          - { key: status, type: text }
+          - { key: health_state, type: text, label: Health }
+          - { key: health_reason, type: text, label: Reason }
+          - { key: health_message, type: text, label: Details }
+          - { key: health_at, type: text, hidden: true }
+          - { key: channel, type: text, label: Channel, icon: "tabler:hash" }
+          - { key: agent, type: text, label: Agent, icon: "tabler:robot" }
+          - { key: trait_count, type: text, label: Capabilities, icon: "tabler:puzzle" }
+          - { key: connection_id, type: text, hidden: true }
+          - { key: channel_id, type: text, hidden: true }
+      projections:
+        - kind: "kickside.channel.responder:status"
+          worker_ref: "func://kickside.channel.responder:responder_projection_worker"
+          input_mode: prefetch_events
+      events:
+        input: []
+        output:
+          - type: kickside.channel.responder.events:status.changed
+          - type: kickside.channel.responder.events:session.activated
+            system_only: true
+          - type: kickside.channel.responder.events:session.completed
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:installable
+        methods:
+          install: kickside.channel.responder:install
+      - contract: kickside.channel.responder:channel_responder_contract
+        methods:
+          status: kickside.channel.responder:status
+          read_config: kickside.channel.responder:read_config
+          configure: kickside.channel.responder:configure
+          pause: kickside.channel.responder:pause
+          resume: kickside.channel.responder:resume
+      - contract: kickside.contract:deletable
+        methods:
+          delete: kickside.channel.responder:delete

@@ -1,0 +1,312 @@
+version: "1.0"
+namespace: kickside.oauth
+entries:
+  - name: connector
+    kind: contract.definition
+    meta:
+      comment: OAuth 2.0 handler contract for provider authentication flows
+      tags:
+        - oauth
+        - authentication
+        - provider
+    methods:
+      - name: init_oauth
+        description: |
+          Initialize OAuth flow by generating authorization URL and state.
+
+          Example:
+          - { "redirect_uri": "https://app.com/oauth/callback", "scopes": ["email", "profile"] }
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "redirect_uri": {
+                    "type": "string",
+                    "description": "URI where user will be redirected after authorization"
+                  },
+                  "scopes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "OAuth scopes to request"
+                  }
+                },
+                "required": ["redirect_uri"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"success\": {\n      \"type\": \"boolean\",\n      \"description\": \"Whether initialization was successful\"\n    },\n    \"authorization_url\": {\n      \"type\": \"string\",\n      \"description\": \"Complete OAuth authorization URL to redirect user to\"\n    },\n    \"state_token\": {\n      \"type\": \"string\", \n      \"description\": \"State token for this flow\"\n    },\n    \"storage_payload\": {\n      \"type\": \"object\",\n      \"description\": \"Data to store using state_token as key\"\n    },\n    \"expires_in\": {\n      \"type\": \"integer\",\n      \"description\": \"State expiration time in seconds\"\n    },\n    \"error\": {\n      \"type\": \"string\",\n      \"description\": \"Error message if initialization failed\"\n    }\n  },\n  \"required\": [\"success\"]\n}\n"
+            format: application/schema+json
+      - name: handle_callback
+        description: |
+          Handle OAuth callback and complete authorization flow.
+
+          Example:
+          - { "code": "auth_code", "state": "abc123", "stored_data": {"code_verifier": "xyz", "redirect_uri": "..."} }
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "Authorization code from OAuth provider"
+                  },
+                  "state": {
+                    "type": "string",
+                    "description": "State parameter from OAuth response"
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Error parameter from OAuth response"
+                  },
+                  "error_description": {
+                    "type": "string",
+                    "description": "Error description from OAuth response"
+                  },
+                  "stored_data": {
+                    "type": "object",
+                    "description": "Data retrieved from storage using state token"
+                  }
+                },
+                "required": ["state", "stored_data"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "description": "Whether callback was handled successfully"
+                  },
+                  "oauth_connection": {
+                    "type": "object",
+                    "properties": {
+                      "access_token": {
+                        "type": "string",
+                        "description": "OAuth access token"
+                      },
+                      "refresh_token": {
+                        "type": "string",
+                        "description": "OAuth refresh token (if provided)"
+                      },
+                      "token_type": {
+                        "type": "string",
+                        "description": "Token type (usually 'Bearer')"
+                      },
+                      "expires_in": {
+                        "type": "integer",
+                        "description": "Token expiration time in seconds"
+                      },
+                      "expires_at": {
+                        "type": "integer",
+                        "description": "Unix timestamp when token expires"
+                      },
+                      "scope": {
+                        "type": "string",
+                        "description": "Granted OAuth scopes"
+                      },
+                      "scopes_granted": {
+                        "type": "string",
+                        "description": "Space-separated list of granted scopes"
+                      },
+                      "scopes_requested": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Array of originally requested scopes"
+                      },
+                      "redirect_uri": {
+                        "type": "string",
+                        "description": "OAuth redirect URI used for this connection"
+                      },
+                      "is_active": {
+                        "type": "boolean",
+                        "description": "Whether the connection is active"
+                      },
+                      "connection_state": {
+                        "type": "string",
+                        "description": "Current connection state"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "description": "RFC3339 UTC timestamp when connection was created"
+                      },
+                      "last_token_refresh": {
+                        "type": "string",
+                        "description": "RFC3339 UTC timestamp of last token refresh"
+                      },
+                      "provider_token_response": {
+                        "type": "object",
+                        "description": "Raw token response from provider for debugging"
+                      }
+                    },
+                    "required": ["access_token", "is_active"],
+                    "additionalProperties": true,
+                    "description": "OAuth connection information with tokens and connection metadata"
+                  },
+                  "user_context": {
+                    "type": "object",
+                    "properties": {
+                      "provider_user_id": {
+                        "type": "string",
+                        "description": "User ID from OAuth provider"
+                      },
+                      "email": {
+                        "type": "string",
+                        "description": "User email from provider (when available)"
+                      },
+                      "display_name": {
+                        "type": "string",
+                        "description": "User display name from provider (when available)"
+                      },
+                      "username": {
+                        "type": "string",
+                        "description": "Username from provider (when available)"
+                      },
+                      "avatar_url": {
+                        "type": "string",
+                        "description": "User avatar URL from provider (when available)"
+                      },
+                      "first_name": {
+                        "type": "string",
+                        "description": "User first name from provider (when available)"
+                      },
+                      "last_name": {
+                        "type": "string",
+                        "description": "User last name from provider (when available)"
+                      },
+                      "locale": {
+                        "type": "string",
+                        "description": "User locale from provider (when available)"
+                      },
+                      "provider_data": {
+                        "type": "object",
+                        "description": "Raw user data from provider for provider-specific fields"
+                      }
+                    },
+                    "required": ["provider_user_id"],
+                    "additionalProperties": true,
+                    "description": "User profile information from OAuth provider"
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Error message if callback handling failed"
+                  }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+      - name: refresh_token
+        description: |
+          Refresh OAuth access token using refresh token.
+
+          Example:
+          - { "refresh_token": "refresh_abc123" }
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "refresh_token": {
+                    "type": "string",
+                    "description": "Refresh token to use for getting new access token"
+                  }
+                },
+                "required": ["refresh_token"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "description": "Whether token refresh was successful"
+                  },
+                  "access_token": {
+                    "type": "string",
+                    "description": "New access token"
+                  },
+                  "refresh_token": {
+                    "type": "string",
+                    "description": "New refresh token (if provider rotates refresh tokens)"
+                  },
+                  "token_type": {
+                    "type": "string",
+                    "description": "Token type (usually 'Bearer')"
+                  },
+                  "expires_in": {
+                    "type": "integer",
+                    "description": "Token expiration time in seconds from now"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "description": "Granted OAuth scopes for new token"
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Error message if refresh failed"
+                  },
+                  "requires_reauth": {
+                    "type": "boolean",
+                    "description": "True only when the provider rejects the refresh grant (invalid_grant); HTTP receipt alone does not require reconnection"
+                  },
+                  "response_received": {
+                    "type": "boolean",
+                    "description": "Whether an HTTP response was received from the OAuth provider (false indicates network connectivity issues)"
+                  }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+
+  # kickside.oauth:form — RFC 3986 url/form encoding shared by the OAuth flows
+  # (auth-URL params + token exchange/refresh bodies).
+  - name: form
+    kind: library.lua
+    meta:
+      comment: URL/form percent-encoding for OAuth requests.
+    source: file://../../form.lua
+
+  # kickside.oauth:creds
+  - name: creds
+    kind: library.lua
+    meta:
+      comment: Resolve OAuth client id/secret from settings (preferred) or env.
+    source: file://../../creds.lua
+    modules:
+      - ctx
+      - env
+      - contract
+      - security
+    imports:
+      oauth_types: kickside.oauth:oauth_types
+
+  - name: provider_errors
+    kind: library.lua
+    meta:
+      comment: Redact OAuth provider error responses before returning/logging them.
+    source: file://../../provider_errors.lua
+    modules:
+      - json
+
+  - name: connection_manager
+    kind: library.lua
+    meta:
+      comment: OAuth connection storage, public component meta, and refresh schedule coordination.
+    source: file://../../connection_manager.lua
+    modules:
+      - contract
+      - uuid
+      - security
+      - logger
+    imports:
+      component: kickside.component:component
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+      refresh_schedule: kickside.oauth:refresh_schedule
+

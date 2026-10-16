@@ -1,0 +1,295 @@
+version: "1.0"
+namespace: kickside.models
+entries:
+  - name: preset.openai_compatible_plain
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: OpenAI-compatible endpoint that requires plain string Chat Completions message content.
+    key: openai-compatible-plain
+    title: OpenAI Compatible (plain chat)
+    description: Use for compatible APIs that reject structured content arrays in chat messages.
+    icon: tabler:message
+    provider_id: kickside.models:openai_compat_plain.provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    # Niche variant (endpoints that reject structured content); kept out of the
+    # onboarding picker to avoid a duplicate "OpenAI Compatible" tile. Still
+    # available in full Models settings.
+    onboarding: false
+    order: 10.5
+    config:
+      base_url: http://localhost:11434/v1
+      timeout: 600
+
+  - name: preset.ollama
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Local Ollama OpenAI-compatible endpoint.
+    key: ollama
+    title: Ollama
+    description: Local Ollama endpoint using the OpenAI-compatible adapter.
+    icon: tabler:server
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 11
+    config:
+      base_url: http://localhost:11434/v1
+      timeout: 600
+
+  - name: preset.lmstudio
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: LM Studio OpenAI-compatible local endpoint.
+    key: lmstudio
+    title: LM Studio
+    description: Local LM Studio server using the OpenAI-compatible adapter.
+    icon: tabler:device-desktop
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 12
+    config:
+      base_url: http://localhost:1234/v1
+      timeout: 600
+
+  - name: preset.vllm
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: vLLM OpenAI-compatible endpoint.
+    key: vllm
+    title: vLLM
+    description: Self-hosted vLLM endpoint using the OpenAI-compatible adapter.
+    icon: tabler:cpu
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 13
+    config:
+      base_url: http://localhost:8000/v1
+      timeout: 600
+
+  - name: preset.openrouter
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: OpenRouter profile preset using the OpenAI-compatible adapter.
+    key: openrouter
+    title: OpenRouter
+    description: OpenRouter API profile with model discovery through /models.
+    icon: tabler:route
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 20
+    config:
+      base_url: https://openrouter.ai/api/v1
+      api_key_env: OPENROUTER_API_KEY
+      timeout: 600
+
+  - name: preset.together
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Together AI OpenAI-compatible endpoint.
+    key: together
+    title: Together AI
+    description: Hosted OpenAI-compatible models with /models discovery.
+    icon: tabler:cloud
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 21
+    config:
+      base_url: https://api.together.xyz/v1
+      api_key_env: TOGETHER_API_KEY
+      timeout: 600
+
+  - name: preset.groq
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Groq OpenAI-compatible endpoint.
+    key: groq
+    title: Groq
+    description: GroqCloud OpenAI-compatible chat endpoint.
+    icon: tabler:bolt
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 22
+    config:
+      base_url: https://api.groq.com/openai/v1
+      api_key_env: GROQ_API_KEY
+      timeout: 600
+
+  - name: preset.fireworks
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Fireworks AI OpenAI-compatible endpoint.
+    key: fireworks
+    title: Fireworks
+    description: Fireworks hosted inference through the OpenAI-compatible adapter.
+    icon: tabler:sparkles
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 23
+    config:
+      base_url: https://api.fireworks.ai/inference/v1
+      api_key_env: FIREWORKS_API_KEY
+      timeout: 600
+
+  - name: preset.mistral
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Mistral OpenAI-compatible endpoint.
+    key: mistral
+    title: Mistral
+    description: Mistral API through the OpenAI-compatible adapter.
+    icon: tabler:wind
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 24
+    config:
+      base_url: https://api.mistral.ai/v1
+      api_key_env: MISTRAL_API_KEY
+      timeout: 600
+
+  - name: preset.deepinfra
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: DeepInfra OpenAI-compatible endpoint.
+    key: deepinfra
+    title: DeepInfra
+    description: DeepInfra hosted models through the OpenAI-compatible adapter.
+    icon: tabler:layers-intersect
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 25
+    config:
+      base_url: https://api.deepinfra.com/v1/openai
+      api_key_env: DEEPINFRA_API_KEY
+      timeout: 600
+
+  - name: preset.xai
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: xAI OpenAI-compatible endpoint.
+    key: xai
+    title: xAI
+    description: xAI API through the OpenAI-compatible adapter.
+    icon: tabler:letter-x
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 26
+    config:
+      base_url: https://api.x.ai/v1
+      api_key_env: XAI_API_KEY
+      timeout: 600
+
+  - name: preset.cerebras
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Cerebras OpenAI-compatible endpoint.
+    key: cerebras
+    title: Cerebras
+    description: Cerebras inference through the OpenAI-compatible adapter.
+    icon: tabler:circuit-resistor
+    provider_id: wippy.llm.openai_compat:provider
+    profile_editor_tag: kickside-model-provider-openai-compatible
+    order: 28
+    config:
+      base_url: https://api.cerebras.ai/v1
+      api_key_env: CEREBRAS_API_KEY
+      timeout: 600
+
+  - name: preset.openai
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: OpenAI native provider preset.
+    key: openai
+    title: OpenAI
+    description: OpenAI Responses and embeddings provider.
+    icon: tabler:brand-openai
+    provider_id: wippy.llm.openai:provider
+    profile_editor_tag: kickside-model-provider-openai
+    order: 30
+    config:
+      base_url: https://api.openai.com/v1
+      api_key_env: OPENAI_API_KEY
+      timeout: 600
+
+  - name: preset.anthropic
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Anthropic Claude provider preset.
+    key: anthropic
+    title: Anthropic
+    description: Claude Messages API provider with model discovery.
+    icon: tabler:hexagon-letter-c
+    provider_id: wippy.llm.claude:provider
+    profile_editor_tag: kickside-model-provider-anthropic
+    order: 40
+    config:
+      base_url: https://api.anthropic.com
+      api_key_env: ANTHROPIC_API_KEY
+      api_version: "2023-06-01"
+      timeout: 600
+
+  - name: preset.google_gemini
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Google Gemini API provider preset.
+    key: google-gemini
+    title: Google Gemini
+    description: Gemini Developer API using GEMINI_API_KEY and models.list discovery.
+    icon: tabler:brand-google
+    provider_id: wippy.llm.google.generative_ai:provider
+    profile_editor_tag: kickside-model-provider-google-generative-ai
+    order: 50
+    config:
+      base_url: https://generativelanguage.googleapis.com/v1beta/models
+      api_key_env: GEMINI_API_KEY
+      timeout: 600
+
+  - name: preset.google_vertex
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: Google Vertex AI provider preset.
+    key: google-vertex
+    title: Google Vertex AI
+    description: Vertex AI provider context for explicit model overlays.
+    icon: tabler:cloud
+    provider_id: wippy.llm.google.vertex:provider
+    profile_editor_tag: kickside-model-provider-google-vertex
+    order: 60
+    config:
+      project_env: GOOGLE_CLOUD_PROJECT
+      location_env: VERTEX_AI_LOCATION
+      google_credentials_env: GOOGLE_CREDENTIALS
+      timeout: 600
+
+  - name: preset.bedrock
+    kind: registry.entry
+    meta:
+      type: kickside.models:provider_profile_preset
+      comment: AWS Bedrock provider preset.
+    key: bedrock
+    title: AWS Bedrock
+    description: Bedrock Converse/InvokeModel provider with signed model discovery.
+    icon: tabler:brand-aws
+    provider_id: wippy.llm.bedrock:provider
+    profile_editor_tag: kickside-model-provider-bedrock
+    order: 70
+    config:
+      region_env: AWS_REGION
+      access_key_env: AWS_ACCESS_KEY_ID
+      secret_key_env: AWS_SECRET_ACCESS_KEY
+      session_token_env: AWS_SESSION_TOKEN
+      timeout: 600

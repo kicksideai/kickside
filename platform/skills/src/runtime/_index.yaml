@@ -1,0 +1,32 @@
+version: "1.0"
+namespace: kickside.skills.runtime
+
+# Skill runtime methods — the store-backed implementation of the
+# kickside.skills:skill_runtime contract (defined in the parent _index.yaml).
+# activate / list_files / read_file dispatch over the access-checked store funcs;
+# script execution is not exposed until a runner implementation exists.
+
+entries:
+  - name: activate_func
+    kind: function.lua
+    meta:
+      comment: "skill_runtime:activate — load a version's body + file manifest."
+    source: file://skill_runtime.lua
+    method: activate
+    modules: [funcs]
+
+  - name: list_files_func
+    kind: function.lua
+    meta:
+      comment: "skill_runtime:list_files — a version's file manifest (no content)."
+    source: file://skill_runtime.lua
+    method: list_files
+    modules: [funcs]
+
+  - name: read_file_func
+    kind: function.lua
+    meta:
+      comment: "skill_runtime:read_file — one bundled file (access + path + size checked)."
+    source: file://skill_runtime.lua
+    method: read_file
+    modules: [funcs]

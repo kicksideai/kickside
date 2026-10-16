@@ -1,0 +1,84 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the documentation test harness.
+    file: "${sqlite_path}"
+
+  - name: documentation.home
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: README.md
+      title: Documentation Harness
+      document_kind: guide
+      status: stable
+      content: file://README.md
+
+  - name: documentation.page
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/page.md
+      title: Registry Page
+      document_kind: guide
+      status: stable
+      content: file://docs/page.md
+
+  - name: documentation.utf8
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/unicode.md
+      title: Unicode Registry Page
+      document_kind: guide
+      status: stable
+      content: "éclair"
+
+  - name: documentation.navigation
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.navigation
+    data:
+      items:
+        - title: Start Here
+          items:
+            - document: app:documentation.home
+            - document: app:documentation.page
+
+  - name: documentation
+    kind: library.lua
+    source: file://documentation.lua
+    modules: [registry]
+    imports:
+      keyset: kickside.contract:keyset
+
+  - name: documentation_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_documentation
+      comment: Proves registry-owned documentation discovery, list/read behavior, and exact-page rejection.
+    source: file://documentation_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      documentation: app:documentation
+      test: wippy.test:test
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: "*"

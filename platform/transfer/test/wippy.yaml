@@ -1,0 +1,7 @@
+organization: kickside
+module: transfer-test
+type: application
+description: Standalone application harness that boots kickside/transfer and runs its harness-owned test suites.
+directories:
+  modules: .wippy
+  src: .

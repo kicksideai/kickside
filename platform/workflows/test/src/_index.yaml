@@ -1,0 +1,378 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/workflows. Provides the host resources the compiler,
+# version plane, run launcher, and automation kind require (app:db, routers, process
+# host, env storage, a permissive scope) and boots the automation + dataflow stack so
+# its harness-owned suites run in isolation. The module loads once through its
+# dependency replacement. Test source lives in this harness under suites/.
+# Harness-only; excluded from publish.
+
+entries:
+  - name: runs_fixture
+    kind: library.lua
+    meta: { comment: "Test-only run plane with explicitly supplied owning modules." }
+    source: file://suites/runs_fixture.lua
+    imports:
+      runs_read: kickside.workflows.runs:runs_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+  - name: runs_dedup_scaffold
+    kind: library.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Shared scaffold for the runs dedup suites.
+    source: file://suites/runs_dedup_scaffold.lua
+  - name: engine_scaffold
+    kind: library.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Shared scaffold for the live-engine execution suites.
+    source: file://suites/engine_scaffold.lua
+  - name: admission_scaffold
+    kind: library.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Shared scaffold for the admission suites.
+    source: file://suites/admission_scaffold.lua
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: Workflow Test Application
+      comment: Managed root namespace for the isolated Workflow harness.
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the workflows suite.
+    file: "${sqlite_path}"
+
+  - name: uploads
+    kind: fs.directory
+    directory: ./storage
+    auto_init: true
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: repo_fs
+    kind: fs.directory
+    meta:
+      comment: Workspace root for tests that load real sibling module declarations.
+    directory: ../../../..
+
+  - name: processes
+    kind: process.host
+    host:
+      # The suite creates durable dataflow actors as well as one process per test
+      # entry. Keep enough slots for those actors so completed entries cannot
+      # starve later entries behind the host's small default process cap.
+      max_processes: 100
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Authenticated API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: Public router for wippy/views to avoid route collisions with app:api.
+      server: gateway
+    prefix: /public
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the workflows suites run their scoped actors under.
+    groups:
+      - automation_test
+      - wippy.security:process
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: workflows_suite_policy
+    kind: security.policy
+    meta:
+      comment: Named policy the access suite resolves for its scoped actors.
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.wippy.test
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Test runner the Workflows harness suites import and `wippy test` discovers them through.
+    component: wippy/test
+
+  - name: dep.kickside.workflows
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Workflows mounted as the single package root; this harness supplies all host and transitive seams.
+    component: kickside/workflows
+    parameters:
+    - name: kickside.workflows:target_db
+      value: app:db
+    - name: kickside.workflows:api_router
+      value: app:api
+    - name: kickside.workflows:ui_server
+      value: app:gateway
+    - name: kickside.workflows:process_host
+      value: app:processes
+    - name: kickside.workflows.security:user_security_scope
+      value: app:user
+    - name: kickside.automation:target_db
+      value: app:db
+    - name: kickside.automation:api_router
+      value: app:api
+    - name: kickside.automation:ui_server
+      value: app:gateway
+    - name: kickside.inbox:api_router
+      value: app:api
+    - name: kickside.inbox:ui_server
+      value: app:gateway
+    - name: kickside.inbox.security:assignment_security_scope
+      value: app:user
+    - name: kickside.blocks:process_host
+      value: app:processes
+    - name: kickside.transform.security:user_security_scope
+      value: app:user
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.views:api_router
+      value: app:api_public
+    - name: wippy.views:env_storage
+      value: app:env_storage
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+
+  - name: dep.kickside.transform
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Transform — transitive dep pulled in by automation's shared engine wiring.
+    component: "kickside/transform"
+    parameters:
+      - name: kickside.transform:api_router
+        value: app:api
+
+      - name: kickside.transform:ui_server
+        value: app:gateway
+
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Jobs — owns the effect tables included in Core thread cleanup cascades.
+    component: "kickside/jobs"
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+      - name: api_router
+        value: app:api
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Users — owns the app_users table wippy/session's migrations reference; its migrations run before session 02 on both engines.
+    component: "kickside/users"
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: env_storage
+        value: app:env_storage
+      - name: public_router
+        value: app:api_public
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+      - name: user_security_scope
+        value: app:user
+      - name: admin_security_scope
+        value: app:user
+      - name: login_role_resource
+        value: app:user
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.wippy.llm
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: LLM — transitive provider required by the dataflow agent node runtime.
+    component: "wippy/llm"
+    parameters:
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.relay
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Relay — transitive dep of session/views.
+    component: "wippy/relay"
+    parameters:
+      - name: user_security_scope
+        value: app:user
+      - name: env_storage
+        value: app:env_storage
+      - name: application_host
+        value: app:processes
+
+  - name: dep.wippy.views
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Views — transitive dep of session (artifact rendering).
+    component: "wippy/views"
+    parameters:
+      - name: api_router
+        value: app:api_public
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.session
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Session — backs wippy/dataflow's session artifact repo.
+    component: "wippy/session"
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: env_storage
+        value: app:env_storage
+      - name: delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: application_host
+        value: app:processes
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.migration
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Migration engine configured for the harness database.
+    component: "wippy/migration"
+    parameters:
+      - name: app_db
+        value: app:db
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}

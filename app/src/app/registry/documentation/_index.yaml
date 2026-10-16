@@ -1,0 +1,143 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: documentation.glossary
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/glossary.md
+      title: Glossary
+      document_kind: guide
+      status: stable
+      content: file://../../docs/kickside-development/glossary.md
+
+  - name: documentation.index-by-module
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/index-by-module.md
+      title: Index By Module
+      document_kind: guide
+      status: stable
+      content: file://../../docs/kickside-development/index-by-module.md
+
+  - name: documentation.index-by-task
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/index-by-task.md
+      title: Index By Task
+      document_kind: guide
+      status: stable
+      content: file://../../docs/kickside-development/index-by-task.md
+
+  - name: documentation.plugin-template
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: templates/plugin/plugin-template.md
+      title: KickSide Module Template
+      document_kind: guide
+      status: stable
+      content: file://../../templates/plugin/plugin-template.md
+
+  - name: documentation.navigation
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.navigation
+    data:
+      items:
+        - title: Start Here
+          items:
+            - document: app:documentation.home
+            - document: app:documentation.developer-handbook
+            - document: app:documentation.discovery-addressing-context
+            - document: app:documentation.index-by-task
+        - title: Architecture
+          items:
+            - document: app:documentation.canonical-model
+            - document: app:documentation.component-development
+            - document: app:documentation.contracts-and-ports
+            - document: app:documentation.threads-events-projections
+            - document: app:documentation.connections-and-integrations
+            - document: app:documentation.application-patterns
+            - document: app:documentation.security-and-module-access
+            - document: app:documentation.blocks-flows-workflows
+            - document: app:documentation.design-gaps
+        - title: Build And Operate
+          items:
+            - document: app:documentation.knowledge-uploads-automation-inbox
+            - document: app:documentation.agents-skills-models
+            - document: app:documentation.frontend-web-components
+            - document: app:documentation.recipes
+            - document: app:documentation.module-layout
+            - document: app:documentation.testing
+            - document: app:documentation.dev-loop
+            - document: app:documentation.publishing
+            - document: app:documentation.conventions
+            - document: app:documentation.settings
+            - document: app:documentation.checklists
+        - title: Frontend
+          items:
+            - document: app:documentation.frontend-handbook
+            - document: app:documentation.frontend-app-guide
+            - document: app:documentation.frontend-component-guide
+            - document: app:documentation.frontend-host-spec
+            - document: app:documentation.frontend-proxy-api
+            - document: app:documentation.frontend-best-practices
+            - document: app:documentation.frontend-app-checklist
+        - title: Reference
+          items:
+            - document: app:documentation.glossary
+            - document: app:documentation.index-by-module
+            - document: app:documentation.plugin-template
+
+  - name: documentation
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      title: Read KickSide Documentation
+      llm_alias: read_kickside_documentation
+      llm_description: List or read the canonical KickSide development handbook and working plugin scaffold. Start with Discovery, Addressing, And Context before creating or searching for an extension.
+      tags: [kickside, documentation, development]
+      input_schema:
+        type: object
+        additionalProperties: false
+        properties:
+          page:
+            type: string
+            description: Exact page returned by list mode. Omit to list pages.
+          limit:
+            type: integer
+            minimum: 1
+            maximum: 100
+            description: List mode page names per page; default 25.
+          cursor:
+            type: string
+            description: List mode next_cursor of the previous page.
+      output_schema:
+        oneOf:
+          - type: object
+            additionalProperties: false
+            required: [pages]
+            properties:
+              pages:
+                type: array
+                items: { type: string }
+              next_cursor: { type: string, description: Pass as cursor for the next list page; absent on the last page. }
+          - type: object
+            additionalProperties: false
+            required: [page, content]
+            properties:
+              page: { type: string }
+              content: { type: string }
+    source: file://../../documentation.lua
+    method: read
+    modules: [registry]
+    imports:
+      keyset: kickside.contract:keyset

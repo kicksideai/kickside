@@ -1,0 +1,121 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Users admin surface. Styled only with the universal --p-* theme vocabulary so
+   it renders correctly inside the shadow DOM of any Wippy host (no SPA tokens),
+   which is also what makes the users implementation swappable per deployment. */
+.ku {
+  --system-surface-gutter: var(--kickside-system-surface-gutter, 24px);
+  font-family: inherit;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ku-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; width: 100%;
+  margin: 0; padding: 16px var(--system-surface-gutter) 10px; flex-wrap: wrap;
+}
+.ku-count { font-size: 12.5px; color: var(--p-text-muted-color); }
+
+.ku-err {
+  width: calc(100% - (var(--system-surface-gutter) * 2));
+  margin: 0 0 8px var(--system-surface-gutter); padding: 9px 12px; border-radius: 10px; font-size: 13px;
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent);
+  color: var(--p-danger-600, var(--p-danger-500));
+}
+
+.ku-body {
+  flex: 1 0 auto;
+  min-height: 0;
+  width: 100%;
+  margin: 0;
+  padding: 6px var(--system-surface-gutter) 20px;
+}
+.ku-loading { display: flex; align-items: center; gap: 8px; color: var(--p-text-muted-color); font-size: 13px; padding: 24px; }
+
+.ku-empty { text-align: center; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ku-empty-title { font-size: 15px; font-weight: 700; color: var(--p-text-color); }
+.ku-empty-sub { font-size: 13px; color: var(--p-text-muted-color); margin-bottom: 10px; }
+
+.ku-list {
+  display: flex; flex-direction: column; border: 1px solid var(--p-content-border-color);
+  border-radius: 14px; overflow: hidden; background: var(--p-content-background); width: 100%;
+}
+.ku-row {
+  display: grid; grid-template-columns: 40px minmax(0, 1.4fr) minmax(0, 1.2fr) auto auto;
+  align-items: center; gap: 14px; padding: 11px 16px; border-bottom: 1px solid var(--p-content-border-color);
+}
+.ku-row:last-child { border-bottom: none; }
+.ku-row:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.ku-avatar {
+  width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color);
+  font-weight: 700; font-size: 13px;
+}
+.ku-id { min-width: 0; }
+.ku-name { font-size: 14px; font-weight: 600; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ku-email { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ku-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+/* Sizing is .kx-tag-sm, colour is the Tag's severity; the status strings
+   arrive lowercase. */
+.ku-badge { text-transform: capitalize; }
+.ku-date { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; }
+.ku-actions { display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+.ku-row:hover .ku-actions, .ku-row:focus-within .ku-actions { opacity: 1; }
+
+.ku-icon-btn {
+  width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--p-content-border-color); background: transparent; color: var(--p-text-muted-color);
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.ku-icon-btn:hover { color: var(--p-text-color); background: color-mix(in srgb, var(--p-text-color) 9%, transparent); }
+.ku-danger:hover { color: var(--p-danger-600, var(--p-danger-500)); border-color: color-mix(in srgb, var(--p-danger-500) 40%, transparent); }
+
+.ku-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid transparent;
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: filter .15s, background .15s, opacity .15s;
+}
+.ku-btn:disabled { opacity: .45; cursor: default; }
+.ku-btn-primary { background: var(--p-primary-color); color: var(--p-button-primary-color); }
+.ku-btn-primary:hover:not(:disabled) { filter: brightness(1.05); }
+.ku-btn-ghost { background: transparent; border-color: var(--p-content-border-color); color: var(--p-text-color); }
+.ku-btn-ghost:hover { background: color-mix(in srgb, var(--p-text-color) 9%, transparent); }
+.ku-btn-danger { background: var(--p-danger-500); color: var(--p-button-danger-color); }
+.ku-btn-danger:hover:not(:disabled) { background: var(--p-danger-600, color-mix(in srgb, var(--p-danger-500) 85%, var(--p-text-color))); }
+
+.ku-form { display: flex; flex-direction: column; gap: 14px; }
+.ku-field { display: flex; flex-direction: column; gap: 6px; }
+.ku-label { font-size: 12px; font-weight: 600; color: var(--p-text-muted-color); }
+.ku-input {
+  width: 100%; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; transition: border-color .15s;
+}
+.ku-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.ku-check input { accent-color: var(--p-primary-color); }
+.ku-check-label { font-size: 13px; color: var(--p-text-color); }
+.ku-check-id { font-size: 11px; color: var(--p-text-muted-color); font-family: ui-monospace, monospace; }
+
+
+.ku-editor { margin: 0 var(--system-surface-gutter) 20px; padding: 16px; border: 1px solid var(--p-content-border-color); border-radius: 14px; }
+.ku-editor h2 { margin: 0 0 12px; font-size: 16px; }

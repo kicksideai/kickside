@@ -1,0 +1,971 @@
+version: "1.0"
+namespace: kickside.core.threads
+
+# Threads slice. Owns the kickside_thread aggregate and its append-only
+# kickside_event log: thread CRUD, event post/batch, and the projection-management
+# methods of the kickside.core:threads contract. A thread IS a component — this
+# slice registers each thread with kickside.component:component_service and gates
+# every read/write on that contract's access context, so NO component_access /
+# component_meta SQL lives here. It declares its OWN ns.requirements (userspace
+# pattern) so it wires into a host without the root _index.yaml being edited for
+# wiring: target_db backs the SQL, user_security_scope is the scope the endpoints +
+# binding read the actor under, process_host places the workspace relay plugin,
+# and api_router carries
+# the endpoints. The contract.binding itself is registered in the root _index.yaml
+# (the one public interface core exposes), pointing at the method funcs below.
+
+entries:
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # Runtime DB access resolves the root target_db-injected db_config.
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Security scope the thread endpoints + binding read the acting actor under.
+    targets:
+      - entry: kickside.core.threads:user_workspace_spawn
+        path: ".groups +="
+      - entry: kickside.core.threads.api:create_thread.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:get_thread.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:update_thread.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:delete_thread.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:list_threads.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:list_classes.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:list_children.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:get_graph.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:post_message.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:post_event.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:list_events.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:ingest_events_batch.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:list_jobs.endpoint
+        path: .meta.scope
+      - entry: kickside.core.threads.api:list_job_runs.endpoint
+        path: .meta.scope
+      - entry: kickside.core.security:module_access
+        path: .groups +=
+      - entry: kickside.core.security:module_runtime
+        path: .groups +=
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host for the workspace relay plugin and projection cursor waiter broker.
+    targets:
+      - entry: kickside.core.threads:workspace_plugin
+        path: .meta.default_host
+      - entry: kickside.core.threads:cursor_waiter.service
+        path: .host
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the thread endpoints attach to.
+    targets:
+      - entry: kickside.core.threads.api:create_thread.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:get_thread.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:update_thread.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:delete_thread.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:list_threads.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:list_classes.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:list_children.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:get_graph.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:post_message.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:post_event.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:list_events.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:ingest_events_batch.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:list_jobs.endpoint
+        path: .meta.router
+      - entry: kickside.core.threads.api:list_job_runs.endpoint
+        path: .meta.router
+
+  # ─── Tunable knob (env.variable) ─────────────────────────────────────
+  # ─── Constant vocabulary ─────────────────────────────────────────────
+  - name: consts
+    kind: library.lua
+    meta:
+      comment: Thread/event field bounds, defaults, op_type names, component contract id, cascade tables.
+    source: file://consts.lua
+
+  - name: env
+    kind: library.lua
+    meta:
+      comment: Core target_db accessor shared by thread runtime persistence.
+    source: file://env.lua
+    imports:
+      core_db: kickside.core:db
+
+  # ─── Libraries ───────────────────────────────────────────────────────
+  - name: endpoint_resolver
+    kind: library.lua
+    meta:
+      comment: Resolve+dispatch a component-kind event endpoint by its `via` URI — thread (own event log), func://<id>, contract://<id>. Parses scheme/target/domain-context with {self} -> owning component id; actor/scope inherited ambiently.
+    source: file://endpoint_resolver.lua
+    modules:
+      - funcs
+      - contract
+
+  - name: component
+    kind: library.lua
+    meta:
+      comment: The single seam to kickside.component:component_service — register, access, list, placement, delete. No SQL on component tables.
+    source: file://component.lua
+    modules:
+      - contract
+      - security
+    imports:
+      threads_consts: kickside.core.threads:consts
+      core_types: kickside.core:types
+      component_envelope: kickside.component:envelope
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: component_identity
+    kind: library.lua
+    meta:
+      comment: Owner loader for a component's stored execution identity (trusted component tier).
+    source: file://component_identity.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_client: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+
+  - name: notify
+    kind: library.lua
+    meta:
+      comment: Post-write thread update fanout through the threads-owned emit_update function.
+    source: file://notify.lua
+    modules:
+      - json
+      - time
+      - process
+      - funcs
+      - sql
+    imports:
+      consts: kickside.core.threads:notify_consts
+      threads_env: kickside.core.threads:env
+
+  # Hub delivery runs under the threads identity: writers act under their own
+  # actors and need no process messaging authority.
+  - name: emit_update_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the thread update fanout message connected user hubs.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: emit_update_access
+    kind: security.policy
+    meta:
+      comment: Lets a narrowly scoped thread writer deliver its updates through the threads identity.
+    policy:
+      resources: kickside.core.threads:emit_update
+      actions: funcs.call
+      effect: allow
+
+  - name: emit_update
+    kind: function.lua
+    meta:
+      comment: Thread/projection update fanout to the stored thread audience's connected hubs; absent hubs are skipped, refused deliveries are returned.
+    source: file://notify.lua
+    method: emit_thread_update
+    modules:
+      - json
+      - time
+      - process
+      - funcs
+      - sql
+    imports:
+      consts: kickside.core.threads:notify_consts
+      threads_env: kickside.core.threads:env
+    security:
+      actor:
+        id: kickside.core.threads:emit_update
+      policies:
+        - kickside.core.threads:emit_update_transport
+
+  - name: notify_consts
+    kind: library.lua
+    meta:
+      comment: Thread-update topic vocabulary and per-user hub naming.
+    source: file://notify_consts.lua
+
+  - name: provision
+    kind: library.lua
+    meta:
+      comment: Materializes provisioned component-kind declarations into component+thread+projections+retention (idempotent, convergent).
+    source: file://provision.lua
+    modules:
+      - contract
+      - funcs
+      - sql
+    imports:
+      component_envelope: kickside.component:envelope
+      error_envelope: kickside.contract:error_envelope
+      autoinit: kickside.component:autoinit
+      retention_repo: kickside.core.retention.persist:repo
+      core_db: kickside.core:db
+      execution_identity: kickside.execution:execution_identity
+      proj_types: kickside.core.projections:types
+      component_identity: kickside.core.threads:component_identity
+
+  - name: workspace_plugin
+    kind: process.lua
+    meta:
+      type: relay.plugin
+      command_prefix: "workspace_"
+      auto_start: true
+      default_host: ""
+      comment: One relay plugin owning per-user component init; materializes provisioned component-kind decls on websocket login, then exits.
+    source: file://workspace_plugin.lua
+    method: run
+    modules:
+      - logger
+      - security
+    imports:
+      provision: kickside.core.threads:provision
+
+  - name: user_workspace_spawn
+    kind: security.policy
+    groups: []
+    policy:
+      resources: kickside.core.threads:workspace_plugin
+      actions: [process.spawn, process.spawn.monitored, process.spawn.linked]
+      effect: allow
+
+  - name: cursor_waiters
+    kind: library.lua
+    meta:
+      comment: Process-message broker for request-scoped projection cursor progress waiters.
+    source: file://cursor_waiters.lua
+    modules: [time, channel, process, logger, uuid, funcs]
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: cursor_waiter
+    kind: process.lua
+    meta:
+      comment: Supervised projection cursor waiter broker.
+    source: file://cursor_waiters.lua
+    method: main
+    modules: [time, channel, process, logger, uuid, funcs]
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  # Broker signals run under the threads identity: waiters and cursor writers
+  # act under their own actors and need no process messaging authority.
+  - name: cursor_waiter_signal_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the cursor waiter signal message the registered waiter broker.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: cursor_waiter_signal
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one waiter registration, removal, or committed cursor change to the waiter broker.
+    source: file://cursor_waiters.lua
+    method: signal
+    modules: [time, channel, process, logger, uuid, funcs]
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+    security:
+      actor:
+        id: kickside.core.threads:cursor_waiter_signal
+      policies:
+        - kickside.core.threads:cursor_waiter_signal_transport
+
+  - name: cursor_waiter.service
+    kind: process.service
+    meta:
+      comment: Request-scoped cursor notification broker for threads.catch_up_projection.
+    process: kickside.core.threads:cursor_waiter
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_delay: 60s
+        max_attempts: 10
+      security:
+        groups:
+          - wippy.security:process
+
+  - name: contract_common
+    kind: library.lua
+    meta:
+      comment: Shared argument checks, actor/identity lookups, pooled connection and update notification for the threads contract parts.
+    source: file://contract/common.lua
+    modules: [sql, security]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_identity: kickside.core.threads:component_identity
+      execution_identity: kickside.execution:execution_identity
+      threads_env: kickside.core.threads:env
+      threads_notify: kickside.core.threads:notify
+
+  - name: contract_resource_crud
+    kind: library.lua
+    meta:
+      comment: kickside.core:threads existing-thread mutations (update/delete/list); split out of contract_resource to keep both files under the size limit.
+    source: file://contract/resource_crud.lua
+    modules: [json]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: contract_resource
+    kind: library.lua
+    meta:
+      comment: kickside.core:threads resource methods (create/converge/ensure/emit/purge/find/upsert/update/delete/list).
+    source: file://contract/resource.lua
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      error_envelope: kickside.contract:error_envelope
+
+  - name: contract_event_authorization
+    kind: library.lua
+    meta:
+      comment: Shared component WRITE, stored-kind event declaration and authorship validation.
+    source: file://contract/event_authorization.lua
+    modules: [sql, security, registry, uuid, json]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      threads_writer: kickside.core.threads.persist:writer
+      component_client: kickside.component:component
+      core_types: kickside.core:types
+      contract_common: kickside.core.threads:contract_common
+
+  - name: contract_events
+    kind: library.lua
+    meta:
+      comment: kickside.core:threads event methods (list_events/find_event_by_external/append_events/append_event).
+    source: file://contract/events.lua
+    modules: [sql, json, security, registry]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_teardown: kickside.core.threads.persist:teardown
+      component_client: kickside.component:component
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+
+  - name: contract_graph
+    kind: library.lua
+    meta:
+      comment: kickside.core:threads topology reads (list_children/list_edges/list_classes).
+    source: file://contract/graph.lua
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+
+  - name: component_scope
+    kind: library.lua
+    meta:
+      comment: Resolve READ-authorized thread components to thread ids for cross-owner listings.
+    source: file://contract/component_scope.lua
+    modules: [sql]
+    imports:
+      component: kickside.core.threads:component
+      core_types: kickside.core:types
+      contract_common: kickside.core.threads:contract_common
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+
+  - name: component_scope.readable_threads
+    kind: function.lua
+    meta:
+      comment: Typed READ-scoped component-to-thread resolution for Jobs listings.
+    source: file://contract/component_scope.lua
+    method: readable_threads
+    modules: [sql]
+    imports:
+      component: kickside.core.threads:component
+      core_types: kickside.core:types
+      contract_common: kickside.core.threads:contract_common
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+
+  - name: thread_status
+    kind: function.lua
+    meta:
+      comment: kickside.contract:component get_status for a thread-backed component.
+    source: file://component_status.lua
+    method: get_status
+    modules: [ctx, time]
+
+  # ─── Contract method funcs ───────────────────────────────────────────
+  # Each kickside.core:threads method is one function.lua entry point in its
+  # contract part (contract/resource, events, graph, projections), selected by
+  # `method`. The root _index.yaml's threads binding maps
+  # the contract methods to these entries.
+  - name: create_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads create — register component + write thread.
+    source: file://contract/resource.lua
+    method: create
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: ensure_thread_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads ensure_thread — attach a thread to an existing component-first component (idempotent), auto-applying its declared projections/retention.
+    source: file://contract/resource.lua
+    method: ensure_thread
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: converge_thread_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads converge_thread — make a component's thread state match its kind's declaration (create if absent, apply missing projections/cursors if present). Boot/install convergence primitive, never a hot path.
+    source: file://contract/resource.lua
+    method: converge_thread
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: emit_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads emit — append an event to a component's primary thread (thread_id == component_id), creating the thread with its declared projections on first touch.
+    source: file://contract/resource.lua
+    method: emit
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: purge_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads purge — reap a component's primary thread + cascade (events/projections/cursors/retention/edges) without touching the component row; the component-driven delete cascade. Idempotent.
+    source: file://contract/resource.lua
+    method: purge
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: find_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads find — lookup by id, soft (nil when not accessible).
+    source: file://contract/resource.lua
+    method: find
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: upsert_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads upsert — idempotent get-or-create on a natural key.
+    source: file://contract/resource.lua
+    method: upsert
+    modules: [crypto]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      contract_events: kickside.core.threads:contract_events
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+      contract_resource_crud: kickside.core.threads:contract_resource_crud
+      natural_upsert: kickside.core.threads:natural_upsert
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: update_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads update — patch state/thread_class/attrs.
+    source: file://contract/resource_crud.lua
+    method: update
+    modules: [json]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: delete_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads delete — remove thread + cascade + component.
+    source: file://contract/resource_crud.lua
+    method: delete
+    modules: [json]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: list_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads list — access-filtered via the component contract.
+    source: file://contract/resource_crud.lua
+    method: list
+    modules: [json]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+
+  - name: list_events_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads list_events — read a thread's event log (READ-gated).
+    source: file://contract/events.lua
+    method: list_events
+    modules: [sql, json, security, registry]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_teardown: kickside.core.threads.persist:teardown
+      component_client: kickside.component:component
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+
+  - name: prune_boundary_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads prune_boundary — a thread's highest pruned sequence for callers holding the read action on its class.
+    source: file://contract/events.lua
+    method: prune_boundary
+    modules: [sql, json, security, registry]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_teardown: kickside.core.threads.persist:teardown
+      component_client: kickside.component:component
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+
+  - name: find_event_by_external_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads find_event_by_external — exact durable external-identity lookup (READ-gated).
+    source: file://contract/events.lua
+    method: find_event_by_external
+    modules: [sql, json, security, registry]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_teardown: kickside.core.threads.persist:teardown
+      component_client: kickside.component:component
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+
+  - name: append_events_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads append_events — durable typed event append (WRITE-gated).
+    source: file://contract/events.lua
+    method: append_events
+    modules: [sql, json, security, registry]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_teardown: kickside.core.threads.persist:teardown
+      component_client: kickside.component:component
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+
+  - name: append_event_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads append_event — single durable typed event append (WRITE-gated).
+    source: file://contract/events.lua
+    method: append_event
+    modules: [sql, json, security, registry]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_teardown: kickside.core.threads.persist:teardown
+      component_client: kickside.component:component
+      contract_event_authorization: kickside.core.threads:contract_event_authorization
+
+  - name: list_children_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads list_children — child threads (READ-gated on parent).
+    source: file://contract/graph.lua
+    method: list_children
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+
+  - name: list_edges_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads list_edges — thread relationship edges (READ-gated).
+    source: file://contract/graph.lua
+    method: list_edges
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+
+  - name: list_classes_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads list_classes — distinct thread classes present.
+    source: file://contract/graph.lua
+    method: list_classes
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      threads_reader: kickside.core.threads.persist:reader
+
+  - name: register_projection_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads register_projection — WRITE-gated, delegates to projections writer.
+    source: file://contract/projections.lua
+    method: register_projection
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: list_projections_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads list_projections — projection definitions and cursors (READ-gated).
+    source: file://contract/projections.lua
+    method: list_projections
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: get_projection_cursor_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads get_projection_cursor — one projection and cursor at their declared address (READ-gated).
+    source: file://contract/projections.lua
+    method: get_projection_cursor
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: catch_up_projection_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads catch_up_projection — READ-gated synchronous projection catch-up.
+    source: file://contract/projections.lua
+    method: catch_up_projection
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: pause_projection_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads pause_projection — pause a projection cursor (WRITE-gated).
+    source: file://contract/projections.lua
+    method: pause_projection
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: resume_projection_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads resume_projection — resume a paused/failed cursor and wake scheduler (WRITE-gated).
+    source: file://contract/projections.lua
+    method: resume_projection
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: remove_projection_method
+    kind: function.lua
+    meta:
+      comment: kickside.core:threads remove_projection — WRITE-gated, delegates to projections writer.
+    source: file://contract/projections.lua
+    method: remove_projection
+    modules: [sql, time]
+    imports:
+      committed_error: kickside.contract:committed_error
+      error_envelope: kickside.contract:error_envelope
+      contract_common: kickside.core.threads:contract_common
+      core_types: kickside.core:types
+      jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      proj_reader: kickside.core.projections.persist:reader
+      page_cursor: kickside.core.projections.persist:page_cursor
+      proj_worker: kickside.core.projections.persist:worker
+      proj_writer: kickside.core.projections.persist:writer
+      threads_reader: kickside.core.threads.persist:reader
+      threads_writer: kickside.core.threads.persist:writer
+
+  # ─── Tests ───────────────────────────────────────────────────────────
+
+  - name: events_pullable
+    kind: function.lua
+    meta:
+      comment: Thread events as a pullable source; payload is the declared event body, metadata stays on the item; integer cursor, READ-gated, reports source_gap below the prune boundary.
+    source: file://events_pullable.lua
+    method: pull
+    modules: [sql, json, time]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      threads_env: kickside.core.threads:env
+      threads_reader: kickside.core.threads.persist:reader
+
+  - name: authorize_projection_writes
+    kind: function.lua
+    meta: { private: true }
+    source: file://contract/event_authorization.lua
+    method: authorize_writes
+    modules: [sql, security, registry, uuid, json]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      threads_writer: kickside.core.threads.persist:writer
+      component_client: kickside.component:component
+      core_types: kickside.core:types
+      contract_common: kickside.core.threads:contract_common
+
+  - name: job_history
+    kind: library.lua
+    source: file://contract/job_history.lua
+    modules: [uuid]
+    meta:
+      comment: Authorized Jobs pages merged across complete readable-thread scope.
+    imports:
+      threads_contract: kickside.core.threads:component_scope
+      thread_resource: kickside.core.threads:contract_resource
+      jobs: kickside.core.jobs:jobs
+      clock: kickside.core.jobs:clock
+
+  - name: natural_upsert
+    kind: library.lua
+    meta: {private: true}
+    source: file://contract/natural_upsert.lua
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      committed_error: kickside.contract:committed_error
+      natural_key: kickside.core.threads.persist:natural_key
+      contract_common: kickside.core.threads:contract_common
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
+      threads_reader: kickside.core.threads.persist:reader
+      threads_component: kickside.core.threads:component

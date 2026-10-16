@@ -1,0 +1,46 @@
+version: '1.0'
+namespace: app
+entries:
+- name: owner_retention_test
+  kind: function.lua
+  meta:
+    title: Jobs Retention Bounded By Expiry
+    type: test
+    timeout: 600s
+    suite: kickside_core
+    group: KickSide Core / Jobs
+  source: file://owner_retention_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - channel
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    retention: kickside.core.jobs.persist:retention
+    config: kickside.core.jobs:config
+    jobs: kickside.core.jobs:jobs
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    job_fixture: app:job_fixture
+    job_types: kickside.core.jobs:types
+- name: row_limit_test
+  kind: function.lua
+  meta:
+    title: Jobs Row Byte Limit
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+  source: file://row_limit_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    config: kickside.core.jobs:config
+    job_fixture: app:job_fixture
+    worker_fence: kickside.core.jobs.service:worker_fence
+    row_bytes: kickside.core.jobs.persist:row_bytes

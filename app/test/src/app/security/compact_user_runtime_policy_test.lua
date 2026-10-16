@@ -1,0 +1,1 @@
+../../../../src/app/security/compact_user_runtime_policy_test.lua

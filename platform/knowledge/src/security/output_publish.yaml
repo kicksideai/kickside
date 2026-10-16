@@ -1,0 +1,41 @@
+version: '1.0'
+namespace: kickside.knowledge.security
+entries:
+- name: content_deleted_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.knowledge.events:content.deleted
+    actions: threads.output.publish
+    effect: allow
+- name: content_upserted_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.knowledge.events:content.upserted
+    actions: threads.output.publish
+    effect: allow
+- name: graph_changed_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.knowledge.events:graph.changed
+    actions: threads.output.publish
+    effect: allow
+- name: sink_output_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources:
+    - kickside.knowledge.events:delivery.claimed
+    - kickside.knowledge.events:content.deleted
+    actions: threads.output.publish
+    effect: allow

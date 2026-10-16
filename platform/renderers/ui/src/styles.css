@@ -1,0 +1,302 @@
+@import "@kickside/ui-kit/spin.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+/* Shared styles for the kickside content viewers. Theme-portable: everything is
+   derived from the universal --p-* tokens so a viewer looks right in any host
+   (wiki, uploads, inbox). Each viewer element fills the box its host gives it. */
+:host {
+  display: block;
+  --rv-text: var(--p-text-color);
+  --rv-muted: var(--p-text-muted-color);
+  --rv-faint: color-mix(in srgb, var(--p-text-color) 45%, transparent);
+  --rv-border: var(--p-content-border-color, color-mix(in srgb, var(--p-text-color) 12%, transparent));
+  --rv-surface: color-mix(in srgb, var(--p-text-color) 3%, transparent);
+  --rv-surface-2: color-mix(in srgb, var(--p-text-color) 6%, transparent);
+  /* Opaque elevated surface for sticky headers — must not be translucent (body
+     rows would bleed through) and must flip with dark mode. Composited from the
+     semantic content background + text color per the FE theming guide; the raw
+     --p-surface-* ramp is a fixed scale that does NOT adapt to dark mode. */
+  --rv-header: color-mix(in srgb, var(--p-content-background) 90%, var(--p-text-color) 10%);
+  --rv-zebra: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);
+  --rv-danger: var(--p-danger-500);
+  /* Code-syntax palette (highlight.js token types). Named as syntax roles, not
+     severities; the values reuse the theme's accent ramps so the palette adapts
+     with the theme and stays legible on both light and dark surfaces. */
+  --rv-hljs-string: var(--p-success-600);
+  --rv-hljs-number: var(--p-warn-500);
+  --rv-hljs-title:  var(--p-info-500);
+  --rv-hljs-type:   var(--p-info-600);
+  --rv-hljs-attr:   var(--p-help-500);
+  /* Exported documents and media retain their own canvas colors; these are
+     source-content surfaces rather than host chrome. Keep the pair explicit. */
+  --rv-document-canvas: #fff;
+  --rv-video-canvas: #000;
+  --rv-pad: 18px;
+  --rv-radius: 10px;
+}
+/* One content frame for every viewer: wc-resource-view wraps each leaf here, so a
+   single padding gives consistent breathing room from the host edge — prose gets
+   inner margin, bordered/media viewers get an even gutter around their card. */
+.rv { padding: var(--rv-pad); min-width: 0; box-sizing: border-box; }
+
+
+.rv-state {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  padding: 40px 16px; color: var(--rv-muted); font-size: 13px;
+}
+.rv-state.err { color: var(--rv-danger); }
+.rv-state svg { width: 17px; height: 17px; flex-shrink: 0; }
+
+/* Fallback for an unknown content type — a centered empty-state card, not a thin
+   glued-to-the-edge bar. */
+.rv-fallback {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 13px; text-align: center; min-height: 180px;
+  padding: 40px 24px; border-radius: var(--rv-radius);
+  border: 1px solid var(--rv-border); background: var(--rv-surface);
+  color: var(--rv-muted); font-size: 13px;
+}
+.rv-fallback svg { width: 34px; height: 34px; color: var(--rv-faint); }
+.rv-fallback strong { color: var(--rv-text); font-weight: 700; }
+.rv-fallback a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px; border: 1px solid var(--rv-border);
+  color: var(--p-primary-color); text-decoration: none; font-weight: 650;
+}
+.rv-fallback a:hover {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 8%, transparent);
+}
+
+/* ── Markdown prose — beacon-style ──────────────────────────────────────── */
+.md {
+  font-size: 14.5px; line-height: 1.7; color: var(--rv-text);
+  overflow-wrap: break-word; max-width: 768px;
+}
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p { margin: 0 0 14px; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
+  color: var(--rv-text); font-weight: 720; line-height: 1.28;
+}
+.md h1 { font-size: 25px; margin: 32px 0 14px; padding-bottom: 9px; border-bottom: 1px solid var(--rv-border); }
+.md h2 { font-size: 20px; margin: 28px 0 12px; padding-bottom: 7px; border-bottom: 1px solid var(--rv-border); }
+.md h3 { font-size: 16.5px; margin: 22px 0 9px; }
+.md h4 { font-size: 14.5px; margin: 18px 0 8px; }
+.md h5, .md h6 { font-size: 12.5px; margin: 16px 0 7px; text-transform: uppercase; letter-spacing: .04em; color: var(--rv-muted); }
+.md strong { font-weight: 700; color: var(--rv-text); }
+.md em { font-style: italic; }
+.md a {
+  color: var(--p-primary-color); text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--p-primary-color) 38%, transparent);
+}
+.md a:hover { border-bottom-color: var(--p-primary-color); }
+.md ul, .md ol { margin: 0 0 14px; padding-left: 22px; }
+.md li { margin: 4px 0; }
+.md li::marker { color: var(--rv-faint); }
+.md blockquote {
+  margin: 0 0 16px; padding: 2px 16px;
+  border-left: 3px solid color-mix(in srgb, var(--p-primary-color) 55%, var(--rv-border));
+  color: var(--rv-muted);
+}
+.md blockquote p { margin: 8px 0; }
+.md hr { border: none; border-top: 1px solid var(--rv-border); margin: 24px 0; }
+.md :not(pre) > code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .88em; padding: 2px 5px; border-radius: 4px;
+  background: color-mix(in srgb, var(--p-text-color) 6%, transparent);
+  color: var(--rv-text); overflow-wrap: anywhere;
+}
+.md pre {
+  margin: 0 0 16px; padding: 12px 14px; border-radius: 6px;
+  background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
+  border: 1px solid var(--rv-border); overflow-x: auto; white-space: pre-wrap;
+}
+.md pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.6; color: var(--rv-text);
+  background: transparent; padding: 0; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.md table { display: block; width: 100%; margin: 0 0 16px; border-collapse: collapse; overflow-x: auto; font-size: 13.5px; }
+.md th, .md td { padding: 8px 11px; border: 1px solid var(--rv-border); text-align: left; vertical-align: top; }
+.md th { background: var(--rv-header); color: var(--rv-text); font-weight: 700; white-space: nowrap; }
+.md tr:nth-child(even) td { background: var(--rv-zebra); }
+.md .hljs, .codev .hljs { color: var(--rv-text); background: transparent; }
+.md .hljs-comment, .md .hljs-quote, .codev .hljs-comment, .codev .hljs-quote { color: var(--rv-faint); font-style: italic; }
+.md .hljs-keyword, .md .hljs-selector-tag, .md .hljs-subst, .codev .hljs-keyword, .codev .hljs-selector-tag, .codev .hljs-subst { color: var(--p-primary-color); }
+.md .hljs-string, .md .hljs-doctag, .codev .hljs-string, .codev .hljs-doctag { color: var(--rv-hljs-string); }
+.md .hljs-number, .md .hljs-literal, .codev .hljs-number, .codev .hljs-literal { color: var(--rv-hljs-number); }
+.md .hljs-title, .md .hljs-section, .codev .hljs-title, .codev .hljs-section { color: var(--rv-hljs-title); }
+.md .hljs-type, .md .hljs-class .hljs-title, .codev .hljs-type, .codev .hljs-class .hljs-title { color: var(--rv-hljs-type); }
+.md .hljs-attribute, .md .hljs-name, .md .hljs-selector-class, .codev .hljs-attribute, .codev .hljs-name, .codev .hljs-selector-class { color: var(--rv-hljs-attr); }
+.md .hljs-built_in, .codev .hljs-built_in { color: var(--rv-hljs-title); }
+.md .hljs-meta, .codev .hljs-meta { color: var(--rv-muted); }
+.md .hljs-deletion, .codev .hljs-deletion { color: var(--rv-danger); }
+.md .hljs-addition, .codev .hljs-addition { color: var(--rv-hljs-string); }
+
+/* ── PDF ────────────────────────────────────────────────────────────────── */
+.pdfv {
+  border: 1px solid var(--rv-border); border-radius: 8px; overflow: auto;
+  background: color-mix(in srgb, var(--p-text-color) 3%, transparent);
+  max-height: min(82vh, 900px);
+}
+.pdfv-pages { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.pdfv-page { position: relative; background: var(--rv-document-canvas); max-width: 100%; }
+.pdfv-page + .pdfv-page { border-top: 1px solid var(--rv-border); }
+/* Cap to the viewer width so a wide/scanned page never scrolls horizontally. */
+.pdfv-page canvas { display: block; max-width: 100%; height: auto; }
+.textLayer {
+  position: absolute; inset: 0; overflow: clip; opacity: 1; line-height: 1;
+  text-align: initial; transform-origin: 0 0; forced-color-adjust: none;
+  text-size-adjust: none;
+}
+.textLayer span, .textLayer br {
+  position: absolute; white-space: pre; color: transparent;
+  transform-origin: 0 0; cursor: text;
+}
+.textLayer ::selection { background: color-mix(in srgb, var(--p-primary-color) 35%, transparent); }
+
+/* ── Image ──────────────────────────────────────────────────────────────── */
+.imgv {
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; border-radius: 10px;
+  background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
+  border: 1px solid var(--rv-border);
+}
+.imgv img {
+  max-width: 100%; max-height: min(80vh, 860px); height: auto;
+  border-radius: 4px; box-shadow: 0 8px 24px color-mix(in srgb, #000 16%, transparent);
+}
+
+/* ── HTML (sandboxed iframe) ────────────────────────────────────────────── */
+.htmlv { border: 1px solid var(--rv-border); border-radius: 10px; overflow: hidden; background: var(--rv-document-canvas); }
+.htmlv-frame { width: 100%; border: 0; display: block; min-height: 240px; }
+
+/* ── Code / data ────────────────────────────────────────────────────────── */
+.codev-code {
+  display: flex; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--rv-border);
+  background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
+  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px; line-height: 1.6;
+}
+.codev-gutter {
+  margin: 0; padding: 16px 10px 16px 14px; flex: none; text-align: right;
+  color: var(--rv-faint); user-select: none; tab-size: 2;
+  border-right: 1px solid var(--rv-border);
+  background: color-mix(in srgb, var(--p-text-color) 2.5%, transparent);
+  font: inherit; white-space: pre;
+}
+.codev-pre {
+  margin: 0; padding: 16px 18px; overflow: auto; flex: 1; min-width: 0;
+  background: transparent; font: inherit; tab-size: 2;
+}
+.codev-pre code { font: inherit; white-space: pre; }
+.codev-table-wrap { overflow: auto; border: 1px solid var(--rv-border); border-radius: var(--rv-radius); max-height: 78vh; }
+.codev-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+.codev-table th, .codev-table td {
+  padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--rv-border);
+  border-right: 1px solid var(--rv-border); white-space: nowrap;
+}
+.codev-table th {
+  position: sticky; top: 0; z-index: 1; font-weight: 700; color: var(--rv-text);
+  background: var(--rv-header); box-shadow: inset 0 -1px 0 var(--rv-border);
+  letter-spacing: .01em;
+}
+.codev-table td { color: var(--rv-muted); }
+.codev-table tbody tr:nth-child(even) td { background: var(--rv-zebra); }
+.codev-table tbody tr:hover td { background: color-mix(in srgb, var(--p-primary-color) 7%, transparent); }
+.codev-table tr:last-child td { border-bottom: none; }
+.codev-table th:last-child, .codev-table td:last-child { border-right: none; }
+
+/* ── Word (docx-preview) ────────────────────────────────────────────────── */
+.docxv { display: flex; justify-content: center; }
+.docxv-host { width: 100%; }
+/* docx-preview emits its own .docx-wrapper with white pages + shadow; keep it
+   centered and responsive inside whatever box the host gives us. */
+.docxv-host .docx-wrapper { background: transparent; padding: 0; gap: 16px; }
+.docxv-host .docx-wrapper > section.docx {
+  box-shadow: 0 8px 28px color-mix(in srgb, #000 16%, transparent);
+  margin-bottom: 0; max-width: 100%; border-radius: 4px; box-sizing: border-box;
+  /* Auto-generated/exported docs often carry near-zero page margins, gluing text
+     to the white edge. A preview reads better with a consistent comfortable inset
+     than with exact print margins, so normalize the page padding. */
+  padding: clamp(22px, 5%, 48px);
+}
+
+/* ── Spreadsheet (SheetJS) ──────────────────────────────────────────────── */
+.xlsxv { display: flex; flex-direction: column; min-width: 0; }
+.xlsxv-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.xlsxv-tab {
+  height: 28px; padding: 0 12px; border-radius: 8px; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 600;
+  background: transparent; color: var(--rv-muted);
+  border: 1px solid var(--rv-border); transition: background .14s, color .14s, border-color .14s;
+}
+.xlsxv-tab:hover { color: var(--rv-text); }
+.xlsxv-tab.on {
+  color: var(--p-primary-color); border-color: color-mix(in srgb, var(--p-primary-color) 45%, transparent);
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+.xlsxv-sheet { overflow: auto; border: 1px solid var(--rv-border); border-radius: var(--rv-radius); max-height: 78vh; }
+.xlsxv-sheet table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; min-width: 100%; }
+.xlsxv-sheet td, .xlsxv-sheet th {
+  border-bottom: 1px solid var(--rv-border); border-right: 1px solid var(--rv-border);
+  padding: 6px 10px; white-space: nowrap; color: var(--rv-text); text-align: left;
+}
+.xlsxv-sheet td:last-child, .xlsxv-sheet th:last-child { border-right: none; }
+/* SheetJS emits the header as the first row of plain <td>; pin it as an opaque,
+   divided header so data never bleeds through while scrolling. */
+.xlsxv-sheet tr:first-child td, .xlsxv-sheet thead td, .xlsxv-sheet thead th {
+  position: sticky; top: 0; z-index: 1; font-weight: 700; color: var(--rv-text);
+  background: var(--rv-header); box-shadow: inset 0 -1px 0 var(--rv-border);
+}
+.xlsxv-sheet tbody tr:nth-child(even) td,
+.xlsxv-sheet tr:nth-child(even):not(:first-child) td { background: var(--rv-zebra); }
+.xlsxv-sheet tr:not(:first-child):hover td { background: color-mix(in srgb, var(--p-primary-color) 7%, transparent); }
+
+/* ── PowerPoint (pptx-to-html) ──────────────────────────────────────────── */
+.pptxv { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+/* The frame is full width; the fixed 960x540 stage inside is scaled to fit it. */
+.pptxv-frame {
+  width: 100%; max-width: 960px; position: relative; overflow: hidden;
+  background: var(--rv-document-canvas); border: 1px solid var(--rv-border); border-radius: 8px;
+  box-shadow: 0 8px 28px color-mix(in srgb, #000 16%, transparent);
+}
+.pptxv-stage { position: absolute; top: 0; left: 0; transform-origin: top left; }
+.pptxv-nav { display: flex; align-items: center; gap: 14px; }
+.pptxv-btn {
+  width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--rv-border); border-radius: 8px; background: transparent; color: var(--rv-text);
+  transition: background .14s, color .14s, border-color .14s;
+}
+.pptxv-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--p-text-color) 8%, transparent); }
+.pptxv-btn:disabled { opacity: .4; cursor: default; }
+.pptxv-btn svg { width: 18px; height: 18px; }
+.pptxv-count { font-size: 12.5px; font-weight: 600; color: var(--rv-muted); font-variant-numeric: tabular-nums; }
+
+/* ── Audio / video ──────────────────────────────────────────────────────── */
+.mediav { display: flex; align-items: center; justify-content: center; padding: 16px; }
+.mediav-audio { width: 100%; max-width: 560px; }
+.mediav-video {
+  max-width: 100%; max-height: min(80vh, 860px); border-radius: 8px;
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 18%, transparent); background: var(--rv-video-canvas);
+}
+
+/* Shared bounded preview controls for extracted tables and workbook sheets. */
+.preview-pager { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 0; color: var(--rv-text); font-size: 12px; }
+.preview-axis { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.preview-pager button, .preview-pager input { font: inherit; color: var(--rv-text); background: var(--rv-header); border: 1px solid var(--rv-border); border-radius: var(--rv-radius); padding: 4px 6px; }
+.preview-pager input { width: 64px; }
+.preview-pager button { cursor: pointer; }
+.preview-pager button:disabled { opacity: .5; cursor: default; }
+
+/* Diagram errors retain the original multiline source beside the reason. */
+.md-mermaid { overflow-x: auto; white-space: pre-wrap; }
+.md-mermaid svg { display: block; max-width: 100%; height: auto; white-space: normal; }
+.md-mermaid-error { margin-top: 8px; padding-left: 8px; border-left: 3px solid var(--rv-danger); color: var(--rv-text); white-space: normal; }

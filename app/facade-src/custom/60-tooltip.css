@@ -1,0 +1,4 @@
+.p-tooltip.p-component .p-tooltip-text {
+  border: 1px solid var(--p-content-border-color);
+  font-size: 11px;
+}

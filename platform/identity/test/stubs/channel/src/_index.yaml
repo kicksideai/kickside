@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.channel
+
+# Provides the kickside.channel:cleanup_conversation function the link service
+# imports, so the standalone identity harness resolves without vendoring the
+# channel module.
+entries:
+  - name: cleanup_conversation
+    kind: library.lua
+    meta:
+      comment: Identity-harness stub for channel session teardown (reports success).
+    source: file://channel_stub.lua
+
+  - name: complete_unlink
+    kind: library.lua
+    meta:
+      comment: Identity-harness stub for Channel-owned unlink count finalization.
+    source: file://channel_stub.lua

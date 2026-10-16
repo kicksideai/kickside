@@ -1,0 +1,199 @@
+version: "1.0"
+namespace: kickside.blocks
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Blocks
+      comment: Typed executable units for headless and visual Flow composition.
+
+  - name: dep.wippy.dataflow
+    kind: ns.dependency
+    meta:
+      comment: Shared durable execution, nesting, parking, signaling, and recovery engine.
+    component: wippy/dataflow
+    # The application lock must pin Dataflow at 0.7.8 or newer for resume
+    # reconstruction, nil-absent named inputs, and the reserved max_iterations input.
+    version: '*'
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    meta:
+      comment: The canonical JSON codec Flow artifact checksums encode through.
+    component: kickside/contract
+    version: "*"
+
+  - name: blocks
+    kind: library.lua
+    meta:
+      comment: Exact Block discovery and headless native lowering.
+    source: file://blocks.lua
+    modules: [registry, json]
+    imports:
+      contract: kickside.blocks:contract
+      keyset: kickside.contract:keyset
+      lower: kickside.blocks:lower
+      tool_adapter: kickside.blocks:tool_adapter
+
+  - name: tool_adapter
+    kind: library.lua
+    meta:
+      comment: Actor-visible public registry tool projection into canonical virtual Blocks.
+    source: file://tool_adapter.lua
+    modules: [json]
+
+  - name: contract
+    kind: library.lua
+    meta:
+      comment: Strict kickside.block/v1 declaration and instance validation.
+    source: file://contract.lua
+    modules: [json]
+
+  - name: flow_contract
+    kind: library.lua
+    meta:
+      comment: Pure kickside.flow/v1 artifact validation, checksums, reference binding, and materialization for headless or visual consumers.
+    source: file://flow_contract.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
+
+  - name: lower
+    kind: library.lua
+    meta:
+      comment: Block execution lowering with public tool authority validation.
+    source: file://lower.lua
+    modules: [registry]
+    imports:
+      contract: kickside.blocks:contract
+      tool_adapter: kickside.blocks:tool_adapter
+
+  - name: list
+    kind: function.lua
+    meta:
+      type: tool
+      title: List Blocks
+      llm_alias: list_blocks
+      llm_description: List compact Block summaries (id, title, source_kind and tool), in pages of 25 by default; pass next_cursor as cursor for the next page. Use get_block with block_id for the full descriptor and schemas.
+      input_schema:
+        type: object
+        additionalProperties: false
+        properties:
+          limit: { type: integer, minimum: 1, maximum: 100, description: Blocks per page; default 25. }
+          cursor: { type: string, description: The next_cursor of the previous page. }
+      output_schema:
+        type: object
+        required: [blocks]
+        properties:
+          blocks:
+            type: array
+            items:
+              type: object
+              additionalProperties: false
+              required: [id, title, source_kind, tool]
+              properties:
+                id: { type: string }
+                title: { type: string }
+                source_kind: { type: string }
+                tool: { type: boolean }
+          next_cursor: { type: string, description: Pass as cursor for the next page; absent on the last page. }
+    source: file://blocks.lua
+    method: list
+    modules: [registry, json]
+    imports:
+      contract: kickside.blocks:contract
+      keyset: kickside.contract:keyset
+      lower: kickside.blocks:lower
+      tool_adapter: kickside.blocks:tool_adapter
+
+  - name: get
+    kind: function.lua
+    meta:
+      type: tool
+      title: Get Block
+      llm_alias: get_block
+      llm_description: Read one Block's complete descriptor, including input, config, output, ports, presentation and execution schemas, by its exact block_id.
+      input_schema:
+        type: object
+        additionalProperties: false
+        required: [block_id]
+        properties:
+          block_id: { type: string }
+      output_schema:
+        type: object
+        required: [id, title, source_kind, tool, input, config, output, ports, execution]
+        properties:
+          id: { type: string }
+          title: { type: string }
+          description: { type: string }
+          source_kind: { type: string }
+          tool: { type: boolean }
+          input: { type: object }
+          config: { type: object }
+          output: { type: object }
+          error: { type: object }
+          ports: { type: array }
+          presentation: { type: object }
+          execution: { type: object }
+          declaration: { type: object }
+    source: file://blocks.lua
+    method: get
+    modules: [registry, json]
+    imports:
+      contract: kickside.blocks:contract
+      keyset: kickside.contract:keyset
+      lower: kickside.blocks:lower
+      tool_adapter: kickside.blocks:tool_adapter
+
+  - name: await
+    kind: process.lua
+    meta:
+      name: Block Await
+      comment: Generic durable approval wait; persists the wait before invoking its declared arm.
+    source: file://await.lua
+    method: run
+    modules: [ctx]
+    imports:
+      node: userspace.dataflow:node
+
+  - name: resume
+    kind: function.lua
+    meta:
+      comment: Generic Signal resume under the caller or Flow's durable identity, independent of visual Workflows.
+    source: file://resume.lua
+    method: resume
+    modules: [funcs, security]
+    imports:
+      client: userspace.dataflow:client
+      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      execution_frame: userspace.dataflow:execution_frame
+
+  - name: resume_under_identity
+    kind: function.lua
+    meta:
+      private: true
+      comment: Signals a parked Block after reconstructing the Flow's durable identity.
+    source: file://resume.lua
+    method: resume_under_identity
+    modules: [funcs, security]
+    imports:
+      client: userspace.dataflow:client
+      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      execution_frame: userspace.dataflow:execution_frame
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host for durable Block Await nodes.
+      description: Process host for durable Block Await nodes.
+    targets:
+      - entry: kickside.blocks:await
+        path: .meta.default_host
+
+  - name: review_signal
+    kind: library.lua
+    source: file://review_signal.lua
+    imports:
+      dataflow_repo: userspace.dataflow.persist:dataflow_repo

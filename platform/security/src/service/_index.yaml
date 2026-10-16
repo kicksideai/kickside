@@ -1,0 +1,123 @@
+version: "1.0"
+namespace: kickside.security.service
+
+# Service layer: the supervised process that OWNS the DB -> security.scope
+# projection. The only layer that spawns/supervises and writes the registry. It
+# runs under a dedicated trust group (not wippy.security:process, which denies
+# registry writes) so it may registry.apply.
+
+entries:
+  - name: projection_transport
+    kind: security.policy
+    meta: {private: true, service_only: true, comment: Lets the reconcile request message the registered scope projector.}
+    policy:
+      resources: "*"
+      actions: process.send
+      effect: allow
+  # Reconcile requests run under the security identity: requesting principals
+  # need no process messaging authority.
+  - name: reconcile_request_access
+    kind: security.policy
+    meta:
+      comment: Lets the trusted reconcile clients (group-set materialization, scope admin writes) hand requests to the projector through the security identity.
+    policy:
+      resources: kickside.security.service:reconcile_request
+      actions: funcs.call
+      effect: allow
+
+  - name: reconcile_request
+    kind: function.lua
+    meta:
+      private: true
+      comment: Hands one reconcile request to the registered scope projector.
+    source: file://../trigger_reconcile.lua
+    method: deliver
+    modules: [channel, time, funcs]
+    imports:
+      security_consts: kickside.security:security_consts
+    security:
+      actor:
+        id: kickside.security.service:reconcile_request
+      policies:
+        - kickside.security.service:projection_transport
+
+  - name: policy_groups
+    kind: library.lua
+    source: file://policy_groups.lua
+    modules: [registry]
+    imports:
+      security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
+      policy_coverage: kickside.security:policy_coverage
+  - name: scope_projection
+    kind: library.lua
+    meta: { comment: Idempotent reconcile projecting enabled DB custom scopes into security.scope registry entries. }
+    source: file://scope_projection.lua
+    modules: [registry, logger, funcs]
+    imports:
+      security_consts: kickside.security:security_consts
+      scope_store: kickside.security.persist:scope_store
+      group_sets: kickside.security.persist:group_sets
+      policy_groups: kickside.security.service:policy_groups
+      policy_composition: kickside.security:policy_composition
+
+  - name: scope_projection_proc
+    kind: process.lua
+    meta:
+      comment: Owns custom-scope projection; starts after bootloader migrations, boot-reconciles, then reconciles on admin write messages.
+    source: file://scope_service.lua
+    method: main
+    modules: [logger, channel, events, time, registry]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      security_consts: kickside.security:security_consts
+      scope_projection: kickside.security.service:scope_projection
+      group_sets: kickside.security.persist:group_sets
+
+  # Dedicated trust group for the projector. wippy.security:process is denied
+  # registry writes (registry.no_write), so the service runs under this group,
+  # which permits registry.apply. Scoped to this one infra service.
+  - name: scope_projection_trust
+    kind: security.policy
+    meta:
+      comment: Grants the scope projection service registry read/write + db access to project custom scopes into security.scope entries.
+    groups:
+      - kickside.security.service:scope_projection_writer
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: scope_projection.service
+    kind: process.service
+    meta:
+      comment: Supervised single owner of the custom-scope -> security.scope projection. host is injected by the process_host requirement.
+    process: kickside.security.service:scope_projection_proc
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        # A failed boot reconcile exits; requested reconciliation failures return to the caller.
+        initial_delay: 2s
+        max_delay: 60s
+        max_attempts: 0
+      security:
+        groups:
+          - kickside.security.service:scope_projection_writer
+
+  # A login reads its projected group set without a projection pass.
+  - name: group_set_registry_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: registry.get
+      resources: '*'
+      effect: allow
+
+  - name: group_set_db
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: db.get
+      resources: []
+      effect: allow

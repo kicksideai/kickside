@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: kickside.users.directory
+entries:
+- name: directory_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    actions: access
+    resources:
+    - kickside.users.api:principals_search.endpoint
+    - kickside.users.api:principals_resolve.endpoint
+    effect: allow

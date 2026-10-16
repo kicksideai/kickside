@@ -1,0 +1,139 @@
+version: "1.0"
+namespace: kickside.core
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Core
+      comment: Thread/event/projection engine — append-only threads, derived projections, retention, lifecycle reaping, and thread update notifications.
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing every kickside_* table.
+    targets:
+      - entry: kickside.core.migrations:00_encoding
+        path: .meta.target_db
+      - entry: kickside.core.migrations:01_thread
+        path: .meta.target_db
+      - entry: kickside.core.migrations:02_projection
+        path: .meta.target_db
+      - entry: kickside.core.migrations:05_retention
+        path: .meta.target_db
+      - entry: kickside.core.migrations:06_graph
+        path: .meta.target_db
+      - entry: kickside.core.migrations:07_retention_pins
+        path: .meta.target_db
+      - entry: kickside.core.migrations:08_write_receipts
+        path: .meta.target_db
+      - entry: kickside.core.migrations:09_thread_subjects
+        path: .meta.target_db
+      - entry: kickside.core.migrations:10_thread_natural_keys
+        path: .meta.target_db
+      - entry: kickside.core:db_config
+        path: .meta.db_id
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured core database id (rewritten by target_db).
+      db_id: ""
+
+  - name: db
+    kind: library.lua
+    meta:
+      comment: Resolves runtime SQL access from the target_db-injected config.
+    source: file://db.lua
+    modules: [registry]
+
+  - name: policy
+    kind: registry.entry
+    meta:
+      comment: Core-owned event and write-receipt retention plus bounded sweep policy.
+      retention:
+        events: 90d
+        receipts_orphan: 30d
+      sweep:
+        batch_events: 5000
+        batch_receipts: 500
+      limits:
+        max_row_bytes: 4194304
+
+  - name: policy_config
+    kind: library.lua
+    meta:
+      comment: Validated Core retention windows and per-row size limit.
+    source: file://retention/policy.lua
+    modules: [registry, time]
+    imports:
+      row_size: kickside.core:row_size
+
+  - name: row_size
+    kind: library.lua
+    meta:
+      comment: The per-row size refusal every row-storing module applies under its own row byte limit.
+    source: file://row_size.lua
+
+  # The job-worker, scheduler, and their read endpoints moved to kickside/jobs,
+  # which declares its own process_host / api_router requirements. The remaining
+  # core services (retention sweeper, lifecycle reaper, projection proc-runner)
+  # and endpoints (threads, projections, retention) wire through the
+  # process_host / api_router requirements their own slices declare, so no root
+  # process_host / api_router requirement is needed here.
+
+  # ─── Packaging / mount test ──────────────────────────────────────────
+  # Audits the module as a whole against the live requirement-injected registry:
+  # services point at real processes, the job worker is the single owner, no
+  # phantom factory survives, and every env.variable binds a resolved storage.
+  # This is the seam the isolated per-slice unit harness masks.
+
+  # ─── Shared vocabulary ───────────────────────────────────────────────
+  # The only root library. Holds entity types, cross-slice state enums, and
+  # access masks. Component-private constants/config live in their own slice.
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Shared entity types, cross-slice state enums, and access masks.
+    source: file://types.lua
+
+  # ─── Write receipts ──────────────────────────────────────────────────
+  # One reservation/commit implementation for writables without a durable
+  # store of their own, over kickside_write_receipt (migration 08). The
+  # conformance suites live in the core test harness.
+  - name: write_receipt
+    kind: library.lua
+    meta:
+      comment: Shared write receipts — replay, reserve, commit, and reconcile over kickside_write_receipt.
+    source: file://write_receipt.lua
+    modules: [sql, json]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      core_db: kickside.core:db
+      retention_policy: kickside.core:policy_config
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: write_receipt_purge
+    kind: library.lua
+    meta:
+      comment: Bounded physical deletion of committed receipts past the retention window.
+    source: file://write_receipt_purge.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  # ─── Public contract ─────────────────────────────────────────────────
+  # The one interface core exposes; implemented by the threads slice binding.
+  - name: source_delete_fence
+    kind: contract.definition
+    meta:
+      comment: Fence a surviving retention consumer before its source thread is reaped.
+    methods:
+    - name: fence
+      description: Block one consumer of a deleting source thread before protected events are discarded.
+      input_schemas:
+      - format: application/schema+json
+        definition: '{"type":"object","properties":{"source_thread_id":{"type":"string"},"consumer_key":{"type":"string"}},"required":["source_thread_id","consumer_key"]}'
+      output_schemas:
+      - format: application/schema+json
+        definition: '{"type":"object","properties":{"fenced":{"type":"boolean"},"consumer_status":{"type":"string"}},"required":["fenced","consumer_status"]}'

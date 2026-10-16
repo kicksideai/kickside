@@ -1,0 +1,199 @@
+version: "1.0"
+namespace: kickside.channel.service
+
+entries:
+  - name: hub_signal
+    kind: library.lua
+    meta: { comment: "Conversation hub messages through the channel-owned hub_signal_deliver function." }
+    source: file://hub_signal.lua
+    modules: [process, funcs]
+    imports:
+      channel_consts: kickside.channel:consts
+
+  # Hub messages run under the channel identity: bridges and ingress writers act
+  # under their principals and need no process messaging authority.
+  - name: hub_signal_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the hub signal message the registered conversation session hub.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: hub_signal_deliver
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one conversation hub message stamped with its origin process.
+    source: file://hub_signal.lua
+    method: deliver
+    modules: [process, funcs]
+    imports:
+      channel_consts: kickside.channel:consts
+    security:
+      actor:
+        id: kickside.channel.service:hub_signal_deliver
+      policies:
+        - kickside.channel.service:hub_signal_transport
+
+  - name: publication
+    kind: library.lua
+    source: file://publication.lua
+    modules: [process, channel, time, uuid, contract]
+    imports:
+      execution_ref: kickside.channel.service:execution_ref
+      component: kickside.component:component
+      channel_receive_witness: kickside.channel.service:receive_witness
+      hub_signal: kickside.channel.service:hub_signal
+
+  - name: bridge_support
+    kind: library.lua
+    meta: { comment: "Shared bridge turn preparation and session setup." }
+    source: file://bridge_support.lua
+    modules: [logger, time, channel, security, contract]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      component: kickside.component:component
+      session_consts: wippy.session:consts
+      session_service: wippy.session:service
+      reply_sender: kickside.connection:reply_sender
+      reply_policy: kickside.channel.service:reply_policy
+      attachment_ingest: kickside.uploads:attachment_ingest
+      channel_consts: kickside.channel:consts
+      channel_thread_bridge: kickside.channel.service:thread_bridge
+      trace_context: kickside.execution:trace
+
+  - name: reply_policy
+    kind: library.lua
+    meta: { comment: "Pure channel responder reply policy: lazy turn prompts, wait bounds, and no-response suppression." }
+    source: file://reply_policy.lua
+
+  # ─── Wire types (Envelope + Route) ───────────────────────────────────
+
+  - name: bridge
+    kind: process.lua
+    meta: { comment: "Per-chat session trigger, spawned by the hub under the run-as frame: ensures the session, owns a wippy.session run as that identity, pulls attachments, buffers content, flushes one reply per turn at the system level, idle-terminates. Identity-agnostic." }
+    source: file://bridge.lua
+    method: main
+    modules: [logger, time, channel, security, contract]
+    security:
+      policies:
+      - kickside.channel.service:bridge_registry
+      - kickside.channel:thread_inbound_publish
+      - kickside.channel:thread_reply_publish
+      - kickside.channel:thread_responder_session_publish
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      component: kickside.component:component
+      session_consts: wippy.session:consts
+      session_service: wippy.session:service
+      reply_sender: kickside.connection:reply_sender
+      reply_policy: kickside.channel.service:reply_policy
+      attachment_ingest: kickside.uploads:attachment_ingest
+      channel_consts: kickside.channel:consts
+      channel_thread_bridge: kickside.channel.service:thread_bridge
+      trace_context: kickside.execution:trace
+      bridge_support: kickside.channel.service:bridge_support
+      responder_health: kickside.channel.responder:health
+      channel_publication: kickside.channel.service:publication
+      hub_signal: kickside.channel.service:hub_signal
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+
+  - name: execution_ref
+    kind: library.lua
+    meta: { comment: "Fixed trusted owner loaders for channel and DM execution references." }
+    source: file://execution_ref.lua
+    imports:
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      channel_persist: kickside.channel.persist:repo
+      channel_consts: kickside.channel:consts
+
+  # ─── Durable state + audit ───────────────────────────────────────────
+
+  - name: thread_bridge
+    kind: library.lua
+    meta: { comment: "Actor-scoped bridge into kickside.core threads: upsert + append inbound/reply events, generic over thread class + event types." }
+    source: file://thread_bridge.lua
+    modules: [contract, security, hash]
+    imports:
+      channel_consts: kickside.channel:consts
+
+  - name: dedup
+    kind: library.lua
+    meta: { comment: Bounded recent-id set to drop redelivered turns. }
+    source: file://dedup.lua
+
+  - name: hub_policy
+    kind: library.lua
+    meta: { comment: "Pure bridge-lifecycle policy (spawn/supersede/hold/route, respawn/drop). No process I/O, so the one-bridge-per-chat invariant is unit-testable; the hub executes its decisions." }
+    source: file://hub_policy.lua
+
+  - name: receive_witness
+    kind: library.lua
+    meta: { comment: Best-effort audit-thread witness for Channel inbounds that are not routed. }
+    source: file://receive_witness.lua
+    modules: [logger]
+    imports:
+      channel_consts: kickside.channel:consts
+      execution_ref: kickside.channel.service:execution_ref
+      channel_thread_bridge: kickside.channel.service:thread_bridge
+
+  - name: turn_supervisor
+    kind: library.lua
+    meta: { comment: Monitors accepted-turn writers and recovers unappended turns at boot, writer exit, and their persisted retry deadlines. }
+    source: file://turn_supervisor.lua
+    modules: [channel, process, time, logger]
+    imports:
+      channel_consts: kickside.channel:consts
+      channel_persist: kickside.channel.persist:repo
+      channel_turn_recovery: kickside.channel.persist:turn_recovery
+
+  - name: hub
+    kind: process.lua
+    meta: { comment: "Cluster-wide session hub: maintains a bridge per chat, dedups, routes turns and clear, resolves the protected execution reference, and spawns the bridge under it. Provider- and identity-agnostic." }
+    source: file://hub.lua
+    method: main
+    modules: [logger, channel, process, json, uuid]
+    security:
+      policies:
+      - kickside.channel:thread_inbound_publish
+      - kickside.channel:thread_reply_publish
+      - kickside.channel:thread_responder_session_publish
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      responder_health: kickside.channel.responder:health
+      channel_consts: kickside.channel:consts
+      channel_dedup: kickside.channel.service:dedup
+      execution_ref: kickside.channel.service:execution_ref
+      channel_hub_policy: kickside.channel.service:hub_policy
+      channel_persist: kickside.channel.persist:repo
+      channel_turn_supervisor: kickside.channel.service:turn_supervisor
+      channel_publication: kickside.channel.service:publication
+
+  - name: hub.service
+    kind: process.service
+    process: kickside.channel.service:hub
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        initial_delay: 2s
+        max_delay: 60s
+        max_attempts: 0
+      security:
+        actor: { id: "system:channel-hub" }
+        groups:
+          - wippy.security:process
+          - kickside.channel.service:hub_execution
+
+  # The hub is an identity boundary: it receives an accepted-turn reference
+  # and is the only process allowed to turn its stored execution reference into the
+  # actor/scope used by a conversation bridge. wippy.security:process covers the
+  # process primitives, but deliberately does not grant actor reconstruction or
+  # access to the users-backed scope resolver. Keep those extra rights on this
+  # dedicated service group instead of widening every process service.

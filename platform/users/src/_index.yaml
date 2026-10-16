@@ -1,0 +1,812 @@
+version: "1.0"
+namespace: kickside.users
+
+entries:
+  - name: bot_accounts
+    kind: library.lua
+    source: file://bot_accounts.lua
+    modules: [security, funcs]
+    imports:
+      group_validation: kickside.users.api:group_validation
+      admin_repo: kickside.users.persist:admin_repo
+      user_consts: kickside.users:consts
+
+  - name: run_as_candidates
+    kind: function.lua
+    source: file://run_as_candidates.lua
+    method: list
+    modules: [security]
+    security:
+      policies:
+        - kickside.users.security:run_as_candidate_evaluation
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+    imports:
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: bot_account_inventory
+    kind: registry.entry
+    meta: {consumers: []}
+
+  - name: bot_account_consumers
+    kind: ns.requirement
+    default: []
+    meta:
+      description: Reviewed credential boundaries required before new bot creation; optional consumers apply when their installation sentinel exists.
+    targets:
+      - entry: kickside.users:bot_account_inventory
+        path: .meta.consumers
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    version: '*'
+    component: kickside/security
+
+  - name: baseline_security_scope
+    kind: ns.requirement
+    default: ""
+    meta:
+      value_kind: security.scope
+      description: Core group present for every signed-in user when the application declares one.
+    targets:
+      - entry: kickside.users.env:baseline_group_id
+        path: .default
+  - name: default_memberships
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 30
+      requires: [wippy.migration:migration_bootloader]
+    source: file://default_memberships.lua
+    method: run
+    modules: [registry]
+    imports:
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Users
+      comment: KickSide-owned user auth, persistence, group membership, directory, and admin web component. Permission-agnostic; auth enforced by the host router.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # The host wires these via ns.dependency. The endpoints attach to api_router
+  # (must enforce auth + endpoint_firewall — handlers do no auth of their own).
+
+  - name: env_storage
+    kind: ns.requirement
+    meta:
+      value_kind: env.storage
+      comment: Environment variable storage location.
+      description: Environment variable storage location.
+    default: kickside.users.env:envs
+    targets:
+      - entry: kickside.users.env:database_resource
+        path: ".storage"
+      - entry: kickside.users.env:admin_group_id
+        path: ".storage"
+      - entry: kickside.users.env:admin_init_enabled
+        path: ".storage"
+      - entry: kickside.users.env:default_admin_email
+        path: ".storage"
+      - entry: kickside.users.env:default_admin_password
+        path: ".storage"
+      - entry: kickside.users.env:default_group_id
+        path: ".storage"
+      - entry: kickside.users.env:token_expiration
+        path: ".storage"
+
+  - name: public_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Public API router for unauthenticated login.
+      description: Public API router for unauthenticated login.
+    targets:
+      - entry: kickside.users.api:login.endpoint
+        path: .meta.router
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the user-management endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the user-management endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.users.api:bot_accounts_create.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:bot_accounts_list.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:run_as_candidates.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:me.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:update_me.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:logout.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:list_assignable_scopes.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:list_users.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:create_user.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:delete_user.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:update_user.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:get_user_groups.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:set_user_groups.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:principals_search.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:principals_resolve.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:get_profile.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:put_profile.endpoint
+        path: .meta.router
+
+  # The principal directory (the share seam) lives in the kickside.users.directory
+  # child namespace.
+
+  # ─── Per-user profile (kickside.users.profile child namespace) ────────
+  # One DB declaration drives every user migration, runtime repository, profile
+  # writer, and token store. user_security_scope injects the role group that may
+  # reach GET/PUT /profile (the app wires app.security:user).
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing kickside_profile.
+      description: SQL database resource backing kickside_profile.
+    targets:
+      - entry: kickside.users.migrations:14_bot_lifecycle_audit
+        path: .meta.target_db
+      - entry: kickside.users.migrations:13_bot_accounts
+        path: .meta.target_db
+      - entry: kickside.users.migrations:12_delegation_epochs
+        path: .meta.target_db
+      - entry: kickside.users.migrations:11_group_enrollments
+        path: .meta.target_db
+      - entry: kickside.users.migrations:01_create_app_user_tables
+        path: .meta.target_db
+      - entry: kickside.users.migrations:02_init_admin_user
+        path: .meta.target_db
+      - entry: kickside.users.migrations:03_create_token_store_table
+        path: .meta.target_db
+      - entry: kickside.users.migrations:04_create_user_sessions
+        path: .meta.target_db
+      - entry: kickside.users.migrations:09_profile
+        path: .meta.target_db
+      - entry: kickside.users.migrations:10_canonical_email_grants
+        path: .meta.target_db
+      - entry: kickside.users.env:database_resource
+        path: .default
+      - entry: kickside.users.profile:db_config
+        path: .meta.db_id
+      - entry: kickside.users.security:token_storage
+        path: .database
+      - entry: kickside.users.security:token_storage
+        path: ".lifecycle.depends_on +="
+      - entry: kickside.users.security:login_db_access
+        path: ".policy.resources +="
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach the per-user profile, self-service, and principal-directory endpoints.
+      description: Application security group that may reach the per-user profile, self-service, and principal-directory endpoints.
+    targets:
+    - entry: kickside.users.env:default_group_id
+      path: .default
+    - entry: kickside.users.security:users_runtime_read
+      path: ".groups +="
+    - entry: kickside.users.security:users_endpoint_access
+      path: .groups +=
+    - entry: kickside.users.profile:profile_endpoint_access
+      path: .groups +=
+    - entry: kickside.users.directory:directory_endpoint_access
+      path: .groups +=
+    - entry: kickside.users.security:run_as_candidate_endpoint_access
+      path: .groups +=
+    - entry: kickside.users.security:directory_access
+      path: .groups +=
+    - entry: kickside.users.security:module_runtime
+      path: .groups +=
+
+  - name: admin_security_scope
+    kind: ns.requirement
+    meta:
+      value_kind: security.scope
+      comment: Application administrator group assigned to the initial bootstrap administrator.
+      description: Application administrator group assigned to the initial bootstrap administrator.
+    targets:
+      - entry: kickside.users.env:admin_group_id
+        path: .default
+
+  - name: login_role_resource
+    kind: ns.requirement
+    meta:
+      comment: Host role resource or resource pattern that authenticated users may resolve during login.
+      description: Host role resource or resource pattern that authenticated users may resolve during login.
+    targets:
+      - entry: kickside.users.security:login_role_resolve
+        path: ".policy.resources +="
+
+  - name: __dependency.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration system dependency.
+    component: wippy/migration
+
+  - name: consts
+    kind: library.lua
+    meta:
+      comment: KickSide user system constants and configuration.
+    source: file://consts.lua
+    modules:
+      - env
+      - funcs
+    method: consts
+
+  - name: session_metadata
+    kind: library.lua
+    source: file://session_metadata.lua
+
+  - name: session
+    kind: library.lua
+    meta:
+      comment: Shared session-token minting for password login and SSO provisioning.
+    source: file://session.lua
+    modules:
+      - security
+      - time
+      - contract
+      - logger
+      - sql
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+      session_metadata: kickside.users:session_metadata
+      user_authority: kickside.users:user_authority
+      execution_identity: kickside.execution:execution_identity
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: revocation
+    kind: library.lua
+    meta:
+      comment: Session revocation triggers shared by the account mutation endpoints.
+    source: file://revocation.lua
+    modules:
+      - funcs
+      - logger
+
+  # ─── Authentication settings (Security group) ────────────────────────
+  # Admin-editable session lifetime. session.lua reads this at mint time and
+  # falls back to KICKSIDE_USERS_TOKEN_EXPIRATION when unset or unavailable, so
+  # login never depends on the settings store.
+
+  - name: default_groups
+    kind: library.lua
+    source: file://default_groups.lua
+    modules: [contract, registry]
+
+  - name: setting.join_default_group
+    kind: registry.entry
+    meta: {type: 'kickside.settings:definition'}
+    namespace: kickside.users
+    key: join_default_group
+    value_type: bool
+    default: true
+    title: Default members group for new users
+    category: Authentication
+    order: 20
+    description: New users join the application's default members group. Existing memberships stay assigned.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.token_expiration
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Session lifetime, overriding KICKSIDE_USERS_TOKEN_EXPIRATION at token-mint time.
+    namespace: kickside.users
+    key: token_expiration
+    value_type: duration
+    default: 24h
+    title: Session lifetime
+    category: Authentication
+    order: 10
+    description: "How long a login session stays valid (a duration, e.g. `24h` or `720h`). Overrides KICKSIDE_USERS_TOKEN_EXPIRATION when set."
+    scope: global
+    editable: true
+    visible: true
+
+  # Module-owned Settings block: the Authentication card under the Security
+  # group. Reuses the shared provider card (kickside-settings-provider), the same
+  # chrome as the connection-provider blocks; the card renders every visible
+  # kickside.users setting. The top-level namespace claims the namespace so it
+  # gets no duplicate auto-block.
+
+  - name: block.authentication
+    kind: registry.entry
+    meta:
+      type: kickside.settings:block
+      comment: Authentication — session and login token policy.
+    key: authentication
+    title: Authentication
+    icon: tabler:lock
+    group: Security
+    order: 20
+    component_tag: kickside-settings-provider
+    namespace: kickside.users
+    config:
+      namespace: kickside.users
+      title: Authentication
+      icon: tabler:lock
+      help: Session and login token policy.
+
+  # ─── Admin UI (self-served web component) ────────────────────────────
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the admin UI static mount attaches to.
+      description: HTTP server the admin UI static mount attaches to.
+    targets:
+      - entry: kickside.users:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-users web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-users
+    fs: kickside.users:ui_fs
+    options:
+      # Stable bundle names (index.js/share.js/profile.js) — without revalidation
+      # browsers cache them hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: users_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: users_view
+      title: Users
+      announced: true
+      tag_name: kickside-users
+      base_path: kickside-users
+      entry_point: index.js
+
+  # The reusable share popup (kickside-share), served from the same bundle dir
+  # (share.js). Any resource backed by the component access model mounts it by
+  # tag and passes { resource_id, access_url, share_url, title } as `config`; it
+  # discovers principals through the directory seam and reports `changed`.
+
+  - name: share_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: share_view
+      title: Share
+      announced: true
+      tag_name: kickside-share
+      base_path: kickside-users
+      entry_point: share.js
+      auto_register: false
+
+  # Single-value directory picker. Owned beside /principals/search|resolve so every
+  # consumer (workflow config, sharing, future assignment surfaces) uses one principal
+  # vocabulary and one label-resolution path.
+
+  - name: principal_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: principal_picker_view
+      title: Principal picker
+      announced: true
+      tag_name: wc-principal-picker
+      base_path: kickside-users
+      entry_point: principal_picker.js
+      auto_register: true
+    props:
+      type: object
+      properties:
+        value: { type: string, default: "" }
+        config: { type: string, default: "" }
+        schema: { type: string, default: "" }
+        placeholder: { type: string, default: "Select a person or group…" }
+        kinds: { type: string, default: "user,group" }
+
+  - name: run_as_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      title: Run as
+      announced: true
+      tag_name: wc-run-as-picker
+      base_path: kickside-users
+      entry_point: run_as_picker.js
+      auto_register: true
+    props:
+      type: object
+      properties:
+        value: {type: string, default: ""}
+        root: {type: string, default: ""}
+        disabled: {type: boolean, default: false}
+
+  # Self-service profile popup (kickside-profile): a standalone element served
+  # from the same bundle. Reads GET /user/me and writes editable fields via
+  # PUT /user/me; owns its own modal chrome and emits `close`.
+
+  - name: profile_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: profile_view
+      title: Profile
+      announced: true
+      tag_name: kickside-profile
+      base_path: kickside-users
+      entry_point: profile.js
+      auto_register: false
+
+  # Module-owned System tab: installing this module adds the Users tab to the
+  # System page; uninstalling removes it. The host discovers it at /settings/tabs.
+
+  - name: tab.users
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: User management.
+    access: kickside.users.api:list_users.endpoint
+    key: users
+    label: Users
+    icon: tabler:users
+    order: 10
+    render: component
+    component_tag: kickside-users
+
+  # ─── User CRUD API ───────────────────────────────────────────────────
+
+  # ─── Subject-to-scope resolver (kickside.contract:scope_resolver) ─────
+  # Resolves scope params with one vocabulary: resolve({}) returns the ambient
+  # signed actor snapshot; resolve({ subject_id = ... }) reads that subject's
+  # live groups + effective scope from users only for callers with
+  # impersonation/delegation capability. DM/channel/cron depend on the contract,
+  # not this module, so run-as never hardcodes a scope.
+
+  - name: scope_resolver_binding
+    kind: contract.binding
+    meta:
+      title: Users Scope Resolver
+      comment: Canonical scope_resolver implementation, ambient via signed actor metadata and delegated explicit subjects via app_users + groups.
+      tags: [scope, resolver, identity, users]
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        default: true
+        methods:
+          resolve: kickside.users.binding:scope_resolver_func
+
+  # ─── Group members (kickside.contract:group_members) ─────────────────
+  # The reverse of scope_resolver: group id -> member user ids. The component
+  # realtime fanout depends on the contract (not this module) to expand a group
+  # grant into the users who should receive a component notification. The
+  # implementation function lives in binding/ (kickside.users.binding:group_members_func).
+
+  - name: group_members_binding
+    kind: contract.binding
+    meta:
+      title: Users Group Members
+      comment: Canonical group_members implementation, backed by app_user_groups.
+      tags: [group, members, identity, users]
+    contracts:
+      - contract: kickside.contract:group_members
+        default: true
+        methods:
+          members: kickside.users.binding:group_members_func
+
+  # ─── User provisioning (kickside.users:user_provisioning) ────────────
+  # The contract DEFINITION lives here, in the users package, because it is the
+  # users domain's own seam (unlike the cross-cutting scope_resolver/directory
+  # contracts in core/contract). SSO depends on this id; the binding below is the
+  # canonical implementation.
+
+  - name: user_provisioning
+    kind: contract.definition
+    meta:
+      tags:
+        - users
+        - provisioning
+        - identity
+        - sso
+      comment: |
+        Provision and mount external-identity users into the local account store.
+
+        The seam through which external identity providers (SSO) read, create,
+        group, and mint sessions for local accounts without importing the users
+        module's repositories. The users module both defines and binds it (its own
+        domain); consumers depend on this definition. mint_session reloads the user
+        fresh and mirrors password login's actor metadata, group->scope derivation,
+        and token store, so an SSO session is indistinguishable from a password session.
+    methods:
+      - name: get_user
+        description: |
+          Load a user by id-or-email with their security groups, status, and
+          whether they hold a real (settable) password.
+          Calling: get_user(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "identifier": {
+                    "type": "string",
+                    "description": "Canonical user_id or email"
+                  }
+                },
+                "required": ["identifier"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "ok": {"type": "boolean"},
+                  "error": {"type": "string"},
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "user_id": {"type": "string"},
+                      "email": {"type": "string"},
+                      "full_name": {"type": "string"},
+                      "status": {"type": "string"},
+                      "has_password": {"type": "boolean"},
+                      "provisioning_pending": {"type": "boolean"},
+                      "security_groups": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      }
+                    },
+                    "required": ["user_id", "email", "status", "has_password", "provisioning_pending", "security_groups"]
+                  }
+                },
+                "required": ["ok"]
+              }
+            format: application/schema+json
+      - name: create_passwordless_user
+        description: |
+          Create a pending account carrying the locked-password sentinel. It
+          cannot authenticate until complete_passwordless_user activates it.
+          Calling: create_passwordless_user(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "email": {"type": "string"},
+                  "full_name": {"type": "string"}
+                },
+                "required": ["email"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "ok": {"type": "boolean"},
+                  "error": {"type": "string"},
+                  "user_id": {"type": "string"}
+                },
+                "required": ["ok"]
+              }
+            format: application/schema+json
+      - name: assign_group
+        description: |
+          Grant a single security group to a user (idempotent).
+          Calling: assign_group(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "identifier": {"type": "string"},
+                  "group_id": {"type": "string"}
+                },
+                "required": ["identifier", "group_id"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "ok": {"type": "boolean"},
+                  "error": {"type": "string"}
+                },
+                "required": ["ok"]
+              }
+            format: application/schema+json
+      - name: complete_passwordless_user
+        description: |
+          Atomically reconcile the Users-owned memberships of a pending SSO
+          account and activate it. Replay-safe after an ambiguous commit.
+          Calling: complete_passwordless_user(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "identifier": {"type": "string"},
+                  "default_group": {"type": "string"},
+                  "source": {"type": "string"},
+                  "group_ids": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  }
+                },
+                "required": ["identifier", "source", "group_ids"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "ok": {"type": "boolean"},
+                  "error": {"type": "string"},
+                  "user_id": {"type": "string"},
+                  "groups_added": {"type": "integer"},
+                  "groups_removed": {"type": "integer"}
+                },
+                "required": ["ok"]
+              }
+            format: application/schema+json
+      - name: apply_sourced_groups
+        description: |
+          Reconcile the memberships owned by a single source against a desired
+          set, leaving other sources untouched.
+          Calling: apply_sourced_groups(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "identifier": {"type": "string"},
+                  "source": {"type": "string"},
+                  "group_ids": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  }
+                },
+                "required": ["identifier", "source", "group_ids"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "ok": {"type": "boolean"},
+                  "error": {"type": "string"},
+                  "groups_added": {"type": "integer"},
+                  "groups_removed": {"type": "integer"}
+                },
+                "required": ["ok"]
+              }
+            format: application/schema+json
+      - name: mint_session
+        description: |
+          Reload the user fresh and mint a session token mirroring password login
+          (same actor metadata, group->scope derivation, and token store).
+          Calling: mint_session(request)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "identifier": {"type": "string"},
+                  "meta": {
+                    "type": "object",
+                    "description": "Extra actor/token metadata merged into the session"
+                  }
+                },
+                "required": ["identifier"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "ok": {"type": "boolean"},
+                  "error": {"type": "string"},
+                  "token": {"type": "string"},
+                  "is_admin": {"type": "boolean"},
+                  "scope": {"type": "string"},
+                  "expiration": {"type": "string"}
+                },
+                "required": ["ok"]
+              }
+            format: application/schema+json
+
+  # ─── User provisioning implementation (binds kickside.users:user_provisioning) ──
+  # The seam external identity providers (SSO) provision and mount local
+  # accounts through, without importing the user/group repositories. The users
+  # module keeps ownership of its password sentinel, schema, and session minting.
+
+  - name: provisioning_binding
+    kind: contract.binding
+    meta:
+      title: Users Provisioning
+      comment: Canonical user_provisioning implementation, backed by app_users + groups.
+      tags: [users, provisioning, identity, sso]
+    contracts:
+      - contract: kickside.users:user_provisioning
+        default: true
+        methods:
+          get_user: kickside.users.provisioning:provisioning_get_user
+          create_passwordless_user: kickside.users.provisioning:provisioning_create_passwordless_user
+          assign_group: kickside.users.provisioning:provisioning_assign_group
+          complete_passwordless_user: kickside.users.provisioning:provisioning_complete_passwordless_user
+          apply_sourced_groups: kickside.users.provisioning:provisioning_apply_sourced_groups
+          mint_session: kickside.users.provisioning:provisioning_mint_session
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared component and deletable contracts.
+    component: kickside/contract
+
+  - name: dep.wippy.views
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Server-rendered view substrate.
+    component: wippy/views
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Event-sourced on the core thread engine (thread upsert, event append, status).
+    component: kickside/core
+
+  - name: dep.kickside.settings
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Reads and writes app settings through the settings service.
+    component: kickside/settings
+
+  - name: user_authority
+    kind: library.lua
+    source: file://user_authority.lua

@@ -1,0 +1,64 @@
+version: "1.0"
+namespace: kickside.mcp.persist
+
+entries:
+  - name: repo
+    kind: library.lua
+    meta: { comment: "MCP credential persistence + lifecycle — mint hashed actor-bound tokens, resolve_token, revoke, and list. The trust boundary." }
+    source: file://repo.lua
+    modules: [sql, hash, crypto, uuid, time, json, security]
+    imports:
+      mcp_consts: kickside.mcp:consts
+      mcp_types: kickside.mcp:mcp_types
+      credential_eligibility: kickside.mcp:credential_eligibility_check
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      authority_snapshot: kickside.execution:authority_snapshot
+      repo_queries: kickside.mcp.persist:repo_queries
+      credential_quota: kickside.mcp.persist:credential_quota
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_presets: kickside.mcp:mcp_presets
+
+  - name: credential_policy
+    kind: library.lua
+    meta: { comment: "Strict decoding of stored credential policy restrictions." }
+    source: file://credential_policy.lua
+    modules: [json]
+    imports:
+      persisted_json: kickside.contract:persisted_json
+
+  - name: credential_quota
+    kind: library.lua
+    meta: { comment: "Serializable per-owner active credential cap at mint." }
+    source: file://credential_quota.lua
+    modules: [sql]
+    imports:
+      mcp_consts: kickside.mcp:consts
+
+  - name: repo_queries
+    kind: library.lua
+    meta: { comment: "Credential cleanup and management read helpers." }
+    source: file://repo_queries.lua
+    modules: [sql]
+    imports:
+      mcp_consts: kickside.mcp:consts
+
+  - name: cleanup_principal
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Deletes MCP credential rows owned by a deleted principal.
+    source: file://repo.lua
+    method: cleanup_principal
+    modules: [sql, hash, crypto, uuid, time, json, security]
+    imports:
+      mcp_consts: kickside.mcp:consts
+      mcp_types: kickside.mcp:mcp_types
+      credential_eligibility: kickside.mcp:credential_eligibility_check
+      component: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+      authority_snapshot: kickside.execution:authority_snapshot
+      repo_queries: kickside.mcp.persist:repo_queries
+      credential_quota: kickside.mcp.persist:credential_quota
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_presets: kickside.mcp:mcp_presets

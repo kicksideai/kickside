@@ -1,0 +1,90 @@
+version: '1.0'
+namespace: app
+entries:
+- name: create_transactions_fixture
+  kind: library.lua
+  source: file://create_transactions_fixture.lua
+  modules:
+  - sql
+- name: create_transactions_source
+  kind: library.lua
+  source: file://create_transactions_source.lua
+  modules:
+  - sql
+  - uuid
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+    clock: kickside.core.jobs:clock
+    threads_consts: kickside.core.threads:consts
+    threads_normalize: kickside.core.threads.persist:normalize
+    threads_component: app:create_transactions_component
+    core_types: kickside.core:types
+    autoinit: kickside.component:autoinit
+    proj_writer: kickside.core.projections.persist:writer
+    retention_repo: app:create_transactions_retention
+    threads_writer: app:create_transactions_writer
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_row: app:create_transactions_row
+    natural_key: kickside.core.threads.persist:natural_key
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: create_transactions_row
+  kind: library.lua
+  source: file://create_transactions_row.lua
+  imports:
+    fixture: app:create_transactions_fixture
+    real: kickside.core.threads.persist:thread_row
+- name: create_transactions_writer
+  kind: library.lua
+  source: file://create_transactions_writer.lua
+  imports:
+    fixture: app:create_transactions_fixture
+    real: kickside.core.threads.persist:writer
+- name: create_transactions_component
+  kind: library.lua
+  source: file://create_transactions_component.lua
+  imports:
+    fixture: app:create_transactions_fixture
+    real: kickside.core.threads:component
+- name: create_transactions_retention
+  kind: library.lua
+  source: file://create_transactions_retention.lua
+  imports:
+    fixture: app:create_transactions_fixture
+    real: kickside.core.retention.persist:repo
+- name: create_transactions_test
+  kind: function.lua
+  source: file://create_transactions_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_create_transactions
+  modules:
+  - sql
+  imports:
+    test: wippy.test:test
+    fixture: app:create_transactions_fixture
+    api: app:create_transactions_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+- name: create_transactions_retry_target
+  kind: function.lua
+  source: file://create_transactions_retry_target.lua
+  method: run
+  imports:
+    fixture: app:create_transactions_fixture
+    api: app:create_transactions_source
+- name: create_transactions_retry_test
+  kind: function.lua
+  source: file://create_transactions_retry_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_create_transactions_retry
+  modules:
+  - sql
+  - uuid
+  - funcs
+  imports:
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock

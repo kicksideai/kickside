@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the health test harness.
+    file: "${sqlite_path}"
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: subject
+    kind: library.lua
+    source: file://serve.lua
+    modules:
+      - http
+      - sql
+
+  - name: health_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_health
+      comment: Verifies database readiness behavior using the production probe source.
+    source: file://health_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      health: app:subject
+      test: wippy.test:test

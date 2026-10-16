@@ -1,0 +1,25 @@
+version: "1.0"
+namespace: kickside.models.service
+
+entries:
+  - name: cache_bootloader
+    kind: function.lua
+    meta:
+      comment: Warms the model profile/card cache after migrations.
+      type: bootloader
+      order: 35
+      requires:
+        - wippy.migration:migration_bootloader
+    source: file://cache_bootloader.lua
+    method: run
+    imports:
+      models_repo: kickside.models.persist:repo
+
+  # ─── Admin UI (self-served web component) ────────────────────────────
+
+  - name: models_cache
+    kind: library.lua
+    source: file://cache.lua
+    modules: [store, json]
+    imports:
+      models_types: kickside.models:models_types

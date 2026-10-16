@@ -1,0 +1,238 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "../picker-base.css";
+@import "@kickside/ui-kit/spin.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The control: a field-like box holding the selected chips and the inline
+   search input. Reads as a normal tag-input, themed entirely on --p-* tokens. */
+.ms {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%;
+  min-height: 36px; padding: 6px 10px; border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background); border-radius: 8px; color: var(--p-text-color);
+  font: inherit; font-size: 13px; cursor: text; transition: border-color .12s;
+}
+.ms:focus-within {
+  border-color: var(--p-primary-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-primary-color) 18%, transparent);
+}
+
+.ms-chip {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+  height: 24px; padding: 0 4px 0 8px; border-radius: 6px;
+  background: color-mix(in srgb, var(--p-primary-color) 13%, transparent);
+  color: var(--p-text-color); font-size: 12.5px;
+}
+.ms-chip-ico { width: 14px; height: 14px; color: var(--p-primary-color); flex-shrink: 0; }
+.ms-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-chip-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border: none; border-radius: 6px; padding: 0;
+  background: transparent; color: var(--p-text-muted-color); cursor: pointer; flex-shrink: 0;
+}
+.ms-chip-x:hover { background: color-mix(in srgb, var(--p-text-color) 14%, transparent); color: var(--p-text-color); }
+.ms-chip-x > svg { width: 12px; height: 12px; }
+
+.ms-input {
+  flex: 1; min-width: 90px; height: 24px; border: none; background: transparent;
+  outline: none; font: inherit; font-size: 13px; color: var(--p-text-color);
+}
+.ms-input::placeholder { color: var(--p-text-muted-color); }
+
+/* Placement (fixed positioning, z-index, viewport clamp) is owned by AnchoredPanel;
+   this keeps only the panel's own chrome + a static max-height so the list scrolls. */
+.ms-pop {
+  box-sizing: border-box; overflow: hidden;
+  max-width: calc(100vw - 16px); max-height: var(--anchored-panel-available-height, 340px);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 14px;
+  box-shadow: var(--kx-picker-shadow); padding: 6px; display: flex; flex-direction: column; gap: 2px;
+  transition: height .2s ease, max-height .2s ease;
+}
+.ms-state { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 18px; font-size: 12.5px; color: var(--p-text-muted-color); }
+.ms-list { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.ms-row {
+  display: flex; align-items: center; gap: var(--kx-picker-option-icon-gap); width: 100%; text-align: left;
+  padding: 8px; border: none; border-radius: 8px; background: transparent;
+  color: var(--p-text-color); cursor: pointer; outline: none; transition: background .1s;
+}
+.ms-row:hover, .ms-row-active { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.ms-row:focus-visible {
+  background: color-mix(in srgb, var(--p-text-color) 6%, transparent);
+}
+.ms-row-on { background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); }
+.ms-row-ico { width: var(--kx-picker-option-icon-size); height: var(--kx-picker-option-icon-size); color: var(--p-text-muted-color); flex-shrink: 0; }
+.ms-row-on .ms-row-ico { color: var(--p-primary-color); }
+.ms-row-main { display: flex; flex-direction: column; gap: var(--kx-picker-option-stack-gap); min-width: 0; flex: 1; }
+.ms-row-title { font-size: var(--kx-picker-option-title-size); font-weight: var(--kx-picker-option-title-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.ms-row-tag { font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--p-text-muted-color); border: 1px solid var(--p-content-border-color); border-radius: 6px; padding: 0 4px; }
+.ms-row-sub { font-size: var(--kx-picker-option-subtitle-size); line-height: var(--kx-picker-option-subtitle-line-height); color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ms-row-check { width: 16px; height: 16px; color: var(--p-primary-color); flex-shrink: 0; }
+.ms-row-go { width: 16px; height: 16px; color: var(--p-text-muted-color); flex-shrink: 0; }
+.ms-row-off { cursor: not-allowed; }
+.ms-row-off .ms-row-title, .ms-row-off .ms-row-ico { color: var(--p-text-muted-color); }
+.ms-row-off:hover { background: transparent; }
+
+/* A row that is both selectable and a container: the row picks, the trailing
+   chevron opens it. */
+.ms-item { display: flex; align-items: stretch; gap: 2px; }
+.ms-item > .ms-row { flex: 1; min-width: 0; }
+.ms-row-drill {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 32px; border: none; border-radius: 8px; background: transparent;
+  color: var(--p-text-muted-color); cursor: pointer;
+}
+.ms-row-drill:hover, .ms-row-drill:focus-visible { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); color: var(--p-text-color); outline: none; }
+.ms-row-drill > svg { width: 16px; height: 16px; }
+
+.ms-crumbs {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 2px 2px 6px;
+  border-bottom: 1px solid var(--p-content-border-color); margin-bottom: 4px; font-size: 12px;
+}
+.ms-crumb {
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 2px 6px; border: none; border-radius: 8px; background: transparent;
+  color: var(--p-primary-color); font: inherit; cursor: pointer;
+}
+.ms-crumb:hover, .ms-crumb:focus-visible { background: color-mix(in srgb, var(--p-primary-color) 10%, transparent); outline: none; }
+.ms-crumb-here { color: var(--p-text-color); font-weight: 600; cursor: default; }
+.ms-crumb-here:hover { background: transparent; }
+.ms-crumb-sep { width: 12px; height: 12px; color: var(--p-text-muted-color); flex-shrink: 0; }
+
+.ms-hint { margin: 0; padding: 4px 6px; font-size: 11.5px; line-height: 1.4; color: var(--p-text-muted-color); }
+
+.ms-alert {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--p-danger-500) 32%, transparent);
+  background: color-mix(in srgb, var(--p-danger-500) 7%, transparent);
+  color: color-mix(in srgb, var(--p-danger-500) 50%, var(--p-text-color)); font-size: 12px;
+}
+.ms-alert-ico { width: 16px; height: 16px; flex-shrink: 0; }
+.ms-alert-text { flex: 1; min-width: 0; }
+.ms-link {
+  flex-shrink: 0; padding: 2px 6px; border: none; border-radius: 8px; background: transparent;
+  color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer;
+}
+
+.ms-foot {
+  display: flex; align-items: center; gap: 8px; padding: 6px 2px 0; margin-top: 4px;
+  border-top: 1px solid var(--p-content-border-color);
+}
+.ms-count { flex: 1; min-width: 0; font-size: 11.5px; color: var(--p-text-muted-color); }
+.ms-more {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: var(--p-content-background); color: var(--p-text-color);
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.ms-more:hover:not(:disabled) { background: color-mix(in srgb, var(--p-text-color) 5%, transparent); }
+.ms-more:disabled { opacity: .65; cursor: not-allowed; }
+.ms-more > svg { width: 14px; height: 14px; }
+
+.sp {
+  display: flex; flex-direction: column; gap: 8px; width: 100%;
+  color: var(--p-text-color); font: inherit; font-size: 13px;
+}
+.sp-tabs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 6px; width: 100%;
+}
+.sp-tab {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 0; height: 34px; border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; background: var(--p-content-background);
+  color: var(--p-text-muted-color); font: inherit; font-size: 12.5px;
+  cursor: pointer; transition: border-color .12s, background .12s, color .12s;
+}
+.sp-tab:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--p-text-color) 5%, transparent);
+  color: var(--p-text-color);
+}
+.sp-tab-on {
+  border-color: color-mix(in srgb, var(--p-primary-color) 75%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  color: var(--p-primary-color);
+}
+.sp-tab:disabled { opacity: .65; cursor: not-allowed; }
+.sp-tab > svg { width: 16px; height: 16px; flex-shrink: 0; }
+.sp-tab > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sp-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) 30px; align-items: center;
+  width: 100%; border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; background: var(--p-content-background);
+  transition: border-color .12s;
+}
+/* Bordered shell around a bare input: border lights, halo carries it. */
+.sp-body:focus-within { border-color: var(--p-focus-ring-color); box-shadow: var(--p-focus-ring-shadow); }
+.sp-input {
+  min-width: 0; height: 36px; border: 0; outline: 0; padding: 0 10px;
+  background: transparent; color: var(--p-text-color); font: inherit; font-size: 13px;
+}
+.sp-input::placeholder { color: var(--p-text-muted-color); }
+.sp-input:disabled { opacity: .7; cursor: not-allowed; }
+.sp-status {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; color: var(--p-text-muted-color);
+}
+.sp-status > svg { width: 16px; height: 16px; }
+.sp-status-ok { color: var(--p-primary-color); }
+.sp-status-bad { color: color-mix(in srgb, var(--p-danger-500) 50%, var(--p-text-color)); }
+
+.sp-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 24px; color: var(--p-text-muted-color); font-size: 11.5px;
+}
+.sp-meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-presets { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.sp-preset {
+  height: 24px; padding: 0 7px; border: 1px solid var(--p-content-border-color);
+  border-radius: 6px; background: transparent; color: var(--p-text-muted-color);
+  font: inherit; font-size: 11.5px; cursor: pointer;
+}
+.sp-preset:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+  color: var(--p-primary-color);
+}
+.sp-preset:disabled { opacity: .65; cursor: not-allowed; }
+
+/* Generic schema-form (wc-schema-form). Inlined here because schema_form.ts
+   shares this stylesheet; the SchemaForm.vue control classes (.sf-*) must live in
+   the shadow CSS, not an SFC <style> block (which never reaches the shadow root). */
+.sf { display: flex; flex-direction: column; gap: 12px; width: 100%; color: var(--p-text-color); font: inherit; font-size: 13px; }
+.sf-field { display: flex; flex-direction: column; gap: 5px; }
+.sf-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.sf-req { color: color-mix(in srgb, var(--p-danger-500) 50%, var(--p-text-color)); }
+.sf-input {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; transition: border-color .15s; width: 100%;
+}
+select.sf-input {
+  cursor: pointer;
+}.sf-input:invalid { border-color: var(--p-danger-500); }
+.sf-input::placeholder { color: var(--p-text-muted-color); }
+.sf-textarea { height: auto; min-height: 84px; padding-top: 9px; padding-bottom: 9px; line-height: 1.45; resize: vertical; }
+.sf-structured {
+  min-height: 116px; max-width: 100%; overflow: auto; tab-size: 2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px; white-space: pre;
+}
+.sf-structured.is-invalid { border-color: var(--p-danger-500); }
+.sf-error { font-size: 11.5px; line-height: 1.35; color: color-mix(in srgb, var(--p-danger-500) 50%, var(--p-text-color)); }
+.sf-check { width: 18px; height: 18px; accent-color: var(--p-primary-color); border-radius: 8px; align-self: flex-start; }
+.sf-hint { font-size: 11.5px; color: var(--p-text-muted-color); }
+.sf-advanced { border-top: 1px solid var(--p-content-border-color); padding-top: 8px; }
+.sf-advanced-summary {
+  cursor: pointer; user-select: none; list-style-position: outside; border-radius: 8px; padding: 8px;
+  font-size: 12.5px; font-weight: 600; color: var(--p-text-muted-color);
+}.sf-advanced-body { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-pop { transition: none; }
+}

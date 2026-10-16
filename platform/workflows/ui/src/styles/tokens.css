@@ -1,0 +1,113 @@
+@import "@kickside/ui-kit/spin.css";
+/* ══════════════════════════════════════════════════════════════════════════
+   Workflow builder — a control room for durable AI-agent processes.
+
+   The --wf-* layer derives from the host --p-* tokens with color-mix, so
+   chrome is always the host's palette (light and dark, no brand
+   literals). The only sanctioned fixed colors are the per-KIND canvas hues —
+   they encode meaning, not brand. Dark is the showcase; light is deliberate.
+
+   This layer holds DERIVATIONS ONLY. A host value used unchanged is read as
+   `var(--p-*)` at the call site, not renamed here: a 1:1 alias adds a private
+   name for something the whole app already has a name for, and the module
+   drifts from the rest of KickSide one synonym at a time. Nine such aliases
+   were removed (--wf-text/-line/-accent/-ok/-warn/-bg/-contrast, plus two that
+   nothing read); add a token here only when the value is genuinely different
+   from the host's.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:host {
+  /* Surfaces: layered elevation via mixes of content-background toward text. */
+  --wf-surface: color-mix(in srgb, var(--p-content-background) 95%, var(--p-text-color));
+  --wf-panel: color-mix(in srgb, var(--p-content-background) 97%, var(--p-text-color));
+  --wf-elevated: color-mix(in srgb, var(--p-content-background) 88%, var(--p-text-color));
+
+  /* Lines. */
+  --wf-line-soft: color-mix(in srgb, var(--p-content-border-color) 55%, transparent);
+  --wf-line-strong: color-mix(in srgb, var(--p-text-color) 34%, transparent);
+
+  /* Text. */
+  /* Host muted text is intentionally subtle and can fall below AA at the
+     builder's compact type scale. Pull secondary text toward the host's real
+     foreground instead of inventing a theme-specific gray. */
+  --wf-muted: color-mix(in srgb, var(--p-text-muted-color) 55%, var(--p-text-color));
+  --wf-faint: color-mix(in srgb, var(--p-text-muted-color) 40%, var(--p-text-color));
+
+  /* Chrome accent + semantic status colors — derived from the host palette. */
+  --wf-accent-fg: color-mix(in srgb, var(--p-primary-color) 35%, var(--p-text-color));
+  --wf-danger: color-mix(in srgb, var(--p-danger-500) 50%, var(--p-text-color));
+
+  /* Per-kind canvas hues are decorative category anchors, mixed toward the
+     host text color so their labels retain AA contrast in both themes. */
+  --wf-amber: color-mix(in srgb, #f5a623 60%, var(--p-text-color));
+  --wf-violet: color-mix(in srgb, #8b5cf6 60%, var(--p-text-color));
+  --wf-blue: color-mix(in srgb, #3b82f6 60%, var(--p-text-color));
+  --wf-teal: color-mix(in srgb, #14b8a6 60%, var(--p-text-color));
+  --wf-rose: color-mix(in srgb, #f43f5e 60%, var(--p-text-color));
+  --wf-paper: color-mix(in srgb, #b6924a 60%, var(--p-text-color));
+
+  /* Boundary "contract" palette — calm, desaturated tones set apart from the punchy
+     per-kind data hues, so Start/Finish/Error read as the workflow's interface rather
+     than another data node. Not the plain green/blue/red of ordinary status. */
+  --wf-contract-in: color-mix(in srgb, #5b8aa6 60%, var(--p-text-color));   /* Start  — steel-cyan, the entry */
+  --wf-contract-out: color-mix(in srgb, #6d78b5 60%, var(--p-text-color));  /* Finish — calm indigo, the exit */
+  --wf-contract-err: color-mix(in srgb, #a3788f 60%, var(--p-text-color));  /* Error  — muted mauve, not alarm-red */
+
+  /* Canvas grid + minimap. */
+  --wf-dot: color-mix(in srgb, var(--p-text-muted-color) 26%, transparent);
+  --wf-minimap-node: color-mix(in srgb, var(--p-text-muted-color) 40%, transparent);
+
+  /* Fixed radii (host scale). */
+  --wf-radius: 14px;
+  --wf-radius-sm: 8px;
+
+  /* Type scale. Two sheets read --wf-mono directly and the .wf-mono class reads
+     it too, so the stack is declared once here rather than per site. */
+  --wf-mono: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  --wf-fs-label: 10.5px;
+  --wf-fs-meta: 11.5px;
+  --wf-fs-body: 13px;
+  --wf-fs-title: 15px;
+
+  --wf-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Canvas-only depth: nodes and coordinate annotations remain legible without
+     depending on private facade shadow variables. */
+  --wf-elev-1: 0 2px 8px color-mix(in srgb, var(--p-text-color) 14%, transparent);
+  --wf-elev-2: 0 6px 18px color-mix(in srgb, var(--p-text-color) 18%, transparent);
+  --wf-elev-3: 0 12px 32px color-mix(in srgb, var(--p-text-color) 22%, transparent);
+
+  /* Module layer map. These values order local panel affordances, sticky list chrome,
+     graph annotations, responsive rails, the toolbar, and screen-coordinate authoring
+     overlays. PrimeVue owns every standard dialog, menu, toast, and confirmation layer. */
+  --wf-layer-panel-affordance: 1;
+  --wf-layer-list-header: 1;
+  --wf-layer-selection: 2;
+  --wf-layer-node-label: 3;
+  --wf-layer-edge-annotation: 4;
+  --wf-layer-canvas-status: 5;
+  --wf-layer-palette: 21;
+  --wf-layer-toolbar: 30;
+  --wf-layer-coordinate-hint: 40;
+  --wf-layer-coordinate-trace: 41;
+  --wf-layer-coordinate-editor: 42;
+  --wf-layer-immersive-shell: 50;
+
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  color: var(--p-text-color);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+.wf {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--p-content-background);
+  overflow: hidden;
+}

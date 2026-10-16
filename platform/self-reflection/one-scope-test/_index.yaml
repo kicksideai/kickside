@@ -1,0 +1,39 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+  - name: dep.kickside.self_reflection
+    kind: ns.dependency
+    component: kickside/self-reflection
+    version: '*'
+    parameters:
+      - name: kickside.self_reflection.security:admin_scope
+        value: app:admin
+  - name: admin
+    kind: security.policy
+    groups: [app:admin]
+    policy: { resources: '*', actions: '*', effect: allow }
+  - name: reader
+    kind: security.policy
+    groups: [app:reader]
+    policy:
+      resources: '*'
+      actions: [registry.get, registry.find, funcs.call]
+      effect: allow
+  - name: compatibility_test
+    kind: function.lua
+    meta: { type: test, suite: self_reflection_one_scope }
+    source: file://src/compatibility_test.lua
+    method: run
+    modules: [security, funcs]
+    imports: { test: 'wippy.test:test' }
+  - name: discovery_probe
+    kind: function.lua
+    source: file://src/discovery_probe.lua
+    method: run
+    modules: [registry]
+  - name: definition
+    kind: ns.definition

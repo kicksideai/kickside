@@ -1,0 +1,91 @@
+/* KickSide tag scale: the small pill, and the caps micro-badge.
+ *
+ * Nineteen modules render a small rounded label - a status, a count, a
+ * capability, a category. They agreed on the idea and disagreed on every
+ * number: padding ran `1px 6px`, `1px 7px`, `1px 8px`, `2px 6px`, `2px 7px`,
+ * `2px 8px` and `3px 10px 3px 8px`; font-size ran 9, 10, 10.5, 11 and 11.5px;
+ * weight ran 500, 600, 660 and 700.
+ *
+ * Sorted by what they actually look like, those are TWO devices, not one scale:
+ *
+ *   .kx-tag-sm    a label at sentence scale - 10.5px, weight 600, mixed case.
+ *                 Status, counts, metadata. Reads as a quiet marker beside the
+ *                 thing it describes. This is the majority: users, webhooks,
+ *                 mcp, skills, models, security, inbox and channel were all
+ *                 within half a pixel of each other.
+ *
+ *   .kx-tag-caps  a category stamp - 9px, weight 700, uppercase, letter-spaced.
+ *                 INSTALLED, PRIVATE, TOOLS, BEHAVIOR. Deliberately not a label:
+ *                 it names a class of thing rather than reporting a state, and
+ *                 the caps are what make it read that way.
+ *
+ * Folding the second into the first would have removed a distinction the
+ * product is making on purpose, so both ship.
+ *
+ * SIZING ONLY - no colour, no background, no border. A tag is painted by
+ * whatever is already painting it: a PrimeVue `<Tag severity>`, a module tone
+ * class, or a `color-mix` off `currentColor`. That split is why one class can
+ * serve a hand-rolled `<span>` and a PrimeVue `<Tag>` at once.
+ *
+ * Each selector repeats its project class to carry the required specificity. A module's
+ * stylesheet is an inline <style> in the shadow root; PrimeVue's arrives as an
+ * adoptedStyleSheet, which the spec applies AFTER the tree's own <style>
+ * elements. So on a `<Tag>` the bare class loses to `.p-tag` at equal
+ * specificity and the sizing silently does nothing - the repeated project selector is
+ * what makes it land.
+ *
+ * The radius comes from `kx-tokens.css`, which points `--kx-radius-tag` at the
+ * theme's own `--p-content-border-radius`. The 6px fallback is for a module
+ * that imports this sheet on its own.
+ *
+ * Note for adopters: a CSS `@import` must precede all other rules, so this
+ * sheet lands first and a module's own rule wins at equal specificity.
+ * Adopting means DELETING the local sizing, not just importing. Keep the
+ * module's colour rules - those are not this sheet's business.
+ */
+
+/* ── Small label pill ──────────────────────────────────────────────────── */
+
+.kx-tag-sm,
+.kx-tag-sm.kx-tag-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: var(--kx-radius-tag, 6px);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* 12px is the size an icon has to be to sit on a 10.5px line without pushing
+   the pill taller than its text does. */
+.kx-tag-sm svg,
+.kx-tag-sm.kx-tag-sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ── Caps micro-badge ──────────────────────────────────────────────────── */
+
+.kx-tag-caps,
+.kx-tag-caps.kx-tag-caps {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: var(--kx-radius-tag, 6px);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.kx-tag-caps svg,
+.kx-tag-caps.kx-tag-caps svg {
+  width: 11px;
+  height: 11px;
+}

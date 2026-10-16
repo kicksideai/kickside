@@ -1,0 +1,452 @@
+version: "1.0"
+namespace: kickside.channel
+
+# kickside.channel — inbound external channel messages onto agent sessions, and
+# the shared session engine both DMs and channels run on.
+#
+# A channel is a shared external surface (chat channel / group / room) bridged to
+# a wippy.session. A responder automation attaches an agent to a channel; the
+# agent runs as the responder's selected principal (vs kickside.dm, which runs as
+# the linked external user). The engine here -- the cluster-wide session hub + the
+# per-chat bridge -- is identity-agnostic and is the single
+# implementation both kickside.dm and kickside.channel use (no parallel session
+# code). Durable state includes the session map, protected admissions and
+# accepted turns. Replies are pure transport over the connection's bot token at the
+# system level. Providers normalize platform events and call
+# kickside.channel:receive; they never touch session, identity, routing, or
+# storage.
+
+entries:
+
+  - name: retention
+    kind: function.lua
+    meta:
+      type: kickside.retention.owner
+      comment: Prune settled accepted turns on the existing core retention tick.
+    source: file://retention.lua
+    method: run
+    modules: [time]
+    security:
+      actor: { id: system:kickside.channel.retention }
+      policies: [kickside.channel:retention_db_access]
+    imports:
+      channel_consts: kickside.channel:consts
+      channel_retention: kickside.channel.persist:retention
+      channel_archive_retention: kickside.channel.persist:archive_retention
+      channel_idle_retention: kickside.channel.persist:idle_retention
+      channel_retention_policy: kickside.channel:retention_policy
+      channel_conversation: kickside.channel.persist:conversation
+
+  - name: retention_policy
+    kind: library.lua
+    source: file://retention_policy.lua
+    modules: [registry]
+
+  - name: policy
+    kind: registry.entry
+    meta:
+      limits:
+        max_row_bytes: 4194304
+      retention:
+        settled_turns: "48h"
+        batch_turns: 500
+        archived_sessions: "30d"
+        batch_archives: 50
+        idle_sessions: "30d"
+        batch_idle: 50
+
+  - name: reply_admission
+    kind: contract.definition
+    meta: { comment: "Protected accepted-turn reservation checked by the connection reply boundary." }
+    methods:
+      - name: verify
+        description: Verify a narrowly admitted reply proof before a provider opens; reserves nothing.
+      - name: reserve
+        description: Reserve a narrowly admitted reply before provider token use.
+      - name: complete
+        description: Retain the provider receipt for that reserved reply.
+
+  - name: reserve_reply_func
+    kind: function.lua
+    security:
+      policies: [kickside.channel:hub_deferred_execution]
+    source: file://reply_admission.lua
+    method: reserve
+    imports:
+      channel_consts: kickside.channel:consts
+      channel_persist: kickside.channel.persist:repo
+      execution_ref: kickside.channel.service:execution_ref
+
+  - name: verify_reply_func
+    kind: function.lua
+    security:
+      policies: [kickside.channel:hub_deferred_execution]
+    source: file://reply_admission.lua
+    method: verify
+    imports:
+      channel_consts: kickside.channel:consts
+      channel_persist: kickside.channel.persist:repo
+      execution_ref: kickside.channel.service:execution_ref
+
+  - name: complete_reply_func
+    kind: function.lua
+    source: file://reply_admission.lua
+    method: complete
+    imports:
+      channel_consts: kickside.channel:consts
+      channel_persist: kickside.channel.persist:repo
+      execution_ref: kickside.channel.service:execution_ref
+
+  - name: reply_admission_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.channel:reply_admission
+        default: true
+        methods:
+          verify: kickside.channel:verify_reply_func
+          reserve: kickside.channel:reserve_reply_func
+          complete: kickside.channel:complete_reply_func
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Channel
+      comment: Provider-neutral channel responder plus the shared external chat session engine (hub + bridge) used by both kickside.dm and kickside.channel. A responder attaches an agent to a channel; the agent runs as the responder's live resolved principal.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the shared chat session map.
+      description: SQL database resource backing the shared chat session map.
+    targets:
+      - entry: kickside.channel:retention_db_access
+        path: .policy.resources
+      - entry: kickside.channel.migrations:01_channel
+        path: .meta.target_db
+      - entry: kickside.channel.migrations:02_admission
+        path: .meta.target_db
+      - entry: kickside.channel.migrations:03_session_archives
+        path: .meta.target_db
+      - entry: kickside.channel.migrations:09_conversation_cleanup_counts
+        path: .meta.target_db
+      - entry: kickside.channel.migrations:11_capacity
+        path: .meta.target_db
+      - entry: kickside.channel:db_config
+        path: .meta.db_id
+
+  - name: retention_db_access
+    kind: security.policy
+    meta:
+      comment: Let the channel retention callback open its own DB and the backing Wippy session DB for session teardown.
+    policy:
+      actions: [db.get]
+      effect: allow
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host running the channel hub, bridge children, and session children.
+      description: Process host running the channel hub, bridge children, and session children.
+    targets:
+      - entry: kickside.channel.service:hub.service
+        path: .host
+      - entry: kickside.channel:process_config
+        path: .meta.host_id
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the channel install-form bundle attaches to.
+      description: HTTP server the channel install-form bundle attaches to.
+    targets:
+      - entry: kickside.channel:ui_static
+        path: .meta.server
+
+  # Resolved DB id for the persist layer. The target_db requirement rewrites
+  # .meta.db_id here; consts.db_id() reads it back so the persist layer binds the
+  # configured database, not a hardcoded literal.
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured channel DB id (rewritten by the target_db requirement).
+
+  - name: process_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured channel process host used by dynamic child spawns.
+
+  - name: __dependency.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration system dependency.
+    component: wippy/migration
+
+  - name: __dependency.kickside.automation
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Automation runtime dependency for the channel responder component controls.
+    component: kickside/automation
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution identity primitive (principal codec, delegation, live run-as).
+    component: kickside/execution
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    component: kickside/core
+
+  - name: dep.kickside.connection
+    version: '*'
+    kind: ns.dependency
+    component: kickside/connection
+
+  - name: dep.kickside.uploads
+    version: '*'
+    kind: ns.dependency
+    component: kickside/uploads
+
+  - name: dep.kickside.agents
+    version: '*'
+    kind: ns.dependency
+    component: kickside/agents
+
+  - name: dep.wippy.agent
+    version: '*'
+    kind: ns.dependency
+    component: wippy/agent
+
+  - name: dep.wippy.llm
+    version: '*'
+    kind: ns.dependency
+    component: wippy/llm
+
+  - name: dep.wippy.session
+    version: '*'
+    kind: ns.dependency
+    component: wippy/session
+
+  - name: consts
+    kind: library.lua
+    meta: { comment: "Hub names, run-as modes, thread class + event types, db id resolver, external_ref builder." }
+    source: file://consts.lua
+    modules: [registry]
+
+  # Component-kind declaration. Its thread carries the channel conversation: inbound
+  # messages plus the responder's reply events. The inbound stream is published as a
+  # trigger source (the channel_message_received port below), so a Task or Data Sync
+  # can watch every message on a picked channel thread. The reply events stay
+  # audit-only (no port). This kind declares no sink: the post sink is the
+  # self-describing channel_sink writable binding.
+
+  - name: channel_kind
+    kind: contract.binding
+    meta:
+      title: Channel Chat
+      icon: tabler:message-circle
+      comment: Inbound messages from a connected channel (Discord, Slack) on this chat's thread.
+      class:
+        - kickside.channel
+      group: Channels
+      events:
+        input: []
+        output:
+          - type: "kickside.channel.events:message.inbound"
+            system_only: true
+          - type: "kickside.channel.events:reply.sent"
+            system_only: true
+          - type: "kickside.channel.events:reply.failed"
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  # Published events port over the channel's inbound message stream. A watch trigger
+  # (Task, Data Sync) binds to a picked channel thread and receives every
+  # message.inbound event as an envelope; backfill: all replays the thread history
+  # through the same envelope/dedup path. The output face derives from the
+  # message.inbound event entry's schema; the picker is class-scoped to
+  # kickside.channel by the binding.
+
+  - name: channel_message_received
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: New Channel Message
+      comment: Start when a message arrives in a connected channel.
+      icon: tabler:message-circle
+    binding: kickside.channel:channel_kind
+    event: kickside.channel.events:message.inbound
+    config_schema:
+      thread_id:
+        picker: wc-component-picker
+        required: true
+        title: Channel
+
+  # ─── Identity resolution ─────────────────────────────────────────────
+
+  - name: types
+    kind: library.lua
+    meta: { comment: "Envelope (transport message) + Route (the one struct a surface builds and the runtime consumes). The traceable seam vocabulary." }
+    source: file://types.lua
+
+  # ─── Session engine (hub + bridge) ───────────────────────────────────
+
+
+  - name: hub_deferred_execution
+    kind: security.policy
+    groups: [kickside.channel.service:hub_execution]
+    policy:
+      resources: kickside.channel.service:execution_ref
+      actions: kickside.execution.defer
+      effect: allow
+
+  - name: receive_inject
+    kind: security.policy
+    meta:
+      comment: A caller with WRITE on a conversation may send an authorized ambient turn through its receive surface.
+    policy:
+      resources:
+        - kickside.channel:receive
+        - kickside.dm:receive
+      actions: channel.receive.inject
+      effect: allow
+
+  - name: receive
+    kind: contract.definition
+    meta:
+      title: Channel Receive
+      comment: Provider-neutral inbound seam for shared channels. Connection providers normalize platform events and hand them here; the channel responder owns routing (chat -> installed automation), installer-identity reconstruction, the audit thread, dedup, and the persistent session.
+    methods:
+      - name: receive
+        description: Accept one normalized inbound channel message. The responder resolves which installed automation covers channel_id, runs its agent as the selected principal, and replies through the connection.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "provider": { "type": "string" }, "reply_component_id": { "type": "string" }, "reply_resource_id": { "type": "string" }, "channel_id": { "type": "string" }, "external_user_id": { "type": "string" }, "external_username": { "type": "string" }, "external_display_name": { "type": "string" }, "external_message_id": { "type": "string" }, "text": { "type": "string" }, "attachments": { "type": "array" }, "trace_context": { "type": "object" } }, "required": ["provider", "reply_component_id", "channel_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "accepted": { "type": "boolean" }, "status": { "type": "string" }, "thread_id": { "type": "string" }, "session_id": { "type": "string" }, "error": { "type": "string" } }, "required": ["accepted", "status"] }
+            format: application/schema+json
+
+  - name: receive_func
+    kind: function.lua
+    security:
+      policies:
+      - kickside.channel:hub_deferred_execution
+      - kickside.channel:thread_inbound_publish
+    meta: { comment: "kickside.channel:receive -- route the channel to its responder automation, run the agent as the frozen installer, append the audit event, forward the turn to the session hub." }
+    source: file://receive.lua
+    method: receive
+    modules: [contract, logger, uuid, security]
+    imports:
+      channel_responder: kickside.channel.responder:runtime
+      component: kickside.component:component
+      agent_ref: kickside.agents:agent_ref
+      channel_persist: kickside.channel.persist:repo
+      channel_consts: kickside.channel:consts
+      channel_types: kickside.channel:types
+      trace_context: kickside.execution:trace
+      execution_identity: kickside.execution:execution_identity
+      responder_health: kickside.channel.responder:health
+      hub_signal: kickside.channel.service:hub_signal
+      channel_receive_witness: kickside.channel.service:receive_witness
+      channel_publication: kickside.channel.service:publication
+      channel_turn_recovery: kickside.channel.persist:turn_recovery
+      channel_refusal: kickside.channel:refusal
+
+  - name: refusal
+    kind: library.lua
+    meta: { comment: "Typed durable refusals of a conversation write: owner deletion and row byte limit." }
+    source: file://refusal.lua
+
+  - name: channel_binding
+    kind: contract.binding
+    meta:
+      title: Channel Receive Service
+      comment: Default provider-neutral channel receive implementation.
+    contracts:
+      - contract: kickside.channel:receive
+        default: true
+        methods:
+          receive: kickside.channel:receive_func
+
+  # ─── Ambient trigger (kickside.channel:inject) ───────────────────────
+  # Cross-module seam: trigger a system ambient message into a designated chat
+  # (DM or channel) so its agent reacts. Reuses the chat's own surface; the hub
+  # reuses or wakes the session. Any module (inbox, automation, tool) opens this.
+
+  # ─── Chat teardown ───────────────────────────────────────────────────
+  # A responder registers this as its install rollback step; on uninstall (explicit
+  # or cascaded from a connection/user deletion) it deletes the chat session +
+  # drops the (provider, external_id) mapping so no owner deletion leaves an orphan.
+
+  - name: cleanup_conversation
+    kind: function.lua
+    meta: { comment: "Delete a chat session + mapping row. The responder's install rollback target." }
+    source: file://binding/cleanup_conversation_func.lua
+    method: cleanup_conversation
+    modules: [logger]
+    imports:
+      channel_persist: kickside.channel.persist:repo
+      channel_consts: kickside.channel:consts
+      session_service: wippy.session:service
+      session_delete_proof: kickside.channel.persist:session_delete_proof
+      channel_conversation: kickside.channel.persist:conversation
+      conversation_gc: kickside.channel.persist:conversation_gc
+
+  - name: complete_unlink
+    kind: function.lua
+    meta: { comment: "Finalize Channel-owned unlink counts after Identity deletes its link row." }
+    source: file://binding/cleanup_conversation_func.lua
+    method: complete_unlink
+    imports:
+      channel_consts: kickside.channel:consts
+      channel_persist: kickside.channel.persist:repo
+      session_service: wippy.session:service
+      session_delete_proof: kickside.channel.persist:session_delete_proof
+      channel_conversation: kickside.channel.persist:conversation
+      conversation_gc: kickside.channel.persist:conversation_gc
+
+  # ─── Install-form UI server ──────────────────────────────────────────
+  # The channel-responder automation lives in its own component
+  # (kickside.channel.responder); this module only serves its built UI bundle
+  # (../ui -> ./static) at /kickside-channel.
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built channel UI bundle (install forms).
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-channel
+    fs: kickside.channel:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"

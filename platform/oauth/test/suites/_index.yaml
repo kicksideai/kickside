@@ -1,0 +1,577 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/oauth. Provides the host resources the module
+# requires (app:db, app:processes, app:api, app:public_api, app:gateway, env
+# storage, a permissive actor scope) and boots component/contract/cron/views/core
+# so the co-located suites drive the repository, the connection contract, the
+# discovery handlers and the pure-logic seams directly. Harness-only; never
+# published.
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    version: "*"
+    component: wippy/test
+
+  # ─── Host resources ──────────────────────────────────────────────────
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the oauth suites.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router (authenticated surface).
+      server: gateway
+    prefix: /api
+
+  - name: public_api
+    kind: http.router
+    meta:
+      comment: Public router the OAuth callback endpoints attach to.
+      server: gateway
+    prefix: /public
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the oauth suites open their contracts under.
+    groups:
+      - oauth_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: scope_resolver_stub
+    kind: function.lua
+    meta:
+      comment: Test implementation of the application-owned scope resolver contract.
+    source: file://scope_resolver_stub.lua
+    imports:
+      execution_identity: kickside.execution:execution_identity
+    method: resolve
+
+  - name: scope_resolver_binding
+    kind: contract.binding
+    meta:
+      comment: OAuth harness scope resolver; production binds this in kickside/users.
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        default: true
+        methods:
+          resolve: app:scope_resolver_stub
+
+  # ─── Suites ──────────────────────────────────────────────────────────
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Service and negotiator spawns route through the one process_host requirement.
+    source: file://packaging_test.lua
+    method: run
+    modules:
+      - registry
+    imports:
+      test: wippy.test:test
+      runtime_config: kickside.oauth:runtime_config
+
+  - name: types_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Public DTO helpers allowlist profile fields and strip secret envelopes.
+    source: file://types_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      oauth_types: kickside.oauth:oauth_types
+
+  - name: form_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: RFC 3986 url/form percent-encoding for auth URLs and token bodies.
+    source: file://form_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      form: kickside.oauth:form
+
+  - name: creds_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Credential resolver rejects a non-canonical field before any context lookup.
+    source: file://creds_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      creds: kickside.oauth:creds
+
+  - name: provider_errors_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Provider error responses are redacted before they are returned or logged.
+    source: file://provider_errors_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      provider_errors: kickside.oauth:provider_errors
+
+  - name: refresh_schedule_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Exact refresh deadline calculation and typed input rejection.
+    source: file://refresh_schedule_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      refresh_schedule: kickside.oauth:refresh_schedule
+
+  - name: refresh_install_integration_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+    source: file://refresh_install_integration_test.lua
+    method: run
+    modules: [sql, json, uuid, time, security, funcs]
+    imports:
+      test: wippy.test:test
+      refresh_schedule: kickside.oauth:refresh_schedule
+      jobs: kickside.core.jobs:jobs
+      oauth_repo_support: kickside.oauth.persist:oauth_repo_support
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: connection_manager_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Canonical public component meta for an OAuth connection.
+    source: file://connection_manager_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      connection_manager: kickside.oauth:connection_manager
+
+  - name: update_connection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Row and component-metadata updates commit together or compensate; a divergent state is reported, never hidden.
+    source: file://api/update_connection_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      update_consistency: kickside.oauth.api:update_consistency
+
+  - name: oauth_callback_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Callback parameter normalization and negotiator delivery, including listener release on every exit.
+    source: file://api/public/oauth_callback_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      callback_params: kickside.oauth.api.public:callback_params
+      callback_waiter: kickside.oauth.api.public:callback_waiter
+      callback_names: kickside.oauth:callback_names
+
+  - name: security_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: The public callback policies grant only the callback process primitives and their own view entries.
+    source: file://api/public/security_policy_test.lua
+    method: run
+    modules:
+      - security
+    imports:
+      test: wippy.test:test
+      callback_names: kickside.oauth:callback_names
+
+  - name: discovery_miss_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: Discovery handlers surface an unknown provider as success=false rather than a nil-field success.
+    source: file://discovery/discovery_miss_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      get_provider_info_func: kickside.oauth.binding:get_provider_info_func
+      get_connector_contract_func: kickside.oauth.binding:get_connector_contract_func
+      get_component_contract_func: kickside.oauth.binding:get_component_contract_func
+
+  - name: db_config_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth
+      group: KickSide OAuth
+      comment: The repo resolves its DB id from the target_db requirement, not a hardcoded literal.
+    source: file://persist/db_config_test.lua
+    method: run
+    modules:
+      - registry
+    imports:
+      test: wippy.test:test
+      oauth_types: kickside.oauth:oauth_types
+
+  - name: oauth_repo_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: Connection persistence — create, read, update, token envelopes encrypted at rest, schedule coordination.
+    source: file://persist/oauth_repo_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - time
+      - env
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: get_access_token_func_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: get_access_token returns an unexpired token, denies a stranger at the component boundary, and never reports an expired token as usable.
+    source: file://binding/get_access_token_func_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - time
+      - json
+      - contract
+      - security
+      - funcs
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+
+  - name: get_connection_status_func_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_oauth_persist
+      group: KickSide OAuth
+      comment: get_status summarizes OAuth state from the component's public meta.
+    source: file://binding/get_connection_status_func_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+      - contract
+    imports:
+      test: wippy.test:test
+
+  # ─── Dependencies ────────────────────────────────────────────────────
+  - name: dep.kickside.oauth
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: OAuth mounted as the single package root; this harness supplies every host seam it requires.
+    component: kickside/oauth
+    parameters:
+    - name: kickside.oauth:target_db
+      value: app:db
+    - name: kickside.oauth:api_router
+      value: app:api
+    - name: kickside.oauth:public_api_router
+      value: app:public_api
+    - name: kickside.oauth:process_host
+      value: app:processes
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Shared contracts the OAuth connection binding implements.
+    component: kickside/contract
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.component
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Component primitives backing OAuth connection components and their access boundary.
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - name: dep.kickside.core
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Core host wiring for the lifecycle implementation the component backbone binds.
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - name: dep.wippy.views
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Views — renders the module-owned OAuth callback page.
+    component: wippy/views
+    parameters:
+      - name: api_router
+        value: app:public_api
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.security
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Actor, scope, and access resolution framework; supplies the wippy.security:process group the bootloader service runs under.
+    component: wippy/security
+
+  - name: dep.wippy.migration
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Points the migration bootloader at the test database.
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Bootloader provisions the encryption key and applies every dep's migrations on boot.
+    component: wippy/bootloader
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: refresh_fixture_provider
+    kind: registry.entry
+    meta: { oauth_provider: native-refresh-test }
+    data:
+      connector_contract:
+        implementation_id: app:refresh_fixture_connector
+        context_values: {}
+  - name: refresh_fixture_connector
+    kind: contract.binding
+    contracts:
+      - contract: kickside.oauth:connector
+        methods:
+          init_oauth: app:refresh_fixture_unused
+          handle_callback: app:refresh_fixture_unused
+          refresh_token: app:refresh_fixture_effect
+  - name: refresh_fixture_effect
+    kind: function.lua
+    source: file://refresh_provider_fixture.lua
+    method: refresh
+    modules: [sql, security, time]
+    imports:
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+  - name: refresh_fixture_unused
+    kind: function.lua
+    source: file://refresh_provider_fixture.lua
+    method: unused
+    modules: [sql, security, time]
+    imports:
+      oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: refresh_http_fixture
+    kind: library.lua
+    source: file://refresh_http_fixture.lua
+  - name: refresh_context_fixture
+    kind: library.lua
+    source: file://refresh_context_fixture.lua
+  - name: refresh_creds_fixture
+    kind: library.lua
+    source: file://refresh_creds_fixture.lua
+  - name: refresh_connector_with_transport_adapter
+    kind: library.lua
+    source: file://../src_link/binding/refresh_token_func.lua
+    modules: [json, logger]
+    imports:
+      ctx: app:refresh_context_fixture
+      http_client: app:refresh_http_fixture
+      creds: app:refresh_creds_fixture
+      form: kickside.oauth:form
+      provider_errors: kickside.oauth:provider_errors
+  - name: refresh_token_http_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_oauth }
+    source: file://refresh_token_http_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      connector: app:refresh_connector_with_transport_adapter
+      http_fixture: app:refresh_http_fixture
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules: [registry, security]
+    imports:
+      test: wippy.test:test
+
+  - name: refresh_endpoint_fixture
+    kind: function.lua
+    source: file://refresh_endpoint_fixture.lua
+    security:
+      actor: { id: oauth-http-fixture }
+      policies: [app:user]
+    method: handle
+    modules: [http, sql, time]
+    imports:
+      oauth_repo: kickside.oauth.persist:oauth_repo
+  - name: refresh_endpoint_fixture.endpoint
+    kind: http.endpoint
+    meta: { router: public_api }
+    method: POST
+    path: /test-token
+    func: refresh_endpoint_fixture
+  - name: refresh_test_client
+    kind: env.variable
+    variable: OAUTH_HTTP_TEST_CLIENT
+    storage: app:env_storage
+    default: local-test-client
+  - name: refresh_endpoint_provider
+    kind: registry.entry
+    meta: { oauth_provider: http-refresh-test }
+    data:
+      connector_contract:
+        implementation_id: kickside.oauth:base_connector
+        context_values:
+          oauth_token_endpoint: http://127.0.0.1:19145/public/test-token
+          oauth_client_id_env: app:refresh_test_client
+  - name: refresh_network_provider
+    kind: registry.entry
+    meta: { oauth_provider: http-refresh-network-test }
+    data:
+      connector_contract:
+        implementation_id: kickside.oauth:base_connector
+        context_values:
+          oauth_token_endpoint: https://127.0.0.1:19145/public/test-token
+          oauth_client_id_env: app:refresh_test_client
+  - name: refresh_endpoint_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_oauth }
+    source: file://refresh_endpoint_test.lua
+    method: run
+    modules: [sql, uuid, time, json, contract, security]
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      refresh_schedule: kickside.oauth:refresh_schedule
+      component: kickside.component:component

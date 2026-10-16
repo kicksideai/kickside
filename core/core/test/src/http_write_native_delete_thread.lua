@@ -1,0 +1,1 @@
+../../src/threads/api/delete_thread.lua

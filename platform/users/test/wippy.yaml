@@ -1,0 +1,7 @@
+organization: kickside
+module: users-test
+type: application
+description: Standalone application harness that boots kickside/users and runs its harness-owned test suites.
+directories:
+  modules: .wippy
+  src: .

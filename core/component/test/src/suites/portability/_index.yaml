@@ -1,0 +1,31 @@
+version: "1.0"
+namespace: app.component_suites.portability
+
+entries:
+  - name: portable_io_test
+    kind: function.lua
+    meta: {type: test, suite: component_portability}
+    source: file://portable_io_test.lua
+    method: run
+    modules: [fs, uuid]
+    imports:
+      test: wippy.test:test
+      portable_io: kickside.component.portability:portable_io
+
+  - name: parts
+    kind: fs.directory
+    directory: ./.wippy/contract-audit-parts
+    auto_init: true
+
+  - name: base_portable_test
+    kind: function.lua
+    meta:
+      title: Base Portable Domain Test
+      type: test
+      suite: component_portability
+      comment: Allowlisting, credential exclusion, slots, round trips, and reference remapping.
+    source: file://base_portable_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      base_portable: kickside.component.portability:base_portable

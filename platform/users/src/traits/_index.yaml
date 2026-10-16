@@ -1,0 +1,31 @@
+version: "1.0"
+namespace: kickside.users.traits
+
+entries:
+  # kickside.users.traits:user_aware
+  - name: user_aware
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: User Aware
+      public: true
+      comment: Inject current username into prompt
+      tags:
+        - user
+        - context
+      icon: tabler:user
+    prompt: User context awareness.
+    prompt_func_id: kickside.users.traits:user_name
+    
+  # kickside.users.traits:user_name
+  - name: user_name
+    kind: function.lua
+    meta:
+      comment: Get current user name for prompt injection
+    source: file://user_name.lua
+    modules:
+      - security
+    imports:
+      consts: kickside.users:consts
+    method: handler
+    

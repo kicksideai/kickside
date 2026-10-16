@@ -1,0 +1,60 @@
+local test = require("test")
+local catalog = require("catalog")
+local fixture = require("fixture")
+local registry = require("registry")
+local job_types = require("job_types")
+return {run = test.run_cases(function()
+    test.describe("native awaited job catalog errors", function()
+        for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
+            errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT,
+            errors.RATE_LIMITED, errors.UNKNOWN}) do
+            for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
+                test.it(kind .. "/" .. tostring(options.retryable), function()
+                    local source = errors.new({kind = kind, message = "registry catalog refusal", retryable = options.retryable,
+                        details = {code = "awaited_catalog_dependency", nested = {marker = "kept"}}})
+                    fixture.reset(source, nil)
+                    local values, err = catalog.awaited_types()
+                    test.is_nil(values)
+                    test.eq(err:kind(), source:kind())
+                    test.eq(err:retryable(), source:retryable())
+                    test.eq(err:details().code, "awaited_catalog_dependency")
+                    test.eq(err:details().nested.marker, "kept")
+                    test.eq(source:details().nested.marker, "kept")
+                end)
+            end
+            test.it("absent details/" .. kind, function()
+                local source = errors.new({kind = kind, message = "registry catalog refusal"})
+                fixture.reset(source, nil)
+                local values, err = catalog.awaited_types()
+                test.is_nil(values)
+                test.eq(err:kind(), source:kind())
+                test.eq(err:retryable(), source:retryable())
+                test.is_nil(err:details())
+            end)
+        end
+        test.it("sorts successful worker identities and keeps the empty catalog", function()
+            fixture.reset(nil, {{id = "z"}, {id = "a"}})
+            local values, err = catalog.awaited_types()
+            test.is_nil(err)
+            test.eq(values[1], "a")
+            test.eq(values[2], "z")
+            fixture.reset(nil, {})
+            values, err = catalog.awaited_types()
+            test.is_nil(err)
+            test.eq(#values, 0)
+        end)
+        test.it("retains the actual SDK registry catalog", function()
+            fixture.reset(nil, nil)
+            local entries, source_err = registry.find({[job_types.JOB_CLASS_META] = job_types.JOB_CLASS.AWAITED})
+            test.is_nil(source_err)
+            local expected = {}
+            for _, entry in ipairs(entries) do expected[#expected + 1] = tostring(entry.id) end
+            table.sort(expected)
+            local values, err = catalog.awaited_types()
+            test.is_nil(err)
+            test.eq(#values, #expected)
+            for i, id in ipairs(expected) do test.eq(values[i], id) end
+            test.is_true(#values > 0)
+        end)
+    end)
+end)}

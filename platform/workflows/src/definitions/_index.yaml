@@ -1,0 +1,15 @@
+version: "1.0"
+namespace: kickside.workflows.definitions
+
+entries:
+  - name: definitions_lib
+    kind: library.lua
+    meta:
+      comment: Workflow definition helpers — published-only graph interfaces and Workflow artifact exports, never compiled commands.
+    source: file://definitions.lua
+    imports:
+      version_read: kickside.workflows.repo:version_read
+      workflow_repo: kickside.workflows.repo:repo
+      flow_contract: kickside.blocks:flow_contract
+      flow_ref: kickside.workflows.execution:flow_ref
+      mapping: kickside.workflows.execution:mapping

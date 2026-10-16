@@ -1,0 +1,23 @@
+version: "1.0"
+namespace: kickside.models
+entries:
+  - name: dep.wippy.llm
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Large language model calls for transform and agent work.
+    component: wippy/llm
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration
+
+  - name: dep.wippy.security
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Actor, scope, and access resolution framework.
+    component: wippy/security

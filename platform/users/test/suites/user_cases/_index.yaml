@@ -1,0 +1,234 @@
+version: '1.0'
+namespace: kickside.users
+entries:
+- name: users_account_creation_and_authentication_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: users
+  source: file://users_account_creation_and_authentication_test.lua
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  method: run
+  modules:
+  - json
+  - time
+  - sql
+  - crypto
+  - hash
+  - security
+  imports:
+    test: wippy.test:test
+    user_repo: kickside.users.persist:user_repo
+    consts: kickside.users:consts
+    error_response: kickside.users.api:error_response
+    user_credentials_repo: kickside.users.persist:user_credentials_repo
+    user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+    user_groups_repo: kickside.users.persist:user_groups_repo
+    user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+    admin_repo: kickside.users.persist:admin_repo
+    provisioning: kickside.users.provisioning:provisioning
+    directory: kickside.users.directory:directory_lib
+    scope_resolver: kickside.users.binding:scope_resolver_func
+    execution_identity: kickside.execution:execution_identity
+    set_user_groups: kickside.users.api:set_user_groups
+    delete_user: kickside.users.api:delete_user
+    delete_principal: kickside.users.persist:delete_principal
+    update_user: kickside.users.api:update_user
+    list_users: kickside.users.api:list_users
+    lifecycle_report: app:lifecycle_report_stub
+    session_index: kickside.users.persist:session_index
+- name: users_basic_reads_credentials_and_groups_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: users
+  source: file://users_basic_reads_credentials_and_groups_test.lua
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  method: run
+  modules:
+  - json
+  - time
+  - sql
+  - crypto
+  - hash
+  - security
+  imports:
+    test: wippy.test:test
+    user_repo: kickside.users.persist:user_repo
+    user_credentials_repo: kickside.users.persist:user_credentials_repo
+    user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+    user_groups_repo: kickside.users.persist:user_groups_repo
+    user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+    admin_repo: kickside.users.persist:admin_repo
+    provisioning: kickside.users.provisioning:provisioning
+    directory: kickside.users.directory:directory_lib
+    scope_resolver: kickside.users.binding:scope_resolver_func
+    execution_identity: kickside.execution:execution_identity
+    set_user_groups: kickside.users.api:set_user_groups
+    delete_user: kickside.users.api:delete_user
+    delete_principal: kickside.users.persist:delete_principal
+    update_user: kickside.users.api:update_user
+    list_users: kickside.users.api:list_users
+    lifecycle_report: app:lifecycle_report_stub
+    session_index: kickside.users.persist:session_index
+- name: users_catalog_membership_by_email_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: users
+  source: file://users_catalog_membership_by_email_test.lua
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  method: run
+  modules:
+  - json
+  - time
+  - sql
+  - crypto
+  - hash
+  - security
+  imports:
+    test: wippy.test:test
+    user_repo: kickside.users.persist:user_repo
+    user_credentials_repo: kickside.users.persist:user_credentials_repo
+    user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+    user_groups_repo: kickside.users.persist:user_groups_repo
+    user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+    admin_repo: kickside.users.persist:admin_repo
+    provisioning: kickside.users.provisioning:provisioning
+    directory: kickside.users.directory:directory_lib
+    scope_resolver: kickside.users.binding:scope_resolver_func
+    execution_identity: kickside.execution:execution_identity
+    set_user_groups: kickside.users.api:set_user_groups
+    delete_user: kickside.users.api:delete_user
+    delete_principal: kickside.users.persist:delete_principal
+    update_user: kickside.users.api:update_user
+    list_users: kickside.users.api:list_users
+    lifecycle_report: app:lifecycle_report_stub
+    session_index: kickside.users.persist:session_index
+- name: users_directory_scope_resolution_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: users
+  source: file://users_directory_scope_resolution_test.lua
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  method: run
+  modules:
+  - json
+  - time
+  - sql
+  - crypto
+  - hash
+  - security
+  imports:
+    test: wippy.test:test
+    user_repo: kickside.users.persist:user_repo
+    user_credentials_repo: kickside.users.persist:user_credentials_repo
+    user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+    user_groups_repo: kickside.users.persist:user_groups_repo
+    user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+    admin_repo: kickside.users.persist:admin_repo
+    provisioning: kickside.users.provisioning:provisioning
+    directory: kickside.users.directory:directory_lib
+    scope_resolver: kickside.users.binding:scope_resolver_func
+    execution_identity: kickside.execution:execution_identity
+    set_user_groups: kickside.users.api:set_user_groups
+    delete_user: kickside.users.api:delete_user
+    delete_principal: kickside.users.persist:delete_principal
+    update_user: kickside.users.api:update_user
+    list_users: kickside.users.api:list_users
+    lifecycle_report: app:lifecycle_report_stub
+    session_index: kickside.users.persist:session_index
+- name: users_email_lookup_and_directory_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: users
+  source: file://users_email_lookup_and_directory_test.lua
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  method: run
+  modules:
+  - json
+  - time
+  - sql
+  - crypto
+  - hash
+  - security
+  - contract
+  imports:
+    test: wippy.test:test
+    user_repo: kickside.users.persist:user_repo
+    user_credentials_repo: kickside.users.persist:user_credentials_repo
+    user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+    user_groups_repo: kickside.users.persist:user_groups_repo
+    user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+    admin_repo: kickside.users.persist:admin_repo
+    provisioning: kickside.users.provisioning:provisioning
+    directory: kickside.users.directory:directory_lib
+    scope_resolver: kickside.users.binding:scope_resolver_func
+    execution_identity: kickside.execution:execution_identity
+    set_user_groups: kickside.users.api:set_user_groups
+    delete_user: kickside.users.api:delete_user
+    delete_principal: kickside.users.persist:delete_principal
+    update_user: kickside.users.api:update_user
+    list_users: kickside.users.api:list_users
+    lifecycle_report: app:lifecycle_report_stub
+    session_index: kickside.users.persist:session_index
+- name: users_final_reconciliation_and_deletion_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: users
+  source: file://users_final_reconciliation_and_deletion_test.lua
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  method: run
+  modules:
+  - json
+  - time
+  - sql
+  - crypto
+  - hash
+  - security
+  imports:
+    test: wippy.test:test
+    user_repo: kickside.users.persist:user_repo
+    user_credentials_repo: kickside.users.persist:user_credentials_repo
+    user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+    user_groups_repo: kickside.users.persist:user_groups_repo
+    user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+    admin_repo: kickside.users.persist:admin_repo
+    provisioning: kickside.users.provisioning:provisioning
+    directory: kickside.users.directory:directory_lib
+    scope_resolver: kickside.users.binding:scope_resolver_func
+    execution_identity: kickside.execution:execution_identity
+    set_user_groups: kickside.users.api:set_user_groups
+    delete_user: kickside.users.api:delete_user
+    delete_principal: kickside.users.persist:delete_principal
+    update_user: kickside.users.api:update_user
+    list_users: kickside.users.api:list_users
+    lifecycle_report: app:lifecycle_report_stub
+    session_index: kickside.users.persist:session_index

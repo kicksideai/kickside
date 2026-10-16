@@ -1,0 +1,52 @@
+version: "1.0"
+namespace: kickside.workflows
+entries:
+  - name: flow_run_started
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Workflow Run Started
+      comment: Start after a selected Workflow run starts.
+      icon: tabler:player-play
+    binding: kickside.workflows:workflow_kind
+    event: kickside.workflows.runs.events:started
+    config_schema:
+      thread_id:
+        type: string
+        title: Workflow
+        picker: wc-component-picker
+        class: flow
+
+  - name: flow_run_finished
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Workflow Run Finished
+      comment: Start after a selected Workflow run finishes successfully.
+      icon: tabler:circle-check
+    binding: kickside.workflows:workflow_kind
+    event: kickside.workflows.runs.events:finished
+    config_schema:
+      thread_id:
+        type: string
+        title: Workflow
+        picker: wc-component-picker
+        class: flow
+
+  - name: flow_run_failed
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Workflow Run Failed
+      comment: Start after a selected Workflow run fails, is cancelled, or is terminated.
+      icon: tabler:circle-x
+    binding: kickside.workflows:workflow_kind
+    event: kickside.workflows.runs.events:failed
+    config_schema:
+      thread_id:
+        type: string
+        title: Workflow
+        picker: wc-component-picker
+        class: flow
+
+  # ─── Canonical Block catalog (optional builder UI) ────────────────────

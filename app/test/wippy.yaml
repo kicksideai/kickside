@@ -1,0 +1,12 @@
+organization: kickside
+module: app-security-test
+description: Standalone harness for app security scope and policy assertions.
+directories:
+  modules: ../.wippy
+  src: src
+exclude:
+  - ".wippy/**"
+  - "composition/**"
+  - "documentation/**"
+  - "health/**"
+  - "e2e_fixture/**"

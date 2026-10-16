@@ -1,0 +1,50 @@
+@import "@wippy-fe/theme/theme-config.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The modal shell is PrimeVue's Dialog (scrim, header, close button, sizing);
+   the styles below dress only the module's own body content, using the
+   universal --p-* theme vocabulary so it renders correctly in any host. */
+.ks-body { overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.ks-lead { margin: 0; color: var(--p-text-muted-color); font-size: 0.85rem; }
+
+.ks-panel {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ks-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ks-spacer { flex: 1; }
+
+.ks-field { display: flex; flex-direction: column; gap: 5px; }
+.ks-field-label { color: var(--p-text-muted-color); font-size: 0.78rem; }
+/* PrimeVue Select renders full-width in the field; its chrome comes from the
+   facade --p-select-* tokens. */
+.ks-select { width: 100%; }
+
+.ks-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.35rem; letter-spacing: 3px; font-weight: 700;
+  background: var(--p-highlight-background);
+  border-radius: 8px; padding: 6px 12px; user-select: all;
+}
+.ks-hint { margin: 0; color: var(--p-text-muted-color); font-size: 0.82rem; }
+.ks-hint code { font-family: ui-monospace, monospace; background: var(--p-highlight-background); padding: 1px 5px; border-radius: 4px; }
+
+.ks-list { display: flex; flex-direction: column; }
+.ks-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--p-content-border-color); }
+.ks-item:first-child { border-top: none; }
+.ks-item-main { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
+.ks-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.9rem; }
+.ks-item-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--p-text-muted-color); font-size: 0.8rem; }
+.ks-item-action { flex: none; }
+.ks-provider { text-transform: capitalize; font-size: 0.72rem; border: 1px solid var(--p-content-border-color); border-radius: 999px; padding: 2px 9px; color: var(--p-text-muted-color); }
+.ks-empty { color: var(--p-text-muted-color); font-size: 0.85rem; margin: 0; }
+.ks-error { color: var(--p-danger-color); font-size: 0.85rem; margin: 0; }

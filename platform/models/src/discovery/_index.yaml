@@ -1,0 +1,98 @@
+version: "1.0"
+namespace: kickside.models.discovery
+
+entries:
+  - name: common
+    kind: library.lua
+    meta:
+      comment: Shared discovery helpers for provider adapters.
+    source: file://common.lua
+    modules: [env, json]
+
+  - name: mapper
+    kind: library.lua
+    meta:
+      comment: Maps provider-native model rows into KickSide model-card fields.
+    source: file://mapper.lua
+    imports:
+      discovery_common: kickside.models.discovery:common
+      models_types: kickside.models:models_types
+
+  - name: provider.openai_like
+    kind: library.lua
+    meta:
+      comment: OpenAI and OpenAI-compatible /models discovery adapter.
+    source: file://providers/openai_like.lua
+    modules: [http_client, json]
+    imports:
+      discovery_common: kickside.models.discovery:common
+      model_mapper: kickside.models.discovery:mapper
+
+  - name: provider.anthropic
+    kind: library.lua
+    meta:
+      comment: Anthropic /v1/models discovery adapter.
+    source: file://providers/anthropic.lua
+    modules: [http_client]
+    imports:
+      discovery_common: kickside.models.discovery:common
+
+  - name: provider.google_genai
+    kind: library.lua
+    meta:
+      comment: Google Gemini Developer API models.list adapter.
+    source: file://providers/google_genai.lua
+    modules: [http_client]
+    imports:
+      discovery_common: kickside.models.discovery:common
+
+  - name: provider.bedrock
+    kind: library.lua
+    meta:
+      comment: AWS Bedrock ListFoundationModels discovery adapter.
+    source: file://providers/bedrock.lua
+    modules: [http_client]
+    imports:
+      discovery_common: kickside.models.discovery:common
+      sigv4: wippy.llm.bedrock:sigv4
+
+  - name: provider_registry
+    kind: library.lua
+    meta:
+      comment: Provider discovery adapter registry.
+    source: file://registry.lua
+    imports:
+      openai_like_provider: kickside.models.discovery:provider.openai_like
+      anthropic_provider: kickside.models.discovery:provider.anthropic
+      google_genai_provider: kickside.models.discovery:provider.google_genai
+      bedrock_provider: kickside.models.discovery:provider.bedrock
+
+  - name: reference.openrouter
+    kind: library.lua
+    meta:
+      comment: Reference-catalog adapter — OpenRouter public model list (context + pricing).
+    source: file://reference_openrouter.lua
+    modules: [http_client]
+    imports:
+      discovery_common: kickside.models.discovery:common
+
+  - name: reference_registry
+    kind: library.lua
+    meta:
+      comment: Model-metadata reference port — composes reference catalogs to fill context/pricing gaps.
+    source: file://reference_registry.lua
+    imports:
+      reference_openrouter: kickside.models.discovery:reference.openrouter
+
+  - name: model_discovery
+    kind: library.lua
+    meta:
+      comment: Connector-level model discovery port for DB-backed provider profiles.
+    source: file://service.lua
+    imports:
+      models_repo: kickside.models.persist:repo
+      models_types: kickside.models:models_types
+      discovery_common: kickside.models.discovery:common
+      model_mapper: kickside.models.discovery:mapper
+      provider_registry: kickside.models.discovery:provider_registry
+      reference_registry: kickside.models.discovery:reference_registry

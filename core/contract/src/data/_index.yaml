@@ -1,0 +1,250 @@
+# kickside.data — Data Source/Sink contract family (engine-owned flow state).
+# Co-located in the contracts module; ids are kickside.data:* (pullable/writable).
+# Spec + rationale: docs/architecture/06-data-sources-and-syncs.md
+
+version: "1.0"
+namespace: kickside.data
+
+entries:
+  - name: writable_sink
+    kind: library.lua
+    meta:
+      comment: Shared writable-sink request helpers — input trim and the DataError failure envelope.
+    source: file://writable_sink.lua
+
+  - name: pullable
+    kind: contract.definition
+    meta:
+      title: Pullable Data Source
+      tags: [data, source, pull, flow, cursor]
+      comment: Stateless cursored producer. Engine owns cursor, lease, schedule, dedup, id-map, and sink routing.
+    methods:
+      - name: pull
+        description: |
+          Return one page from an opaque provider cursor. cursor=null starts a new engine generation.
+          next_cursor is persisted only after every item is durably accepted by the sink.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "cursor": {
+                    "type": ["object", "null"],
+                    "description": "Opaque provider-shaped resume state, or null to start."
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Per-source config validated by the selected automation port's config_schema."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Requested max items for this page. Provider enforces its own per-page maximum."
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Engine-generated key stable for this cursor transition; used only for idempotent upstream job-start or async-export side effects."
+                  }
+                },
+                "required": ["cursor", "config"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/DataSourceItem" }
+                  },
+                  "next_cursor": {
+                    "type": "object",
+                    "description": "Required on success. Engine persists it only after durable item acceptance."
+                  },
+                  "has_more": {
+                    "type": "boolean",
+                    "description": "true means engine should drain immediately. If true with empty items, retry_after_ms is required."
+                  },
+                  "coverage": { "$ref": "#/$defs/Coverage" },
+                  "retry_after_ms": { "type": "integer", "minimum": 0 },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": ["items", "next_cursor", "has_more"],
+                      "properties": { "error": false }
+                    }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": {
+                        "items": false,
+                        "next_cursor": false,
+                        "has_more": false,
+                        "coverage": false
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "success": { "const": true },
+                        "has_more": { "const": true },
+                        "items": { "type": "array", "maxItems": 0 }
+                      },
+                      "required": ["success", "has_more", "items"]
+                    },
+                    "then": { "required": ["retry_after_ms"] }
+                  }
+                ],
+                "$defs": {
+                  "DataSourceItem": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "item_key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stable source identity; engine id-map key."
+                      },
+                      "dedup_key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Idempotency key for this delivery; stable across cursor replay."
+                      },
+                      "op": { "type": "string", "enum": ["upsert", "delete"] },
+                      "source_version": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional bytewise-monotonic version within item_key."
+                      },
+                      "occurred_at": { "type": "string", "format": "date-time" },
+                      "observed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Provider/source seen time; distinct from occurred_at, the domain event time."
+                      },
+                      "ref": { "$ref": "#/$defs/ContentProviderRef" },
+                      "payload": { "type": "object" }
+                    },
+                    "required": ["item_key", "dedup_key", "op"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "op": { "const": "upsert" } }, "required": ["op"] },
+                        "then": {
+                          "anyOf": [
+                            { "required": ["payload"] },
+                            { "required": ["ref"] }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "ContentProviderRef": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "component_id": {
+                        "type": "string",
+                        "description": "Component implementing kickside.contract:content_provider."
+                      },
+                      "context": {
+                        "type": "object",
+                        "description": "Provider-shaped content reference context."
+                      }
+                    },
+                    "required": ["component_id"]
+                  },
+                  "Coverage": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "mode": { "type": "string", "enum": ["delta", "complete"] },
+                      "pass_key": {
+                        "type": "string",
+                        "description": "Stable id for every page in one complete enumeration pass."
+                      },
+                      "scope_key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stable reconciliation scope id. Required for complete coverage; use global for unpartitioned scans."
+                      },
+                      "scope": {
+                        "type": "object",
+                        "description": "Provider-shaped reconciliation partition/scope."
+                      },
+                      "final": {
+                        "type": "boolean",
+                        "description": "Only true on the final page of a complete pass."
+                      }
+                    },
+                    "required": ["mode"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "mode": { "const": "complete" } }, "required": ["mode"] },
+                        "then": { "required": ["pass_key", "scope_key"] }
+                      },
+                      {
+                        "if": { "properties": { "final": { "const": true } }, "required": ["final"] },
+                        "then": {
+                          "properties": { "mode": { "const": "complete" } },
+                          "required": ["mode", "pass_key", "scope_key"]
+                        }
+                      },
+                      {
+                        "if": { "properties": { "mode": { "const": "delta" } }, "required": ["mode"] },
+                        "then": { "not": { "required": ["pass_key"] } }
+                      }
+                    ]
+                  },
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired",
+                          "rate_limited",
+                          "invalid_config",
+                          "invalid_request",
+                          "not_found",
+                          "conflict",
+                          "permission_denied",
+                          "provider_unavailable",
+                          "provider_error",
+                          "cursor_expired",
+                          "history_unavailable",
+                          "stalled",
+                          "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }

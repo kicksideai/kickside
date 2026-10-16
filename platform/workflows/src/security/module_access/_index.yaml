@@ -1,0 +1,81 @@
+version: '1.0'
+namespace: kickside.workflows.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Workflows
+    surface: kickside.workflows
+    intent: module_access
+    includes:
+    - kickside.workflows.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.workflows.api:apply.endpoint
+    - kickside.workflows.api:assist_binding.endpoint
+    - kickside.workflows.api:assist_config.endpoint
+    - kickside.workflows.api:assist_edge.endpoint
+    - kickside.workflows.api:assist_schema.endpoint
+    - kickside.workflows.api:blocks_api.endpoint
+    - kickside.workflows.api:create_workflow.endpoint
+    - kickside.workflows.api:delete_workflow.endpoint
+    - kickside.workflows.api:diff_versions.endpoint
+    - kickside.workflows.api:export_definition.endpoint
+    - kickside.workflows.api:get_events.endpoint
+    - kickside.workflows.api:get_run.endpoint
+    - kickside.workflows.api:get_state.endpoint
+    - kickside.workflows.api:get_version.endpoint
+    - kickside.workflows.api:import_definition.endpoint
+    - kickside.workflows.api:list_published.endpoint
+    - kickside.workflows.api:list_runs.endpoint
+    - kickside.workflows.api:list_versions.endpoint
+    - kickside.workflows.api:list_workflows.endpoint
+    - kickside.workflows.api:publish.endpoint
+    - kickside.workflows.api:redo.endpoint
+    - kickside.workflows.api:restore_version.endpoint
+    - kickside.workflows.api:run.endpoint
+    - kickside.workflows.api:run_events.endpoint
+    - kickside.workflows.api:run_export.endpoint
+    - kickside.workflows.api:run_node_data.endpoint
+    - kickside.workflows.api:set_workflow_labels.endpoint
+    - kickside.workflows.api:simulate.endpoint
+    - kickside.workflows.api:undo.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.workflows:*
+    - kickside.workflows.agent:*
+    - kickside.workflows.api:*
+    - kickside.workflows.binding:*
+    - kickside.workflows.catalog:*
+    - kickside.workflows.compiler:*
+    - kickside.workflows.definitions:*
+    - kickside.workflows.execution:*
+    - kickside.workflows.migrations:*
+    - kickside.workflows.repo:*
+    - kickside.workflows.runs:*
+    - kickside.workflows.runs.events:*
+    - kickside.workflows.runtime:*
+    - kickside.workflows.schema:*
+    - kickside.workflows.security:*
+    - kickside.workflows.store:*
+    - kickside.workflows.traits:*
+    - kickside.workflows.undo:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

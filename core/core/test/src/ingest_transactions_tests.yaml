@@ -1,0 +1,84 @@
+version: '1.0'
+namespace: app
+entries:
+- name: ingest_transactions_fixture
+  kind: library.lua
+  source: file://ingest_transactions_fixture.lua
+  modules:
+  - sql
+- name: ingest_transactions_append
+  kind: library.lua
+  source: file://ingest_transactions_append.lua
+  imports:
+    fixture: app:ingest_transactions_fixture
+- name: ingest_transactions_wake
+  kind: library.lua
+  source: file://ingest_transactions_wake.lua
+  imports:
+    fixture: app:ingest_transactions_fixture
+- name: ingest_transactions_notifier
+  kind: library.lua
+  source: file://ingest_transactions_notifier.lua
+  imports:
+    fixture: app:ingest_transactions_fixture
+- name: ingest_transactions_source
+  kind: library.lua
+  source: file://ingest_transactions_source.lua
+  modules:
+  - sql
+  - logger
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    threads_normalize: kickside.core.threads.persist:normalize
+    threads_component: kickside.core.threads:component
+    core_types: kickside.core:types
+    retention_notifier: app:ingest_transactions_notifier
+    jobs_wake: app:ingest_transactions_wake
+    threads_append: app:ingest_transactions_append
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: ingest_transactions_test
+  kind: function.lua
+  source: file://ingest_transactions_test.lua
+  method: run
+  imports:
+    fixture: app:ingest_transactions_fixture
+    api: app:ingest_transactions_source
+    error_envelope: kickside.contract:error_envelope
+    canonical_json: kickside.contract:canonical_json
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+  meta:
+    type: test
+    suite: core_ingest_transactions_native
+  modules:
+  - sql
+  - funcs
+  - uuid
+- name: ingest_transactions_retry_target
+  kind: function.lua
+  source: file://ingest_transactions_retry_target.lua
+  method: run
+  imports:
+    fixture: app:ingest_transactions_fixture
+    api: app:ingest_transactions_source
+    error_envelope: kickside.contract:error_envelope
+    canonical_json: kickside.contract:canonical_json
+- name: ingest_transactions_retry_test
+  kind: function.lua
+  source: file://ingest_transactions_retry_test.lua
+  method: run
+  imports:
+    fixture: app:ingest_transactions_fixture
+    api: app:ingest_transactions_source
+    error_envelope: kickside.contract:error_envelope
+    canonical_json: kickside.contract:canonical_json
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+  meta:
+    type: test
+    suite: core_ingest_transactions_native
+  modules:
+  - sql
+  - funcs
+  - uuid

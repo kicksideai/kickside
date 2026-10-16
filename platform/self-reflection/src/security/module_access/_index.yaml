@@ -1,0 +1,79 @@
+version: '1.0'
+namespace: kickside.self_reflection.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Self Reflection
+    surface: kickside.self_reflection
+    intent: module_access
+    includes:
+    - kickside.self_reflection.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.self_reflection:*
+    - kickside.self_reflection.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: tool_access
+  kind: security.policy
+  meta:
+    title: Self Reflection tools
+    surface: kickside.self_reflection
+    intent: tool_access
+    includes:
+    - kickside.self_reflection.security:tool_runtime
+  groups: []
+  policy:
+    resources: kickside.self_reflection.traits:self_reflection_tool
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.self_reflection:*
+    - kickside.self_reflection.security:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: tool_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.self_reflection.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

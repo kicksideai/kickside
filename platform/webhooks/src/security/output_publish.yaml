@@ -1,0 +1,12 @@
+version: '1.0'
+namespace: kickside.webhooks.security
+entries:
+- name: ingress_output_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.webhooks.events:webhook.inbound
+    actions: threads.output.publish
+    effect: allow

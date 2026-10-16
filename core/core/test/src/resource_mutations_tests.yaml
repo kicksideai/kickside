@@ -1,0 +1,71 @@
+version: '1.0'
+namespace: app
+entries:
+- name: resource_mutations_fixture
+  kind: library.lua
+  source: file://resource_mutations_fixture.lua
+  modules:
+  - sql
+- name: resource_mutations_common
+  kind: library.lua
+  source: file://resource_mutations_common.lua
+  imports:
+    common: kickside.core.threads:contract_common
+    fixture: app:resource_mutations_fixture
+- name: resource_mutations_source
+  kind: library.lua
+  source: file://resource_mutations_source.lua
+  modules:
+  - sql
+  - json
+  imports:
+    contract_common: app:resource_mutations_common
+    threads_reader: kickside.core.threads.persist:reader
+    threads_thread_crud: app:resource_mutations_crud
+    threads_teardown: app:resource_mutations_teardown
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: resource_mutations_test
+  kind: function.lua
+  source: file://resource_mutations_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_resource_mutations
+  imports:
+    test: wippy.test:test
+    fixture: app:resource_mutations_fixture
+    api: app:resource_mutations_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+- name: resource_mutations_retry_target
+  kind: function.lua
+  source: file://resource_mutations_retry_target.lua
+  method: run
+  imports:
+    api: app:resource_mutations_source
+    fixture: app:resource_mutations_fixture
+- name: resource_mutations_retry_test
+  kind: function.lua
+  source: file://resource_mutations_retry_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_resource_mutations_retry
+  modules:
+  - funcs
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    clock: kickside.core.jobs:clock
+- name: resource_mutations_crud
+  kind: library.lua
+  source: file://resource_mutations_crud.lua
+  imports:
+    fixture: app:resource_mutations_fixture
+- name: resource_mutations_teardown
+  kind: library.lua
+  source: file://resource_mutations_teardown.lua
+  imports:
+    fixture: app:resource_mutations_fixture

@@ -1,0 +1,24 @@
+organization: kickside
+module: contract
+type: library
+description: KickSide base contracts
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - contract
+  - interface
+  - component
+  - content-provider
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "test/**"
+  - "test:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app:**"
+  - "app.**:**"

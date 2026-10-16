@@ -1,0 +1,11 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: cleanup_outcome_test
+    kind: function.lua
+    meta: {type: test, suite: knowledge_cleanup}
+    source: file://cleanup_outcome_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      base: kickside.knowledge.injection:thread_ingest_base

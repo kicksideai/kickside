@@ -1,0 +1,154 @@
+version: "1.0"
+namespace: app.agents_suites
+
+entries:
+
+- name: tsplit_agents_api_test_tool_discovery
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_tool_discovery.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_model_discovery
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_model_discovery.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_agent_binding
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_agent_binding.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_private_context_structure
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_private_context_structure.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_agent_metadata
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_agent_metadata.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_agent_access_control
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_agent_access_control.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_delegate_storage
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_delegate_storage.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_system_agent_registry_entries
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_system_agent_registry_entries.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_resolver_input_validation
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_resolver_input_validation.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry
+
+- name: tsplit_agents_api_test_trait_tool_composition_integrity
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://../../agents_api_test_trait_tool_composition_integrity.lua
+  method: run
+  imports:
+    test: wippy.test:test
+  modules:
+  - sql
+  - json
+  - uuid
+  - registry

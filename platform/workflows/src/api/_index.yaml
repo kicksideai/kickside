@@ -1,0 +1,656 @@
+version: "1.0"
+namespace: kickside.workflows.api
+
+# Authenticated definition-plane API. create/list/delete manage workflow components;
+# state/events read the folded definition; apply/undo/redo write through the
+# workflow writer. Routers are injected by the root kickside.workflows:api_router
+# requirement. Access is gated per-endpoint via the component service.
+
+entries:
+  - name: exec_api
+    kind: library.lua
+    meta: { comment: "Execution-plane API helpers shared by the HTTP handlers and contract tests." }
+    source: file://exec_api.lua
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: definitions_api
+    kind: library.lua
+    meta: { comment: "Flow artifact export, typed materialization, package declaration import, and draft creation helpers." }
+    source: file://definitions_api.lua
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      definitions: kickside.workflows.definitions:definitions_lib
+      flow_contract: kickside.blocks:flow_contract
+      version_read: kickside.workflows.repo:version_read
+      types: kickside.workflows:types
+      mapping: kickside.workflows.execution:mapping
+  - name: create_workflow
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows — create a workflow component; idempotency_key replays a duplicate create for the same actor." }
+    source: file://create_workflow.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: create_workflow.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_workflow
+    path: /workflows
+
+  - name: list_workflows
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows — the caller's accessible workflows; published=true filters to published rows." }
+    source: file://list_workflows.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_params: kickside.contract:http_params
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: list_workflows.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_workflows
+    path: /workflows
+
+  - name: list_published
+    kind: function.lua
+    meta:
+      comment: GET /api/v1/workflows/published — exact published Flows the caller can bind to an Automation.
+    source: file://list_published.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_params: kickside.contract:http_params
+      http_errors: kickside.contract:http_errors
+      published_catalog: kickside.workflows.catalog:published_catalog
+
+  - name: list_published.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_published
+    path: /workflows/published
+
+  - name: get_state
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/state — folded definition snapshot." }
+    source: file://get_state.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+
+  - name: get_state.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_state
+    path: /workflows/{id}/state
+
+  - name: export_definition
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/export — READ-gated published Flow artifact; never compiled commands." }
+    source: file://definitions_api.lua
+    method: export_handler
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      definitions: kickside.workflows.definitions:definitions_lib
+      flow_contract: kickside.blocks:flow_contract
+      version_read: kickside.workflows.repo:version_read
+      types: kickside.workflows:types
+      mapping: kickside.workflows.execution:mapping
+
+  - name: export_definition.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: export_definition
+    path: /workflows/{id}/export
+
+  - name: import_definition
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/import — WRITE-gated explicit {flow,bindings} materialization; creates a new unpublished draft." }
+    source: file://definitions_api.lua
+    method: import_handler
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_state: kickside.workflows:workflow_state
+      definitions: kickside.workflows.definitions:definitions_lib
+      flow_contract: kickside.blocks:flow_contract
+      version_read: kickside.workflows.repo:version_read
+      types: kickside.workflows:types
+      mapping: kickside.workflows.execution:mapping
+
+  - name: import_definition.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: import_definition
+    path: /workflows/import
+
+  - name: get_events
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/events — event tail after from_seq." }
+    source: file://get_events.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+
+  - name: get_events.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_events
+    path: /workflows/{id}/events
+
+  - name: apply
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/apply — apply a command batch through the workflow writer." }
+    source: file://write_api.lua
+    method: apply
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_realtime: kickside.workflows:realtime
+      workflow_types: kickside.workflows:types
+
+  - name: apply.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: apply
+    path: /workflows/{id}/apply
+
+  - name: set_workflow_labels
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/labels — replace flat definition-owned workflow labels." }
+    source: file://write_api.lua
+    method: set_labels
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_realtime: kickside.workflows:realtime
+      workflow_types: kickside.workflows:types
+
+  - name: set_workflow_labels.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: set_workflow_labels
+    path: /workflows/{id}/labels
+
+  - name: undo
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/undo — undo the last batch." }
+    source: file://write_api.lua
+    method: undo
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_realtime: kickside.workflows:realtime
+      workflow_types: kickside.workflows:types
+
+  - name: undo.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: undo
+    path: /workflows/{id}/undo
+
+  - name: redo
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/redo — redo the last undone batch." }
+    source: file://write_api.lua
+    method: redo
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      workflow_realtime: kickside.workflows:realtime
+      workflow_types: kickside.workflows:types
+
+  - name: redo.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: redo
+    path: /workflows/{id}/redo
+
+  - name: delete_workflow
+    kind: function.lua
+    meta: { comment: "DELETE /api/v1/workflows/{id} — delete a workflow through canonical teardown." }
+    source: file://delete_workflow.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: delete_workflow.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_workflow
+    path: /workflows/{id}
+
+  # ─── execution plane: publish + versions + runs ──────────────────────
+  - name: publish
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/publish — fold, compile, and allocate an immutable Flow revision." }
+    source: file://exec_api.lua
+    method: publish
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: publish.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: publish
+    path: /workflows/{id}/publish
+
+  - name: list_versions
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/versions — published versions, newest first." }
+    source: file://exec_api.lua
+    method: list_versions
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: list_versions.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_versions
+    path: /workflows/{id}/versions
+
+  - name: get_version
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/versions/{n} — one frozen version." }
+    source: file://exec_api.lua
+    method: get_version
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: get_version.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_version
+    path: /workflows/{id}/versions/{n}
+
+  - name: diff_versions
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/versions/diff?from_version=&to_version= — immutable graph and interface delta." }
+    source: file://exec_api.lua
+    method: diff_versions
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: diff_versions.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: diff_versions
+    path: /workflows/{id}/versions/diff
+
+  - name: restore_version
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/versions/{n}/restore — creates a new draft and records immutable restore lineage." }
+    source: file://restore_api.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      definitions_api: kickside.workflows.api:definitions_api
+
+  - name: restore_version.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: restore_version
+    path: /workflows/{id}/versions/{n}/restore
+
+  - name: run
+    kind: function.lua
+    security:
+      policies:
+        - kickside.workflows.security:workflow_started_publish
+    meta: { comment: "POST /api/v1/workflows/{id}/run — launch one explicit published version with optional paired trigger_id/dedup_key idempotency fields." }
+    source: file://exec_api.lua
+    method: run
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: run.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: run
+    path: /workflows/{id}/run
+
+  - name: simulate
+    kind: function.lua
+    security:
+      policies:
+        - kickside.workflows.security:workflow_started_publish
+    meta: { comment: "POST /api/v1/workflows/{id}/simulate — compile the unpublished working document and launch a transient run." }
+    source: file://exec_api.lua
+    method: simulate
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: simulate.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: simulate
+    path: /workflows/{id}/simulate
+
+  - name: list_runs
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/runs — the runs read model (paged)." }
+    source: file://exec_api.lua
+    method: list_runs
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: list_runs.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_runs
+    path: /workflows/{id}/runs
+
+  - name: get_run
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/runs/{run_id} — run row (including Finish output when completed) + dataflow node headers." }
+    source: file://exec_api.lua
+    method: get_run
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: get_run.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_run
+    path: /workflows/{id}/runs/{run_id}
+
+  - name: run_node_data
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/runs/{run_id}/nodes/{def_node_id}/data — paged data rows ordered by data_id ASC." }
+    source: file://exec_api.lua
+    method: run_node_data
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: run_node_data.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: run_node_data
+    path: /workflows/{id}/runs/{run_id}/nodes/{def_node_id}/data
+
+  - name: run_events
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/runs/{run_id}/events — read-gated, paged lifecycle and engine-record timeline with raw expansion." }
+    source: file://exec_api.lua
+    method: run_events
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: run_events.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: run_events
+    path: /workflows/{id}/runs/{run_id}/events
+
+  - name: run_export
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/{id}/runs/{run_id}/export — read-gated redacted full run JSON export." }
+    source: file://exec_api.lua
+    method: run_export
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs_launch: kickside.workflows.runs:runs_launch
+      runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
+      runs_debug: kickside.workflows.runs:runs_debug
+      runs_state: kickside.workflows.runs:runs_state
+
+  - name: run_export.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: run_export
+    path: /workflows/{id}/runs/{run_id}/export
+
+  # ─── builder assist ─────────────────────────────────────────────────
+  - name: assist_edge
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/assist/edge — validated mapping or topology-intent preview, WRITE-gated." }
+    source: file://assist_api.lua
+    method: edge
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+
+  - name: assist_edge.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: assist_edge
+    path: /workflows/{id}/assist/edge
+
+  - name: assist_binding
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/assist/binding — AI-generated trigger-to-Start mapping, READ-gated to the target workflow." }
+    source: file://assist_api.lua
+    method: binding
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+
+  - name: assist_binding.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: assist_binding
+    path: /workflows/{id}/assist/binding
+
+  - name: assist_schema
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/assist/schema — AI-generated JSON Schema draft/edit, actor-gated." }
+    source: file://assist_api.lua
+    method: schema
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+
+  - name: assist_schema.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: assist_schema
+    path: /workflows/assist/schema
+
+  - name: assist_config
+    kind: function.lua
+    meta: { comment: "POST /api/v1/workflows/{id}/assist/config — AI-drafted declared step configuration, WRITE-gated and side-effect free." }
+    source: file://assist_api.lua
+    method: config
+    modules: [http, json, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      workflow_repo: kickside.workflows.repo:repo
+      assist: kickside.workflows:assist
+
+  - name: assist_config.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: assist_config
+    path: /workflows/{id}/assist/config
+
+  - name: blocks_api
+    kind: function.lua
+    meta: { comment: "GET /api/v1/workflows/blocks — visual projection of canonical Blocks." }
+    source: file://blocks_api.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      http_params: kickside.contract:http_params
+      http_errors: kickside.contract:http_errors
+      block_catalog: kickside.workflows.catalog:block_catalog
+
+  - name: blocks_api.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: blocks_api
+    path: /workflows/blocks
+
+  # Remaining production dependencies

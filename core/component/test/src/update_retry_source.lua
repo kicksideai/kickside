@@ -1,0 +1,1 @@
+../../src/binding/update_component_func.lua

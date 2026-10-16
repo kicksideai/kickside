@@ -1,0 +1,23 @@
+version: "1.0"
+namespace: kickside.workflows
+
+# Test-only declaration double for the production Workflow thread kind. The event
+# IDs stay exact so the shared append contract is exercised against F-01's payload.
+entries:
+  - name: workflow_kind
+    kind: contract.binding
+    meta:
+      thread: { class: flow }
+      events:
+        input: []
+        output:
+          - type: kickside.workflows.runs.events:started
+            system_only: true
+          - type: kickside.workflows.runs.events:finished
+            system_only: true
+          - type: kickside.workflows.runs.events:failed
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status

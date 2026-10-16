@@ -1,0 +1,146 @@
+version: "1.0"
+namespace: kickside.users.migrations
+
+entries:
+  - name: 11_group_enrollments
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-06T00:00:00Z"
+    source: file://11_group_enrollments.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  # kickside.users.migrations:01_create_app_user_tables
+  - name: 01_create_app_user_tables
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - kickside_user
+        - auth
+        - security
+      comment: Create app_users and app_user_groups tables with indexes
+      timestamp: "2025-01-13T10:00:00Z"
+    source: file://01_create_app_user_tables.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  # kickside.users.migrations:02_init_admin_user
+  - name: 02_init_admin_user
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - kickside_user
+        - admin
+        - bootstrap
+      comment: Initialize admin user with randomized credentials on first boot
+      timestamp: "2025-01-13T11:00:00Z"
+    source: file://02_init_admin_user.lua
+    imports:
+      migration: wippy.migration:migration
+      consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support
+    method: migrate
+    modules:
+      - logger
+      - env
+      - crypto
+      - sql
+
+  # kickside.users.migrations:03_create_token_store_table
+  - name: 03_create_token_store_table
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - kickside_user
+        - auth
+        - tokens
+      comment: Create kickside_user_auth_tokens table for SQL-backed token storage
+      timestamp: "2025-01-13T12:00:00Z"
+    source: file://03_create_token_store_table.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  # kickside.users.migrations:04_create_user_sessions
+  - name: 04_create_user_sessions
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - kickside_user
+        - auth
+        - tokens
+        - security
+      comment: Create kickside_user_sessions index mapping token keys to their owning account
+      timestamp: "2025-01-13T13:00:00Z"
+    source: file://04_create_user_sessions.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 09_profile
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_profile per-user field values table
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-20T00:00:01Z"
+    source: file://09_profile.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 10_canonical_email_grants
+    kind: function.lua
+    meta:
+      type: migration
+      tags: [kickside_user, access]
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-04T00:00:00Z"
+    source: file://10_canonical_email_grants.lua
+    imports:
+      migration: wippy.migration:migration
+      access_ops: kickside.component.persist:access_ops
+      user_repo_support: kickside.users.persist:user_repo_support
+    method: migrate
+
+  - name: 12_delegation_epochs
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.users.migrations:01_create_app_user_tables]
+      timestamp: "2026-10-09T00:00:00Z"
+    source: file://12_delegation_epochs.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 13_bot_accounts
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.users.migrations:01_create_app_user_tables]
+      timestamp: "2026-10-09T00:00:01Z"
+    source: file://13_bot_accounts.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 14_bot_lifecycle_audit
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.users.migrations:13_bot_accounts]
+      timestamp: "2026-10-09T00:00:02Z"
+    source: file://14_bot_lifecycle_audit.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

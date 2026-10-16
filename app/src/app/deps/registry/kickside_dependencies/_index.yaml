@@ -1,0 +1,262 @@
+version: "1.0"
+namespace: app.deps
+entries:
+  - version: "*"
+    name: kickside_dashboard
+    kind: ns.dependency
+    meta: {}
+    component: kickside/dashboard
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+
+  # app.deps:kickside_hub
+  - version: "*"
+    name: kickside_hub
+    kind: ns.dependency
+    meta: {}
+    component: kickside/hub
+    parameters:
+      - name: ui_server
+        value: app:gateway
+      - name: kickside.hub:api_router
+        value: app:api
+      - name: kickside.hub.instruments:admin_security_scope
+        value: app.security:admin
+
+  # app.deps:kickside_identity
+  - version: '*'
+    name: kickside_identity
+    kind: ns.dependency
+    meta: {}
+    component: kickside/identity
+    parameters:
+    - name: kickside.identity:credential_eligibility
+      value: kickside.users.binding:credential_eligibility
+    - name: target_db
+      value: app:db
+    - name: api_router
+      value: app:api
+    - name: kickside.identity:ui_server
+      value: app:gateway
+
+  - version: '*'
+    name: kickside_inbox
+    kind: ns.dependency
+    meta: {}
+    component: kickside/inbox
+    parameters:
+    - name: kickside.inbox.security:assignment_security_scope
+      value: app.security:admin
+    - name: kickside.inbox:api_router
+      value: app:api
+    - name: kickside.inbox:ui_server
+      value: app:gateway
+
+  - version: '*'
+    name: kickside_models
+    kind: ns.dependency
+    meta: {}
+    component: kickside/models
+    parameters:
+    - name: target_db
+      value: app:db
+    - name: api_router
+      value: app:api
+    - name: ui_server
+      value: app:gateway
+    - name: kickside.models:process_host
+      value: app:processes
+
+  - version: "*"
+    name: kickside_mcp_client
+    kind: ns.dependency
+    meta: {}
+    component: kickside/mcp-client
+    parameters:
+      - name: kickside.mcp_client:api_router
+        value: app:api
+      - name: kickside.mcp_client:process_host
+        value: app:processes
+      - name: kickside.mcp_client:ui_server
+        value: app:gateway
+
+  # app.deps:kickside_oauth
+  - version: '*'
+    name: kickside_oauth
+    kind: ns.dependency
+    meta: {}
+    component: kickside/oauth
+    parameters:
+    - name: target_db
+      value: app:db
+    - name: api_router
+      value: app:api
+    - name: public_api_router
+      value: app:api.public
+    - name: process_host
+      value: app:processes
+
+  - version: "*"
+    name: kickside_realtime
+    kind: ns.dependency
+    meta: {}
+    component: kickside/realtime
+
+  # app.deps:kickside_security
+  - version: "*"
+    name: kickside_security
+    kind: ns.dependency
+    meta: {}
+    component: kickside/security
+    parameters:
+      - name: kickside.security:delegation_validator
+        value: app.security:delegation_validator
+      - name: kickside.security:sessions_invalidator
+        value: kickside.users.persist:session_revoker
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+
+  # app.deps:kickside_sessions
+  - version: '*'
+    name: kickside_sessions
+    kind: ns.dependency
+    meta: {}
+    component: kickside/sessions
+    parameters:
+    - name: kickside.sessions:api_router
+      value: app:api
+    - name: kickside.sessions:ui_server
+      value: app:gateway
+
+  - version: "*"
+    name: kickside_settings
+    kind: ns.dependency
+    meta: {}
+    component: kickside/settings
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+
+  # app.deps:kickside_sync
+  - version: "*"
+    name: kickside_sync
+    kind: ns.dependency
+    meta: {}
+    component: kickside/sync
+    parameters:
+      - name: ui_server
+        value: app:gateway
+
+  # app.deps:kickside_transform
+  - version: "*"
+    name: kickside_transform
+    kind: ns.dependency
+    meta: {}
+    component: kickside/transform
+    parameters:
+      - name: kickside.transform:api_router
+        value: app:api
+
+      - name: kickside.transform:ui_server
+        value: app:gateway
+
+  # app.deps:kickside_ui
+  - version: '*'
+    name: kickside_ui
+    kind: ns.dependency
+    meta: {}
+    component: kickside/ui
+    parameters:
+    - name: kickside.ui:branding_fs
+      value: app:branding_fs
+    - name: kickside.ui:api_router
+      value: app:api
+    - name: kickside.ui:ui_server
+      value: app:gateway
+    - name: kickside.ui:public_api_router
+      value: app:api.public
+    - name: kickside.ui.security:admin_scope
+      value: app.security:admin
+
+  - version: "*"
+    name: kickside_users
+    kind: ns.dependency
+    meta: {}
+    component: kickside/users
+    parameters:
+      - name: kickside.users:bot_account_consumers
+        value:
+          - entries:
+              - entry: kickside.users.binding:credential_eligibility
+                kind: function.lua
+                meta: {credential_admission: users}
+              - entry: kickside.users.binding:credential_subject_lookup
+                kind: function.lua
+                meta: {credential_admission: users}
+          - entries:
+              - entry: app:api
+                kind: http.router
+                meta: {credential_admission: host}
+              - entry: app:api.views
+                kind: http.router
+                meta: {credential_admission: host}
+          - installed: kickside.sso:definition
+            entries:
+              - entry: kickside.sso.persist:provisioner
+                kind: library.lua
+                meta: {credential_admission: host}
+          - installed: kickside.mcp:definition
+            entries:
+              - entry: kickside.mcp:credential_eligibility_check
+                kind: library.lua
+                meta: {credential_admission: host}
+          - installed: kickside.identity:definition
+            entries:
+              - entry: kickside.identity:credential_eligibility_check
+                kind: library.lua
+                meta: {credential_admission: host}
+      - name: kickside.users:user_security_scope
+        value: app.security:members
+      - name: env_storage
+        value: app.env:store
+      - name: public_router
+        value: app:api.public
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+      - name: target_db
+        value: app:db
+      - name: kickside.users:baseline_security_scope
+        value: app.security:user
+      - name: admin_security_scope
+        value: app.security:admin
+      - name: login_role_resource
+        value: "*"
+
+  # app.deps:kickside_widgets
+  - version: "*"
+    name: kickside_widgets
+    kind: ns.dependency
+    meta: {}
+    component: kickside/widgets
+    parameters:
+      - name: ui_server
+        value: app:gateway
+      - name: kickside.widgets:api_router
+        value: app:api
+
+  # app.deps:llm

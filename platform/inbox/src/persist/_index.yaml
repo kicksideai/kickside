@@ -1,0 +1,78 @@
+version: "1.0"
+namespace: kickside.inbox.persist
+
+entries:
+  - name: object_fields
+    kind: library.lua
+    meta: { private: true, comment: Preserve JSON object shape for Inbox metadata and form fields. }
+    source: file://object_fields.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
+
+  # Event-sourced storage: an inbox item is a sequence of immutable events on the
+  # owner's inbox thread (kickside.core thread engine). State is reduced on read.
+  - name: inbox_events
+    kind: library.lua
+    meta:
+      private: true
+      comment: Internal event store for Inbox create/delete/read and the resolver-only terminal commit capability.
+    source: file://events.lua
+    modules: [contract, uuid, security, json]
+    imports:
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_types: kickside.inbox:inbox_types
+      inbox_item_types: kickside.inbox:inbox_item_types
+      component: kickside.component:component
+
+  # The read-model projection worker: the runner invokes it with each new event
+  # batch; it folds item.created/resolved/deleted into the projection body (items
+  # map) that inbox_events.reduce reads. Auto-applied on the inbox thread via the kind
+  # binding's declared projection (provision + create).
+  - name: projection_worker
+    kind: function.lua
+    meta: { type: projection.worker, post_commit_ref: "func://kickside.inbox.persist:projection_committed", comment: "Inbox read-model projection worker — folds item events and trace context into the projection body." }
+    source: file://projection.lua
+    method: run
+    modules: [json, funcs]
+    imports:
+      component: kickside.component:component
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_types: kickside.inbox:inbox_types
+
+  - name: projection_committed
+    kind: function.lua
+    meta: { type: projection.worker, comment: Publish Inbox public counts after the fenced projection commit. }
+    source: file://projection.lua
+    method: after_commit
+    modules: [json, funcs]
+    imports:
+      component: kickside.component:component
+      inbox_types: kickside.inbox:inbox_types
+      object_fields: kickside.inbox.persist:object_fields
+
+  - name: inbox_reader
+    kind: library.lua
+    meta: { comment: Reads the owner's inbox items from the projection body; fluent query/get over current items. }
+    source: file://reader.lua
+    imports:
+      inbox_types: kickside.inbox:inbox_types
+      inbox_events: kickside.inbox.persist:inbox_events
+
+  - name: inbox_writer
+    kind: library.lua
+    meta: { comment: Write facade for create/delete lifecycle only; terminal resolution is owned by kickside.inbox:inbox_resolve. }
+    source: file://writer.lua
+    imports:
+      inbox_types: kickside.inbox:inbox_types
+      inbox_events: kickside.inbox.persist:inbox_events
+
+  - name: publish_summary
+    kind: function.lua
+    meta: { private: true }
+    source: file://publish_summary.lua
+    method: run
+    security:
+      policies:
+        - kickside.inbox.security:projection_public_meta
+    imports:
+      component: kickside.component:component

@@ -1,0 +1,12 @@
+version: "1.0"
+namespace: kickside.core.jobs.api
+
+entries:
+  # Core resolves component access and thread ids through its typed threads
+  # contract. Jobs validates and queries only the supplied thread-id set.
+
+  - name: scope
+    kind: library.lua
+    meta:
+      comment: Validates the resolved thread-id set supplied by Core.
+    source: file://scope.lua

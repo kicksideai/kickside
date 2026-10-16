@@ -1,0 +1,208 @@
+version: "1.0"
+namespace: kickside.agents.registry
+
+entries:
+  - name: capability_visibility
+    kind: library.lua
+    meta:
+      comment: Canonical public trait/tool validation for user-agent capability references.
+    source: file://capability_visibility.lua
+    imports:
+      tool_visibility: kickside.agents.registry:tool_visibility
+
+  - name: a_create
+    kind: function.lua
+    meta: { comment: "agents — create" }
+    source: file://agents.lua
+    method: create
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_find
+    kind: function.lua
+    meta: { comment: "agents — find" }
+    source: file://agents.lua
+    method: find
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_upsert
+    kind: function.lua
+    meta: { comment: "agents — upsert" }
+    source: file://agents.lua
+    method: upsert
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_update
+    kind: function.lua
+    meta: { comment: "agents — update" }
+    source: file://agents.lua
+    method: update
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_delete
+    kind: function.lua
+    meta: { comment: "agents — delete" }
+    source: file://agents.lua
+    method: delete
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_list
+    kind: function.lua
+    meta: { comment: "agents — one offset page filtered by text" }
+    source: file://agents.lua
+    method: list
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_attach_kb
+    kind: function.lua
+    meta: { comment: "agents — attach_kb" }
+    source: file://agents.lua
+    method: attach_kb
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_detach_kb
+    kind: function.lua
+    meta: { comment: "agents — detach_kb" }
+    source: file://agents.lua
+    method: detach_kb
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_attach_tool
+    kind: function.lua
+    meta: { comment: "agents — attach_tool" }
+    source: file://agents.lua
+    method: attach_tool
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: a_detach_tool
+    kind: function.lua
+    meta: { comment: "agents — detach_tool" }
+    source: file://agents.lua
+    method: detach_tool
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+
+  - name: agents_registry
+    kind: contract.binding
+    meta:
+      title: Agents Registry
+      comment: Canonical orchestrator for kickside.agents:agents
+      tags: [agents, registry, canonical]
+    contracts:
+      - contract: kickside.agents:agents
+        default: true
+        methods:
+          create: kickside.agents.registry:a_create
+          find: kickside.agents.registry:a_find
+          upsert: kickside.agents.registry:a_upsert
+          update: kickside.agents.registry:a_update
+          delete: kickside.agents.registry:a_delete
+          list: kickside.agents.registry:a_list
+          attach_kb: kickside.agents.registry:a_attach_kb
+          detach_kb: kickside.agents.registry:a_detach_kb
+          attach_tool: kickside.agents.registry:a_attach_tool
+          detach_tool: kickside.agents.registry:a_detach_tool
+
+  - name: tool_schema
+    kind: library.lua
+    meta:
+      comment: Normalizes table and JSON-string tool schemas at the registry boundary.
+    source: file://tool_schema.lua
+    modules: [json]
+
+  - name: tool_visibility
+    kind: library.lua
+    meta:
+      comment: Exact-boolean, fail-closed visibility predicate shared by every tool discovery surface.
+    source: file://tool_visibility.lua
+
+  - name: t_find
+    kind: function.lua
+    meta: { comment: "tools — find" }
+    source: file://tools.lua
+    method: find
+    modules: [registry]
+    imports:
+      tool_schema: kickside.agents.registry:tool_schema
+      tool_visibility: kickside.agents.registry:tool_visibility
+
+  - name: t_list
+    kind: function.lua
+    meta: { comment: "tools — list" }
+    source: file://tools.lua
+    method: list
+    modules: [registry]
+    imports:
+      tool_schema: kickside.agents.registry:tool_schema
+      tool_visibility: kickside.agents.registry:tool_visibility
+
+  - name: tools_registry
+    kind: contract.binding
+    meta:
+      title: Tools Registry
+      comment: Canonical orchestrator for kickside.agents:tools
+      tags: [tools, registry, canonical]
+    contracts:
+      - contract: kickside.agents:tools
+        default: true
+        methods:
+          find: kickside.agents.registry:t_find
+          list: kickside.agents.registry:t_list

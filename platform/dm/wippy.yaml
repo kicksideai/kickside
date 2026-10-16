@@ -1,0 +1,25 @@
+organization: kickside
+module: dm
+type: plugin
+description: KickSide DM — bridges inbound external direct messages onto private, user-owned agent chats. After pairing an external identity to an internal user (surfaced via inbox), a DM is backed by a user-owned kickside.core thread; a provider-chosen automation runs the agent on it under the user's actor, and replies go back out via kickside.connection.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - dm
+  - messaging
+  - threads
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "test/**"
+  - "test:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

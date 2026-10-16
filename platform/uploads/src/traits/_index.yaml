@@ -1,0 +1,434 @@
+version: "1.0"
+namespace: kickside.uploads.traits
+
+entries:
+  # kickside.uploads.traits:count_files
+  - name: count_files
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: Count Files
+      tags:
+        - uploads
+        - files
+        - counting
+        - statistics
+      comment: Count user's uploaded files matching specific criteria
+      input_schema: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"content_types\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Filter by content types (e.g., ['image/*', 'text/*'])\"\n    },\n    \"created_after\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\", \n      \"description\": \"Count files created after this date\"\n    },\n    \"created_before\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\",\n      \"description\": \"Count files created before this date\"\n    }\n  }\n}\n"
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "count", "filters"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "count": { "type": "integer", "description": "Number of uploaded files matching the criteria." },
+            "filters": { "type": "object", "description": "The applied filters: content_types, created_after, created_before." }
+          },
+          "description": "Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: CountFiles
+      llm_description: "Get the total count of user's uploaded files matching the specified criteria. Useful for showing statistics like 'You have 45 images' or 'You uploaded 12 files this week'. Failures return no result and a typed tool error with a clear message."
+    source: file://count_files.lua
+    modules:
+      - security
+      - contract
+    method: handle
+    
+  # kickside.uploads.traits:file_manager
+    imports:
+  - name: file_manager
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: File Manager
+      public: true
+      comment: Uploaded-content access for listing, counting, viewing, and adding files by URL or inline content; activate it directly when the user asks about uploaded files.
+      tags:
+        - uploads
+        - files
+        - management
+        - content
+        - trait
+      icon: tabler:files
+    prompt: |-
+      You have access to file management tools for uploaded content. Use these tools to help users find, list, and view their uploaded files efficiently.
+      If the user asks to list, count, inspect, or read uploaded files, use the file tools directly. Do not ask for another confirmation and do not say you lack file access; your scope is the user's uploaded content exposed by these tools, not arbitrary local folders or private cloud drives.
+      Before answering a question about an attachment, call ViewFiles with upload_ids containing the ID from the attachment metadata (the listed ID or upload_id). For PDFs and other documents, ViewFiles reads the converted text. Base your answer and quotations on the returned content, never on the filename or metadata. If reading fails or conversion is incomplete, report that result and do not invent the contents.
+    
+      **Available capabilities:**
+      - List user's uploaded files with filtering and pagination
+      - View file content and selected derived artifacts
+      - Count files matching specific criteria
+      - Fetch a public URL into the uploads workspace with FetchURL; use check_only to inspect a URL's format first, and wait to block until processing completes
+      - Store bytes you already hold (base64, up to 10 MiB decoded) as a new upload with UploadFile; the returned upload_id is what other modules' tools accept
+    
+      **Important guidelines:**
+      - Always respect user ownership - users can only access their own files
+      - ViewFiles returns text whole; request only the artifact_refs you need rather than a whole artifact set
+      - Support various content types: text, images, documents
+      - Document uploads may include many extracted image artifacts. ViewFiles lists them in small pages; request only the specific artifact_refs needed to see images.
+      - Use appropriate response formats based on content type
+    tools:
+      - kickside.uploads.traits:*
+    
+  # kickside.uploads.traits:list_files
+  - name: list_files
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: List Files
+      tags:
+        - uploads
+        - files
+        - listing
+        - pagination
+      comment: List user's uploaded files with filtering and cursor-based pagination
+      input_schema: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"after_file_id\": {\n      \"type\": \"string\",\n      \"description\": \"Return files after this file ID (for pagination)\"\n    },\n    \"limit\": {\n      \"type\": \"integer\",\n      \"description\": \"Maximum number of files to return (1-50)\",\n      \"default\": 20,\n      \"minimum\": 1,\n      \"maximum\": 50\n    },\n    \"content_types\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"Filter by content types (e.g., ['image/*', 'text/plain', 'application/pdf'])\"\n    },\n    \"created_after\": {\n      \"type\": \"string\",\n      \"format\": \"date-time\",\n      \"description\": \"Show files created after this date (ISO format)\"\n    },\n    \"created_before\": {\n      \"type\": \"string\", \n      \"format\": \"date-time\",\n      \"description\": \"Show files created before this date (ISO format)\"\n    },\n    \"sort\": {\n      \"type\": \"string\",\n      \"enum\": [\"created_at\", \"size\"],\n      \"description\": \"Sort field\",\n      \"default\": \"created_at\"\n    },\n    \"sort_order\": {\n      \"type\": \"string\",\n      \"enum\": [\"asc\", \"desc\"],\n      \"description\": \"Sort order\", \n      \"default\": \"desc\"\n    }\n  }\n}\n"
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "files", "count", "has_more"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "files": { "type": "array", "description": "Summary rows: id, filename, size, content_type, and created_at. Use ViewFiles with an id for the full file.", "items": { "type": "object" } },
+            "count": { "type": "integer", "description": "Number of files in this page." },
+            "has_more": { "type": "boolean", "description": "More files follow this page." },
+            "next_after_file_id": { "type": "string", "description": "Pass as after_file_id for the next page; absent on the last page." }
+          },
+          "description": "Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: ListFiles
+      llm_description: "List compact summaries of the user's uploaded files with optional filtering by content type and date range. Supports pagination for large file collections. Use ViewFiles with an ID to read the whole file. Failures return no result and a typed tool error with a clear message."
+    source: file://list_files.lua
+    modules:
+      - security
+      - contract
+    method: handle
+    
+  # kickside.uploads.traits:view_files
+    imports:
+  - name: view_files
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: View Files
+      tags:
+        - uploads
+        - files
+        - viewing
+        - content
+      comment: View uploaded file content and selected artifacts
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "upload_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Array of upload IDs (UUIDs) to view",
+              "minItems": 1,
+              "maxItems": 10
+            },
+            "artifact_refs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "upload_id": {
+                    "type": "string",
+                    "description": "Upload ID that owns the artifact"
+                  },
+                  "artifact_id": {
+                    "type": "string",
+                    "description": "Canonical artifact ID returned in image_artifacts. If only a visible artifact filename is available, pass it as filename instead."
+                  },
+                  "filename": {
+                    "type": "string",
+                    "description": "Artifact filename/label returned in image_artifacts, such as page2_Im1.jpg"
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Alias for filename when resolving a derived artifact by label"
+                  },
+                  "page": {
+                    "type": "integer",
+                    "description": "Document page number whose extracted image artifacts should be viewed"
+                  },
+                  "selector": {
+                    "type": "string",
+                    "description": "Natural selector such as 'page 2' when the user asks for a page"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "Maximum artifacts to view for this selector, default 4, maximum 6",
+                    "minimum": 1,
+                    "maximum": 6
+                  }
+                },
+                "required": ["upload_id"]
+              },
+              "description": "Specific derived artifacts to view. Prefer canonical artifact_id from image_artifacts; filename/label/page selectors are supported for user-friendly follow-ups.",
+              "maxItems": 6
+            },
+            "artifact_offset": {
+              "type": "integer",
+              "description": "Offset for listing derived artifacts on each upload",
+              "minimum": 0,
+              "default": 0
+            },
+            "artifact_limit": {
+              "type": "integer",
+              "description": "Maximum derived artifacts to list per upload. Use artifact_refs to view selected images.",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "files"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "files": {
+              "type": "array",
+              "description": "One record per requested upload or artifact: upload_id, artifact_id, filename, content_type, total_size, is_image; the whole text content as content; binary, content_omitted and omitted_reason when content is not shown as text; image_attached when the image rides in _images; image_artifacts with artifact_parts_total, artifact_offset and artifact_limit for document uploads; error for an entry that could not be read.",
+              "items": { "type": "object" }
+            },
+            "_images": {
+              "type": "array",
+              "description": "Inline images for vision models: { type = image, source = { type = base64, mime_type, data } }.",
+              "items": { "type": "object" }
+            }
+          },
+          "description": "Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: ViewFiles
+      llm_description: "View file content and selected derived artifacts. Text and markdown are returned whole. Uploaded images and selected image artifacts are returned as canonical _images. For document uploads, returns the extracted content plus a paginated image_artifacts list; call ViewFiles again with specific artifact_refs to inspect images. Use upload_id plus artifact_id when available, or filename/label/page for follow-up requests like \"page 2\". Never request all artifacts from large documents at once. Failures return no result and a typed tool error with a clear message."
+    source: file://view_files.lua
+    modules:
+      - security
+      - contract
+      - base64
+    method: handle
+    imports:
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+
+  # kickside.uploads.traits:fetch_url
+  - name: fetch_url
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: Fetch URL
+      tags:
+        - uploads
+        - files
+        - url
+        - fetch
+      comment: Fetch a URL into the user's uploads workspace, optionally waiting for processing.
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Public http(s) URL to fetch into the uploads workspace"
+            },
+            "check_only": {
+              "type": "boolean",
+              "description": "Inspect the URL's content type and size without downloading or creating an upload",
+              "default": false
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Wait for the created upload to finish processing before returning",
+              "default": false
+            },
+            "filename": {
+              "type": "string",
+              "description": "Filename to store the fetched file under; derived from the URL when omitted"
+            },
+            "timeout_seconds": {
+              "type": "integer",
+              "description": "Maximum seconds to wait for processing when wait is true (1-600)",
+              "default": 120,
+              "minimum": 1,
+              "maximum": 600
+            }
+          },
+          "required": ["url"]
+        }
+      output_schema: |
+        {
+          "description": "Result of the fetch. Shape depends on the mode: check_only inspection, an async upload, or a waited terminal result. Failures return no result and a typed tool error with a clear message.",
+          "oneOf": [
+            {
+              "type": "object",
+              "description": "check_only inspection: the detected format of the URL, no upload created.",
+              "properties": {
+                "url": {"type": "string", "description": "The inspected URL"},
+                "content_type": {"type": "string", "description": "Detected MIME type"},
+                "size": {"type": ["integer", "null"], "description": "Detected byte size when the origin reports it"},
+                "filename": {"type": "string", "description": "Derived or provided filename"},
+                "supported": {"type": "boolean", "description": "True when the uploads pipeline can process this content type"}
+              },
+              "required": ["url", "content_type", "filename", "supported"]
+            },
+            {
+              "type": "object",
+              "description": "Async upload (wait=false): the file bytes were stored, but processing may still be running. Treat extracted content as unavailable unless status is completed.",
+              "properties": {
+                "upload_id": {"type": "string", "description": "Id of the created upload"},
+                "status": {"type": "string", "description": "Current durable status (processing/completed/failed)"},
+                "processed": {"type": "boolean", "description": "True only when processing has completed and extracted content is ready"},
+                "message": {"type": "string", "description": "Human-readable status message"}
+              },
+              "required": ["upload_id", "status", "message"]
+            },
+            {
+              "type": "object",
+              "description": "Waited result (wait=true): the upload reached a terminal state or the wait timed out.",
+              "properties": {
+                "upload_id": {"type": "string", "description": "Id of the created upload"},
+                "status": {
+                  "type": "string",
+                  "enum": ["completed", "processing"],
+                  "description": "Terminal status, or processing when the bounded wait elapsed"
+                },
+                "processed": {"type": "boolean", "description": "True only when processing has completed and extracted content is ready"},
+                "processing_timed_out": {"type": "boolean", "description": "True when wait=true timed out before processing reached a terminal state"},
+                "content_type": {"type": "string", "description": "MIME type of the processed/stored content"},
+                "markdown": {"type": "string", "description": "Complete extracted primary text/markdown when the upload exposes it"},
+                "artifacts": {
+                  "type": "array",
+                  "description": "References of every derived artifact on the upload",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "artifact_id": {"type": "string"},
+                      "label": {"type": "string"},
+                      "kind": {"type": "string"},
+                      "mime_type": {"type": "string"},
+                      "role": {"type": "string"}
+                    }
+                  }
+                },
+                "artifact_count": {"type": "integer", "description": "Total derived artifacts on the upload"},
+                "message": {"type": "string", "description": "Human-readable status message"}
+              },
+              "required": ["upload_id", "status", "message"]
+            }
+          ]
+        }
+      llm_alias: FetchURL
+      llm_description: "Fetch a public URL into the user's uploads workspace. set check_only=true to inspect without downloading. Otherwise the file is downloaded and stored as an upload. With wait=true, only status=completed means extracted content/artifacts are ready; status=processing means the wait timed out and processing continues in the background. With wait=false, return the upload_id immediately while processing continues. Failures return no result and a typed tool error with a clear message."
+    source: file://fetch_url.lua
+    modules:
+      - security
+      - http_client
+      - time
+    method: handle
+    imports:
+      upload_lib: kickside.uploads:uploads
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      upload_type: kickside.uploads:upload_type
+      net_safety: kickside.uploads:net_safety
+      upload_status: kickside.uploads:upload_status
+
+  # kickside.uploads.traits:upload_file
+  - name: upload_file
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: Upload File
+      tags:
+        - uploads
+        - files
+        - upload
+      comment: Create an upload from inline base64 content through the same pipeline as the HTTP upload endpoint.
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "filename": {
+              "type": "string",
+              "description": "Filename to store the upload under; its extension selects the upload type when content_type is omitted"
+            },
+            "content_type": {
+              "type": "string",
+              "description": "MIME type of the content, e.g. image/png, image/webp, application/pdf"
+            },
+            "content_base64": {
+              "type": "string",
+              "description": "File bytes as standard base64 (no data: prefix; line breaks allowed). Decoded size limit: 10485760 bytes (10 MiB)."
+            },
+            "title": {
+              "type": "string",
+              "description": "Human-readable title stored in the upload metadata"
+            }
+          },
+          "required": ["filename", "content_base64"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "description": "The created upload. Failures return no result and a typed tool error with a clear message.",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "upload_id": {"type": "string", "description": "Id of the upload"},
+                "status": {"type": "string", "enum": ["processing", "completed", "failed"], "description": "Current durable status"},
+                "processed": {"type": "boolean", "description": "True only when processing has completed"},
+                "deduped": {
+                  "type": "boolean",
+                  "description": "True when the account already held these exact bytes and the existing upload is returned"
+                },
+                "size": {"type": "integer", "description": "Decoded byte size"},
+                "message": {"type": "string", "description": "Human-readable status message"}
+              },
+              "required": ["upload_id", "status", "processed", "deduped", "size", "message"]
+            }
+          ]
+        }
+      llm_alias: UploadFile
+      llm_description: "Store a file you hold as bytes (base64) in the user's uploads, owned by the user. Returns the upload_id other tools accept, e.g. to attach an image to a landing site. Content is limited to 10 MiB decoded; use FetchURL for a file that is reachable by URL. The file is stored immediately; processing continues in the background unless status is completed. Failures return no result and a typed tool error with a clear message."
+    source: file://upload_file.lua
+    modules:
+      - security
+      - base64
+    method: handle
+    imports:
+      upload_lib: kickside.uploads:uploads
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_status: kickside.uploads:upload_status

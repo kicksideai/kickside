@@ -1,0 +1,20 @@
+version: '1.0'
+namespace: app.http_errors_test
+entries:
+- name: binding_http_errors_test
+  kind: function.lua
+  source: file://binding_http_errors_test.lua
+  method: run
+  meta:
+    type: test
+    suite: binding_http_errors_test
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    binding: kickside.agents.binding:user_agents_func
+    create_api: kickside.agents.api:create_user_agent
+    update_api: kickside.agents.api:update_user_agent
+    get_api: kickside.agents.api:get_user_agent
+    delete_api: kickside.agents.api:delete_user_agent

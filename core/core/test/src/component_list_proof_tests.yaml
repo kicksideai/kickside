@@ -1,0 +1,15 @@
+version: '1.0'
+namespace: app
+entries:
+- name: component_list_proof_test
+  kind: function.lua
+  source: file://component_list_proof_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_component_list_proof
+  imports:
+    test: wippy.test:test
+    component: kickside.core.threads:component
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

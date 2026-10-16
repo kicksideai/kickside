@@ -1,0 +1,421 @@
+version: "1.0"
+namespace: kickside.contract
+
+entries:
+  - name: capacity_executor
+    kind: library.lua
+    source: file://capacity_executor.lua
+    modules: [time]
+
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Contract
+      comment: KickSide base contracts
+
+  - name: http_errors
+    kind: library.lua
+    source: file://http_errors.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  - name: model_failure
+    kind: library.lua
+    meta:
+      comment: Typed errors for a failed model call of a service step.
+    source: file://model_failure.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  - name: committed_error
+    kind: library.lua
+    source: file://committed_error.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  - name: error_envelope
+    kind: library.lua
+    source: file://error_envelope.lua
+
+  - name: http_params
+    kind: library.lua
+    meta:
+      comment: Strict HTTP query-parameter parsing shared by KickSide API endpoints.
+    source: file://http_params.lua
+    modules: [http]
+
+  - name: keyset
+    kind: library.lua
+    meta:
+      comment: Keyset pages (limit, cursor, next_cursor) over a collection ordered by a unique string key.
+    source: file://keyset.lua
+
+  - name: tool_result
+    kind: library.lua
+    meta:
+      comment: Agent tool results - typed tool failures and structured domain errors.
+    source: file://tool_result.lua
+
+  - name: canonical_json
+    kind: library.lua
+    meta:
+      comment: The one canonical JSON codec (sorted keys at every depth) every KickSide hash and digest encodes through.
+    source: file://canonical_json.lua
+    modules: [json, hash]
+
+  - name: persisted_json
+    kind: library.lua
+    meta:
+      comment: Strict typed decoding for JSON table values loaded from durable storage.
+    source: file://persisted_json.lua
+    modules: [json]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  # kickside.contract:component
+  - name: component
+    kind: contract.definition
+    meta:
+      comment: Base contract that all user components must implement
+      tags:
+        - component
+        - base
+        - status
+    methods:
+      - name: get_status
+        description: |
+          Get component status as human-readable description.
+          Component can return any relevant status information as free-form text.
+          Calling: get_status(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {},
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "description": "Human-readable status description"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "description": "ISO timestamp when status was last updated"
+                  }
+                },
+                "required": ["description"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:content_provider
+  - name: content_provider
+    kind: contract.definition
+    meta:
+      comment: Access-checked content provider interface.
+      tags:
+        - content
+        - provider
+    methods:
+      - name: get_content
+        description: |
+          Retrieve content from provider with size limits.
+          Calling: get_content(options)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "max_size": {
+                    "type": "integer",
+                    "description": "Maximum content size in bytes (default: 32KB text, 50MB images)"
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": ["raw", "base64"],
+                    "description": "Content format for binary data"
+                  }
+                },
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "The content"
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "description": "MIME type of content"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "description": "Content size in bytes"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Any metadata associated with content"
+                  },
+                  "source_ref": {
+                    "type": "object",
+                    "description": "Optional provider-owned provenance reference; not an access grant"
+                  },
+                  "truncated": {
+                    "type": "boolean",
+                    "description": "Whether content was truncated due to size limits"
+                  }
+                },
+                "required": ["content", "content_type", "size"]
+              }
+            format: application/schema+json
+      - name: get_info
+        description: |
+          Get content information without loading the actual content.
+          Calling: get_info()
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "content_type": {
+                    "type": "string",
+                    "description": "MIME type of content"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "description": "Size in bytes if available"
+                  },
+                  "filename": {
+                    "type": "string",
+                    "description": "Original filename if available"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "description": "Creation timestamp"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Any metadata without loading content"
+                  },
+                  "source_ref": {
+                    "type": "object",
+                    "description": "Optional provider-owned provenance reference; not an access grant"
+                  }
+                },
+                "required": ["content_type"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:deletable
+  - name: deletable
+    kind: contract.definition
+    meta:
+      comment: Optional contract for components that need custom deletion logic
+      tags:
+        - components
+        - deletion
+        - cleanup
+    methods:
+      - name: delete
+        description: |
+          Cleanup component resources only - service handles unregistering.
+          Component should clean up files, connections, external resources, etc.
+          Component service will unregister component after successful cleanup.
+          Calling: delete(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {},
+                "default": {}
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "description": "Whether deletion completed successfully"
+                  }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:portable
+  - name: portable
+    kind: contract.definition
+    meta:
+      comment: |
+        Optional contract for components that export and restore themselves to/from a storage envelope.
+        Components implement this to serialize themselves to, and restore themselves
+        from, an unpacked envelope on a storage backend (storage_id resolves via
+        fs.get to local fs or S3). Instance-only: export writes the component's
+        envelope; import_into restores into an already-registered shell. Component
+        creation, ownership, placement and rollback are lifecycle concerns owned by
+        component_service.import_component, not by this contract. Secrets
+        (credential_schema keys) are never written; credentials and instance-local
+        references travel as slots filled on import. Archiving/transfer and
+        multi-component workspace iteration live in a thin orchestrator above this.
+      tags:
+        - components
+        - portability
+        - export
+        - import
+    methods:
+      - name: export
+        description: |
+          Write this component's portable self to the envelope at storage_id:path:
+          component.json (impl_id + allowlisted meta + allowlisted private_context,
+          no secrets) and, for data-bearing impls, data/*.jsonl streamed from its own
+          tables. Returns a manifest of the slots an importer must fill and what was
+          written. Opened on an existing component (ADMIN access).
+          Calling: export(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "storage_id": { "type": "string", "description": "Storage resource id; resolves to local fs or S3" },
+                  "path": { "type": "string", "description": "Envelope directory prefix to write under" }
+                },
+                "required": ["storage_id", "path"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "manifest": {
+                    "type": "object",
+                    "description": "impl_id, declared slots, files written and per-file counts",
+                    "properties": {
+                      "impl_id": { "type": "string" },
+                      "slots": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": { "type": "string" },
+                            "kind": { "type": "string", "enum": ["credential", "component_ref"] },
+                            "path": { "type": "string", "description": "JSON pointer into private_context" },
+                            "contract": { "type": "string" },
+                            "required": { "type": "boolean" }
+                          },
+                          "required": ["key", "kind"]
+                        }
+                      },
+                      "files": { "type": "array", "items": { "type": "string" } },
+                      "counts": { "type": "object", "description": "file/table -> row count" }
+                    },
+                    "required": ["impl_id"]
+                  },
+                  "error": { "type": "string" }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+      - name: import_into
+        description: |
+          Restore this already-registered component from a pre-unpacked envelope at
+          storage_id:path. The shell (private_context, meta) was set at registration
+          from the envelope + slot_values by the coordinator; this replays
+          data/*.jsonl into the component's own tables, remapping ids via id_map.
+          id_map is namespaced ({ components, rows: { <ns> } }) and is returned
+          extended with the rows this component created. On failure the coordinator
+          rolls the component back. Opened on the new component instance.
+          Calling: import_into(request_dto)
+        input_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "storage_id": { "type": "string" },
+                  "path": { "type": "string" },
+                  "id_map": {
+                    "type": "object",
+                    "description": "{ components: {src->new}, rows: { <ns>: {src->new} } } — supplied by the coordinator"
+                  }
+                },
+                "required": ["storage_id", "path", "id_map"]
+              }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              {
+                "type": "object",
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "id_map": { "type": "object", "description": "id_map extended with this component's created row ids" },
+                  "warnings": { "type": "array", "items": { "type": "string" } },
+                  "error": { "type": "string" }
+                },
+                "required": ["success"]
+              }
+            format: application/schema+json
+
+  # kickside.contract:resource_registry
+
+
+  - name: host_credential_guard
+    kind: ns.requirement
+    default: ''
+    meta:
+      description: Optional host-wide credential eligibility guard; enabled for every supported credential consumer when nonempty.
+    targets:
+      - entry: kickside.contract:host_credential_eligibility
+        path: .meta.credential_eligibility
+      - entry: kickside.contract:host_credential_guard_call
+        path: ".policy.resources +="
+
+  - name: host_credential_eligibility
+    kind: function.lua
+    source: file://host_credential_eligibility.lua
+    method: check
+    meta:
+      type: kickside.contract:credential_eligibility
+      credential_eligibility: ''
+    modules: [registry, funcs]
+    security:
+      actor: {id: kickside.contract:host_credential_eligibility}
+      policies:
+        - kickside.contract:host_credential_config_read
+        - kickside.contract:host_credential_guard_call
+
+  - name: host_credential_config_read
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      actions: registry.get
+      resources: kickside.contract:host_credential_eligibility
+      effect: allow
+
+  - name: host_credential_guard_call
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      actions: funcs.call
+      resources: []
+      effect: allow
+
+  - name: credential_eligibility
+    kind: library.lua
+    source: file://credential_eligibility.lua
+    modules: [registry, funcs]

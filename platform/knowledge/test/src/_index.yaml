@@ -1,0 +1,491 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/knowledge. Provides the host resources the
+# module and its deps require (app:db, app:processes, app:api, env storage, a
+# permissive actor scope) and supplies a test KB-engine descriptor plus
+# component/uploads/dataflow/llm/agent so the co-located *_test.lua suites run
+# in isolation. The fake engine is discovered through the same registry seam as
+# a production engine, without installing kickside/kb10.
+# Harness-only; excluded from publish via the namespace exclude in wippy.yaml.
+
+entries:
+  - name: dep.kickside.models
+    kind: ns.dependency
+    version: '*'
+    component: kickside/models
+    parameters:
+    - name: kickside.models:target_db
+      value: app:db
+    - name: kickside.models:api_router
+      value: app:api
+    - name: kickside.models:ui_server
+      value: app:gateway
+    - name: kickside.models:process_host
+      value: app:processes
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for knowledge slice tests.
+    file: "${sqlite_path}"
+
+  - name: thread_ingest_append_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Test-only probe that appends KB content under the caller's framed actor/scope.
+    source: file://thread_ingest_append_probe.lua
+    method: handle
+    imports:
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: encryption_key
+    kind: env.variable
+    meta:
+      comment: Test-only token signing key used by users/session dependencies.
+    storage: app:env_storage
+    default: "1111111111111111111111111111111111111111111111111111111111111111"
+    variable: ENCRYPTION_KEY
+
+  - name: uploads
+    kind: fs.directory
+    meta:
+      comment: Local file storage for upload-backed knowledge tests.
+    directory: ./storage
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: test_engine_wiki
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      kb_type: wiki
+      title: Wiki
+      impl_id: test.kb:embeddable
+      query_binding: test.kb:queryable
+      maintenance_binding: test.kb:maintainable
+      config_maintenance:
+        schedule_resummarize: [outline_style]
+      store_contract: shared:kb_store
+      is_graph: true
+      # Declared source projection: provisioned on the KB primary thread when the
+      # KB is created (thread_id == component_id). The worker_ref mirrors the kb10
+      # engine; this harness only exercises the declaration + its execution identity,
+      # not the worker run, so no events are dispatched against it.
+      projections:
+        - kind: knowledge.injection.source
+          projection_key: source
+          cursor_key: source
+          worker_ref: "proc://kickside.kb10.injection:source_worker_proc"
+          input_mode: prefetch_events
+          batch_size: 1
+          events:
+            input:
+              - type: "kickside.knowledge.events:content.upserted"
+              - type: "kickside.knowledge.events:content.deleted"
+      default_config:
+        chunk_size: 400
+        chunk_overlap: 0
+        summary_max_chars: 0
+
+  - name: test_engine_no_maintenance
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      kb_type: no_maintenance
+      title: No-maintenance harness engine
+      impl_id: test.kb:no_maintenance
+      store_contract: shared:kb_store
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: >-
+        Separate router for wippy/views. In the real app views mounts on
+        app:api.public, distinct from the authed router carrying kickside's
+        component endpoints. The component access API owns the distinct
+        /component-access route family, so both routers may also be co-mounted safely.
+      server: gateway
+    prefix: /public
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the knowledge suites run their scoped actors under.
+    groups:
+      - kb_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: limited_user
+    kind: security.policy
+    meta:
+      comment: User-like test scope; broad runtime/app access with a deny layered below for process policy groups.
+    groups:
+      - kb_limited
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: limited_no_process_scope
+    kind: security.policy
+    meta:
+      comment: Proves user-triggered ingestion does not fetch the privileged process policy group.
+    groups:
+      - kb_limited
+    policy:
+      resources: 'wippy.security:process'
+      actions: 'security.policy_group.get'
+      effect: deny
+
+  - name: component_lifecycle_impl
+    kind: ns.requirement
+    meta:
+      comment: Binds Component lifecycle callbacks to the canonical Core implementation.
+    default: kickside.core.lifecycle:component_lifecycle_impl
+    targets:
+      - entry: kickside.component:component_lifecycle
+        path: .imports.lifecycle_impl
+
+  - name: dep.kickside.knowledge
+    kind: ns.dependency
+    component: kickside/knowledge
+    version: "*"
+    parameters:
+      - { name: kickside.knowledge:api_router, value: app:api }
+      - { name: kickside.knowledge:ui_server, value: app:gateway }
+      - { name: kickside.knowledge.security:user_security_scope, value: app:user }
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Users — the user_repo seam the share endpoint checks for phantom users.
+    component: "kickside/users"
+    parameters:
+      - name: kickside.security:target_db
+        value: app:db
+      - name: kickside.security:api_router
+        value: app:api
+      - name: kickside.security:ui_server
+        value: app:gateway
+      - name: kickside.security:process_host
+        value: app:processes
+      - name: kickside.users:env_storage
+        value: app:env_storage
+      - name: kickside.users:public_router
+        value: app:api
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - { name: kickside.users:target_db, value: app:db }
+      - { name: kickside.users:user_security_scope, value: app:user }
+      - { name: kickside.users:admin_security_scope, value: app:user }
+      - { name: kickside.users:login_role_resource, value: 'app:*' }
+      - { name: kickside.settings:target_db, value: app:db }
+      - { name: kickside.settings:api_router, value: app:api }
+      - { name: kickside.settings:ui_server, value: app:gateway }
+
+  - name: dep.kickside.uploads
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Uploads — document ingestion + upload tokens.
+    component: "kickside/uploads"
+    parameters:
+      - name: kickside.uploads:database_resource
+        value: app:db
+      - name: kickside.uploads:storage_id
+        value: app:uploads
+      - name: kickside.uploads:env_storage
+        value: app:env_storage
+      - name: kickside.uploads:api_router
+        value: app:api
+      - name: kickside.uploads:ui_server
+        value: app:gateway
+      - name: kickside.uploads.security:user_security_scope
+        value: app:user
+
+  - name: dep.kickside.component
+    kind: ns.dependency
+    version: '*'
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - name: dep.kickside.core
+    kind: ns.dependency
+    version: '*'
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.realtime
+    kind: ns.dependency
+    version: '*'
+    component: kickside/realtime
+
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    version: '*'
+    component: kickside/jobs
+    parameters:
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - name: dep.wippy.relay
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Relay — transitive dep of session/views.
+    component: "wippy/relay"
+    parameters:
+      - name: user_security_scope
+        value: app:user
+      - name: env_storage
+        value: app.env:store
+      - name: application_host
+        value: app:processes
+
+  - name: dep.wippy.views
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Views — transitive dep of session (artifact rendering). Mounts on the separate public router to avoid /components/* route collisions with the component module.
+    component: "wippy/views"
+    parameters:
+      - name: wippy.views:api_router
+        value: app:api_public
+      - name: wippy.views:env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.session
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Session — backs wippy/dataflow's session artifact repo.
+    component: "wippy/session"
+    parameters:
+      - name: wippy.session:api_router
+        value: app:api
+      - name: wippy.session:env_storage
+        value: app:env_storage
+      - name: wippy.session:delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.wippy.dataflow
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Dataflow — injection + concept-graph enrichment flows.
+    component: "wippy/dataflow"
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+      - name: api_router
+        value: app:api
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.migration
+    kind: ns.dependency
+    version: '*'
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: planner_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_organize }
+    source: file://planner_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      planner: app:planner_fixture
+      planner_llm: app:planner_llm_stub
+
+  - name: kb_fetch_url_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_traits }
+    source: file://kb_fetch_url_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      fetch_url: app:kb_fetch_url_fixture
+      http_stub: app:kb_fetch_url_http_stub
+      llm_stub: app:kb_fetch_url_llm_stub
+
+  - name: kb_fetch_url_http_stub
+    kind: library.lua
+    source: file://kb_fetch_url_stub.lua
+
+  - name: kb_fetch_url_component_stub
+    kind: library.lua
+    source: file://kb_fetch_url_stub.lua
+
+  - name: kb_fetch_url_llm_stub
+    kind: library.lua
+    source: file://kb_fetch_url_stub.lua
+
+  - name: kb_fetch_url_fixture
+    kind: library.lua
+    source: file://fixtures/kb_fetch_url.lua
+    modules: [ctx, html, security, process, channel, time, uuid]
+    imports:
+      util: kickside.knowledge:util
+      component: app:kb_fetch_url_component_stub
+      http_client: app:kb_fetch_url_http_stub
+      upload_lib: kickside.uploads:uploads
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      execution_identity: kickside.execution:execution_identity
+      trace_context: kickside.execution:trace
+      llm: app:kb_fetch_url_llm_stub
+      prompt: wippy.llm:prompt
+      net_safety: kickside.uploads:net_safety
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: planner_llm_stub
+    kind: library.lua
+    source: file://planner_llm_stub.lua
+
+  - name: planner_fixture
+    kind: library.lua
+    source: file://fixtures/planner.lua
+    modules: [json]
+    imports:
+      llm: app:planner_llm_stub
+      prompt: wippy.llm:prompt
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: digest_request_probe
+    kind: function.lua
+    source: file://digest_request_probe.lua
+    method: request_digest
+    imports:
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: ingest_upload_probe
+    kind: function.lua
+    source: file://ingest_upload_probe.lua
+    method: handler
+    imports:
+      ingest_upload: kickside.knowledge.api:ingest_upload
+
+  - name: fixture_cleanup
+    kind: library.lua
+    source: file://fixture_cleanup.lua
+    modules: [sql]
+    imports:
+      component: kickside.component:component
+      teardown: kickside.core.threads.persist:teardown
+      test: wippy.test:test
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}

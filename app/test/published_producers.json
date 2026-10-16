@@ -1,0 +1,244 @@
+{
+  "policies": {
+    "kickside.channel:thread_inbound_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": [
+        "kickside.channel.events:message.inbound",
+        "kickside.dm.events:message.inbound"
+      ]
+    },
+    "kickside.channel:thread_reply_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": [
+        "kickside.dm.events:reply.sent",
+        "kickside.dm.events:reply.failed",
+        "kickside.channel.events:reply.sent",
+        "kickside.channel.events:reply.failed"
+      ]
+    },
+    "kickside.channel:thread_responder_session_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": [
+        "kickside.channel.responder.events:session.activated",
+        "kickside.channel.responder.events:session.completed"
+      ]
+    },
+    "kickside.channel.responder:thread_status_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": "kickside.channel.responder.events:status.changed"
+    },
+    "kickside.inbox.security:create_output_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": [
+        "kickside.inbox.events:item.created",
+        "kickside.inbox.events:delivery.claimed"
+      ]
+    },
+    "kickside.inbox.security:resolve_output_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": "kickside.inbox.events:item.resolved"
+    },
+    "kickside.inbox.security:submit_output_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": "kickside.inbox.events:item.created"
+    },
+    "kickside.inbox.security:delete_output_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": [
+        "kickside.inbox.events:item.deleted",
+        "kickside.inbox.events:delivery.claimed"
+      ]
+    },
+    "kickside.inbox.security:sink_output_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": [
+        "kickside.inbox.events:item.created",
+        "kickside.inbox.events:item.deleted",
+        "kickside.inbox.events:delivery.claimed"
+      ]
+    },
+    "kickside.uploads:thread_deleted_publish": {
+      "actions": "threads.output.publish",
+      "effect": "allow",
+      "resources": "kickside.uploads.events:upload.deleted"
+    },
+    "kickside.knowledge.security:content_deleted_publish": {
+      "resources": "kickside.knowledge.events:content.deleted",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.knowledge.security:content_upserted_publish": {
+      "resources": "kickside.knowledge.events:content.upserted",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.knowledge.security:graph_changed_publish": {
+      "resources": "kickside.knowledge.events:graph.changed",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.knowledge.security:sink_output_publish": {
+      "resources": [
+        "kickside.knowledge.events:delivery.claimed",
+        "kickside.knowledge.events:content.deleted"
+      ],
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.skills.security:create_output_publish": {
+      "resources": "kickside.skills.events:skill.created",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.skills.security:import_output_publish": {
+      "resources": [
+        "kickside.skills.events:skill.created",
+        "kickside.skills.events:skill.updated"
+      ],
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.skills.security:refine_output_publish": {
+      "resources": "kickside.skills.events:skill.updated",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.webhooks.security:ingress_output_publish": {
+      "resources": "kickside.webhooks.events:webhook.inbound",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.workflows.security:workflow_started_publish": {
+      "resources": "kickside.workflows.runs.events:started",
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    },
+    "kickside.workflows.security:workflow_terminal_publish": {
+      "resources": [
+        "kickside.workflows.runs.events:finished",
+        "kickside.workflows.runs.events:failed"
+      ],
+      "actions": "threads.output.publish",
+      "effect": "allow"
+    }
+  },
+  "producers": {
+    "kickside.channel:receive_func": [
+      "kickside.channel:thread_inbound_publish"
+    ],
+    "kickside.channel.responder:pause": [
+      "kickside.channel.responder:thread_status_publish"
+    ],
+    "kickside.channel.responder:resume": [
+      "kickside.channel.responder:thread_status_publish"
+    ],
+    "kickside.channel.service:bridge": [
+      "kickside.channel:thread_inbound_publish",
+      "kickside.channel:thread_reply_publish",
+      "kickside.channel:thread_responder_session_publish"
+    ],
+    "kickside.inbox.api:create_item": [
+      "kickside.inbox.security:create_output_publish"
+    ],
+    "kickside.inbox.api:resolve_item": [
+      "kickside.inbox.security:resolve_output_publish"
+    ],
+    "kickside.inbox.api:delete_item": [
+      "kickside.inbox.security:delete_output_publish"
+    ],
+    "kickside.inbox:arm_decision": [
+      "kickside.inbox.security:submit_output_publish"
+    ],
+    "kickside.inbox:create_decision": [
+      "kickside.inbox.security:submit_output_publish"
+    ],
+    "kickside.inbox.sink:inbox_write": [
+      "kickside.inbox.security:sink_output_publish"
+    ],
+    "kickside.inbox.traits:inbox_submit_tool": [
+      "kickside.inbox.security:submit_output_publish"
+    ],
+    "kickside.uploads.api:delete_handler": [
+      "kickside.uploads:thread_deleted_publish"
+    ],
+    "kickside.uploads.archive:on_delete": [
+      "kickside.uploads:thread_deleted_publish"
+    ],
+    "kickside.uploads.binding:delete_uploads_func": [
+      "kickside.uploads:thread_deleted_publish"
+    ],
+    "kickside.uploads.persist:cleanup_principal": [
+      "kickside.uploads:thread_deleted_publish"
+    ],
+    "kickside.knowledge.api:ingest_content": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.api:delete_content": [
+      "kickside.knowledge.security:content_deleted_publish"
+    ],
+    "kickside.knowledge.api:ingest_existing_upload": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.api:organize": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.binding:embed_reference_func": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.injection:on_upload_complete": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.sink:kb_embed_write": [
+      "kickside.knowledge.security:sink_output_publish"
+    ],
+    "kickside.knowledge.traits:kb_embed_tool": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.traits.kb_ingest:fetch_url": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.traits.kb_ingest:embed_content": [
+      "kickside.knowledge.security:content_upserted_publish"
+    ],
+    "kickside.knowledge.traits.kb_ingest:delete_content": [
+      "kickside.knowledge.security:content_deleted_publish"
+    ],
+    "kickside.skills:skill_create": [
+      "kickside.skills.security:create_output_publish"
+    ],
+    "kickside.skills:skill_refine": [
+      "kickside.skills.security:refine_output_publish"
+    ],
+    "kickside.skills.portability:import_into_func": [
+      "kickside.skills.security:import_output_publish"
+    ],
+    "kickside.webhooks.ingress:append_event": [
+      "kickside.webhooks.security:ingress_output_publish"
+    ],
+    "kickside.workflows.api:run": [
+      "kickside.workflows.security:workflow_started_publish"
+    ],
+    "kickside.workflows.api:simulate": [
+      "kickside.workflows.security:workflow_started_publish"
+    ],
+    "kickside.workflows.runs:run_write": [
+      "kickside.workflows.security:workflow_started_publish"
+    ],
+    "kickside.workflows.runs:maintenance_publish": [
+      "kickside.workflows.security:workflow_terminal_publish"
+    ],
+    "kickside.workflows.runs:run_completed": [
+      "kickside.workflows.security:workflow_terminal_publish"
+    ]
+  },
+  "optional_source_baseline": "9af42bf2ea7150feb9f3484dabccc908fe9162b4"
+}

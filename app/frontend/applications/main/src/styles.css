@@ -1,0 +1,245 @@
+@import "@kickside/ui-kit/kx-tokens.css";
+
+*, p, span, div, li, td, th, label, input, button, textarea, select,
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+html { color-scheme: light dark; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ----------------------------------------------------------------
+   Theme bridge (Wippy canonical pattern).
+   Surface tiers are derived via color-mix on semantic vars
+   (--p-content-background, --p-text-color, --p-content-border-color,
+   --p-{danger,success,warn,info,help}-*) so they flip light/dark
+   without a media-query override.
+
+   All --p-* token redefinitions and raw .p-* selector overrides live
+   in the facade dependency (src/app/deps/_index.yaml). This file holds
+   only the project-prefixed tokens this SPA still owns (--ac-fg) and
+   project classes — they are layer-local to the SPA iframe.
+   ---------------------------------------------------------------- */
+:root {
+  /* Inherits into every web-component shadow DOM, enabling height/max-height
+     animation to and from intrinsic (auto) sizes so modals ease instead of snap. */
+  interpolate-size: allow-keywords;
+
+  /* Brand hue used as text on neutral/tinted surfaces. Raw primary colors are
+     not guaranteed to meet text contrast in every administrator-selected theme. */
+  --ac-fg: color-mix(in srgb, var(--p-primary-color) 35%, var(--p-text-color));
+}
+
+/* Dark-mode --p-primary-contrast-color (white-on-primary) is delivered by the
+   facade children CSS (:host, :root) so it reaches this host document AND every
+   WC shadow — module/page CSS must not redefine host --p-* tokens (11.42b). */
+
+/* Thin, theme-aware scrollbars that blend into surrounding surfaces. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kx-border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--kx-border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--p-content-background);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--kx-border-stronger); }
+
+/* Animation utilities. */
+@keyframes lt-fadeUp  { from { opacity: 0; transform: translateY(8px) }  to { opacity: 1; transform: translateY(0) } }
+@keyframes lt-fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes lt-spin    { to { transform: rotate(360deg) } }
+@keyframes lt-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+.au { animation: lt-fadeUp .4s cubic-bezier(.22, 1, .36, 1) both }
+.ai { animation: lt-fadeIn .3s ease both }
+.d1 { animation-delay: .05s } .d2 { animation-delay: .10s } .d3 { animation-delay: .15s }
+.d4 { animation-delay: .20s } .d5 { animation-delay: .25s } .d6 { animation-delay: .30s }
+.spin { animation: lt-spin 1s linear infinite; }
+
+/* App shell — keep html/body chrome transparent so the host iframe
+   background shows through (Wippy canonical: bg is host-owned). */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--p-text-color);
+}
+
+/* ----------------------------------------------------------------
+   Canonical page header — the ONE visual rule for every surface.
+   Values are PX so SPA pages and shadow-DOM web components render
+   identically (the SPA root font-size is 13px, so Tailwind rem
+   spacing would scale; WCs use raw px). Web components mirror this
+   exact spec in their own styles as .kx-head/.kx-head-icon/etc.
+     container : flex, align center, gap 12, padding 20 24 14
+     icon      : 40x40, radius 12, primary 14% tint, svg 22
+     title     : 17px / 700
+     subtitle  : 13px muted
+   Pages with tabs put the tab row inside the same container (which
+   then carries a bottom border); the title row keeps these classes.
+   ---------------------------------------------------------------- */
+.page-head { display: flex; align-items: center; gap: 12px; padding: 20px 24px 14px; flex-shrink: 0; }
+.page-head-icon {
+  width: 40px; height: 40px; border-radius: 11px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
+  color: var(--p-primary-color);
+}
+.page-head-icon svg { width: 22px; height: 22px; }
+.page-head-text { flex: 1; min-width: 0; }
+.page-title { font-size: 17px; font-weight: 700; color: var(--p-text-color); margin: 0; line-height: 1.25; }
+.page-sub { font-size: 13px; color: var(--p-text-muted-color); margin: 2px 0 0; }
+.page-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+#app { height: 100%; }
+
+/* ----------------------------------------------------------------
+   Design-system component classes (ported from the lattice SPA).
+   Layer-local to this SPA iframe; all colors derive from --p-* and
+   @kickside/ui-kit's --kx-* tokens via color-mix so light/dark flips
+   for free. Heading
+   weight uses var(--kx-font-heading) (Outfit), which the SPA shell loads.
+   ---------------------------------------------------------------- */
+
+/* Normalized square icon button — the single icon-action style app-wide. Never
+   circular. Use .icon-btn for any icon-only control. */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--kx-control-height); height: var(--kx-control-height); border-radius: var(--kx-radius-8);
+  background: var(--kx-surface-2); border: 1px solid var(--p-content-border-color); color: var(--p-text-muted-color);
+  cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+/* Boxed: it draws a border and a fill at rest, so the ring is that border
+   going primary plus the halo - never an outline. See the focus canon in
+   app/src/app/docs/kickside-development/frontend/best-practices.md. */
+.icon-btn:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+.icon-btn:hover:not(:disabled) { background: var(--kx-surface-3); color: var(--p-text-color); border-color: var(--kx-border-strong); }
+.icon-btn:disabled { opacity: .4; cursor: default; }
+.icon-btn svg { width: 17px; height: 17px; }
+.icon-btn.sm { width: 28px; height: 28px; }
+.icon-btn.sm svg { width: 15px; height: 15px; }
+.icon-btn.danger:hover { background: var(--kx-wash-danger); color: var(--p-danger-500); border-color: color-mix(in srgb, var(--p-danger-500) 35%, transparent); }
+
+/* Ghost action button. */
+.ghost-action {
+  display: inline-flex; align-items: center; gap: 7px; height: var(--kx-control-height); padding: 0 14px;
+  border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-8); background: var(--kx-surface-2); color: var(--p-text-muted-color);
+  font: inherit; font-size: 12.5px; font-weight: 700; font-family: var(--kx-font-heading);
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+/* Boxed: it draws a border and a fill at rest, so the ring is that border
+   going primary plus the halo - never an outline. Same canon as .icon-btn. */
+.ghost-action:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+/* Guarded and paired with a disabled rule because this is a <button> now: as a
+   <label> it could never match :disabled, so an unguarded :hover was harmless.
+   It is the upload control, disabled for the whole round trip. */
+.ghost-action:hover:not(:disabled) { background: var(--kx-surface-3); border-color: var(--kx-border-strong); color: var(--p-text-color); transform: translateY(-1px); }
+.ghost-action:disabled { opacity: .4; cursor: default; transform: none; }
+.ghost-action:active { transform: translateY(0); }
+.ghost-action svg { width: 14px; height: 14px; }
+
+/* Form primitives. */
+.lt-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -.005em;
+  color: var(--p-text-muted-color);
+}
+.lt-field-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--p-text-muted-color);
+  opacity: 0.7;
+}
+.lt-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  border-radius: var(--kx-radius-8);
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  color-scheme: light dark;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}.lt-input::placeholder { color: var(--p-text-muted-color); opacity: 0.7; }
+/* .lt-input kills the UA outline but drew no ring of its own, and the facade's
+   default only covers button/summary/a/checkbox/radio/range - not text inputs.
+   The workspace-name field on onboarding step 1 is autofocused, so the first
+   screen of the product had a focusable control with no visible focus at all.
+   Bordered treatment, same canon as .icon-btn and .ghost-action. */
+.lt-input:focus-visible {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* Inline form/banner messages. .msg.ok = success, .msg.err = error. */
+.msg {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-radius: var(--kx-radius-8);
+  font-size: 12.5px;
+}
+.msg svg { width: 14px; height: 14px; flex-shrink: 0; }
+.msg.ok { background: var(--kx-wash-success); border: 1px solid color-mix(in srgb, var(--p-success-500) 35%, transparent); color: var(--p-success-700); }
+.msg.err { background: var(--kx-wash-danger); border: 1px solid color-mix(in srgb, var(--p-danger-500) 35%, transparent); color: var(--p-danger-700); }
+
+/* Modal body helpers — used inside PrimeVue Dialog content. */
+.m-sub { font-size: 13px; color: var(--p-text-muted-color); line-height: 1.55; margin-bottom: 14px; }
+.m-body { display: flex; flex-direction: column; gap: 14px; }
+
+/* Search input with leading icon. */
+.search {
+  position: relative; width: 280px; max-width: 100%;
+  display: flex; align-items: center;
+}
+.search input {
+  width: 100%; height: 34px;
+  padding: 0 30px 0 32px;
+  background: var(--kx-surface-2); border: 1px solid var(--p-content-border-color);
+  border-radius: var(--kx-radius-8);
+  font-size: 13px; color: var(--p-text-color); font-family: inherit;
+  transition: border-color .15s, background .15s;
+}
+.search input:focus { background: var(--kx-surface-1); }
+.search input::placeholder { color: var(--kx-text-faint); }
+.search .s-ico { position: absolute; left: 11px; width: 14px; height: 14px; color: var(--kx-text-faint); pointer-events: none; }
+.s-clear {
+  position: absolute; right: 6px; padding: 4px;
+  background: transparent; border: none; cursor: pointer; color: var(--kx-text-faint); display: flex;
+}
+.s-clear:hover { color: var(--p-text-color); }
+.s-clear svg { width: 13px; height: 13px; }
+
+/* Skeleton loader. */
+.sk {
+  background: linear-gradient(
+    90deg,
+    var(--kx-surface-2) 0%,
+    color-mix(in srgb, var(--kx-surface-2) 50%, var(--kx-surface-3)) 50%,
+    var(--kx-surface-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: lt-shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--kx-radius-6);
+}
+.sk.line { height: 12px; border-radius: var(--kx-radius-4); }
+.sk.circle { border-radius: 50%; }
+.sk.box { border-radius: 10px; }

@@ -1,0 +1,90 @@
+version: "1.0"
+namespace: kickside.transform
+entries:
+  - name: snippet
+    kind: library.lua
+    meta:
+      comment: Reusable transform snippets — structural fingerprint + registry search/publish for a confirmed (source->sink) mapping.
+    source: file://../../snippet.lua
+    modules: [json, registry]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  - name: generator
+    kind: library.lua
+    meta:
+      comment: Transform generation core — the validation gate, schema-similarity strategy call, and bounded generate/regenerate orchestration.
+    source: file://../../generator.lua
+    modules: [json]
+    imports:
+      transform_apply: kickside.transform:apply
+      transform_strategies: kickside.transform:strategies
+      sink_input: kickside.transform:sink_input
+      component: kickside.component:component
+      schema_validate: kickside.transform:schema_validate
+
+  # Dataflow node functions for the generator. Isolated so their llm/prompt import
+  # closure stays off the plain transform library.
+  - name: node_snippet_search
+    kind: function.lua
+    meta:
+      comment: Generator node — reuse a confirmed snippet for the shape pair.
+    source: file://../../gen_nodes.lua
+    method: snippet_search
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      generator: kickside.transform:generator
+      snippet: kickside.transform:snippet
+
+  - name: node_analyze
+    kind: function.lua
+    meta:
+      comment: Generator node — honor an explicit strategy or judge an explicit auto request.
+    source: file://../../gen_nodes.lua
+    method: analyze
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      generator: kickside.transform:generator
+      snippet: kickside.transform:snippet
+
+  - name: node_iterate
+    kind: function.lua
+    meta:
+      comment: Generator cycle node — draft an artifact and run the validation gate.
+    source: file://../../gen_nodes.lua
+    method: iterate
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      generator: kickside.transform:generator
+      snippet: kickside.transform:snippet
+
+  # The callable API seam (UI / sync-create). function.lua so it is invoked via
+  # funcs.call, keeping the dataflow import closure isolated in its own pool --
+  # the same isolation the KB agentic_query driver uses.
+  - name: generate_transform
+    kind: function.lua
+    meta:
+      comment: Run the generator dataflow for a source/sink pair; returns a validated transform proposal.
+    source: file://../../gen_flow.lua
+    method: generate_transform
+    imports:
+      flow: userspace.dataflow.flow:flow
+      generator: kickside.transform:generator
+      snippet: kickside.transform:snippet
+
+  - name: publish_transform_snippet
+    kind: function.lua
+    meta:
+      comment: Persist a confirmed transform as a reusable snippet keyed by the two schema fingerprints.
+    source: file://../../gen_flow.lua
+    method: publish_transform_snippet
+    imports:
+      flow: userspace.dataflow.flow:flow
+      generator: kickside.transform:generator
+      snippet: kickside.transform:snippet

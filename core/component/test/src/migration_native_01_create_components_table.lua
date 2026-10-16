@@ -1,0 +1,1 @@
+../../src/migrations/01_create_components_table.lua

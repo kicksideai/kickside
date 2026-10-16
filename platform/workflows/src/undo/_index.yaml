@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: kickside.workflows.undo
+
+entries:
+  - name: undo
+    kind: library.lua
+    meta:
+      comment: Pure undo/redo tracker — capped inverse-command stacks.
+    source: file://undo.lua
+    imports:
+      types: kickside.workflows:types
+
+  # ─── Flow definition read contract (source artifact, never execution) ─────

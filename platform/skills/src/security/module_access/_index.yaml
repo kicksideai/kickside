@@ -1,0 +1,49 @@
+version: '1.0'
+namespace: kickside.skills.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Skills
+    surface: kickside.skills
+    intent: module_access
+    includes:
+    - kickside.skills.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.skills.api:create_skill.endpoint
+    - kickside.skills.api:delete_skill.endpoint
+    - kickside.skills.api:get_skill.endpoint
+    - kickside.skills.api:list_skills.endpoint
+    - kickside.skills.api:list_versions.endpoint
+    - kickside.skills.api:read_file.endpoint
+    - kickside.skills.api:refine_skill.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.skills:*
+    - kickside.skills.api:*
+    - kickside.skills.bundle:*
+    - kickside.skills.events:*
+    - kickside.skills.portability:*
+    - kickside.skills.runtime:*
+    - kickside.skills.security:*
+    - kickside.skills.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

@@ -1,0 +1,41 @@
+version: "1.0"
+namespace: kickside.channel
+
+# Harness-only stand-in for the kickside.channel published inbound port surface
+# (thread binding + events port). The kickside.channel code module is not mounted
+# in this trigger harness; these two registry entries mirror the real
+# channel_kind binding and channel_message_received port so the channel_watch_e2e
+# test resolves and installs the REAL port id
+# (kickside.channel:channel_message_received) through the real trigger service.
+entries:
+  - name: channel_kind
+    kind: contract.binding
+    meta:
+      type: test_fixture
+      title: Channel Chat
+      icon: tabler:message-circle
+      class:
+        - kickside.channel
+      group: Channels
+      events:
+        input: []
+        output:
+          - type: "kickside.channel.events:message.inbound"
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: channel_message_received
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: New Channel Message
+      icon: tabler:message-circle
+    binding: kickside.channel:channel_kind
+    event: kickside.channel.events:message.inbound
+    config_schema:
+      thread_id:
+        picker: wc-component-picker
+        required: true
+        title: Channel

@@ -1,0 +1,187 @@
+version: "1.0"
+namespace: kickside.mcp.api
+
+entries:
+  - name: serve_mcp
+    kind: function.lua
+    meta: { comment: "POST /mcp — public streamable-HTTP MCP endpoint; the dispatcher enforces the bearer." }
+    source: file://serve_mcp.lua
+    method: handler
+    modules: [http, uuid]
+    imports:
+      mcp_dispatcher: kickside.mcp:mcp_dispatcher
+      public_url: kickside.mcp:public_url
+    security:
+      actor:
+        id: kickside.mcp.api:serve_mcp
+      policies:
+        - kickside.mcp.security:endpoint_public_url
+        - kickside.mcp.security:endpoint_db_access
+        - kickside.mcp.security:endpoint_actor_create
+        - kickside.mcp.security:endpoint_deferred_execution
+        - kickside.mcp.security:endpoint_identity_resolver
+        - kickside.mcp.security:endpoint_identity_call
+        - kickside.mcp.security:endpoint_identity_binding
+        - kickside.mcp.security:endpoint_runtime_exec
+        - kickside.mcp.security:endpoint_registry_read
+        - kickside.mcp.security:credential_eligibility_call
+
+  - name: serve_mcp.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: serve_mcp
+    path: /mcp
+
+  - name: serve_mcp.get.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: serve_mcp
+    path: /mcp
+
+  - name: serve_mcp.delete.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: serve_mcp
+    path: /mcp
+
+  # ─── Management API (authenticated) ──────────────────────────────────
+  - name: create_credential
+    kind: function.lua
+    meta: { comment: "POST /mcp/credentials — mint a scoped credential; returns the raw token once." }
+    source: file://create_credential.lua
+    method: handler
+    modules: [http, json, env, security]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_repo: kickside.mcp.persist:repo
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_http_headers: kickside.mcp:http_headers
+      mcp_presets: kickside.mcp:mcp_presets
+
+    security:
+      policies: [kickside.mcp.security:credential_eligibility_call]
+
+  - name: create_credential.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_credential
+    path: /mcp/credentials
+
+  - name: update_credential
+    kind: function.lua
+    meta: { comment: "PATCH /mcp/credentials/{id} — change policy (tools/traits/profile) without re-minting." }
+    source: file://update_credential.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      mcp_repo: kickside.mcp.persist:repo
+      credential_policy: kickside.mcp.persist:credential_policy
+      mcp_presets: kickside.mcp:mcp_presets
+
+  - name: update_credential.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PATCH
+    func: update_credential
+    path: /mcp/credentials/{id}
+
+  - name: list_credentials
+    kind: function.lua
+    meta: { comment: "GET /mcp/credentials — the current actor's credentials (no token)." }
+    source: file://list_credentials.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      public_url: kickside.mcp:public_url
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: list_credentials.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_credentials
+    path: /mcp/credentials
+
+  - name: revoke_credential
+    kind: function.lua
+    meta: { comment: "POST /mcp/credentials/{id}/revoke — revoke one of your credentials." }
+    source: file://revoke_credential.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: revoke_credential.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: revoke_credential
+    path: /mcp/credentials/{id}/revoke
+
+  - name: delete_credential
+    kind: function.lua
+    meta: { comment: "DELETE /mcp/credentials/{id} — hard-remove one of your credentials." }
+    source: file://delete_credential.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      mcp_repo: kickside.mcp.persist:repo
+
+  - name: delete_credential.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_credential
+    path: /mcp/credentials/{id}
+
+  - name: list_tools
+    kind: function.lua
+    meta: { comment: "GET /mcp/tools — the tool catalog a credential may be allowed to surface." }
+    source: file://list_tools.lua
+    method: handler
+    modules: [http, registry, security]
+    imports:
+      mcp_consts: kickside.mcp:consts
+
+  - name: list_tools.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_tools
+    path: /mcp/tools
+
+  - name: list_components
+    kind: function.lua
+    meta: { comment: "GET /mcp/components — browse the canonical component tree (access-filtered, all classes) for the scope picker." }
+    source: file://list_components.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      component: kickside.component:component
+
+  - name: list_components.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_components
+    path: /mcp/components
+
+  - name: list_presets
+    kind: function.lua
+    meta: { comment: "GET /mcp/presets — declared preset bundles for the create UI." }
+    source: file://list_presets.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      mcp_presets: kickside.mcp:mcp_presets
+
+  - name: list_presets.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_presets
+    path: /mcp/presets

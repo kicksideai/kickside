@@ -1,0 +1,46 @@
+version: "1.0"
+namespace: app.blocks_suites
+
+entries:
+  - name: blocks_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: blocks
+      group: KickSide Blocks
+      comment: Block declarations accept registry provenance without coupling to it.
+    source: file://blocks_test.lua
+    method: run
+    modules: [registry, time]
+    imports:
+      blocks: kickside.blocks:blocks
+      lower: kickside.blocks:lower
+      test: wippy.test:test
+
+  - name: block_contract_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: blocks
+      group: KickSide Blocks
+    source: file://contract_test.lua
+    method: run
+    modules: [registry, time]
+    imports:
+      blocks: kickside.blocks:blocks
+      tool_adapter: kickside.blocks:tool_adapter
+      lower: kickside.blocks:lower
+      test: wippy.test:test
+
+  - name: flow_contract_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: blocks
+      group: KickSide Blocks
+    source: file://flow_contract_test.lua
+    method: run
+    modules: [json]
+    imports:
+      flow_contract: kickside.blocks:flow_contract
+      test: wippy.test:test

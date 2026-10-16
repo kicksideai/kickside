@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.settings.migrations
+
+# target_db is injected by the root kickside.settings:target_db requirement.
+entries:
+  - name: 01_settings
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_settings admin overrides table
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-12T00:00:01Z"
+    source: file://01_settings.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

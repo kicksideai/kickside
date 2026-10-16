@@ -1,0 +1,22 @@
+version: '1.0'
+namespace: app.http_errors_test
+entries:
+- name: restore_diff_http_test
+  kind: function.lua
+  source: file://restore_diff_http_test.lua
+  method: run
+  meta:
+    type: test
+    suite: restore_diff_http_test
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    exec_api: kickside.workflows.api:exec_api
+    restore: kickside.workflows.api:restore_version
+    repo: kickside.workflows.repo:repo
+    runs_read: kickside.workflows.runs:runs_read
+    runs_launch: kickside.workflows.runs:runs_launch
+    runs_state: kickside.workflows.runs:runs_state
+    definitions_api: kickside.workflows.api:definitions_api

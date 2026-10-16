@@ -1,0 +1,17 @@
+local test = require("test")
+local handler = require("list_fixture")
+local state = require("list_fixture_state")
+local function define_tests()
+    test.describe("Model list presentation", function()
+        test.it("exposes the selected model output budget without embedding-only cards", function()
+            local _, err = handler.handler()
+            test.is_nil(err)
+            local result = state.result()
+            test.eq(result.success, true)
+            test.eq(#result.models, 1)
+            test.eq(result.models[1].name, "fixture/generate")
+            test.eq(result.models[1].output_tokens, 8192)
+        end)
+    end)
+end
+return { run = test.run_cases(define_tests) }

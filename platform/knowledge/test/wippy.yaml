@@ -1,0 +1,9 @@
+organization: kickside
+module: knowledge-harness
+type: application
+description: Standalone runnable harness that boots kickside/knowledge (and its component/uploads/dataflow/llm/agent deps) and runs its co-located *_test.lua suites.
+directories:
+    modules: .wippy
+    src: .
+options:
+    unpack_modules: true

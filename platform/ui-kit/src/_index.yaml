@@ -1,0 +1,34 @@
+version: "1.0"
+namespace: kickside.ui_kit
+
+# KickSide's shared frontend vocabulary. Unlike every other FE module here this
+# one serves nothing at runtime: it publishes a build-time artifact that
+# consumers materialize into their own node_modules.
+#
+#   wippy artifacts materialize <ui-kit.wapp> kickside.ui_kit:package_fs --root .wippy
+#
+# which writes .wippy/npm/@kickside/ui-kit, linked by a `./.wippy/npm/@*/*`
+# workspaces glob in the consumer's package.json. Resolution is then ordinary
+# node resolution, which is the point: a path alias (`@widgets` -> ../../widgets)
+# only works inside this monorepo, and the vocabulary has to reach modules that
+# live elsewhere.
+#
+# It is a module of its own rather than a directory inside kickside/widgets
+# because the artifact's package.json version must equal the module version.
+# Sharing widgets' version would force a ui-kit release on every widget bundle
+# change, and vice versa.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide UI Kit
+      comment: Shared frontend vocabulary consumed at build time as @kickside/ui-kit.
+
+  - name: package_fs
+    kind: fs.directory
+    meta:
+      comment: The @kickside/ui-kit npm package, materialized by consumers at build time.
+      artifact:
+        format: node-package
+    directory: ./package

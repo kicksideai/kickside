@@ -1,0 +1,1 @@
+../../src/threads/contract/resource.lua

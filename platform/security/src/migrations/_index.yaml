@@ -1,0 +1,38 @@
+version: "1.0"
+namespace: kickside.security.migrations
+
+# target_db is injected by the root kickside.security:target_db requirement.
+entries:
+  - name: 05_group_set_revisions
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [kickside.security.migrations:04_group_sets]
+      timestamp: '2026-10-07T13:00:00Z'
+    source: file://05_group_set_revisions.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 04_group_sets
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+      - kickside.security.migrations:01_security_scopes
+      timestamp: '2026-10-06T20:02:00Z'
+    source: file://04_group_sets.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 01_security_scopes
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_security_scopes custom-scope table
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-20T00:00:03Z"
+    source: file://01_security_scopes.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

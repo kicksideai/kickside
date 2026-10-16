@@ -1,0 +1,519 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/agents. Provides the host resources the agents
+# module and its deps require (app:db, app:processes, app:api, env storage, a
+# permissive actor scope) and boots component/contract so the co-located
+# *_test.lua suites run in isolation. Harness-only; excluded from publish.
+
+entries:
+  - name: public_tool_probe
+    kind: function.lua
+    meta: { type: tool, title: Public tool probe, public: true, input_schema: '{}' }
+    source: file://tool_probe.lua
+    method: run
+
+  - name: private_tool_probe
+    kind: function.lua
+    meta: { type: tool, title: Private tool probe, public: true, private: true, input_schema: '{}' }
+    source: file://tool_probe.lua
+    method: run
+
+  - name: missing_public_tool_probe
+    kind: function.lua
+    meta: { type: tool, title: Missing public tool probe, class: public, input_schema: '{}' }
+    source: file://tool_probe.lua
+    method: run
+
+  - name: malformed_public_tool_probe
+    kind: function.lua
+    meta: { type: tool, title: Malformed public tool probe, public: "true", input_schema: '{}' }
+    source: file://tool_probe.lua
+    method: run
+
+  - name: malformed_private_tool_probe
+    kind: function.lua
+    meta: { type: tool, title: Malformed private tool probe, public: true, private: "false", input_schema: '{}' }
+    source: file://tool_probe.lua
+    method: run
+
+  - name: wrong_kind_tool_probe
+    kind: library.lua
+    meta: { type: tool, title: Wrong-kind tool probe, public: true, input_schema: '{}' }
+    source: file://tool_probe.lua
+
+  - name: public_trait_probe
+    kind: registry.entry
+    meta: { type: agent.trait, title: Public trait probe, comment: Test-only public capability fixture., icon: tabler:test-pipe, public: true, tags: DiscoveryStringTag }
+    prompt: Test-only public trait.
+
+  - name: internal_trait_probe
+    kind: registry.entry
+    meta: { type: agent.trait, title: Internal trait probe }
+    prompt: Test-only internal trait.
+
+  - name: create_via_api
+    kind: function.lua
+    meta:
+      comment: Harness seam that runs user_agents.create through the HTTP-create path for the discoverability regression test.
+    source: file://create_via_api.lua
+    method: handler
+    imports:
+      user_agents: kickside.agents.binding:user_agents_func
+
+  - name: agent_context_resolver_probe
+    kind: function.lua
+    meta:
+      comment: Test-only probe that loads a component-backed user agent through wippy.agent:context under caller actor/scope.
+    source: file://agent_context_resolver_probe.lua
+    imports:
+      agent_context: wippy.agent:context
+    method: run
+
+  - name: agents_by_name_probe
+    kind: function.lua
+    meta:
+      comment: Test-only probe that runs the agents-by-name title resolution under the caller actor.
+    source: file://agents_by_name_probe.lua
+    imports:
+      agents_by_name: kickside.agents.api:agents_by_name
+    method: run
+
+  - name: user_agents_update_wipe_probe
+    kind: function.lua
+    meta:
+      comment: Test-only probe that drives user_agents.update with a failing context read.
+    source: file://user_agents_update_wipe_probe.lua
+    method: run
+    modules: [sql, json]
+    imports:
+      user_agents: kickside.agents.binding:user_agents_func
+
+  - name: user_agents_shared_read_probe
+    kind: function.lua
+    meta:
+      comment: Test-only probe that drives user_agents.get/update under the calling actor.
+    source: file://user_agents_shared_read_probe.lua
+    method: run
+    imports:
+      user_agents: kickside.agents.binding:user_agents_func
+
+  - name: memory_runtime_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_memory
+      comment: Verifies the KB-backed memory trait runtime consumed by agents.
+    source: file://memory_runtime_test.lua
+    imports:
+      test: wippy.test:test
+      memory_runtime: kickside.memory:runtime
+    method: run
+
+  - name: delegate_capture
+    kind: function.lua
+    meta:
+      comment: Harness seam for the Agents delegate tool; captures actor + routed context without invoking an LLM.
+    source: file://delegate_capture.lua
+    method: handler
+    modules:
+      - security
+      - ctx
+
+  - name: session_tool_runtime_capture
+    kind: function.lua
+    meta:
+      comment: Harness seam that runs session process_tools under a real framed actor/scope and captures the tool runtime.
+    source: file://session_tool_runtime_capture.lua
+    method: handler
+    modules:
+      - json
+    imports:
+      message_handlers: wippy.session.process:message_handlers
+      tool_caller: wippy.agent.tools:caller
+
+  - name: stub_connection_status
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.connection:connection.get_status.
+    source: file://connection_stubs.lua
+    method: get_status
+    modules: [ctx]
+
+  - name: stub_connection_test
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.connection:connection.test_connection.
+    source: file://connection_stubs.lua
+    method: test_connection
+    modules: [ctx]
+
+  - name: stub_connection_discover
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.connection:connection.discover_resources.
+    source: file://connection_stubs.lua
+    method: discover_resources
+    modules: [ctx]
+
+  - name: stub_connection_delete
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.contract:deletable.delete.
+    source: file://connection_stubs.lua
+    method: delete
+    modules: [ctx]
+
+  - name: stub_send_reply
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.connection:reply_provider.send_reply.
+    source: file://connection_stubs.lua
+    method: send_reply
+    modules: [ctx]
+
+  - name: stub_update_reply
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.connection:reply_provider.update_reply.
+    source: file://connection_stubs.lua
+    method: update_reply
+    modules: [ctx]
+
+  - name: stub_send_status
+    kind: function.lua
+    meta:
+      comment: Harness provider stub for kickside.connection:reply_provider.send_status.
+    source: file://connection_stubs.lua
+    method: send_status
+    modules: [ctx]
+
+  - name: jira_connection
+    kind: contract.binding
+    meta:
+      title: Jira
+      provider: jira
+      class: [connection]
+    contracts:
+      - contract: kickside.connection:connection
+        context_required: [component_id]
+        methods:
+          get_status: app:stub_connection_status
+          test_connection: app:stub_connection_test
+          discover_resources: app:stub_connection_discover
+      - contract: kickside.contract:deletable
+        context_required: [component_id]
+        methods:
+          delete: app:stub_connection_delete
+
+  - name: discord_connection
+    kind: contract.binding
+    meta:
+      title: Discord
+      provider: discord
+      class: [connection, reply_provider]
+    contracts:
+      - contract: kickside.connection:connection
+        context_required: [component_id]
+        methods:
+          get_status: app:stub_connection_status
+          test_connection: app:stub_connection_test
+          discover_resources: app:stub_connection_discover
+      - contract: kickside.contract:deletable
+        context_required: [component_id]
+        methods:
+          delete: app:stub_connection_delete
+      - contract: kickside.connection:reply_provider
+        context_required: [component_id]
+        methods:
+          send_reply: app:stub_send_reply
+          update_reply: app:stub_update_reply
+          send_status: app:stub_send_status
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for agents tests.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: encryption_key
+    kind: env.variable
+    meta:
+      comment: Test-only token signing key used by users/session dependencies.
+    storage: app:env_storage
+    default: "1111111111111111111111111111111111111111111111111111111111111111"
+    variable: ENCRYPTION_KEY
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: uploads
+    kind: fs.directory
+    meta:
+      comment: Test-owned filesystem for job temporaries and upload bytes.
+    directory: ./static
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: Test public router for unauthenticated userspace endpoints.
+      server: gateway
+    prefix: /api/public
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the agents suites run their scoped actors under.
+    groups:
+      - agents_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: capability_admin
+    kind: security.policy
+    meta:
+      comment: Test-only administrator scope for capability attachment authority.
+    groups:
+      - app:capability_admin
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.kickside.core
+    kind: ns.dependency
+    version: '*'
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.projections:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.threads.hydration:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:env_storage
+      value: app:env_storage
+    - name: kickside.core.projections:env_storage
+      value: app:env_storage
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.threads.hydration:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    version: '*'
+    component: kickside/jobs
+    parameters:
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:temp_fs
+      value: app:uploads
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: kickside.core.jobs:api_router
+      value: app:api
+    - name: kickside.core.scheduler:process_host
+      value: app:processes
+    - name: kickside.core.scheduler:env_storage
+      value: app:env_storage
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    version: '*'
+    component: kickside/users
+    parameters:
+    - name: kickside.users:api_router
+      value: app:api
+    - name: kickside.users:public_router
+      value: app:api_public
+    - name: kickside.users:ui_server
+      value: app:gateway
+    - name: kickside.users:target_db
+      value: app:db
+    - name: kickside.users:env_storage
+      value: app:env_storage
+    - name: kickside.users:user_security_scope
+      value: app:user
+    - name: kickside.users:admin_security_scope
+      value: app:user
+    - name: kickside.users:login_role_resource
+      value: app:*
+  - name: dep.wippy.relay
+    kind: ns.dependency
+    version: '*'
+    component: wippy/relay
+    parameters:
+    - name: application_host
+      value: app:processes
+    - name: env_storage
+      value: app:env_storage
+    - name: user_security_scope
+      value: app:user
+
+  - name: dep.kickside.uploads
+    kind: ns.dependency
+    version: '*'
+    component: kickside/uploads
+    parameters:
+    - name: kickside.uploads:api_router
+      value: app:api
+    - name: kickside.uploads:ui_server
+      value: app:gateway
+    - name: kickside.uploads:database_resource
+      value: app:db
+    - name: kickside.uploads:env_storage
+      value: app:env_storage
+    - name: kickside.uploads:storage_id
+      value: app:uploads
+    - name: kickside.uploads.security:user_security_scope
+      value: app:user
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}
+
+  - name: agents_title_contract_runtime_allow
+    kind: security.policy
+    groups: [app:agents_title_contract_deny_scope]
+    meta:
+      comment: Runtime authority for the agent-title contract-denial regression guard.
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: agents_title_query_contract_deny
+    kind: security.policy
+    groups: [app:agents_title_contract_deny_scope]
+    meta:
+      comment: Denies the component-service query method while leaving point-read methods available.
+    policy:
+      resources: query
+      actions: contract.call
+      effect: deny
+
+  - name: agents_title_contract_authority_probe
+    kind: function.lua
+    meta:
+      comment: Reports the query-method contract authority for the regression guard.
+    source: file://agents_title_contract_authority_probe.lua
+    method: run
+    modules: [security]
+
+  - name: agents_title_legacy_scope_probe
+    kind: function.lua
+    meta:
+      comment: Runs the existing legacy agent-title resolver under a caller frame.
+    source: file://agents_title_legacy_scope_probe.lua
+    method: run
+    imports:
+      agents_by_name: kickside.agents.api:agents_by_name
+
+  - name: agents_title_function_runtime_allow
+    kind: security.policy
+    groups: [app:agents_title_function_deny_scope]
+    meta:
+      comment: Runtime authority for the agent-title function-denial regression guard.
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: agents_title_query_function_deny
+    kind: security.policy
+    groups: [app:agents_title_function_deny_scope]
+    meta:
+      comment: Denies direct calls to the component query binding while preserving point-read methods.
+    policy:
+      resources: kickside.component.binding:query_components_func
+      actions: funcs.call
+      effect: deny
+
+  - name: agents_title_function_authority_probe
+    kind: function.lua
+    meta:
+      comment: Reports the query-binding function authority for the regression guard.
+    source: file://agents_title_function_authority_probe.lua
+    method: run
+    modules: [security]

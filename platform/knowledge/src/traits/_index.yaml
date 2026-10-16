@@ -1,0 +1,572 @@
+version: "1.0"
+namespace: kickside.knowledge.traits
+
+entries:
+  # KB Reader trait — engine-neutral search over knowledge bases selected via the
+  # web component. An installed engine may publish additional exploration traits;
+  # this control plane deliberately does not name one optional engine's tools.
+  - name: kb_reader
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Knowledge Base Reader
+      public: true
+      icon: tabler:book-2
+      comment: Reads and searches configured knowledge bases or an explicit accessible KB id. Use Knowledge Base Explorer to discover component ids before configuring the reader. Names are not ids.
+      tags: [knowledge, query, search]
+      web_component: wc-kb-picker
+      context_schema:
+        type: object
+        properties:
+          kb_ids:
+            type: array
+            title: Knowledge bases
+            description: Accessible knowledge base component ids. Resolve names with FindKnowledgeBases in Knowledge Base Explorer before activation. Names are not ids.
+            role: picker
+            web_component: wc-kb-picker
+            items: { type: string }
+        additionalProperties: false
+    prompt: |
+      You can read and explore the knowledge bases configured for this trait,
+      or pass an explicit accessible kb_id when no bases are configured.
+      For a named knowledge base, use Knowledge Base Explorer and FindKnowledgeBases
+      to resolve its id first. Knowledge base names are not ids. If no bases
+      are configured, kb_id is required; omitting it cannot search any base.
+
+      Use QueryKB with fields: [content, meta] to retrieve the passages relevant
+      to the question. Read that content to answer, including table values and
+      attribute/value pairs. Refine the query when the results are too broad or
+      do not contain the requested information.
+
+      When only one knowledge base is configured you can omit kb_id — it is used
+      automatically. When several are configured, omitting kb_id searches
+      the configured set. QueryKB results carry each match's kb_id; pass
+      that kb_id back to QueryKB to target a specific configured base.
+      Base answers only on retrieved content.
+    tools:
+      - kickside.knowledge.traits:kb_query_tool
+
+  - name: kb_query_tool
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: Query Knowledge Base
+      llm_alias: QueryKB
+      llm_description: "Search configured knowledge bases, or an explicit accessible kb_id when none are configured, for compact ranked passage rows. If none are configured, kb_id is required: use FindKnowledgeBases in Knowledge Base Explorer to discover ids first. A knowledge base name is not an id. When bases are configured, an explicit kb_id must belong to that set. Use fields to request content, meta, or another provider field for selected rows. Pass a result's kb_id back to QueryKB to target that base. Failures return no result and a typed tool error with a clear message."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "kb_id": { "type": "string", "description": "Explicit KB id; required when no KBs are configured. Discover ids with FindKnowledgeBases. If KBs are configured, the id must belong to that set; omit it to search the configured set." },
+            "query": { "type": "string", "description": "Natural language search query" },
+            "limit": { "type": "integer", "description": "Maximum results per page; defaults to 25", "minimum": 1, "maximum": 100 },
+            "cursor": { "type": "string", "description": "next_cursor from the previous page; keep the query and configured KBs unchanged" },
+            "fields": { "type": "array", "items": { "type": "string" }, "description": "Additional result fields to include, such as content or meta. Omit for compact summary rows." }
+          },
+          "required": ["query"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "query", "count", "results"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "query": { "type": "string" },
+            "next_cursor": { "type": "string", "description": "Continue with this cursor; absent after the last result" },
+            "count": { "type": "integer", "description": "Number of results returned." },
+            "results": {
+              "type": "array",
+              "description": "Compact ranked passage rows: id, kb_id, title when supplied, score when supplied, and provider snippet when supplied. fields requests additional provider fields.",
+              "items": { "type": "object" }
+            }
+          }
+        }
+    source: file://kb_query.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_render: kickside.knowledge.traits:kb_render
+
+  # Retrieval tool for the agentic query driver (kickside.knowledge.retrieval:
+  # agentic_query) — RetrieveKB in the built-in Ask agent's toolset.
+  - name: kb_retrieve_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Retrieve from Knowledge Base
+      llm_alias: RetrieveKB
+      llm_description: "Search the bound knowledge base for compact ranked passage rows. Use fields to request content, meta, or another provider field for selected rows. Failures return no result and a typed tool error with a clear message."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "query": { "type": "string", "description": "Natural language search query" },
+            "limit": { "type": "integer", "description": "Maximum passages per page; defaults to 25", "minimum": 1, "maximum": 50 },
+            "cursor": { "type": "string", "description": "next_cursor from the previous page" },
+            "fields": { "type": "array", "items": { "type": "string" }, "description": "Additional result fields to include, such as content or meta. Omit for compact summary rows." }
+          },
+          "required": ["query"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "query", "count", "results"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "query": { "type": "string" },
+            "next_cursor": { "type": "string", "description": "Continue with this cursor; absent after the last result" },
+            "count": { "type": "integer", "description": "Number of results returned." },
+            "results": {
+              "type": "array",
+              "description": "Compact ranked passage rows: id, title when supplied, score when supplied, and provider snippet when supplied. fields requests additional provider fields.",
+              "items": { "type": "object" }
+            }
+          }
+        }
+    source: file://kb_retrieve.lua
+    method: handle
+    modules: [ctx]
+    imports:
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_render: kickside.knowledge.traits:kb_render
+
+  # Shared presentation/resolution helpers for the KB agent tools — both the generic
+  # knowledge tools (find/search/ask) and the kb10 node tools import this: id/label/line
+  # rendering, limit normalization, kb_id resolution from ctx, and the read gate.
+  - name: kb_render
+    kind: library.lua
+    meta: { comment: Shared render + kb_id-resolution + access-gate helpers for KB agent tools. }
+    source: file://kb_render.lua
+    modules: [ctx]
+    imports:
+      component: kickside.component:component
+
+  # KB Writer trait — embed content into knowledge bases selected via web component
+  - name: kb_writer
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Knowledge Base Writer
+      public: true
+      icon: tabler:database-plus
+      comment: Adds uploaded files, chat attachments, or text into knowledge bases for later retrieval, preserving the uploaded document source.
+      tags: [knowledge, embed, write, files, uploads, attachments]
+      web_component: wc-kb-picker
+      context_schema:
+        type: object
+        properties:
+          kb_ids:
+            type: array
+            title: Knowledge bases
+            role: picker
+            web_component: wc-kb-picker
+            items: { type: string }
+        additionalProperties: false
+    prompt: |
+      You can queue content into knowledge bases using the EmbedToKB tool.
+      Use it to store information, notes, or extracted data into a knowledge base.
+      To store a file the user uploaded (e.g. one they dropped into the chat),
+      pass its upload id as upload_id instead of content — the file's primary
+      markdown/text artifact is ingested for you. Otherwise pass the text as content.
+      If multiple KBs are configured, specify which one to target with kb_id.
+    tools:
+      - kickside.knowledge.traits:kb_embed_tool
+
+  - name: kb_embed_tool
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    meta:
+      type: tool
+      public: true
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      title: Embed to Knowledge Base
+      llm_alias: EmbedToKB
+      llm_description: "Queue content into a configured knowledge base. Either pass text as content, OR pass upload_id to ingest the file's primary markdown/text artifact. Failures return no result and a typed tool error with a clear message."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "content": { "type": "string", "description": "Text content to embed. Omit when ingesting an uploaded file via upload_id." },
+            "upload_id": { "type": "string", "description": "Id of a file the user already uploaded (e.g. dropped into chat). Ingests that file's primary markdown/text artifact; takes precedence over content." },
+            "title": { "type": "string", "description": "Title for the content" },
+            "kb_id": { "type": "string", "description": "Target KB ID; required when multiple KBs are configured" },
+            "content_type": { "type": "string", "description": "MIME type (default: text/plain)" },
+            "external_id": { "type": "string", "description": "Stable external content id for idempotent replacement" },
+            "external_version": { "type": "string", "description": "Optional source version for this content" },
+            "metadata": { "type": "object", "description": "Optional document metadata carried into the durable KB event" },
+            "source_ref": { "type": "object", "description": "Optional source reference carried into the durable KB event" }
+          },
+          "required": []
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Enqueue result envelope. On success the content is queued as a durable KB ingestion event, materialized later by the projection worker. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "description": "True when the content was enqueued", "const": true},
+            "status": {"type": "string", "description": "Enqueue status; \"queued\" on success"},
+            "kb_id": {"type": "string", "description": "Target KB id the content was queued into"},
+            "upload_id": {"type": "string", "description": "Present only when an uploaded file was ingested via upload_id"},
+            "thread_id": {"type": "string", "description": "Durable ingestion thread id for this enqueue"},
+            "projection_id": {"type": "string", "description": "Id of the projection worker materializing the event"},
+            "external_id": {"type": "string", "description": "Stable external content id used for idempotent replacement"},
+            "external_version": {"type": "string", "description": "Source version recorded for this content"},
+            "trace_context": {"type": "object", "description": "Trace context propagated into the durable KB event"},
+            "source_ref": {"type": "object", "description": "Source reference stored with the materialized document"}
+          },
+          "required": ["success"]
+        }
+    source: file://kb_embed.lua
+    method: handle
+    modules: [json, ctx, security]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      ingest_upload: kickside.knowledge.api:ingest_upload
+
+  # KB Explorer trait — deterministic, runtime-targeted access to ANY knowledge
+  # base the agent's user can read: discover one, then ask / search / read nodes /
+  # traverse the graph by passing the kb_id at call time. Unlike kb_reader (pinned
+  # to KBs picked at config), this lets an agent find and use KBs dynamically.
+  - name: kb_tools
+    kind: library.lua
+    meta:
+      comment: Shared implementation for the generic KB explorer tools.
+    source: file://kb_tools.lua
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+      kb_render: kickside.knowledge.traits:kb_render
+      kb_types: kickside.knowledge:types
+      keyset: kickside.contract:keyset
+
+  - name: kb_explorer
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Knowledge Base Explorer
+      public: true
+      icon: tabler:database-search
+      comment: Finds and queries any of the user's knowledge bases on the fly.
+      tags: [knowledge, query, search, discovery]
+      context_schema:
+        type: object
+        properties:
+          kb_id:
+            type: string
+            title: Default knowledge base
+            role: picker
+            web_component: wc-kb-picker
+          kb_ids:
+            type: array
+            title: Searchable knowledge bases
+            role: picker
+            web_component: wc-kb-picker
+            items: { type: string }
+        additionalProperties: false
+    prompt: |
+      You can explore the user's knowledge bases with a set of tools.
+      Start with FindKnowledgeBases to discover which knowledge bases exist and
+      their ids, then act on a specific one by passing its kb_id:
+        - AskKB — get a grounded answer with cited sources (best for questions).
+        - SearchKB — get raw matching passages (best when you want the evidence).
+      Prefer AskKB for direct questions and SearchKB when you need the passages
+      to reason over yourself. You can only reach knowledge bases the user can
+      access. Installed KB engines may contribute separate exploration traits.
+    tools:
+      - kickside.knowledge.traits:kb_find_tool
+      - kickside.knowledge.traits:kb_ask_tool
+      - kickside.knowledge.traits:kb_search_tool
+
+  - name: kb_find_tool
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp: { required_scopes: [state.read] }
+      title: Find Knowledge Bases
+      llm_alias: FindKnowledgeBases
+      llm_description: "List compact knowledge-base rows (kb_id, name, type) the user can access. Call this first to discover which KB to use. Optional q filters by name/description; fields requests extra provider fields. Results come in pages of 25 by default (limit at most 50); pass next_cursor as cursor for the next page. Failures return no result and a typed tool error with a clear message."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "q": { "type": "string", "description": "Optional substring to filter knowledge bases by name or description" },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 50, "description": "Bases per page; defaults to 25" },
+            "cursor": { "type": "string", "description": "The next_cursor of the previous page" },
+            "fields": { "type": "array", "items": { "type": "string" }, "description": "Additional provider fields to include, such as description or meta. Omit for compact summary rows." }
+          }
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "count", "knowledge_bases"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "count": { "type": "integer", "description": "Number of bases in this page." },
+            "knowledge_bases": {
+              "type": "array",
+              "description": "Compact accessible knowledge-base rows in kb_id order: { kb_id, name, type }. fields requests additional provider fields. Pass a kb_id to AskKB or SearchKB.",
+              "items": { "type": "object" }
+            },
+            "next_cursor": { "type": "string", "description": "Pass as cursor for the next page; absent on the last page." }
+          }
+        }
+    source: file://kb_tools.lua
+    method: find
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+      kb_render: kickside.knowledge.traits:kb_render
+      kb_types: kickside.knowledge:types
+      keyset: kickside.contract:keyset
+
+  - name: kb_ask_tool
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp: { required_scopes: [state.read] }
+      title: Ask Knowledge Base
+      llm_alias: AskKB
+      llm_description: "Ask a question of one knowledge base and get a grounded answer plus the source passages it relied on. Failures return no result and a typed tool error with a clear message."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "kb_id": { "type": "string", "description": "Knowledge base id (from FindKnowledgeBases)" },
+            "query": { "type": "string", "description": "The question to answer from this KB" },
+            "limit": { "type": "integer", "description": "Max source passages; omitted uses the KB default", "minimum": 1, "maximum": 50 }
+          },
+          "required": ["kb_id", "query"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success", "answer", "count", "sources"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "answer": { "type": "string", "description": "The grounded answer text; empty when retrieval found no passages or synthesis returned no text." },
+            "count": { "type": "integer", "description": "Number of source passages." },
+            "sources": {
+              "type": "array",
+              "description": "The source passages the answer relied on, each the engine's full item: id, content, similarity and meta.",
+              "items": { "type": "object" }
+            }
+          }
+        }
+    source: file://kb_tools.lua
+    method: ask
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+      kb_render: kickside.knowledge.traits:kb_render
+      kb_types: kickside.knowledge:types
+      keyset: kickside.contract:keyset
+
+  - name: kb_search_tool
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      mcp: { required_scopes: [state.read] }
+      title: Search Knowledge Base
+      llm_alias: SearchKB
+      llm_description: "Search configured knowledge bases and return compact ranked passage rows. Use fields to request content, meta, or another provider field for selected rows. Continue with next_cursor to read every result. Infrastructure failures return typed errors; domain failures return a structured error object."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "kb_id": { "type": "string", "description": "Knowledge base id (from FindKnowledgeBases)" },
+            "query": { "type": "string", "description": "Natural language search query" },
+            "limit": { "type": "integer", "description": "Maximum passages per page; defaults to 25", "minimum": 1, "maximum": 50 },
+            "cursor": { "type": "string", "description": "next_cursor from the previous page; keep the query and configured KBs unchanged" },
+            "fields": { "type": "array", "items": { "type": "string" }, "description": "Additional result fields to include, such as content or meta. Omit for compact summary rows." }
+          },
+          "required": ["kb_id", "query"]
+        }
+      output_schema: |
+        {
+          "oneOf": [{
+          "type": "object",
+          "required": ["success", "query", "count", "results"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "query": { "type": "string" },
+            "next_cursor": { "type": "string", "description": "Continue with this cursor; absent after the last result" },
+            "count": { "type": "integer", "description": "Number of results returned." },
+            "results": {
+              "type": "array",
+              "description": "Compact ranked passage rows: id, kb_id, title when supplied, score when supplied, and provider snippet when supplied. fields requests additional provider fields.",
+              "items": { "type": "object" }
+            }
+          }
+          }, {
+            "type": "object",
+            "properties": { "success": { "const": false }, "error": { "type": "string" } },
+            "required": ["success", "error"]
+          }]
+        }
+    source: file://kb_tools.lua
+    method: search
+    modules: [ctx]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      kb_search: kickside.knowledge.retrieval:kb_search
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+      kb_render: kickside.knowledge.traits:kb_render
+      kb_types: kickside.knowledge:types
+      keyset: kickside.contract:keyset
+
+  - name: knowledge_manager
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Knowledge Manager
+      public: true
+      icon: tabler:books
+      comment: Creates empty knowledge bases, discovers installed engines, and lists, updates or deletes knowledge bases.
+      tags: [knowledge, management]
+    prompt: |
+      You can manage knowledge bases with the **Knowledge** tool.
+
+      Call `list_kb_engines` before creating a
+      knowledge base. Pass the returned `kb_type` (for example `document`),
+      never the engine registry `id`, to `upsert_knowledge_base`. Use
+      `embedding_model: "class:embed"` for the configured Embedding model class;
+      generation classes such as `class:fast` cannot embed documents. Leave
+      `config` absent for an empty base. Request the detailed engine catalog
+      only when changing engine settings. List actions return pages of 25 by
+      default; pass `next_cursor` as `cursor` for the next page.
+      Use `list_knowledge_bases` before mutating an existing base.
+      `upsert_knowledge_base` is idempotent by name and
+      `delete_knowledge_base` requires the returned `component_id`.
+
+      `resummarize_knowledge_base` and `reembed_knowledge_base` also require
+      `component_id`. Neither waits for the work: each schedules the run on the
+      knowledge engine and answers a receipt — `{ run_type, job_id, scheduled,
+      run }` — in a moment, because rewriting a whole knowledge base takes
+      minutes to hours and resummarize also costs model calls. Call
+      `knowledge_base_maintenance` with the same `component_id` to see how far a
+      run has got: it returns the latest run of each type, and a run's counters
+      are final only once its `in_flight` is false. Use
+      `resummarize_knowledge_base` after changing materialization settings
+      that affect document summaries or chunk context; use
+      `reembed_knowledge_base` after changing the embedding model or when
+      vectors need to be regenerated from stored content.
+    tools:
+      - kickside.knowledge.traits:knowledge_manager_tool
+
+  - name: knowledge_manager_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Knowledge
+      public: true
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "list_kb_engines",
+                "list_knowledge_bases",
+                "upsert_knowledge_base",
+                "delete_knowledge_base",
+                "resummarize_knowledge_base",
+                "reembed_knowledge_base",
+                "knowledge_base_maintenance"
+              ],
+              "description": "resummarize_knowledge_base and reembed_knowledge_base do not run the work: they schedule it on the knowledge engine and answer a receipt with job_id. Rewriting a whole knowledge base takes minutes to hours and resummarize also costs model calls. Read knowledge_base_maintenance for the latest run of each type and whether it is still in flight."
+            },
+            "q": { "type": "string", "description": "Optional substring filter for list actions." },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "List actions: records per page; default 25." },
+            "cursor": { "type": "string", "description": "List actions: the next_cursor of the previous page." },
+            "fields": { "type": "array", "items": { "type": "string" }, "description": "List actions: additional provider fields to include. Omit for compact summary rows." },
+            "component_id": { "type": "string", "description": "Knowledge-base component id returned by list_knowledge_bases. Required by delete_knowledge_base, resummarize_knowledge_base, reembed_knowledge_base, and knowledge_base_maintenance." },
+            "name": { "type": "string", "description": "Knowledge-base name." },
+            "description": { "type": "string" },
+            "kb_type": { "type": "string", "description": "kb_type returned by list_kb_engines (for example document), never its registry id." },
+            "embedding_model": { "type": "string", "description": "Required for creation. Use class:embed for the configured Embedding model class; class:fast is a generation class." },
+            "config": { "type": "object", "description": "Engine-specific configuration declared by list_kb_engines." },
+            "enrichment_agent_id": { "type": "string", "description": "Optional agent component id." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "success": {"type": "boolean", "const": false, "description": "Present only when the knowledge-base registry refuses the operation."},
+            "error": {"type": "string", "description": "Present with success false: the registry's refusal."},
+            "kb_engines": {"type": "array", "items": {"type": "object"}},
+            "knowledge_bases": {"type": "array", "items": {"type": "object"}},
+            "next_cursor": {"type": "string", "description": "List actions: pass as cursor for the next page; absent on the last page."},
+            "kb": {"type": "object", "description": "upsert_knowledge_base: the knowledge-base component row."},
+            "created": {"type": "boolean", "description": "upsert_knowledge_base: true when the registry created the base, false when it reused one by name."},
+            "rollback": {"type": "object", "description": "upsert_knowledge_base: the registry's rollback step for a created base."},
+            "component_id": {"type": "string", "description": "delete_knowledge_base: the deleted knowledge base."},
+            "kb_id": {"type": "string", "description": "The knowledge base the maintenance actions addressed."},
+            "run_type": {
+              "type": "string",
+              "enum": ["resummarize", "reembed"],
+              "description": "Scheduling receipt: which run was scheduled."
+            },
+            "job_id": {
+              "type": "string",
+              "description": "Scheduling receipt: the engine job carrying the run. The work has not started yet."
+            },
+            "scheduled": {"type": "boolean", "description": "Scheduling receipt: the run reached the engine's queue."},
+            "run": {
+              "type": "object",
+              "description": "Scheduling receipt: the newly opened run record — { id, run_type, status, in_flight, created_at }. Counters are all zero here; read knowledge_base_maintenance for progress."
+            },
+            "resummarize": {
+              "type": ["object", "null"],
+              "description": "knowledge_base_maintenance: the latest resummarize run, or null if this knowledge base has never run one. { id, status, in_flight, stale, total, scanned, resummarized, documents_skipped, chunks_reenriched, chunks_failed, last_error, created_at, started_at, finished_at } — counters are final once in_flight is false."
+            },
+            "reembed": {
+              "type": ["object", "null"],
+              "description": "knowledge_base_maintenance: the latest re-embed run, or null if this knowledge base has never run one. Same shape, with embedded in place of the document/chunk counters."
+            }
+          },
+          "description": "The action's record. Failures return no result and a typed tool error with a clear message; a registry refusal returns success false with its error."
+        }
+      llm_alias: Knowledge
+      llm_description: "Discover installed knowledge engines and list, create, reuse, delete, resummarize, or re-embed knowledge bases through the Knowledge-owned registry. resummarize_knowledge_base and reembed_knowledge_base schedule the run on the knowledge engine and answer a receipt with job_id rather than waiting (a whole knowledge base takes minutes to hours; resummarize also costs model calls); knowledge_base_maintenance reports the latest run of each type and whether it is still in flight. Failures return no result and a typed tool error with a clear message."
+    source: file://knowledge_manager.lua
+    method: handler
+    modules: [contract, security]
+    imports:
+      tool_result: kickside.contract:tool_result
+      keyset: kickside.contract:keyset
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
+      kb_render: kickside.knowledge.traits:kb_render

@@ -1,0 +1,21 @@
+version: "1.0"
+namespace: kickside.core.retention.persist
+
+entries:
+  # Persistence layer of the retention slice: per-thread/class retention policy
+  # CRUD with enforced defaults. The sweep logic and its supervised process live
+  # in the slice root (sweeper) and the service layer (kickside.core.retention.service);
+  # shared vocabulary (consts, env) lives in the slice root.
+
+  - name: repo
+    kind: library.lua
+    meta:
+      comment: Per-thread retention policy CRUD with enforced defaults.
+    source: file://repo.lua
+    modules:
+      - sql
+      - uuid
+    imports:
+      clock: kickside.core.jobs:clock
+      ret_consts: kickside.core.retention:consts
+      retention_notifier: kickside.core.retention:notifier

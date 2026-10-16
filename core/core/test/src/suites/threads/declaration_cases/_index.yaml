@@ -1,0 +1,51 @@
+version: '1.0'
+namespace: kickside.core.threads
+entries:
+- name: thread_event_declarations_test
+  kind: function.lua
+  meta:
+    title: Threads Contract Declarations
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Threads
+    comment: binding orchestration — create registers a component, list access-filtered, non-member excluded, upsert idempotency,
+      projection rollback.
+  source: file://thread_event_declarations_test.lua
+  method: run
+  modules:
+  - funcs
+  - sql
+  - uuid
+  - security
+  - contract
+  - json
+  - process
+  - time
+  - channel
+  imports:
+    test: wippy.test:test
+    fixture: kickside.core.threads:contract_fixture
+- name: thread_projection_declarations_test
+  kind: function.lua
+  meta:
+    title: Threads Contract Declarations
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Threads
+    comment: binding orchestration — create registers a component, list access-filtered, non-member excluded, upsert idempotency,
+      projection rollback.
+  source: file://thread_projection_declarations_test.lua
+  method: run
+  modules:
+  - funcs
+  - sql
+  - uuid
+  - security
+  - contract
+  - json
+  - process
+  - time
+  - channel
+  imports:
+    test: wippy.test:test
+    fixture: kickside.core.threads:contract_fixture

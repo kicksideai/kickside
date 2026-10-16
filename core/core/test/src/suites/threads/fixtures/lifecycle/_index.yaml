@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.core.lifecycle
+
+# Test-only declaration proves a public kind cannot make a framework-owned event
+# appendable by declaring that event as one of its inputs.
+entries:
+  - name: lifecycle_event_input_kind
+    kind: contract.binding
+    meta:
+      events:
+        input:
+          - type: kickside.lifecycle.events:principal.deleted
+        output: []
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status

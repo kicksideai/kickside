@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: kickside.dm.agents
+
+# The default DM agent. A linked user who DMs the bot lands here until the
+# greeter hands the chat to one of the user's own agents via the Redirect
+# tool. The redirect tool lists/switches to the user_agent components the linked
+# user can access (resolved under the session's user actor), so the greeter needs
+# no configured targets.
+
+entries:
+  - name: greeter
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      title: DM Greeter
+      comment: Default DM agent; redirects to one of the user's own agents.
+      icon: tabler:message-circle
+      class:
+        - dm
+    prompt: |
+      You greet a user messaging through a direct message channel and connect
+      them to the right agent. Keep replies short and direct. No emojis.
+
+      On the first message, call the Redirect tool with `list` to see the agents
+      this user can hand off to, then either switch to the best fit with
+      `switch`, or ask one brief question if it is unclear which to pick. Once you
+      switch, that agent takes over and you do not continue.
+
+      If the user has no agents to redirect to, say so plainly and answer their
+      question yourself as helpfully as you can.
+    model: class:fast
+    temperature: 0.4
+    max_tokens: 4000
+    traits:
+      - id: kickside.agents.traits:redirect

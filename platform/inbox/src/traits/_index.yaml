@@ -1,0 +1,80 @@
+version: "1.0"
+namespace: kickside.inbox.traits
+
+# Agent trait contributed by the inbox module: lets an agent escalate an item
+# into the human review inbox (HIL) by appending the canonical item.created event
+# onto the actor's inbox component thread. The human approves / rejects / dismisses
+# it from the admin inbox; the agent only enqueues. When used inside a flow, pass
+# trace_context so the eventual item.resolved event remains queryable by the same
+# run_id/correlation_key. Discovered by the agents module via meta.type agent.trait.
+
+entries:
+  - name: inbox_submit
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Submit to Inbox
+      public: true
+      icon: tabler:inbox
+      comment: Escalates an item to a person's review inbox for approval or attention.
+      tags: [inbox, review, hil]
+    prompt: |
+      You can send an item to the human review inbox using the SubmitToInbox tool.
+      Use it to escalate something that needs a person's review, approval, or
+      attention — the human sees it in their inbox and decides. You do not wait
+      for or resolve the outcome; continue with whatever else you can do. When a
+      caller gives you trace_context, pass it through unchanged.
+    tools:
+      - kickside.inbox.traits:inbox_submit_tool
+
+  - name: inbox_submit_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Submit to Inbox
+      mcp:
+        required_scopes:
+          - state.read
+          - state.write
+      llm_alias: SubmitToInbox
+      llm_description: "Send an item to the human review inbox for approval or attention. Returns the created item id. Failures return no result and a typed tool error with a clear message."
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "description": "Short summary shown in the inbox" },
+            "content": { "type": "string", "description": "Detail and context for the reviewer" },
+            "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "description": "Defaults to normal" },
+            "item_type": { "type": "string", "description": "Declared inbox item type; defaults to notice" },
+            "trace_context": {
+              "type": "object",
+              "description": "Optional workflow trace context to carry through item.created and item.resolved events",
+              "properties": {
+                "trace_id": { "type": "string" },
+                "run_id": { "type": "string" },
+                "caused_by_event_id": { "type": "string" },
+                "correlation_key": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["title"]
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "Result of enqueuing the item onto the inbox thread. Failures return no result and a typed tool error with a clear message.",
+          "properties": {
+            "success": {"type": "boolean", "description": "True when the item was enqueued (item.created appended).", "const": true},
+            "id": {"type": "string", "description": "Id of the created inbox item; present when success is true."}
+          },
+          "required": ["success"]
+        }
+    security:
+      policies:
+      - kickside.inbox.security:submit_output_publish
+    source: file://inbox_submit.lua
+    method: handle
+    modules: [security]
+    imports:
+      inbox_writer: kickside.inbox.persist:inbox_writer

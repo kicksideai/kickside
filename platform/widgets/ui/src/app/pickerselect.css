@@ -1,0 +1,18 @@
+@import "../picker-base.css";
+
+.kx-ps { width: 100%; text-align: start; font: inherit; }
+.anchored-panel > .p-select-overlay.kx-ps-panel { position: static; width: 100%; display: flex; flex-direction: column; max-height: var(--anchored-panel-available-height); overflow: hidden; }
+.kx-ps-panel > .p-select-header { flex: none; }
+.kx-ps-options { min-height: 0; overflow-y: auto; }
+.kx-ps-options > li { flex: none; }
+
+.kx-ps-val { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.kx-ps-val-ico { width: 16px; height: 16px; color: var(--p-primary-color); flex: none; }
+.kx-ps-val-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-ps-ph { color: var(--p-text-muted-color); }
+
+.kx-ps-option { gap: var(--kx-picker-option-icon-gap); }
+.kx-ps-opt-ico { width: var(--kx-picker-option-icon-size); height: var(--kx-picker-option-icon-size); flex: none; }
+.kx-ps-opt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--kx-picker-option-stack-gap); }
+.kx-ps-opt-title { font-size: var(--kx-picker-option-title-size); font-weight: var(--kx-picker-option-title-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.kx-ps-opt-sub { font-size: var(--kx-picker-option-subtitle-size); line-height: var(--kx-picker-option-subtitle-line-height); color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }

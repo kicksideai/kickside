@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: kickside.models.migrations
+
+entries:
+  - name: 01_models_schema
+    kind: function.lua
+    meta:
+      type: migration
+      comment: DB-backed provider profiles and model overlays.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-18T00:00:01Z"
+    source: file://01_models_schema.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

@@ -1,0 +1,23 @@
+version: '1.0'
+namespace: kickside.workflows.security
+entries:
+- name: workflow_started_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.workflows.runs.events:started
+    actions: threads.output.publish
+    effect: allow
+- name: workflow_terminal_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources:
+    - kickside.workflows.runs.events:finished
+    - kickside.workflows.runs.events:failed
+    actions: threads.output.publish
+    effect: allow

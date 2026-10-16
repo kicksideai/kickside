@@ -1,0 +1,81 @@
+version: "1.0"
+namespace: kickside.uploads.archive
+
+# Transparent archive (zip) support. A zip upload is unpacked and each member is
+# pushed back through the normal upload path, so members are typed and processed as
+# if uploaded directly. The zip upload becomes a container record listing its
+# members for provenance and cascade delete.
+
+entries:
+  # Tunable unpack limits. The ns.requirements in the parent module rewrite this
+  # entry's meta per deployment; consts reads it.
+  - name: config
+    kind: registry.entry
+    meta:
+      comment: Transparent archive (zip) unpack configuration.
+      max_zip_bytes: 2147483648
+
+  - name: consts
+    kind: library.lua
+    meta:
+      comment: Archive config accessors; reads unpack limits from the config registry entry.
+    source: file://consts.lua
+    modules: [registry]
+
+  - name: zip_reader
+    kind: library.lua
+    meta:
+      comment: Minimal zip container reader; lists central-directory entries and extracts member bytes over the native deflate codec.
+    source: file://zip_reader.lua
+    modules: [compress]
+
+  - name: processor
+    kind: function.lua
+    meta:
+      type: processor
+      comment: Upload-pipeline processor that unpacks a zip and re-ingests each member as a normal upload.
+    source: file://processor.lua
+    modules: [fs, logger, funcs]
+    imports:
+      upload_type: kickside.uploads:upload_type
+      consts: kickside.uploads.archive:consts
+      zip_reader: kickside.uploads.archive:zip_reader
+      upload_lib: kickside.uploads:uploads
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+    method: process
+    pool:
+      type: static
+      size: 2
+      workers: 2
+
+  - name: on_delete
+    kind: function.lua
+    meta:
+      type: processor
+      comment: Cascade delete of the member uploads produced from an archive container.
+    security:
+      policies:
+      - kickside.uploads:thread_deleted_publish
+    source: file://on_delete.lua
+    modules: [logger]
+    imports:
+      upload_lib: kickside.uploads:uploads
+    method: handle
+
+  - name: types.archive
+    kind: registry.entry
+    meta:
+      title: Archive Files
+      type: upload.type
+      comment: Zip archives, transparently unpacked into their member files.
+    type_key: archive
+    priority: 100
+    extensions: [zip]
+    mime_types:
+      - application/zip
+      - application/x-zip-compressed
+    pipeline:
+      - title: Unpacking archive
+        func: kickside.uploads.archive:processor
+    on_delete:
+      - func: kickside.uploads.archive:on_delete

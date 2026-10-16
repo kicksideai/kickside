@@ -1,0 +1,4 @@
+organization: kickside
+module: webhooks-harness
+type: application
+description: Standalone runnable harness that boots kickside/webhooks (+ core, component) and runs its suite.

@@ -1,0 +1,298 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* Sessions surface. Uses the same --p-* theme vocabulary and the shared .kx-*
+   visual language as the other kickside pages (agents/knowledge/inbox) so it
+   reads as one app. Shadow-scoped, so the .kx- names don't collide. */
+
+/* The shell clips the slot to the viewport, so the surface fills it and scrolls
+   as a unit (one scrollbar, header scrolls with the page -- the canonical pattern
+   the other pages use). */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Favorites are a decorative domain marker, not a warning state. Pair the hue
+   explicitly so the star keeps enough contrast in both host color schemes. */
+:host { --kx-favorite-color: #b45309; }
+@media (prefers-color-scheme: dark) { :host { --kx-favorite-color: #fbbf24; } }
+
+.kx {
+  font-family: inherit; color: var(--p-text-color); background: var(--p-content-background);
+  height: 100%; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+.kx-head {
+  /* Must not shrink inside the surface column. */
+  flex: none;
+}
+.kx-side-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px; }
+.kx-side-title { margin: 0; min-width: 0; font-size: 14px; font-weight: 700; }
+.kx-side-new { margin-left: auto; }
+.kx-side-artifacts {
+  flex: none; min-height: 38px; margin: 0 8px; padding: 0 10px; display: flex; align-items: center; gap: 8px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--p-text-color); font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.kx-side-artifacts:hover { background: color-mix(in srgb, var(--p-text-color) 7%, transparent); }
+.kx-side-artifacts.is-active { background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color); }
+.kx-side-artifacts svg { width: 16px; height: 16px; flex: none; }
+.kx-side-artifacts-caret { margin-left: auto; color: var(--p-text-muted-color); }
+.kx-sidebar { overflow: hidden; }
+.kx-sidebar .kx-body { flex: 1 1 60%; min-height: 0; padding: 8px; gap: 8px; overflow-y: auto; }
+.kx-side-section-title { padding: 3px 6px 5px; color: var(--p-text-muted-color); font-size: 11px; font-weight: 650; }
+.kx-sidebar .kx-list { border-top: 0; }
+.kx-sidebar .kx-row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px; padding: 2px 4px; border-radius: 8px; border-bottom: 0; }
+.kx-sidebar .kx-row:hover, .kx-sidebar .kx-row-active { background: color-mix(in srgb, var(--p-primary-color) 11%, transparent); }
+.kx-sidebar .kx-name { font-size: 13px; }
+.kx-sidebar .kx-row-main { min-height: 34px; padding: 0 4px; }
+.kx-sidebar .kx-row-agent, .kx-sidebar .kx-tok { display: none; }
+.kx-sidebar .kx-row-meta { font-size: 11px; }
+.kx-sidebar .kx-row-end { gap: 2px; }
+.kx-sidebar .kx-src { width: 20px; font-size: 15px; }
+
+/* ── Search (icon absolutely placed, matching the other pages) ─── */
+.kx-search { position: relative; display: flex; align-items: center; }
+.kx-search-ico { position: absolute; left: 10px; width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kx-search-input {
+  height: 34px; width: 220px; max-width: 40vw; padding: 0 30px 0 30px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; transition: border-color .15s;
+}.kx-search-input::-webkit-search-cancel-button { display: none; }
+.kx-select {
+  height: 34px; padding: 0 30px 0 10px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px;
+}.kx-search-clear {
+  position: absolute; right: 6px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 6px; background: transparent; color: var(--p-text-muted-color); cursor: pointer;
+}
+.kx-search-clear:hover { background: color-mix(in srgb, var(--p-text-color) 10%, transparent); color: var(--p-text-color); }
+.kx-search-clear svg { width: 13px; height: 13px; }
+
+/* ── Sidebar toggle ───────────────────────────────────────────── */
+.kx-toggle {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
+  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; border-radius: 8px;
+  border: 1px solid var(--p-content-border-color); background: transparent; color: var(--p-text-muted-color);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.kx-toggle svg { width: 16px; height: 16px; }
+.kx-toggle:hover:not(:disabled) { color: var(--p-text-color); background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-toggle:disabled { opacity: .5; cursor: default; }
+.kx-toggle-on {
+  color: var(--p-primary-color);
+  border-color: color-mix(in srgb, var(--p-primary-color) 55%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+
+/* ── Body states ──────────────────────────────────────────────── */
+.kx-body { flex: 1 1 auto; min-height: 0; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+.kx-err {
+  /* An icon-and-text row rather than a plain block. */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 4px;
+}
+.kx-err svg { width: 16px; height: 16px; flex: none; }
+.kx-err-x { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+  border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.kx-err-x:hover { background: color-mix(in srgb, var(--p-danger-500) 18%, transparent); }
+.kx-err-x svg { width: 14px; height: 14px; }
+
+/* ── List + rows ──────────────────────────────────────────────── */
+.kx-list {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--p-content-border-color);
+}
+.kx-row {
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 4px 10px; border-bottom: 1px solid var(--p-content-border-color);
+}
+.kx-row:last-child { border-bottom: none; }
+.kx-row:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-src { width: 30px; display: inline-flex; align-items: center; justify-content: center; color: var(--p-text-muted-color); font-size: 18px; }
+
+.kx-row-main {
+  min-width: 0; min-height: 38px; padding: 0 6px; display: grid;
+  grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px;
+  border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.kx-row-main-edit { display: flex; cursor: default; }
+.kx-name { font-size: 14px; font-weight: 600; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-row-meta { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; color: var(--p-text-muted-color); font-size: 12px; white-space: nowrap; }
+.kx-row-agent { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.kx-tok svg { width: 12px; height: 12px; opacity: .8; }
+.kx-tok { display: inline-flex; align-items: center; gap: 3px; }
+.kx-sub-bad { color: var(--p-danger-600, var(--p-danger-500)); font-weight: 600; }
+.kx-edit {
+  width: 100%; font: inherit; font-size: 14px; font-weight: 600; padding: 3px 8px;
+  border: 1px solid var(--p-primary-color); border-radius: 8px;
+  background: var(--p-content-background); color: var(--p-text-color); outline: none;
+}
+
+/* Favorite remains a meaningful state marker. Secondary actions live in one
+   discoverable menu so row width does not change on hover. */
+.kx-row-end { display: flex; align-items: center; gap: 6px; }
+.kx-menu-trigger { flex: none; }
+.kx-row-menu {
+  position: absolute; z-index: 20; top: calc(50% + 18px); right: 10px; width: 196px; padding: 5px;
+  border: 1px solid var(--p-content-border-color); border-radius: 10px;
+  background: var(--p-content-background); box-shadow: var(--p-popover-shadow);
+}
+.kx-menu-item {
+  width: 100%; min-height: 34px; padding: 0 9px; display: flex; align-items: center; gap: 9px;
+  border: 0; border-radius: 7px; background: transparent; color: var(--p-text-color);
+  font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+}
+.kx-menu-item:hover:not(:disabled), .kx-menu-item:focus-visible { background: color-mix(in srgb, var(--p-text-color) 9%, transparent); }
+.kx-menu-item:disabled { opacity: .55; cursor: default; }
+.kx-menu-item svg { width: 15px; height: 15px; flex: none; color: var(--p-text-muted-color); }
+.kx-menu-item-danger, .kx-menu-item-danger svg { color: var(--p-danger-600, var(--p-danger-500)); }
+
+.kx-fav { color: var(--p-text-muted-color); }
+/* Favorite marker is a decorative gold (not a severity) — a mid-gold that
+   reads correctly on both light and dark surfaces, so it is theme-independent
+   by intent rather than a --p-* severity token. */
+.kx-fav:hover:not(:disabled) { color: var(--kx-favorite-color); }
+.kx-fav-on, .kx-fav-on:hover { color: var(--kx-favorite-color); }
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+
+.kx-more { display: flex; justify-content: center; padding: 4px 0 2px; }
+
+/* ── Artifact inventories ────────────────────────────────────── */
+.kx-artifacts-page .kx-head,
+.kx-artifacts-page .kx-artifacts-body { width: min(100%, 1180px); margin-inline: auto; }
+.kx-artifacts-page .kx-head { padding-top: 44px; padding-bottom: 28px; }
+.kx-artifacts-page .kx-title { font-family: inherit; font-size: 32px; line-height: 1.1; }
+.kx-artifacts-body { overflow-y: auto; padding-inline: 24px; }
+.kx-artifact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.kx-artifact-card { min-width: 0; overflow: hidden; border: 1px solid var(--p-content-border-color); border-radius: 14px; background: var(--p-content-background); transition: border-color .15s, transform .15s, box-shadow .15s; }
+.kx-artifact-card:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--p-primary-color) 45%, var(--p-content-border-color)); box-shadow: 0 8px 22px color-mix(in srgb, var(--p-text-color) 10%, transparent); }
+.kx-artifact-open { width: 100%; min-height: 328px; padding: 0; display: grid; grid-template-rows: 230px auto; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; position: relative; }
+.kx-artifact-open:disabled { cursor: wait; }
+.kx-artifact-preview { min-width: 0; display: block; background: var(--p-content-background); border-bottom: 1px solid var(--p-content-border-color); overflow: hidden; pointer-events: none; }
+.kx-artifact-preview w-artifact { display: block; width: 143%; min-height: 329px; transform: scale(.7); transform-origin: left top; }
+.kx-artifact-copy { min-width: 0; padding: 14px 42px 14px 16px; display: flex; flex-direction: column; gap: 7px; }
+.kx-artifact-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 16px; line-height: 1.35; }
+.kx-artifact-meta { display: flex; gap: 8px; color: var(--p-text-muted-color); font-size: 11.5px; text-transform: capitalize; }
+.kx-artifact-meta span + span::before { content: "·"; margin-right: 8px; }
+.kx-artifact-open-icon { position: absolute; right: 14px; bottom: 16px; width: 17px; height: 17px; color: var(--p-text-muted-color); }
+
+.kx-session-artifacts { flex: 0 0 40%; min-height: 72px; max-height: 40%; display: flex; flex-direction: column; overflow: hidden; background: color-mix(in srgb, var(--p-text-color) 2%, var(--p-content-background)); }
+.kx-session-artifacts.is-collapsed { flex-basis: 36px; min-height: 36px; max-height: 36px; }
+.kx-session-artifacts-head { width: 100%; height: 36px; padding: 0 10px; display: flex; align-items: center; gap: 7px; border: 0; background: transparent; color: var(--p-text-muted-color); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.kx-session-artifacts-head:hover { color: var(--p-text-color); background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-session-artifacts-head svg { width: 14px; height: 14px; }
+.kx-session-artifact-count { min-width: 20px; padding: 1px 5px; border-radius: 6px; background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); color: var(--p-primary-color); text-align: center; }
+.kx-session-artifact-spin { margin-left: auto; }
+.kx-session-artifact-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; padding: 2px 6px 8px; }
+.kx-session-artifact { width: 100%; min-height: 32px; padding: 0 7px; display: grid; grid-template-columns: 16px minmax(0, 1fr) 14px; align-items: center; gap: 7px; border: 0; border-radius: 7px; background: transparent; color: var(--p-text-color); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.kx-session-artifact:hover { background: color-mix(in srgb, var(--p-primary-color) 10%, transparent); }
+.kx-session-artifact svg { width: 14px; height: 14px; color: var(--p-text-muted-color); }
+.kx-session-artifact span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-session-artifact-state { margin: 0; padding: 8px; color: var(--p-text-muted-color); font-size: 11.5px; }
+.kx-session-artifact-error { display: flex; align-items: center; gap: 6px; color: var(--p-danger-600, var(--p-danger-500)); }
+.kx-session-artifact-error button { margin-left: auto; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.kx-session-artifact-more { width: 100%; min-height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 7px; background: transparent; color: var(--p-text-muted-color); font: inherit; font-size: 11.5px; cursor: pointer; }
+.kx-session-artifact-more:hover:not(:disabled) { color: var(--p-text-color); background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
+.kx-session-artifact-more:disabled { cursor: wait; opacity: .65; }
+.kx-session-artifact-more svg { width: 14px; height: 14px; }
+
+/* ── Managed artifact side panel ─────────────────────────────── */
+.kx-artifact-panel { width: 100%; height: 100%; min-width: 0; min-height: 0; box-sizing: border-box; overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 12px; border-left: 0; background: var(--p-surface-50); color: var(--p-text-color); }
+@media (prefers-color-scheme: dark) {
+  :host(:not(.w-theme-light)) .kx-artifact-panel { background: var(--p-content-background); }
+}
+:host(.w-theme-dark) .kx-artifact-panel { background: var(--p-content-background); }
+.kx-artifact-panel-head { position: relative; z-index: 2; flex: none; min-height: 36px; padding: 0; display: flex; align-items: center; gap: 12px; border: 0; background: transparent; }
+.kx-artifact-panel-title { min-width: 0; flex: 1; }
+.kx-artifact-panel-select { width: 100%; min-width: 0; height: 36px; border-color: var(--p-content-border-color); border-radius: 10px; background: var(--p-content-background); color: var(--p-text-color); box-shadow: none !important; font: inherit; font-size: 13px; font-weight: 650; }
+.kx-artifact-panel-select:hover, .kx-artifact-panel-select.p-focus { border-color: var(--p-content-border-color); background: var(--p-content-background); box-shadow: none !important; }
+.kx-artifact-panel-select .p-select-label { min-width: 0; padding: 0 8px; display: flex; align-items: center; }
+.kx-artifact-panel-select .p-select-dropdown { width: 28px; }
+.kx-artifact-select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-artifact-select-value.is-placeholder { color: var(--p-text-muted-color); font-weight: 500; }
+.kx-artifact-select-option { min-width: 0; width: 100%; padding: 2px 0; display: flex; flex-direction: column; gap: 2px; }
+.kx-artifact-select-option-title { overflow: hidden; color: var(--p-text-color); font-size: 12.5px; font-weight: 650; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.kx-artifact-select-option-sub { overflow: hidden; color: var(--p-text-muted-color); font-size: 11px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.kx-artifact-panel-select-overlay .p-select-option { align-items: flex-start; }
+.kx-artifact-panel-actions { flex: none; display: flex; align-items: center; gap: 5px; }
+.kx-panel-action, .kx-panel-close { height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--p-content-border-color); border-radius: 10px; background: var(--p-content-background); color: var(--p-text-color); box-shadow: none; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.kx-panel-action { padding: 0 9px; }
+.kx-panel-close { width: 36px; padding: 0; border-color: transparent; box-shadow: none; }
+.kx-panel-action:hover:not(:disabled), .kx-panel-close:hover { background: color-mix(in srgb, var(--p-text-color) 8%, transparent); }
+.kx-panel-action:disabled { opacity: .45; cursor: default; }
+.kx-panel-action svg, .kx-panel-close svg { width: 15px; height: 15px; }
+.kx-artifact-panel-error { flex: none; margin: 0; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-radius: 8px; background: color-mix(in srgb, var(--p-danger-500) 11%, transparent); color: var(--p-danger-600, var(--p-danger-500)); font-size: 12px; }
+.kx-artifact-panel-retry { flex: none; border: 0; border-radius: 6px; padding: 4px 7px; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.kx-artifact-panel-retry:hover:not(:disabled), .kx-artifact-panel-retry:focus-visible { background: color-mix(in srgb, currentColor 9%, transparent); }
+.kx-artifact-panel-retry:disabled { opacity: .5; cursor: default; }
+.kx-artifact-panel-body { flex: 1 1 auto; min-height: 0; overflow: hidden; border-radius: 18px; background: var(--p-content-background); box-shadow: 0 0 0 1px var(--p-content-border-color), 0 8px 24px color-mix(in srgb, var(--p-text-color) 7%, transparent); }
+.kx-artifact-panel-body w-artifact { display: block; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
+.kx-artifact-panel-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; border-radius: 18px; background: var(--p-content-background); box-shadow: 0 0 0 1px var(--p-content-border-color); color: var(--p-text-muted-color); font-size: 13px; }
+.kx-artifact-panel-empty svg { width: 30px; height: 30px; }
+
+/* ── Pagination ───────────────────────────────────────────────── */
+.kx-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 2px 2px 4px; }
+.kx-pager-info { font-size: 12.5px; color: var(--p-text-muted-color); }
+.kx-pager-ctrls { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.kx-pager-btn, .kx-pager-num {
+  min-width: 30px; height: 30px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--p-content-border-color); background: transparent; border-radius: 8px;
+  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.kx-pager-num { color: var(--p-text-muted-color); }
+.kx-pager-btn { color: var(--p-text-color); }
+.kx-pager-btn:hover:not(:disabled), .kx-pager-num:hover { background: color-mix(in srgb, var(--p-text-color) 8%, transparent); color: var(--p-text-color); }
+.kx-pager-btn:disabled { opacity: .45; cursor: default; }
+.kx-pager-btn svg { width: 15px; height: 15px; }
+.kx-pager-cur, .kx-pager-cur:hover { background: var(--p-primary-color); color: var(--p-button-primary-color); border-color: var(--p-primary-color); }
+.kx-pager-gap { padding: 0 2px; color: var(--p-text-muted-color); font-size: 12.5px; user-select: none; }
+
+/* ── Drawer (message preview) ─────────────────────────────────── */
+/* The message preview is a PrimeVue Drawer (position="right"); the theme's
+   PrimeVuePlugin teleports its overlay into this shadow root by default.
+   Its scrim, panel, and slide animation come from PrimeVue + the facade
+   --p-drawer-* tokens; these rules style the header title and the body content
+   the module supplies through the drawer's slots. */
+.kx-drawer-title { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; min-width: 0; }
+.kx-drawer-title svg { width: 18px; height: 18px; color: var(--p-primary-color); flex: none; }
+.kx-drawer-b { min-height: 0; }
+.kx-drawer-state { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 40px 10px; color: var(--p-text-muted-color); font-size: 13px; }
+.kx-drawer-state.err { color: var(--p-danger-600, var(--p-danger-500)); }
+
+.kx-msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.kx-msg { padding: 10px 12px; border: 1px solid var(--p-content-border-color); border-radius: 10px;
+  background: color-mix(in srgb, var(--p-text-color) 3%, transparent); }
+.kx-msg-user { background: color-mix(in srgb, var(--p-primary-color) 8%, transparent); border-color: color-mix(in srgb, var(--p-primary-color) 25%, var(--p-content-border-color)); }
+.kx-msg-role { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--p-text-muted-color); }
+.kx-msg-body { margin: 6px 0 0; font: inherit; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .kx-head { padding: 16px 16px 12px; }
+  .kx-head-actions { margin-left: 0; width: 100%; }
+  .kx-search { flex: 1; }
+  .kx-search-input { width: 100%; max-width: none; }
+  .kx-body { padding: 6px 14px 16px; }
+  .kx-row { gap: 12px; padding: 11px 12px; }
+  .kx-row-meta { display: none; }
+  .kx-artifact-grid { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 641px) and (max-width: 960px) {
+  .kx-artifact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Focus canon: each of these draws a border at rest, so focus lights that
+   border and adds the halo - never an outline. See app/facade-src/README.md. */

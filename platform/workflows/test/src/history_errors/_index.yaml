@@ -1,0 +1,32 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: history_error_store
+    kind: library.lua
+    source: file://store_fixture.lua
+  - name: history_error_workflow
+    kind: library.lua
+    source: file://workflow.lua
+    imports:
+      store: app:history_error_store
+      types: kickside.workflows:types
+      workflow_state: kickside.workflows:workflow_state
+      workflow_inverse: kickside.workflows:workflow_inverse
+      undo: kickside.workflows.undo:undo
+      policy: kickside.workflows:policy_config
+      mapping: kickside.workflows.execution:mapping
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+  - name: history_native_errors_test
+    kind: function.lua
+    meta: { type: test, suite: workflows, group: KickSide Workflows }
+    source: file://history_native_errors_test.lua
+    method: run
+    modules: [json, uuid]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      store_fixture: app:history_error_store
+      workflow_fixture: app:history_error_workflow
+      workflow: kickside.workflows:workflow
+      types: kickside.workflows:types

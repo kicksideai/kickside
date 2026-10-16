@@ -1,0 +1,1036 @@
+version: "1.0"
+namespace: kickside.data
+
+entries:
+  # ─── Bulk load: many batches, one transaction ─────────────────────────
+  # Sibling of writable, not a replacement for it. writable is the per-record
+  # ABI: one sink_op, one idempotency_key, one dest_ref in the engine id-map,
+  # per record. It can model an atomic multi-record write as a provider-atomic
+  # sink_op with a composite input, so a slice replacement that fits one call
+  # is expressible. What it cannot express is a load that arrives in many calls:
+  # a staging identity that outlives one write, idempotent re-delivery of a
+  # batch, a commit that replaces a scope only after every batch has landed, and
+  # an abort that leaves nothing behind.
+  #
+  # loadable is that missing shape. A load is a short-lived transaction identity
+  # over one or more targets: begin it, stream batches into it, then commit or
+  # discard. The staging area belongs to the receiver, which is the only
+  # arrangement that keeps the replacement atomic -- the whole transaction stays
+  # on one side of the boundary.
+  #
+  # The twelve rules below are normative and are what the method schemas cannot
+  # state. A receiver that implements the eight methods but not the rules will
+  # look correct and lose data under concurrency, so they belong in a
+  # conformance suite next to the pullable one.
+  #
+  #   1. commit is one transaction for the whole load, every target of it.
+  #   2. expect is rechecked inside that transaction; a mismatch is conflict
+  #      having mutated nothing.
+  #   3. Rows are ordered by (batch_index, position), deterministically on
+  #      either SQL engine.
+  #   4. begin is idempotent on run_id: an open load is returned again, a
+  #      committed one (within rule 6's window) answers conflict/already_committed
+  #      with the commit result, a discarded or reclaimed one opens a new load.
+  #   5. commit is idempotent on load_id: a repeat returns the same per-target
+  #      results and applies once.
+  #   6. A load with no activity for limits.abandon_after_ms is reclaimed; a
+  #      committed load stays answerable for at least as long after its commit.
+  #   7. A dry run never calls begin; describe and describe_scope are reads.
+  #   8. append is idempotent on (load_id, target, batch_index).
+  #   9. With replace_scope.period_in, every staged row's period must be present
+  #      and in the list.
+  #  10. A non-empty key is enforced at commit: duplicates are conflict, no
+  #      upsert.
+  #  11. columns_version from describe is echoed in begin and rechecked in commit.
+  #  12. A target set the receiver cannot commit together is refused at begin.
+  #
+  # target is a namespace:id string the receiver resolves; what is behind it is
+  # the receiver binding's business, and describe(target) is how a caller learns
+  # the columns and key behind it. Nothing here says a target is a registry
+  # entry: the same syntax is a logical address the receiver resolves from a
+  # table of its own, and list is how a caller learns what exists without either
+  # side knowing how the other stores it.
+  #
+  # Creating a target is deliberately not part of this contract. loadable only
+  # loads; creation is schema evolution with its own semantics and would force
+  # every receiver to implement DDL before it could accept a single row. That
+  # half is kickside.data:definable, and a receiver that binds it answers
+  # describe.supports.can_define = true.
+  #
+  # Reading rows back is not part of it either. list, describe and
+  # describe_scope are the reads the load protocol itself needs -- what
+  # targets exist, how a row must be shaped, who owns the slice a commit is
+  # about to replace -- and none of them answers a row value: describe_scope
+  # reports run ids, counts and the source each load's begin supplied, nothing
+  # a row holds. Reading rows -- a sample, a profile of a slice, which keys
+  # already exist -- is kickside.data:readable, a right a host grants through
+  # its own binding, and a receiver that binds it answers
+  # describe.supports.can_read = true.
+  #
+  # DataError is inlined into every output schema's $defs, as the sibling
+  # contracts do: there is no cross-schema $ref in this file.
+  - name: loadable
+    kind: contract.definition
+    meta:
+      title: Loadable Data Sink
+      tags: [data, sink, load, bulk, transaction, slice]
+      comment: Bulk load ABI. Batches staged into one load over one or more targets and committed as one transaction, optionally replacing a scope. Receiver owns staging.
+    methods:
+      - name: list
+        description: |
+          Existing targets a caller may load into, for a picker or an agent choosing where a recipe
+          output goes. A target must exist before a load; this is the only discovery the contract
+          offers. query is an optional substring filter on id and title.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "query": { "type": "string", "description": "Optional substring filter on id and title." }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["id", "title"],
+                      "properties": {
+                        "id": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "title": { "type": "string", "minLength": 1 },
+                        "description": { "type": "string" }
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["targets"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "targets": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: describe
+        description: |
+          What this target is and what the receiver can do with it. A caller sizes its batches and
+          chooses a replacement mode from this answer rather than from a constant of its own.
+
+          A column carries a storage type and, optionally, a role and a format. The type is what a
+          caller coerces a value to; the role is what the column is for; the format is a hint a caller
+          MAY use and MUST NOT depend on. At most one column may carry role=period, and it is the axis
+          replace_scope.period_in replaces by. Stating the axis on the column rather than beside the
+          array keeps one fact in one place: a separate period_column field could name a column the
+          array does not contain, or one whose type contradicts it. A column whose type the receiver
+          cannot express in the enum MUST be omitted; when that column is also required, describe MUST
+          fail with invalid_request/unsupported_column instead of describing a target nobody can load.
+
+          columns_version changes whenever columns change; begin echoes it and commit rechecks it.
+          key names the columns that identify one row; when non-empty, commit refuses duplicates
+          (conflict/duplicate_key). supports.expect = false means the receiver keeps no ownership
+          record: describe_scope answers owners=[] with no target_version and commit refuses any
+          expect. supports.multi_target = false means begin accepts exactly one target.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^[^\\s:]+:[^\\s:]+$",
+                    "description": "namespace:id the receiver resolves to one loadable relation."
+                  }
+                },
+                "required": ["target"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "columns": {
+                    "type": "array",
+                    "description": "Columns this target accepts, in declaration order.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "type", "nullable"],
+                      "properties": {
+                        "name": { "type": "string", "minLength": 1 },
+                        "type": {
+                          "type": "string",
+                          "enum": ["string", "number", "integer", "boolean", "date"],
+                          "description": "Storage type. This is what a caller coerces a value to, and nothing else."
+                        },
+                        "format": {
+                          "type": "string",
+                          "description": "Receiver-specific hint such as email or uuid. A caller MAY use it and MUST NOT depend on it."
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": ["period"],
+                          "description": "What this column is for, as distinct from what it holds. A period column is the axis replace_scope.period_in replaces by; at most one column may carry it. A period value is not always a date -- 2025-08, 2025-Q1 -- which is why the role does not replace the storage type."
+                        },
+                        "nullable": { "type": "boolean" }
+                      }
+                    }
+                  },
+                  "key": {
+                    "type": "array",
+                    "description": "Columns naming one row's identity. Empty when the target has no row identity. Enforced at commit when non-empty.",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "columns_version": {
+                    "type": "string", "minLength": 1,
+                    "description": "Opaque; changes whenever columns change. Echoed in begin, rechecked in commit."
+                  },
+                  "limits": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["max_batch_rows", "abandon_after_ms"],
+                    "properties": {
+                      "max_batch_rows": {
+                        "type": "integer", "minimum": 1,
+                        "description": "Largest rows array append accepts. The bound belongs to whoever owns the statement."
+                      },
+                      "max_replace_scopes": {
+                        "type": "integer", "minimum": 1,
+                        "description": "Upper bound on replace_scope.period_in and describe_scope.period_in cardinality."
+                      },
+                      "abandon_after_ms": {
+                        "type": "integer", "minimum": 1,
+                        "description": "A load with no begin, append or commit for this long is reclaimed; a committed load stays answerable for at least this long after its commit."
+                      }
+                    }
+                  },
+                  "supports": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["replace_scope", "expect", "allow_shrink", "multi_target"],
+                    "properties": {
+                      "replace_scope": { "type": "boolean" },
+                      "expect": { "type": "boolean" },
+                      "allow_shrink": { "type": "boolean" },
+                      "multi_target": { "type": "boolean" },
+                      "can_define": {
+                        "type": "boolean",
+                        "description": "True when this receiver also binds kickside.data:definable, so a caller holding a file nobody has a target for can create one instead of stopping."
+                      },
+                      "rehearse": {
+                        "type": "boolean",
+                        "description": "True when rehearse runs a load to the end and rolls it back, and begin accepts define for a target it would create or alter."
+                      },
+                      "can_read": {
+                        "type": "boolean",
+                        "description": "True when this receiver also binds kickside.data:readable, so a caller can read back what it loaded -- sample a target, profile a slice, find which keys exist -- by the same target ids."
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": ["columns", "key", "columns_version", "limits", "supports"],
+                      "properties": { "error": false }
+                    }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": { "columns": false, "key": false, "columns_version": false, "limits": false, "supports": false }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: describe_scope
+        description: |
+          Who owns the rows a commit is about to replace. This is the read expect is built from: a
+          caller looks, decides, then asserts in commit that what it saw is still true.
+
+          With period_in, owners carries one entry per (period, owning run); a period with no rows
+          appears once with run_id=null. Without period_in the scope is the whole target and entries
+          carry no period; an empty target answers [{run_id: null, rows: 0}]. source is returned
+          exactly as the owning load's begin supplied it. target_version is the value to carry into
+          expect. A receiver with supports.expect=false answers owners=[] and no target_version, but
+          MUST still answer rows.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                  "period_in": {
+                    "type": "array", "minItems": 1,
+                    "items": { "type": "string", "minLength": 1 },
+                    "description": "Periods to report on, in the lexical form append accepts for the period column. Bounded by limits.max_replace_scopes. Omit for the whole target."
+                  }
+                },
+                "required": ["target"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "target_version": {
+                    "type": "string", "minLength": 1,
+                    "description": "Opaque; changes on every commit that mutates the target. Absent when supports.expect is false."
+                  },
+                  "rows": { "type": "integer", "minimum": 0, "description": "Rows currently in the requested scope." },
+                  "owners": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["run_id", "rows"],
+                      "properties": {
+                        "period": { "type": "string", "description": "Present only when the request carried period_in." },
+                        "run_id": { "type": ["string", "null"], "description": "Owning run, or null when the period (or target) holds no rows." },
+                        "source": { "type": "object", "description": "The owning load's run.source, verbatim." },
+                        "rows": { "type": "integer", "minimum": 0 }
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["rows", "owners"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": { "target_version": false, "rows": false, "owners": false }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: begin
+        description: |
+          Open a load against one or more targets. run_id is the caller's own run identity: it is the
+          lineage the receiver stamps onto every accepted row, and it is the idempotency key of the
+          load itself. A second begin for a run whose load is still open MUST return that same
+          load_id, or invalid_request/run_targets_differ if the target set is not the same. A begin
+          for a run whose load was committed within limits.abandon_after_ms MUST return
+          conflict/already_committed with the commit output in error.details.result, so a retry
+          after a lost acknowledgement learns the outcome instead of loading twice. A begin for a run
+          whose load was discarded or reclaimed opens a new load.
+
+          source is opaque provenance the receiver stores with the load and returns from
+          describe_scope; the caller decides what identifies a source. Each target echoes the
+          columns_version its caller took from describe; a stale one is conflict/schema_changed.
+
+          Every target of one load commits in one transaction. A receiver that cannot do that for the
+          requested set MUST refuse here with invalid_request/targets_not_co_located, never split the
+          commit later.
+
+          A target may carry define: the request kickside.data:definable.define takes, for a target
+          that does not exist yet or one the definition would alter. The load then stages and checks
+          rows as that definition would shape the target, and it can only be rehearsed: commit MUST
+          refuse it with invalid_request/rehearsal_only. A receiver that cannot rehearse refuses define
+          here with invalid_request/rehearsal_unsupported.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "run": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["run_id"],
+                    "properties": {
+                      "run_id": { "type": "string", "minLength": 1 },
+                      "source": {
+                        "type": "object",
+                        "description": "Opaque provenance stored with the load and returned by describe_scope."
+                      }
+                    }
+                  },
+                  "targets": {
+                    "type": "array", "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["target"],
+                      "properties": {
+                        "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "columns_version": {
+                          "type": "string", "minLength": 1,
+                          "description": "From describe. Refused with conflict/schema_changed when it has moved."
+                        },
+                        "define": {
+                          "type": "object",
+                          "description": "The kickside.data:definable.define request this target is loaded as if applied. Only a rehearsal may carry one."
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": ["run", "targets"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "load_id": { "type": "string", "minLength": 1 },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["load_id"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "load_id": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: append
+        description: |
+          Stage one batch for one target of the load. Rows are plain objects keyed by column name with
+          JSON scalar values; a column a row omits or carries as null is absent and stored as NULL. A
+          key that is not a declared column is invalid_request/unknown_column; a value the column's
+          type cannot hold is invalid_request/type_mismatch. More than limits.max_batch_rows rows MUST
+          be refused with invalid_request/batch_too_large rather than split silently, so the caller's
+          batching stays honest. An empty batch is accepted and counts toward contiguity.
+
+          batch_index starts at 1 and is the caller's sequence within (load, target). append is
+          idempotent on (load_id, target, batch_index): a repeated index MUST be acknowledged and MUST
+          NOT be staged again; the receiver MAY compare the row count and refuse a difference with
+          conflict/batch_mismatch. Rows are ordered by (batch_index, position) at commit.
+
+          Appending to a committed or discarded load is invalid_request/load_closed; to an unknown
+          load, or to a target the load was not opened for, not_found.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "load_id": { "type": "string", "minLength": 1 },
+                  "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                  "batch_index": { "type": "integer", "minimum": 1 },
+                  "rows": { "type": "array", "items": { "type": "object" } }
+                },
+                "required": ["load_id", "target", "batch_index", "rows"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "staged": { "type": "integer", "minimum": 0, "description": "Rows accepted in this batch; on a repeated batch_index, the count already held." },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["staged"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "staged": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: commit
+        description: |
+          Apply the load as one transaction across every target it was opened for. A target with no
+          plan entry is committed in append mode. The effect matrix is normative, per target:
+          replace_scope omitted MUST insert and delete nothing and return result=appended;
+          replace_scope.period_in MUST delete exactly those periods and then insert, returning
+          result=replaced; replace_scope.all MUST delete the whole target and then insert, returning
+          result=replaced; a target that staged no rows MUST return result=noop, MUST NOT delete
+          anything and skips its expect, so an import that produced nothing cannot erase what it was
+          meant to restate.
+
+          With period_in, every staged row of that target MUST carry a period value in the list:
+          a null or blank one is invalid_request/period_missing, one outside the list is
+          invalid_request/period_not_in_scope. period_in on a target with no role=period column is
+          invalid_request/period_unsupported. Values are compared after the same coercion append
+          applies to the column.
+
+          expect is the caller's assertion, rechecked inside the transaction: target_version asserts
+          nothing was committed since the caller looked (conflict/version_changed); owners asserts,
+          for each period it lists, that the current owner set equals run_ids exactly, an empty array
+          meaning nobody (conflict/owner_changed); an entry without period asserts the whole target.
+          Both may be given and both must hold. Without expect a competing commit simply wins; the
+          receiver promises nothing about interleaving.
+
+          When replace_scope.all would drop the target below the receiver's shrink floor, the call
+          MUST be refused with conflict/shrink unless allow_shrink is true. Only the receiver can
+          count what is already there. A non-empty describe.key is enforced here: duplicates among the
+          staged rows or against surviving rows are conflict/duplicate_key. columns_version from begin
+          is rechecked: conflict/schema_changed. batches, when given, is the number of appends the
+          caller made for that target; the receiver MUST verify it holds exactly indexes 1..batches
+          and refuse a gap with invalid_request/batches_incomplete.
+
+          Every refusal mutates nothing in any target and carries scope=flow. commit is idempotent
+          on load_id: a repeat returns the same per-target results. A discarded or unknown load is
+          not_found. A load that carries define for any target is invalid_request/rehearsal_only.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "load_id": { "type": "string", "minLength": 1 },
+                  "targets": {
+                    "type": "array",
+                    "description": "Per-target plan. A target of the load with no entry is committed in append mode.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["target"],
+                      "properties": {
+                        "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "replace_scope": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "oneOf": [
+                            { "required": ["period_in"] },
+                            { "required": ["all"] }
+                          ],
+                          "properties": {
+                            "period_in": {
+                              "type": "array", "minItems": 1,
+                              "items": { "type": "string", "minLength": 1 },
+                              "description": "Values of the target's role=period column whose rows this load replaces, in the lexical form append accepts. Every staged row's period MUST be in this list."
+                            },
+                            "all": { "const": true }
+                          }
+                        },
+                        "expect": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "target_version": {
+                              "type": "string", "minLength": 1,
+                              "description": "Version last observed through describe_scope. Receiver refuses when it has moved."
+                            },
+                            "owners": {
+                              "type": "array",
+                              "description": "Who the caller believes owns each scope it is about to replace. An entry without period is about the whole target.",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["run_ids"],
+                                "properties": {
+                                  "period": { "type": "string", "minLength": 1 },
+                                  "run_ids": {
+                                    "type": "array",
+                                    "items": { "type": "string", "minLength": 1 },
+                                    "description": "The complete owner set the caller saw. Empty asserts the period holds no rows."
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "allow_shrink": { "type": "boolean", "default": false },
+                        "batches": {
+                          "type": "integer", "minimum": 0,
+                          "description": "Appends the caller made for this target. When given, the receiver MUST hold exactly indexes 1..batches."
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": ["load_id"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "targets": {
+                    "type": "array",
+                    "description": "One entry per target of the load, in begin order.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["target", "result", "inserted", "deleted"],
+                      "properties": {
+                        "target": { "type": "string" },
+                        "result": { "type": "string", "enum": ["appended", "replaced", "noop"] },
+                        "inserted": { "type": "integer", "minimum": 0 },
+                        "deleted": { "type": "integer", "minimum": 0 },
+                        "target_version": {
+                          "type": "string", "minLength": 1,
+                          "description": "Version of the target after this commit; carry it into the next expect. Absent when supports.expect is false."
+                        }
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["targets"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "targets": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: rehearse
+        description: |
+          Everything commit would do for this load, in the one transaction commit would do it in, and
+          then rolled back. The answer is what commit would have answered -- the per-target results or
+          the refusal, by the same rules -- and nothing survives it: no row, no target, no version, no
+          definition. The load is discarded whichever way the rehearsal goes.
+
+          A target the load carries define for is shaped inside that transaction as the definition
+          would shape it -- created, or altered from what exists -- before any rule runs, so a
+          rehearsal answers for a target that does not exist yet exactly as its first commit would. A
+          receiver that cannot rehearse answers invalid_request/rehearsal_unsupported and describes
+          its targets with supports.rehearse = false.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "load_id": { "type": "string", "minLength": 1 },
+                  "targets": {
+                    "type": "array",
+                    "description": "Per-target plan. A target of the load with no entry is committed in append mode.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["target"],
+                      "properties": {
+                        "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "replace_scope": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "oneOf": [
+                            { "required": ["period_in"] },
+                            { "required": ["all"] }
+                          ],
+                          "properties": {
+                            "period_in": {
+                              "type": "array", "minItems": 1,
+                              "items": { "type": "string", "minLength": 1 },
+                              "description": "Values of the target's role=period column whose rows this load replaces, in the lexical form append accepts. Every staged row's period MUST be in this list."
+                            },
+                            "all": { "const": true }
+                          }
+                        },
+                        "expect": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "target_version": {
+                              "type": "string", "minLength": 1,
+                              "description": "Version last observed through describe_scope. Receiver refuses when it has moved."
+                            },
+                            "owners": {
+                              "type": "array",
+                              "description": "Who the caller believes owns each scope it is about to replace. An entry without period is about the whole target.",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["run_ids"],
+                                "properties": {
+                                  "period": { "type": "string", "minLength": 1 },
+                                  "run_ids": {
+                                    "type": "array",
+                                    "items": { "type": "string", "minLength": 1 },
+                                    "description": "The complete owner set the caller saw. Empty asserts the period holds no rows."
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "allow_shrink": { "type": "boolean", "default": false },
+                        "batches": {
+                          "type": "integer", "minimum": 0,
+                          "description": "Appends the caller made for this target. When given, the receiver MUST hold exactly indexes 1..batches."
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": ["load_id"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "targets": {
+                    "type": "array",
+                    "description": "One entry per target of the load, in begin order.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["target", "result", "inserted", "deleted"],
+                      "properties": {
+                        "target": { "type": "string" },
+                        "result": { "type": "string", "enum": ["appended", "replaced", "noop"] },
+                        "inserted": { "type": "integer", "minimum": 0 },
+                        "deleted": { "type": "integer", "minimum": 0 },
+                        "target_version": {
+                          "type": "string", "minLength": 1,
+                          "description": "Version of the target after this commit; carry it into the next expect. Absent when supports.expect is false."
+                        }
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["targets"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "targets": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: discard
+        description: |
+          Drop a load's staged rows, every target of it. Idempotent, and discarding an unknown load is
+          success: the postcondition the caller wants is already true. Discarding a committed load is
+          also success and changes nothing: those rows are data now, not staging. A load that is
+          neither committed nor discarded is reclaimed by the receiver after limits.abandon_after_ms
+          of inactivity.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": { "load_id": { "type": "string", "minLength": 1 } },
+                "required": ["load_id"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"] }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }

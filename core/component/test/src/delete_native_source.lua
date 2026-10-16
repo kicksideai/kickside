@@ -1,0 +1,1 @@
+../../src/persist/delete_ops.lua

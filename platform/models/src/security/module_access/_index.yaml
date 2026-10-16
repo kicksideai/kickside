@@ -1,0 +1,86 @@
+version: '1.0'
+namespace: kickside.models.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Models
+    surface: kickside.models
+    intent: module_access
+    includes:
+    - kickside.models.security:module_runtime
+    - kickside.models.security:models_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.models:*
+    - kickside.models.api:*
+    - kickside.models.api.admin:*
+    - kickside.models.catalog:*
+    - kickside.models.classes:*
+    - kickside.models.discovery:*
+    - kickside.models.migrations:*
+    - kickside.models.persist:*
+    - kickside.models.providers:*
+    - kickside.models.providers.google_vertex:*
+    - kickside.models.providers.openai_compat_plain:*
+    - kickside.models.security:*
+    - kickside.models.service:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: models_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.models.api:list_model_classes.endpoint
+    - kickside.models.api:list_models.endpoint
+    - kickside.models.api:models_by_name.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.models:*
+    - kickside.models.api:*
+    - kickside.models.api.admin:*
+    - kickside.models.catalog:*
+    - kickside.models.classes:*
+    - kickside.models.discovery:*
+    - kickside.models.migrations:*
+    - kickside.models.persist:*
+    - kickside.models.providers:*
+    - kickside.models.providers.google_vertex:*
+    - kickside.models.providers.openai_compat_plain:*
+    - kickside.models.security:*
+    - kickside.models.service:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.models.security:module_access
+    path: .groups +=
+  - entry: kickside.models.security:module_runtime
+    path: .groups +=
+  - entry: kickside.models.security:models_endpoint_access
+    path: .groups +=

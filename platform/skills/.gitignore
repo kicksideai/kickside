@@ -1,0 +1,11 @@
+.wippy/
+ui/node_modules/
+ui/dist/
+node_modules/
+*.tsbuildinfo
+*.wapp
+*.db
+*.db-wal
+*.db-shm
+.DS_Store
+.idea/

@@ -1,0 +1,480 @@
+version: "1.0"
+namespace: kickside.skills
+
+# Skill store: a skill is a component (identity / access / sharing / discovery)
+# whose primary thread events ARE its version history; a registered projection
+# (projection_worker) folds them into the read-model body the reader serves. Bundled
+# file bytes live in the skill filesystem, named by sha256.
+# Each store method is a function.lua dispatcher over persist/reader.lua (queries) +
+# persist/writer.lua (commands), running under the caller's actor; the component
+# service enforces access. Permission-agnostic — the host router enforces auth.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Skills
+      comment: Reusable agent procedures — a skill is a component plus a versioned markdown body, kept as thread events folded by a projection (no table); bundled files live in the skill filesystem. Ships a CRUD/share API and the Skills agent capability (dual-mode Skill tool + pin-by-context build func) that agents discover via the registry. Permission-agnostic; access is enforced upstream by the component service.
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    component: kickside/contract
+
+  - name: dep.kickside.uploads
+    version: '*'
+    kind: ns.dependency
+    component: kickside/uploads
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    component: kickside/core
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # The consuming host attaches the skill HTTP endpoints to api_router, which must
+  # enforce auth + endpoint_firewall — the handlers do no authentication of their
+  # own (per-skill access is the component service's job). A skill keeps no DB: its
+  # version history is thread events folded by a projection, file bytes live in its
+  # filesystem.
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the skill endpoints attach to. Must enforce auth + endpoint_firewall.
+      description: HTTP router the skill endpoints attach to. Must enforce auth + endpoint_firewall.
+    targets:
+      - entry: kickside.skills.api:list_skills.endpoint
+        path: .meta.router
+      - entry: kickside.skills.api:read_file.endpoint
+        path: .meta.router
+      - entry: kickside.skills.api:get_skill.endpoint
+        path: .meta.router
+      - entry: kickside.skills.api:list_versions.endpoint
+        path: .meta.router
+      - entry: kickside.skills.api:create_skill.endpoint
+        path: .meta.router
+      - entry: kickside.skills.api:refine_skill.endpoint
+        path: .meta.router
+      - entry: kickside.skills.api:delete_skill.endpoint
+        path: .meta.router
+
+  - name: upload_storage
+    kind: ns.requirement
+    meta:
+      value_kind: fs.directory
+      comment: Filesystem holding skill bundle bytes.
+      description: Filesystem holding skill bundle bytes.
+    targets:
+      - entry: kickside.skills:storage_config
+        path: .storage_id
+
+  - name: storage_config
+    kind: registry.entry
+    meta:
+      comment: Holds the requirement-injected skill bundle filesystem id.
+
+  - name: storage
+    kind: library.lua
+    meta:
+      comment: Resolves the upload_storage requirement for bundle persistence.
+    source: file://storage.lua
+    modules: [registry]
+
+  # ─── Skills page UI (self-served web component) ──────────────────────
+  # The page web component renders the skill list + create/refine/share/delete
+  # over the skills HTTP API; it ships and serves its own built bundle.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the skills UI static mount attaches to.
+      description: HTTP server the skills UI static mount attaches to.
+    targets:
+      - entry: kickside.skills:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-skills web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-skills
+    fs: kickside.skills:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: skills_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: skills_view
+      title: Skills
+      comment: Discovers, loads, activates, and authors reusable skills with the Skill tool.
+      announced: true
+      tag_name: kickside-skills
+      base_path: kickside-skills
+      entry_point: index.js
+
+  # The Skills trait config component (kickside-skill-picker), served from the
+  # same bundle dir (picker.js). The agent editor mounts it by tag when the Skills
+  # trait is enabled; it receives the trait context as `config` and emits
+  # `config-changed`. announced so the host can resolve the tag on demand.
+  - name: skill_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: skill_picker_view
+      title: Skill Picker
+      announced: true
+      tag_name: kickside-skill-picker
+      base_path: kickside-skills
+      entry_point: picker.js
+      auto_register: false
+
+  # Module-owned nav entry: installing this module adds the Skills surface to the
+  # nav; uninstalling removes it. The host bundle renders route_name "skills" by
+  # mounting the kickside-skills web component by tag.
+  - name: nav_item
+    kind: registry.entry
+    meta:
+      type: ui.nav_item
+      section: ""
+      path: /skills
+      route_name: skills
+      title: Skills
+      comment: Reusable procedures your agents discover and run.
+      icon: tabler:bulb
+      order: 62
+      render: component
+      component_tag: kickside-skills
+
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Skill type and invariant surfaces (Skill/SkillSummary/VersionRecord, statuses, limits, event + projection vocab, thread seams).
+    source: file://types.lua
+
+  # Read model: reads only the committed projection body and selects a version.
+  # Event history remains available to command-side version allocation and export,
+  # never to ordinary GET/list/read-file paths.
+  - name: state
+    kind: library.lua
+    meta:
+      comment: "Skills read model — access-check and read one committed projection body. It cannot observe events, cursors, lag, or catch-up controls."
+    source: file://persist/state.lua
+    modules: [contract, security]
+    imports:
+      types: kickside.skills:types
+
+  # The version-history projection worker: the runner invokes it with each new
+  # event batch; it folds created/updated into the read-model body (kickside_projection).
+  - name: projection_worker
+    kind: function.lua
+    meta:
+      type: projection.worker
+      comment: "Skills version-history projection worker — folds version events into the projection body."
+    source: file://persist/projection.lua
+    method: run
+    imports:
+      component: kickside.component:component
+      types: kickside.skills:types
+
+  - name: refine_consistency
+    kind: library.lua
+    meta:
+      comment: Compensated coordinator for the independently-owned component-meta and skill-event writes.
+    source: file://persist/refine_consistency.lua
+
+  - name: version_append
+    kind: library.lua
+    meta:
+      comment: Append a skill version through Threads and verify durable-key duplicates are exact replays rather than concurrent content conflicts.
+    source: file://persist/version_append.lua
+    modules: [json, contract]
+
+  # ─── Skill runtime ───────────────────────────────────────────────────
+  # The runtime contract activates a skill version (its body + file manifest),
+  # lists its files, and reads one file — all over the access-checked store.
+  # Bundled scripts are persisted as files, but execution is not part of the
+  # public runtime contract until a runner implementation exists.
+  - name: skill_runtime
+    kind: contract.definition
+    meta:
+      title: Skill Runtime
+      comment: Activate a skill version and list/read its bundled files.
+    methods:
+      - name: activate
+        description: "Load a skill version for use. input { skill_id, version? }, returns { skill, files }."
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "skill_id": { "type": "string" }, "version": { "type": "string", "description": "Defaults to the current version" } }, "required": ["skill_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "skill": { "type": "object" }, "files": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: list_files
+        description: "List a version's file manifest. input { skill_id, version?, kind? }, returns { files }."
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "skill_id": { "type": "string" }, "version": { "type": "string" }, "kind": { "type": "string", "description": "Optional file-kind filter" } }, "required": ["skill_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "files": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: read_file
+        description: "Read one bundled file. input { skill_id, path, version?, max_bytes?, format? }, returns the file."
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "skill_id": { "type": "string" }, "path": { "type": "string" }, "version": { "type": "string" }, "max_bytes": { "type": "integer" }, "format": { "type": "string", "enum": ["text", "base64"] } }, "required": ["skill_id", "path"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "path": { "type": "string" }, "content": { "type": "string" }, "mime_type": { "type": "string" }, "size_bytes": { "type": "integer" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+  - name: skill_runtime_binding
+    kind: contract.binding
+    meta:
+      title: Skill Runtime (store-backed)
+      comment: Default skill runtime — activates + reads skill files over the access-checked store.
+    contracts:
+      - contract: kickside.skills:skill_runtime
+        default: true
+        methods:
+          activate: kickside.skills.runtime:activate_func
+          list_files: kickside.skills.runtime:list_files_func
+          read_file: kickside.skills.runtime:read_file_func
+
+  # The skill component impl binding (impl_id stored on every skill's components
+  # row). Owns portability — its data (version events + bundle files) moves through
+  # the portable contract — and deletable, so delete_component tears down the skill's
+  # history thread + bundle.
+  - name: skill
+    kind: contract.binding
+    meta:
+      title: Skill
+      comment: User-authored skill — reusable instructions plus bundled files.
+      icon: tabler:bulb
+      color: "#f59e0b"
+      class:
+        - kickside.skills
+      # Canonical workspace kind: a skill is an ordinary component, so the workspace
+      # renders it with no special-casing. Not creatable from the generic "+ new" popup
+      # yet (a skill needs its editor — a create_ui hook, pending); authored through the
+      # skills surface.
+      # Version history rides the skill's own history thread. create/refine pass
+      # this kind as the thread declaration impl_id so the engine auto-applies its
+      # declared projection; the thread component shell remains kickside.core:thread.
+      # The projection folds version events into the read-model body the reader
+      # serves. projections declares the read model.
+      events:
+        input: []
+        output:
+          - type: "kickside.skills.events:skill.created"
+          - type: "kickside.skills.events:skill.updated"
+          - type: "kickside.skills.events:file.transferred"
+      projections:
+        - kind: "kickside.skills:history"
+          worker_ref: "func://kickside.skills:projection_worker"
+          input_mode: prefetch_events
+      retention:
+        event_days: 365
+        drain_aware: true
+      portable_schema:
+        context: false
+        meta:
+          - description
+          - status
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:deletable
+        default: true
+        methods:
+          delete: kickside.skills.portability:delete_func
+      - contract: kickside.contract:portable
+        methods:
+          export: kickside.skills.portability:export_func
+          import_into: kickside.skills.portability:import_into_func
+
+  # Published port over the skill version stream on its own history thread. The
+  # output face derives from the event entry's schema. skill.created is internal
+  # (a skill exists before it can be followed), so only skill.updated is published.
+  - name: skill_updated
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Skill Updated
+      comment: Start when a skill is changed or refined.
+      icon: tabler:bulb
+    binding: kickside.skills:skill
+    event: kickside.skills.events:skill.updated
+    config_schema:
+      thread_id: { picker: wc-component-picker, required: true, title: Skill }
+
+  # The store dispatchers: queries (get/list/list_files/read_file/list_versions)
+  # over persist/reader.lua, commands (create/refine/delete/share) over
+  # persist/writer.lua. The writer registers the component + history thread +
+  # projection, stores bundle bytes, and appends version events; the reader
+  # serves from the projection body (skill_state) + reads bundle bytes.
+  - name: skill_create
+    kind: function.lua
+    security:
+      policies:
+        - kickside.skills.security:create_output_publish
+    meta:
+      comment: skills store — create (component + history thread + projection + first version)
+    source: file://persist/writer.lua
+    method: create
+    modules: [uuid, base64, contract]
+    imports:
+      component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+      refine_consistency: kickside.skills:refine_consistency
+      version_append: kickside.skills:version_append
+
+  - name: skill_get
+    kind: function.lua
+    meta:
+      comment: skills store — get (meta + a version's body from the projection)
+    source: file://persist/reader.lua
+    method: get
+    modules: [base64]
+    imports:
+      component: kickside.component:component
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+
+  - name: skill_list
+    kind: function.lua
+    meta:
+      comment: skills store — list (descriptions for discovery)
+    source: file://persist/reader.lua
+    method: list
+    modules: [base64]
+    imports:
+      component: kickside.component:component
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+
+  - name: skill_list_files
+    kind: function.lua
+    meta:
+      comment: skills store — list_files (version file manifest, no content)
+    source: file://persist/reader.lua
+    method: list_files
+    modules: [base64]
+    imports:
+      component: kickside.component:component
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+
+  - name: skill_read_file
+    kind: function.lua
+    meta:
+      comment: skills store — read_file (one bundled file's bytes, access + size checked)
+    source: file://persist/reader.lua
+    method: read_file
+    modules: [base64]
+    imports:
+      component: kickside.component:component
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+
+  - name: skill_list_versions
+    kind: function.lua
+    meta:
+      comment: skills store — list_versions (version history, newest first, no bodies)
+    source: file://persist/reader.lua
+    method: list_versions
+    modules: [base64]
+    imports:
+      component: kickside.component:component
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+
+  - name: skill_refine
+    kind: function.lua
+    security:
+      policies:
+        - kickside.skills.security:refine_output_publish
+    meta:
+      comment: skills store — refine (append a new version; carries files forward or replaces)
+    source: file://persist/writer.lua
+    method: refine
+    modules: [uuid, base64, contract]
+    imports:
+      component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+      refine_consistency: kickside.skills:refine_consistency
+      version_append: kickside.skills:version_append
+
+  - name: skill_delete
+    kind: function.lua
+    meta:
+      comment: skills store — delete (component delete; its deletable tears down thread + bundle)
+    source: file://persist/writer.lua
+    method: delete
+    modules: [uuid, base64, contract]
+    imports:
+      component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+      refine_consistency: kickside.skills:refine_consistency
+      version_append: kickside.skills:version_append
+
+  - name: skill_share
+    kind: function.lua
+    meta:
+      comment: skills store — share (grant/revoke another user's access)
+    source: file://persist/writer.lua
+    method: share
+    modules: [uuid, base64, contract]
+    imports:
+      component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      types: kickside.skills:types
+      normalize: kickside.skills.bundle:normalize
+      skill_state: kickside.skills:state
+      bundle_store: kickside.skills.bundle:store
+      refine_consistency: kickside.skills:refine_consistency
+      version_append: kickside.skills:version_append
+
+  # Agent surface (trait + Skill tool + pin build_func) lives in the child
+  # namespace kickside.skills.traits (traits/_index.yaml).

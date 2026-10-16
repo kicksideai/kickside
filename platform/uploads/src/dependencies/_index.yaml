@@ -1,0 +1,37 @@
+version: "1.0"
+namespace: kickside.uploads
+entries:
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Event-sourced on the core thread engine (thread upsert, event append, status).
+    component: kickside/core
+
+  - name: dep.kickside.jobs
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Background job substrate the scheduler and projection runtime coordinate with.
+    component: kickside/jobs
+
+  - name: dep.wippy.views
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Server-rendered view substrate.
+    component: wippy/views
+
+  - name: dep.wippy.session
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Session substrate for agent and thread state.
+    component: wippy/session

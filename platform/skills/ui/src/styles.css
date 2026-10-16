@@ -1,0 +1,212 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-card.css";
+@import "@kickside/ui-kit/kx-head.css";
+@import "@kickside/ui-kit/kx-modal-head.css";
+@import "@kickside/ui-kit/kx-state.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element + the WippyVueElement mount wrapper need a definite height,
+   or the inner height:100% chain collapses to content height and the surface
+   overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Skills control surface. Styled only with the universal --p-* theme vocabulary
+   so it renders correctly inside the shadow DOM of any Wippy host (no SPA
+   tokens), which is also what makes the implementation swappable per
+   deployment. */
+.kx {
+  font-family: inherit;
+  color: var(--p-text-color);
+  background: var(--p-content-background);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.kx-search { position: relative; display: flex; align-items: center; }
+.kx-search-ico { position: absolute; left: 10px; width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kx-search-input {
+  height: 34px; width: 220px; max-width: 40vw; padding: 0 10px 0 30px; font: inherit; font-size: 13px;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px; transition: border-color .15s;
+}
+.kx-search-input::placeholder { color: var(--p-text-muted-color); }
+
+.kx-body { flex: 1; min-height: 0; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Skill card grid */
+.kx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 264px), 1fr)); gap: 12px; max-width: 1180px; }
+.kx-ficon {
+  width: 38px; height: 38px; border-radius: 11px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color);
+}
+.kx-ficon svg { width: 20px; height: 20px; }
+.kx-card-name {
+  /* The actions sit at rest rather than on hover, so the name reserves their width. */
+  padding-right: 64px;
+}
+
+/* Sizing is .kx-tag-sm; the chip only asks not to be stretched by its row. */
+.kx-chip { flex: none; }
+.kx-ver {
+  color: var(--p-text-muted-color);
+  background: color-mix(in srgb, var(--p-text-color) 8%, transparent);
+}
+.kx-files-badge {
+  color: var(--p-text-muted-color);
+  background: color-mix(in srgb, var(--p-text-color) 7%, transparent);
+}
+.kx-scope {
+  text-transform: uppercase; color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+.kx-status {
+  text-transform: uppercase;
+  color: var(--p-warn-600, var(--p-warn-500));
+  background: color-mix(in srgb, var(--p-warn-500) 14%, transparent);
+}
+
+/* Modals (PrimeVue Dialog). The overlay chrome — scrim, panel background/border/
+   radius — comes from the facade --p-dialog-* tokens; the theme's PrimeVuePlugin
+   teleports the Dialog overlay into this shadow root by default (no per-component
+   append-to). These rules lay out the header / content / footer regions; scoped to
+   .kx-dialog so they never reach other dialogs (e.g. an unstyled ConfirmDialog)
+   sharing this shadow root. */
+.kx-dialog {
+  --p-dialog-content-padding: 0;
+  width: min(460px, calc(100vw - 32px));
+}
+/* Wide two-column editor — fixed dialog size so the big right-hand editor
+   always has maximum room; left controls and right editor each scroll. */
+.kx-dialog.kx-modal-xl { width: min(1040px, 94vw); height: min(720px, 90vh); }
+.kx-dialog > .kx-dialog-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; }
+.kx-dialog > .kx-dialog-content { padding: 0; overflow: hidden; display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.kx-dialog > .kx-dialog-footer {
+  display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px;
+  border-top: 1px solid var(--p-content-border-color);
+}
+/* Header: icon badge + title/subtitle on one line, consistent with the
+   agents editor and other module popups. */
+.kx-modal-head-sub {
+  /* Two clamped lines rather than one ellipsised one: these subtitles carry a
+     server-supplied name or URL that has to stay readable. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Forms */
+.kx-form { display: flex; flex-direction: column; gap: 14px; }
+.kx-field { display: flex; flex-direction: column; gap: 5px; }
+/* Name row: the icon picker sits inline to the left of the name input. */
+.kx-name-row { display: flex; align-items: center; gap: 8px; }
+.kx-name-row .kx-input { flex: 1; min-width: 0; }
+.kx-name-icon { flex: none; }
+.kx-field-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }
+.kx-field-hint-inline { font-weight: 400; color: var(--p-text-muted-color); }
+.kx-input {
+  height: 36px; padding: 0 10px; font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color);
+  border-radius: 8px; transition: border-color .15s; width: 100%;
+}
+.kx-input::placeholder { color: var(--p-text-muted-color); }.kx-input:disabled { opacity: .6; cursor: default; }
+/* PrimeVue Select (status field). Chrome/height come from the facade --p-select-*
+   tokens; only ensure it fills the field width like the text inputs beside it. */
+.kx-select { width: 100%; min-width: 0; }
+.kx-textarea {
+  height: auto; min-height: 160px; padding: 10px; resize: vertical; line-height: 1.55;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 12.5px; tab-size: 2;
+}
+.kx-textarea-sm { min-height: 64px; font-family: inherit; font-size: 13px; }
+
+/* Two-column editor body: fixed-width left controls, flex right editor. */
+.kx-edit-cols { flex: 1; min-height: 0; display: flex; }
+.kx-edit-left {
+  width: 312px; flex: none; padding: 18px; overflow-y: auto;
+  border-right: 1px solid var(--p-content-border-color);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.kx-edit-right { flex: 1; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.kx-edit-right-head { display: flex; flex-direction: column; gap: 8px; }
+.kx-body-editor {
+  flex: 1; min-height: 0; height: auto; padding: 12px; resize: none; line-height: 1.6;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 13px; tab-size: 2;
+}
+.kx-body-preview { background: color-mix(in srgb, var(--p-text-color) 4%, var(--p-content-background)); cursor: default; }
+.kx-edit-err { margin: 0 18px; }
+
+.kx-meta-line { display: flex; flex-wrap: wrap; gap: 5px; font-size: 12px; color: var(--p-text-muted-color); }
+
+/* Preview affordance bar over the editor. */
+.kx-preview-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kx-preview-tag {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+  color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  padding: 3px 9px; border-radius: 6px;
+}
+.kx-preview-tag svg { width: 14px; height: 14px; }
+
+/* Version history list. */
+.kx-vers { display: flex; flex-direction: column; border: 1px solid var(--p-content-border-color); border-radius: 10px; overflow: hidden; }
+.kx-ver-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; width: 100%; text-align: left;
+  border: none; border-bottom: 1px solid var(--p-content-border-color); background: transparent;
+  font: inherit; cursor: pointer; color: var(--p-text-color); transition: background .12s;
+}
+.kx-ver-row:last-child { border-bottom: none; }
+.kx-ver-row:hover { background: color-mix(in srgb, var(--p-text-color) 7%, transparent); }
+.kx-ver-row-on { background: color-mix(in srgb, var(--p-primary-color) 12%, transparent); }
+.kx-ver-when { font-size: 12px; color: var(--p-text-muted-color); }
+.kx-ver-files { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; color: var(--p-text-muted-color); }
+.kx-ver-files svg { width: 12px; height: 12px; }
+
+@media (max-width: 720px) {
+  .kx-edit-cols { flex-direction: column; }
+  .kx-edit-left { width: 100%; border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
+}
+
+/* Phone baseline: stack header rows and let inputs/search go full-width so
+   nothing overflows the narrow viewport. */
+@media (max-width: 640px) {
+  .kx-head { padding: 16px 16px 12px; }
+  .kx-body { padding: 6px 16px 16px; }
+  .kx-head-actions { margin-left: 0; width: 100%; }
+  .kx-search { flex: 1; }
+  .kx-card-name { padding-right: 32px; }
+}
+
+@media (max-width: 560px) {
+  .kx-search-input { width: 100%; max-width: none; }
+}
+
+/* Bundled-file manifest — one flat bordered block of divider rows. */
+.kx-files { display: flex; flex-direction: column; border: 1px solid var(--p-content-border-color); border-radius: 10px; overflow: hidden; }
+.kx-file {
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-bottom: 1px solid var(--p-content-border-color);
+  font-size: 12.5px; color: var(--p-text-color);
+}
+.kx-file:last-child { border-bottom: none; }
+.kx-file svg { width: 16px; height: 16px; color: var(--p-primary-color); flex-shrink: 0; }
+.kx-file-path { font-family: ui-monospace, Menlo, monospace; font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-file-kind { margin-left: auto; font-size: 9px; font-weight: 600; color: var(--p-text-muted-color); background: color-mix(in srgb, var(--p-text-color) 8%, transparent); padding: 2px 6px; border-radius: 6px; flex-shrink: 0; }
+
+/* Icon-picker wrapper the shared IconField emits around <wc-icon-picker>. */
+.wc-iconfield { display: inline-block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kx-dialog { transition: none; }
+}

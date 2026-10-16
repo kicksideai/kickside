@@ -1,0 +1,27 @@
+organization: kickside
+module: core
+type: library
+description: KickSide engine root — threads, events, projections, retention, lifecycle reaping, thread notifications, proc supervision
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - threads
+  - events
+  - projections
+  - scheduler
+  - engine
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "test/**"
+  - "test:**"
+  - "app:**"
+  - "app.env:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

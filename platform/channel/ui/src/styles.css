@@ -1,0 +1,114 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }
+
+.kx-cr {
+  display: flex; flex-direction: column; gap: 16px; width: 100%; padding: 6px 0 0;
+  color: var(--p-text-color); font: inherit; font-size: 13px;
+}
+
+.kx-cr-head { display: flex; align-items: center; gap: 12px; }
+.kx-cr-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--p-primary-color) 13%, transparent);
+  color: var(--p-primary-color);
+}
+.kx-cr-ico > svg { width: 20px; height: 20px; }
+.kx-cr-title { display: flex; flex-direction: column; min-width: 0; }
+.kx-cr-title h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.kx-cr-title span { font-size: 12.5px; color: var(--p-text-muted-color); }
+
+.kx-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.kx-field-lbl { font-size: 12px; font-weight: 600; color: var(--p-text-muted-color); }
+
+.kx-input {
+  width: 100%; min-height: 36px; padding: 6px 10px;
+  border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: var(--p-content-background); color: var(--p-text-color);
+  font: inherit; font-size: 13px; outline: none; transition: border-color .12s;
+}.kx-input::placeholder { color: var(--p-text-muted-color); }
+.kx-textarea { min-height: 64px; padding: 8px 10px; resize: vertical; line-height: 1.45; }
+.kx-textarea-lg { min-height: 140px; }
+.kx-input[readonly] {
+  color: var(--p-text-muted-color);
+  background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-content-border-color));
+}
+/* A readonly field that must host a resolved-name/id pair (not just plain text)
+   -- same chrome as .kx-input[readonly], on a div so the id can ride as a
+   distinct secondary span instead of being concatenated into one string. */
+.kx-input-ro {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--p-text-muted-color);
+  background: color-mix(in srgb, var(--p-content-background) 90%, var(--p-content-border-color));
+}
+.kx-field-help { color: var(--p-text-muted-color); font-size: 12px; line-height: 1.35; }
+/* PrimeVue Select fills the field like the text inputs it replaced; color and
+   border come from the prestyled .p-select theme (primeVueCssUrl). */
+.kx-select { width: 100%; min-width: 0; }
+.kx-note {
+  padding: 10px 12px; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  color: var(--p-text-muted-color); background: var(--p-content-background);
+}
+
+.kx-adv { border-top: 1px solid var(--p-content-border-color); padding-top: 4px; }
+.kx-adv-toggle {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 2px; border: none; background: transparent;
+  color: var(--p-text-muted-color); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.kx-adv-toggle:hover { color: var(--p-text-color); }
+.kx-adv-toggle > svg { width: 15px; height: 15px; }
+/* Sizing is .kx-tag-sm. */
+.kx-adv-badge { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color); }
+.kx-adv-body { display: flex; flex-direction: column; gap: 14px; padding: 10px 0 4px; }
+.kx-trait-cfg { border: 1px solid var(--p-content-border-color); border-radius: 10px; padding: 10px 12px; }
+.kx-trait-conn { font-weight: 400; color: var(--p-text-muted-color); }
+/* A trait/channel whose declared name is missing falls back to a neutral label;
+   the raw id still rides along here, as a small mono secondary — never primary. */
+.kx-id { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 400; color: var(--p-text-muted-color); }
+
+.kx-check {
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start;
+  padding: 10px 12px; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  background: color-mix(in srgb, var(--p-content-background) 92%, var(--p-primary-color));
+  cursor: pointer;
+}
+.kx-check input {
+  appearance: none; -webkit-appearance: none; width: 18px; height: 18px; margin: 1px 0 0;
+  display: grid; place-content: center; border: 1px solid var(--p-content-border-color); border-radius: 6px;
+  background: var(--p-content-background); cursor: pointer;
+  transition: border-color .15s, background-color .15s, box-shadow .15s, opacity .15s;
+}
+.kx-check input::before {
+  content: ""; width: 5px; height: 9px; border: solid var(--p-button-primary-color);
+  border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transform-origin: center;
+  transition: transform .12s ease-out;
+}
+.kx-check input:checked { border-color: var(--p-primary-color); background: var(--p-primary-color); }
+.kx-check input:checked::before { transform: rotate(45deg) scale(1); }.kx-check input:disabled { opacity: .55; cursor: not-allowed; }
+.kx-check:has(input:disabled) { cursor: not-allowed; }
+.kx-check > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.kx-check strong { font-size: 13px; font-weight: 650; color: var(--p-text-color); }
+.kx-check small { font-size: 12px; line-height: 1.35; color: var(--p-text-muted-color); }
+.kx-check-control { align-items: center; }
+.kx-inline-control {
+  display: inline-flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 7px;
+  max-width: 100%; margin-top: 7px; color: var(--p-text-muted-color); font-size: 12px;
+}
+.kx-inline-control > span { display: inline; white-space: nowrap; }
+.kx-inline-control-standalone { margin-top: 0; }
+.kx-number-sm { flex: 0 0 96px; width: 96px; min-height: 30px; padding: 4px 8px; }
+.kx-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.kx-error {
+  color: var(--p-danger-600, var(--p-danger-500));
+  font-size: 12.5px;
+  line-height: 1.4;
+}

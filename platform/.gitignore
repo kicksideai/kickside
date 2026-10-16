@@ -1,0 +1,9 @@
+node_modules/
+.wippy/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# ephemeral test blob storage (keep .gitkeep)
+uploads/test/storage/*
+!uploads/test/storage/.gitkeep

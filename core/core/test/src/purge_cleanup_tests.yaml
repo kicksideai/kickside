@@ -1,0 +1,43 @@
+version: '1.0'
+namespace: app
+entries:
+- name: purge_cleanup_fixture
+  kind: library.lua
+  source: file://purge_cleanup_fixture.lua
+- name: purge_cleanup_common
+  kind: library.lua
+  source: file://purge_cleanup_common.lua
+  imports:
+    common: kickside.core.threads:contract_common
+    fixture: app:purge_cleanup_fixture
+- name: purge_cleanup_source
+  kind: library.lua
+  source: file://purge_cleanup_source.lua
+  modules:
+  - sql
+  - crypto
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    contract_common: app:purge_cleanup_common
+    contract_events: kickside.core.threads:contract_events
+    contract_event_authorization: kickside.core.threads:contract_event_authorization
+    contract_resource_crud: kickside.core.threads:contract_resource_crud
+    natural_upsert: kickside.core.threads:natural_upsert
+    threads_reader: app:component_cleanup_reader
+    threads_teardown: app:purge_cleanup_fixture
+    threads_thread_crud: app:component_cleanup_crud
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: purge_cleanup_test
+  kind: function.lua
+  source: file://purge_cleanup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_purge_cleanup
+  imports:
+    test: wippy.test:test
+    fixture: app:purge_cleanup_fixture
+    api: app:purge_cleanup_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

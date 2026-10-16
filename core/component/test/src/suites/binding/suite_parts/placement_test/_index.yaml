@@ -1,0 +1,30 @@
+version: "1.0"
+namespace: app.component_suites.binding
+
+entries:
+
+  - name: tsplit_placement_test_placement_deletes
+    kind: function.lua
+    meta:
+      title: Component Placement Test
+      type: test
+      suite: component_placement
+      comment: Hierarchy, ordering, cycle rejection, orphaning, and subtree access.
+    source: file://../../placement_test_placement_deletes.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: tsplit_placement_test_placement_access
+    kind: function.lua
+    meta:
+      title: Component Placement Test
+      type: test
+      suite: component_placement
+      comment: Hierarchy, ordering, cycle rejection, orphaning, and subtree access.
+    source: file://../../placement_test_placement_access.lua
+    method: run
+    modules: [sql, uuid, time, contract, security]
+    imports:
+      test: wippy.test:test

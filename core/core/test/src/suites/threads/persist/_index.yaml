@@ -1,0 +1,103 @@
+version: "1.0"
+namespace: kickside.core.threads.persist
+
+# Harness-owned declarations for colocated production tests.
+entries:
+  - name: writer_test
+    kind: function.lua
+    meta:
+      title: Threads Writer
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: event post/batch + dedup/seq + non-member WRITE denial, driven under a real actor.
+    source: file://writer_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - funcs
+      - contract
+      - process
+      - channel
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      projection_writer: kickside.core.projections.persist:writer
+      writer: kickside.core.threads.persist:writer
+
+  - name: lifecycle_test
+    kind: function.lua
+    meta:
+      title: Threads Lifecycle
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: lifecycle thread ensure idempotency + recursion exemption + at-least-once append dedupe.
+    source: file://lifecycle_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+    imports:
+      jobs: kickside.core.jobs:jobs
+      test: wippy.test:test
+      lifecycle: kickside.core.threads.persist:lifecycle
+      threads_teardown: kickside.core.threads.persist:teardown
+      teardown_fence: kickside.core.threads.persist:teardown_fence
+      sweeper: kickside.core.retention:sweeper
+
+  - name: reader_test
+    kind: function.lua
+    meta:
+      title: Threads Reader
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: event listing windows + non-member read denial via the component contract.
+    source: file://reader_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - security
+      - funcs
+      - contract
+    imports:
+      test: wippy.test:test
+
+  - name: append_test
+    kind: function.lua
+    meta:
+      title: Threads append_tx
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+      comment: batched append sequencing, per-event answers, external-identity dedup, prune-boundary refusal.
+    source: file://append_test.lua
+    method: run
+    modules:
+      - sql
+      - uuid
+      - json
+    imports:
+      test: wippy.test:test
+      append: kickside.core.threads.persist:append
+
+  - name: subject_test
+    kind: function.lua
+    meta:
+      title: Thread Subject Concurrency
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Threads
+    source: file://subject_test.lua
+    method: run
+    modules: [sql, uuid, channel]
+    imports:
+      test: wippy.test:test
+      append: kickside.core.threads.persist:append
+      writer: kickside.core.threads.persist:writer
+      teardown: kickside.core.threads.persist:teardown
+      scaffold: app:prune_scaffold

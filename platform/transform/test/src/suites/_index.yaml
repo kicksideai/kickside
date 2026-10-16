@@ -1,0 +1,172 @@
+version: "1.0"
+namespace: kickside.transform
+
+entries:
+  - name: packaging_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      group: KickSide Transform
+      comment: Host-owned router, environment storage, and static-server requirements cover every transform integration seam.
+    source: file://packaging_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+
+  - name: sink_input_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      comment: The one normalization of a strategy value into a sink input.
+    source: file://sink_input_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      sink_input: kickside.transform:sink_input
+
+  - name: strategy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+      comment: "Strategy apply contract suite: raw values, present marker, authorization."
+    source: file://strategy_test.lua
+    method: run
+    modules: []
+    imports:
+      test: wippy.test:test
+      llm: wippy.llm:llm
+      apply: kickside.transform:apply
+      strategy_none: kickside.transform:strategy_none
+      strategy_expr: kickside.transform:strategy_expr
+      strategy_llm: kickside.transform:strategy_llm
+      strategy_code: kickside.transform:strategy_code
+      strategy_func: kickside.transform:strategy_func
+      strategy_reference: kickside.transform:strategy_reference
+      strategies: kickside.transform:strategies
+
+  - name: func_strategy_fixture
+    kind: function.lua
+    meta:
+      type: test_helper
+    source: file://func_strategy_fixture.lua
+    method: run
+
+  - name: generator_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform_generator
+    source: file://generator_test.lua
+    method: run
+    modules: [json, expr, registry]
+    imports:
+      test: wippy.test:test
+      generator: kickside.transform:generator
+      snippet: kickside.transform:snippet
+
+  - name: fireflies_demo_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform
+    source: file://fireflies_demo_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      generator: kickside.transform:generator
+
+  - name: test_stub_pass
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Emits a validated attempt-1 cycle envelope.
+    source: file://gen_flow_stubs.lua
+    method: stub_pass
+    imports:
+      gen_nodes: kickside.transform:node_iterate
+
+  - name: test_stub_fail
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Emits a hard-failure cycle envelope (attempts exhausted).
+    source: file://gen_flow_stubs.lua
+    method: stub_fail
+    imports:
+      gen_nodes: kickside.transform:node_iterate
+
+  - name: gen_flow_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: transform_generator
+    source: file://gen_flow_test.lua
+    method: run
+    modules: [json, funcs, security]
+    imports:
+      test: wippy.test:test
+      generator: kickside.transform:generator
+      gen_nodes: kickside.transform:node_iterate
+      gen_flow: kickside.transform:generate_transform
+
+  - name: test_run_flow
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Runs generator Flow seams under the same actor and scope required in production.
+    source: file://gen_flow_test_runner.lua
+    method: run
+    imports:
+      flow: userspace.dataflow.flow:flow
+
+  - name: upper_strategy_fixture
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: A test-only strategy that upper-cases input.text.
+    source: file://upper_strategy_fixture.lua
+    method: apply
+
+  - name: upper_strategy_describe
+    kind: function.lua
+    meta:
+      type: test_helper
+    source: file://upper_strategy_fixture.lua
+    method: describe
+
+  - name: upper_strategy_binding
+    kind: contract.binding
+    meta:
+      type: kickside.transform.strategy
+      strategy: test_upper
+      validate_at_install: true
+      replay_safe: true
+    contracts:
+      - contract: kickside.transform:strategy
+        methods:
+          apply: kickside.transform:upper_strategy_fixture
+          describe: kickside.transform:upper_strategy_describe
+
+  - name: open_failure_strategy_entry
+    kind: registry.entry
+    meta:
+      type: kickside.transform.strategy
+      strategy: open_failure
+      replay_safe: true
+
+  - name: generator_hint_test
+    kind: function.lua
+    meta: { type: test, suite: transform_generator }
+    source: file://generator_hint_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      nodes: kickside.transform:node_iterate
+      stubs: kickside.transform:hint_stubs
+  - name: hint_stubs
+    kind: library.lua
+    source: file://generator_hint_stubs.lua

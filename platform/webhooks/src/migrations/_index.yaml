@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.webhooks.migrations
+
+# target_db is injected by the root kickside.webhooks:target_db requirement.
+
+entries:
+  - name: 01_webhooks
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_webhooks table
+      depends_on:
+        - ns:wippy.migration
+    source: file://01_webhooks.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration

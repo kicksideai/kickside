@@ -1,0 +1,3 @@
+organization: kickside
+module: contract-test
+description: Standalone runnable harness that loads kickside/contract and checks its published contract definitions.

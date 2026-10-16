@@ -1,0 +1,76 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: round_cadence_test
+  kind: function.lua
+  meta:
+    title: Cadence
+    type: test
+    suite: kickside_automation_round
+    comment: Pure UTC next-due calculation for interval, ticker, once and cron schedules.
+  source: file://../round/cadence_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    cadence: kickside.automation:cadence
+- name: round_timer_pullable_test
+  kind: function.lua
+  meta:
+    title: Timer Pullable
+    type: test
+    suite: kickside_automation_round
+    comment: The timer source pulls exactly the persisted occurrence.
+  source: file://../round/timer_pullable_test.lua
+  method: run
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+- name: round_reconcile_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Reconciliation over receipts — pull_keys enumeration with pass stamps, sweep of stale destinations through delivery, resync starts a pass.
+  source: file://../round/reconcile_test.lua
+  method: run
+  modules:
+  - json
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+- name: round_write_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: The round's preparation/write library — keys, normalization, prepared output, sink semantics, classified writes.
+  source: file://../round/write_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - uuid
+  - channel
+  - process
+  - time
+  imports:
+    test: wippy.test:test
+    round_write: kickside.automation:round_write
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+- name: round_batch_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Bounded ledger persistence pages under their owner locks.
+  source: file://../round/batch_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    round_ledger: kickside.automation:round_ledger
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness

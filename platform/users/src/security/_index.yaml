@@ -1,0 +1,162 @@
+version: "1.0"
+namespace: kickside.users.security
+
+entries:
+  - name: run_as_candidate_endpoint_access
+    kind: security.policy
+    meta: {private: true}
+    groups: []
+    policy:
+      actions: access
+      resources: [kickside.users.api:run_as_candidates.endpoint]
+      effect: allow
+
+  - name: run_as_candidate_evaluation
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [security.actor.create, security.policy_group.get, security.scope.create]
+      resources: '*'
+      effect: allow
+
+  - name: credential_inventory_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: registry.get
+      resources: '*'
+      effect: allow
+
+  - name: session_group_policy_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [security.policy_group.get, registry.get]
+      resources: '*'
+      effect: allow
+  - name: session_group_set_projection
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [funcs.call, security.groups.compose]
+      resources: [kickside.security.binding:materialize_group_set, kickside.security.binding:classify_membership_effect]
+      effect: allow
+  - name: users_runtime_read
+    kind: security.policy
+    meta:
+      comment: Members read the Users database selector while serving self-service requests.
+    groups: []
+    policy:
+      resources:
+        - kickside.users.env:database_resource
+      actions: env.get
+      effect: allow
+
+  # Least-privilege policy bundle shared by password login and SSO callback.
+  # Host-owned database and role resources are injected by kickside.users
+  # requirements; all other resources are owned by this package.
+  - name: login_db_access
+    kind: security.policy
+    meta:
+      comment: Login and the dedicated session revoker may open only the users database selected by the host application.
+    policy:
+      resources: []
+      actions:
+        - db.get
+      effect: allow
+
+  - name: login_env_read
+    kind: security.policy
+    meta:
+      comment: Login may read only the Users authentication configuration entries.
+    policy:
+      resources:
+        - kickside.users.env:database_resource
+        - kickside.users.env:admin_group_id
+        - kickside.users.env:admin_init_enabled
+        - kickside.users.env:default_group_id
+        - kickside.users.env:baseline_group_id
+        - kickside.users.env:token_expiration
+      actions:
+        - env.get
+      effect: allow
+
+  - name: login_actor_create
+    kind: security.policy
+    meta:
+      comment: Login may create the authenticated actor after credential verification.
+    policy:
+      resources: "*"
+      actions:
+        - security.actor.create
+      effect: allow
+
+  - name: login_role_resolve
+    kind: security.policy
+    meta:
+      comment: Login may resolve only the host role resources explicitly supplied through login_role_resource.
+    policy:
+      resources: []
+      actions:
+        - security.policy_group.get
+      effect: allow
+
+  - name: login_scope_compose
+    kind: security.policy
+    policy:
+      resources: custom
+      actions: security.scope.create
+      effect: allow
+
+  - name: login_token_mint
+    kind: security.policy
+    meta:
+      comment: Login may issue sessions only through the Users token store.
+    policy:
+      resources:
+        - kickside.users.security:tokens
+      actions:
+        - security.token_store.get
+        - security.token.create
+      effect: allow
+
+  - name: login_settings_read
+    kind: security.policy
+    meta:
+      comment: Users reads its own settings (session lifetime, default membership) through the Settings contract.
+    policy:
+      resources:
+        - kickside.settings:settings
+        - kickside.settings:*
+        - get
+      actions:
+        - contract.get
+        - contract.open
+        - contract.call
+      effect: allow
+
+  # kickside.users.security:token_storage
+  - name: token_storage
+    kind: store.sql
+    meta:
+      comment: SQL-backed storage for authentication tokens
+    cleanup_interval: 1h
+    expire_column_name: expires_at
+    id_column_name: token_key
+    lifecycle:
+      depends_on: []
+      auto_start: true
+    payload_column_name: token_value
+    table_name: kickside_user_auth_tokens
+
+  # kickside.users.security:tokens
+  - name: tokens
+    kind: security.token_store
+    meta:
+      comment: Authentication token store for kickside users
+    default_expiration: 24h
+    store: kickside.users.security:token_storage
+    subject_lookup: kickside.users.binding:credential_subject_lookup
+    token_key_env: ENCRYPTION_KEY
+    token_key: ""
+    token_length: 32

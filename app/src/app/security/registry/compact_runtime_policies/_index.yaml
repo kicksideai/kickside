@@ -1,0 +1,167 @@
+version: '1.0'
+namespace: app.security
+entries:
+- name: user.endpoint_access
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.runtime
+    intent: trusted_product_runtime
+  groups:
+  - app.security:user
+  policy:
+    resources:
+    - app.api.websocket:ws_endpoint.endpoint
+    - kickside.users.api:get_profile.endpoint
+    - kickside.users.api:logout.endpoint
+    - kickside.users.api:me.endpoint
+    - kickside.users.api:put_profile.endpoint
+    - kickside.users.api:update_me.endpoint
+    - userspace.dataflow.api:*
+    - wippy.session.api:*
+    - wippy.views.api:find_by_tag.endpoint
+    - wippy.views.api:list_components.endpoint
+    - wippy.views.api:list_pages.endpoint
+    - wippy.views.api:list_routes.endpoint
+    - wippy.views.api:public_url.endpoint
+    - wippy.views.api:render.endpoint
+    actions: access
+    effect: allow
+- name: user.unrestricted_runtime_actions
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.runtime
+    intent: trusted_product_runtime
+  groups:
+  - app.security:user
+  policy:
+    resources: '*'
+    actions:
+    - contract.call
+    - http_client.private_ip
+    - process.send
+    effect: allow
+- name: user.environment_runtime
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.runtime
+    intent: trusted_product_runtime
+  groups:
+  - app.security:user
+  policy:
+    resources:
+    - ANTHROPIC_API_KEY
+    - ANTHROPIC_API_VERSION
+    - ANTHROPIC_BASE_URL
+    - ANTHROPIC_TIMEOUT
+    - APP_CACHE
+    - AWS_ACCESS_KEY_ID
+    - AWS_CONTAINER_AUTHORIZATION_TOKEN
+    - AWS_CONTAINER_CREDENTIALS_FULL_URI
+    - AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
+    - AWS_DEFAULT_REGION
+    - AWS_REGION
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_SESSION_TOKEN
+    - BEDROCK_BASE_URL
+    - BEDROCK_TIMEOUT
+    - CEREBRAS_API_KEY
+    - DEEPINFRA_API_KEY
+    - ENCRYPTION_KEY
+    - FIREWORKS_API_KEY
+    - GEMINI_API_KEY
+    - GOOGLE_CLOUD_PROJECT
+    - GOOGLE_CREDENTIALS
+    - GROQ_API_KEY
+    - KICKSIDE_COMPONENT_DB_ID
+    - KICKSIDE_CORE_JOB_DB_ID
+    - KICKSIDE_PROJECTION_DB_ID
+    - KICKSIDE_PROJECTION_PROC_HOST
+    - KICKSIDE_THREADS_DB_ID
+    - KICKSIDE_THREAD_HYDRATION_DB_ID
+    - MISTRAL_API_KEY
+    - OPENAI_API_KEY
+    - OPENAI_BASE_URL
+    - OPENAI_COMPAT_API_KEY
+    - OPENAI_COMPAT_BASE_URL
+    - OPENAI_COMPAT_ORGANIZATION
+    - OPENAI_COMPAT_TIMEOUT
+    - OPENAI_ORGANIZATION
+    - OPENAI_TIMEOUT
+    - OPENROUTER_API_KEY
+    - PUBLIC_API_URL
+    - TOGETHER_API_KEY
+    - XAI_API_KEY
+    - kickside.users.env:admin_group_id
+    - kickside.users.env:baseline_group_id
+    - kickside.users.env:database_resource
+    - kickside.users.env:default_group_id
+    - userspace.dataflow.env:web_host_origin
+    - wippy.llm.bedrock:*
+    - wippy.llm.claude:*
+    - wippy.llm.google.env:*
+    - wippy.llm.openai:*
+    - wippy.llm.openai_compat:*
+    - wippy.session.env:*
+    actions: env.get
+    effect: allow
+- name: user.registry_discovery
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.runtime
+    intent: trusted_product_runtime
+  groups:
+  - app.security:user
+  policy:
+    resources:
+    - app.composition:core_member_enrollment
+    - app.composition:default_member_enrollment
+    - app.ui:*
+    - app:definition
+    - app:documentation
+    - app:documentation.*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: user.context_runtime
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.runtime
+    intent: trusted_product_runtime
+  groups:
+  - app.security:user
+  policy:
+    resources:
+    - context
+    actions:
+    - contract.context
+    - funcs.context
+    effect: allow
+- name: user.process_spawn
+  kind: security.policy
+  meta:
+    type: app.security.policy_binding
+    surface: app.runtime
+    intent: trusted_product_runtime
+  groups:
+  - app.security:user
+  policy:
+    resources:
+    - userspace.dataflow.node.agent:node
+    - userspace.dataflow.node.cycle:cycle
+    - userspace.dataflow.node.func:node
+    - userspace.dataflow.node.parallel:parallel
+    - userspace.dataflow.node.signal:node
+    - userspace.dataflow.node.state:state
+    - wippy.session.process:plugin
+    - wippy.session.process:session
+    actions:
+    - process.spawn
+    - process.spawn.monitored
+    - process.spawn.linked
+    effect: allow

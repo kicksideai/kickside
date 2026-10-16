@@ -1,0 +1,63 @@
+version: "1.0"
+namespace: kickside.skills.events
+
+# Event-type entries for the skill history thread. Both schemas are the ports'
+# output face: a full skill version snapshot.
+entries:
+  - name: skill.created
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        skill_id: { type: string }
+        version: { type: number }
+        name: { type: string }
+        description: { type: string }
+        body: { type: string }
+        license: { type: string }
+        allowed_tools: { type: array, items: { type: string } }
+        compatibility: { type: object }
+        metadata: { type: object }
+        source: { type: object }
+        files: { type: array, items: { type: object } }
+        file_count: { type: number }
+        bundle_size: { type: number }
+      required: [skill_id, version, name, description, body]
+
+  - name: skill.updated
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        skill_id: { type: string }
+        version: { type: number }
+        name: { type: string }
+        description: { type: string }
+        body: { type: string }
+        license: { type: string }
+        allowed_tools: { type: array, items: { type: string } }
+        compatibility: { type: object }
+        metadata: { type: object }
+        source: { type: object }
+        files: { type: array, items: { type: object } }
+        file_count: { type: number }
+        bundle_size: { type: number }
+      required: [skill_id, version, name, description, body]
+
+  - name: file.transferred
+    kind: registry.entry
+    meta: {type: kickside.core.threads.event}
+    schema:
+      type: object
+      properties:
+        skill_id: {type: string}
+        artifact_id: {type: string}
+        sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        version: {type: string}
+      required: [skill_id, artifact_id, sha256]

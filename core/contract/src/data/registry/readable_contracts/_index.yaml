@@ -1,0 +1,1774 @@
+version: "1.0"
+namespace: kickside.data
+
+entries:
+  # ─── Reading a target back ───────────────────────────────────────────
+  # loadable puts rows into a target and promises nothing about getting them
+  # back: list and describe serve its own protocol, and describe_scope, the
+  # one read of data it has, exists so a commit can assert what it is about
+  # to replace. Everything else a producer or an analyst needs -- a sample of
+  # what is there, a profile of a slice, which keys already exist, what one
+  # run loaded, a sum by market year over year -- is a read of the same target
+  # in the same vocabulary (target, columns, key, period, run_id), and without
+  # a contract every caller would have to learn whose tables are behind it.
+  # That is the dependency this contract removes.
+  #
+  # readable is deliberately not a SQL pipe. A caller sends a structural query:
+  # a target, or targets joined many-to-one, a projection, closed predicates,
+  # grouping, a closed catalogue of functions, an order, a limit, named
+  # parameters. The receiver resolves every column against its own describe,
+  # maps every name and alias to identifiers of its own, binds every value,
+  # and compiles and runs the query however it stores rows -- SQLite,
+  # Postgres, a table in memory. Nothing a caller sends ever becomes statement
+  # text, which makes the contract read-only by construction rather than by a
+  # guard over text, and lets a receiver that is not a SQL engine implement it
+  # at all.
+  #
+  # It is a contract over targets, not over sources in general. A target is
+  # what describe describes: typed columns, a key, versions, a receiver that
+  # owns it -- the thing loadable writes into. A client's database, an API, a
+  # warehouse nobody declared are read through their own connectors in their
+  # own dialect, and a workflow lines the two up.
+  #
+  # The contract is tiered. The core every receiver MUST implement is the
+  # read-back an importer needs: one target, closed filters, order, limit and
+  # offset, distinct, the six aggregates grouped by nothing, by the period
+  # column or by run. Everything analytical -- grouping by any column, filtered
+  # aggregates, derived expressions, many-to-one joins, window totals and
+  # ranks, date buckets, text matching -- is the same grammar behind a
+  # capability the receiver declares in describe and refuses by name when
+  # absent. A caller that needs more than a receiver offers runs two queries
+  # and lines them up itself; it never asks for SQL.
+  #
+  # Accepting rows, changing a schema and reading rows are three rights, and a
+  # host grants each through its own binding. A receiver that binds this
+  # contract as well answers loadable.describe with supports.can_read = true.
+  #
+  # The thirteen rules below are normative and are what the method schemas
+  # cannot state. A receiver that implements the five methods but not the
+  # rules will look correct and leak, lie about freshness, or page over
+  # itself, so they belong in a conformance suite next to the pullable and
+  # loadable ones.
+  #
+  #   1. Read-only by construction. No method mutates. The receiver resolves
+  #      every column against describe, maps every name and alias to
+  #      identifiers of its own and binds every value: nothing a caller sends
+  #      -- a value, a column name, an alias -- becomes statement text. Where
+  #      the engine has a read-only transaction it is a second guard, never
+  #      the first. A read never moves data_version.
+  #   2. Nothing leaves that a row read would not return. A column describe
+  #      omits -- a secret above all -- is one query refuses as
+  #      unknown_column. A target whose rows the receiver transforms on the
+  #      way out (masking, computed values, a read hook) is not readable at
+  #      all: an aggregate over stored values would answer what a row read
+  #      hides.
+  #   3. A refusal names every problem at once. invalid_query carries
+  #      details.problems[], each with a JSON pointer into the request; plan
+  #      and query validate identically, so a query plan accepted is refused
+  #      later only for access or infrastructure reasons.
+  #   4. Access is per target, under the calling actor, decided before any
+  #      row is read. One denied target denies the whole call:
+  #      permission_denied, no partial answer.
+  #   5. One call, one snapshot. Every target of a query is read in one
+  #      snapshot (one transaction, or the receiver's equivalent);
+  #      data_versions and the page counts in the answer are that
+  #      snapshot's.
+  #   6. Versions. columns_version changes whenever a target's readable
+  #      columns change, and for a target that is also loadable whenever
+  #      loadable.describe's columns change. data_version changes on every
+  #      committed change to the target's rows -- a load commit, a record
+  #      write or delete -- and on nothing else.
+  #   7. A query has a total order. The receiver appends the key (or @id) to
+  #      a row query's order, every select item to a distinct one's and the
+  #      grouping expressions to an aggregate one's, so the same query with
+  #      the same params on the same data_version answers the same rows in
+  #      the same order. offset continues that order: pages whose answers
+  #      carry the same data_versions neither repeat nor skip a row. When
+  #      data_version moved between pages a later page is best effort, and a
+  #      caller that needs one slice reads again.
+  #   8. Limits are honest. A query answers at most limit (<= max_rows) rows,
+  #      an aggregate query at most max_groups groups, and page says what the
+  #      answer covers: total rows of the from target, filtered rows (groups)
+  #      the query produces before offset and limit, returned in this answer.
+  #      A structural bound exceeded (joins, in values, lookup keys, depth,
+  #      nodes, select, period_in) is refused with limit_exceeded, never
+  #      trimmed silently; depth and nodes count the query after every { ref }
+  #      is expanded. A receiver whose engine cannot stop a query by time MUST
+  #      bound its work by these limits.
+  #   9. Capabilities are honest. A capability describe declares for a target
+  #      works on that target; an undeclared one is refused with
+  #      unsupported_capability naming it; the receiver never emulates one
+  #      silently.
+  #  10. Period scope. in/from/to compare after the same coercion
+  #      loadable.append applies to the period column; latest is the greatest
+  #      non-null period value present in the whole target, before where
+  #      applies (latest = N, the N greatest distinct non-null values); a
+  #      period scope on a target with no role = period column is
+  #      scope_unsupported.
+  #  11. Lineage. @run_id is the run_id loadable.begin stamped on the row;
+  #      rows a load did not write carry null; scope.run_id filters on it;
+  #      lookup answers the owning run_id when lineage.run_id is true.
+  #  12. Joins are many-to-one and co-located. A query over targets the
+  #      receiver cannot read in one snapshot is refused at plan as
+  #      targets_not_co_located. via names a declared relation, whose
+  #      target_columns are a unique set of the related target; on (join =
+  #      adhoc) is equality pairs whose right side covers one of the joined
+  #      target's describe.unique sets, otherwise join_not_keyed. A join
+  #      without a condition, and a join that can multiply rows, do not exist
+  #      here: comparing two fact targets is two aggregate queries a caller
+  #      lines up. A join adds columns and keeps the rows: left, the default,
+  #      keeps a row with no related row and answers its joined columns as
+  #      null, the way an ORM loads a many-to-one relation; inner keeps only
+  #      the rows that have one.
+  #  13. Values are typed, both ways. A literal, a param and a lookup key fit
+  #      the type of what they compare with, as loadable.append checks a row:
+  #      integer and number are one numeric family, a date is an ISO-8601
+  #      string, and a value that does not fit is type_mismatch (keys_invalid
+  #      in lookup) -- never a comparison across types, which one engine
+  #      refuses and another answers wrongly. null compares with nothing;
+  #      is_null and not_null test it. Every row value is a JSON value of its
+  #      column's declared type whatever the engine hands back: integer and
+  #      number as numbers, boolean as true or false, date as an ISO-8601
+  #      string. A row is an object keyed by result column name -- names are
+  #      unique, duplicate_alias otherwise -- and a missing value is an absent
+  #      key (or null), never a positional hole.
+  #
+  # The function catalogue is closed and tiered; describe.capabilities says
+  # which tiers a receiver answers:
+  #
+  #   core        count count_distinct sum avg min max, grouped by nothing, by
+  #               the period column, bucket(period) or @run_id; bucket on the
+  #               period column, when it is a date, for the grains in
+  #               capabilities.buckets;
+  #               predicates eq ne lt lte gt gte in between is_null not_null;
+  #               { ref } to an earlier select item; order_by, limit, offset,
+  #               distinct, params
+  #   aggregate   group_by by any column or bucket; having; order by aggregates
+  #   filtered_aggregates   filter on an aggregate (SUM(CASE WHEN .. THEN x END))
+  #   derived     add sub mul div neg abs round coalesce nullif to_text; case
+  #   window      total rank row_number lag lead, with over.partition_by and
+  #               over.order_by
+  #   buckets     year quarter month week day -- on date columns only, the
+  #               period column included when it is a date; any other column
+  #               is type_mismatch
+  #   text        contains starts_with ends_with like lower upper; every
+  #               match ignores case, on every engine; like takes a pattern
+  #               with % and _, and \ escapes them
+  #   join        none | declared (via) | adhoc (on, keyed)
+  #   lineage     @run_id, scope.run_id
+  #   row_ids     @id
+  #   period_latest   scope.period.latest
+  #   render      a human-readable SQL-like form in plan and query answers, for
+  #               logs and a "supporting query" -- never executable
+  #
+  # Reserved for a later, additive version: a derived source (from: { query })
+  # behind a compose capability, so an aggregate over an aggregate and a filter
+  # by another query's result become expressible. Until then a caller runs two
+  # queries.
+  #
+  # Result column types are loadable's closed enum. count, count_distinct,
+  # rank, row_number -> integer; sum -> the argument's type; avg, div ->
+  # number; min, max, coalesce, lag, lead, total(x) -> the argument's type;
+  # bucket -> string in the lexical ISO form of its grain (2025, 2025-Q3,
+  # 2025-08, 2025-W33, 2025-08-16); to_text -> string; case -> the common type
+  # of its branches (integer and number widen to number), and branches that
+  # share no type are type_mismatch, never a silent cast to string (rule 13).
+  #
+  # Problems (details.problems[].code) a plan or query may name, all at once:
+  # malformed (a request the grammar does not take: an unknown field, a value
+  # of the wrong shape, a constant to group or order by), unknown_target (in a
+  # join), unknown_column, ambiguous_column,
+  # unknown_alias, duplicate_alias, alias_required, ref_misplaced,
+  # type_mismatch, not_grouped, aggregate_misplaced, nested_aggregate,
+  # window_misplaced, unknown_function, arity, unknown_param, missing_param,
+  # unsupported_capability, unsupported_grain, unsupported_op,
+  # scope_unsupported, lineage_unsupported, relation_unknown,
+  # join_incompatible, join_not_keyed, limit_exceeded,
+  # targets_not_co_located.
+  #
+  # Reasons (details.reason) on the closed DataError codes: invalid_request /
+  # invalid_query (with problems), keys_invalid, limit_exceeded,
+  # unsupported_capability;
+  # not_found for an unknown primary target; permission_denied with
+  # details.target; provider_unavailable / timeout (retriable = false) or
+  # infrastructure (retriable = true); rate_limited.
+  #
+  # DataError is inlined into every output schema's $defs, as the sibling
+  # contracts do: there is no cross-schema $ref in this file. The query schema
+  # is likewise inlined into both plan and query, byte for byte.
+  - name: readable
+    kind: contract.definition
+    meta:
+      title: Readable Data Source
+      tags: [data, source, read, query, target, slice, lineage]
+      comment: Read ABI over declared targets. Structural queries the receiver compiles itself; identifiers resolved against describe, values bound, read-only by construction, tiered by declared capabilities.
+    methods:
+      - name: list
+        description: |
+          Targets a caller may read, for a picker or an agent choosing what to look at. A target that
+          is also a load target says loadable = true; a receiver may list targets nothing can load into
+          (reference data edited by hand), and never lists one it transforms on the way out (rule 2).
+          query is an optional substring filter on id and title.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "query": { "type": "string", "description": "Optional substring filter on id and title." }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["id", "title", "loadable"],
+                      "properties": {
+                        "id": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "title": { "type": "string", "minLength": 1 },
+                        "description": { "type": "string" },
+                        "loadable": {
+                          "type": "boolean",
+                          "description": "True when kickside.data:loadable can load into this target as well."
+                        }
+                      }
+                    }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["targets"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"], "properties": { "targets": false } }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: describe
+        description: |
+          What this target looks like to a reader and what the receiver can do with it. A caller builds
+          every query from this answer and nothing else: a column absent here is one query refuses, a
+          capability absent here is one query refuses by name.
+
+          columns carry loadable's closed storage types, plus what a reader needs and a loader does not:
+          a label and a description, and role = period on the axis a slice is cut by. A name is exactly
+          what a query uses and never starts with @, the pseudo columns' prefix; secret (write-only)
+          columns are never listed. key is the row identity loadable.describe answers; unique lists
+          every column set the receiver keeps unique, key first, and is what a join on equality pairs
+          must cover. columns_version changes whenever these columns change, and for a loadable target
+          whenever loadable.describe's columns change; the two values need not be equal.
+
+          period names the axis, its grain when the receiver knows it, and latest -- the greatest period
+          value present now, so an agent learns what "current" means without a query. relations declare
+          many-to-one joins by natural key as metadata, with no foreign key behind them: target_columns
+          are always a unique set of the related target, and via in a join names one. pseudo_columns
+          lists the system columns a query may name: @run_id (lineage.run_id) and @id (row_ids).
+
+          capabilities and limits are what the receiver answers for; see the contract comment for the
+          tiers. data_version is the target's data version at the time of this answer.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^[^\\s:]+:[^\\s:]+$",
+                    "description": "namespace:id the receiver resolves to one readable relation."
+                  }
+                },
+                "required": ["target"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                  "title": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" },
+                  "loadable": { "type": "boolean" },
+                  "columns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "Columns a query may name, in declaration order. Secret columns are never here.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "type", "nullable"],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "description": "Exactly what a query names. Never starts with @, which is the pseudo columns' prefix."
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["string", "number", "integer", "boolean", "date"],
+                          "description": "Storage type, loadable's closed enum. What a value compares and aggregates as."
+                        },
+                        "nullable": { "type": "boolean" },
+                        "role": {
+                          "type": "string",
+                          "enum": ["period"],
+                          "description": "The slice axis; at most one column carries it. Same meaning as in loadable.describe."
+                        },
+                        "format": {
+                          "type": "string",
+                          "description": "Receiver-specific hint such as email, enum: a, b. A caller MAY use it and MUST NOT depend on it."
+                        },
+                        "label": { "type": "string", "description": "What a person calls the column." },
+                        "description": {
+                          "type": "string",
+                          "description": "What the column means, in terms an agent choosing a measure can act on."
+                        }
+                      }
+                    }
+                  },
+                  "key": {
+                    "type": "array",
+                    "description": "Columns naming one row's identity; empty when the target has none. The same key loadable.describe answers.",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "unique": {
+                    "type": "array",
+                    "description": "Every column set the receiver keeps unique, key first when key is non-empty. A join on equality pairs must cover one of the joined target's sets.",
+                    "items": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+                  },
+                  "columns_version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Opaque; changes whenever these columns change, and for a loadable target whenever loadable.describe's columns change. Not required to equal loadable's value."
+                  },
+                  "period": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["column"],
+                    "properties": {
+                      "column": { "type": "string", "minLength": 1 },
+                      "grain": {
+                        "type": "string",
+                        "enum": ["day", "week", "month", "quarter", "year", "unknown"],
+                        "description": "How fine one period value is, when the receiver knows. bucket on the period column accepts this grain and coarser ones."
+                      },
+                      "latest": {
+                        "type": ["string", "null"],
+                        "description": "The greatest non-null period value present, or null when there is none."
+                      }
+                    }
+                  },
+                  "relations": {
+                    "type": "array",
+                    "description": "Many-to-one joins by natural key, declared as metadata. target_columns are one of the related target's unique sets; join.via names a relation.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "columns", "target", "target_columns", "cardinality"],
+                      "properties": {
+                        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,40}$" },
+                        "columns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                        "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "target_columns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                        "cardinality": { "type": "string", "enum": ["many_to_one", "one_to_one"] }
+                      }
+                    }
+                  },
+                  "pseudo_columns": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["@run_id", "@id"] },
+                    "description": "System columns a query may name on this target."
+                  },
+                  "capabilities": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "aggregate", "join", "derived", "filtered_aggregates", "window", "buckets", "text",
+                      "lineage", "row_ids", "period_latest", "render"
+                    ],
+                    "properties": {
+                      "aggregate": {
+                        "type": "boolean",
+                        "description": "group_by by any column or bucket, having, ordering by aggregates."
+                      },
+                      "join": {
+                        "type": "string",
+                        "enum": ["none", "declared", "adhoc"],
+                        "description": "declared: via a relation only; adhoc: also on equality pairs whose right side covers one of the joined target's unique sets."
+                      },
+                      "derived": {
+                        "type": "boolean",
+                        "description": "add sub mul div neg abs round coalesce nullif to_text and case."
+                      },
+                      "filtered_aggregates": { "type": "boolean", "description": "filter on an aggregate call." },
+                      "window": {
+                        "type": "array",
+                        "items": { "type": "string", "enum": ["total", "rank", "row_number", "lag", "lead"] }
+                      },
+                      "buckets": {
+                        "type": "array",
+                        "items": { "type": "string", "enum": ["year", "quarter", "month", "week", "day"] },
+                        "description": "Grains bucket accepts, on date columns only. Empty means no bucket at all."
+                      },
+                      "text": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["contains", "starts_with", "ends_with", "like", "lower", "upper"]
+                        }
+                      },
+                      "lineage": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["run_id"],
+                        "properties": {
+                          "run_id": { "type": "boolean", "description": "@run_id and scope.run_id." }
+                        }
+                      },
+                      "row_ids": { "type": "boolean", "description": "@id." },
+                      "period_latest": { "type": "boolean", "description": "scope.period.latest." },
+                      "render": { "type": "boolean", "description": "rendered in plan and query answers." }
+                    }
+                  },
+                  "limits": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "max_rows", "default_rows", "max_groups", "max_joins", "max_in_values",
+                      "max_lookup_keys", "max_period_in", "max_depth", "max_nodes", "max_select"
+                    ],
+                    "properties": {
+                      "max_rows": { "type": "integer", "minimum": 1, "description": "Largest limit a row query may ask for." },
+                      "default_rows": { "type": "integer", "minimum": 1, "description": "limit when the query names none." },
+                      "max_groups": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Most groups an aggregate query answers; page.filtered still counts them all."
+                      },
+                      "max_joins": { "type": "integer", "minimum": 0 },
+                      "max_in_values": { "type": "integer", "minimum": 1 },
+                      "max_lookup_keys": { "type": "integer", "minimum": 1 },
+                      "max_period_in": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Upper bound on scope.period.in cardinality; equals loadable's max_replace_scopes when both are bound."
+                      },
+                      "max_depth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Expression and predicate nesting depth, counted after every { ref } is expanded."
+                      },
+                      "max_nodes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Expression and predicate nodes in the whole query, counted after every { ref } is expanded."
+                      },
+                      "max_select": { "type": "integer", "minimum": 1 },
+                      "max_duration_ms": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Advisory. A receiver whose engine can stop a query stops it here and answers provider_unavailable/timeout."
+                      }
+                    }
+                  },
+                  "data_version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Opaque; changes on every committed change to the target's rows."
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": [
+                        "target", "title", "loadable", "columns", "key", "unique", "columns_version",
+                        "relations", "pseudo_columns", "capabilities", "limits", "data_version"
+                      ],
+                      "properties": {
+                        "error": false
+                      }
+                    }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": {
+                        "target": false,
+                        "columns": false,
+                        "key": false,
+                        "unique": false,
+                        "columns_version": false,
+                        "capabilities": false,
+                        "limits": false,
+                        "data_version": false
+                      }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: plan
+        description: |
+          Everything query checks, and nothing it runs. The answer is the typed columns the query would
+          produce, the targets it reads with their current versions, the canonical form of the query
+          and the capabilities it uses. A refusal names every problem at once
+          in details.problems -- each { code, path, message, hint? } with a JSON pointer into the
+          request -- rather than the first one hit, so an agent fixes a query in one round trip.
+
+          Names resolve one way only. { col, of? } is a column of a source by its describe name (of is
+          the source alias, needed when two sources have the column: ambiguous_column otherwise) or a
+          pseudo column. { ref } is an earlier select item by its as; it is allowed in select, having
+          and order_by and refused elsewhere as ref_misplaced. A bare name never means both.
+
+          canonical is the receiver's normalized rendering of the query: keys sorted, defaults filled,
+          aliases explicit, refs expanded, params left as references. It is what a caller hashes for a
+          fingerprint together with its params and the data_versions of the targets; two queries with
+          one canonical form read the same thing. rendered, when capabilities.render is true, is a
+          human-readable SQL-like form for logs and a "supporting query" -- it is never executable.
+
+          plan and query validate identically: a query plan accepted is refused later only for
+          permission or infrastructure reasons.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["from", "select"],
+                "properties": {
+                  "from": { "$ref": "#/$defs/Source" },
+                  "joins": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/Join" },
+                    "description": "Bounded by limits.max_joins. Needs capabilities.join."
+                  },
+                  "select": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "$ref": "#/$defs/SelectItem" },
+                    "description": "Bounded by limits.max_select. Without group_by or aggregates this is a row query."
+                  },
+                  "where": { "$ref": "#/$defs/Predicate" },
+                  "group_by": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/Expr" },
+                    "description": "Core: only the period column, bucket(period) or @run_id. Any column or bucket needs capabilities.aggregate. { ref } is not allowed here."
+                  },
+                  "having": { "$ref": "#/$defs/Predicate", "description": "Needs capabilities.aggregate." },
+                  "order_by": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/OrderItem" },
+                    "description": "{ ref } orders by a select item; { col } by a column of a source."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Rows (or groups) to answer; default limits.default_rows; above limits.max_rows is limit_exceeded."
+                  },
+                  "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Rows (or groups) of the ordered result to skip before limit applies; default 0."
+                  },
+                  "distinct": {
+                    "type": "boolean",
+                    "description": "Answer each distinct row once. order_by then names select items only (not_grouped otherwise), the order every engine can apply to distinct rows."
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": { "$ref": "#/$defs/Scalar" },
+                    "propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,40}$" },
+                    "description": "Named values { param } references bind to. Bound, never inlined."
+                  },
+                  "render": { "type": "boolean", "description": "Ask for rendered in the answer; needs capabilities.render." }
+                },
+                "$defs": {
+                  "Scalar": { "type": ["string", "number", "boolean", "null"] },
+                  "Ident": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,40}$" },
+                  "Alias": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,15}$" },
+                  "Target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                  "Scope": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "period": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "in": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": { "type": "string", "minLength": 1 },
+                            "description": "Period values in the lexical form loadable.append accepts; bounded by limits.max_period_in."
+                          },
+                          "latest": {
+                            "oneOf": [{ "const": true }, { "type": "integer", "minimum": 1 }],
+                            "description": "The greatest non-null period value present, or the N greatest distinct ones. Needs capabilities.period_latest."
+                          },
+                          "from": { "type": "string", "minLength": 1, "description": "Inclusive lower bound on the period value." },
+                          "to": { "type": "string", "minLength": 1, "description": "Inclusive upper bound on the period value." }
+                        },
+                        "oneOf": [
+                          { "required": ["in"] },
+                          { "required": ["latest"] },
+                          { "anyOf": [{ "required": ["from"] }, { "required": ["to"] }] }
+                        ]
+                      },
+                      "run_id": {
+                        "oneOf": [
+                          { "type": "string", "minLength": 1 },
+                          { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+                        ],
+                        "description": "Only rows a load with this run_id (one of these) wrote. Needs capabilities.lineage.run_id."
+                      }
+                    }
+                  },
+                  "Source": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["target"],
+                    "properties": {
+                      "target": { "$ref": "#/$defs/Target" },
+                      "as": { "$ref": "#/$defs/Alias" },
+                      "scope": { "$ref": "#/$defs/Scope" }
+                    }
+                  },
+                  "Join": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["target", "as"],
+                    "properties": {
+                      "target": { "$ref": "#/$defs/Target" },
+                      "as": { "$ref": "#/$defs/Alias" },
+                      "kind": {
+                        "type": "string",
+                        "enum": ["left", "inner"],
+                        "default": "left",
+                        "description": "left keeps a row with no related row and answers its joined columns as null; inner keeps only the rows that have one."
+                      },
+                      "via": {
+                        "$ref": "#/$defs/Ident",
+                        "description": "A relation the source named by of (default: from) declares in describe.relations. Needs capabilities.join = declared or adhoc."
+                      },
+                      "of": {
+                        "$ref": "#/$defs/Alias",
+                        "description": "With via only: the source whose relation via names, when it is not the from source."
+                      },
+                      "on": {
+                        "type": "array",
+                        "minItems": 1,
+                        "description": "Equality pairs: left is a column of a source before this join, right a column of the joined target. The right columns MUST cover one of the joined target's describe.unique sets (join_not_keyed otherwise). Needs capabilities.join = adhoc.",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["left", "right"],
+                          "properties": {
+                            "left": { "$ref": "#/$defs/ColRef" },
+                            "right": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "A column of the joined target, by its describe name."
+                            }
+                          }
+                        }
+                      },
+                      "scope": { "$ref": "#/$defs/Scope" }
+                    },
+                    "oneOf": [{ "required": ["via"] }, { "required": ["on"] }]
+                  },
+                  "Expr": {
+                    "oneOf": [
+                      { "$ref": "#/$defs/ColRef" },
+                      { "$ref": "#/$defs/Ref" },
+                      { "$ref": "#/$defs/Literal" },
+                      { "$ref": "#/$defs/ListLiteral" },
+                      { "$ref": "#/$defs/Param" },
+                      { "$ref": "#/$defs/Call" },
+                      { "$ref": "#/$defs/Case" }
+                    ]
+                  },
+                  "ColRef": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["col"],
+                    "properties": {
+                      "col": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "A column of a source by its exact describe name, or a pseudo column (@run_id, @id)."
+                      },
+                      "of": {
+                        "$ref": "#/$defs/Alias",
+                        "description": "The source the column belongs to: from.as or a join's as. Needed only when more than one source has the column (ambiguous_column otherwise)."
+                      }
+                    }
+                  },
+                  "Ref": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["ref"],
+                    "properties": {
+                      "ref": {
+                        "$ref": "#/$defs/Ident",
+                        "description": "An earlier select item, by its as. Allowed in select, having and order_by, and expanded by the receiver; elsewhere ref_misplaced."
+                      }
+                    }
+                  },
+                  "Literal": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["value"],
+                    "properties": {
+                      "value": { "$ref": "#/$defs/Scalar" }
+                    }
+                  },
+                  "ListLiteral": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["values"],
+                    "properties": {
+                      "values": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": { "$ref": "#/$defs/Scalar" },
+                        "description": "Only as the second argument of in; bounded by limits.max_in_values."
+                      }
+                    }
+                  },
+                  "Param": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["param"],
+                    "properties": {
+                      "param": { "$ref": "#/$defs/Ident" }
+                    }
+                  },
+                  "Call": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["fn"],
+                    "properties": {
+                      "fn": {
+                        "type": "string",
+                        "enum": [
+                          "count", "count_distinct", "sum", "avg", "min", "max", "bucket", "add", "sub",
+                          "mul", "div", "neg", "abs", "round", "coalesce", "nullif", "to_text", "lower",
+                          "upper", "total", "rank", "row_number", "lag", "lead"
+                        ],
+                        "description": "Closed catalogue; see the contract comment for tiers and result types. count takes zero or one argument; bucket takes a date column and a grain literal (type_mismatch on any other column); lag/lead take an expression and an optional offset literal."
+                      },
+                      "args": { "type": "array", "items": { "$ref": "#/$defs/Expr" } },
+                      "filter": {
+                        "$ref": "#/$defs/Predicate",
+                        "description": "Only on an aggregate; needs capabilities.filtered_aggregates."
+                      },
+                      "over": {
+                        "$ref": "#/$defs/Window",
+                        "description": "Only on rank, row_number, lag, lead, which need over.order_by (rule 7); total takes no over."
+                      }
+                    }
+                  },
+                  "Case": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["case"],
+                    "properties": {
+                      "case": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["when", "then"],
+                          "properties": {
+                            "when": { "$ref": "#/$defs/Predicate" },
+                            "then": { "$ref": "#/$defs/Expr" }
+                          }
+                        }
+                      },
+                      "else": { "$ref": "#/$defs/Expr" }
+                    }
+                  },
+                  "Window": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "partition_by": { "type": "array", "items": { "$ref": "#/$defs/Expr" } },
+                      "order_by": { "type": "array", "items": { "$ref": "#/$defs/OrderItem" } }
+                    }
+                  },
+                  "Predicate": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["and"],
+                        "properties": {
+                          "and": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Predicate" } }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["or"],
+                        "properties": {
+                          "or": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Predicate" } }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["not"],
+                        "properties": {
+                          "not": { "$ref": "#/$defs/Predicate" }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["op", "args"],
+                        "properties": {
+                          "op": {
+                            "type": "string",
+                            "enum": [
+                              "eq", "ne", "lt", "lte", "gt", "gte", "in", "between", "is_null", "not_null",
+                              "contains", "starts_with", "ends_with", "like"
+                            ],
+                            "description": "Core: eq ne lt lte gt gte in between is_null not_null. contains starts_with ends_with like need capabilities.text and ignore case; like takes a pattern with % and _, and \\ escapes them. in takes [Expr, ListLiteral]; between takes [Expr, low, high]; is_null/not_null take [Expr]; the rest take [Expr, Expr]. A literal, a list value or a param fits the type of what it compares with (type_mismatch otherwise); null is tested with is_null and not_null only."
+                          },
+                          "args": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/Expr" } }
+                        }
+                      }
+                    ]
+                  },
+                  "SelectItem": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["expr"],
+                    "properties": {
+                      "expr": { "$ref": "#/$defs/Expr" },
+                      "as": {
+                        "$ref": "#/$defs/Ident",
+                        "description": "Result column name, unique in the query (duplicate_alias). Optional for a bare column (its own name); required for anything else (alias_required). Later select items, having and order_by refer to it with { ref }."
+                      }
+                    }
+                  },
+                  "OrderItem": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["expr"],
+                    "properties": {
+                      "expr": { "$ref": "#/$defs/Expr" },
+                      "dir": { "type": "string", "enum": ["asc", "desc"], "default": "asc" },
+                      "nulls": {
+                        "type": "string",
+                        "enum": ["first", "last"],
+                        "description": "Default: last for asc, first for desc."
+                      }
+                    }
+                  }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "columns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "Result columns the query produces, in select order.",
+                    "items": { "$ref": "#/$defs/Column" }
+                  },
+                  "targets": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "Every target the query reads, from and joins, with its versions now.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["target", "columns_version", "data_version", "loadable"],
+                      "properties": {
+                        "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                        "columns_version": { "type": "string", "minLength": 1 },
+                        "data_version": { "type": "string", "minLength": 1 },
+                        "loadable": { "type": "boolean" }
+                      }
+                    }
+                  },
+                  "canonical": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The normalized query -- keys sorted, defaults filled, aliases explicit, refs expanded, params left as references -- as a string a caller hashes."
+                  },
+                  "uses": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Capability names the query relies on beyond the core; empty for a core query."
+                  },
+                  "rendered": {
+                    "type": "string",
+                    "description": "Human-readable SQL-like form. Never executable. Present when asked and capabilities.render is true."
+                  },
+                  "warnings": {
+                    "type": "array",
+                    "description": "Things the receiver accepted but a caller should know: an aggregate query's limit lowered to max_groups, a bucket coarser than the data's grain.",
+                    "items": { "$ref": "#/$defs/Problem" }
+                  },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": ["columns", "targets", "canonical", "uses", "warnings"],
+                      "properties": {
+                        "error": false
+                      }
+                    }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": {
+                        "columns": false,
+                        "targets": false,
+                        "canonical": false,
+                        "uses": false,
+                        "rendered": false,
+                        "warnings": false
+                      }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "Column": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "type", "nullable"],
+                    "properties": {
+                      "name": { "type": "string", "minLength": 1 },
+                      "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                      "nullable": { "type": "boolean" },
+                      "source": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["target", "column"],
+                        "description": "Present when the result column is a bare column of one target.",
+                        "properties": {
+                          "target": { "type": "string" },
+                          "column": { "type": "string" }
+                        }
+                      }
+                    }
+                  },
+                  "Problem": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["code", "path", "message"],
+                    "description": "The shape every entry of error.details.problems takes as well.",
+                    "properties": {
+                      "code": { "type": "string", "minLength": 1 },
+                      "path": { "type": "string", "description": "JSON pointer into the request, e.g. /select/2/expr/args/0." },
+                      "message": { "type": "string" },
+                      "hint": { "type": "string", "description": "What would make it pass, when the receiver can say." }
+                    }
+                  },
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": {
+                        "type": "object",
+                        "description": "reason, and for invalid_query the problems array (see Problem)."
+                      }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: query
+        description: |
+          Run a structural query over one target, or over targets joined many-to-one, and answer typed
+          columns and rows. The receiver resolves every identifier against describe, binds every value
+          -- params and literals alike -- and reads every target in one snapshot; nothing the caller
+          sends becomes statement text.
+
+          A query without group_by or aggregates is a row query: it has a total order (the receiver
+          appends the key or @id as tiebreaker, and a distinct query orders by every select item) and
+          answers at most limit rows after skipping offset. An aggregate query does the same over its
+          groups, at most limits.max_groups of them. page says what the answer covers: total rows of
+          the from target, filtered rows (groups) the query produces before offset and limit, the
+          offset and limit applied, and returned rows. The counts are exact and read in the same
+          snapshot as the rows. Pages whose answers carry the same data_versions neither repeat nor
+          skip a row.
+
+          scope cuts a target before anything else: period in/from/to compare after the same coercion
+          loadable.append applies, latest is the greatest non-null period present in the whole target,
+          run_id keeps the rows one load wrote. A join cannot multiply rows: via names a declared
+          relation, and on must cover one of the joined target's unique sets. Nor does it drop them:
+          left, the default, answers a row with no related row with its joined columns as null.
+
+          A row is an object keyed by result column name, every value typed as its column declares
+          whatever the engine returned, and a null is an absent key. Every validation refusal is
+          invalid_request/invalid_query with details.problems naming each problem by path; access is checked per target before any row is read and one denied target is
+          permission_denied for the whole call. A receiver whose engine stops a query by time answers
+          provider_unavailable/timeout with retriable = false; one that cannot bounds the work by its
+          limits instead.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["from", "select"],
+                "properties": {
+                  "from": { "$ref": "#/$defs/Source" },
+                  "joins": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/Join" },
+                    "description": "Bounded by limits.max_joins. Needs capabilities.join."
+                  },
+                  "select": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "$ref": "#/$defs/SelectItem" },
+                    "description": "Bounded by limits.max_select. Without group_by or aggregates this is a row query."
+                  },
+                  "where": { "$ref": "#/$defs/Predicate" },
+                  "group_by": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/Expr" },
+                    "description": "Core: only the period column, bucket(period) or @run_id. Any column or bucket needs capabilities.aggregate. { ref } is not allowed here."
+                  },
+                  "having": { "$ref": "#/$defs/Predicate", "description": "Needs capabilities.aggregate." },
+                  "order_by": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/OrderItem" },
+                    "description": "{ ref } orders by a select item; { col } by a column of a source."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Rows (or groups) to answer; default limits.default_rows; above limits.max_rows is limit_exceeded."
+                  },
+                  "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Rows (or groups) of the ordered result to skip before limit applies; default 0."
+                  },
+                  "distinct": {
+                    "type": "boolean",
+                    "description": "Answer each distinct row once. order_by then names select items only (not_grouped otherwise), the order every engine can apply to distinct rows."
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": { "$ref": "#/$defs/Scalar" },
+                    "propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,40}$" },
+                    "description": "Named values { param } references bind to. Bound, never inlined."
+                  },
+                  "render": { "type": "boolean", "description": "Ask for rendered in the answer; needs capabilities.render." }
+                },
+                "$defs": {
+                  "Scalar": { "type": ["string", "number", "boolean", "null"] },
+                  "Ident": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,40}$" },
+                  "Alias": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,15}$" },
+                  "Target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                  "Scope": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "period": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "in": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": { "type": "string", "minLength": 1 },
+                            "description": "Period values in the lexical form loadable.append accepts; bounded by limits.max_period_in."
+                          },
+                          "latest": {
+                            "oneOf": [{ "const": true }, { "type": "integer", "minimum": 1 }],
+                            "description": "The greatest non-null period value present, or the N greatest distinct ones. Needs capabilities.period_latest."
+                          },
+                          "from": { "type": "string", "minLength": 1, "description": "Inclusive lower bound on the period value." },
+                          "to": { "type": "string", "minLength": 1, "description": "Inclusive upper bound on the period value." }
+                        },
+                        "oneOf": [
+                          { "required": ["in"] },
+                          { "required": ["latest"] },
+                          { "anyOf": [{ "required": ["from"] }, { "required": ["to"] }] }
+                        ]
+                      },
+                      "run_id": {
+                        "oneOf": [
+                          { "type": "string", "minLength": 1 },
+                          { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+                        ],
+                        "description": "Only rows a load with this run_id (one of these) wrote. Needs capabilities.lineage.run_id."
+                      }
+                    }
+                  },
+                  "Source": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["target"],
+                    "properties": {
+                      "target": { "$ref": "#/$defs/Target" },
+                      "as": { "$ref": "#/$defs/Alias" },
+                      "scope": { "$ref": "#/$defs/Scope" }
+                    }
+                  },
+                  "Join": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["target", "as"],
+                    "properties": {
+                      "target": { "$ref": "#/$defs/Target" },
+                      "as": { "$ref": "#/$defs/Alias" },
+                      "kind": {
+                        "type": "string",
+                        "enum": ["left", "inner"],
+                        "default": "left",
+                        "description": "left keeps a row with no related row and answers its joined columns as null; inner keeps only the rows that have one."
+                      },
+                      "via": {
+                        "$ref": "#/$defs/Ident",
+                        "description": "A relation the source named by of (default: from) declares in describe.relations. Needs capabilities.join = declared or adhoc."
+                      },
+                      "of": {
+                        "$ref": "#/$defs/Alias",
+                        "description": "With via only: the source whose relation via names, when it is not the from source."
+                      },
+                      "on": {
+                        "type": "array",
+                        "minItems": 1,
+                        "description": "Equality pairs: left is a column of a source before this join, right a column of the joined target. The right columns MUST cover one of the joined target's describe.unique sets (join_not_keyed otherwise). Needs capabilities.join = adhoc.",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["left", "right"],
+                          "properties": {
+                            "left": { "$ref": "#/$defs/ColRef" },
+                            "right": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "A column of the joined target, by its describe name."
+                            }
+                          }
+                        }
+                      },
+                      "scope": { "$ref": "#/$defs/Scope" }
+                    },
+                    "oneOf": [{ "required": ["via"] }, { "required": ["on"] }]
+                  },
+                  "Expr": {
+                    "oneOf": [
+                      { "$ref": "#/$defs/ColRef" },
+                      { "$ref": "#/$defs/Ref" },
+                      { "$ref": "#/$defs/Literal" },
+                      { "$ref": "#/$defs/ListLiteral" },
+                      { "$ref": "#/$defs/Param" },
+                      { "$ref": "#/$defs/Call" },
+                      { "$ref": "#/$defs/Case" }
+                    ]
+                  },
+                  "ColRef": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["col"],
+                    "properties": {
+                      "col": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "A column of a source by its exact describe name, or a pseudo column (@run_id, @id)."
+                      },
+                      "of": {
+                        "$ref": "#/$defs/Alias",
+                        "description": "The source the column belongs to: from.as or a join's as. Needed only when more than one source has the column (ambiguous_column otherwise)."
+                      }
+                    }
+                  },
+                  "Ref": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["ref"],
+                    "properties": {
+                      "ref": {
+                        "$ref": "#/$defs/Ident",
+                        "description": "An earlier select item, by its as. Allowed in select, having and order_by, and expanded by the receiver; elsewhere ref_misplaced."
+                      }
+                    }
+                  },
+                  "Literal": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["value"],
+                    "properties": {
+                      "value": { "$ref": "#/$defs/Scalar" }
+                    }
+                  },
+                  "ListLiteral": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["values"],
+                    "properties": {
+                      "values": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": { "$ref": "#/$defs/Scalar" },
+                        "description": "Only as the second argument of in; bounded by limits.max_in_values."
+                      }
+                    }
+                  },
+                  "Param": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["param"],
+                    "properties": {
+                      "param": { "$ref": "#/$defs/Ident" }
+                    }
+                  },
+                  "Call": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["fn"],
+                    "properties": {
+                      "fn": {
+                        "type": "string",
+                        "enum": [
+                          "count", "count_distinct", "sum", "avg", "min", "max", "bucket", "add", "sub",
+                          "mul", "div", "neg", "abs", "round", "coalesce", "nullif", "to_text", "lower",
+                          "upper", "total", "rank", "row_number", "lag", "lead"
+                        ],
+                        "description": "Closed catalogue; see the contract comment for tiers and result types. count takes zero or one argument; bucket takes a date column and a grain literal (type_mismatch on any other column); lag/lead take an expression and an optional offset literal."
+                      },
+                      "args": { "type": "array", "items": { "$ref": "#/$defs/Expr" } },
+                      "filter": {
+                        "$ref": "#/$defs/Predicate",
+                        "description": "Only on an aggregate; needs capabilities.filtered_aggregates."
+                      },
+                      "over": {
+                        "$ref": "#/$defs/Window",
+                        "description": "Only on rank, row_number, lag, lead, which need over.order_by (rule 7); total takes no over."
+                      }
+                    }
+                  },
+                  "Case": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["case"],
+                    "properties": {
+                      "case": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["when", "then"],
+                          "properties": {
+                            "when": { "$ref": "#/$defs/Predicate" },
+                            "then": { "$ref": "#/$defs/Expr" }
+                          }
+                        }
+                      },
+                      "else": { "$ref": "#/$defs/Expr" }
+                    }
+                  },
+                  "Window": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "partition_by": { "type": "array", "items": { "$ref": "#/$defs/Expr" } },
+                      "order_by": { "type": "array", "items": { "$ref": "#/$defs/OrderItem" } }
+                    }
+                  },
+                  "Predicate": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["and"],
+                        "properties": {
+                          "and": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Predicate" } }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["or"],
+                        "properties": {
+                          "or": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Predicate" } }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["not"],
+                        "properties": {
+                          "not": { "$ref": "#/$defs/Predicate" }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["op", "args"],
+                        "properties": {
+                          "op": {
+                            "type": "string",
+                            "enum": [
+                              "eq", "ne", "lt", "lte", "gt", "gte", "in", "between", "is_null", "not_null",
+                              "contains", "starts_with", "ends_with", "like"
+                            ],
+                            "description": "Core: eq ne lt lte gt gte in between is_null not_null. contains starts_with ends_with like need capabilities.text and ignore case; like takes a pattern with % and _, and \\ escapes them. in takes [Expr, ListLiteral]; between takes [Expr, low, high]; is_null/not_null take [Expr]; the rest take [Expr, Expr]. A literal, a list value or a param fits the type of what it compares with (type_mismatch otherwise); null is tested with is_null and not_null only."
+                          },
+                          "args": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/Expr" } }
+                        }
+                      }
+                    ]
+                  },
+                  "SelectItem": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["expr"],
+                    "properties": {
+                      "expr": { "$ref": "#/$defs/Expr" },
+                      "as": {
+                        "$ref": "#/$defs/Ident",
+                        "description": "Result column name, unique in the query (duplicate_alias). Optional for a bare column (its own name); required for anything else (alias_required). Later select items, having and order_by refer to it with { ref }."
+                      }
+                    }
+                  },
+                  "OrderItem": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["expr"],
+                    "properties": {
+                      "expr": { "$ref": "#/$defs/Expr" },
+                      "dir": { "type": "string", "enum": ["asc", "desc"], "default": "asc" },
+                      "nulls": {
+                        "type": "string",
+                        "enum": ["first", "last"],
+                        "description": "Default: last for asc, first for desc."
+                      }
+                    }
+                  }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "columns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "Result columns, in select order: the order a caller renders a row's keys in.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "type", "nullable"],
+                      "properties": {
+                        "name": { "type": "string", "minLength": 1 },
+                        "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                        "nullable": { "type": "boolean" },
+                        "source": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["target", "column"],
+                          "properties": {
+                            "target": { "type": "string" },
+                            "column": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "rows": {
+                    "type": "array",
+                    "description": "One object per row, keyed by result column name and typed as the column declares whatever the engine returned. A null value is an absent key (or null); callers treat both alike.",
+                    "items": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean", "null"] } }
+                  },
+                  "page": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["total", "filtered", "offset", "limit", "returned"],
+                    "description": "What the answer covers, counted exactly in the snapshot the rows were read from. More exists when offset + returned < filtered.",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Rows of the from target, before scope, where and joins."
+                      },
+                      "filtered": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Rows the query produces before offset and limit: result rows of a row query, groups of an aggregate query, distinct rows of a distinct one."
+                      },
+                      "offset": { "type": "integer", "minimum": 0, "description": "The offset applied." },
+                      "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The limit applied: the query's or limits.default_rows, for an aggregate query at most limits.max_groups."
+                      },
+                      "returned": { "type": "integer", "minimum": 0, "description": "Rows in this answer." }
+                    }
+                  },
+                  "data_versions": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string", "minLength": 1 },
+                    "description": "Target id -> data_version of the snapshot this answer was read from. Pages whose answers carry the same data_versions neither repeat nor skip a row."
+                  },
+                  "columns_versions": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string", "minLength": 1 },
+                    "description": "Target id -> columns_version at the time of the read."
+                  },
+                  "stats": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["duration_ms"],
+                    "properties": {
+                      "duration_ms": { "type": "integer", "minimum": 0 }
+                    }
+                  },
+                  "rendered": { "type": "string", "description": "Human-readable SQL-like form. Never executable." },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": ["columns", "rows", "page", "data_versions", "columns_versions", "stats"],
+                      "properties": {
+                        "error": false
+                      }
+                    }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": {
+                        "columns": false,
+                        "rows": false,
+                        "page": false,
+                        "data_versions": false,
+                        "columns_versions": false,
+                        "stats": false,
+                        "rendered": false
+                      }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": {
+                        "type": "object",
+                        "description": "reason, and for invalid_query the problems array ({ code, path, message, hint? })."
+                      }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }
+
+      - name: lookup
+        description: |
+          Which of these keys the target holds. keys are objects keyed by the columns of describe.key,
+          at most limits.max_lookup_keys of them; a key naming other columns, a value that does not fit
+          its column's type (rule 13), or a target with an empty key, is invalid_request/keys_invalid. scope narrows where to look -- the periods a load is
+          about to replace, one run -- and found answers, per key found, the owning run_id and the
+          period of the row when the receiver keeps them, plus the requested columns.
+
+          This is the read an importer asks before it decides whether a file belongs in a target that
+          already exists, and the read a slice replacement is checked against. It is a method of its
+          own because a membership test over thousands of composite keys is not a predicate any
+          receiver wants to compile from an expression tree. The answer is read in one snapshot and
+          mutates nothing.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["target", "keys"],
+                "properties": {
+                  "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
+                  "keys": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "Each object names every column of describe.key with a scalar value. Bounded by limits.max_lookup_keys.",
+                    "items": {
+                      "type": "object",
+                      "minProperties": 1,
+                      "additionalProperties": { "type": ["string", "number", "boolean"] }
+                    }
+                  },
+                  "scope": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "period": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "in": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                          "latest": { "oneOf": [{ "const": true }, { "type": "integer", "minimum": 1 }] },
+                          "from": { "type": "string", "minLength": 1 },
+                          "to": { "type": "string", "minLength": 1 }
+                        },
+                        "oneOf": [
+                          { "required": ["in"] },
+                          { "required": ["latest"] },
+                          { "anyOf": [{ "required": ["from"] }, { "required": ["to"] }] }
+                        ]
+                      },
+                      "run_id": {
+                        "oneOf": [
+                          { "type": "string", "minLength": 1 },
+                          { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+                        ]
+                      }
+                    }
+                  },
+                  "columns": {
+                    "type": "array",
+                    "description": "Columns to return for each found key, besides the key itself.",
+                    "items": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "key": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 },
+                    "description": "The key columns, in describe.key order."
+                  },
+                  "found": {
+                    "type": "array",
+                    "description": "One entry per key the target holds, in request order.",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["key"],
+                      "properties": {
+                        "key": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+                        "run_id": {
+                          "type": ["string", "null"],
+                          "description": "Owning run, when lineage.run_id is true; null for a row no load wrote."
+                        },
+                        "period": {
+                          "type": ["string", "null"],
+                          "description": "The row's period value, when the target has a period column."
+                        },
+                        "columns": {
+                          "type": "object",
+                          "additionalProperties": { "type": ["string", "number", "boolean", "null"] },
+                          "description": "The requested columns of the row."
+                        }
+                      }
+                    }
+                  },
+                  "missing": {
+                    "type": "array",
+                    "description": "Keys the target does not hold in the scope, in request order.",
+                    "items": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean"] } }
+                  },
+                  "data_version": { "type": "string", "minLength": 1 },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "required": ["key", "found", "missing", "data_version"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": {
+                        "key": false,
+                        "found": false,
+                        "missing": false,
+                        "data_version": false
+                      }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }

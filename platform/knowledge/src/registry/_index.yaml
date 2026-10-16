@@ -1,0 +1,144 @@
+version: "1.0"
+namespace: kickside.knowledge.registry
+
+# Canonical implementation of kickside.knowledge:knowledge_bases.
+
+entries:
+  # ─── per-method dispatchers ──────────────────────────────────────────
+  - name: kb_create
+    kind: function.lua
+    meta: { comment: "knowledge_bases — create" }
+    source: file://knowledge_bases.lua
+    method: create
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  - name: kb_find
+    kind: function.lua
+    meta: { comment: "knowledge_bases — find" }
+    source: file://knowledge_bases.lua
+    method: find
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  - name: kb_upsert
+    kind: function.lua
+    meta: { comment: "knowledge_bases — upsert" }
+    source: file://knowledge_bases.lua
+    method: upsert
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  - name: kb_update
+    kind: function.lua
+    meta: { comment: "knowledge_bases — update" }
+    source: file://knowledge_bases.lua
+    method: update
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  - name: kb_delete
+    kind: function.lua
+    meta: { comment: "knowledge_bases — delete" }
+    source: file://knowledge_bases.lua
+    method: delete
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  - name: kb_list
+    kind: function.lua
+    meta: { comment: "knowledge_bases — list" }
+    source: file://knowledge_bases.lua
+    method: list
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  # ─── test-only library view + unit test ──────────────────────────────
+  - name: knowledge_bases_lib
+    kind: library.lua
+    meta:
+      comment: Library view of knowledge_bases for unit tests; excluded from published packages.
+    source: file://knowledge_bases.lua
+    modules: [contract, uuid, registry, security]
+    imports:
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      kb_types: kickside.knowledge:types
+      envelope: kickside.component:envelope
+
+  - name: composer_catalog
+    kind: library.lua
+    meta:
+      comment: Composer catalog projection for accessible knowledge bases.
+    source: file://composer_catalog.lua
+    modules: [contract, security]
+
+    imports:
+      util: kickside.knowledge:util
+  - name: composer_knowledge_bases_catalog_rows
+    kind: function.lua
+    meta:
+      comment: Composer catalog projection rows for accessible knowledge bases.
+    source: file://composer_catalog.lua
+    method: knowledge_bases
+    modules: [contract, security]
+
+    imports:
+      util: kickside.knowledge:util
+  - name: composer_knowledge_bases_catalog
+    kind: registry.entry
+    meta:
+      type: kickside.composer.catalog
+      catalog: knowledge_bases
+      title: Knowledge bases
+      comment: Knowledge base instances the composer can pin into trait_contexts.
+      projection_ref: kickside.knowledge.registry:composer_knowledge_bases_catalog_rows
+      row_schema:
+        type: object
+        required: [id, title, description]
+        properties:
+          id: { type: string }
+          title: { type: string }
+          description: { type: string }
+
+  # ─── binding ─────────────────────────────────────────────────────────
+  - name: knowledge_bases_registry
+    kind: contract.binding
+    meta:
+      title: Knowledge Bases Registry
+      comment: Canonical orchestrator for kickside.knowledge:knowledge_bases
+      tags: [knowledge_bases, registry, canonical]
+    contracts:
+      - contract: kickside.knowledge:knowledge_bases
+        default: true
+        methods:
+          create: kickside.knowledge.registry:kb_create
+          find: kickside.knowledge.registry:kb_find
+          upsert: kickside.knowledge.registry:kb_upsert
+          update: kickside.knowledge.registry:kb_update
+          delete: kickside.knowledge.registry:kb_delete
+          list: kickside.knowledge.registry:kb_list

@@ -1,0 +1,69 @@
+**/.env
+**/.wippy/
+**/node_modules
+**/node_modules/
+**/*.log
+**/*.log.*
+**/app.db*
+**/.playwright-mcp/
+**/.test-raw.out
+**/*.test-raw.out
+.claude/
+.worktrees/
+scratch/
+/app/data/
+/app-pg/
+/pg-harness-scratch/
+scratchpad/**/profile/
+scratchpad/gtm/sweep/
+.audit_*.txt
+**/scratchpad-*.md
+
+# test-harness symlinks (local, recreated by harness setup)
+platform/*/test/agents_src_link
+platform/transform/eval/code_exec/run_code.lua
+
+# Published modules declare dependency ranges. Only standalone test harnesses
+# retain their own resolution locks.
+/platform/*/wippy.lock
+!/platform/transform-eval/wippy.lock
+/core/*/wippy.lock
+
+# vue-tsc / TypeScript build artifacts (emit leaks, incremental cache)
+**/*.tsbuildinfo
+**/vite.config.js
+**/vite.config.d.ts
+
+# machine-local dev files (not part of the repo)
+/wippy.exe
+/CLAUDE.md
+/.local/
+/app/wippy.lock.*
+/platform/*/test/storage/uploads/*
+# ephemeral skill artifact storage written by the skills harness suites
+/platform/*/test/storage/skillport/*
+__pycache__/
+*.pyc
+
+# Keeper screenshot tool output
+app/static/public/previews/
+
+# Scratchpad runtime captures
+/scratchpad/**/*.png
+/scratchpad/**/*.jpg
+/scratchpad/**/*.jpeg
+/scratchpad/**/*.webp
+/scratchpad/**/*.db
+/scratchpad/**/*.db-*
+/scratchpad/**/*.sqlite
+/scratchpad/**/*.sqlite-*
+/scratchpad/**/*.sqlite3
+/scratchpad/**/*.sqlite3-*
+/scratchpad/**/*.csv
+/scratchpad/**/*.jsonl
+/scratchpad/**/*.err
+/scratchpad/**/captures/
+/scratchpad/**/forensics_dbcopies/
+/scratchpad/**/promptmap/cache/
+
+.compat/

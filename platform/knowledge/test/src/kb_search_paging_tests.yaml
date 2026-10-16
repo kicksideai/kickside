@@ -1,0 +1,32 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: kb_search_paging_test
+    kind: function.lua
+    meta: { type: test, suite: kb_search_paging }
+    source: file://kb_search_paging_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      tools: kickside.knowledge.traits:kb_tools
+      search: kickside.knowledge.retrieval:kb_search
+      component: kickside.component:component
+      stores: kickside.knowledge:stores
+      facade: app:search_facade_under_test
+      binding: app:query_binding_stub
+
+  - name: search_facade_under_test
+    kind: library.lua
+    source: file://search_facade_source.lua
+    imports:
+      contract: app:query_binding_stub
+      security: app:query_security_stub
+      component: kickside.component:component
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
+  - name: query_binding_stub
+    kind: library.lua
+    source: file://query_binding_stub.lua
+  - name: query_security_stub
+    kind: library.lua
+    source: file://query_security_stub.lua

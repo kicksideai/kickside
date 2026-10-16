@@ -1,0 +1,466 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/sync. Provides the host resources the
+# engine and its deps require (app:db, app:processes, app:api, env storage, a
+# permissive actor scope) and boots component/contract so the co-located
+# *_test.lua suites run in isolation. Harness-only; excluded from publish via
+# the namespace exclude in wippy.yaml.
+
+entries:
+  - name: document_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_sync
+    source: file://document_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      sync_document: kickside.sync:document
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    version: '*'
+    component: kickside/security
+    parameters:
+      - {name: api_router, value: app:api}
+      - {name: ui_server, value: app:gateway}
+      - {name: target_db, value: app:db}
+      - {name: process_host, value: app:processes}
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: users_closure_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: harness_users_closure
+      comment: Proves app_users carries the users-module DDL and all registered app:db migrations completed before tests start.
+    source: file://users_closure_test.lua
+    modules: [sql]
+    method: run
+    imports:
+      test: wippy.test:test
+      migration_registry: wippy.migration:registry
+
+  - name: sync_kind_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_sync
+      comment: The Data Sync kind on the round — declaration, installed drives, reconfigure and generic controls.
+    source: file://sync_kind_test.lua
+    method: run
+    security:
+      actor:
+        id: sync_test_runner
+      policies:
+        - app:user
+    modules: [contract, funcs, registry, security, sql, time, uuid, json]
+    imports:
+      test: wippy.test:test
+      sync_runtime: kickside.sync:sync_runtime
+      llm: wippy.llm:llm
+      strategy_llm: kickside.transform:strategy_llm
+      automations_lib: kickside.automation:automation
+      binding_validation: kickside.automation:binding_validation
+      drive: kickside.automation:drive
+
+  - name: round_delivery_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_sync
+      comment: Filter, normalization, prepared replay and declared sink outcomes.
+    source: file://round_consumer_test.lua
+    method: run_delivery
+    modules: [sql, json, uuid, funcs, contract, security]
+    imports:
+      round_write: kickside.automation:round_write
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: round_storage_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_sync
+      comment: Storage failure before prepare or uncertainty reservation sends nothing.
+    source: file://round_consumer_test.lua
+    method: run_storage
+    modules: [sql, json, uuid, funcs, contract, security]
+    imports:
+      round_write: kickside.automation:round_write
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: round_authorization_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_sync
+      comment: Effectful transforms enforce operator and principal resource grants.
+    source: file://round_consumer_test.lua
+    method: run_authorization
+    modules: [sql, json, uuid, funcs, contract, security]
+    imports:
+      round_write: kickside.automation:round_write
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for Data Sync kind tests.
+    file: "${sqlite_path}"
+
+  - name: uploads
+    kind: fs.directory
+    directory: ./storage
+    auto_init: true
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: Separate public router for wippy/views to avoid route collisions with app:api.
+      server: gateway
+    prefix: /public
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the Data Sync suites run their scoped actors under.
+    groups:
+      - automation_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  # The Data Sync module loads through its explicit local replacement while this
+  # application source tree owns both suites. Sync's ns.requirement defaults
+  # (api_router=app:api) resolve against the resources above. component/contract
+  # load via their replacements and target_db default.
+
+  - name: dep.kickside.sync
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Sync mounted as the single package root; this harness supplies all host and transitive seams.
+    component: kickside/sync
+    parameters:
+    - name: kickside.sync:ui_server
+      value: app:gateway
+    - name: kickside.automation:target_db
+      value: app:db
+    - name: kickside.automation:api_router
+      value: app:api
+    - name: kickside.automation:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.transform:api_router
+      value: app:api
+    - name: kickside.transform:ui_server
+      value: app:gateway
+    - name: kickside.transform.security:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: wippy.migration:app_db
+      value: app:db
+    - name: wippy.views:api_router
+      value: app:api_public
+    - name: wippy.views:env_storage
+      value: app:env_storage
+    - name: wippy.bootloader:application_host
+      value: app:processes
+    - name: wippy.bootloader:env_storage
+      value: app:env_storage
+
+  - name: dep.kickside.automation
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Automation engine — provides install/rollback, trigger subscriptions, and scheduled-action adapters consumed by Data Sync.
+    component: "kickside/automation"
+    parameters:
+      - name: process_host
+        value: app:processes
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+      - name: target_db
+        value: app:db
+
+  - name: dep.kickside.users
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Users mounted for its migrations (app_users owns the Session foreign keys). Suites keep the harness scope_resolver stub, which resolves the test actor's fixed group.
+    component: "kickside/users"
+    parameters:
+      - name: kickside.users:env_storage
+        value: app:env_storage
+      - name: kickside.users:public_router
+        value: app:api_public
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - name: kickside.users:target_db
+        value: app:db
+      - name: kickside.users:user_security_scope
+        value: app:user
+      - name: kickside.users:admin_security_scope
+        value: app:user
+      - name: kickside.users:login_role_resource
+        value: app:*
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.kickside.transform
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Transform — shared item transform engine used by Data Sync automation flows.
+    component: "kickside/transform"
+
+  - name: dep.wippy.llm
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: LLM — transitive provider required by the shared transform engine.
+    component: "wippy/llm"
+    parameters:
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.relay
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Relay — transitive dep of session/views pulled in by transform's generator dataflow.
+    component: "wippy/relay"
+    parameters:
+      - name: user_security_scope
+        value: app:user
+      - name: env_storage
+        value: app:env_storage
+      - name: application_host
+        value: app:processes
+
+  - name: dep.wippy.views
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Views — transitive dep of session (artifact rendering) pulled in by transform's generator dataflow.
+    component: "wippy/views"
+    parameters:
+      - name: api_router
+        value: app:api_public
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.session
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Session — backs wippy/dataflow's session artifact repo, pulled in by transform's generator dataflow.
+    component: "wippy/session"
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: env_storage
+        value: app:env_storage
+      - name: delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.wippy.dataflow
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Dataflow — the durable engine transform's generator flow compiles to.
+    component: "wippy/dataflow"
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+      - name: api_router
+        value: app:api
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: application_host
+        value: app:processes
+      - name: env_storage
+        value: app:env_storage
+
+  - name: scope_resolver_stub
+    kind: function.lua
+    meta:
+      comment: Test-only scope resolver so projection registration can freeze the test actor's execution identity.
+    source: file://scope_resolver_stub.lua
+    modules: [security]
+    method: resolve
+    imports:
+      execution_identity: kickside.execution:execution_identity
+
+  - name: scope_resolver_binding
+    kind: contract.binding
+    meta:
+      comment: Sync harness resolver; production binds this in kickside/users.
+    contracts:
+      - contract: kickside.contract:scope_resolver
+        default: true
+        methods:
+          resolve: app:scope_resolver_stub
+
+  - name: dep.kickside.inbox
+    kind: ns.dependency
+    version: '*'
+    component: kickside/inbox
+    parameters:
+    - name: kickside.inbox:api_router
+      value: app:api
+    - name: kickside.inbox:ui_server
+      value: app:gateway
+    - name: kickside.blocks:process_host
+      value: app:processes
+
+  - name: dep.kickside.atlassian
+    kind: ns.dependency
+    component: kickside/atlassian
+    version: '*'
+    parameters:
+    - name: kickside.atlassian:env_storage
+      value: app:env_storage
+    - name: kickside.atlassian:ui_server
+      value: app:gateway
+    - name: kickside.connection:api_router
+      value: app:api
+    - name: kickside.connection:ui_server
+      value: app:gateway
+    - name: kickside.oauth:target_db
+      value: app:db
+    - name: kickside.oauth:api_router
+      value: app:api
+    - name: kickside.oauth:public_api_router
+      value: app:api_public
+    - name: kickside.oauth:process_host
+      value: app:processes
+
+  - name: sync_native_validation_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_sync}
+    source: file://sync_native_validation_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      sync_runtime: kickside.sync:sync_runtime
+
+  - name: sync_source_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_sync}
+    source: file://sync_source_native_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      sync_runtime: kickside.sync:sync_runtime
+
+  - name: sync_dependency_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_sync}
+    source: file://sync_dependency_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      sync_runtime: kickside.sync:sync_runtime
+      automations_lib: kickside.automation:automation

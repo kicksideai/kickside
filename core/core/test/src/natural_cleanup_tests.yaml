@@ -1,0 +1,56 @@
+version: '1.0'
+namespace: app
+entries:
+- name: natural_cleanup_fixture
+  kind: library.lua
+  source: file://natural_cleanup_fixture.lua
+- name: natural_cleanup_source
+  kind: library.lua
+  source: file://natural_cleanup_source.lua
+  imports:
+    natural_key: app:natural_cleanup_natural_key
+    contract_common: app:natural_cleanup_contract_common
+    threads_thread_crud: app:natural_cleanup_threads_thread_crud
+    threads_reader: app:natural_cleanup_threads_reader
+    threads_component: app:natural_cleanup_threads_component
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    committed_error: kickside.contract:committed_error
+- name: natural_cleanup_test
+  kind: function.lua
+  source: file://natural_cleanup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_natural_cleanup
+  imports:
+    test: wippy.test:test
+    fixture: app:natural_cleanup_fixture
+    api: app:natural_cleanup_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: natural_cleanup_natural_key
+  kind: library.lua
+  source: file://natural_cleanup_natural_key.lua
+  imports:
+    fixture: app:natural_cleanup_fixture
+- name: natural_cleanup_contract_common
+  kind: library.lua
+  source: file://natural_cleanup_contract_common.lua
+  imports:
+    fixture: app:natural_cleanup_fixture
+- name: natural_cleanup_threads_thread_crud
+  kind: library.lua
+  source: file://natural_cleanup_threads_thread_crud.lua
+  imports:
+    fixture: app:natural_cleanup_fixture
+- name: natural_cleanup_threads_reader
+  kind: library.lua
+  source: file://natural_cleanup_threads_reader.lua
+  imports:
+    fixture: app:natural_cleanup_fixture
+- name: natural_cleanup_threads_component
+  kind: library.lua
+  source: file://natural_cleanup_threads_component.lua
+  imports:
+    fixture: app:natural_cleanup_fixture

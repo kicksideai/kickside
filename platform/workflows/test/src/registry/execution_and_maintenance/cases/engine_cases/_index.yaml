@@ -1,0 +1,103 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_engine_execution_test_workflow_compiler_live_dataflow_execution_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_1_engine
+      group: KickSide Workflows
+      comment: Live engine execution — runs after fixture-only suites because its durable dataflow actors share the harness process host and DB.
+    source: file://../../../../suites/engine_flow_visibility_and_agent.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+      maintenance: kickside.workflows.runs:maintenance
+
+  - name: tsplit_engine_execution_test_workflow_compiler_live_dataflow_execution_3
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_1_engine
+      group: KickSide Workflows
+      comment: Live engine execution — runs after fixture-only suites because its durable dataflow actors share the harness process host and DB.
+    source: file://../../../../suites/engine_edge_transform_and_simulation.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: tsplit_engine_execution_test_workflow_compiler_live_dataflow_execution__2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_1_engine
+      group: KickSide Workflows
+      comment: Live engine execution of branches, Awaits, for_each items and failure ports — runs after fixture-only suites because its durable dataflow actors share the harness process host and DB.
+    source: file://../../../../suites/engine_await_resume.lua
+    method: run_flow_control
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: tsplit_engine_execution_test_workflow_compiler_live_dataflow_execution__3
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows_live_1_engine
+      group: KickSide Workflows
+      comment: Live engine execution of branches, Awaits, for_each items and failure ports — runs after fixture-only suites because its durable dataflow actors share the harness process host and DB.
+    source: file://../../../../suites/engine_iteration_and_failure.lua
+    method: run_flow_control
+    modules: [sql, json, funcs, uuid, time, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold

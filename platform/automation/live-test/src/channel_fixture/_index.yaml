@@ -1,0 +1,33 @@
+version: '1.0'
+namespace: kickside.channel
+entries:
+- name: channel_kind
+  kind: contract.binding
+  meta:
+    type: test_fixture
+    title: Channel Chat
+    icon: tabler:message-circle
+    class:
+    - kickside.channel
+    group: Channels
+    events:
+      input: []
+      output:
+      - type: kickside.channel.events:message.inbound
+  contracts:
+  - contract: kickside.contract:component
+    methods:
+      get_status: kickside.core.threads:thread_status
+- name: channel_message_received
+  kind: registry.entry
+  meta:
+    type: kickside.automation.port
+    title: New Channel Message
+    icon: tabler:message-circle
+  binding: kickside.channel:channel_kind
+  event: kickside.channel.events:message.inbound
+  config_schema:
+    thread_id:
+      picker: wc-component-picker
+      required: true
+      title: Channel

@@ -1,0 +1,93 @@
+version: "1.0"
+namespace: kickside.oauth.service
+
+entries:
+  # kickside.oauth.service:connection_negotiator
+  - name: connection_negotiator
+    kind: process.lua
+    meta:
+      comment: OAuth connection negotiation process
+      tags:
+        - oauth
+        - process
+        - connection
+        - negotiation
+    source: file://connection_negotiator.lua
+    modules:
+      - time
+      - contract
+      - process
+      - channel
+      - security
+    imports:
+      connection_manager: kickside.oauth:connection_manager
+      callback_reply: kickside.oauth.service:callback_reply
+      callback_names: kickside.oauth:callback_names
+    method: run
+
+  - name: callback_reply
+    kind: library.lua
+    meta:
+      comment: The negotiator's answer to its callback request through the OAuth-owned deliver function.
+    source: file://callback_reply.lua
+    modules: [process, funcs]
+
+  # The callback answer runs under the OAuth identity: the negotiating principal
+  # needs no process messaging authority.
+  - name: callback_reply_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the negotiator answer the callback request that delivered its code.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: callback_reply_deliver
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one OAuth callback response to the requesting callback handler.
+    source: file://callback_reply.lua
+    method: deliver
+    modules: [process, funcs]
+    security:
+      actor:
+        id: kickside.oauth.service:callback_reply_deliver
+      policies:
+        - kickside.oauth.service:callback_reply_transport
+
+  # kickside.oauth.service:token_refresh
+  - name: token_refresh
+    kind: process.lua
+    meta:
+      comment: Token refresh for a connection
+      tags:
+        - oauth
+        - token
+        - refresh
+        - execute
+    source: file://token_refresh.lua
+    imports:
+      token_refresh_core: kickside.oauth:token_refresh_core
+    method: handle
+
+  - name: refresh_bootstrap
+    kind: process.lua
+    source: file://refresh_bootstrap.lua
+    method: run
+    modules: [process, channel]
+    imports:
+      refresh_schedule: kickside.oauth:refresh_schedule
+
+  - name: refresh_bootstrap.service
+    kind: process.service
+    process: kickside.oauth.service:refresh_bootstrap
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        initial_delay: 2s
+        max_delay: 60s
+        max_attempts: 10

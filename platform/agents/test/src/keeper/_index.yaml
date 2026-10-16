@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: keeper.hub.tools
+
+entries:
+  - name: administrator_probe
+    kind: function.lua
+    meta:
+      type: tool
+      title: Administrator-only Keeper probe
+      public: true
+      input_schema: '{}'
+    source: file://tool_probe.lua
+    method: run

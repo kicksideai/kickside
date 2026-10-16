@@ -1,0 +1,51 @@
+version: "1.0"
+namespace: kickside.automation.migrations
+
+# target_db is injected by the root kickside.automation:target_db requirement.
+
+entries:
+  - name: 12_delivery_history
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+        - ns:wippy.migration
+    source: file://12_delivery_history.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 06_trigger_item_ledger
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Durable per-item delivery ledger for trigger/sync acquisition (attempts, pacing, parked, dead, resolved).
+      depends_on:
+        - ns:wippy.migration
+    source: file://06_trigger_item_ledger.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 10_drive_schema
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Automation drive, command, op, receipt and prepared tables.
+      depends_on:
+        - ns:wippy.migration
+    source: file://10_drive_schema.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 11_delivery_provenance
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+        - ns:wippy.migration
+    source: file://11_delivery_provenance.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration

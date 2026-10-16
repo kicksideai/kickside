@@ -1,0 +1,17 @@
+scratchpad/ export-ignore
+**/scratchpad/** export-ignore
+AGENTS.md export-ignore
+automations-page.png export-ignore
+lab-pid.txt export-ignore
+.gitlab/ export-ignore
+.gitlab-ci.yml export-ignore
+.pre-commit-config.yaml export-ignore
+ops/ export-ignore
+helm/ export-ignore
+Dockerfile.runtime export-ignore
+**/.local/ export-ignore
+release/private-orgs.txt export-ignore
+release/private-app-components.txt export-ignore
+*.js.map export-ignore
+platform/users/test/scratch/ export-ignore
+app/test/health/verify_wiring.py export-ignore

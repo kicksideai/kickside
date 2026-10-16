@@ -1,0 +1,25 @@
+organization: kickside
+module: blocks
+type: plugin
+description: Typed executable Blocks for headless and visual Flow composition.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - blocks
+  - dataflow
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+exclude:
+  - "app:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

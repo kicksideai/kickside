@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: app.models
+
+# Live model the transform_eval suite resolves. The generator's reasoning calls
+# and the llm transform kind both resolve `class:fast` through wippy.llm.discovery,
+# so a real llm.model with that class must exist. In production these entries live
+# in the kickside/models app module discovered from a provider profile; here a
+# single registry model is enough. The OpenAI provider reads OPENAI_API_KEY from
+# wippy.llm.env:envs (OS storage), so that key must be present for the eval to run.
+# Point the eval at a different id via KICKSIDE_TRANSFORM_EVAL_MODEL. Harness-only.
+
+entries:
+  - name: gpt-4.1-mini
+    kind: registry.entry
+    meta:
+      type: llm.model
+      title: GPT-4.1 Mini
+      comment: Fast generation model the transform generator resolves via class:fast.
+      capabilities:
+        - tool_use
+        - generate
+        - structured_output
+      class:
+        - default
+        - fast
+      priority: 10
+    max_tokens: 1047576
+    output_tokens: 32768
+    pricing:
+      cached_input: 0.5
+      input: 2
+      output: 8
+    providers:
+      - id: wippy.llm.openai:provider
+        provider_model: gpt-4.1-mini

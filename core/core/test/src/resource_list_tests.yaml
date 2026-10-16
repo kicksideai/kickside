@@ -1,0 +1,34 @@
+version: '1.0'
+namespace: app
+entries:
+- name: resource_list_reader
+  kind: library.lua
+  source: file://resource_list_reader.lua
+  imports:
+    fixture: app:event_read_release_fixture
+- name: resource_list_source
+  kind: library.lua
+  source: file://resource_list_source.lua
+  modules:
+  - json
+  - sql
+  imports:
+    contract_common: app:event_read_release_common
+    threads_reader: app:resource_list_reader
+    threads_teardown: kickside.core.threads.persist:teardown
+    threads_thread_crud: kickside.core.threads.persist:thread_crud
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+- name: resource_list_test
+  kind: function.lua
+  source: file://resource_list_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_resource_list
+  imports:
+    test: wippy.test:test
+    resource: app:resource_list_source
+    fixture: app:event_read_release_fixture
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

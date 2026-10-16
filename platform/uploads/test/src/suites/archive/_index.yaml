@@ -1,0 +1,15 @@
+version: "1.0"
+namespace: app.uploads_suites.archive
+
+entries:
+  - name: zip_reader_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads_archive
+    source: file://zip_reader_test.lua
+    method: run
+    modules: [compress]
+    imports:
+      test: wippy.test:test
+      zip_reader: kickside.uploads.archive:zip_reader

@@ -1,0 +1,86 @@
+version: '1.0'
+namespace: kickside.agents.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Agents
+    surface: kickside.agents
+    intent: module_access
+    includes:
+    - kickside.agents.security:module_runtime
+    - kickside.agents.security:agents_endpoint_access
+  groups: []
+  policy:
+    resources:
+    - kickside.agents:*
+    - kickside.agents.api:*
+    - kickside.agents.binding:*
+    - kickside.agents.dependencies:*
+    - kickside.agents.invoke:*
+    - kickside.agents.pickers:*
+    - kickside.agents.registry:*
+    - kickside.agents.security:*
+    - kickside.agents.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: agents_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.agents.api:agents_by_name.endpoint
+    - kickside.agents.api:create_user_agent.endpoint
+    - kickside.agents.api:delete_user_agent.endpoint
+    - kickside.agents.api:get_user_agent.endpoint
+    - kickside.agents.api:list_agents.endpoint
+    - kickside.agents.api:list_memory_options.endpoint
+    - kickside.agents.api:list_namespaces.endpoint
+    - kickside.agents.api:list_tools.endpoint
+    - kickside.agents.api:list_traits.endpoint
+    - kickside.agents.api:list_user_agents.endpoint
+    - kickside.agents.api:update_user_agent.endpoint
+    actions: access
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.agents:*
+    - kickside.agents.api:*
+    - kickside.agents.binding:*
+    - kickside.agents.dependencies:*
+    - kickside.agents.invoke:*
+    - kickside.agents.pickers:*
+    - kickside.agents.registry:*
+    - kickside.agents.security:*
+    - kickside.agents.traits:*
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: user_security_scope
+  kind: ns.requirement
+  default: kickside.security.groups:members
+  meta:
+    value_kind: security.scope
+    description: Application group with member access to this module.
+  targets:
+  - entry: kickside.agents.security:module_access
+    path: .groups +=
+  - entry: kickside.agents.security:module_runtime
+    path: .groups +=
+  - entry: kickside.agents.security:agents_endpoint_access
+    path: .groups +=

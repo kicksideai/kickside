@@ -1,0 +1,5 @@
+organization: kickside
+module: renderers-test
+directories:
+  src: .
+  modules: .wippy

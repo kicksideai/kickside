@@ -1,0 +1,3 @@
+organization: kickside
+module: identity-test
+description: Standalone harness that boots kickside/identity and exercises the link service.

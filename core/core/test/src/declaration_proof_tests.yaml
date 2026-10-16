@@ -1,0 +1,50 @@
+version: '1.0'
+namespace: app
+entries:
+- name: declaration_proof_source
+  kind: library.lua
+  source: file://declaration_proof_source.lua
+  modules:
+  - sql
+  - uuid
+  imports:
+    clock: kickside.core.jobs:clock
+    threads_consts: kickside.core.threads:consts
+    threads_normalize: kickside.core.threads.persist:normalize
+    threads_component: kickside.core.threads:component
+    core_types: kickside.core:types
+    autoinit: app:declaration_proof_autoinit
+    proj_writer: app:declaration_proof_writer
+    retention_repo: app:attachment_errors_retention
+    threads_writer: kickside.core.threads.persist:writer
+    threads_teardown: app:attachment_errors_teardown
+    threads_thread_row: kickside.core.threads.persist:thread_row
+    natural_key: kickside.core.threads.persist:natural_key
+    error_envelope: kickside.contract:error_envelope
+    committed_error: kickside.contract:committed_error
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+- name: declaration_proof_fixture
+  kind: library.lua
+  source: file://declaration_proof_fixture.lua
+- name: declaration_proof_test
+  kind: function.lua
+  source: file://declaration_proof_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_declaration_proof
+  imports:
+    test: wippy.test:test
+    fixture: app:declaration_proof_fixture
+    api: app:declaration_proof_source
+    canonical_json: kickside.contract:canonical_json
+- name: declaration_proof_autoinit
+  kind: library.lua
+  source: file://declaration_proof_autoinit.lua
+  imports:
+    fixture: app:declaration_proof_fixture
+- name: declaration_proof_writer
+  kind: library.lua
+  source: file://declaration_proof_writer.lua
+  imports:
+    fixture: app:declaration_proof_fixture

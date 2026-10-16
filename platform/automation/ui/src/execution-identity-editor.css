@@ -1,0 +1,4 @@
+@import "@wippy-fe/theme/theme-config.css";
+@tailwind base;
+:host { display: block; }
+*, *::before, *::after { box-sizing: border-box; }

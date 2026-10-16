@@ -1,0 +1,345 @@
+version: "1.0"
+namespace: kickside.ui
+
+# Platform UI surfaces and navigation. The Appearance editor is a self-contained
+# web component (kickside-appearance) that edits navigation appearance (layout,
+# categories, per-surface overrides). This module also owns the nav aggregation
+# backend that discovers ui.nav_item registry entries and serves the effective
+# navigation over the stable /nav endpoints.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide UI
+      comment: Platform UI and navigation — effective nav API plus the Appearance editor web component.
+
+  # ─── Nav API dependency interface ────────────────────────────────────
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the nav endpoints attach to. /nav/list is read by any authed user; /nav/config is admin-only via the router firewall.
+      description: HTTP router the nav endpoints attach to. /nav/list is read by any authed user; /nav/config is admin-only via the router firewall.
+    targets:
+      - entry: kickside.ui.api:list_nav.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:list_contributions.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:set_config.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:upload_logo.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:list_settings_tabs.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:list_account_items.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:mark_splash_seen.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:mark_splash_unseen.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:reset_splashes.endpoint
+        path: .meta.router
+
+  # Public (unauthenticated) router for branding reads — the login page resolves
+  # title + logo before any session exists.
+  - name: public_api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Public HTTP router the unauthenticated branding read attaches to.
+      description: Public HTTP router the unauthenticated branding read attaches to.
+    targets:
+      - entry: kickside.ui.api:get_branding.endpoint
+        path: .meta.router
+      - entry: kickside.ui.api:get_logo.endpoint
+        path: .meta.router
+
+  # ─── Appearance UI (self-served web component + System tab) ───────────
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the appearance UI mount attaches to.
+      description: HTTP server the appearance UI mount attaches to.
+    targets:
+      - entry: kickside.ui:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-appearance web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta:
+      server: ""
+    path: /kickside-appearance
+    fs: kickside.ui:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+
+  - name: legacy_branding_fs
+    kind: fs.directory
+    directory: ./branding
+    auto_init: true
+
+  - name: branding_fs
+    kind: ns.requirement
+    default: kickside.ui:legacy_branding_fs
+    meta:
+      value_kind: fs.directory
+      description: Existing branding filesystem binding accepted by installed module parameters.
+    targets:
+      - entry: kickside.ui:legacy_branding_config
+        path: .fs
+
+  - name: legacy_branding_config
+    kind: registry.entry
+    fs: kickside.ui:legacy_branding_fs
+
+  - name: branding
+    kind: library.lua
+    source: file://branding.lua
+    modules: [sql, registry, hash, json, base64]
+    imports:
+      settings_types: kickside.settings:settings_types
+      ui_types: kickside.ui:types
+
+  - name: appearance_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: appearance_view
+      title: Appearance
+      announced: true
+      tag_name: kickside-appearance
+      base_path: kickside-appearance
+      entry_point: index.js
+      icon: tabler:palette
+
+  - name: tab.appearance
+    kind: registry.entry
+    meta:
+      type: ui.settings_tab
+      comment: Navigation appearance — layout, categories, surface visibility.
+    key: appearance
+    label: Appearance
+    icon: tabler:palette
+    order: 40
+    render: component
+    component_tag: kickside-appearance
+    access: kickside.ui.api:set_config.endpoint
+
+  # ─── Nav system controls (admin-editable, cached via settings) ────────
+  - name: setting_layout
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Navigation layout orientation.
+    namespace: kickside.ui
+    key: layout
+    value_type: string
+    default: vertical
+    description: Navigation orientation — vertical (sidebar) or horizontal (top bar).
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_overrides
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Per-item nav overrides keyed by route_name or id.
+    namespace: kickside.ui
+    key: overrides
+    value_type: json
+    default: {}
+    description: Per-item overrides { hidden, order, category, label, icon } keyed by route_name or id.
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_categories
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Admin-declared nav categories.
+    namespace: kickside.ui
+    key: categories
+    value_type: json
+    default: []
+    description: Custom nav categories [ { key, label, icon, order, collapsed } ].
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_custom_items
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Admin-declared custom nav items.
+    namespace: kickside.ui
+    key: custom_items
+    value_type: json
+    default: []
+    description: Custom nav items [ { id, label, icon, path, route_name, category, order } ].
+    scope: global
+    visible: false
+    editable: true
+
+  # ─── Branding (admin-editable title + logo) ───────────────────────────
+  - name: setting_title
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Site title shown in the header and the browser tab.
+    namespace: kickside.ui
+    key: title
+    value_type: string
+    default: KickSide
+    description: Site title — shown in the app header and the browser tab.
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_logo_url
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Public URL of the uploaded logo (empty falls back to the default mark).
+    namespace: kickside.ui
+    key: logo_url
+    value_type: string
+    default: ""
+    description: Logo image URL — set via the Appearance logo upload; empty uses the default mark.
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_home
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Path of the surface used as the landing page (empty falls back to "/").
+    namespace: kickside.ui
+    key: home
+    value_type: string
+    default: ""
+    description: Home page — the surface path users land on at "/"; empty uses the first/declared default.
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_primary_color
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Base tone (primary color) applied to the app theme via the facade resolver.
+    namespace: kickside.ui
+    key: primary_color
+    value_type: string
+    default: ""
+    description: Base tone — a hex color (e.g. #3b82f6) that retones the app's primary ramp; empty uses the built-in default.
+    scope: global
+    editable: true
+    visible: false
+    schema:
+      type: string
+      format: color
+
+  - name: nav_provider
+    kind: contract.definition
+    meta:
+      title: Nav Provider
+      description: >-
+        A source of navigation. list() returns the nav items (and the categories that
+        name their groups) this source contributes for the calling user. Providers run
+        under the caller's actor and scope, so a provider may filter by what that user
+        may see. The canonical registry provider is always collected first; remaining
+        bindings follow meta.priority (desc), so a declared surface wins the first-wins
+        dedupe over a dynamic item claiming the same path or route_name.
+    methods:
+      - name: list
+        description: |
+          list({ locale, manage, timeout_ms }) -> { items, categories }. locale is the caller's
+          interface locale (for labels built from user data); manage is true when the
+          appearance editor is asking. Items follow the ui.nav_item field shape plus a
+          stable id: { id, title, icon, path, route_name, category, order, render,
+          surface, component_tag, badge }. Categories are { key, title, icon, order,
+          collapsed }. timeout_ms is the provider's cooperative request budget. The
+          core calls the bounded provider set through cancellable native futures
+          beneath one 250ms deadline and re-validates everything it receives. A
+          provider failure makes navigation unavailable; future cancellation is
+          best-effort and does not preempt installed in-process code.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object",
+                "properties": {
+                  "locale": { "type": "string" },
+                  "manage": { "type": "boolean" },
+                  "timeout_ms": { "type": "integer", "minimum": 1, "maximum": 250 }
+                } }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              { "type": "object",
+                "properties": {
+                  "items": { "type": "array", "items": { "type": "object" } },
+                  "categories": { "type": "array", "items": { "type": "object" } }
+                } }
+
+  - name: registry_nav_provider
+    kind: function.lua
+    meta:
+      comment: Default nav source — scans the declared ui.nav_item surfaces and ui.nav_category groups and contributes them like any other provider (the core normalizes them).
+    source: file://registry_nav_provider.lua
+    method: list
+    imports:
+      ui_types: kickside.ui:types
+      shell: kickside.ui:shell_discovery
+
+  - name: registry_nav_provider_binding
+    kind: contract.binding
+    meta:
+      title: Registry Navigation
+      comment: Implements kickside.ui:nav_provider over the registry. Highest priority, so declared surfaces are collected before any dynamic provider's items.
+      priority: 1000
+    contracts:
+      - contract: kickside.ui:nav_provider
+        methods:
+          list: kickside.ui:registry_nav_provider
+
+  # ─── Nav libraries ───────────────────────────────────────────────────
+  - name: types
+    kind: library.lua
+    meta: { comment: Nav item/category meta.type + provider contract id + settings namespace/keys + layout vocabulary. }
+    source: file://types.lua
+
+  - name: nav
+    kind: library.lua
+    meta: { comment: "Assemble effective navigation — provider-contributed items merged with system controls, deduped first-wins, grouped into ordered categories." }
+    source: file://nav.lua
+    imports:
+      ui_types: kickside.ui:types
+
+  - name: nav_providers
+    kind: library.lua
+    meta: { comment: "Bounded fan-out over nav_provider bindings via an injected port — normalizes and caps each contribution. Pure (no contract import); list_nav owns the contract edge. A provider failure makes navigation unavailable; cancellation failures retain the operation error." }
+    source: file://nav_providers.lua
+    modules: [time]
+    imports:
+      ui_types: kickside.ui:types
+      nav: kickside.ui:nav
+      error_envelope: kickside.contract:error_envelope
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

@@ -1,0 +1,375 @@
+version: "1.0"
+namespace: kickside.users.api
+
+entries:
+
+  - name: bot_accounts_create
+    kind: function.lua
+    source: file://bot_accounts.lua
+    method: create
+    modules: [http, json, security]
+    imports:
+      bot_accounts: kickside.users:bot_accounts
+      list_users: kickside.users.api:list_users
+      http_errors: kickside.contract:http_errors
+      error_response: kickside.users.api:error_response
+
+  - name: bot_accounts_create.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    path: /users/bots
+    func: bot_accounts_create
+
+  - name: bot_accounts_list
+    kind: function.lua
+    source: file://bot_accounts.lua
+    method: list
+    modules: [http, json, security]
+    imports:
+      bot_accounts: kickside.users:bot_accounts
+      list_users: kickside.users.api:list_users
+      http_errors: kickside.contract:http_errors
+      error_response: kickside.users.api:error_response
+
+  - name: bot_accounts_list.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    path: /users/bots
+    func: bot_accounts_list
+
+  - name: run_as_candidates
+    kind: function.lua
+    source: file://run_as_candidates.lua
+    method: handler
+    modules: [http, security, funcs]
+
+  - name: run_as_candidates.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: run_as_candidates
+    path: /users/run-as-candidates
+
+  # kickside.users.api:login
+  - name: login
+    kind: function.lua
+    meta:
+      comment: KickSide Users Login API
+    source: file://login.lua
+    modules:
+      - http
+      - json
+    imports:
+      consts: kickside.users:consts
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_repo: kickside.users.persist:user_repo
+      user_credentials_repo: kickside.users.persist:user_credentials_repo
+      user_repo_support: kickside.users.persist:user_repo_support
+      session: kickside.users:session
+    security:
+      actor:
+        id: kickside.users.api:login
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:login_actor_create
+        - kickside.users.security:session_group_policy_read
+        - kickside.users.security:session_group_set_projection
+        - kickside.users.security:login_role_resolve
+        - kickside.users.security:login_scope_compose
+        - kickside.users.security:login_token_mint
+        - kickside.users.security:login_settings_read
+    method: handler
+
+  # kickside.users.api:login.endpoint
+  - name: login.endpoint
+    kind: http.endpoint
+    meta:
+      comment: KickSide Users Login Endpoint
+      router: public_router
+    method: POST
+    func: login
+    path: /user/token
+
+  # kickside.users.api:me
+  - name: me
+    kind: function.lua
+    meta:
+      comment: KickSide Users Profile API
+    source: file://get_me.lua
+    modules:
+      - http
+      - security
+      - json
+      - time
+    imports:
+      consts: kickside.users:consts
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_repo: kickside.users.persist:user_repo
+    method: handler
+
+  # kickside.users.api:me.endpoint
+  - name: me.endpoint
+    kind: http.endpoint
+    meta:
+      comment: KickSide Users Profile Endpoint
+      router: router
+    method: GET
+    func: me
+    path: /user/me
+
+  # kickside.users.api:update_me — self-service profile edit
+  - name: update_me
+    kind: function.lua
+    meta:
+      comment: KickSide Users Self Profile Update
+    source: file://update_me.lua
+    modules:
+      - http
+      - security
+      - json
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      user_credentials_repo: kickside.users.persist:user_credentials_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      consts: kickside.users:consts
+      error_response: kickside.users.api:error_response
+    method: handler
+
+  # kickside.users.api:update_me.endpoint
+  - name: update_me.endpoint
+    kind: http.endpoint
+    meta:
+      comment: KickSide Users Self Profile Update Endpoint
+      router: router
+    method: PUT
+    func: update_me
+    path: /user/me
+
+  # kickside.users.api:logout — ends the caller's own session(s)
+  - name: logout
+    kind: function.lua
+    meta:
+      comment: KickSide Users Logout
+    source: file://logout.lua
+    modules:
+      - http
+      - security
+      - json
+      - funcs
+      - logger
+    imports:
+      revocation: kickside.users:revocation
+    method: handler
+
+  # kickside.users.api:logout.endpoint
+  - name: logout.endpoint
+    kind: http.endpoint
+    meta:
+      comment: KickSide Users Logout Endpoint
+      router: router
+    method: POST
+    func: logout
+    path: /user/logout
+
+  # kickside.users.api:list_assignable_scopes — assignable scope/role catalog for
+  # the user editor, sourced via the kickside.contract:security_scopes port.
+  - name: list_assignable_scopes
+    kind: function.lua
+    meta:
+      comment: GET /users/assignable-scopes — normalized assignable scope/role catalog (via security_scopes contract).
+    source: file://list_assignable_scopes.lua
+    method: handler
+    modules: [http, security, contract]
+
+  - name: list_assignable_scopes.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Assignable scope/role catalog for the user editor.
+      router: router
+    method: GET
+    func: list_assignable_scopes
+    path: /users/assignable-scopes
+
+  # kickside.users.api:get_profile
+  - name: get_profile
+    kind: function.lua
+    meta:
+      comment: GET /profile — exact declared value when key is present; otherwise the actor's visible fields.
+    source: file://get_profile.lua
+    method: handler
+    modules: [http, contract, security]
+
+  - name: get_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_profile
+    path: /profile
+
+  # kickside.users.api:put_profile
+  - name: put_profile
+    kind: function.lua
+    meta:
+      comment: PUT /profile — set/unset the actor's own profile values.
+    source: file://put_profile.lua
+    method: handler
+    modules: [http, json, security, contract]
+
+  - name: put_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: put_profile
+    path: /profile
+
+  # kickside.users.api:principals_search — frontend transport for the directory
+  # seam (who you can share with). Thin HTTP shell over the directory adapter.
+  - name: principals_search
+    kind: function.lua
+    source: file://principals_search.lua
+    modules: [http]
+    imports:
+      directory: kickside.users.directory:directory_lib
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: principals_search.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: principals_search
+    path: /principals/search
+
+  # kickside.users.api:principals_resolve
+  - name: principals_resolve
+    kind: function.lua
+    source: file://principals_resolve.lua
+    modules: [http, json]
+    imports:
+      directory: kickside.users.directory:directory_lib
+      http_errors: kickside.contract:http_errors
+    method: handler
+
+  - name: principals_resolve.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: principals_resolve
+    path: /principals/resolve
+
+  # ─── User CRUD API ───────────────────────────────────────────────────
+  - name: group_validation
+    kind: library.lua
+    source: file://group_validation.lua
+    modules: [contract, security]
+
+  - name: error_response
+    kind: library.lua
+    source: file://error_response.lua
+    imports:
+      consts: kickside.users:consts
+
+  - name: list_users
+    kind: function.lua
+    source: file://list_users.lua
+    modules: [http, security, logger]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+    method: handler
+
+  - name: list_users.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_users
+    path: /users
+
+  - name: create_user
+    kind: function.lua
+    source: file://create_user.lua
+    modules: [http, json, security]
+    imports:
+      default_groups: kickside.users:default_groups
+      admin_repo: kickside.users.persist:admin_repo
+      group_validation: kickside.users.api:group_validation
+      consts: kickside.users:consts
+      error_response: kickside.users.api:error_response
+    method: handler
+
+  - name: create_user.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_user
+    path: /users
+
+  - name: delete_user
+    kind: function.lua
+    source: file://delete_user.lua
+    modules: [http, security, funcs, logger]
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      lifecycle_report: kickside.core.lifecycle:report
+    method: handler
+
+  - name: delete_user.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_user
+    path: /users/{id}
+
+  - name: update_user
+    kind: function.lua
+    source: file://update_user.lua
+    modules: [http, json, security]
+    imports:
+      admin_repo: kickside.users.persist:admin_repo
+      group_validation: kickside.users.api:group_validation
+      consts: kickside.users:consts
+      error_response: kickside.users.api:error_response
+    method: handler
+
+  - name: update_user.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: update_user
+    path: /users/{id}
+
+  - name: get_user_groups
+    kind: function.lua
+    source: file://get_user_groups.lua
+    modules: [http, security]
+    imports:
+      user_groups_repo: kickside.users.persist:user_groups_repo
+    method: handler
+
+  - name: get_user_groups.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_user_groups
+    path: /users/{id}/groups
+
+  - name: set_user_groups
+    kind: function.lua
+    source: file://set_user_groups.lua
+    modules: [http, json, security]
+    imports:
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      group_validation: kickside.users.api:group_validation
+      error_response: kickside.users.api:error_response
+    method: handler
+
+  - name: set_user_groups.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: set_user_groups
+    path: /users/{id}/groups

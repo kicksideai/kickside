@@ -1,0 +1,47 @@
+version: "1.0"
+namespace: kickside.agents.pickers
+
+entries:
+  # The public trait selection UI, shared with other modules through this custom
+  # element. `value` is a JSON string containing { traits, trait_contexts };
+  # change crosses the shadow boundary with that same object in CustomEvent.detail.
+  - name: agent_trait_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: agent_trait_picker_view
+      title: Agent Trait Picker
+      comment: >-
+        Search and select public agent traits with tint and effect badges. Expand
+        configurable traits to edit their context. Accepts value as a JSON string
+        { traits: string[], trait_contexts: Record<string, unknown> } and emits
+        a composed, bubbling change event whose detail has that object shape.
+        Loads GET /api/v1/agents/traits itself. Consumers may embed
+        <wc-agent-trait-picker> by tag.
+      announced: true
+      auto_register: true
+      tag_name: wc-agent-trait-picker
+      base_path: kickside-agents
+      entry_point: agent_trait_picker.js
+      icon: tabler:puzzle
+    props:
+      type: object
+      properties:
+        value:
+          type: string
+          default: '{"traits":[],"trait_contexts":{}}'
+          description: JSON string with traits (string array) and trait_contexts (object keyed by trait id).
+        refresh-key:
+          type: integer
+          default: 0
+          description: Increment to reload the public trait catalog without remounting the picker.
+        keep-menu-open-on-add:
+          type: boolean
+          default: false
+          description: Keep the add menu open after a selection for consumers that add several traits in sequence.
+    events:
+      type: object
+      properties:
+        change:
+          type: object
+          description: "Composed, bubbling CustomEvent. detail is { traits: string[], trait_contexts: Record<string, unknown> }."

@@ -1,0 +1,12 @@
+version: "1.0"
+namespace: app.knowledge_listing
+entries:
+  - name: listing_test
+    kind: function.lua
+    meta: {type: test, suite: knowledge_listing}
+    source: file://listing_test.lua
+    method: run
+    modules: [http]
+    imports:
+      test: wippy.test:test
+      adapter: kickside.knowledge.api:list_kb

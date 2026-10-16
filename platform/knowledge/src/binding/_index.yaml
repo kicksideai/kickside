@@ -1,0 +1,59 @@
+version: "1.0"
+namespace: kickside.knowledge.binding
+
+entries:
+  # Shared embeddable-reference handler. Every KB engine binding reuses this
+  # generic content-provider → embed_content dispatcher. Implements kb10's
+  # embeddable.embed_reference contract method — not an HTTP handler.
+  - name: embed_reference_func
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    source: file://embed_reference_func.lua
+    modules: [ctx, contract, security]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      canonical_json: kickside.contract:canonical_json
+      source_ref_builder: kickside.core.provenance:source_ref
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+    method: handle
+
+  - name: kb_memory_recall
+    kind: function.lua
+    meta:
+      comment: "Implements the wippy.agent:memory recall method for the Knowledge Bases memory provider: builds a search query from working_on + up to 3 recent_actions, searches the agent's bound KB (ctx.component_id) via kb_search, and returns { memories: [{ id, content, metadata: { type, source, similarity, created_at } }] } capped at constraints.max_items (default 3), skipping ids already in previous_memories. Not agent-facing; the agent runtime calls this automatically each turn, not the LLM."
+    source: file://kb_memory_recall.lua
+    modules: [ctx]
+    imports:
+      kb_search: kickside.knowledge.retrieval:kb_search
+    method: handle
+
+  - name: kb_memory
+    kind: contract.binding
+    contracts:
+      - contract: wippy.agent:memory
+        context_required: [component_id]
+        methods:
+          recall: kickside.knowledge.binding:kb_memory_recall
+
+  - name: list_memory_targets
+    kind: function.lua
+    meta:
+      comment: "Backs the Knowledge Bases memory provider's list_targets: lists the knowledge bases the current actor/scope can read, returning { success, items: [{ id, title, name, description, kb_type }], count } or { success = false, error }. Not agent-facing; called by the agent config UI to populate the memory-provider target picker, not the LLM."
+    source: file://list_memory_targets.lua
+    method: handle
+    modules: [contract, security]
+
+  - name: kb_memory_provider
+    kind: registry.entry
+    meta:
+      type: agent.memory_provider
+      title: Knowledge Bases
+      comment: Uses a selected knowledge base as the agent's chat memory source.
+      icon: tabler:books
+      order: 10
+      default: true
+      implementation_id: kickside.knowledge.binding:kb_memory
+      list_targets: kickside.knowledge.binding:list_memory_targets

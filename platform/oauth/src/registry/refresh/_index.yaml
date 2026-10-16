@@ -1,0 +1,72 @@
+version: "1.0"
+namespace: kickside.oauth
+entries:
+  - name: token_refresh_core
+    kind: library.lua
+    meta:
+      comment: Shared OAuth token refresh executor for scheduled and on-demand refresh.
+    source: file://../../token_refresh_core.lua
+    modules:
+      - time
+      - contract
+      - logger
+      - security
+    imports:
+      oauth_read_repo: kickside.oauth.persist:oauth_read_repo
+      connection_manager: kickside.oauth:connection_manager
+      refresh_schedule: kickside.oauth:refresh_schedule
+
+  - name: refresh_schedule
+    kind: library.lua
+    meta:
+      comment: Native OAuth refresh deadlines, durable wake demand and per-connection Jobs slots.
+    source: file://../../refresh_drive.lua
+    modules: [time, sql]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      jobs_config: kickside.core.jobs:config
+      oauth_repo_support: kickside.oauth.persist:oauth_repo_support
+
+  - name: refresh_connection
+    kind: function.lua
+    meta: { private: true }
+    source: file://../../refresh_worker.lua
+    method: run
+    security:
+      actor: { id: 'system:kickside.oauth.refresh' }
+      policies:
+        - kickside.oauth.security:refresh_defer
+        - kickside.oauth.security:refresh_actor
+    modules: [time]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      refresh_schedule: kickside.oauth:refresh_schedule
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      token_refresh_core: kickside.oauth:token_refresh_core
+
+  - name: refresh_apply
+    kind: function.lua
+    meta: { private: true }
+    source: file://../../refresh_worker.lua
+    method: apply
+    modules: [time]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      refresh_schedule: kickside.oauth:refresh_schedule
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      token_refresh_core: kickside.oauth:token_refresh_core
+
+  - name: dispatch_refresh
+    kind: function.lua
+    meta: { private: true }
+    source: file://../../refresh_worker.lua
+    method: dispatch
+    modules: [time]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      refresh_schedule: kickside.oauth:refresh_schedule
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      token_refresh_core: kickside.oauth:token_refresh_core

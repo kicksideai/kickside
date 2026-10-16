@@ -1,0 +1,127 @@
+version: "1.0"
+namespace: kickside.skills.api
+
+# HTTP surface for the skill store. Thin handlers: authn (defensive — the router
+# enforces it), parse, dispatch to the store method (funcs:call runs it under the
+# actor), map to the {success,...} envelope. Attaches to api_router (auth +
+# firewall).
+
+entries:
+  - name: query_params
+    kind: library.lua
+    meta:
+      comment: Strict query-param parsing shared by skill picker endpoints.
+    source: file://query_params.lua
+    modules: [http]
+
+  - name: list_skills
+    kind: function.lua
+    meta:
+      comment: "GET /skills — list skills the user can read (name + description)."
+    source: file://list_skills.lua
+    method: handler
+    modules: [http, funcs, security]
+    imports:
+      query_params: kickside.skills.api:query_params
+      http_errors: kickside.contract:http_errors
+  - name: list_skills.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_skills
+    path: /skills
+
+  - name: get_skill
+    kind: function.lua
+    meta:
+      comment: "GET /skills/{id} — skill meta + current body."
+    source: file://get_skill.lua
+    method: handler
+    modules: [http, funcs, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+  - name: get_skill.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_skill
+    path: /skills/{id}
+
+  - name: list_versions
+    kind: function.lua
+    meta:
+      comment: "GET /skills/{id}/versions — the skill's version history (newest first)."
+    source: file://list_versions.lua
+    method: handler
+    modules: [http, funcs, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+  - name: list_versions.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: list_versions
+    path: /skills/{id}/versions
+
+  - name: create_skill
+    kind: function.lua
+    meta:
+      comment: "POST /skills — create a skill { name, description, body?, agent_id? }."
+    source: file://create_skill.lua
+    method: handler
+    modules: [http, json, funcs, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+  - name: create_skill.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_skill
+    path: /skills
+
+  - name: refine_skill
+    kind: function.lua
+    meta:
+      comment: "PATCH /skills/{id} — refine body and/or description (new version)."
+    source: file://refine_skill.lua
+    method: handler
+    modules: [http, json, funcs, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+  - name: refine_skill.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PATCH
+    func: refine_skill
+    path: /skills/{id}
+
+  - name: delete_skill
+    kind: function.lua
+    meta:
+      comment: "DELETE /skills/{id} — remove a skill."
+    source: file://delete_skill.lua
+    method: handler
+    modules: [http, funcs, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+  - name: delete_skill.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_skill
+    path: /skills/{id}
+
+  - name: read_file
+    kind: function.lua
+    source: file://read_file.lua
+    method: handler
+    modules: [http, funcs, security]
+    imports:
+      http_errors: kickside.contract:http_errors
+      query_params: kickside.skills.api:query_params
+  - name: read_file.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: read_file
+    path: /skills/{id}/file

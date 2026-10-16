@@ -1,0 +1,77 @@
+version: "1.0"
+namespace: kickside.workflows.compiler
+
+# The workflow compiler: the folded canvas document (the primary IR) -> graph
+# validation + classification -> the raw dataflow engine command stream. Pure Lua;
+# no engine boot needed to compile. graph.build freezes the artifact + the exact-id
+# allowlist; materialize.emit lowers to CREATE_NODE/CREATE_DATA with node ids = the
+# stable def_node_ids; compiler.remint mints fresh per-run uuids at launch.
+
+entries:
+  - name: dataflow_consts
+    kind: library.lua
+    meta: { comment: The dataflow engine node/command/data vocabulary the compiler emits against. }
+    source: file://dataflow_consts.lua
+
+  - name: conditions
+    kind: library.lua
+    meta: { comment: "Edge predicate -> engine expr DSL (output/state field-ref binding), with negation + disjunction for else fan-out." }
+    source: file://conditions.lua
+
+  - name: graph
+    kind: library.lua
+    meta: { comment: "Canvas document -> validated IR — Start entry, reachability, acyclicity, convergence classification, allowlist freeze." }
+    source: file://graph.lua
+    imports:
+      graph_start: kickside.workflows.compiler:graph_start
+      graph_edges: kickside.workflows.compiler:graph_edges
+      graph_branch: kickside.workflows.compiler:graph_branch
+      graph_step: kickside.workflows.compiler:graph_step
+      graph_end: kickside.workflows.compiler:graph_end
+      conditions: kickside.workflows.compiler:conditions
+      mapping: kickside.workflows.execution:mapping
+      config_schema: kickside.workflows:config_schema
+      flow_ref: kickside.workflows.execution:flow_ref
+      types: kickside.workflows:types
+      workflow_state: kickside.workflows:workflow_state
+
+  - name: graph_start
+    kind: library.lua
+    source: file://start.lua
+
+  - name: graph_edges
+    kind: library.lua
+    source: file://edges.lua
+
+  - name: graph_branch
+    kind: library.lua
+    source: file://branch.lua
+
+  - name: graph_step
+    kind: library.lua
+    source: file://step.lua
+
+  - name: graph_end
+    kind: library.lua
+    source: file://end.lua
+
+  - name: materialize
+    kind: library.lua
+    meta: { comment: Validated IR -> raw CREATE_NODE/CREATE_DATA stream; stamps metadata.def_node_id/workflow_id/version. }
+    source: file://materialize.lua
+    imports:
+      conditions: kickside.workflows.compiler:conditions
+      consts: kickside.workflows.compiler:dataflow_consts
+      mapping: kickside.workflows.execution:mapping
+      flow_ref: kickside.workflows.execution:flow_ref
+      blocks: kickside.blocks:blocks
+
+  - name: compiler
+    kind: library.lua
+    meta: { comment: "Facade — compile(document) validates + materializes; remint(commands, gen_id, input) mints fresh per-run ids." }
+    source: file://compiler.lua
+    modules: [expr]
+    imports:
+      graph: kickside.workflows.compiler:graph
+      materialize: kickside.workflows.compiler:materialize
+      consts: kickside.workflows.compiler:dataflow_consts

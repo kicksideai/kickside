@@ -1,0 +1,363 @@
+/* ══ NODE CARD ═══════════════════════════════════════════════════════════ */
+.wfn {
+  --wfn-hue: var(--wf-blue);
+  position: relative; display: flex; align-items: center; gap: 12px;
+  width: 216px; min-height: 62px; padding: 11px 14px; box-sizing: border-box;
+  border: 1.5px solid color-mix(in srgb, var(--wfn-hue) 52%, var(--p-content-border-color));
+  border-radius: var(--wf-radius);
+  background: color-mix(in srgb, var(--wfn-hue) 4%, var(--wf-panel));
+  box-shadow: var(--wf-elev-1);
+  user-select: none; cursor: grab;
+  transition: box-shadow .16s var(--wf-ease), border-color .16s var(--wf-ease), background-color .16s var(--wf-ease);
+}
+.wfn:active { cursor: grabbing; }
+.wfn:hover {
+  border-color: color-mix(in srgb, var(--wfn-hue) 76%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--wfn-hue) 7%, var(--wf-panel));
+  box-shadow: var(--wf-elev-2);
+}
+.wfn--selected {
+  border-color: var(--wfn-hue);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--wfn-hue) 18%, transparent),
+    var(--wf-elev-2);
+}
+
+.wfn-well {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; flex: none; border-radius: 11px;
+  color: var(--wfn-hue);
+  background: color-mix(in srgb, var(--wfn-hue) 15%, var(--wf-surface));
+  border: 1px solid color-mix(in srgb, var(--wfn-hue) 18%, transparent);
+}
+.wfn-well svg { width: 18px; height: 18px; }
+.wfn-body { min-width: 0; flex: 1; }
+.wfn-kind {
+  font-size: 9.5px; font-weight: 750; letter-spacing: .11em; line-height: 1.2;
+  text-transform: uppercase; color: color-mix(in srgb, var(--wfn-hue) 82%, var(--p-text-color));
+}
+.wfn-title { font-size: 14px; font-weight: 700; line-height: 1.2; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wfn-sub { font-size: 11px; line-height: 1.25; color: var(--wf-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+/* Run status rides on the icon tile itself — a badge on the well's corner, like an
+   avatar's presence dot — instead of a detached bubble over the card's own content. It
+   never competes with the lock badge (boundary cards keep that at the card corner). */
+.wfn-status {
+  position: absolute; bottom: -4px; right: -4px; width: 16px; height: 16px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--wf-panel);
+}
+.wfn-status--ok { color: var(--p-button-primary-color); background: var(--p-success-500); }
+.wfn-status--fail { color: var(--p-button-primary-color); background: var(--wf-danger); }
+.wfn-status svg { width: 9px; height: 9px; }
+
+/* Run status ring — the breathing signature. */
+.wfn-ring { position: absolute; inset: -3px; border-radius: calc(var(--wf-radius) + 2px); pointer-events: none; opacity: 0; }
+.wfn.is-running .wfn-ring,
+.wfn.is-awaiting .wfn-ring {
+  opacity: 1; border: 2px solid var(--wfn-hue);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--wfn-hue) 55%, transparent);
+  animation: wf-breathe 1.5s var(--wf-ease) infinite;
+}
+.wfn.is-running, .wfn.is-awaiting { border-color: var(--wfn-hue); }
+
+/* A declared human-wait step is distinct from ordinary running. */
+.wfn-await {
+  position: absolute; right: 12px; top: -10px;
+  display: inline-flex; align-items: center; gap: 5px; max-width: calc(100% - 24px); white-space: nowrap; z-index: var(--wf-layer-node-label);
+  padding: 2px 7px; border: 1px solid color-mix(in srgb, var(--wfn-hue) 62%, var(--p-content-border-color)); border-radius: 6px;
+  background: var(--wf-panel); color: color-mix(in srgb, var(--wfn-hue) 82%, var(--p-text-color));
+  font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  box-shadow: var(--wf-elev-1);
+}
+.wfn-await > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.wfn-await-pulse {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--wfn-hue); flex: none;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--wfn-hue) 70%, transparent);
+  animation: wf-await-pulse 1.3s var(--wf-ease) infinite;
+}
+@keyframes wf-await-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--wfn-hue) 65%, transparent); }
+  70% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--wfn-hue) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--wfn-hue) 0%, transparent); }
+}
+.wfn.is-completed { border-color: color-mix(in srgb, var(--p-success-500) 58%, var(--p-content-border-color)); background: color-mix(in srgb, var(--p-success-500) 5%, var(--wf-panel)); }
+.wfn.is-failed .wfn-ring { opacity: 1; border: 2px solid var(--wf-danger); }
+.wfn.is-failed { border-color: var(--wf-danger); }
+/* Publish-gate issue: a danger outline + corner mark on the node the compiler named, so
+   the reason sits where the fix is. Distinct from a run failure (that is is-failed). */
+.wfn--issue { border-color: var(--wf-danger); }
+.wfn--issue .wfn-ring { opacity: 1; border: 2px solid color-mix(in srgb, var(--wf-danger) 70%, transparent); }
+.wfn-issue {
+  position: absolute; top: -8px; left: -8px; z-index: var(--wf-layer-selection); width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--p-button-primary-color); background: var(--wf-danger); box-shadow: 0 1px 4px color-mix(in srgb, var(--p-text-color) 25%, transparent);
+}
+.wfn-issue svg { width: 12px; height: 12px; }
+@keyframes wf-breathe {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--wfn-hue) 55%, transparent); }
+  70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--wfn-hue) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--wfn-hue) 0%, transparent); }
+}
+
+.wfn-port {
+  width: 9px; height: 9px; border: 2px solid var(--wf-panel);
+  background: var(--wfn-hue); opacity: .72; border-radius: 50%;
+  transition: opacity .13s var(--wf-ease), box-shadow .13s var(--wf-ease);
+}
+.wfn:hover .wfn-port, .wfn--selected .wfn-port { opacity: .95; }
+/* Grow via box-shadow, not transform: VueFlow positions the handle with its own
+   transform, so scaling here would drop that offset and make the port jump. */
+.wfn:hover .wfn-port:hover { opacity: 1; box-shadow: 0 0 0 2px var(--wfn-hue), 0 0 0 5px color-mix(in srgb, var(--wfn-hue) 20%, transparent); }
+
+/* Boundary contract nodes: the workflow's interface, pinned. A quiet ringed frame and a
+   lock badge set them apart from ordinary steps; the hue is the calm "contract" palette
+   (--wf-contract-*), so Start/Finish/Error read as the interface, not a data node. */
+.wfn--boundary {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--wfn-hue) 42%, var(--p-content-border-color));
+  background: color-mix(in srgb, var(--wfn-hue) 7%, var(--wf-panel));
+  box-shadow: var(--wf-elev-1), inset 0 0 0 1px color-mix(in srgb, var(--wfn-hue) 16%, transparent);
+}
+.wfn--boundary .wfn-well { border-radius: 11px; }
+/* Locked/IO identity reads through the lock badge and the muted "contract" palette, not
+   through a shape break — the card keeps the same border-radius as every other step. */
+.wfn--boundary-start .wfn-well { border-radius: 50%; }
+.wfn--pinned { cursor: pointer; }
+/* Pinned badge sits on the node's content padding grid (11px 13px), so it aligns
+   with the header rather than floating tight into the rounded corner. */
+.wfn-lock {
+  position: absolute; top: 11px; right: 13px; width: 17px; height: 17px;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  color: var(--wfn-hue); background: color-mix(in srgb, var(--wfn-hue) 16%, var(--wf-surface));
+  border: 1px solid color-mix(in srgb, var(--wfn-hue) 34%, transparent);
+}
+.wfn-lock svg { width: 10px; height: 10px; }
+
+/* Boundary frozen to a published interface: the same pinned
+   frame, muted toward the neutral token so it reads as fixed rather than editable. The lock
+   glyph stays; the hue accent recedes. */
+.wfn--boundary-locked {
+  border-color: color-mix(in srgb, var(--wf-muted) 38%, var(--p-content-border-color));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wf-muted) 9%, var(--wf-panel)), var(--wf-panel));
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--p-text-color) 8%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--wf-muted) 16%, transparent);
+}
+.wfn--boundary-locked .wfn-well {
+  color: var(--wf-muted);
+  background: color-mix(in srgb, var(--wf-muted) 14%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-muted) 28%, transparent);
+}
+.wfn--boundary-locked .wfn-kind { color: var(--wf-muted); }
+.wfn--boundary-locked .wfn-lock {
+  color: var(--wf-muted);
+  background: color-mix(in srgb, var(--wf-muted) 16%, var(--wf-surface));
+  border-color: color-mix(in srgb, var(--wf-muted) 30%, transparent);
+}
+
+/* Partial-call named ports: Finished continues the flow, Failed carries the error. */
+.wfn-port--failed { background: var(--wf-danger); }
+.wfn-port--result { background: var(--p-success-500); }
+
+/* Generalized Failed port: a quiet danger-hued recovery route on ordinary steps, anchored
+   at the card's lower-right. Faint until the card is hovered/selected or the route is
+   wired, so it stays discoverable without cluttering every card — drag from it to send a
+   step's failure downstream. */
+.wfn-failport {
+  position: absolute; right: -5px; bottom: -7px;
+  display: flex; flex-direction: row-reverse; align-items: center; gap: 4px;
+  pointer-events: none;
+}
+.wfn-port--failaff {
+  opacity: 0; pointer-events: none; transition: opacity .12s ease;
+}
+.wfn:hover .wfn-port--failaff,
+.wfn--selected .wfn-port--failaff,
+.wfn--failwired .wfn-port--failaff { opacity: 1; pointer-events: auto; }
+.wfn-faillabel {
+  font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--wf-danger) 82%, var(--p-text-color));
+}
+
+/* Compact create/setup surface mounted inside Automation's Add Automation pane. */
+.wf-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.wf-setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.wf-setup-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--p-text-color);
+}
+
+.wf-setup-req,
+.wf-setup-error {
+  color: var(--wf-danger);
+}
+
+.wf-setup-input {
+  width: 100%;
+}
+
+.wf-setup-seg {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.wf-setup-hint {
+  margin: 0;
+  color: var(--wf-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.wf-setup-trigger {
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--wf-radius);
+  background: color-mix(in srgb, var(--wf-panel) 92%, var(--wf-muted));
+  padding: 10px;
+}
+
+.wf-setup-trigger-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--p-text-color);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 9px;
+}
+
+.wf-setup-trigger-ico {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+  color: var(--wf-accent-fg);
+}
+
+.wf-setup-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--p-text-color);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wf-setup-error {
+  margin: 0;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.wf-hue--amber { --wfn-hue: var(--wf-amber); }
+.wf-hue--violet { --wfn-hue: var(--wf-violet); }
+.wf-hue--blue { --wfn-hue: var(--wf-blue); }
+.wf-hue--teal { --wfn-hue: var(--wf-teal); }
+.wf-hue--rose { --wfn-hue: var(--wf-rose); }
+.wf-hue--slate { --wfn-hue: var(--wf-muted); }
+.wf-hue--ok { --wfn-hue: var(--p-success-500); }
+.wf-hue--danger { --wfn-hue: var(--wf-danger); }
+.wf-hue--contract-in { --wfn-hue: var(--wf-contract-in); }
+.wf-hue--contract-out { --wfn-hue: var(--wf-contract-out); }
+.wf-hue--contract-err { --wfn-hue: var(--wf-contract-err); }
+
+.wfn--agent { --wfn-hue: var(--wf-violet); }
+.wfn--tool, .wfn--func { --wfn-hue: var(--wf-blue); }
+.wfn--cycle, .wfn--for_each, .wfn--parallel, .wfn--signal, .wfn--branch, .wfn--combine, .wfn--join, .wfn--merge { --wfn-hue: var(--wf-teal); }
+.wfn--flow { --wfn-hue: var(--wf-violet); }
+
+/* Cards with named outgoing ports receive their grid and padding measurements from the
+   canonical node-geometry contract through CSS variables. */
+.wfn-portrow {
+  position: absolute; left: var(--wfn-port-left); right: var(--wfn-port-right); bottom: -22px;
+  display: grid; grid-template-columns: repeat(var(--wfn-port-columns, 1), minmax(var(--wfn-port-min-width), var(--wfn-port-cell-width, 1fr)));
+  grid-auto-rows: var(--wfn-port-row-height); gap: 0 var(--wfn-port-gap); align-items: start; pointer-events: none;
+}
+.wfn-portslot { position: relative; display: flex; width: 100%; min-width: var(--wfn-port-min-width); flex-direction: column; align-items: center; pointer-events: auto; }
+.wfn-port--named { opacity: 1; }
+.wfn-portlabel {
+  position: absolute; top: -16px; width: 100%; max-width: var(--wfn-port-cell-width); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+  font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--wfn-hue) 78%, var(--p-text-color));
+}
+
+/* ══ NOTE (sticky) ═══════════════════════════════════════════════════════ */
+.wf-note {
+  width: 100%; height: 100%; overflow: hidden;
+  display: flex; flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--wfnote-hue, var(--wf-amber)) 42%, var(--p-content-border-color));
+  border-radius: var(--wf-radius);
+  background: color-mix(in srgb, var(--wfnote-hue, var(--wf-amber)) 15%, var(--wf-panel));
+  color: var(--p-text-color);
+  transition: box-shadow .13s var(--wf-ease), border-color .13s var(--wf-ease);
+}
+.wf-note--amber, .wf-frame--amber { --wfnote-hue: var(--wf-amber); }
+.wf-note--teal, .wf-frame--teal { --wfnote-hue: var(--wf-teal); }
+.wf-note--blue, .wf-frame--blue { --wfnote-hue: var(--wf-blue); }
+.wf-note--violet, .wf-frame--violet { --wfnote-hue: var(--wf-violet); }
+.wf-note--rose, .wf-frame--rose { --wfnote-hue: var(--wf-rose); }
+.wf-note--slate, .wf-frame--slate { --wfnote-hue: var(--wf-muted); }
+.wf-note::before {
+  content: ""; flex: none; height: 4px;
+  background: color-mix(in srgb, var(--wfnote-hue, var(--wf-amber)) 72%, transparent);
+}
+.wf-note--selected {
+  border-color: color-mix(in srgb, var(--wfnote-hue, var(--wf-amber)) 75%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--p-text-color) 16%, transparent);
+}
+.wf-note-md { flex: 1; min-height: 0; overflow: auto; padding: 10px 13px; font-size: 12px; line-height: 1.55; }
+.wf-note-md :first-child { margin-top: 0; }
+.wf-note-md :last-child { margin-bottom: 0; }
+.wf-note-empty { padding: 12px 13px; color: var(--wf-faint); font-style: italic; font-size: 12px; }
+
+/* PrimeVue owns color selection; these dots are non-interactive option previews. */
+.wf-note-colors { margin-bottom: 10px; }
+.wf-note-color-dot { display: block; width: 16px; height: 16px; border-radius: 999px; background: var(--sw); }
+.wf-note-color-dot.wf-swatch--amber { --sw: var(--wf-amber); }
+.wf-note-color-dot.wf-swatch--teal { --sw: var(--wf-teal); }
+.wf-note-color-dot.wf-swatch--blue { --sw: var(--wf-blue); }
+.wf-note-color-dot.wf-swatch--violet { --sw: var(--wf-violet); }
+.wf-note-color-dot.wf-swatch--rose { --sw: var(--wf-rose); }
+.wf-note-color-dot.wf-swatch--slate { --sw: var(--wf-muted); }
+
+/* ══ FRAME (background region) ═══════════════════════════════════════════ */
+/* A translucent colored zone behind the steps, used to group work. The box is
+   click-through so nodes over it stay interactive; only the title strip (the drag +
+   select handle) and the resize handles react. */
+.wf-frame {
+  width: 100%; height: 100%;
+  border: 1px solid color-mix(in srgb, var(--wfnote-hue, var(--wf-blue)) 45%, var(--p-content-border-color));
+  border-radius: var(--wf-radius);
+  background: color-mix(in srgb, var(--wfnote-hue, var(--wf-blue)) 9%, transparent);
+  pointer-events: none;
+  transition: border-color .13s var(--wf-ease), box-shadow .13s var(--wf-ease);
+}
+.wf-frame--selected {
+  border-color: color-mix(in srgb, var(--wfnote-hue, var(--wf-blue)) 75%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--p-text-color) 14%, transparent);
+}
+.wf-frame-title {
+  position: absolute; top: -1px; left: -1px; max-width: calc(100% - 2px);
+  padding: 3px 10px; border-radius: var(--wf-radius) 0 var(--wf-radius-sm) 0;
+  background: color-mix(in srgb, var(--wfnote-hue, var(--wf-blue)) 22%, var(--wf-panel));
+  color: color-mix(in srgb, var(--wfnote-hue, var(--wf-blue)) 82%, var(--p-text-color));
+  font-size: var(--wf-fs-meta); font-weight: 600; line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: auto; cursor: grab;
+}

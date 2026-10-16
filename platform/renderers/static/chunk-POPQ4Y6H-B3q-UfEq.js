@@ -1,0 +1,20 @@
+import { _ as a, d as w, l as x } from "./mermaid.core-CmK1425T.js";
+var B = /* @__PURE__ */ a((e, t, i, r) => {
+  e.attr("class", i);
+  const { width: o, height: h, x: n, y: c } = u(e, t);
+  w(e, h, o, r);
+  const s = d(n, c, o, h, t);
+  e.attr("viewBox", s), x.debug(`viewBox configured: ${s} with padding: ${t}`);
+}, "setupViewPortForSVG"), u = /* @__PURE__ */ a((e, t) => {
+  const i = e.node()?.getBBox() || { width: 0, height: 0, x: 0, y: 0 };
+  return {
+    width: i.width + t * 2,
+    height: i.height + t * 2,
+    x: i.x,
+    y: i.y
+  };
+}, "calculateDimensionsWithPadding"), d = /* @__PURE__ */ a((e, t, i, r, o) => `${e - o} ${t - o} ${i} ${r}`, "createViewBox");
+export {
+  B as s
+};
+//# sourceMappingURL=chunk-POPQ4Y6H-B3q-UfEq.js.map

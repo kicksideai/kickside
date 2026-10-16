@@ -1,0 +1,210 @@
+version: "1.0"
+namespace: kickside.users.persist
+
+entries:
+  - name: bot_accounts_repo
+    kind: library.lua
+    source: file://bot_accounts_repo.lua
+    modules: [sql, security, uuid, time, json]
+    imports:
+      user_consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: credential_readiness
+    kind: library.lua
+    source: file://credential_readiness.lua
+    modules: [registry]
+    imports:
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: credential_eligibility
+    kind: library.lua
+    source: file://credential_eligibility.lua
+    imports:
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
+      error_envelope: kickside.contract:error_envelope
+      user_consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_directory_repo
+    kind: library.lua
+    source: file://user_directory_repo.lua
+    modules: [sql]
+    imports:
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_repo_support
+    kind: library.lua
+    meta:
+      comment: Shared database lookup and credential hashing functions for user repositories.
+    source: file://user_repo_support.lua
+    modules: [sql, crypto]
+    imports:
+      user_consts: kickside.users:consts
+
+  - name: user_credentials_repo
+    kind: library.lua
+    meta:
+      comment: Password verification and self-service credential rotation.
+    source: file://user_credentials_repo.lua
+    modules: [sql, time]
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+      user_repo: kickside.users.persist:user_repo
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_lifecycle_repo
+    kind: library.lua
+    meta:
+      comment: User account updates and deletion lifecycle persistence.
+    source: file://user_lifecycle_repo.lua
+    modules: [sql, time]
+    imports:
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_groups_support
+    kind: library.lua
+    meta:
+      comment: Shared database lookup and identity resolution for user group repositories.
+    source: file://user_groups_support.lua
+    modules: [sql]
+    imports:
+      user_consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_groups_repo
+    kind: library.lua
+    meta:
+      comment: User security group assignment and management
+    source: file://user_groups_repo.lua
+    modules: [sql, time]
+    imports:
+      user_consts: kickside.users:consts
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      user_groups_support: kickside.users.persist:user_groups_support
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_group_sources_repo
+    kind: library.lua
+    meta:
+      comment: Whole-set group replacement and provider-sourced membership reconciliation.
+    source: file://user_group_sources_repo.lua
+    modules: [sql, time, funcs, registry]
+    imports:
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      default_groups: kickside.users:default_groups
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+      user_groups_support: kickside.users.persist:user_groups_support
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: user_repo
+    kind: library.lua
+    meta:
+      comment: User account management with secure password handling
+    source: file://user_repo.lua
+    modules: [sql, uuid, time]
+    imports:
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
+      user_consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support
+
+  - name: admin_repo
+    kind: library.lua
+    meta:
+      comment: Atomic administrative account and security-group mutations.
+    source: file://admin_repo.lua
+    modules: [sql, security, uuid, time]
+    imports:
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
+      user_groups_support: kickside.users.persist:user_groups_support
+      user_consts: kickside.users:consts
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      session_index: kickside.users.persist:session_index
+
+  - name: session_index
+    kind: library.lua
+    meta:
+      comment: Maps minted session tokens to their owning account so sessions can be revoked per user.
+    source: file://session_index.lua
+    modules:
+      - sql
+    imports:
+      credential_eligibility: kickside.users.persist:credential_eligibility
+      policy_coverage: kickside.security:policy_coverage
+      user_consts: kickside.users:consts
+
+  - name: session_revoker
+    kind: function.lua
+    meta:
+      comment: Revokes a single session or every session an account holds.
+    source: file://session_revoker.lua
+    method: run
+    modules:
+      - logger
+    imports:
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+    security:
+      actor:
+        id: kickside.users.persist:session_revoker
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:session_group_policy_read
+
+  - name: profile_writer
+    kind: library.lua
+    meta: { comment: "Per-user profile DB persist layer. No global cache — reads are scoped to one (user_id, namespace)." }
+    source: file://profile_writer.lua
+    modules: [sql, json, time, funcs]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_types: kickside.users.profile:profile_types
+
+  - name: cleanup_principal
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Deletes profile value rows for a deleted principal.
+    source: file://profile_writer.lua
+    method: cleanup_principal
+    modules: [sql, json, time, funcs]
+    imports:
+      profile_defs: kickside.users.profile:profile_defs
+      profile_types: kickside.users.profile:profile_types
+
+  - name: delete_principal
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Idempotently removes the local account and revokes its sessions after its durable principal-deletion event is accepted.
+    source: file://principal_cleanup.lua
+    method: run
+    modules: []
+    imports:
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+
+  - name: delegation_fencer
+    kind: function.lua
+    source: file://delegation_fencer.lua
+    method: run
+    modules: [logger]
+    imports:
+      user_consts: kickside.users:consts
+      session_index: kickside.users.persist:session_index
+    security:
+      actor: {id: kickside.users.persist:delegation_fencer}
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:session_group_policy_read

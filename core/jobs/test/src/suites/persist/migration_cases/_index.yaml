@@ -1,0 +1,20 @@
+version: '1.0'
+namespace: app
+entries:
+- name: migration_identity_test
+  kind: function.lua
+  meta:
+    title: Job P1 Migration
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Run execution uniqueness and old-worker attempt compatibility.
+  source: file://migration_identity_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    claim: kickside.core.jobs.persist:claim

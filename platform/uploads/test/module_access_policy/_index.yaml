@@ -1,0 +1,28 @@
+version: '1.0'
+namespace: kickside.uploads.test.module_access
+entries:
+- name: test
+  kind: function.lua
+  meta:
+    type: test
+    suite: module_access_policy
+  source: file://test.lua
+  method: run
+  modules:
+  - registry
+  - security
+  - funcs
+  - fs
+  - uuid
+  imports:
+    test: wippy.test:test
+    records: kickside.uploads.persist:upload_record_repo
+    content: kickside.uploads.persist:artifact_content_repo
+    cleanup: kickside.uploads.persist:artifact_cleanup_repo
+- name: storage_access
+  kind: security.policy
+  meta: {type: test_support, private: true}
+  policy:
+    resources: ["app:db", "app:uploads"]
+    actions: [db.get, fs.get, fs.read, fs.write, fs.stat]
+    effect: allow

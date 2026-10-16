@@ -1,0 +1,152 @@
+version: "1.0"
+namespace: kickside.models.api.admin
+
+# Admin/editor HTTP API for global model provider profiles and DB-backed model
+# cards. The URL paths stay under /models for frontend compatibility. The
+# endpoint registry ids are isolated under this child namespace so the app can
+# bind group/role policy centrally, e.g. deny `kickside.models.api.admin:*` to
+# ordinary users in app.security.
+
+entries:
+  - name: admin
+    kind: function.lua
+    meta:
+      comment: GET /models/admin — adapters, DB provider profiles, and merged model catalog for the settings surface.
+    source: file://get_admin.lua
+    modules: [http]
+    imports:
+      models_repo: kickside.models.persist:repo
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+    method: handler
+
+  - name: admin.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: admin
+    path: /models/admin
+
+  - name: create_profile
+    kind: function.lua
+    source: file://create_profile.lua
+    modules: [http, json]
+    imports:
+      models_repo: kickside.models.persist:repo
+    method: handler
+
+  - name: create_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: create_profile
+    path: /models/provider-profiles
+
+  - name: update_profile
+    kind: function.lua
+    source: file://update_profile.lua
+    modules: [http, json]
+    imports:
+      models_repo: kickside.models.persist:repo
+    method: handler
+
+  - name: update_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: update_profile
+    path: /models/provider-profiles/{id}
+
+  - name: delete_profile
+    kind: function.lua
+    source: file://delete_profile.lua
+    modules: [http]
+    imports:
+      models_repo: kickside.models.persist:repo
+    method: handler
+
+  - name: delete_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_profile
+    path: /models/provider-profiles/{id}
+
+  - name: discover_profile
+    kind: function.lua
+    source: file://discover_profile.lua
+    modules: [http]
+    imports:
+      model_discovery: kickside.models.discovery:model_discovery
+    method: handler
+
+  - name: discover_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: discover_profile
+    path: /models/provider-profiles/{id}/discover
+
+  - name: test_profile
+    kind: function.lua
+    source: file://test_profile.lua
+    modules: [http, json]
+    imports:
+      model_discovery: kickside.models.discovery:model_discovery
+    method: handler
+
+  - name: test_profile.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: test_profile
+    path: /models/provider-profiles/{id}/test
+
+  - name: test_card
+    kind: function.lua
+    source: file://test_card.lua
+    modules: [http, json, time]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      model_catalog: kickside.models.catalog:model_catalog
+      model_discovery: kickside.models.discovery:model_discovery
+    method: handler
+
+  - name: test_card.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: test_card
+    path: /models/cards/test
+
+  - name: upsert_card
+    kind: function.lua
+    source: file://upsert_card.lua
+    modules: [http, json]
+    imports:
+      models_repo: kickside.models.persist:repo
+      model_catalog: kickside.models.catalog:model_catalog
+    method: handler
+
+  - name: upsert_card.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: PUT
+    func: upsert_card
+    path: /models/cards
+
+  - name: delete_card
+    kind: function.lua
+    source: file://delete_card.lua
+    modules: [http]
+    imports:
+      models_repo: kickside.models.persist:repo
+    method: handler
+
+  - name: delete_card.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: DELETE
+    func: delete_card
+    path: /models/cards

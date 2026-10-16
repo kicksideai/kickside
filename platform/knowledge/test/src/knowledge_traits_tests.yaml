@@ -1,0 +1,42 @@
+version: "1.0"
+namespace: kickside.knowledge.traits
+
+entries:
+  - name: knowledge_manager_maintenance_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kb_traits
+      comment: Covers optional engine maintenance dispatch and manager access gates.
+    source: file://knowledge_manager_maintenance_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security]
+    imports: { test: wippy.test:test }
+
+  - name: knowledge_manager_test
+    kind: function.lua
+    meta: { type: test, suite: kb_traits }
+    source: file://knowledge_manager_test.lua
+    method: run
+    modules: [funcs, security]
+    imports: { test: wippy.test:test }
+
+  - name: traits_test
+    kind: function.lua
+    meta: { type: test, suite: kb_traits }
+    source: file://traits_test.lua
+    method: run
+    modules: [funcs, security, registry]
+    imports: { test: wippy.test:test }
+
+  - name: kb_tools_test
+    kind: function.lua
+    meta: { type: test, suite: kb_tools }
+    source: file://kb_tools_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+      kb_tools: kickside.knowledge.traits:kb_tools
+      kb_render: kickside.knowledge.traits:kb_render
+      component: kickside.component:component

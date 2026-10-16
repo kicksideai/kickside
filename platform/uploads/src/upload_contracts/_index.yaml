@@ -1,0 +1,8 @@
+version: "1.0"
+namespace: kickside.uploads
+entries:
+  - name: upload_status
+    kind: library.lua
+    meta:
+      comment: Durable upload lifecycle status as the agent tools report it (processing, completed, failed).
+    source: file://../upload_status.lua

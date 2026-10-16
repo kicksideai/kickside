@@ -1,0 +1,150 @@
+version: "1.0"
+namespace: kickside.knowledge.injection
+
+entries:
+  - name: config
+    kind: library.lua
+    source: file://config.lua
+    imports:
+      utils: kickside.knowledge:util
+
+  # Component-kind declaration. The content-change events this component OWNS on the
+  # injection thread are published as a port below. This kind declares no sink: the
+  # embed sink is the self-describing kb_embed_sink writable binding.
+  - name: injection_kind
+    kind: contract.binding
+    meta:
+      title: Knowledge Injection
+      icon: tabler:database-import
+      description: Knowledge-base content change events as they are injected.
+      class:
+        - kickside.knowledge.injection
+      group: Knowledge
+      events:
+        input: []
+        output:
+          - type: "kickside.knowledge.events:content.upserted"
+          - type: "kickside.knowledge.events:content.deleted"
+          - type: "kickside.knowledge.events:delivery.claimed"
+          - type: "kickside.knowledge.events:graph.changed"
+          - type: "kickside.knowledge.events:digest.requested"
+          - type: "kickside.knowledge.events:treatment.requested"
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  # Published port over the content-change stream on the injection thread. The output
+  # face derives from the event entry's schema. content.deleted is internal
+  # reconciliation with no port.
+  - name: content_updated
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Knowledge Content Updated
+      comment: Start when content is added to a knowledge base.
+      icon: tabler:database-import
+    binding: kickside.knowledge.injection:injection_kind
+    event: kickside.knowledge.events:content.upserted
+    config_schema:
+      thread_id: { picker: wc-component-picker, required: true, title: "Knowledge base" }
+
+  - name: thread_ingest_base
+    kind: library.lua
+    meta:
+      private: true
+      comment: Shared KB injection event producer and identity helpers.
+    source: file://thread_ingest_base.lua
+    modules: [security, contract, uuid, hash, json]
+    imports:
+      util: kickside.knowledge:util
+      component: kickside.component:component
+      source_ref_builder: kickside.core.provenance:source_ref
+      trace_context: kickside.execution:trace
+
+  - name: thread_ingest_status
+    kind: library.lua
+    meta:
+      private: true
+      comment: KB injection primary-thread projection and event helpers.
+    source: file://thread_ingest_status.lua
+    imports:
+      thread_ingest_base: kickside.knowledge.injection:thread_ingest_base
+
+  - name: thread_ingest
+    kind: library.lua
+    meta:
+      comment: KB-owned thread producer for durable knowledge content events.
+    source: file://thread_ingest.lua
+    modules:
+      - security
+      - contract
+      - uuid
+      - hash
+      - json
+      - time
+    imports:
+      util: kickside.knowledge:util
+      thread_ingest_base: kickside.knowledge.injection:thread_ingest_base
+      thread_ingest_status: kickside.knowledge.injection:thread_ingest_status
+      component: kickside.component:component
+
+  - name: thread_ingest_control
+    kind: function.lua
+    meta:
+      comment: Callable KB-owned control plane for the canonical knowledge injection thread.
+    source: file://thread_ingest_control.lua
+    imports:
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+    method: handle
+
+  # The entire materialization pipeline -- the source/digest/graph_meta WORKERS,
+  # the materialization planner (source_materializer), and the content extractor --
+  # lives in the kb10 engine (kickside.kb10.injection). A KB provisions the workers
+  # on its primary thread from the engine binding's declared meta.projections. This
+  # module keeps only the canonical event PRODUCER (thread_ingest); knowledge runs
+  # no materialization.
+
+  # Upload complete callback (called via funcs.call from upload pipeline)
+  - name: on_upload_complete
+    kind: function.lua
+    security:
+      policies:
+        - kickside.knowledge.security:content_upserted_publish
+    source: file://on_upload_complete.lua
+    modules: [process, logger, funcs]
+    imports:
+      ingest_upload: kickside.knowledge.api:ingest_upload
+    method: handler
+    pool:
+      size: 4
+
+  # The completion answer runs under the knowledge identity: the upload's
+  # principal needs no process messaging authority.
+  - name: upload_complete_reply_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the upload completion answer reach the caller waiting on it.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: upload_complete_reply
+    kind: function.lua
+    meta:
+      private: true
+      comment: Answers the process waiting on an upload with its upload.complete outcome.
+    source: file://on_upload_complete.lua
+    method: deliver_reply
+    modules: [process, logger, funcs]
+    imports:
+      ingest_upload: kickside.knowledge.api:ingest_upload
+    security:
+      actor:
+        id: kickside.knowledge.injection:upload_complete_reply
+      policies:
+        - kickside.knowledge.injection:upload_complete_reply_transport
+
+  # content_extractor_test and chunk_text_test live in kickside.kb10.knowledge_tests.

@@ -1,0 +1,103 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: owner_gc_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Component owner deletion removes terminal workflow runs.
+    source: file://../suites/owner_gc_test.lua
+    method: run
+    modules: [uuid, security, funcs]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      workflow: kickside.workflows:workflow
+      types: kickside.workflows:types
+
+  - name: run_retention_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Aged published workflow runs are pruned while live and unpublished runs remain.
+    source: file://../suites/run_retention_test.lua
+    method: run
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      maintenance: kickside.workflows.runs:maintenance
+
+  - name: definition_history_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      timeout: 120s
+      comment: Definition history grows past former per-workflow counts; one oversized row is refused.
+    source: file://../suites/definition_history_test.lua
+    method: run
+    modules: [uuid, json, channel]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      workflow: kickside.workflows:workflow
+      types: kickside.workflows:types
+      version_publish: kickside.workflows.repo:version_publish
+
+  - name: run_admission_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      timeout: 600s
+      comment: Run admission past former per-workflow counts, row limits, races and age expiry.
+    source: file://../suites/run_admission_test.lua
+    method: run
+    modules: [uuid, json, channel, process, time, security, funcs]
+    imports:
+      maintenance: kickside.workflows.runs:maintenance
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      workflow: kickside.workflows:workflow
+      types: kickside.workflows:types
+      version_publish: kickside.workflows.repo:version_publish
+      admission: kickside.workflows.runs:admission
+      runs: app:runs_fixture
+
+  - name: run_admission_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Executes workflow run admission cases under a selected user actor.
+    source: file://../suites/run_admission_test.lua
+    method: actor_run
+    modules: [uuid, json, channel, process, time, security, funcs]
+    imports:
+      maintenance: kickside.workflows.runs:maintenance
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      workflow: kickside.workflows:workflow
+      types: kickside.workflows:types
+      version_publish: kickside.workflows.repo:version_publish
+      admission: kickside.workflows.runs:admission
+      runs: app:runs_fixture
+
+  - name: run_restart_probe
+    kind: process.lua
+    meta:
+      comment: Fresh supervised process reading durable workflow runs after restart.
+    source: file://../suites/run_restart_probe.lua
+    method: run
+    security:
+      groups: [wippy.security:process]
+    imports:
+      store: kickside.workflows.store:store

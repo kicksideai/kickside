@@ -1,0 +1,304 @@
+version: "1.0"
+namespace: kickside.transform
+
+# KickSide transform: the item transform strategies (none|expr|llm|code|func),
+# each a kickside.transform:strategy registry binding applied through
+# kickside.transform:apply, the one sink input normalization, and the transform
+# generator with its validation gate.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Transform
+      comment: Item transform strategies (none|expr|llm|code|func) resolved through their registry bindings.
+
+  - name: dep.wippy.llm
+    version: '*'
+    kind: ns.dependency
+    component: wippy/llm
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: The generation gate authorizes the resources a transform declares against the caller's component access.
+    component: kickside/component
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: Authenticated HTTP router the transform assist endpoints attach to.
+      description: Authenticated HTTP router the transform assist endpoints attach to.
+    targets:
+      - entry: kickside.transform.api:assist.endpoint
+        path: .meta.router
+      - entry: kickside.transform.api:validate.endpoint
+        path: .meta.router
+      - entry: kickside.transform.api:snippet.endpoint
+        path: .meta.router
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the transform-assist static bundle attaches to.
+      description: HTTP server the transform-assist static bundle attaches to.
+    targets:
+      - entry: kickside.transform:ui_static
+        path: .meta.server
+
+  # ─── Reusable assist web component (kickside-transform-assist) ────────────
+  # The negotiation surface for the generator, built (vite) into ./static and
+  # served from the mount below. Mounted by tag anywhere a source->sink mapping is
+  # wired (sync-create, webhook reactions); attribute-driven, host-agnostic. It is
+  # NOT a nav surface — auto_register makes the tag resolvable from any host shell.
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built kickside-transform-assist web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-transform-assist
+    fs: kickside.transform:ui_fs
+    options:
+      # Stable bundle name (index.js) — no-cache lets a rebuild be picked up.
+      cache: "no-cache"
+
+  - name: transform_assist_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: transform_assist_view
+      title: Transform Assist
+      description: >-
+        The reusable transform-builder field (tag kickside-transform-assist) a
+        host form mounts wherever a source->sink mapping is wired: pick a
+        strategy (auto/expression/LLM/code/pass-through), optionally
+        AI-generate a transform, hand-edit it, and each edit is auto-validated
+        against the sink. Takes source-schema, sink-schema, input-shape, samples, hint, value
+        (an existing transform to seed edit-back), and disabled props; emits
+        transform-confirmed { transform, strategy } on every change (the host
+        owns install/cancel — there are no built-in Confirm/Cancel buttons).
+      announced: true
+      auto_register: true
+      tag_name: kickside-transform-assist
+      base_path: kickside-transform-assist
+      entry_point: index.js
+      icon: tabler:wand
+    props:
+      type: object
+      properties:
+        source-schema:
+          type: string
+          default: ""
+          description: Source item JSON schema (JSON string or object).
+        sink-schema:
+          type: string
+          default: ""
+          description: Sink/endpoint input JSON schema (JSON string or object).
+        input-shape:
+          type: string
+          default: ""
+          description: The sink's declared input shape, record or content; generation and validation shape each output into it.
+        samples:
+          type: string
+          default: ""
+          description: Optional JSON array of real source items the generated transform is validated against.
+        hint:
+          type: string
+          default: ""
+          description: Optional freeform steer for the model.
+        value:
+          type: string
+          default: ""
+          description: Optional existing transform { kind, ... } (JSON string or object) to seed the builder for edit-back.
+        disabled:
+          type: boolean
+          default: false
+          description: Disable the assist action.
+
+  - name: schema_validate
+    kind: library.lua
+    meta:
+      comment: Minimal JSON-schema instance validator (type/required/properties/items/enum) for the generation gate.
+    source: file://schema_validate.lua
+    modules: [json]
+
+  # Strategy libraries: one module per transform strategy plus the shared
+  # reference helper. apply resolves a strategy by name and returns
+  # the raw value with a present marker; meta.replay_safe declares replay
+  # safety (CONTRACTS section 15).
+  - name: strategy_none
+    kind: library.lua
+    meta:
+      comment: Pure pass-through strategy; nil input maps to absent, false stays a value.
+    source: file://strategy/none.lua
+    modules: []
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_expr
+    kind: library.lua
+    meta:
+      comment: Pure expression strategy evaluated once in the single frozen environment.
+    source: file://strategy/expr.lua
+    modules: [expr]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_llm
+    kind: library.lua
+    meta:
+      comment: Effectful LLM strategy with documented prompt and model defaults; model and tool use stay inside declared resources.
+    source: file://strategy/llm.lua
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_reference
+    kind: library.lua
+    meta:
+      comment: Strategy resource references and operator/principal grant intersection.
+    source: file://strategy/reference.lua
+    modules: []
+
+  - name: strategy_code
+    kind: library.lua
+    meta:
+      comment: Effectful sandboxed-code strategy; tool use stays inside declared resources.
+    source: file://strategy/code.lua
+    modules: [funcs, security]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_func
+    kind: library.lua
+    meta:
+      comment: Effectful function-call strategy with use-time authorization.
+    source: file://strategy/func.lua
+    modules: [funcs, security]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: sink_input
+    kind: library.lua
+    meta:
+      comment: "The one normalization of a strategy value into a sink input: record or content."
+    source: file://sink_input.lua
+
+  - name: apply
+    kind: library.lua
+    meta:
+      comment: "Strategy apply resolver: one strategy over one item through its registry binding, raw value plus present marker."
+    source: file://apply.lua
+    modules: []
+    imports:
+      strategies: kickside.transform:strategies
+
+  - name: strategies
+    kind: library.lua
+    meta:
+      comment: Resolves transform strategies through their kickside.transform:strategy registry bindings and declared replay safety.
+    source: file://strategies.lua
+    modules: [registry, contract]
+
+  # The strategy contract every strategy binding implements (A28.4): apply one
+  # configuration to one item env under an optional authorization, and
+  # describe the resources a configuration uses.
+  - name: strategy
+    kind: contract.definition
+    meta:
+      title: Transform Strategy
+      comment: "A transform strategy: apply({config, env, authorization?}) -> {present, value?} | {error}; describe({config}) -> {references} | {error}."
+    methods:
+      - { name: apply, description: "Apply one configuration to one item env under an optional authorization." }
+      - { name: describe, description: "Describe the resources a configuration uses, or refuse one whose use cannot be enforced." }
+
+  - name: strategy_none_apply
+    kind: function.lua
+    meta:
+      comment: The none strategy's apply method.
+    source: file://strategy/none.lua
+    method: bind_apply
+    modules: []
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_none_describe
+    kind: function.lua
+    meta:
+      comment: The none strategy's describe method.
+    source: file://strategy/none.lua
+    method: bind_describe
+    modules: []
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_none_binding
+    kind: contract.binding
+    meta:
+      type: kickside.transform.strategy
+      strategy: none
+      replay_safe: true
+    contracts:
+      - contract: kickside.transform:strategy
+        methods:
+          apply: kickside.transform:strategy_none_apply
+          describe: kickside.transform:strategy_none_describe
+
+  - name: strategy_expr_apply
+    kind: function.lua
+    meta:
+      comment: The expr strategy's apply method.
+    source: file://strategy/expr.lua
+    method: bind_apply
+    modules: [expr]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_expr_describe
+    kind: function.lua
+    meta:
+      comment: The expr strategy's describe method.
+    source: file://strategy/expr.lua
+    method: bind_describe
+    modules: [expr]
+    imports:
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: strategy_expr_binding
+    kind: contract.binding
+    meta:
+      type: kickside.transform.strategy
+      strategy: expr
+      replay_safe: true
+      validate_at_install: true
+    contracts:
+      - contract: kickside.transform:strategy
+        methods:
+          apply: kickside.transform:strategy_expr_apply
+          describe: kickside.transform:strategy_expr_describe
+
+  - name: strategy_llm_apply
+    kind: function.lua
+    meta:
+      comment: The llm strategy's apply method.
+    source: file://strategy/llm.lua
+    method: bind_apply
+    modules: [json]
+    imports:
+      llm: wippy.llm:llm
+      prompt: wippy.llm:prompt
+      strategy_reference: kickside.transform:strategy_reference
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

@@ -1,0 +1,20 @@
+version: '1.0'
+namespace: app.http_errors_test
+entries:
+- name: projection_retention_http_test
+  kind: function.lua
+  source: file://projection_retention_http_test.lua
+  method: run
+  meta:
+    type: test
+    suite: projection_retention_http_test
+  modules:
+  - http
+  imports:
+    test: wippy.test:test
+    canonical_json: kickside.contract:canonical_json
+    projection: kickside.core.projections.api:pause_projection
+    retention: kickside.core.retention.api:upsert_thread_retention
+    thread_access: kickside.core.threads.api:thread_access
+    projection_read: kickside.core.projections.api:list_projection_cursors
+    retention_read: kickside.core.retention.api:get_thread_retention

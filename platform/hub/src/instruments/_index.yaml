@@ -1,0 +1,232 @@
+version: "1.0"
+namespace: kickside.hub.instruments
+
+entries:
+  # Baseline endpoint reach for the onboarding instrument endpoints. The host
+  # application composes its administrator group in through admin_security_scope;
+  # the handlers additionally gate on the kickside.ui:system_onboarding surface.
+  - name: instruments_endpoint_access
+    kind: security.policy
+    meta:
+      title: Hub onboarding instruments
+      surface: Hub
+      intent: Invoke grounded module recommendations and install requirement resolution.
+      comment: Administrators may invoke the hub-owned onboarding instrument endpoints.
+    groups: []
+    policy:
+      resources:
+        - kickside.hub.instruments:recommendations.endpoint
+        - kickside.hub.instruments:requirement_resolution.endpoint
+      actions: access
+      effect: allow
+
+  - name: required_setup_endpoint_access
+    kind: security.policy
+    meta:
+      title: Hub required setup
+      surface: Hub
+      intent: Inspect and retry fixed module setup actions after an administrator starts an install.
+      comment: Only the module installer administrator may dispatch a validated required setup descriptor.
+    groups: []
+    policy:
+      resources:
+        - kickside.hub.api:required_setup_status.endpoint
+        - kickside.hub.api:required_setup_apply.endpoint
+      actions: access
+      effect: allow
+
+
+  - name: admin_security_scope
+    kind: ns.requirement
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may invoke the onboarding instrument endpoints.
+      description: Application security group that may invoke the onboarding instrument endpoints.
+    targets:
+      - entry: kickside.hub.instruments:instruments_endpoint_access
+        path: ".groups +="
+      - entry: kickside.hub.instruments:required_setup_endpoint_access
+        path: ".groups +="
+  # App-composition agent for the admin-only onboarding instruments step. The
+  # app invokes it through its narrow one-shot endpoint; it is not discoverable
+  # through ordinary agent lists or available as a user-started session.
+  - name: recommender
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      title: Workspace instrument recommender
+      public: true
+      comment: Ranks an allowlist of real Hub component IDs for workspace onboarding.
+      class: system_onboarding
+      palette_hidden: true
+    prompt: |
+      You rank software component IDs for a workspace administrator.
+
+      The user message contains an administrator need and a candidates array.
+      Each candidate has component, title, description, and keywords fields.
+      workspace_context lists the already configured root/transitive components
+      already configured in the workspace. Use that context only to understand
+      the existing workspace and avoid redundant choices.
+      Return ONLY one JSON array containing zero to five component strings
+      copied exactly from candidates, best match first. Never invent, alter,
+      explain, install, call, or inspect a component. Do not infer or claim
+      version, dependency, or compatibility results; Keeper's install planner is
+      authoritative for those. Do not return markdown, prose, objects, scores,
+      or any value other than allowed component IDs.
+    model: class:fast
+    temperature: 0
+    max_tokens: 300
+
+  - name: requirement_resolver
+    kind: registry.entry
+    meta:
+      type: agent.gen1
+      title: Install requirement resolver
+      public: true
+      comment: Resolves ambiguous host bindings from an authoritative planner candidate set using read-only artifact and registry evidence.
+      class: system_onboarding
+      palette_hidden: true
+    prompt: |
+      You resolve ambiguous host bindings for one software component install.
+
+      The user message is authoritative JSON from Keeper's current install plan.
+      For every requirement, choose only a value copied exactly from that
+      requirement's candidates. Inspect the component artifact first so you can
+      understand the requirement targets and code. Inspect candidate registry
+      entries whenever their identifiers can be looked up. Never invent a value,
+      namespace, entry, requirement, or compatibility claim. If evidence is not
+      sufficient, omit that requirement instead of guessing.
+
+      Return ONLY one JSON object in this shape:
+      {"parameters":[{"name":"exact requirement name","value":"exact candidate value"}]}
+      Do not return markdown, prose, scores, or fields other than parameters.
+    model: class:fast
+    temperature: 0
+    max_tokens: 800
+    tools:
+      - kickside.hub.instruments:inspect_module_artifact
+      - kickside.hub.instruments:inspect_registry_entries
+
+  - name: requirement_resolution_runtime
+    kind: library.lua
+    meta:
+      comment: Keeper requirement filling with read-only evidence and review proposals.
+    source: file://requirement_resolution.lua
+    modules: [http, json, security]
+    imports:
+      planner: keeper.hub:planner
+      requirement_fill: keeper.hub:requirement_fill
+      llm: wippy.llm:llm
+      http_errors: kickside.contract:http_errors
+      evidence: kickside.hub.instruments:requirement_evidence_runtime
+
+  - name: requirement_resolution
+    kind: function.lua
+    meta:
+      comment: Delegates scoped install and update suggestions to Keeper requirement filling.
+    source: file://requirement_resolution.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      planner: keeper.hub:planner
+      requirement_fill: keeper.hub:requirement_fill
+      llm: wippy.llm:llm
+      http_errors: kickside.contract:http_errors
+      evidence: kickside.hub.instruments:requirement_evidence_runtime
+
+  - name: inspect_module_artifact
+    kind: function.lua
+    meta:
+      type: tool
+      title: Inspect module artifact
+      llm_alias: InspectModuleArtifact
+      llm_description: Open an exact Hub module artifact read-only. Without entry_id it lists compact registry-entry summaries in pages of 25; pass next_cursor as cursor for the next page. Pass an exact entry_id to inspect that entry's metadata, data and source code.
+      input_schema:
+        type: object
+        additionalProperties: false
+        required: [component, version]
+        properties:
+          component: { type: string, description: Exact org/name component from the resolver request. }
+          version: { type: string, description: Exact resolved version from the resolver request. }
+          entry_id: { type: string, description: Exact registry entry id to read whole. Omit to list compact entry summaries. }
+          limit: { type: integer, minimum: 1, maximum: 100, description: Entries per page in id order; default 25. }
+          cursor: { type: string, description: The next_cursor of the previous page. }
+      output_schema:
+        type: object
+        properties:
+          component: { type: string }
+          version: { type: string }
+          metadata: { type: object, description: "Detail mode: complete artifact metadata." }
+          entries: { type: array }
+          entry: { type: object, description: "Detail mode: complete exact registry entry." }
+          truncated: { type: boolean, description: More entries follow this page. }
+          next_cursor: { type: string, description: Pass as cursor for the next page; absent on the last page. }
+    source: file://requirement_evidence.lua
+    method: inspect_module
+    modules: [hub, registry]
+    imports:
+      keyset: kickside.contract:keyset
+  - name: requirement_evidence_runtime
+    kind: library.lua
+    meta:
+      comment: Read-only Hub artifact and live registry evidence used by the install requirement resolver.
+    source: file://requirement_evidence.lua
+    modules: [hub, registry]
+    imports:
+      keyset: kickside.contract:keyset
+  - name: inspect_registry_entries
+    kind: function.lua
+    meta:
+      type: tool
+      title: Inspect registry candidates
+      llm_alias: InspectRegistryCandidates
+      llm_description: Read exact live registry entries for candidate binding identifiers.
+      input_schema:
+        type: object
+        additionalProperties: false
+        required: [ids]
+        properties:
+          ids: { type: array, items: { type: string } }
+      output_schema:
+        type: object
+        properties:
+          entries: { type: array }
+    source: file://requirement_evidence.lua
+    method: inspect_registry
+    modules: [hub, registry]
+    imports:
+      keyset: kickside.contract:keyset
+  - name: requirement_resolution.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Admin-only AI-assisted resolution of ambiguous install requirements.
+    method: POST
+    func: requirement_resolution
+    path: /onboarding/requirement-resolution
+
+  - name: recommendations_runtime
+    kind: library.lua
+    meta:
+      comment: App-owned, admin-gated one-shot module recommendation service.
+    source: file://recommendations.lua
+    modules: [http, json, security]
+    imports:
+      agent_invoke: kickside.agents.invoke:agent_invoke_runtime
+
+  - name: recommendations
+    kind: function.lua
+    meta:
+      comment: Validates a grounded module allowlist and invokes the app-owned recommender once.
+    source: file://recommendations.lua
+    method: handler
+    modules: [http, json, security]
+    imports:
+      agent_invoke: kickside.agents.invoke:agent_invoke_runtime
+
+  - name: recommendations.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Admin-only one-shot module recommendations for system onboarding.
+    method: POST
+    func: recommendations
+    path: /onboarding/module-recommendations

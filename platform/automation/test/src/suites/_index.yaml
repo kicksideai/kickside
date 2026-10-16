@@ -1,0 +1,654 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: automation_test_engine
+  kind: library.lua
+  meta:
+    comment: Isolated Automation engine constructor used by the test suite.
+  source: file://automation_engine.lua
+  modules:
+  - contract
+  - funcs
+  - registry
+  - logger
+  - security
+  - uuid
+  - json
+  - sql
+  - time
+  - expr
+  - ctx
+  - hash
+  imports:
+    automation_engine: kickside.automation.engine:engine
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    declaration_references: kickside.automation:declaration_references
+    declaration_authority: kickside.automation:declaration_authority
+    jobs_config: kickside.core.jobs:config
+    types: kickside.automation:types
+    automation_ref: kickside.automation:automation_ref
+    execution_identity: kickside.execution:execution_identity
+    component: kickside.component:component
+    autoinit: kickside.component:autoinit
+    slot: kickside.automation:slot
+    runtime_policy: kickside.automation:runtime_policy
+    failure_classification: kickside.automation:failure_classification
+    round_ledger: kickside.automation:round_ledger
+    round_history: kickside.automation:round_history
+    prepared_retention: kickside.automation:prepared_retention
+    receipt_retention: kickside.automation:receipt_retention
+    round_outcome: kickside.automation:round_outcome
+    canonical_json: kickside.contract:canonical_json
+    automation_db: kickside.automation:automation_db
+    retention_pin: kickside.core.retention:pin
+    core_db: kickside.core:db
+    view_components: wippy.views:component_registry
+- name: pullable_conformance_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Verifies the shared pullable provider conformance battery.
+  source: file://pullable_conformance_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    pullable_conformance: kickside.automation.testing:pullable_conformance
+- name: generic_actions_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Generic automation actions reserve their names, access levels and reconfigure path.
+  source: file://generic_actions_test.lua
+  method: run
+  modules:
+    - uuid
+    - registry
+  imports:
+    test: wippy.test:test
+    automation_test_engine: kickside.automation:automation_test_engine
+    drive: kickside.automation:drive
+    control_fixture: kickside.automation:control_fixture
+- name: catalog_snapshot_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://catalog_snapshot_test.lua
+  method: run
+  modules:
+  - registry
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+- name: automation_ref_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://automation_ref_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    automation_ref: kickside.automation:automation_ref
+- name: binding_validation_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://binding_validation_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    binding_validation: kickside.automation:binding_validation
+- name: events_referential_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://events_referential_test.lua
+  method: run
+  modules:
+  - registry
+  imports:
+    test: wippy.test:test
+- name: failure_classification_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://failure_classification_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    failure_classification: kickside.automation:failure_classification
+    round_outcome: kickside.automation:round_outcome
+    drive: kickside.automation:drive
+
+- name: drive_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Drive rows — creation, drive_key paging, fenced updates, command fencing and control-wake acknowledgment.
+  source: file://drive_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+- name: slot_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Drive slots — one canonically identified job per drive, recorded on the drive, idempotent provision.
+  source: file://slot_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    owner_gc: kickside.automation:owner_gc
+- name: recovery_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Pending command recovery from the command alone and the command dispatcher pass (wake, acknowledge, slot repair).
+  source: file://recovery_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - time
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    automation_test_engine: kickside.automation:automation_test_engine
+    recovery_shared: kickside.automation:recovery_shared
+- name: receipt_retention_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Bounded orphan receipt retention protects active drives and pending installation.
+  source: file://receipt_retention_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    receipt_retention: kickside.automation:receipt_retention
+- name: ledger_orphan_retention_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Bounded orphan ledger retention preserves live and pending recovery owners.
+  source: file://ledger_orphan_retention_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    round_ledger: kickside.automation:round_ledger
+    prepared_retention: kickside.automation:prepared_retention
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: rollback_envelope_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://rollback_envelope_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: owner_gc_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Automation owner deletion removes every owned SQL row and canonical drive slot.
+  source: file://owner_gc_test.lua
+  method: run
+  security:
+    actor: { id: automation-owner-gc-test }
+  modules: [sql, uuid, json, security, contract, funcs]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    owner_gc: kickside.automation:owner_gc
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    component: kickside.component:component
+    retention_pin: kickside.core.retention:pin
+    automations_lib: kickside.automation:automation
+    lifecycle_consts: kickside.core.lifecycle:consts
+    threads_teardown: kickside.core.threads.persist:teardown
+    round_claim: kickside.automation:round_claim
+- name: automation_retention_restart_probe
+  kind: process.lua
+  meta:
+    comment: Fresh process reads durable automation receipts and prepared output after its predecessor exits.
+  source: file://retention_restart_probe.lua
+  method: run
+  modules: [sql]
+  security:
+    groups: [wippy.security:process]
+- name: owner_gc_rollback_probe
+  kind: function.lua
+  meta:
+    comment: Records whether automation deletable forwarded kind-specific rollback options exactly once.
+  source: file://owner_gc_rollback_probe.lua
+  method: handle
+  modules: [sql]
+- name: recovery_state_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Reconfigure recovery commits kind state and timer cadence together after a component write outage.
+  source: file://recovery_state_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: dispatcher_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: The command dispatcher maintenance slot worker — one pass, then rearm to the exact next deadline or not at all (A52 no polling).
+  source: file://dispatcher_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+- name: round_harness
+  kind: library.lua
+  meta:
+    comment: Shared harness of the round suites — installed fixture automations, source thread, drive reads, round seams.
+    depends_on:
+    - kickside.automation:round_single_worker_pool
+    - kickside.automation:round_live_probe
+  source: file://round/harness.lua
+  modules: [sql, json, uuid, time, funcs, contract, security, logger, process, channel]
+  imports:
+    drive: kickside.automation:drive
+    round_runner: kickside.automation:round_runner
+    runtime_policy: kickside.automation:runtime_policy
+    jobs: kickside.core.jobs:jobs
+    jobs_config: kickside.core.jobs:config
+    migration_runner: wippy.migration:runner
+- name: round_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: The automation round over a real installed automation, drive, ledger, pin, thread and pullables.
+  source: file://round/round_test.lua
+  method: run
+  modules: [json, uuid, time]
+  imports:
+    test: wippy.test:test
+    automation_test_engine: kickside.automation:automation_test_engine
+    drive: kickside.automation:drive
+    retention_pin: kickside.core.retention:pin
+    slot: kickside.automation:slot
+    round_harness: kickside.automation:round_harness
+    round_ledger: kickside.automation:round_ledger
+    row_size: kickside.core:row_size
+- name: round_more_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: The automation round over a real installed automation, drive, ledger, pin, thread and pullables.
+  source: file://round/round_test.lua
+  method: run_more
+  modules: [json, uuid, time]
+  imports:
+    test: wippy.test:test
+    automation_test_engine: kickside.automation:automation_test_engine
+    drive: kickside.automation:drive
+    retention_pin: kickside.core.retention:pin
+    slot: kickside.automation:slot
+    round_harness: kickside.automation:round_harness
+    round_ledger: kickside.automation:round_ledger
+    row_size: kickside.core:row_size
+- name: round_advance_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: The round cursor advances past undelivered items; the ledger holds only undelivered items and tombstones with expiries; receipts change only with their destination; writes name their origin.
+  source: file://round/advance_test.lua
+  method: run
+  modules: [json]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+- name: round_bookkeeping_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Ledger, receipt and prepared rows a round writes per delivered item, counted by row triggers.
+  source: file://round/bookkeeping_test.lua
+  method: run
+  modules: [json, sql]
+  imports:
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness
+- name: round_sink_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: The automation round's collection paging and sink delivery over a real installed automation, drive, ledger and fixture sinks.
+  source: file://round/sink_test.lua
+  method: run
+  modules: [json, time]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+    runtime_policy: kickside.automation:runtime_policy
+- name: round_control_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Drive controls through the command stream — pause, resume, run_now, replay, resync — honoured by the round.
+  source: file://round/control_test.lua
+  method: run_1
+  modules:
+  - json
+  - uuid
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    retention_pin: kickside.core.retention:pin
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: round_control_test_2
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Drive controls through the command stream — pause, resume, run_now, replay, resync — honoured by the round.
+  source: file://round/control_test.lua
+  method: run_2
+  modules:
+  - json
+  - uuid
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    retention_pin: kickside.core.retention:pin
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: round_control_test_3
+  kind: function.lua
+  meta:
+    type: test
+    timeout: 120s
+    suite: kickside_automation_round
+    comment: Drive controls through the command stream — pause, resume, run_now, replay, resync — honoured by the round.
+  source: file://round/control_test.lua
+  method: run_3
+  modules:
+  - json
+  - uuid
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    retention_pin: kickside.core.retention:pin
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: round_limits_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    # Multiple database rounds exercise every pass and admission limit.
+    timeout: 120s
+    comment: Round limits — backpressure admission, scheduled pass bounds, the round deadline and typed failures of stored drive state.
+  source: file://round/limits_test.lua
+  method: run
+  modules:
+  - json
+  - time
+  - registry
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    runtime_policy: kickside.automation:runtime_policy
+    round_harness: kickside.automation:round_harness
+- name: round_lifecycle_recovery_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Round lifecycle recovery — backoff, takeover, parking, pending commands and owner deletion.
+  source: file://round/recovery_test.lua
+  method: run_lifecycle
+  modules:
+  - json
+  - time
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_claim: kickside.automation:round_claim
+    round_runner: kickside.automation:round_runner
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+
+- name: round_delivery_recovery_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Round delivery recovery — source gaps, consumer contracts, redelivery and event continuation.
+  source: file://round/recovery_test.lua
+  method: run_delivery
+  modules:
+  - json
+  - time
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_claim: kickside.automation:round_claim
+    round_runner: kickside.automation:round_runner
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+
+- name: ledger_order_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Ledger batch primary-key lock order under concurrent rounds.
+  source: file://round/ledger_order_test.lua
+  method: run
+  modules: [sql, uuid, channel]
+  imports:
+    test: wippy.test:test
+    round_ledger: kickside.automation:round_ledger
+
+- name: round_single_worker_pool
+  kind: process.lua
+  source: file://round/single_worker_pool.lua
+  method: main
+  modules: [sql]
+  security:
+    groups: [wippy.security:process]
+  imports:
+    worker_pool: kickside.core.jobs.service:worker_pool
+    config: kickside.core.jobs:config
+- name: round_live_probe
+  kind: function.lua
+  source: file://round/live_probe.lua
+  method: run
+  modules: [sql, process]
+
+- name: source_schema_test
+  kind: function.lua
+  meta: { type: test, suite: kickside_automation }
+  source: file://source_schema_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+
+- name: actor_instance_native_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://actor_instance_native_test.lua
+  method: run
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+    autoinit: kickside.component:autoinit
+- name: actor_instance_native_probe
+  kind: function.lua
+  meta: {type: test_helper}
+  source: file://actor_instance_native_test.lua
+  method: probe
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+    autoinit: kickside.component:autoinit
+
+- name: registry_native_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://registry_native_test.lua
+  method: run
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+- name: registry_native_probe
+  kind: function.lua
+  meta: {type: test_helper}
+  source: file://registry_native_test.lua
+  method: probe
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+
+- name: action_native_validation_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://action_native_validation_test.lua
+  method: run
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+- name: action_native_validation_probe
+  kind: function.lua
+  meta: {type: test_helper}
+  source: file://action_native_validation_test.lua
+  method: probe
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+
+- name: input_native_validation_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://input_native_validation_test.lua
+  method: run
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_schema: kickside.automation.engine:schema
+    engine_harness: kickside.automation:automation_test_engine
+- name: input_native_validation_probe
+  kind: function.lua
+  meta: {type: test_helper}
+  source: file://input_native_validation_test.lua
+  method: probe
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_schema: kickside.automation.engine:schema
+    engine_harness: kickside.automation:automation_test_engine
+
+- name: install_preflight_native_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://install_preflight_native_test.lua
+  method: run
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+- name: install_preflight_native_probe
+  kind: function.lua
+  meta: {type: test_helper}
+  source: file://install_preflight_native_test.lua
+  method: probe
+  modules: [funcs]
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine
+
+- name: selected_install_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://selected_install_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    automation_test_engine: kickside.automation:automation_test_engine
+    recovery_shared: kickside.automation:recovery_shared
+    command: kickside.automation:command
+    drive: kickside.automation:drive
+
+- name: manual_source_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation_round}
+  source: file://round/manual_source_test.lua
+  method: run
+  modules: [uuid, json]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness

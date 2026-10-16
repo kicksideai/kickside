@@ -1,0 +1,32 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: recovery_shared
+  kind: library.lua
+  source: file://../recovery_shared.lua
+  modules:
+  - sql
+  - uuid
+  - time
+  imports:
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    automation_test_engine: kickside.automation:automation_test_engine
+- name: recovery_dispatch_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+    comment: Command dispatcher wake, slot repair, and age pruning.
+  source: file://../recovery_dispatch_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - time
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    command: kickside.automation:command
+    automation_test_engine: kickside.automation:automation_test_engine
+    recovery_shared: kickside.automation:recovery_shared

@@ -1,0 +1,307 @@
+version: "1.0"
+namespace: kickside.component.persist
+
+entries:
+  - name: implementation_access
+    kind: library.lua
+    source: file://implementation_access.lua
+    modules: [security, sql]
+    imports:
+      component_types: kickside.component:types
+  - name: pending_delete
+    kind: library.lua
+    meta:
+      comment: Resume fenced component deletions from their durable delete marks on the existing retention slot.
+    source: file://pending_delete.lua
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+      component: kickside.component:component
+      teardown: kickside.component.persist:teardown
+
+  - name: cleanup_principal_access
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Remove a deleted user's direct grants on surviving components in bounded, retriable pages.
+    source: file://cleanup_principal_access.lua
+    method: run
+    modules: [sql]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+
+  - name: access_ops
+    kind: library.lua
+    meta:
+      comment: Component grants, revocation, access checks and share listing.
+    source: file://access_ops.lua
+    modules: [sql, uuid, time]
+    imports:
+      component_types: kickside.component:types
+      access_subjects: kickside.component.persist:access_subjects
+      access_policy: kickside.component:access_policy
+      placement: kickside.component.persist:placement
+      execution_identity: kickside.execution:execution_identity
+      implementation_access: kickside.component.persist:implementation_access
+
+  # kickside.component.persist:placement
+  - name: placement
+    kind: library.lua
+    meta:
+      comment: Hierarchy and ordering engine (lexorank positions + materialized/ltree paths)
+      tags:
+        - components
+        - kickside
+        - placement
+        - hierarchy
+    source: file://placement.lua
+    modules:
+      - sql
+    imports:
+      component_types: kickside.component:types
+
+  # kickside.component.persist:access_subjects
+  - name: access_subjects
+    kind: library.lua
+    meta:
+      comment: Resolve a user into their access subjects (user + groups) and define their effective access mask (union of all grants)
+      tags:
+        - components
+        - kickside
+        - access
+    source: file://access_subjects.lua
+    modules:
+      - security
+      - contract
+    imports:
+      component_types: kickside.component:types
+      execution_identity: kickside.execution:execution_identity
+
+  - name: component_reader
+    kind: library.lua
+    meta:
+      comment: Flexible component query reader with immutable API
+      tags:
+        - components
+        - kickside
+        - query
+        - reader
+    source: file://component_reader.lua
+    modules:
+      - sql
+      - uuid
+    imports:
+      persisted_json: kickside.contract:persisted_json
+      error_envelope: kickside.contract:error_envelope
+      component_query: kickside.component.persist:component_query
+      implementation_access: kickside.component.persist:implementation_access
+      component_types: kickside.component:types
+
+  - name: component_query
+    kind: library.lua
+    meta:
+      comment: The SQL a component reader state compiles to — access join, filters, ordering, pagination.
+    source: file://component_query.lua
+    modules:
+      - sql
+    imports:
+      access_subjects: kickside.component.persist:access_subjects
+      component_types: kickside.component:types
+
+  # kickside.component.persist:read_port
+  - name: read_port
+    kind: library.lua
+    meta:
+      comment: Translates the read-port filter DTO into a configured reader and resolves the access scope
+      tags:
+        - components
+        - kickside
+        - query
+        - read-port
+    source: file://read_port.lua
+    modules:
+      - security
+    imports:
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+      access_policy: kickside.component:access_policy
+      access_subjects: kickside.component.persist:access_subjects
+
+  # kickside.component.persist:component_ops
+  # Named component_ops (not ops) so its pool symbol never collides with another
+  # module's same-named ops entry (e.g. userspace.dataflow.persist:ops) when a
+  # single pool transitively imports both.
+  - name: component_ops
+    kind: library.lua
+    meta:
+      comment: Component operation constants and command handlers
+      tags:
+        - components
+        - kickside
+        - operations
+        - commands
+        - access
+    source: file://ops.lua
+    modules:
+      - sql
+      - time
+    imports:
+      component_types: kickside.component:types
+      context_ops: kickside.component.persist:context_ops
+      declaration_ops: kickside.component.persist:declaration_ops
+      declaration_fence: kickside.component.persist:declaration_fence
+      meta_ops: kickside.component.persist:meta_ops
+      delete_ops: kickside.component.persist:delete_ops
+      placement_ops: kickside.component.persist:placement_ops
+      access_ops: kickside.component.persist:access_ops
+      declared_create: kickside.component.persist:declared_create
+
+  - name: context_ops
+    kind: library.lua
+    source: file://context_ops.lua
+    modules: [sql, time, json, security]
+    imports:
+      meta_ops: kickside.component.persist:meta_ops
+      component_types: kickside.component:types
+      context_policy: kickside.component:context_policy
+      access_ops: kickside.component.persist:access_ops
+      access_subjects: kickside.component.persist:access_subjects
+      identity_ops: kickside.component.persist:identity_ops
+      audit_policy: kickside.component.persist:audit_policy
+      identity_access: kickside.component:identity_access
+      execution_identity: kickside.execution:execution_identity
+      declaration_fence: kickside.component.persist:declaration_fence
+
+  - name: adoption
+    kind: library.lua
+    meta:
+      comment: Orphan adoption — an instance operator takes a component no principal holds access to, with an identity audit row.
+    source: file://adoption.lua
+    modules: [sql, json, uuid]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+      access_ops: kickside.component.persist:access_ops
+      context_ops: kickside.component.persist:context_ops
+      declaration_fence: kickside.component.persist:declaration_fence
+      identity_ops: kickside.component.persist:identity_ops
+      audit_policy: kickside.component.persist:audit_policy
+      execution_identity: kickside.execution:execution_identity
+
+  - name: declaration_fence
+    kind: library.lua
+    meta:
+      comment: The component declaration fence — owner, read and advance of the (component, automation) command fence (CONTRACTS §9, A16).
+    source: file://declaration_fence.lua
+    modules: [sql, time]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+
+  - name: declaration_ops
+    kind: library.lua
+    meta:
+      comment: Validated automation declaration commands — verification, tokens, the fenced declaration write, verified creations (design v5 §6.3).
+    source: file://declaration_ops.lua
+    modules: [json, security]
+    imports:
+      context_ops: kickside.component.persist:context_ops
+      meta_ops: kickside.component.persist:meta_ops
+      declaration_fence: kickside.component.persist:declaration_fence
+      execution_identity: kickside.execution:execution_identity
+
+  - name: declared_create
+    kind: library.lua
+    meta:
+      comment: The one privileged create path for a verified automation install command (design v4 §6.3).
+    source: file://declared_create.lua
+    imports:
+      component_types: kickside.component:types
+      declaration_ops: kickside.component.persist:declaration_ops
+      declaration_fence: kickside.component.persist:declaration_fence
+      placement_ops: kickside.component.persist:placement_ops
+      access_ops: kickside.component.persist:access_ops
+      lifecycle_rollback: kickside.component.persist:lifecycle_rollback
+
+  - name: lifecycle_rollback
+    kind: library.lua
+    meta:
+      comment: The component lifecycle's single writer of the runtime-owned _rollback chain.
+    source: file://lifecycle_rollback.lua
+    imports:
+      context_ops: kickside.component.persist:context_ops
+
+  - name: identity_ops
+    kind: library.lua
+    source: file://identity_ops.lua
+    modules: []
+
+  - name: audit_policy
+    kind: library.lua
+    meta:
+      comment: Identity audit age window and per-row size limit.
+    source: file://audit_policy.lua
+    modules: [registry]
+
+  - name: audit_retention
+    kind: library.lua
+    source: file://audit_retention.lua
+    modules: [sql, time]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
+      component_lifecycle: kickside.component:component_lifecycle
+      audit_policy: kickside.component.persist:audit_policy
+
+  - name: meta_ops
+    kind: library.lua
+    source: file://meta_ops.lua
+    modules: [sql, time, uuid, json, registry]
+    imports:
+      component_types: kickside.component:types
+      error_envelope: kickside.contract:error_envelope
+
+  - name: delete_ops
+    kind: library.lua
+    source: file://delete_ops.lua
+    modules: [sql]
+    imports:
+      component_types: kickside.component:types
+      placement: kickside.component.persist:placement
+
+  - name: placement_ops
+    kind: library.lua
+    source: file://placement_ops.lua
+    modules: [sql, time, uuid, json, security]
+    imports:
+      placement_rules: kickside.component:placement_rules
+      component_types: kickside.component:types
+      placement: kickside.component.persist:placement
+      meta_ops: kickside.component.persist:meta_ops
+      context_policy: kickside.component:context_policy
+      identity_ops: kickside.component.persist:identity_ops
+      audit_policy: kickside.component.persist:audit_policy
+      execution_identity: kickside.execution:execution_identity
+
+  - name: teardown
+    kind: library.lua
+    meta:
+      comment: Shared component-delete core (deletable cascade + unregister); ridden by the gated contract delete and the trusted lifecycle system delete.
+      tags:
+        - components
+        - delete
+        - deletable
+        - teardown
+    source: file://teardown.lua
+    modules:
+      - sql
+      - contract
+      - registry
+      - security
+      - time
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      component_ops: kickside.component.persist:component_ops
+      placement: kickside.component.persist:placement
+      component_lifecycle: kickside.component:component_lifecycle

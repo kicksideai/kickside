@@ -1,0 +1,9 @@
+organization: kickside
+module: oauth-test
+type: application
+description: Standalone runnable harness that boots kickside/oauth (and its component/contract/cron/views deps) and runs its co-located *_test.lua suites.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

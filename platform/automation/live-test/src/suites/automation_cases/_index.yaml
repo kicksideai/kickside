@@ -1,0 +1,6 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: catalog_fixture
+  kind: library.lua
+  source: file://../../test_src/suites/automation_cases/catalog_fixture.lua

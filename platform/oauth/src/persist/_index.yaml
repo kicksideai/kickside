@@ -1,0 +1,45 @@
+version: "1.0"
+namespace: kickside.oauth.persist
+
+entries:
+  # kickside.oauth.persist:oauth_repo
+  - name: oauth_repo
+    kind: library.lua
+    meta:
+      comment: Create, update, schedule, and delete OAuth connections.
+    source: file://oauth_repo.lua
+    modules: [sql, uuid]
+    imports:
+      oauth_types: kickside.oauth:oauth_types
+      oauth_repo_support: kickside.oauth.persist:oauth_repo_support
+      refresh_schedule: kickside.oauth:refresh_schedule
+
+  - name: oauth_read_repo
+    kind: library.lua
+    meta:
+      comment: Read OAuth connection data and filtered metadata lists.
+    source: file://oauth_read_repo.lua
+    modules: [sql]
+    imports:
+      oauth_types: kickside.oauth:oauth_types
+      oauth_repo_support: kickside.oauth.persist:oauth_repo_support
+
+  - name: oauth_token_repo
+    kind: library.lua
+    meta:
+      comment: Read access tokens and update refreshed OAuth tokens.
+    source: file://oauth_token_repo.lua
+    modules: [sql]
+    imports:
+      oauth_types: kickside.oauth:oauth_types
+      oauth_repo_support: kickside.oauth.persist:oauth_repo_support
+      refresh_schedule: kickside.oauth:refresh_schedule
+
+  - name: oauth_repo_support
+    kind: library.lua
+    meta:
+      comment: Shared OAuth database, encryption, and timestamp functions.
+    source: file://oauth_repo_support.lua
+    modules: [sql, json, time, env, crypto, base64]
+    imports:
+      oauth_types: kickside.oauth:oauth_types

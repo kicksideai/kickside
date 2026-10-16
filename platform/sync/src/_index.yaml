@@ -1,0 +1,406 @@
+version: "1.0"
+namespace: kickside.sync
+
+# The Data Sync automation kind on the automation round. install embeds the
+# user's Trigger Spec v2 and declares the main drive's source; the round owns
+# acquisition, the item ledger, receipts and controls, and delivers each page
+# to the sync's round consumer, which filters, applies the declared transform
+# (none|expr|llm|code|func) and writes each item to the declared destination.
+
+entries:
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Sync
+      description: Data Sync automation kind for source-to-destination synchronization on the shared automation engine.
+
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      description: HTTP server the Data Sync create UI static bundle attaches to.
+    targets:
+      - entry: kickside.sync:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta:
+      comment: Built Data Sync create web component bundle.
+    directory: ./static
+
+  - name: ui_static
+    kind: http.static
+    meta: {}
+    path: /kickside-sync
+    fs: kickside.sync:ui_fs
+    options:
+      # Stable bundle names — without revalidation the browser caches them hard
+      # and never picks up rebuilds (matches the other view modules).
+      cache: "no-cache"
+
+  # Create-view web component, served from the sync module's own static
+  # bundle. The manager mounts it by tag with a `type-id` attribute and listens
+  # for `automation-installed`.
+  - name: sync_create_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: Data Sync Setup
+      title: Data Sync Setup
+      announced: true
+      auto_register: false
+      tag_name: kickside-sync-create
+      base_path: kickside-sync
+      entry_point: sync_create.js
+    props:
+      type: object
+      properties:
+        input:
+          type: string
+          default: ""
+          description: Initial declared install inputs as a JSON object, supplied by the owning component.
+        type-id:
+          type: string
+          default: ""
+          description: The installable automation type this create wizard installs (set by the automation manager).
+        parent-id:
+          type: string
+          default: ""
+          description: The workspace folder to place the new automation under (omit for root).
+        submit-nonce:
+          type: string
+          default: ""
+          description: Monotonic host command; each new non-empty value submits the embedded form once.
+
+  # The settings view of an installed data sync, declared as the kind's manage
+  # view: the automation manager mounts it with config { id } for Config and
+  # Edit. It saves through reconfigure and reports change / close / error.
+  - name: sync_manage_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: Data Sync Settings
+      title: Data Sync Settings
+      announced: true
+      auto_register: false
+      tag_name: kickside-sync-manage
+      base_path: kickside-sync
+      entry_point: sync_manage.js
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          description: "Config-host convention: { id } — the installed data sync's automation id."
+        value:
+          type: object
+          description: Alias of config; the first of config/value carrying an id wins.
+
+  - name: document
+    kind: library.lua
+    meta: { comment: The content document a sync writes to a content-shaped sink — content under item identity, sync origin and provenance source_ref metadata. }
+    source: file://round/document.lua
+    imports:
+      source_ref_builder: kickside.core.provenance:source_ref
+
+  - name: round_plan
+    kind: library.lua
+    meta: { comment: The sync's delivery plan compiled from the drive's applied declaration — filter, transform strategy with its replay safety, declared sink. }
+    source: file://round/plan.lua
+    modules: [expr]
+    imports:
+      transform_apply: kickside.transform:apply
+      transform_strategies: kickside.transform:strategies
+      strategy_reference: kickside.transform:strategy_reference
+      component: kickside.component:component
+      round_write: kickside.automation:round_write
+      canonical_json: kickside.contract:canonical_json
+
+  - name: round_deliver
+    kind: function.lua
+    meta: { comment: "kickside.trigger:round_consumer.deliver — filters, transforms, normalizes and writes one page of a drive's items through round_write." }
+    source: file://round/consumer.lua
+    method: deliver
+    imports:
+      sink_input: kickside.transform:sink_input
+      failure_classification: kickside.automation:failure_classification
+      round_write: kickside.automation:round_write
+      round_plan: kickside.sync:round_plan
+      transform_gate: kickside.transform:generator
+      sync_document: kickside.sync:document
+
+  - name: destination_map
+    kind: library.lua
+    meta: { comment: Destination input ownership checks shared by Data Sync install and reconfigure. }
+    source: file://destination_map.lua
+
+  - name: sync_runtime
+    kind: library.lua
+    meta: { comment: The Data Sync kind — declaration validation, the main drive source it declares, install and reconfigure. }
+    source: file://sync.lua
+    modules: [ctx, time]
+    imports:
+      automations_lib: kickside.automation:automation
+      destination_map: kickside.sync:destination_map
+      round_plan: kickside.sync:round_plan
+      transform_gate: kickside.transform:generator
+
+  - name: sync_install
+    kind: function.lua
+    meta: { comment: installable.install for the sync — validates the declaration and declares the main drive's source (A22). }
+    source: file://sync.lua
+    method: install
+    modules: [ctx, time]
+    imports:
+      automations_lib: kickside.automation:automation
+      destination_map: kickside.sync:destination_map
+      round_plan: kickside.sync:round_plan
+      transform_gate: kickside.transform:generator
+
+  - name: sync_reconfigure
+    kind: function.lua
+    meta: { comment: Re-declares the sync through the automation's declaration command with its main source. }
+    source: file://sync.lua
+    method: reconfigure
+    modules: [ctx, time]
+    imports:
+      automations_lib: kickside.automation:automation
+      destination_map: kickside.sync:destination_map
+      round_plan: kickside.sync:round_plan
+      transform_gate: kickside.transform:generator
+
+  - name: sync_contract
+    kind: contract.definition
+    meta:
+      comment: Data Sync reconfiguration.
+      tags: [automation, sync]
+    methods:
+      - name: reconfigure
+        description: "Edit source selection, cadence, transform, title, or enabled state in place."
+        input_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "additionalProperties": true }'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{ "type":"object", "properties": { "success":{"type":"boolean"}, "id":{"type":"string"}, "error":{"type":"string"} }, "required":["success"] }'
+
+  - name: sync
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: Data Sync
+      comment: Move data from a source to a destination on a schedule or event, with an explicit owner-selected transform in between.
+      icon: tabler:arrows-exchange
+      category: data
+      class: automation
+      exportable: true
+      reconfigurable: true
+      component:
+        create: { view: kickside.sync:sync_create_view }
+        manage: { view: kickside.sync:sync_manage_view }
+      # status, resync, replay, pause and resume are the engine's generic
+      # controls over the sync's drives.
+      actions:
+        - name: status
+        - name: resync
+        - name: replay
+        - name: pause
+        - name: resume
+        - name: reconfigure
+      inputs:
+        type: object
+        additionalProperties: false
+        required: [title, trigger, sink_port, enabled, transform]
+        properties:
+          title: { type: string, title: Name, minLength: 1 }
+          # Trigger Spec v2 (kickside.trigger:trigger_spec_schema). A data sync
+          # requires trigger.source.
+          trigger:
+            type: object
+            title: Trigger
+            additionalProperties: false
+            required: [v]
+            properties:
+              v: { const: 2 }
+              source: { type: string, description: "Source port entry id. A data sync requires one." }
+              config:
+                type: object
+                description: "Per-source selector instance and options."
+                additionalProperties: true
+                properties:
+                  connection_id: { type: string, x-reference: { kind: connection, access: READ } }
+                  thread_id: { type: string, x-reference: { kind: thread, access: READ } }
+              filter:
+                type: object
+                additionalProperties: false
+                properties:
+                  expr: { type: string }
+              schedule:
+                type: object
+                additionalProperties: false
+                required: [type, expression]
+                properties:
+                  # Recurring-only: a data sync keeps moving data, so a one-shot
+                  # `once` schedule is not a valid data sync. One-shot stays a
+                  # legitimate primitive for other Automation kinds.
+                  type: { enum: [interval, ticker, cron] }
+                  expression: { type: string }
+              # The per-item delivery retry delay (round delivery.retry_after_ms).
+              delivery:
+                type: object
+                additionalProperties: false
+                properties:
+                  retry_after_ms: { type: integer, minimum: 1 }
+              # Collection acquisition bounds (round.page_size, round.max_pages,
+              # round.max_items).
+              poll:
+                type: object
+                additionalProperties: false
+                properties:
+                  page_size: { type: integer, minimum: 1 }
+                  max_pages_per_run: { type: integer, minimum: 1 }
+                  max_items_per_run: { type: integer, minimum: 0 }
+              backfill:
+                oneOf:
+                  - enum: [all, none]
+                  - type: object
+                    additionalProperties: false
+                    properties:
+                      since: { type: string }
+                      last_days: { type: integer }
+                description: Required history boundary for collection/event sources; no engine default.
+          sink_port: { type: string, title: Destination, minLength: 1 }
+          sink_config:
+            type: object
+            title: Destination config
+            additionalProperties: true
+            properties:
+              connection_id: { type: string, x-reference: { kind: connection, access: READ } }
+              resource_id: { type: string, x-reference: { kind: component, access: WRITE } }
+              kb_id: { type: string, x-reference: { kind: component, access: WRITE } }
+              kb_ids:
+                type: array
+                items: { type: string, x-reference: { kind: component, access: WRITE } }
+              crm_id: { type: string, x-reference: { kind: component, access: WRITE } }
+              ledger_id: { type: string, x-reference: { kind: component, access: WRITE } }
+          output_schema: { type: object, title: Output schema }
+          enabled: { type: boolean, title: Enabled }
+          reconcile:
+            type: boolean
+            const: true
+            title: Reconcile deleted source items
+          transform:
+            type: object
+            title: Transform
+            additionalProperties: false
+            required: [kind]
+            properties:
+              # The kickside.transform:strategy bindings the round applies.
+              kind: { type: string, enum: [none, expr, llm, func, code] }
+              expr: { type: string, title: Expression }
+              prompt: { type: string, title: LLM prompt }
+              model: { type: string, title: Model }
+              temperature: { type: number, title: Temperature }
+              max_tokens: { type: integer, title: Runtime token budget }
+              generation_policy: { type: object, title: Generation policy, description: Optional kickside.transform.generation_policy/v1 runtime values (model.selector, sampling.temperature, budgets.runtime, prompts.runtime); model, sampling and budget fields agree when both are present; an explicit prompt overrides the policy prompt. }
+              function: { type: string, title: Trusted function reference }
+              # The func strategy hands this table to its target alongside the
+              # item, so a func transform is parameterised here.
+              config: { type: object, title: Transform config }
+              input_version: { type: string, title: Declared transform input version }
+              output_version: { type: string, title: Declared transform output version }
+              code: { type: string, title: Code }
+              tool_ids: { type: array, items: { type: string } }
+              resource_id: { type: string, minLength: 1, title: Function resource }
+              required_mask: { type: integer, enum: [1, 2, 4, 8], title: Required access }
+              resources:
+                type: array
+                title: Declared resources
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [resource_id]
+                  properties:
+                    resource_id: { type: string, minLength: 1 }
+                    required_mask: { type: integer, enum: [1, 2, 4, 8] }
+      # The fields the sync writes at install and reconfigure; run state is the
+      # drives' generic status. The row is led by the subtitle `when` read from
+      # the declared source.
+      public_state_schema:
+        fields:
+          - { key: when, type: text, label: When, role: subtitle }
+          - { key: enabled, type: boolean, label: Enabled }
+          - { key: status, type: text, label: Status, enum_labels: { idle: Idle, paused: Paused } }
+          - { key: reconcile_enabled, type: boolean, label: Reconcile, hidden: true }
+          - { key: sync_mode, type: text, label: Sync mode, hidden: true, enum_labels: { continuous: Continuous, trigger: Event triggered } }
+          - { key: schedule_type, type: text, label: Schedule type, enum_labels: { interval: Interval, ticker: Periodic, cron: Cron, trigger: Event triggered }, hidden: true }
+          - { key: schedule_expression, type: text, label: Schedule, hidden: true }
+          - { key: output_schema, type: object, label: Output schema, hidden: true }
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+      - contract: kickside.contract:installable
+        methods:
+          install: kickside.sync:sync_install
+      - contract: kickside.sync:sync_contract
+        methods:
+          reconfigure: kickside.sync:sync_reconfigure
+      - contract: kickside.trigger:round_consumer
+        methods:
+          deliver: kickside.sync:round_deliver
+      - contract: kickside.contract:deletable
+        methods:
+          delete: kickside.automation:noop_delete
+
+  - name: dep.kickside.automation
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: The automation engine and round that install, drive and deliver the Data Sync.
+    component: kickside/automation
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Records and instances register as component shells and resolve access through the component service.
+    component: kickside/component
+
+  - name: dep.kickside.contract
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Provides the Trigger Spec and round consumer contracts.
+    component: kickside/contract
+
+  - name: dep.kickside.core
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Event-sourced on the core thread engine (thread upsert, event append, status).
+    component: kickside/core
+
+  - name: dep.kickside.transform
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Applies the shared transform (none/expr/llm/code/func) to synced items.
+    component: kickside/transform
+
+  - name: round_transform_effect
+    kind: function.lua
+    meta:
+      type: kickside.automation.round.effect
+      private: true
+    source: file://round/plan.lua
+    method: compute
+    modules: [expr]
+    imports:
+      transform_apply: kickside.transform:apply
+      transform_strategies: kickside.transform:strategies
+      strategy_reference: kickside.transform:strategy_reference
+      component: kickside.component:component
+      round_write: kickside.automation:round_write
+      canonical_json: kickside.contract:canonical_json

@@ -1,0 +1,87 @@
+[
+  {
+    "source": "platform/automation/src/engine/install.lua",
+    "contracts": {
+      "kickside.contract:installable": [
+        "install"
+      ]
+    },
+    "reason": "The install path resolves the declared install method target of a production kind binding."
+  },
+  {
+    "source": "platform/automation/src/engine/actions.lua",
+    "contracts": {
+      "kickside.channel.responder:channel_responder_contract": [
+        "status",
+        "read_config",
+        "configure",
+        "pause",
+        "resume"
+      ],
+      "kickside.sync:sync_contract": [
+        "reconfigure"
+      ],
+      "kickside.automation.recurring:configurable": [
+        "reconfigure"
+      ]
+    },
+    "reason": "The kind action dispatcher resolves the contract and method from the production binding action declarations."
+  },
+  {
+    "source": "core/component/src/context.lua",
+    "contracts": {
+      "kickside.oauth:oauth_connection_contract": [
+        "get_access_token",
+        "get_info"
+      ],
+      "kickside.data:definable": [
+        "types",
+        "define"
+      ],
+      "kickside.data:loadable": [
+        "list",
+        "describe",
+        "describe_scope",
+        "begin",
+        "append",
+        "commit",
+        "rehearse",
+        "discard"
+      ],
+      "kickside.data:readable": [
+        "list",
+        "describe",
+        "plan",
+        "query",
+        "lookup"
+      ]
+    },
+    "reason": "The component context engine opens the caller-selected contract on a receiver binding with validated actor, scope and private context. OAuth connections and optional data receivers expose these methods through the same generic component proxy."
+  },
+  {
+    "module": "external meeting module",
+    "source": "push/worker.lua",
+    "contracts": {
+      "kickside.data.records:external_record_writer": [
+        "describe",
+        "update_record"
+      ]
+    },
+    "reason": "A meeting module opens the writer discovered for a meeting source, calls describe to check supported kinds and fields, then update_record to push the title. The Fireflies provider implements this platform contract; its definition stays available when providers are installed without a meeting module."
+  },
+  {
+    "module": "kickside/sso",
+    "source": "src/persist/provisioner.lua",
+    "contracts": {
+      "kickside.users:user_provisioning": [
+        "apply_sourced_groups",
+        "assign_group",
+        "complete_passwordless_user",
+        "create_passwordless_user",
+        "get_user",
+        "mint_session"
+      ]
+    },
+    "reason": "The SSO provisioner calls the host user provisioning contract for verified external identities, group assignment and session creation."
+  }
+]

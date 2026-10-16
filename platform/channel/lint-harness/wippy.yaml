@@ -1,0 +1,7 @@
+organization: kickside
+module: channel-lint
+type: application
+description: Static-analysis harness for the canonical kickside/channel source.
+directories:
+  modules: .wippy
+  src: .

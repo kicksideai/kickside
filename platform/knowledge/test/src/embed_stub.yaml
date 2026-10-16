@@ -1,0 +1,88 @@
+version: "1.0"
+namespace: test.kb
+
+# Real embeddable binding for the harness KB engine (test_engine_wiki declares
+# impl_id: test.kb:embeddable). It lets component.open(kb_id, WRITE, embeddable)
+# resolve so the kb_embed_sink writable can drive the canonical content producer.
+
+entries:
+  - name: embed_content
+    kind: function.lua
+    meta:
+      comment: Harness embed_content — forwards writes into knowledge thread_ingest.
+    source: file://embed_stub.lua
+    method: handle
+    modules:
+      - ctx
+    imports:
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: embed_reference
+    kind: function.lua
+    meta:
+      comment: Harness embed_reference — unsupported placeholder to fully bind the contract.
+    source: file://embed_stub.lua
+    method: handle_reference
+    modules:
+      - ctx
+    imports:
+      thread_ingest: kickside.knowledge.injection:thread_ingest
+
+  - name: embeddable
+    kind: contract.binding
+    meta:
+      comment: Harness KB embeddable binding backing test.kb KBs.
+      events:
+        output:
+          - type: kickside.knowledge.events:content.upserted
+          - type: kickside.knowledge.events:content.deleted
+          - type: kickside.knowledge.events:delivery.claimed
+          - type: kickside.knowledge.events:graph.changed
+          - type: kickside.knowledge.events:digest.requested
+          - type: kickside.knowledge.events:treatment.requested
+    contracts:
+      - contract: kickside.contract:embeddable
+        context_required:
+          - component_id
+        methods:
+          embed_content: test.kb:embed_content
+          embed_reference: test.kb:embed_reference
+
+  # A deterministic maintenance binding lets the Knowledge manager harness prove
+  # engine-selected dispatch without making the optional kb10 engine a test dep.
+  - name: schedule_resummarize
+    kind: function.lua
+    meta:
+      comment: Harness receipt for a scheduled summary regeneration.
+    source: file://maintenance_stub.lua
+    method: schedule_resummarize
+    modules: [ctx]
+
+  - name: schedule_reembed
+    kind: function.lua
+    meta:
+      comment: Harness receipt for a scheduled vector regeneration.
+    source: file://maintenance_stub.lua
+    method: schedule_reembed
+    modules: [ctx]
+
+  - name: maintenance_status
+    kind: function.lua
+    meta:
+      comment: Harness maintenance status report.
+    source: file://maintenance_stub.lua
+    method: maintenance_status
+    modules: [ctx]
+
+  - name: maintainable
+    kind: contract.binding
+    meta:
+      comment: Harness KB maintenance binding backing test.kb KBs.
+    contracts:
+      - contract: kickside.knowledge:maintainable
+        context_required:
+          - component_id
+        methods:
+          schedule_resummarize: test.kb:schedule_resummarize
+          schedule_reembed: test.kb:schedule_reembed
+          maintenance_status: test.kb:maintenance_status

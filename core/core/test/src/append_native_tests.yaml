@@ -1,0 +1,56 @@
+version: '1.0'
+namespace: app
+entries:
+- name: append_native_fixture
+  kind: library.lua
+  source: file://append_native_fixture.lua
+- name: append_native_sql
+  kind: library.lua
+  source: file://append_native_sql.lua
+  imports:
+    fixture: app:append_native_fixture
+  modules:
+  - sql
+- name: append_native_normalize
+  kind: library.lua
+  source: file://append_native_normalize.lua
+  imports:
+    fixture: app:append_native_fixture
+    real: kickside.core.threads.persist:normalize
+- name: append_native_subjects
+  kind: library.lua
+  source: file://append_native_subjects.lua
+  imports:
+    fixture: app:append_native_fixture
+    real: kickside.core.threads.persist:subjects
+- name: append_native_source
+  kind: library.lua
+  source: file://append_native_source.lua
+  modules:
+  - json
+  - uuid
+  imports:
+    clock: kickside.core.jobs:clock
+    jobs_wake: kickside.core.jobs.persist:wake
+    threads_consts: kickside.core.threads:consts
+    threads_normalize: app:append_native_normalize
+    core_types: kickside.core:types
+    trace_context: kickside.execution:trace
+    retention_policy: kickside.core:policy_config
+    row_size: kickside.core:row_size
+    subjects: app:append_native_subjects
+    sql: app:append_native_sql
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    error_envelope: kickside.contract:error_envelope
+- name: append_native_test
+  kind: function.lua
+  source: file://append_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_append_native
+  imports:
+    test: wippy.test:test
+    fixture: app:append_native_fixture
+    api: app:append_native_source
+    canonical_json: kickside.contract:canonical_json

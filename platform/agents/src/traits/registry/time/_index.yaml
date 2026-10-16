@@ -1,0 +1,22 @@
+version: "1.0"
+namespace: kickside.agents.traits
+entries:
+  - name: time_aware
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Time Aware
+      public: true
+      comment: Injects the current date and time so the agent knows "now" and can reason about recency.
+      tags: [context, time]
+      icon: tabler:clock
+    prompt: Current date and time awareness.
+    prompt_func_id: kickside.agents.traits:time_context
+
+  - name: time_context
+    kind: function.lua
+    meta:
+      comment: Returns the current date and time for prompt injection (hour-rounded for cache stability).
+    source: file://../../time_context.lua
+    modules: [time]
+    method: handler

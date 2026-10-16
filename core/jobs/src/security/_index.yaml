@@ -1,0 +1,18 @@
+version: "1.0"
+namespace: kickside.core.jobs.security
+
+entries:
+  # A job carries no execution identity: its worker_ref target loads the
+  # owner's identity from the owner record and binds it. Until it does, the
+  # target runs in the jobs worker frame bounded by this policy, so framework
+  # maintenance ownership of a component created there is denied and the
+  # creation refuses instead of leaving the jobs service actor as its owner.
+  - name: unattributed_execution
+    kind: security.policy
+    meta:
+      private: true
+      comment: Bounds a job worker_ref target that has not bound its owner's execution identity.
+    policy:
+      resources: '*'
+      actions: component.own.maintenance
+      effect: deny

@@ -1,0 +1,15 @@
+version: "1.0"
+namespace: kickside.webhooks.events
+
+# Event-type entry for the webhook component thread. The static event schema is a
+# validated webhook JSON payload; the concrete shape of a given occurrence is the
+# selected webhook instance's own schema.
+entries:
+  - name: webhook.inbound
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      description: Validated webhook JSON payload. The concrete shape is the selected webhook instance's schema.

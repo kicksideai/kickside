@@ -1,0 +1,61 @@
+version: "1.0"
+namespace: kickside.uploads.service
+
+entries:
+  - name: process_worker
+    kind: library.lua
+    meta:
+      comment: "Upload processing submitter: writes idempotent durable jobs into the core scheduler."
+    source: file://process_worker.lua
+    modules: [contract, sql, json, security]
+    imports:
+      jobs_config: kickside.core.jobs:config
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+      jobs_wake: kickside.core.jobs.persist:wake
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+      jobs: kickside.core.jobs:jobs
+      provision: kickside.core.threads:provision
+      processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+
+  - name: process_job_proc
+    kind: process.lua
+    meta:
+      comment: "proc:// entry for one upload pipeline attempt. Spawned non-blocking and supervisable by the core job worker, so a hung OCR call can be terminated and the attempt finalized."
+    source: file://process_job.lua
+    modules: [logger, sql, json]
+    security:
+      actor:
+        id: system:kickside.uploads.process
+      policies:
+        - kickside.uploads.security:deferred_owner
+        - kickside.uploads.security:deferred_actor
+    imports:
+      jobs_config: kickside.core.jobs:config
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      pipeline_lib: kickside.uploads:pipeline
+      types: kickside.uploads:types
+      jobs: kickside.core.jobs:jobs
+      job_types: kickside.core.jobs:types
+    method: main
+
+  - name: callback_job
+    kind: function.lua
+    meta:
+      comment: Durable core job target for upload completion callbacks.
+    source: file://callback_job.lua
+    security:
+      actor:
+        id: system:kickside.uploads.callback
+      policies:
+        - kickside.uploads.security:deferred_owner
+        - kickside.uploads.security:deferred_actor
+    imports:
+      execution_identity: kickside.execution:execution_identity
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_tokens: kickside.uploads.persist:upload_tokens
+    method: run

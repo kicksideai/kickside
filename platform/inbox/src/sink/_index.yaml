@@ -1,0 +1,152 @@
+version: "1.0"
+namespace: kickside.inbox.sink
+
+# Inbox sink: a kickside.data:writable binding that creates an item in the
+# ambient actor's inbox. Data flows write through the generic writable ABI; the
+# sink declares a schema-form config so workflow builders can choose item type,
+# priority, and an optional title prefix without hard-coded inbox UI logic.
+
+entries:
+  - name: inbox_write
+    kind: function.lua
+    meta:
+      comment: kickside.data:writable.write — post content to the ambient actor's inbox; delete removes the item keyed by the source identity.
+    security:
+      policies:
+      - kickside.inbox.security:sink_output_publish
+    source: file://inbox_sink.lua
+    method: write
+    imports:
+      writable_sink: kickside.data:writable_sink
+      inbox_writer: kickside.inbox.persist:inbox_writer
+      inbox_types: kickside.inbox:inbox_types
+      inbox_item_types: kickside.inbox:inbox_item_types
+
+  # The post SINK. It implements kickside.data:writable; its published port (below)
+  # makes it a workflow destination in dropdowns. The write method IS the backing --
+  # dispatch opens this binding's writable directly.
+  - name: inbox_sink
+    kind: contract.binding
+    meta:
+      title: Create Inbox Item
+      # The append has a unique external event identity, but a successful return
+      # can precede downstream projection/effects. The binding does not claim an
+      # atomic end-to-end effect and receipt.
+      delivery: at_least_once
+      # Keep string transforms and Sync's content provenance. The consumer
+      # supplies configured content when an event record carries no body.
+      input_shape: content
+      icon: tabler:inbox
+      comment: Create an item in the installer's inbox for review or follow-up.
+      group: Human review
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.inbox.sink:inbox_write
+
+  # Published store port. upsert creates the item (id = the write's identity_key, so
+  # redelivery refreshes rather than duplicates); delete removes the item named by that
+  # same identity. No dest_ref is needed -- the identity locates the item -- so
+  # requires_dest_ref stays false.
+  - name: inbox_item
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Create Inbox Item
+      comment: Add an item to the inbox for review or follow-up.
+      icon: tabler:inbox
+    binding: kickside.inbox.sink:inbox_sink
+    operations:
+      upsert: {}
+      delete:
+        requires_dest_ref: false
+    # The input envelope the write handler reads (input.*). A write needs content;
+    # the content config field supplies it when the item carries none. The other
+    # fields are optional overrides of their config equivalents.
+    input_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "content": { "type": "string", "description": "Item body. Falls back to the destination's content config when absent." },
+          "content_type": { "type": "string", "description": "MIME type of the body, copied onto the item metadata. Any value accepted." },
+          "item_type": { "type": "string", "description": "Overrides the configured item type." },
+          "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "description": "Overrides the configured priority." },
+          "title": { "type": "string", "description": "Overrides the derived title." },
+          "source_id": { "type": "string", "description": "Stable source id; defaults to the idempotency key." },
+          "metadata": { "type": "object", "description": "Copied onto the item metadata; dedup_key defaults to the idempotency key." }
+        },
+        "required": ["content"] }
+    config_schema:
+      content:
+        picker: wc-schema-form
+        type: string
+        format: textarea
+        title: Message
+        supplies: content
+        description: The item body to post when the source record carries no content, including pass-through events and scheduled actions.
+      item_type:
+        picker: wc-schema-form
+        type: string
+        title: Item type
+        description: 'Registered inbox item type (for example notice or system). Custom types must declare an inbox.item_type before use. Defaults to notice.'
+        default: notice
+      priority:
+        picker: wc-schema-form
+        type: string
+        title: Priority
+        enum: [low, normal, high, urgent]
+        default: normal
+        description: 'How urgently the item is flagged for review.'
+      title:
+        picker: wc-schema-form
+        type: string
+        title: Title override
+        description: Optional fixed title. Empty uses the item title or first line of content.
+      title_prefix:
+        picker: wc-schema-form
+        type: string
+        title: Title prefix
+        description: Optional prefix prepended to derived titles.
+    output_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "success": { "type": "boolean" },
+          "result": { "type": "string", "enum": ["created", "updated", "deleted", "noop"] },
+          "dest_refs": {
+            "type": "object",
+            "description": "Destination receipts keyed by the requested map_slot, or default.",
+            "additionalProperties": {
+              "type": "object",
+              "properties": { "dest_ref": {
+                "type": "object",
+                "properties": { "item_id": { "type": "string" }, "item_type": { "type": "string" } },
+                "required": ["item_id"]
+              } },
+              "required": ["dest_ref"]
+            }
+          },
+          "dest_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "item_id": { "type": "string" },
+              "item_type": { "type": "string" }
+            },
+            "required": ["item_id"]
+          },
+          "retry_after_ms": { "type": "integer", "minimum": 0 },
+          "error": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "retriable": { "type": "boolean" },
+              "scope": { "type": "string" }
+            },
+            "required": ["code", "message", "retriable", "scope"]
+          }
+        },
+        "required": ["success"] }

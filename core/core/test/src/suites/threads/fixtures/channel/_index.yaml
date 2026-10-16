@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.channel
+
+# Test-only declaration double for the production Channel thread kind.
+entries:
+  - name: channel_kind
+    kind: contract.binding
+    meta:
+      events:
+        input: []
+        output:
+          - type: kickside.channel.events:message.inbound
+            system_only: true
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status

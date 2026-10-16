@@ -1,0 +1,57 @@
+version: "1.0"
+namespace: kickside.uploads.migrations
+
+entries:
+  - name: 05_scope_archive_deduplication
+    kind: function.lua
+    meta:
+      type: migration
+      tags: [uploads, database]
+      timestamp: "2026-10-05T04:00:00Z"
+    source: file://05_scope_archive_deduplication.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  # kickside.uploads.migrations:01_create_uploads_table
+  - name: 01_create_uploads_table
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - uploads
+        - database
+      comment: Create uploads table for file storage and tracking
+      timestamp: "2025-03-31T10:00:00Z"
+    source: file://01_create_uploads_table.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  # kickside.uploads.migrations:02_create_upload_read_model
+  - name: 02_create_upload_read_model
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - uploads
+        - database
+      comment: Create the upload read-model table every database reads, including those bootstrapped before it existed.
+      timestamp: "2025-03-31T10:30:00Z"
+    source: file://02_create_upload_read_model.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 04_create_artifact_tables
+    kind: function.lua
+    meta:
+      type: migration
+      tags:
+        - uploads
+        - artifacts
+        - chunks
+        - database
+      comment: Create upload artifact, deduplicated blob, and chunk tables.
+      timestamp: "2025-04-01T11:00:00Z"
+    source: file://04_create_artifact_tables.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

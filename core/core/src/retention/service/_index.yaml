@@ -1,0 +1,61 @@
+version: "1.0"
+namespace: kickside.core.retention.service
+
+entries:
+  # Service layer of the retention slice. It reacts to durable Core retention
+  # changes and exact eligibility deadlines. The .host on sweeper.service is
+  # injected by the slice's process_host requirement.
+
+  - name: sweeper_process
+    kind: process.lua
+    meta:
+      comment: Event-driven retention with boot recovery and exact eligibility deadlines.
+    source: file://sweeper_process.lua
+    method: main
+    modules:
+      - sql
+      - channel
+      - time
+      - events
+      - process
+    imports:
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      core_db: kickside.core:db
+      runner: kickside.core.retention.service:runner
+      notifier: kickside.core.retention:notifier
+      lease_release: kickside.core.jobs:lease_release
+
+  - name: owner_hooks
+    kind: library.lua
+    meta:
+      comment: Dispatch public retention operations declared by table owners.
+    source: file://owner_hooks.lua
+    modules: [registry, funcs, sql]
+    imports:
+      migration_repository: wippy.migration:repository
+
+  - name: runner
+    kind: library.lua
+    meta:
+      comment: One event-driven retention pass and its exact next eligibility deadline.
+    source: file://runner.lua
+    modules: [sql, logger, process]
+    imports:
+      sweeper: kickside.core.retention:sweeper
+      owner_hooks: kickside.core.retention.service:owner_hooks
+
+  - name: sweeper.service
+    kind: process.service
+    meta:
+      comment: Supervised retention sweeper bound by the slice's process_host requirement.
+    process: kickside.core.retention.service:sweeper_process
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_delay: 120s
+        max_attempts: 10
+      security:
+        groups:
+          - wippy.security:process

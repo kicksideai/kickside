@@ -1,0 +1,132 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: drive
+    kind: library.lua
+    meta:
+      comment: Automation drive rows — CRUD, fenced updates, command fencing and durable control-wake demand (design v4 §5.1).
+    source: file://../drive.lua
+    modules: [sql, json, time]
+
+  # The automation runtime policy (CONTRACTS §18 configuration model). A host
+  # overrides a value through .wippy.yaml "kickside.automation:policy:meta.<path>".
+  - name: policy
+    kind: registry.entry
+    meta:
+      comment: Automation runtime policy — command step pacing, the dispatcher sweep, round paging, pass bounds, work deadline, retry, per-item size limits, and age-based retention.
+      command:
+        retry_after_ms: 10000
+        max_delay_ms: 900000
+      dispatcher:
+        batch: 100
+      round:
+        page_size: 100
+        max_pages: 50
+        max_items: 0
+        timeout: 10m
+        commit_reserve: 30s
+        redelivery_per_round: 100
+        max_unresolved: 1000
+        retry_after_ms: 10000
+        max_delay_ms: 900000
+      cadence:
+        reconcile: 24h
+      limits:
+        page_size: 1000
+        max_pages: 1000
+        max_items: 1000000
+        prepared_bytes_per_item: 1048576
+        destination_slots_per_item: 16
+        max_row_bytes: 4194304
+      delivery:
+        retry_after_ms: 10000
+        max_delay_ms: 86400000
+      retention:
+        ledger_resolved: 30d
+        ops: 30d
+        prepared: 7d
+        receipts: 30d
+
+  - name: automation_db
+    kind: library.lua
+    meta:
+      comment: The automation database helpers — one connection for a read, one transaction for a write, typed retriable failures.
+    source: file://../automation_db.lua
+    modules: [sql]
+    imports:
+      types: kickside.automation:types
+
+  - name: runtime_policy
+    kind: library.lua
+    meta:
+      comment: Resolves and validates kickside.automation:policy.
+    source: file://../runtime_policy.lua
+    modules: [registry]
+
+  - name: cadence
+    kind: library.lua
+    meta:
+      comment: Pure UTC next-due calculation for interval, ticker, once and five-field cron schedules (A28.10, A18).
+    source: file://../round/cadence.lua
+    modules: [time]
+
+  - name: timer_pullable
+    kind: function.lua
+    meta:
+      comment: The timer source — pulls exactly the persisted timer occurrence the round supplies; no database access (A28.10, A18).
+    source: file://../round/timer_pullable.lua
+    method: pull
+    modules: [json, time]
+
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Automation type surfaces (rollback chain, install/list/action result envelopes).
+    source: file://../types.lua
+    modules: [registry]
+
+  - name: automation_ref
+    kind: library.lua
+    meta:
+      comment: Canonical validator for an exact immutable Automation binding revision.
+    source: file://../automation_ref.lua
+
+  - name: automation
+    kind: library.lua
+    meta:
+      comment: Generic engine — component identity, rollback, public/private state, source/sink port discovery, and action dispatch. Cron owns timing; core owns threads/projections/trace; automation owns source selection and per-source progress.
+    source: file://../automation.lua
+    modules: [contract, funcs, registry, logger, security, uuid, json, sql, time, expr, ctx, hash]
+    imports:
+      automation_engine: kickside.automation.engine:engine
+      drive: kickside.automation:drive
+      command: kickside.automation:command
+      declaration_references: kickside.automation:declaration_references
+      declaration_authority: kickside.automation:declaration_authority
+      jobs_config: kickside.core.jobs:config
+      types: kickside.automation:types
+      automation_ref: kickside.automation:automation_ref
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      autoinit: kickside.component:autoinit
+      slot: kickside.automation:slot
+      runtime_policy: kickside.automation:runtime_policy
+      failure_classification: kickside.automation:failure_classification
+      round_ledger: kickside.automation:round_ledger
+      round_history: kickside.automation:round_history
+      prepared_retention: kickside.automation:prepared_retention
+      receipt_retention: kickside.automation:receipt_retention
+      round_outcome: kickside.automation:round_outcome
+      canonical_json: kickside.contract:canonical_json
+      automation_db: kickside.automation:automation_db
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+      view_components: wippy.views:component_registry
+
+  - name: prepared_installable
+    kind: contract.definition
+    meta:
+      title: Prepared Automation Installation
+    methods:
+      - name: prepare_install
+        description: Returns the existing install result plan from validated input without creating resources or provider effects. The engine persists the plan before selected identity admission and never replays preparation during recovery.

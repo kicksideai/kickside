@@ -1,0 +1,355 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/inbox. Provides app:db + a router + process host,
+# runs shared thread/component migrations via the bootloader, and boots the Inbox
+# contract/events deps so the co-located suite drives its public seams directly. Harness-only; excluded
+# from publish via the namespace exclude in wippy.yaml.
+
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the inbox suite.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: component_lifecycle_impl
+    kind: ns.requirement
+    meta:
+      comment: Harness-local component lifecycle implementation; inbox tests run without core lifecycle threads.
+    default: kickside.core.lifecycle:component_lifecycle_impl
+    targets:
+      - entry: kickside.component:component_lifecycle
+        path: .imports.lifecycle_impl
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: public_api
+    kind: http.router
+    meta:
+      comment: Isolated router for transitive Session and Views endpoints not exercised by Inbox tests.
+      server: gateway
+    prefix: /unused
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive authenticated-user scope for the Inbox harness.
+    groups: [inbox_test]
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+      conditions:
+        - field: action
+          operator: ne
+          value: threads.output.publish
+
+  - name: self_only
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: inbox.assign
+      effect: deny
+
+  - name: owned_item_type
+    kind: registry.entry
+    meta:
+      type: inbox.item_type
+      value: owned
+      actions: [approve]
+      action_owner: component
+      on_resolve: private:callback
+
+  - name: default_item_type
+    kind: registry.entry
+    meta:
+      type: inbox.item_type
+      value: default
+      actions: [dismiss]
+      action_owner: host
+
+  - name: invalid_item_type
+    kind: registry.entry
+    meta:
+      type: inbox.item_type
+      value: invalid
+      actions: [dismiss]
+      action_owner: item
+
+  - name: inbox_read_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Reads one Inbox item under an explicitly framed test actor and scope.
+    source: file://inbox_probe.lua
+    method: read
+    imports:
+      inbox_reader: kickside.inbox.persist:inbox_reader
+
+  - name: inbox_catchup_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Advances the Inbox projection through the public thread contract for deterministic read-after-write assertions.
+    source: file://inbox_catchup_probe.lua
+    method: run
+    modules: [contract, security]
+    imports:
+      component: kickside.component:component
+
+  - name: inbox_error_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Verifies typed lookup and append failures under an authenticated actor.
+    source: file://inbox_error_probe.lua
+    method: run
+    imports:
+      inbox_events: kickside.inbox.persist:inbox_events
+      component: kickside.component:component
+
+  - name: test_identity
+    kind: library.lua
+    meta:
+      comment: Creates real users-module identities for Inbox tests that exercise live per-user projections.
+    source: file://test_identity.lua
+    imports:
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: dep.kickside.inbox
+    kind: ns.dependency
+    version: '*'
+    component: kickside/inbox
+    parameters:
+    - name: kickside.inbox:api_router
+      value: app:api
+    - name: kickside.inbox:ui_server
+      value: app:gateway
+    - name: kickside.inbox.security:assignment_security_scope
+      value: app:user
+
+  - name: dep.kickside.blocks
+    kind: ns.dependency
+    version: "*"
+    component: kickside/blocks
+    parameters:
+      - { name: kickside.blocks:process_host, value: app:processes }
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Shared contracts the inbox item bindings implement.
+    component: kickside/contract
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Real user persistence owns app_users and the principal directory used by Inbox assignment.
+    component: "kickside/users"
+    parameters:
+      - { name: kickside.users:env_storage, value: app:env_storage }
+      - { name: kickside.users:public_router, value: app:public_api }
+      - { name: kickside.users:api_router, value: app:api }
+      - { name: kickside.users:ui_server, value: app:gateway }
+      - { name: kickside.users:target_db, value: app:db }
+      - { name: kickside.users:user_security_scope, value: app:user }
+      - { name: kickside.users:admin_security_scope, value: app:user }
+      - { name: kickside.users:login_role_resource, value: "app:*" }
+      - { name: kickside.settings:target_db, value: app:db }
+      - { name: kickside.settings:api_router, value: app:api }
+      - { name: kickside.settings:ui_server, value: app:gateway }
+
+  - name: dep.kickside.component
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Component primitives for inbox autoinit ids and public meta sync.
+    component: kickside/component
+    parameters:
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+
+  - name: dep.kickside.core
+    kind: ns.dependency
+    version: '*'
+    component: kickside/core
+    parameters:
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: Bootloader applies the shared component/thread migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: dep.wippy.views
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Dataflow's session artifact surface needs an application router and environment storage.
+    component: "wippy/views"
+    parameters:
+      - name: api_router
+        value: app:public_api
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.wippy.session
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Dataflow agent nodes use Session for durable artifacts; bind its application-owned requirements explicitly.
+    component: "wippy/session"
+    parameters:
+      - name: api_router
+        value: app:public_api
+      - name: env_storage
+        value: app:env_storage
+      - name: delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: inbox_delivery_probe
+    kind: function.lua
+    source: file://inbox_delivery_probe.lua
+    method: run
+    imports:
+      inbox_events: kickside.inbox.persist:inbox_events
+      inbox_resolve: kickside.inbox:inbox_resolve
+
+  - name: read_model_contract_context
+    kind: library.lua
+    source: file://read_model_contract_context.lua
+  - name: read_model_events_subject
+    kind: library.lua
+    source: file://read_model_events_subject.lua
+    modules: [uuid, security, json]
+    imports:
+      contract: app:read_model_contract_context
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_types: kickside.inbox:inbox_types
+      inbox_item_types: kickside.inbox:inbox_item_types
+      component: kickside.component:component
+  - name: read_model_error_probe
+    kind: function.lua
+    source: file://read_model_error_probe.lua
+    method: run
+    imports:
+      events_subject: app:read_model_events_subject
+      context: app:read_model_contract_context
+
+  - name: inbox_runtime_base
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security, db.get, registry.get, registry.find, env.get, security.actor.create, security.policy.get, security.policy_group.get]
+      effect: allow
+
+  - name: inbox_runtime_meta_test
+    kind: function.lua
+    source: file://runtime_meta_test.lua
+    method: run
+    meta: { type: test, suite: kickside_inbox }
+    modules: [funcs, contract, security, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}

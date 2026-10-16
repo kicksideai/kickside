@@ -1,0 +1,68 @@
+version: "1.0"
+namespace: app.agents_suites
+
+entries:
+
+- name: tsplit_kickside_agents_registry__agents_registry_test_initiating_actor_capability_authority
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_registry_suite
+  source: file://../../registry/agents_test_initiating_actor_capability_authority.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+  - json
+  imports:
+    test: wippy.test:test
+
+- name: tsplit_kickside_agents_registry__agents_registry_test_create_find_update_delete_cycle
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_registry_suite
+  source: file://../../registry/agents_test_create_find_update_delete_cycle.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+  - json
+  imports:
+    test: wippy.test:test
+
+- name: tsplit_kickside_agents_registry__agents_registry_test_private_context_partial_writes_lost_update
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_registry_suite
+  source: file://../../registry/agents_test_private_context_partial_writes_lost_update.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+  - json
+  imports:
+    test: wippy.test:test
+
+- name: tsplit_kickside_agents_registry__agents_registry_test_api_create_path_is_discoverable_via_regist
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_registry_suite
+  source: file://../../registry/agents_test_api_create_path_is_discoverable_via_regist.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - funcs
+  - security
+  - json
+  imports:
+    test: wippy.test:test

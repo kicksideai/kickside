@@ -1,0 +1,52 @@
+version: "1.0"
+namespace: kickside.inbox.security
+
+# Module-owned access policy for the inbox product endpoints. Declared here so the
+# grant travels with the slice; the role group that receives it is injected by the
+# user_security_scope requirement (the app wires app.security:user), keeping the
+# slice app-agnostic. Per-user ownership is enforced behind the endpoints.
+entries:
+  - name: assignment_access
+    kind: security.policy
+    meta:
+      comment: Assigned administrators may deliver review cards without recipient execution authority.
+    groups: []
+    policy:
+      resources: 'user:*'
+      actions: inbox.assign
+      effect: allow
+
+  - name: assignment_security_scope
+    kind: ns.requirement
+    default: kickside.inbox.security:assigner
+    meta:
+      value_kind: security.scope
+      comment: Application group that may assign Inbox reviews to another user.
+    targets:
+      - entry: kickside.inbox.security:assignment_access
+        path: ".groups +="
+
+  - name: review_resume
+    kind: security.policy
+    policy:
+      resources: kickside.workflows.runs:resume
+      actions: kickside.execution.defer
+      effect: allow
+
+  - name: review_identity
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [security.actor.create, security.policy_group.get]
+      effect: allow
+
+  - name: projection_public_meta
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.impl_id
+          operator: eq
+          value: kickside.inbox:inbox_binding

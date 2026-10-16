@@ -1,0 +1,49 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: command_dispatcher
+    kind: function.lua
+    meta:
+      comment: The command dispatcher's maintenance slot worker — one dispatch pass, then rearm to the exact next deadline or not at all (design v5 §4.7; A52 no polling).
+      private: true
+    source: file://../dispatcher.lua
+    method: run
+    imports:
+      automations_lib: kickside.automation:automation
+
+  - name: slot
+    kind: library.lua
+    meta:
+      comment: Drive slots — one reusable job per drive under the (drive, automation_id, drive_key) identity, recorded on the drive (design v5 §4.1).
+    source: file://../slot.lua
+    modules: [sql]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      slot_purge: kickside.core.jobs.persist:slot_purge
+      types: kickside.automation:types
+      drive: kickside.automation:drive
+
+  - name: command
+    kind: library.lua
+    meta:
+      comment: Per-automation durable command stream — reserve, finalize, receipts, supersede, op outcomes (design v4 §4.7, §5.5).
+    source: file://../command.lua
+    modules: [sql, json]
+    imports:
+      row_limit: kickside.automation:row_limit
+      drive: kickside.automation:drive
+
+  - name: binding_validation
+    kind: library.lua
+    meta:
+      comment: Registry validation of the port catalog's structural invariants and of bindings' declared event outputs.
+    source: file://../binding_validation.lua
+    modules: [json, registry]
+
+  - name: declaration_owner_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.component:declaration_owner
+        default: true
+        methods:
+          verify_identity_command: kickside.automation:declaration_owner_verify

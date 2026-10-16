@@ -1,0 +1,55 @@
+version: '1.0'
+namespace: kickside.settings.security
+entries:
+- name: module_access
+  kind: security.policy
+  meta:
+    title: Settings
+    surface: kickside.settings
+    intent: module_access
+    includes:
+    - kickside.settings.security:module_runtime
+  groups: []
+  policy:
+    resources:
+    - kickside.settings:*
+    - kickside.settings.api:*
+    - kickside.settings.migrations:*
+    - kickside.settings.persist:*
+    - kickside.settings.security:*
+    - kickside.settings.service:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: module_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.settings:*
+    - kickside.settings.api:*
+    - kickside.settings.migrations:*
+    - kickside.settings.persist:*
+    - kickside.settings.security:*
+    - kickside.settings.service:*
+    actions:
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow

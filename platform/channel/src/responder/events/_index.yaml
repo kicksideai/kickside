@@ -1,0 +1,49 @@
+version: "1.0"
+namespace: kickside.channel.responder.events
+
+# Event-type entries for the channel responder thread. Audit events with no port
+# output face; schemas read from their emit sites.
+entries:
+  # Emit site: platform/channel/src/responder/responder.lua:379 (body { paused, status }).
+  - name: status.changed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        paused: { type: boolean }
+        status: { type: string }
+      required: [status]
+
+  # Emit site: platform/channel/src/service/bridge.lua:368 (emit_session_event, SESSION_ACTIVATED).
+  - name: session.activated
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        session_id: { type: string }
+        thread_id: { type: string }
+        route_key: { type: string }
+        at: { type: string }
+      required: [session_id, at]
+
+  # Emit site: platform/channel/src/service/bridge.lua:368 (emit_session_event, SESSION_COMPLETED; adds reason).
+  - name: session.completed
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        session_id: { type: string }
+        thread_id: { type: string }
+        route_key: { type: string }
+        at: { type: string }
+        reason: { type: string }
+      required: [session_id, at]

@@ -1,0 +1,33 @@
+version: "1.0"
+namespace: kickside.knowledge.retrieval
+
+entries:
+  - name: agentic_query_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://agentic_query_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+      agentic_query: kickside.knowledge.retrieval:agentic_query
+      agentic_answer_fixture: kickside.knowledge.retrieval:agentic_answer_fixture
+
+  - name: kb_answer_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://kb_answer_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      kb_answer: kickside.knowledge.retrieval:kb_answer
+
+  - name: answer_flow_fixture
+    kind: library.lua
+    source: file://answer_flow_fixture.lua
+
+  - name: agentic_answer_fixture
+    kind: library.lua
+    source: file://agentic_query_fixture.lua
+    imports:
+      flow: kickside.knowledge.retrieval:answer_flow_fixture

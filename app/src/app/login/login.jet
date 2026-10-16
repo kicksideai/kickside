@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en"{{ if hasTheme }} class="{{ themeClass }}" style="color-scheme: {{ colorScheme }};"{{ end }}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KickSide - Sign In</title>
+    <meta name="description" content="Sign in to your KickSide workspace." />
+    <meta name="color-scheme" content="light dark" />
+    <script src="/api/public/facade/theme-persist.js"></script>
+    <script>
+      // SSO return leg: the callback redirects here with #sso_token or
+      // #sso_error. Consume the fragment before anything renders so the
+      // token never lingers in the URL and lands in the same storage the
+      // password flow uses.
+      (function () {
+        var h = window.location.hash;
+        if (!h || h.length < 2) return;
+        var params = new URLSearchParams(h.slice(1));
+        var token = params.get("sso_token");
+        var err = params.get("sso_error");
+        if (!token && !err) return;
+        history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search,
+        );
+        if (token) {
+          localStorage.setItem(
+            "@wippy_token_info",
+            JSON.stringify({ token: token }),
+          );
+          window.location.replace("/");
+          return;
+        }
+        window.addEventListener("DOMContentLoaded", function () {
+          var el = document.querySelector("#error");
+          el.textContent = err;
+          el.style.display = "block";
+        });
+      })();
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://web-host.wippy.ai/webcomponents-1.0.57/@wippy-fe/assets/theme-config.css"
+      integrity="sha384-EowOVlkTIU0/9+tbEad+lsIiO8JRj9G8XI8VGJKMalpxoSWNV6P0EERXv1Ehsgj1"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://web-host.wippy.ai/webcomponents-1.0.57/@wippy-fe/assets/preflight.css"
+      integrity="sha384-HYhcqJkOFc9nDMBAcrFgm+g/0huoj89BN9Wm1bahNmV6PaClx/fod2Uyv5ZO5pGS"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://web-host.wippy.ai/webcomponents-1.0.57/@wippy-fe/assets/iframe.css"
+      integrity="sha384-ze0ui4Dn6prFSwZQp/zIfXddlRhhNkqrT86hWqxRrUNlfC11jb32Ng2l8FzP/Y/Z"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://web-host.wippy.ai/webcomponents-1.0.57/@wippy-fe/assets/tailwind.css"
+      integrity="sha384-fz89ldHB4I+aXvbsWrdcmFwR/hSZ1NZSrig4NTQAVkJkTY+yPacdRw7E/1wNCKQ1"
+      crossorigin="anonymous"
+    />
+    <!-- Facade theme, same as the app: real --p-* tokens (green primary, dark-mode
+         aware) from css_variables + PrimeVue .p-* chrome. Keeps sign-in on the app
+         theme instead of a hand-picked accent. -->
+    <link rel="stylesheet" href="/api/public/facade/variables.css" />
+    <link rel="stylesheet" href="/app/custom-css.facade.generated.css" />
+    <style>
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        background: color-mix(
+          in srgb,
+          var(--p-content-background) 92%,
+          var(--p-text-color) 8%
+        );
+        color: var(--p-text-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .login-card .p-card-body {
+        padding: 32px;
+      }
+
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+      }
+
+      .brand {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+
+      .brand-icon {
+        display: inline-block;
+        margin-bottom: 14px;
+      }
+
+      .brand-icon img {
+        height: 48px;
+        width: 48px;
+        border-radius: 12px;
+      }
+
+      .brand p {
+        font-size: 13px;
+        color: var(--p-text-muted-color);
+        margin-top: 4px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--p-text-muted-color);
+        margin-bottom: 6px;
+      }
+
+      .form-group .p-inputtext {
+        width: 100%;
+      }
+
+      .error-msg {
+        display: none;
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        background: color-mix(in srgb, var(--p-danger-500) 10%, transparent);
+        border: 1px solid
+          color-mix(in srgb, var(--p-danger-500) 30%, transparent);
+        border-radius: 8px;
+        color: var(--p-danger-500);
+        font-size: 13px;
+      }
+
+      .submit-btn {
+        width: 100%;
+      }
+
+      #sso-buttons .p-button-outlined {
+        border-color: var(--p-button-outlined-secondary-border-color);
+        color: var(--p-text-color);
+      }
+
+      #sso-buttons .p-button-outlined:hover {
+        background: var(--p-button-outlined-secondary-hover-background);
+        color: var(--p-text-color);
+      }
+
+      /* The hosted utility stylesheet colors a bare .p-button from palette
+           contrast tokens. This standalone page has no PrimeVue component
+           layer, so bind its filled action to the same semantic contract used
+           by buttons inside the application. */
+      #submit-btn {
+        background: var(--p-button-primary-background);
+        border-color: var(--p-button-primary-border-color);
+        color: var(--p-button-primary-color);
+      }
+
+      #submit-btn:hover:not(:disabled) {
+        background: var(--p-button-primary-hover-background);
+        border-color: var(--p-button-primary-hover-border-color);
+        color: var(--p-button-primary-hover-color);
+      }
+
+      #submit-btn:active:not(:disabled) {
+        background: var(--p-button-primary-active-background);
+        border-color: var(--p-button-primary-active-border-color);
+        color: var(--p-button-primary-active-color);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="login-card p-card p-component">
+      <div class="p-card-body">
+        <div class="p-card-content">
+          <div class="brand">
+            <div class="brand-icon">
+              <img
+                id="brand-logo"
+                src="/app/kickside-icon.svg"
+                alt="KickSide"
+              />
+            </div>
+            <p>Sign in to continue</p>
+          </div>
+          <div
+            id="error"
+            class="error-msg"
+            role="alert"
+            aria-live="assertive"
+          ></div>
+          <form id="login-form" aria-label="Sign in">
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                required
+                autocomplete="email"
+                autofocus
+                placeholder="you@example.com"
+                class="p-inputtext p-component"
+              />
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="Enter password"
+                class="p-inputtext p-component"
+              />
+            </div>
+            <button
+              type="submit"
+              class="p-button p-component submit-btn"
+              id="submit-btn"
+            >
+              Sign In
+            </button>
+          </form>
+          <div id="sso-section" style="display: none">
+            <div
+              style="
+                text-align: center;
+                margin: 16px 0 12px;
+                font-size: 12px;
+                color: var(--p-text-muted-color);
+              "
+            >
+              or
+            </div>
+            <div id="sso-buttons"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      const form = document.querySelector("#login-form");
+      const errorEl = document.querySelector("#error");
+      const submitBtn = document.querySelector("#submit-btn");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorEl.style.display = "none";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Signing in...";
+
+        try {
+          const res = await fetch("/api/public/user/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: document.querySelector("#email").value,
+              password: document.querySelector("#password").value,
+            }),
+          });
+
+          const contentType = res.headers.get("content-type") || "";
+          const data = contentType.includes("application/json")
+            ? await res.json()
+            : {};
+
+          if (!res.ok || !data.success) {
+            throw new Error("Invalid email or password");
+          }
+
+          localStorage.setItem(
+            "@wippy_token_info",
+            JSON.stringify({ token: data.token }),
+          );
+          window.location.replace("/");
+        } catch (error) {
+          errorEl.textContent =
+            error instanceof TypeError
+              ? "Unable to connect. Check your connection and try again."
+              : "Invalid email or password";
+          errorEl.style.display = "block";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign In";
+        }
+      });
+    </script>
+    <script>
+      // Admin-set branding (title + logo) from the public endpoint, applied
+      // pre-auth. Best-effort: the static defaults stand if it is unavailable.
+      (function () {
+        fetch("/api/public/branding", {
+          headers: { Accept: "application/json" },
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (!d || !d.success) return;
+            if (d.title) {
+              document.title = d.title + " - Sign In";
+            }
+            if (d.logo_url) {
+              var img = document.querySelector("#brand-logo");
+              if (img) {
+                img.src = d.logo_url;
+                img.alt = d.title || "Logo";
+              }
+            }
+          })
+          .catch(function () {});
+      })();
+    </script>
+    <script>
+      // SSO buttons: progressive enhancement — password login stands alone
+      // if providers are disabled or the lookup fails. Plain anchors to the
+      // start endpoint; the head script consumes the returning fragment.
+      // (The bundled <kickside-sso> component requires the Wippy host
+      // proxy, which does not exist on this standalone page.)
+      (function () {
+        fetch("/api/public/sso/providers", {
+          headers: { Accept: "application/json" },
+        })
+          .then(function (r) {
+            return r.ok ? r.json() : null;
+          })
+          .then(function (d) {
+            if (
+              !d ||
+              !d.success ||
+              !Array.isArray(d.providers) ||
+              d.providers.length === 0
+            )
+              return;
+            var box = document.querySelector("#sso-buttons");
+            d.providers.forEach(function (p) {
+              var a = document.createElement("a");
+              a.className = "p-button p-component p-button-outlined submit-btn";
+              a.style.cssText =
+                "display:flex;justify-content:center;text-decoration:none;margin-bottom:8px;box-sizing:border-box";
+              a.href =
+                p.start +
+                "?redirect=" +
+                encodeURIComponent("/login");
+              a.textContent = "Continue with " + p.label;
+              box.append(a);
+            });
+            document.querySelector("#sso-section").style.display = "";
+          })
+          .catch(function () {});
+      })();
+    </script>
+  </body>
+</html>

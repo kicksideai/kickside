@@ -1,0 +1,118 @@
+version: "1.0"
+namespace: kickside.oauth.api.public
+
+entries:
+  # kickside.oauth.api.public:oauth_callback
+  - name: callback_params
+    kind: library.lua
+    meta:
+      comment: Parser for OAuth callback query/body parameters.
+    source: file://callback_params.lua
+    modules:
+      - http
+
+  - name: oauth_callback
+    kind: function.lua
+    meta:
+      comment: OAuth callback API handler
+    source: file://oauth_callback.lua
+    modules:
+      - http
+    imports:
+      callback_params: kickside.oauth.api.public:callback_params
+      callback_waiter: kickside.oauth.api.public:callback_waiter
+    security:
+      actor:
+        id: kickside.oauth.api.public:oauth_callback
+      policies:
+        - kickside.oauth.api.public:callback_registry_runtime
+        - kickside.oauth.api.public:callback_listen_runtime
+        - kickside.oauth.api.public:callback_send_runtime
+    method: handler
+    pool:
+      size: 4
+
+  - name: callback_waiter
+    kind: library.lua
+    meta:
+      comment: Delivers validated OAuth callback data to the active connection negotiator.
+    source: file://callback_waiter.lua
+    modules:
+      - time
+      - process
+      - channel
+    imports:
+      callback_names: kickside.oauth:callback_names
+
+  # kickside.oauth.api.public:oauth_callback.endpoint
+  - name: oauth_callback.endpoint
+    kind: http.endpoint
+    meta:
+      comment: OAuth callback API endpoint
+    method: POST
+    func: oauth_callback
+    path: /oauth/callback
+
+  # kickside.oauth.api.public:oauth_callback_page
+  - name: oauth_callback_page
+    kind: function.lua
+    meta:
+      comment: OAuth callback page handler
+    source: file://oauth_callback_page.lua
+    modules:
+      - http
+      - registry
+    imports:
+      renderer: wippy.views:renderer
+    method: handler
+    security:
+      actor:
+        id: kickside.oauth.api.public:oauth_callback_page
+      policies:
+        - wippy.views:public_registry_runtime
+        - wippy.views:public_env_runtime
+        - kickside.oauth.views:callback_page_runtime
+        - kickside.oauth.views:callback_template_runtime
+    pool:
+      size: 4
+
+  # kickside.oauth.api.public:oauth_callback_page.endpoint
+  - name: oauth_callback_page.endpoint
+    kind: http.endpoint
+    meta:
+      comment: OAuth callback page endpoint
+    method: GET
+    func: oauth_callback_page
+    path: /oauth/callback
+
+  - name: callback_registry_runtime
+    kind: security.policy
+    meta:
+      comment: Public OAuth callbacks may locate only the temporary negotiator process by state.
+    policy:
+      resources:
+        - kickside.oauth.service:connection_negotiator:*
+      actions:
+        - process.registry.lookup
+      effect: allow
+
+  - name: callback_listen_runtime
+    kind: security.policy
+    meta:
+      comment: Public OAuth callbacks wait only on the callback response channel.
+    policy:
+      resources:
+        - oauth_callback_response
+      actions:
+        - process.listen
+      effect: allow
+
+  - name: callback_send_runtime
+    kind: security.policy
+    meta:
+      comment: Public OAuth callbacks send the received authorization code to the dynamic negotiator pid resolved from state.
+    policy:
+      resources: '*'
+      actions:
+        - process.send
+      effect: allow

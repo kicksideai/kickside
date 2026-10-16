@@ -1,0 +1,66 @@
+version: "1.0"
+namespace: kickside.oauth.views
+
+entries:
+  # The OAuth callback is the only server-rendered view: it is the provider's
+  # redirect target, so it must be a page served by this module. Connect/manage
+  # are native SPA UI (the ConnectionPicker component), not jet templates.
+  #
+  # It renders into THIS module's own template set — the module is self-contained
+  # and needs no host-provided template set injected for a single page.
+
+  # kickside.oauth.views:templates — the module's own template set for the callback.
+  - name: templates
+    kind: template.set
+    meta:
+      comment: Template set owned by kickside/oauth for its self-contained callback page.
+    engine:
+      development_mode: true
+
+  - name: callback_template_runtime
+    kind: security.policy
+    meta:
+      comment: Public OAuth callback page renderer may load only this module-owned template set.
+    policy:
+      resources:
+        - kickside.oauth.views:templates
+      actions:
+        - template.get
+      effect: allow
+
+  - name: callback_page_runtime
+    kind: security.policy
+    meta:
+      comment: Public OAuth callback page renderer may locate only its page and theme entries.
+    policy:
+      resources:
+        - kickside.oauth.views:oauth_callback
+        - kickside.oauth.views:theme
+      actions:
+        - registry.get
+      effect: allow
+
+  # kickside.oauth.views:oauth_callback
+  - name: oauth_callback
+    kind: template.jet
+    meta:
+      type: view.page
+      title: OAuth Callback
+      icon: tabler:check-circle
+      comment: OAuth authorization callback page
+      content_type: text/html
+      secure: false
+    source: file://oauth_callback.jet
+    set: kickside.oauth.views:templates
+
+  # kickside.oauth.views:theme — declared branding the OAuth views render. The
+  # callback popup reads it (via its page handler) and themes itself to match the
+  # host app; override these meta values to rebrand without touching the jets.
+  - name: theme
+    kind: registry.entry
+    meta:
+      type: kickside.oauth:view_theme
+      product: KickSide
+      primary: "#e85d1a"
+      primary_dark: "#f97a3b"
+      radius: "14px"

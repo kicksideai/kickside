@@ -1,0 +1,36 @@
+version: "1.0"
+override:
+  "app:db:file": "${sqlite_path}"
+workspace:
+  replacements:
+    kickside/uploads: ../../uploads
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
+    kickside/jobs: ../../../core/jobs
+    kickside/identity: ../../identity
+    kickside/execution: ../../../core/execution
+    kickside/core: ../../../core/core
+    kickside/connection: ../../connection
+    kickside/component: ../../../core/component
+    kickside/channel: ..
+    kickside/automation: ../../automation
+    kickside/agents: ../../agents
+    kickside/contract: ../../../core/contract
+vars:
+  sqlite_path: ":memory:"
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_channel
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      "app:db:kind": db.sql.postgres
+      "app:db:host": "${pg_host}"
+      "app:db:port": "${pg_port}"
+      "app:db:database": "${pg_database}"
+      "app:db:username": "${pg_username}"
+      "app:db:password": "${pg_password}"
+      "app:db:options.sslmode": disable
+      "app:db:pool.max_open": 16
+      "app:db:pool.max_idle": 8

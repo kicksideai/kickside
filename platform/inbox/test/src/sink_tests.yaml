@@ -1,0 +1,17 @@
+version: "1.0"
+namespace: kickside.inbox.sink
+
+entries:
+  - name: sink_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_inbox
+      group: KickSide Inbox
+      comment: Inbox writable sink declares a workflow port and writes idempotent items.
+    source: file://sink_test.lua
+    method: run
+    modules: [funcs, registry, security]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity

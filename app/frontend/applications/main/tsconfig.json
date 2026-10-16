@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@wippy-fe/proxy": ["node_modules/@wippy-fe/proxy"],
+      "@widgets/*": ["../../../../platform/widgets/ui/src/*"]
+    },
+    "types": ["vite/client", "@wippy-fe/types-global-proxy"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue"]
+}

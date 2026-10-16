@@ -1,0 +1,16 @@
+version: '1.0'
+namespace: app
+entries:
+- name: audit_publication_cleanup_test
+  kind: function.lua
+  source: file://audit_publication_cleanup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_audit_publication_cleanup
+  imports:
+    test: wippy.test:test
+    fixture: app:audit_publication_native_fixture
+    publisher: app:audit_publication_native_source
+    canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope

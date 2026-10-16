@@ -1,0 +1,226 @@
+version: '1.0'
+namespace: kickside.mcp.persist
+entries:
+- name: cleanup_error_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+  source: file://cleanup_error_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    mcp_oauth_repo: kickside.mcp.oauth:repo
+    mcp_retention: kickside.mcp:retention
+    mcp_repo: kickside.mcp.persist:repo
+- name: credential_gc_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Expired and revoked credentials are physically pruned after retention.
+  source: file://credential_gc_test.lua
+  method: run
+  modules:
+  - sql
+  - time
+  - security
+  - funcs
+  imports:
+    test: wippy.test:test
+    owner_hooks: kickside.core.retention.service:owner_hooks
+    subjects: app:subjects
+- name: oauth_gc_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Existing retention tick prunes expired OAuth authorization codes.
+  source: file://oauth_gc_test.lua
+  method: run
+  modules:
+  - sql
+  - time
+  imports:
+    test: wippy.test:test
+    mcp_oauth_repo: kickside.mcp.oauth:repo
+    owner_hooks: kickside.core.retention.service:owner_hooks
+- name: public_url_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: The connect URL handed to an external agent — configured domain, request-host fallback, and never a fabricated
+      host.
+  source: file://public_url_test.lua
+  method: run
+  imports:
+    mcp_public_url: kickside.mcp:public_url
+    test: wippy.test:test
+- name: oauth_flow_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: OAuth authorization-server flow — discovery, registration, consent grant, PKCE exchange, and its failure modes.
+  source: file://oauth_flow_test.lua
+  method: run
+  modules:
+  - registry
+  - sql
+  - time
+  - security
+  - funcs
+  imports:
+    mcp_oauth_flow: kickside.mcp.oauth:flow
+    mcp_oauth_repo: kickside.mcp.oauth:repo
+    mcp_repo: kickside.mcp.persist:repo
+    mcp_consts: kickside.mcp:consts
+    subjects: app:subjects
+    mcp_public_url: kickside.mcp:public_url
+    test: wippy.test:test
+- name: repo_authorization_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Credential resolve and dispatcher two-layer authorization suite.
+  source: file://repo_authorization_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - time
+  - uuid
+  - security
+  - funcs
+  - registry
+  imports:
+    mcp_repo: kickside.mcp.persist:repo
+    mcp_security: kickside.mcp:mcp_core_security
+    mcp_dispatcher: kickside.mcp:mcp_dispatcher
+    mcp_consts: kickside.mcp:consts
+    mcp_presets: kickside.mcp:mcp_presets
+    subjects: app:subjects
+    placement: kickside.component.persist:placement
+    test: wippy.test:test
+- name: repo_capability_grants_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Credential resolve and dispatcher two-layer authorization suite.
+  source: file://repo_capability_grants_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - time
+  - uuid
+  - security
+  - funcs
+  imports:
+    canonical_json: kickside.contract:canonical_json
+    mcp_repo: kickside.mcp.persist:repo
+    mcp_security: kickside.mcp:mcp_core_security
+    mcp_dispatcher: kickside.mcp:mcp_dispatcher
+    mcp_consts: kickside.mcp:consts
+    mcp_presets: kickside.mcp:mcp_presets
+    subjects: app:subjects
+    placement: kickside.component.persist:placement
+    test: wippy.test:test
+- name: repo_folder_scope_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Credential resolve and dispatcher two-layer authorization suite.
+  source: file://repo_folder_scope_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - time
+  - uuid
+  - security
+  - funcs
+  imports:
+    mcp_repo: kickside.mcp.persist:repo
+    mcp_security: kickside.mcp:mcp_core_security
+    mcp_dispatcher: kickside.mcp:mcp_dispatcher
+    mcp_consts: kickside.mcp:consts
+    mcp_presets: kickside.mcp:mcp_presets
+    subjects: app:subjects
+    placement: kickside.component.persist:placement
+    test: wippy.test:test
+- name: repo_group_shares_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Credential resolve and dispatcher two-layer authorization suite.
+  source: file://repo_group_shares_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - time
+  - uuid
+  - security
+  - funcs
+  imports:
+    mcp_repo: kickside.mcp.persist:repo
+    mcp_security: kickside.mcp:mcp_core_security
+    mcp_dispatcher: kickside.mcp:mcp_dispatcher
+    mcp_consts: kickside.mcp:consts
+    mcp_presets: kickside.mcp:mcp_presets
+    subjects: app:subjects
+    placement: kickside.component.persist:placement
+    test: wippy.test:test
+- name: repo_mint_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: mcp
+    group: MCP
+    comment: Credential resolve and dispatcher two-layer authorization suite.
+  source: file://repo_mint_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - time
+  - uuid
+  - security
+  - funcs
+  imports:
+    mcp_repo: kickside.mcp.persist:repo
+    mcp_security: kickside.mcp:mcp_core_security
+    mcp_dispatcher: kickside.mcp:mcp_dispatcher
+    mcp_consts: kickside.mcp:consts
+    mcp_presets: kickside.mcp:mcp_presets
+    subjects: app:subjects
+    placement: kickside.component.persist:placement
+    test: wippy.test:test
+
+- name: retention_install_test
+  kind: function.lua
+  meta: { type: test, suite: mcp, group: MCP }
+  source: file://retention_install_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    owner_hooks: kickside.core.retention.service:owner_hooks

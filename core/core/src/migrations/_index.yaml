@@ -1,0 +1,140 @@
+version: "1.0"
+namespace: kickside.core.migrations
+
+# Single baseline schema for the whole module, one file per table group, ordered
+# by canonical 0N_ prefix and meta.timestamp to satisfy FK dependencies. The
+# runner (wippy/migration) discovers these globally and applies them in
+# timestamp order. target_db is injected by the root kickside.core:target_db
+# requirement. Add future migrations as 07_, 08_, ...
+#
+# Enum CHECK constraints are defined inline in each base table (no separate
+# constraint-only migration).
+
+entries:
+  - name: 00_encoding
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: The database encoding contract — Postgres must be UTF8.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:00Z"
+    source: file://00_encoding.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 01_thread
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: kickside_thread + kickside_event
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:01Z"
+    source: file://01_thread.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 02_projection
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: kickside_projection + kickside_projection_cursor
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:02Z"
+    source: file://02_projection.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  # 04_jobs (the kickside_job / kickside_job_run schema) lives in the
+  # kickside/jobs module (kickside.core.jobs.migrations:04_jobs). Its timestamp
+  # slot still applies after 02_projection on a fresh install.
+
+  - name: 05_retention
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: kickside_retention_policy
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:05Z"
+    source: file://05_retention.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 06_graph
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: kickside_thread_edge
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:06Z"
+    source: file://06_graph.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 07_retention_pins
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: kickside_retention_pin, kickside_retention_pin_tombstone, kickside_thread.max_pruned_seq
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-25T17:00:03Z"
+    source: file://07_retention_pins.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 08_write_receipts
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: kickside_write_receipt
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-09-25T17:00:04Z"
+    source: file://08_write_receipts.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 09_thread_subjects
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Subject versions on native thread events and durable stream heads.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-10-05T00:00:00Z"
+    source: file://09_thread_subjects.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 10_thread_natural_keys
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-08T00:00:00Z"
+    source: file://10_thread_natural_keys.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

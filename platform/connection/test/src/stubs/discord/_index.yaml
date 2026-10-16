@@ -1,0 +1,37 @@
+version: "1.0"
+namespace: kickside.plugins.discord
+
+# Stub discord binding. Implements BOTH kickside.connection:connection (so
+# api/connections_test can open impl_id kickside.plugins.discord:discord_connection)
+# and kickside.connection:reply_provider (so the reply_providers registry resolves
+# provider=discord). meta.provider drives both registries' resolution.
+
+entries:
+  - name: discord_connection
+    kind: contract.binding
+    meta:
+      title: Discord
+      provider: discord
+      class:
+        - connection
+        - reply_provider
+    contracts:
+      - contract: kickside.connection:connection
+        context_required:
+          - component_id
+        methods:
+          get_status: kickside.plugins.stubs:get_status
+          test_connection: kickside.plugins.stubs:test_connection
+          discover_resources: kickside.plugins.stubs:discover_resources
+      - contract: kickside.contract:deletable
+        context_required:
+          - component_id
+        methods:
+          delete: kickside.plugins.stubs:delete
+      - contract: kickside.connection:reply_provider
+        context_required:
+          - component_id
+        methods:
+          send_reply: kickside.plugins.stubs:send_reply
+          update_reply: kickside.plugins.stubs:update_reply
+          send_status: kickside.plugins.stubs:send_status

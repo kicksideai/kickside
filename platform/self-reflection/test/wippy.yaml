@@ -1,0 +1,9 @@
+organization: kickside
+module: self-reflection-harness
+type: application
+description: Standalone harness for kickside/self-reflection.
+directories:
+  modules: .wippy
+  src: .
+options:
+  unpack_modules: true

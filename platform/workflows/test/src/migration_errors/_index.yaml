@@ -1,0 +1,45 @@
+version: '1.0'
+namespace: app
+entries:
+- name: migration_fixture_01_workflows
+  kind: library.lua
+  meta:
+    type: test_helper
+    private: true
+    environment: test
+  source: file://fixtures/01_workflows.lua
+  imports:
+    migration: wippy.migration:migration
+- name: migration_fixture_02_definition_state
+  kind: library.lua
+  meta:
+    type: test_helper
+    private: true
+    environment: test
+  source: file://fixtures/02_definition_state.lua
+  imports:
+    migration: wippy.migration:migration
+    types: kickside.workflows:types
+  modules:
+  - json
+- name: migration_fixture_04_admission_recovery
+  kind: library.lua
+  meta:
+    type: test_helper
+    private: true
+    environment: test
+  source: file://fixtures/04_admission_recovery.lua
+  imports:
+    migration: wippy.migration:migration
+- name: migration_errors_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: workflow_migration_errors
+  source: file://migration_errors_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    01_workflows: app:migration_fixture_01_workflows
+    02_definition_state: app:migration_fixture_02_definition_state
+    04_admission_recovery: app:migration_fixture_04_admission_recovery

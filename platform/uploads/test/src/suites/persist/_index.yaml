@@ -1,0 +1,108 @@
+version: "1.0"
+namespace: app.uploads_suites.persist
+
+entries:
+  - name: read_model_retention_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Prune deleted upload tombstones only after the core event watermark passes them.
+    source: file://read_model_retention_test.lua
+    method: run
+    modules: [sql, uuid, time, funcs, channel]
+    imports:
+      test: wippy.test:test
+      upload_read_model_retention: kickside.uploads.persist:read_model_retention
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_types: kickside.uploads:types
+      uploads_retention_policy: kickside.uploads:retention_policy
+
+  - name: orphan_blob_retention_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Existing retention callback reclaims old unreferenced artifact blobs and bytes.
+    source: file://orphan_blob_retention_test.lua
+    method: run
+    modules: [sql, uuid, fs, funcs]
+    imports:
+      test: wippy.test:test
+      artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+
+  - name: upload_record_repo_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Upload repository surfaces typed producer errors.
+    source: file://upload_record_repo_test.lua
+    method: run
+    modules: [uuid]
+    imports:
+      test: wippy.test:test
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_types: kickside.uploads:types
+
+  - name: uploads_projection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Upload component projection folds lifecycle events into a compact summary.
+    source: file://upload_projection_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: upload_notify_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads
+      comment: Owner upload notifications dispatched by the core projection runner under the projection's admission and owner identity.
+    source: file://upload_notify_test.lua
+    method: run
+    modules: [sql, uuid, process, security, contract, channel, time, json]
+    imports:
+      test: wippy.test:test
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      types: kickside.uploads:types
+      provision: kickside.core.threads:provision
+      threads_writer: kickside.core.threads.persist:writer
+
+  - name: upload_notify_constrained
+    kind: security.policy
+    meta:
+      comment: Owner group without process messaging or realtime authority; the projection's owner delivery runs under notify_owner and the realtime transport policy.
+    groups:
+      - app.uploads_suites.persist:notify_constrained
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, contract.get, contract.open, contract.call, contract.security, db.get, registry.get, registry.find, env.get, store.get, fs.get]
+      effect: allow
+
+  - name: upload_relay_probe
+    kind: process.lua
+    source: file://upload_relay_probe.lua
+    method: run
+    modules: [process, channel]
+
+  - name: projection_jobs_pool
+    kind: process.lua
+    meta:
+      comment: Core Jobs pool restricted to awaited slots, so the notification suite dispatches projection jobs only.
+    source: file://projection_jobs_pool.lua
+    method: main
+    modules: [sql]
+    imports:
+      worker_pool: kickside.core.jobs.service:worker_pool
+      config: kickside.core.jobs:config

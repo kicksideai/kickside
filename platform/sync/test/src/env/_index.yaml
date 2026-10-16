@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: app.env
+
+# Mirrors the real app env storage id so transitive core/transform env.variable
+# entries register against a present storage in the standalone Data Sync harness.
+
+entries:
+  - name: store
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true

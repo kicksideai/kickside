@@ -1,0 +1,1 @@
+../../../../src/app/security/resolver_identity_capability_test.lua

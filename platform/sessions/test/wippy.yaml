@@ -1,0 +1,5 @@
+organization: kickside
+module: sessions-test
+directories:
+  src: .
+  modules: .wippy

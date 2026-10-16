@@ -1,0 +1,14 @@
+version: "1.0"
+namespace: app.env
+
+# Mirrors the real app's env storage id (app.env:store) so the
+# relay/session/views deps resolve their env_storage parameter in
+# isolation. Harness-only; excluded from publish.
+
+entries:
+  - name: store
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true

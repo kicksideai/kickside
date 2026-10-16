@@ -1,0 +1,216 @@
+# kickside.data — Data Source/Sink contract family (engine-owned flow state).
+# Co-located in the contracts module; ids are kickside.data:* (pullable/writable).
+# Spec + rationale: docs/architecture/06-data-sources-and-syncs.md
+
+version: "1.0"
+namespace: kickside.data
+
+entries:
+  - name: writable
+    kind: contract.definition
+    meta:
+      title: Writable Data Sink
+      tags: [data, sink, write, flow, idempotent]
+      comment: Deterministic write ABI for syncs. Implementing bindings must declare meta.delivery (exactly_once, at_least_once, at_most_once) and meta.input_shape (record, content). Agent tools wrap this contract; syncs call it directly.
+    methods:
+      - name: write
+        description: |
+          Apply one sink operation idempotently. Same idempotency_key plus same write MUST return the same effect.
+          Same idempotency_key plus different write MUST return conflict.
+          The effect/result matrix is normative: effect=create MUST return result=created and dest_ref;
+          effect=update or effect=upsert MAY return result=created, result=updated, or result=noop;
+          effect=archive MUST return result=updated, retain the engine id-map, and move destination state to archived;
+          effect=delete MUST return result=deleted. Operations declaring requires_dest_ref=true MUST be called with
+          dest_ref; the engine validates this before dispatch. dest_ref/dest_version are aliases for
+          dest_refs.default; one-to-many fan-out uses map_slots. Atomic multi-record writes are modeled as
+          provider-atomic sink_ops with composite input and dest_refs output.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "config": {
+                    "type": "object",
+                    "description": "Per-sink config validated by the selected automation port's config_schema."
+                  },
+                  "sink_op": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Sink operation key (e.g. upsert)."
+                  },
+                  "input": {
+                    "type": "object",
+                    "description": "Provider operation input validated by operations[sink_op].input_schema."
+                  },
+                  "dest_ref": {
+                    "type": ["object", "null"],
+                    "description": "Destination reference from the engine id-map, if one exists."
+                  },
+                  "dest_version": {
+                    "type": "string",
+                    "description": "Last destination version known to the engine, if any. Alias for dest_refs.default.dest_version."
+                  },
+                  "dest_refs": {
+                    "type": "object",
+                    "description": "Destination references from the engine id-map keyed by map_slot. dest_ref/dest_version are aliases for dest_refs.default; one-to-many fan-out uses additional map_slots.",
+                    "additionalProperties": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "dest_ref": { "type": "object" },
+                        "dest_version": { "type": "string" }
+                      },
+                      "required": ["dest_ref"]
+                    }
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Engine-generated idempotency key for this sink effect. Scoped to one delivery: a re-delivery of the same record carries a new key."
+                  },
+                  "identity_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Stable name of the destination record this write owns, carried across deliveries. A sink that names records by the write key MUST prefer this over idempotency_key, or re-delivery mints a duplicate instead of refreshing."
+                  },
+                  "map_slot": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The dest_refs slot this write targets when the engine fans one record out to several destinations."
+                  },
+                  "origin": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The writing origin: the automation whose round makes this write. A sink keys its receipts by (origin, sink_op, idempotency_key) and scopes its reconcile key listing to it, so two syncs reading one source never share a receipt."
+                  },
+                  "trace_context": {
+                    "type": "object",
+                    "description": "Trace/correlation context propagated from the source item."
+                  },
+                  "automation_ref": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["kind", "id", "revision"],
+                    "properties": {
+                      "kind": { "const": "automation" },
+                      "id": { "type": "string", "minLength": 1 },
+                      "revision": { "type": "integer", "minimum": 1 }
+                    },
+                    "description": "The automation whose round makes this write, set by the round on every write; never part of the sink input."
+                  }
+                },
+                "required": ["config", "sink_op", "input", "idempotency_key", "origin"]
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "result": {
+                    "type": "string",
+                    "enum": ["created", "updated", "deleted", "noop"]
+                  },
+                  "dest_ref": {
+                    "type": "object",
+                    "description": "Destination reference to store in the engine id-map. Required when result=created; alias for dest_refs.default.dest_ref."
+                  },
+                  "dest_version": {
+                    "type": "string",
+                    "description": "Destination version/etag for future conditional writes; alias for dest_refs.default.dest_version."
+                  },
+                  "dest_refs": {
+                    "type": "object",
+                    "description": "Destination references to store in the engine id-map keyed by map_slot. One-to-many fan-out uses additional map_slots.",
+                    "additionalProperties": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "dest_ref": { "type": "object" },
+                        "dest_version": { "type": "string" }
+                      },
+                      "required": ["dest_ref"]
+                    }
+                  },
+                  "retry_after_ms": { "type": "integer", "minimum": 0 },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": {
+                      "required": ["result"],
+                      "properties": { "error": false }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "success": { "const": true },
+                        "result": { "const": "created" }
+                      },
+                      "required": ["success", "result"]
+                    },
+                    "then": { "required": ["dest_ref"] }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": {
+                      "required": ["error"],
+                      "properties": {
+                        "result": false,
+                        "dest_ref": false,
+                        "dest_version": false,
+                        "dest_refs": false
+                      }
+                    }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired",
+                          "rate_limited",
+                          "invalid_config",
+                          "invalid_request",
+                          "not_found",
+                          "conflict",
+                          "permission_denied",
+                          "provider_unavailable",
+                          "provider_error",
+                          "cursor_expired",
+                          "history_unavailable",
+                          "stalled",
+                          "dependency_missing",
+                          "idempotency_conflict",
+                          "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean" },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"]
+                  }
+                }
+              }

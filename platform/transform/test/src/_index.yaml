@@ -1,0 +1,318 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/transform. The transform library and its
+# generation core (gate, snippet, fingerprint, orchestration) need only the
+# bootloader stack. The generator dataflow (gen_flow) imports the flow builder,
+# so the harness also provides the dataflow runtime and its transitive
+# relay/session/views services (wired like the knowledge harness) purely so the
+# module loads; the co-located suites exercise the pure core, not a live flow.
+
+entries:
+  - name: dep.wippy.test
+    version: ">=0.4.17"
+    kind: ns.dependency
+    component: wippy/test
+
+  - name: dep.kickside.transform
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Transform mounted as a root with host resources supplied by this harness.
+    component: kickside/transform
+    parameters:
+      - name: kickside.transform:api_router
+        value: app:api
+      - name: kickside.transform:ui_server
+        value: app:gateway
+      - name: kickside.transform.security:user_security_scope
+        value: app:transform_members
+
+  - name: dep.kickside.code_execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Real sandboxed code executor used by the transform code-strategy tests.
+    component: kickside/code-execution
+    parameters:
+    - name: kickside.code_execution:api_router
+      value: app:api
+    - name: kickside.code_execution:ui_server
+      value: app:gateway
+    - name: kickside.code_execution.security:user_security_scope
+      value: app:user
+    - name: kickside.widgets:api_router
+      value: app:api
+    - name: kickside.widgets:ui_server
+      value: app:gateway
+    - name: wippy.migration:app_db
+      value: app:db
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the dataflow runtime the generator flow uses.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server for the dataflow/session/views deps.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: api_public
+    kind: http.router
+    meta:
+      comment: Separate public router for wippy/views to avoid route collisions.
+      server: gateway
+    prefix: /public
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the harness runs its actor under.
+    groups:
+      - transform_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.wippy.relay
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Relay — transitive dep of session/views.
+    component: "wippy/relay"
+    parameters:
+      - name: user_security_scope
+        value: app:user
+      - name: env_storage
+        value: app.env:store
+      - name: application_host
+        value: app:processes
+
+  - name: dep.wippy.views
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Views — transitive dep of session (artifact rendering).
+    component: "wippy/views"
+    parameters:
+      - name: api_router
+        value: app:api_public
+      - name: env_storage
+        value: app.env:store
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    version: '*'
+    meta:
+      comment: "Users \u2014 owns the app_users table wippy/session's migrations reference; its migrations run before session\
+        \ 02 on both engines."
+    component: kickside/users
+    parameters:
+    - name: target_db
+      value: app:db
+    - name: env_storage
+      value: app:env_storage
+    - name: public_router
+      value: app:api_public
+    - name: api_router
+      value: app:api
+    - name: ui_server
+      value: app:gateway
+    - name: user_security_scope
+      value: app:user
+    - name: admin_security_scope
+      value: app:user
+    - name: login_role_resource
+      value: app:user
+    - name: kickside.settings:target_db
+      value: app:db
+    - name: kickside.settings:api_router
+      value: app:api
+    - name: kickside.settings:ui_server
+      value: app:gateway
+    - name: kickside.component:target_db
+      value: app:db
+    - name: kickside.component:api_router
+      value: app:api
+    - name: kickside.component:lifecycle_impl
+      value: kickside.core.lifecycle:component_lifecycle_impl
+    - name: kickside.core:target_db
+      value: app:db
+    - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.core.lifecycle:user_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 2
+    - name: kickside.core.lifecycle:admin_lifecycle_grant
+      value:
+        subject_id: app:user
+        subject_type: group
+        access_mask: 3
+    - name: kickside.core.retention:process_host
+      value: app:processes
+    - name: kickside.core.threads:process_host
+      value: app:processes
+    - name: kickside.core.retention:api_router
+      value: app:api
+    - name: kickside.core.threads:api_router
+      value: app:api
+    - name: kickside.core.projections:api_router
+      value: app:api
+    - name: kickside.core.retention:user_security_scope
+      value: app:user
+    - name: kickside.core.threads:user_security_scope
+      value: app:user
+    - name: kickside.core.jobs:target_db
+      value: app:db
+    - name: kickside.core.jobs:process_host
+      value: app:processes
+
+  - name: dep.wippy.session
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Session — backs wippy/dataflow's session artifact repo.
+    component: "wippy/session"
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: env_storage
+        value: app.env:store
+      - name: delegation_func_id
+        value: userspace.dataflow.session:delegate
+
+  - name: dep.wippy.dataflow
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Dataflow — the durable engine the generator flow compiles to.
+    component: "wippy/dataflow"
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+      - name: api_router
+        value: app:api
+
+  - name: dep.wippy.bootloader
+    version: "*"
+    kind: ns.dependency
+    meta:
+      comment: Bootloader applies every dep's migrations on boot.
+    component: "wippy/bootloader"
+    parameters:
+      - name: application_host
+        value: app:processes
+      - name: env_storage
+        value: app:env_storage
+
+  - name: user_endpoint_policy_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: member_endpoint_policy
+    source: file://user_endpoint_policy_test.lua
+    method: run
+    modules:
+    - registry
+    - security
+    imports:
+      test: wippy.test:test
+
+  - name: dep.member_endpoint_contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+    parameters:
+    - name: kickside.contract.http:user_security_scope
+      value: app:user
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: app:api}
+    - {name: ui_server, value: app:gateway}
+    - {name: target_db, value: app:db}
+    - {name: process_host, value: app:processes}
+
+  - name: native_apply_validation_probe
+    kind: function.lua
+    source: file://native_apply_validation_probe.lua
+    method: run
+    imports:
+      apply: kickside.transform:apply
+
+  - name: apply_native_validation_test
+    kind: function.lua
+    meta: {type: test, suite: transform}
+    source: file://apply_native_validation_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      apply: kickside.transform:apply
+
+  - name: snippet_native_test
+    kind: function.lua
+    meta: {type: test, suite: transform}
+    source: file://snippet_native_test.lua
+    method: run
+    modules: [registry, json, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      snippet: kickside.transform:snippet
+      nodes: kickside.transform:node_snippet_search
+
+  - name: generation_native_validation_test
+    kind: function.lua
+    meta: {type: test, suite: transform}
+    source: file://generation_native_validation_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+      flow_api: kickside.transform:generate_transform
+
+  - name: b_ai_generation_test
+    kind: function.lua
+    meta: {type: test, suite: transform}
+    source: file://b_ai_generation_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      generator: kickside.transform:generator
+      gen_flow: kickside.transform:generate_transform
+      gen_nodes: kickside.transform:node_iterate

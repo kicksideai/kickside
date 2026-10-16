@@ -1,0 +1,47 @@
+version: "1.0"
+namespace: kickside.models.catalog
+
+# The live model catalog. Models are NOT declared statically here — they are
+# discovered from a configured provider profile during onboarding
+# (Settings -> Models -> add provider -> discover), then assigned to capability
+# classes (fast/nano/balanced/premium/embed) from the UI. Class tiers are
+# declared in kickside.models.classes; discovered llm.model entries reference them.
+
+entries:
+  - name: policy
+    kind: library.lua
+    meta:
+      comment: Provider profile policy for input cleaning, config/secret separation, sensitive scrubbing, provider hooks, and public projections.
+    source: file://policy.lua
+    modules: [json, registry, funcs]
+    imports:
+      models_types: kickside.models:models_types
+      models_secrets: kickside.models.persist:models_secrets
+
+
+  - name: card_policy
+    kind: library.lua
+    meta:
+      comment: Model card projections and input cleaning.
+    source: file://card_policy.lua
+    imports:
+      catalog_policy: kickside.models.catalog:policy
+      models_types: kickside.models:models_types
+      registry_models: wippy.llm.discovery:models
+
+  - name: model_catalog
+    kind: library.lua
+    meta:
+      comment: Merged registry + DB/cache model catalog used by UI APIs and the LLM resolver.
+    source: file://model_catalog.lua
+    imports:
+      registry_models: wippy.llm.discovery:models
+      models_repo: kickside.models.persist:repo
+      catalog_card_policy: kickside.models.catalog:card_policy
+
+  - name: model_resolver_func
+    kind: function.lua
+    source: file://resolver.lua
+    method: resolve
+    imports:
+      model_catalog: kickside.models.catalog:model_catalog

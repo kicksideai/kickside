@@ -1,0 +1,12 @@
+version: "1.0"
+namespace: compat.test
+entries:
+  - name: published_http_library_test
+    kind: function.lua
+    source: file://published_http_library_test.lua
+    method: run
+    modules: [registry]
+    meta: { type: test, suite: published_http_library }
+    imports:
+      test: wippy.test:test
+      published: kickside.core:http_status

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MCP credentials</title>
+  <style>
+    :root { --bg:#0f1115; --panel:#171a21; --line:#262b36; --fg:#e6e9ef; --mut:#8b93a3; --acc:#4f8cff; --danger:#e0556b; --ok:#3fb27f; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,sans-serif; }
+    .wrap { max-width:860px; margin:0 auto; padding:28px 20px 64px; }
+    h1 { font-size:20px; margin:0 0 4px; }
+    .sub { color:var(--mut); margin:0 0 24px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px; }
+    label { display:block; color:var(--mut); font-size:12px; margin:10px 0 4px; }
+    input, select { width:100%; background:#0d0f14; color:var(--fg); border:1px solid var(--line); border-radius:7px; padding:8px 10px; font:inherit; }
+    .row { display:flex; gap:12px; } .row > div { flex:1; }
+    .tools { max-height:140px; overflow:auto; border:1px solid var(--line); border-radius:7px; padding:8px; }
+    .tool { display:flex; gap:8px; align-items:center; padding:2px 0; }
+    .tool input { width:auto; }
+    button { background:var(--acc); color:#fff; border:0; border-radius:7px; padding:9px 16px; font:inherit; cursor:pointer; margin-top:14px; }
+    button.ghost { background:transparent; border:1px solid var(--line); color:var(--mut); }
+    button.danger { background:transparent; border:1px solid var(--danger); color:var(--danger); padding:4px 10px; margin:0; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-size:13px; }
+    th { color:var(--mut); font-weight:500; }
+    .pill { font-size:11px; padding:1px 7px; border-radius:99px; border:1px solid var(--line); }
+    .pill.active { color:var(--ok); border-color:var(--ok); } .pill.revoked { color:var(--danger); border-color:var(--danger); }
+    .token { background:#0d0f14; border:1px dashed var(--acc); border-radius:7px; padding:12px; margin-top:14px; word-break:break-all; }
+    .token code { color:var(--acc); }
+    .snip { background:#0d0f14; border:1px solid var(--line); border-radius:7px; padding:10px; margin-top:8px; white-space:pre-wrap; font-family:ui-monospace,monospace; font-size:12px; color:var(--mut); }
+    .err { color:var(--danger); margin-top:10px; } .mut { color:var(--mut); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>MCP credentials</h1>
+    <p class="sub">Mint a scoped MCP endpoint for a workspace slice or your whole account, then hand the token to an agent. Access is bounded by what you hold on the scope; only the tools you allow are surfaced.</p>
+
+    <div class="panel">
+      <strong>New credential</strong>
+      <div class="row">
+        <div><label>Scope component id (a workspace component, or your account root)</label><input id="scope" placeholder="component uuid" /></div>
+        <div><label>Access</label>
+          <select id="mask">
+            <option value="1">Read</option>
+            <option value="3">Read + Write</option>
+            <option value="7">Read + Write + Delete</option>
+            <option value="15">Full</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Label</label><input id="label" placeholder="e.g. research-agent" /></div>
+        <div><label>Preset (optional)</label><select id="preset"><option value="">— none —</option></select></div>
+        <div><label>Expires (days, optional)</label><input id="ttl" type="number" min="1" placeholder="never" /></div>
+      </div>
+      <label>Tools</label>
+      <div class="tools" id="tools"><span class="mut">loading…</span></div>
+      <button id="create">Create credential</button>
+      <div id="created"></div>
+      <div id="cerr" class="err"></div>
+    </div>
+
+    <div class="panel">
+      <strong>Your credentials</strong>
+      <table><thead><tr><th>Label</th><th>Prefix</th><th>Scope</th><th>Access</th><th>Status</th><th></th></tr></thead>
+        <tbody id="list"><tr><td colspan="6" class="mut">loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API = (p) => location.origin.replace(/\/$/, "") + "/api/v1" + p;
+    const MCP_URL = location.origin.replace(/\/$/, "") + "/mcp";
+    const j = async (r) => { const d = await r.json().catch(() => ({})); return { ok: r.ok, d }; };
+
+    async function loadTools() {
+      const { d } = await j(await fetch(API("/mcp/tools"), { credentials: "include" }));
+      const box = document.getElementById("tools");
+      const tools = (d && d.tools) || [];
+      box.innerHTML = tools.length ? tools.map(t =>
+        `<label class="tool"><input type="checkbox" value="${t.id}"> <span>${t.name}</span> <span class="mut">— ${t.description || t.id}</span></label>`
+      ).join("") : '<span class="mut">no tools registered</span>';
+    }
+    async function loadPresets() {
+      const { d } = await j(await fetch(API("/mcp/presets"), { credentials: "include" }));
+      const sel = document.getElementById("preset");
+      ((d && d.presets) || []).forEach(p => {
+        const o = document.createElement("option"); o.value = p.name; o.textContent = p.name + (p.description ? " — " + p.description : "");
+        sel.appendChild(o);
+      });
+    }
+    function accessLabel(m) { return ({1:"Read",3:"Read+Write",7:"RWD",15:"Full"})[m] || ("mask " + m); }
+    async function loadList() {
+      const { d } = await j(await fetch(API("/mcp/credentials"), { credentials: "include" }));
+      const tb = document.getElementById("list");
+      const creds = (d && d.credentials) || [];
+      tb.innerHTML = creds.length ? creds.map(c => `
+        <tr>
+          <td>${c.label || "—"}</td>
+          <td class="mut">${c.token_prefix}…</td>
+          <td class="mut" title="${c.scope_component_id}">${String(c.scope_component_id).slice(0,8)}…</td>
+          <td>${accessLabel(c.access_mask)}</td>
+          <td><span class="pill ${c.status}">${c.status}</span></td>
+          <td>${c.status === "active" ? `<button class="danger" data-id="${c.credential_id}">Revoke</button>` : ""}</td>
+        </tr>`).join("") : '<tr><td colspan="6" class="mut">none yet</td></tr>';
+      tb.querySelectorAll("button.danger").forEach(b => b.onclick = () => revoke(b.dataset.id));
+    }
+    async function revoke(id) {
+      if (!confirm("Revoke this credential? Its token stops working and its access is removed.")) return;
+      await fetch(API("/mcp/credentials/" + id + "/revoke"), { method: "POST", credentials: "include" });
+      loadList();
+    }
+    async function create() {
+      document.getElementById("cerr").textContent = "";
+      const scope = document.getElementById("scope").value.trim();
+      if (!scope) { document.getElementById("cerr").textContent = "scope component id is required"; return; }
+      const tools = [...document.querySelectorAll("#tools input:checked")].map(i => i.value);
+      const ttl = parseInt(document.getElementById("ttl").value, 10);
+      const body = {
+        scope_component_id: scope,
+        access_mask: parseInt(document.getElementById("mask").value, 10),
+        label: document.getElementById("label").value.trim(),
+        preset: document.getElementById("preset").value,
+        allowed_tool_ids: tools,
+      };
+      if (ttl > 0) body.expires_at = Math.floor(Date.now() / 1000) + ttl * 86400;
+      const { ok, d } = await j(await fetch(API("/mcp/credentials"), {
+        method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      }));
+      if (!ok || !d.success) { document.getElementById("cerr").textContent = (d && d.error) || "create failed"; return; }
+      const tok = d.credential.token;
+      const snippet = JSON.stringify({ type: "streamable-http", url: MCP_URL, headers: { Authorization: "Bearer " + tok } }, null, 2);
+      document.getElementById("created").innerHTML =
+        `<div class="token">Copy this token now — it is shown once:<br><code>${tok}</code></div>` +
+        `<div class="snip">${snippet.replace(/</g,"&lt;")}</div>`;
+      loadList();
+    }
+    document.getElementById("create").onclick = create;
+    loadTools(); loadPresets(); loadList();
+  </script>
+</body>
+</html>

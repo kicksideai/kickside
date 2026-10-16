@@ -1,0 +1,46 @@
+version: "1.0"
+namespace: kickside.automation
+entries:
+- name: round_sink_bulk_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    timeout: "300s"
+    comment: The automation round's collection paging and sink delivery over a real installed automation, drive, ledger and fixture sinks.
+  source: file://../round/sink_test.lua
+  method: run_bulk
+  modules:
+  - sql
+  - json
+  - uuid
+  - time
+  - contract
+  - security
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+    runtime_policy: kickside.automation:runtime_policy
+- name: round_sink_slots_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: The automation round's collection paging and sink delivery over a real installed automation, drive, ledger and fixture sinks.
+  source: file://../round/sink_test.lua
+  method: run_slots
+  modules:
+  - sql
+  - json
+  - uuid
+  - time
+  - contract
+  - security
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+    runtime_policy: kickside.automation:runtime_policy

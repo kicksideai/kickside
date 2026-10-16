@@ -1,0 +1,385 @@
+version: '1.0'
+namespace: kickside.automation.round.fixture
+entries:
+- name: round_source_kind
+  kind: contract.binding
+  meta:
+    title: Round Source Fixture
+    class: kickside.test.round
+    events:
+      input:
+      - type: kickside.automation.round.fixture.events:source.received
+      output:
+      - type: kickside.automation.round.fixture.events:source.changed
+  contracts:
+  - contract: kickside.contract:component
+    methods:
+      get_status: kickside.core.threads:thread_status
+- name: install
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: install
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: install_collection
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: install_collection
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: reconfigure_collection
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: reconfigure_collection
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: install_scheduled
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: install_scheduled
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: reconfigure_scheduled
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: reconfigure_scheduled
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: scheduled_contract
+  kind: contract.definition
+  meta:
+    title: Scheduled Fixture Actions
+  methods:
+  - name: reconfigure
+    description: Re-declare timer drives.
+- name: collection_contract
+  kind: contract.definition
+  meta:
+    title: Round Collection Fixture Actions
+  methods:
+  - name: reconfigure
+    description: Re-declare fixture collection items.
+- name: install_event
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: install_event
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: reconfigure_event
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: reconfigure_event
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: event_contract
+  kind: contract.definition
+  meta:
+    title: Round Event Fixture Actions
+    comment: The event fixture's reconfigure.
+  methods:
+  - name: reconfigure
+    description: Re-declare the fixture with a new input and source.
+- name: deliver
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: deliver
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: write
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: write
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: pull
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: pull
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: record_keys
+  kind: function.lua
+  source: file://../../../test_src/suites/round/fixture/fixture.lua
+  method: record_keys
+  modules:
+  - sql
+  - json
+  - ctx
+  - process
+  - channel
+  - time
+  - uuid
+  - security
+  imports:
+    round_write: kickside.automation:round_write
+    automations_lib: kickside.automation:automation
+- name: kind
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Round Fixture
+    comment: Test-only automation kind driven by rounds.
+    class: automation
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.round.fixture:install
+  - contract: kickside.trigger:round_consumer
+    methods:
+      deliver: kickside.automation.round.fixture:deliver
+- name: scheduled_kind
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Scheduled Fixture
+    class: automation
+    reconfigurable: true
+    actions:
+    - name: reconfigure
+    inputs:
+      type: object
+      properties:
+        cadence:
+          type: string
+        remove:
+          type: boolean
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.round.fixture:install_scheduled
+  - contract: kickside.trigger:round_consumer
+    methods:
+      deliver: kickside.automation.round.fixture:deliver
+  - contract: kickside.automation.round.fixture:scheduled_contract
+    methods:
+      reconfigure: kickside.automation.round.fixture:reconfigure_scheduled
+- name: records_binding
+  kind: contract.binding
+  meta:
+    title: Round Fixture Records
+  contracts:
+  - contract: kickside.data:pullable
+    methods:
+      pull: kickside.automation.round.fixture:pull
+- name: records
+  kind: registry.entry
+  meta:
+    type: kickside.automation.port
+    title: Round Fixture Records
+    comment: A pullable collection of fixture records.
+  binding: kickside.automation.round.fixture:records_binding
+  output_schema: '{ "type": "object", "properties": { "directive": { "type": "string"
+    } } }'
+  reconcile:
+    pull_keys: kickside.automation.round.fixture:record_keys
+- name: store_binding
+  kind: contract.binding
+  meta:
+    title: Round Fixture Store
+    delivery: exactly_once
+    input_shape: record
+  contracts:
+  - contract: kickside.data:writable
+    methods:
+      write: kickside.automation.round.fixture:write
+- name: store
+  kind: registry.entry
+  meta:
+    type: kickside.automation.port
+    title: Round Fixture Store
+    comment: A fixture store sink with exactly-once delivery.
+  binding: kickside.automation.round.fixture:store_binding
+  input_schema: '{ "type": "object", "properties": { "directive": { "type": "string"
+    }, "title": { "type": "string" }, "content": { "type": "string" } } }'
+  operations:
+    upsert: {}
+- name: notify_binding
+  kind: contract.binding
+  meta:
+    title: Round Fixture Notify
+    delivery: at_most_once
+    input_shape: content
+  contracts:
+  - contract: kickside.data:writable
+    methods:
+      write: kickside.automation.round.fixture:write
+- name: notify
+  kind: registry.entry
+  meta:
+    type: kickside.automation.port
+    title: Round Fixture Notify
+    comment: A fixture sink with at-most-once delivery.
+  binding: kickside.automation.round.fixture:notify_binding
+  input_schema: '{ "type": "object", "properties": { "directive": { "type": "string"
+    }, "title": { "type": "string" }, "content": { "type": "string" } } }'
+  operations:
+    upsert: {}
+- name: undeclared_binding
+  kind: contract.binding
+  meta:
+    title: Round Fixture Undeclared
+  contracts:
+  - contract: kickside.data:writable
+    methods:
+      write: kickside.automation.round.fixture:write
+- name: undeclared
+  kind: registry.entry
+  meta:
+    type: kickside.automation.port
+    title: Round Fixture Undeclared
+    comment: A fixture sink that declares no delivery semantics.
+  binding: kickside.automation.round.fixture:undeclared_binding
+  input_schema: '{ "type": "object", "properties": { "directive": { "type": "string"
+    }, "title": { "type": "string" }, "content": { "type": "string" } } }'
+  operations:
+    upsert: {}
+- name: event_kind
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Round Event Fixture
+    comment: Test-only automation kind whose main drive watches a thread.
+    class: automation
+    reconfigurable: true
+    actions:
+    - name: reconfigure
+    inputs:
+      type: object
+      properties:
+        thread_id:
+          type: string
+        start:
+          type: string
+        page_size:
+          type: integer
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.round.fixture:install_event
+  - contract: kickside.automation.round.fixture:event_contract
+    methods:
+      reconfigure: kickside.automation.round.fixture:reconfigure_event
+  - contract: kickside.trigger:round_consumer
+    methods:
+      deliver: kickside.automation.round.fixture:deliver
+- name: collection_kind
+  kind: contract.binding
+  meta:
+    type: kickside.automation
+    title: Round Collection Fixture
+    comment: Test-only automation kind whose main drive pulls a collection and reconciles
+      it.
+    class: automation
+    reconfigurable: true
+    actions:
+    - name: reconfigure
+  contracts:
+  - contract: kickside.contract:installable
+    methods:
+      install: kickside.automation.round.fixture:install_collection
+  - contract: kickside.automation.round.fixture:collection_contract
+    methods:
+      reconfigure: kickside.automation.round.fixture:reconfigure_collection
+  - contract: kickside.trigger:round_consumer
+    methods:
+      deliver: kickside.automation.round.fixture:deliver

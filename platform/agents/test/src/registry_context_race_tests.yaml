@@ -1,0 +1,27 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: registry_context_race_fixture
+    kind: library.lua
+    source: file://registry_context_race_fixture.lua
+    modules: [json]
+  - name: registry_context_race_adapter
+    kind: library.lua
+    source: file://registry_context_race_adapter.lua
+    modules: [uuid, registry, security]
+    imports:
+      contract: app:registry_context_race_fixture
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      agent_types: kickside.agents:types
+      capability_context: kickside.agents.traits:capability_context
+      capability_visibility: kickside.agents.registry:capability_visibility
+  - name: registry_context_race_test
+    kind: function.lua
+    meta: {type: test, suite: agents_context_decision}
+    source: file://registry_context_race_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      agents: app:registry_context_race_adapter
+      state: app:registry_context_race_fixture

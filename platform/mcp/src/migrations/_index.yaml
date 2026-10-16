@@ -1,0 +1,51 @@
+version: "1.0"
+namespace: kickside.mcp.migrations
+
+# target_db is injected by the root kickside.mcp:target_db requirement.
+entries:
+  - name: 03_oauth_resource
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.mcp.migrations:01_mcp_credentials]
+      timestamp: "2026-10-08T12:00:00Z"
+    source: file://03_oauth_resource.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+  - name: 01_mcp_credentials
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_mcp_credentials table
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-06-24T12:00:00Z"
+    source: file://01_mcp_credentials.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 02_mcp_oauth
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_mcp_oauth_clients + kickside_mcp_oauth_codes tables
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-08-05T12:00:00Z"
+    source: file://02_mcp_oauth.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 04_authority_snapshot
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.mcp.migrations:01_mcp_credentials]
+      timestamp: "2026-10-09T00:00:00Z"
+    source: file://04_authority_snapshot.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

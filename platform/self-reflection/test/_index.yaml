@@ -1,0 +1,77 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the PostgreSQL profile wiring.
+    file: "${sqlite_path}"
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: self_reflection_test
+    kind: function.lua
+    meta:
+      title: Self Reflection Capability Test
+      type: test
+      suite: kickside_self_reflection
+      group: Self Reflection
+      comment: Search, tree, related, and comparison behavior against an injected registry port.
+    source: file://src/self_reflection_test.lua
+    method: run
+    modules: [registry, security, json]
+    imports:
+      test: wippy.test:test
+      reflection: kickside.self_reflection:reflection
+
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: Self Reflection Test Harness
+
+  - name: test_policy
+    kind: security.policy
+    groups:
+      - app:test
+    policy:
+      resources: "*"
+      actions: "*"
+      effect: allow
+
+  - name: dep.kickside.self_reflection
+    kind: ns.dependency
+    component: kickside/self-reflection
+    version: "*"
+    parameters:
+      - name: kickside.self_reflection.security:admin_scope
+        value: app:test
+      - name: kickside.self_reflection.security:forbid_scope
+        value: app:restricted
+
+  - name: restricted_base
+    kind: security.policy
+    groups: [app:restricted]
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: discovery_probe
+    kind: function.lua
+    source: file://src/discovery_probe.lua
+    method: run
+    modules: [registry]
+
+  - name: discovery_test
+    kind: function.lua
+    source: file://src/discovery_test.lua
+    method: run
+    meta: { type: test, suite: kickside_self_reflection }
+    modules: [security, funcs, registry]
+    imports:
+      test: wippy.test:test

@@ -1,0 +1,60 @@
+version: '1.0'
+namespace: app
+entries:
+- name: audit_lookup_source
+  kind: library.lua
+  source: file://audit_lookup_source.lua
+  modules:
+  - sql
+  - json
+  imports:
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    committed_error: kickside.contract:committed_error
+    error_envelope: kickside.contract:error_envelope
+    contract_common: app:audit_lookup_common
+    threads_reader: kickside.core.threads.persist:reader
+    threads_writer: app:audit_lookup_writer
+    threads_thread_crud: app:principal_resolution_crud
+    threads_teardown: kickside.core.threads.persist:teardown
+    component_client: app:audit_lookup_component
+    contract_event_authorization: app:append_finalization_authorization
+    security: app:principal_resolution_security
+    registry: app:audit_lookup_registry
+- name: audit_lookup_fixture
+  kind: library.lua
+  source: file://audit_lookup_fixture.lua
+- name: audit_lookup_common
+  kind: library.lua
+  source: file://audit_lookup_common.lua
+  imports:
+    fixture: app:audit_lookup_fixture
+    common: kickside.core.threads:contract_common
+- name: audit_lookup_component
+  kind: library.lua
+  source: file://audit_lookup_component.lua
+  imports:
+    fixture: app:audit_lookup_fixture
+- name: audit_lookup_writer
+  kind: library.lua
+  source: file://audit_lookup_writer.lua
+  imports:
+    fixture: app:audit_lookup_fixture
+- name: audit_lookup_test
+  kind: function.lua
+  source: file://audit_lookup_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_audit_lookup
+  imports:
+    test: wippy.test:test
+    fixture: app:audit_lookup_fixture
+    api: app:audit_lookup_source
+    canonical_json: kickside.contract:canonical_json
+
+- name: audit_lookup_registry
+  kind: library.lua
+  source: file://audit_lookup_registry.lua
+  modules: [registry]
+  imports:
+    fixture: app:audit_lookup_fixture

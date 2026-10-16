@@ -1,0 +1,402 @@
+version: "1.0"
+namespace: app
+
+entries:
+
+  - name: tsplit_runs_test_workflow_execution_facade_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_execution_facade_errors.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+
+  - name: tsplit_runs_test_workflow_execution_facade_2_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_execution_facade_errors.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_runs_read_model
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_test_workflow_runs_read_model.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+
+  - name: tsplit_runs_test_workflow_runs_read_model_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_test_workflow_runs_read_model.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_run_detail_api_1
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_detail_projection.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+
+  - name: tsplit_runs_test_workflow_run_detail_api_1_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_detail_projection.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_run_detail_api_2
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_detail_node_data.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+
+  - name: tsplit_runs_test_workflow_run_detail_api_2_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_detail_node_data.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_run_detail_api_3
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_detail_sync_execution.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+
+  - name: tsplit_runs_test_workflow_run_detail_api_3_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_detail_sync_execution.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_run_detail_api_4
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_detail_errors.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+
+  - name: tsplit_runs_test_workflow_run_detail_api_4_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_detail_errors.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_simulate_access
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Runs — native Dataflow launch, dedup, event-driven completion, and read-model paging.
+    source: file://../../../../../../suites/runs_test_workflow_simulate_access.lua
+    method: run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo
+
+  - name: tsplit_runs_test_workflow_simulate_access_actor_run
+    kind: function.lua
+    meta:
+      type: test_helper
+      private: true
+      environment: test
+      comment: Actor-context runner for the split runs suite.
+    source: file://../../../../../../suites/runs_test_workflow_simulate_access.lua
+    method: actor_run
+    modules: [sql, json, funcs, uuid, time, security, contract]
+    imports:
+      dedup_scaffold: app:runs_dedup_scaffold
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      runs: app:runs_fixture
+      admission: kickside.workflows.runs:admission
+      maintenance: kickside.workflows.runs:maintenance
+      block_catalog: kickside.workflows.catalog:block_catalog
+      exec_api: kickside.workflows.api:exec_api
+      client: userspace.dataflow:client
+      runner: kickside.workflows.execution:execution
+      agent_tool: kickside.workflows.agent:agent_tool
+      types: kickside.workflows:types
+      store: kickside.workflows.store:store
+      workflow_repo: kickside.workflows.repo:repo

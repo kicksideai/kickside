@@ -1,0 +1,57 @@
+version: '1.0'
+namespace: app
+entries:
+- name: lifecycle_boot_native_source
+  kind: library.lua
+  source: file://lifecycle_boot_native_source.lua
+  modules:
+  - logger
+  imports:
+    process: app:lifecycle_boot_native_process
+    security: app:lifecycle_boot_native_security
+    provision: app:lifecycle_boot_native_provision
+    lifecycle_consts: kickside.core.lifecycle:consts
+    error_envelope: kickside.contract:error_envelope
+- name: lifecycle_boot_native_fixture
+  kind: library.lua
+  source: file://lifecycle_boot_native_fixture.lua
+  modules:
+  - process
+- name: lifecycle_boot_native_exit
+  kind: process.lua
+  source: file://lifecycle_boot_native_exit.lua
+  method: main
+  imports:
+    fixture: app:lifecycle_boot_native_fixture
+    boot: app:lifecycle_boot_native_source
+- name: lifecycle_boot_native_test
+  kind: function.lua
+  source: file://lifecycle_boot_native_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_lifecycle_boot_native
+  modules:
+  - process
+  - channel
+  - time
+  imports:
+    test: wippy.test:test
+    boot: app:lifecycle_boot_native_source
+    fixture: app:lifecycle_boot_native_fixture
+    canonical_json: kickside.contract:canonical_json
+- name: lifecycle_boot_native_security
+  kind: library.lua
+  source: file://lifecycle_boot_native_security.lua
+  imports:
+    fixture: app:lifecycle_boot_native_fixture
+- name: lifecycle_boot_native_process
+  kind: library.lua
+  source: file://lifecycle_boot_native_process.lua
+  imports:
+    fixture: app:lifecycle_boot_native_fixture
+- name: lifecycle_boot_native_provision
+  kind: library.lua
+  source: file://lifecycle_boot_native_provision.lua
+  imports:
+    fixture: app:lifecycle_boot_native_fixture

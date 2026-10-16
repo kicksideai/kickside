@@ -1,0 +1,266 @@
+version: "1.0"
+namespace: kickside.core.jobs
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide Jobs
+      comment: Durable leased-job engine, wake fan-out and supervised execution.
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  # The consuming host wires these via ns.dependency. The jobs migrations bind
+  # .meta.target_db, the supervised worker binds .host, the read endpoints bind
+  # .meta.router.
+
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database resource backing the kickside_job tables.
+    targets:
+      - entry: kickside.core.jobs.migrations:04_jobs
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:07_job_slots
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:14_worker_pulse
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:19_thread_cleanup
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:20_dispatch_requests
+        path: .meta.target_db
+      - entry: kickside.core.jobs:db_config
+        path: .meta.db_id
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured jobs database id (rewritten by target_db).
+      db_id: ""
+
+  # ─── Runtime policy ──────────────────────────────────────────────────
+  # One configuration shape (design §8). A host overrides a value through
+  # .wippy.yaml "kickside.core.jobs:policy:meta.<path>".
+  - name: policy
+    kind: registry.entry
+    meta:
+      comment: Jobs runtime policy — worker pool, fairness, retry, wake fanout, age-based retention, and per-row size limits.
+      worker:
+        count_sqlite: 2
+        count_postgres: 4
+        awaited_slots: 1
+        claim_batch: 16
+      lease:
+        timeout: 45s
+        heartbeat: 10s
+      retry:
+        max_attempts: 3
+        retry_after_ms: 1000
+        max_delay_ms: 900000
+      slot_retry:
+        retry_after_ms: 10000
+        max_delay_ms: 900000
+      fairness:
+        shares:
+          live: 6
+          backfill: 2
+          maintenance: 2
+      wake:
+        fanout_batch: 200
+      proc:
+        max_execution: 10m
+      health:
+        overdue_grace: 120s
+      limits:
+        max_row_bytes: 4194304
+      retention:
+        jobs: 30d
+        job_runs: 30d
+        thread_cleanup_receipts: 30d
+        sweep_interval: 1h
+        batch: 500
+        thread_cleanup_batch: 100
+
+  - name: process_host
+    kind: ns.requirement
+    meta:
+      value_kind: process.host
+      comment: Process host running the job-worker service and every child/effect process it launches.
+    targets:
+      - entry: kickside.core.jobs.service:worker.service
+        path: .host
+      - entry: kickside.core.jobs:process_config
+        path: .meta.host_id
+
+  - name: process_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured jobs process host used by dynamic child and effect execution.
+      host_id: ""
+
+  # ─── Packaging / mount test ──────────────────────────────────────────
+  - name: config
+    kind: library.lua
+    meta:
+      comment: Validated jobs runtime policy and the host-mapped resource ids.
+    source: file://config.lua
+    modules:
+      - time
+      - registry
+    imports:
+      registry_version: kickside.core.jobs:registry_version
+      job_types: kickside.core.jobs:types
+
+  - name: run_status
+    kind: library.lua
+    meta:
+      comment: Shared run-history status predicates for schema and terminal cleanup.
+    source: file://run_status.lua
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: types
+    kind: library.lua
+    meta:
+      comment: Job / JobRun / EffectIntent entity shapes and job state vocabulary.
+    source: file://types.lua
+
+  - name: job_class
+    kind: library.lua
+    meta:
+      comment: Job classes declared on worker entries (meta.job_class); awaited types own reserved worker slots.
+    source: file://job_class.lua
+    modules: [registry]
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: clock
+    kind: library.lua
+    meta:
+      comment: UTC timestamp adapter shared by job and core persistence.
+    source: file://clock.lua
+    modules:
+      - time
+      - sql
+
+  - name: proc_supervisor
+    kind: library.lua
+    meta:
+      comment: Monitored process supervision with a hard execution deadline.
+    source: file://proc_supervisor.lua
+    modules:
+      - time
+      - channel
+      - process
+      - funcs
+    imports:
+      clock: kickside.core.jobs:clock
+      error_envelope: kickside.contract:error_envelope
+
+  - name: lease_release
+    kind: library.lua
+    source: file://lease_release.lua
+    modules: [process, funcs]
+    meta:
+      comment: Post-commit lease-release handoff to the registered cleanup consumer.
+
+  # Lease releases and execution controls run under Jobs identities: settling,
+  # revoking and renewing principals need no process messaging authority.
+  - name: signal_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the Jobs lease-release and execution signals message their registered recipients.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: lease_release_signal
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one committed lease release to the registered cleanup consumer.
+    source: file://lease_release.lua
+    method: deliver
+    modules: [process, funcs]
+    security:
+      actor:
+        id: kickside.core.jobs:lease_release_signal
+      policies:
+        - kickside.core.jobs:signal_transport
+
+  - name: execution_signal
+    kind: function.lua
+    meta:
+      private: true
+      comment: Delivers one committed lease revocation or renewal to its token-qualified execution owner.
+    source: file://proc_supervisor.lua
+    method: signal_execution
+    modules: [time, channel, process, funcs]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      clock: kickside.core.jobs:clock
+    security:
+      actor:
+        id: kickside.core.jobs:execution_signal
+      policies:
+        - kickside.core.jobs:signal_transport
+
+  - name: jobs
+    kind: library.lua
+    meta:
+      comment: "Durable jobs API: enqueue, fenced cancellation, lease validation, completion, listing, retention, and health."
+    source: file://jobs.lua
+    modules:
+      - sql
+      - logger
+    imports:
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
+      lease_status: kickside.core.jobs.persist:lease_status
+      wake: kickside.core.jobs.persist:wake
+      clock: kickside.core.jobs:clock
+      completion: kickside.core.jobs.persist:completion
+      retention: kickside.core.jobs.persist:retention
+      thread_teardown: kickside.core.jobs.persist:thread_teardown
+      api_scope: kickside.core.jobs.api:scope
+      lease_release: kickside.core.jobs:lease_release
+      claim: kickside.core.jobs.persist:claim
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  # The config suite's env.set/env.get fixtures (int/duration parsers and the
+  # worker-count override path) are registered in the standalone test harness
+  # (test/_index.yaml), not here: env.set only round-trips a registered variable,
+  # and binding a fixture's storage in src would leak a harness-only id into the
+  # published module and a mounted boot. Keeping them in the harness keeps src
+  # free of any storage reference the mounted app cannot resolve.
+
+  - name: dep.kickside.execution
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Execution trace context shared with every writer of trace-stamped rows.
+    component: kickside/execution
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Migration framework for the module read-model tables.
+    component: wippy/migration
+
+  - name: dep.wippy.security
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Actor, scope, and access resolution framework.
+    component: wippy/security
+
+  - name: registry_version
+    kind: library.lua
+    source: file://registry_version.lua

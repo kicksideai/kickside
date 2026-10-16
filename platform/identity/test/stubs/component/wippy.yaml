@@ -1,0 +1,3 @@
+organization: kickside
+module: component
+description: Test-owned Component seam for the Identity unit harness.

@@ -1,0 +1,228 @@
+version: "1.0"
+namespace: kickside.skills.traits
+
+# Agent surface for the skill store: the Skills trait, its Skill tool, and the
+# build func that pins skills into an agent. The store itself (CRUD + access)
+# lives in the parent `kickside.skills` namespace; these entries call it by id.
+# Agents discover the `skills` trait + tool through the registry (meta.type =
+# agent.trait / tool); there is no code coupling to the agents module.
+
+entries:
+  - name: active_set
+    kind: library.lua
+    meta:
+      comment: Skill-id set helpers (parse/has/add/remove) shared by init_skills, skill_tool, and active_skills.
+    source: file://active_set.lua
+
+  - name: init_skills
+    kind: function.lua
+    meta:
+      comment: Skills trait build func — folds pinned skill bodies (context.skill_ids) into the agent prompt.
+    source: file://init_skills.lua
+    method: execute
+    modules: [funcs]
+    imports:
+      active_set: kickside.skills.traits:active_set
+      types: kickside.skills:types
+
+  - name: active_skills
+    kind: function.lua
+    meta:
+      comment: Skills trait prompt func — injects the session's active skills (active_skills context) into the prompt each step.
+    source: file://active_skills.lua
+    method: execute
+    modules: [funcs, ctx]
+    imports:
+      active_set: kickside.skills.traits:active_set
+      types: kickside.skills:types
+
+  - name: skill_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Skill
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "description": "What to do",
+              "enum": ["list", "use", "activate", "deactivate", "save", "refine", "delete", "share", "unshare"]
+            },
+            "skill_id": { "type": "string", "description": "Skill id (use/activate/deactivate/refine/delete/share)" },
+            "name": { "type": "string", "description": "Skill name (save)" },
+            "description": { "type": "string", "description": "What the skill does + when to use it (save/refine)" },
+            "body": { "type": "string", "description": "Markdown procedure (save/refine)" },
+            "status": { "type": "string", "enum": ["active", "archived"], "description": "Archive or reactivate a skill (refine)" },
+            "agent_id": { "type": "string", "description": "Scope the skill to an agent; omit for user-global" },
+            "user_id": { "type": "string", "description": "Target user (share/unshare)" },
+            "access_mask": { "type": "integer", "description": "Access bits to grant (share); default read" },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "list: skills per page; default 25." },
+            "cursor": { "type": "string", "description": "list: the next_cursor of the previous page." },
+            "files": {
+              "type": "array",
+              "description": "Optional bundled files (save/refine). On refine, providing files fully replaces the prior set; omit to carry them forward.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": { "type": "string", "description": "Path within the skill bundle, e.g. references/api.md or scripts/run.py" },
+                  "kind": { "type": "string", "enum": ["reference", "asset", "script"], "description": "Defaults from the path (scripts/ -> script, assets/ -> asset, else reference)" },
+                  "content": { "type": "string", "description": "File content (text, or base64 when encoding is base64)" },
+                  "encoding": { "type": "string", "enum": ["text", "base64"], "description": "Content encoding; default text" }
+                },
+                "required": ["path", "content"]
+              }
+            }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "skills": {"type": "array", "items": {"type": "object"}, "description": "list: compact skill rows (skill_id, name, status, icon, agent_id, version, version_count, file_count, bundle_size)."},
+            "count": {"type": "integer", "description": "list: number of skills in this page."},
+            "next_cursor": {"type": "string", "description": "list: pass as cursor for the next page; absent on the last page."},
+            "skill": {"type": "object", "description": "use: the full skill record, including its markdown body, name, description and version."},
+            "files": {"type": "array", "items": {"type": "object"}, "description": "use: the bundle's file manifest (path, kind, size); read a file with the SkillFile tool."},
+            "skill_id": {"type": "string", "description": "save/refine/delete/share/unshare: the affected skill."},
+            "version": {"type": "integer", "description": "refine: the new version."},
+            "user_id": {"type": "string", "description": "share/unshare: the target user."},
+            "message": {"type": "string", "description": "Outcome of a write, activate or deactivate action."},
+            "_control": {
+              "type": "object",
+              "description": "activate/deactivate: runtime directive that persists the session's new active_skills set.",
+              "properties": {"context": {"type": "object"}}
+            }
+          },
+          "description": "Successful tool result. Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: Skill
+      llm_description: "Discover, load, author, and refine reusable skills (saved markdown procedures, optionally bundling reference/asset/script files). Use `list` to find a relevant skill (compact rows with name, status and skill_id, 25 per page by default; pass next_cursor as cursor for more), then `use` to load its full record with markdown body, description and file manifest. `activate`/`deactivate` keep a skill in your prompt across turns while you work, and `save`/`refine` improve it over time. Writes return the affected skill_id with a short message. Respects user permissions. Read a file named in a manifest with the SkillFile tool. Failures return no result and a typed tool error with a clear message."
+    source: file://skill_tool.lua
+    modules: [funcs, ctx]
+    method: handler
+    imports:
+      keyset: kickside.contract:keyset
+      active_set: kickside.skills.traits:active_set
+      types: kickside.skills:types
+
+  - name: skill_file_tool
+    kind: function.lua
+    meta:
+      type: tool
+      title: Skill File
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "list the bundle's files or read one", "enum": ["list", "read"] },
+            "skill_id": { "type": "string", "description": "Skill id" },
+            "path": { "type": "string", "description": "File path within the bundle (read)" },
+            "version": { "type": "integer", "description": "Skill version to read from; default the current version" },
+            "kind": { "type": "string", "enum": ["reference", "asset", "script"], "description": "Filter the manifest by kind (list)" },
+            "max_bytes": { "type": "integer", "description": "Reject a file larger than this (read)" },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "list: files per page in path order; default 25." },
+            "cursor": { "type": "string", "description": "list: the next_cursor of the previous page." },
+            "format": { "type": "string", "enum": ["text", "base64"], "description": "Return content as text (default) or base64 for binary assets (read)" }
+          },
+          "required": ["action", "skill_id"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "required": ["success"],
+          "properties": {
+            "success": {"type": "boolean", "const": true},
+            "files": {"type": "array", "items": {"type": "object"}, "description": "list: compact file rows (path, kind, mime_type, size_bytes, executable)."},
+            "count": {"type": "integer", "description": "list: number of files in this page."},
+            "next_cursor": {"type": "string", "description": "list: pass as cursor for the next page; absent on the last page."},
+            "path": {"type": "string", "description": "read: the file path."},
+            "kind": {"type": "string"},
+            "mime_type": {"type": "string"},
+            "size_bytes": {"type": "integer"},
+            "sha256": {"type": "string"},
+            "executable": {"type": "boolean"},
+            "encoding": {"type": "string", "enum": ["text", "base64"], "description": "read: how content is encoded."},
+            "content": {"type": "string", "description": "read: the whole file content (base64 when encoding is base64)."}
+          },
+          "description": "Successful tool result. Failures return no result and a typed tool error with a clear message."
+        }
+      llm_alias: SkillFile
+      llm_description: "List or read one skill bundle's files (references, assets, scripts) on demand, addressed by the skill_id and path from the Skill tool's `use` action manifest. `list` returns file records (path, kind, size) 25 per page by default, with next_cursor for more; `read` returns that one file's contents (binary assets base64-encoded when format=base64). Respects user permissions. Failures return no result and a typed tool error with a clear message."
+    source: file://skill_file_tool.lua
+    modules: [funcs]
+    method: handler
+    imports:
+      keyset: kickside.contract:keyset
+      types: kickside.skills:types
+
+  - name: skills
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Skills
+      public: true
+      icon: tabler:bulb
+      comment: Discovers, activates, and authors reusable skills the agent follows for a task.
+      tags:
+        - skills
+      # The trait's config component: enabling Skills on an agent reveals the skill
+      # picker in the agent editor; chosen ids land in trait_contexts
+      # (context.skill_ids), which init_skills pins into the prompt.
+      web_component: kickside-skill-picker
+      context_schema:
+        type: object
+        properties:
+          skill_ids:
+            type: array
+            title: Pinned skills
+            role: picker
+            web_component: kickside-skill-picker
+            items: { type: string }
+        additionalProperties: false
+    # Dynamic trait: the static prompt + Skill tool give on-demand discovery of any
+    # readable skill; build_func pins specific skills into the prompt when the agent
+    # supplies `context.skill_ids` (one or two baked-in skills); prompt_func injects
+    # the session's active set (the agent's own runtime selection) each step.
+    build_func_id: kickside.skills.traits:init_skills
+    prompt_func_id: kickside.skills.traits:active_skills
+    prompt: |
+      You have the **Skill** tool to discover, load, activate, author, and refine
+      reusable skills — saved markdown procedures you follow and improve over time.
+      A "Pinned skills" section (set by your configuration) and an "Active skills"
+      section (the ones you activated) appear below when present — follow those
+      directly; use the tool to find, load, activate, or refine any others.
+
+      **Actions** (pass as `action`):
+
+      | Action | Args | Description |
+      |--------|------|-------------|
+      | `list` | `[agent_id]` | List available skills (name + status). Use `use` to load a description and procedure. |
+      | `use` | `skill_id` | Load a skill's full body once, to read it now. |
+      | `activate` | `skill_id` | Keep a skill in your prompt across turns (under "Active skills") while you work through it. |
+      | `deactivate` | `skill_id` | Remove a skill you activated from your prompt once you are done with it. |
+      | `save` | `name`, `description`, `body`, `[agent_id]` | Author a new skill from what you just learned. |
+      | `refine` | `skill_id`, `[body]`, `[description]`, `[status]` | Improve an existing skill (new version) or archive/reactivate it. |
+      | `delete` | `skill_id` | Remove a skill. |
+      | `share` | `skill_id`, `user_id`, `[access_mask]` | Grant another user access to a skill. |
+      | `unshare` | `skill_id`, `user_id` | Revoke another user's access. |
+
+      Workflow: `list` to find a relevant skill, then `use` for a one-off read or
+      `activate` to keep it loaded while you follow a multi-step procedure (and
+      `deactivate` when finished). Read any referenced file with the **SkillFile**
+      tool. After solving something new or better, `save` or `refine` so you get
+      more capable over time. Pass `agent_id` to scope a skill to a specific agent
+      (e.g. managing skills for another agent); omit it for skills shared across the
+      user's agents.
+
+      A skill can bundle files: references (loaded on demand), assets (binaries it
+      depends on), and scripts (stored for a future runner — not executed today).
+      `use` lists them; read one with **SkillFile**.
+    tools:
+      - kickside.skills.traits:skill_tool
+      - kickside.skills.traits:skill_file_tool

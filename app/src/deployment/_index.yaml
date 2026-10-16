@@ -1,0 +1,615 @@
+version: '1.0'
+namespace: app.deployment
+entries:
+- name: deployment_runtime_image
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_runtime_image.input
+      path: .value
+  meta:
+    value_kind: cloud.image
+    value_type: string
+  default: |
+    {
+      "name": "runtime-image",
+      "repository": "wippy/kickside",
+      "platform": "linux/arm64",
+      "retention": 10,
+      "package_coordinate": "${module.coordinate}",
+      "runtime_url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-arm64",
+      "checksum": "171b81112e54db301e05e18e9a0bc9c43997514d8e38570fb334fecca4385f3d",
+      "signature": "uFCesv545uEhrwepxgxs7U0U6k5l5jAHzcKKP+PleTqlsg1QgxYEsW1xc0k9CUnFxzpn3nZV49Edj0j5EZNnBQ==",
+      "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
+      "hub_token_secret": {
+        "name": "hub-token",
+        "key": "token"
+      },
+      "temporal": {
+        "server": {
+          "url": "https://github.com/temporalio/temporal/releases/download/v1.31.2/temporal_1.31.2_linux_arm64.tar.gz",
+          "checksum": "662a79276ce97fac71637a76727278b28849078caa4dda25f3b7ba0567109e8b"
+        },
+        "cli": {
+          "url": "https://github.com/temporalio/cli/releases/download/v1.8.2/temporal_cli_1.8.2_linux_arm64.tar.gz",
+          "checksum": "83600a8fac6e3da54093e5da6918d399f501532b9f1172235603f9606f4ac6e4"
+        }
+      },
+      "dependencies": {
+        "hub-token": {
+          "target": "hub-token",
+          "kind": "configure"
+        }
+      },
+      "compensation": "delete_on_fail",
+      "target_overrides": {
+        "kubernetes": {
+          "platform": "auto",
+          "runtime_sources": {
+            "amd64": {
+              "checksum": "0e2e4d2a1c11075e5ead793e4e32f7b37e838af643211e6e42d3fcfa6afdeb9e",
+              "signature": "U7rwuQJpA43IDB/SXhZFbeVYsl90DOQsaN2vSiQ/w0suMBApgMOvGi/F1lk5Pb/xCLEgtsnkqkKW/EjfP+XmCA==",
+              "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
+              "url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-amd64"
+            },
+            "arm64": {
+              "checksum": "171b81112e54db301e05e18e9a0bc9c43997514d8e38570fb334fecca4385f3d",
+              "signature": "uFCesv545uEhrwepxgxs7U0U6k5l5jAHzcKKP+PleTqlsg1QgxYEsW1xc0k9CUnFxzpn3nZV49Edj0j5EZNnBQ==",
+              "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
+              "url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-arm64"
+            }
+          },
+          "temporal": null
+        }
+      }
+    }
+- name: deployment_application_data
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_application_data.input
+      path: .value
+  meta:
+    value_kind: cloud.volume
+    value_type: string
+  default: |
+    {
+      "name": "application-data",
+      "capacity_bytes": 21474836480,
+      "access_modes": [
+        "ReadWriteOnce"
+      ],
+      "retention": "delete",
+      "dependencies": {
+        "network": {
+          "target": "network",
+          "kind": "attachment"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_encryption_key_secret
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_encryption_key_secret.input
+      path: .value
+  meta:
+    value_kind: cloud.secret
+    value_type: string
+  default: |
+    {
+      "name": "encryption-key",
+      "reference": {
+        "$ref": {
+          "resource_id": "${env.id}/secret-material",
+          "output_key": "ENCRYPTION_KEY"
+        }
+      },
+      "key": "key",
+      "source_key": "ENCRYPTION_KEY",
+      "dependencies": {
+        "material": {
+          "target": "secret-material",
+          "kind": "configure"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_network
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_network.input
+      path: .value
+  meta:
+    value_kind: cloud.network
+    value_type: string
+  default: |
+    {
+      "name": "network",
+      "isolated": true,
+      "default_deny": true,
+      "ingress": [],
+      "egress": [
+        {
+          "kind": "dns",
+          "value": "cluster_dns"
+        },
+        {
+          "kind": "public_https",
+          "value": "internet"
+        }
+      ],
+      "compensation": "delete_on_fail",
+      "target_overrides": {
+        "kubernetes": {
+          "ingress": [
+            {"kind": "dependency", "value": "application"}
+          ],
+          "egress": [
+            {"kind": "dependency", "value": "database"},
+            {"kind": "dns", "value": "cluster_dns"},
+            {"kind": "public_https", "value": "internet"}
+          ]
+        }
+      }
+    }
+- name: deployment_admin_password
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_admin_password.input
+      path: .value
+  meta:
+    value_kind: cloud.input
+    value_type: string
+  default: |
+    {
+      "name": "admin_password",
+      "type": "string",
+      "format": "password",
+      "secret": true,
+      "writeOnly": true,
+      "required": true,
+      "minLength": 16
+    }
+- name: deployment_application
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_application.input
+      path: .value
+  meta:
+    value_kind: cloud.application
+    value_type: string
+  default: |
+    {
+      "name": "application",
+      "image": {
+        "$ref": {
+          "resource_id": "${env.id}/runtime-image",
+          "output_key": "image"
+        }
+      },
+      "replicas": 1,
+      "port": 8085,
+      "health_path": "/api/public/health",
+      "cpu_millicores": 1000,
+      "memory_bytes": 2147483648,
+      "variables": {
+        "PUBLIC_API_URL": "",
+        "KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL": "${inputs.admin_email}",
+        "KICKSIDE_PG_HOST": {
+          "$ref": {
+            "resource_id": "${env.id}/database",
+            "output_key": "private_service"
+          }
+        },
+        "KICKSIDE_PG_PORT": "5432",
+        "KICKSIDE_PG_DATABASE": "kickside",
+        "KICKSIDE_PG_USERNAME": "kickside"
+      },
+      "environment": [
+        {
+          "name": "KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD",
+          "secret_name": "admin-password",
+          "key": "password"
+        },
+        {
+          "name": "ENCRYPTION_KEY",
+          "secret_name": "encryption-key",
+          "key": "key"
+        },
+        {
+          "name": "WIPPY_TOKEN",
+          "secret_name": "hub-token",
+          "key": "token"
+        },
+        {
+          "name": "KICKSIDE_PG_PASSWORD",
+          "secret_name": "database-password",
+          "key": "password"
+        }
+      ],
+      "command": [
+        "/bin/sh",
+        "-c"
+      ],
+      "args": [
+        "mkdir -p /data/.wippy && cp /app/wippy.lock /data/wippy.lock && mkdir -p /data/.wippy/vendor && cp -R /app/.wippy/vendor/. /data/.wippy/vendor/ && exec /usr/local/bin/wippy run -c --profile postgres --set artifact.materialization_root=/data/.wippy/artifacts --set \"vars.postgres_history_dsn=host=$KICKSIDE_PG_HOST port=$KICKSIDE_PG_PORT dbname=$KICKSIDE_PG_DATABASE user=$KICKSIDE_PG_USERNAME password=$KICKSIDE_PG_PASSWORD sslmode=verify-full sslrootcert=/etc/ssl/certs/aws-rds-global-bundle.pem\" --set \"vars.postgres_history_schema=wippy_registry\" -o app.env:file:file_path=/data/.env --set vars.instance_data_dir=/data -o keeper.components:fe_fs:directory=/data/project/frontend -o keeper.components:previews_fs:directory=/data/project/static/public/previews -o keeper.components:project_fs:directory=/data/project -o keeper.components:pw_runtime_fs:directory=/data/.wippy/fe-playwright-runtime -o keeper.components:siblings_fs:directory=/data -o keeper.components:staging_fs:directory=/data/.wippy/fe-sessions -o keeper.gov:source_fs:directory=/data/project/src -o keeper.state:db:file=/data/.wippy/state_reflect.db"
+      ],
+      "mounts": [
+        {
+          "volume_name": "application-data",
+          "path": "/data"
+        }
+      ],
+      "working_directory": "/data",
+      "temporal": {
+        "enabled": true,
+        "namespace": "default",
+        "task_queue": "wippy-health",
+        "schedule": "* * * * *",
+        "database_host": {
+          "$ref": {
+            "resource_id": "${env.id}/database",
+            "output_key": "private_service"
+          }
+        },
+        "database_port": 5432,
+        "database_user": "kickside",
+        "password_secret": "database-password",
+        "password_secret_key": "password",
+        "security_secret": "encryption-key",
+        "security_secret_key": "key",
+        "persistence_database": "temporal",
+        "visibility_database": "temporal_visibility"
+      },
+      "dependencies": {
+        "image": {
+          "target": "runtime-image",
+          "kind": "health"
+        },
+        "database": {
+          "target": "database",
+          "kind": "health"
+        },
+        "data": {
+          "target": "application-data",
+          "kind": "attachment"
+        },
+        "admin-password": {
+          "target": "admin-password",
+          "kind": "configure"
+        },
+        "encryption-key": {
+          "target": "encryption-key",
+          "kind": "configure"
+        },
+        "hub-token": {
+          "target": "hub-token",
+          "kind": "configure"
+        },
+        "network": {
+          "target": "network",
+          "kind": "attachment"
+        }
+      },
+      "compensation": "delete_on_fail",
+      "target_overrides": {
+        "kubernetes": {
+          "args": [
+            "mkdir -p /data/.wippy && cp /app/wippy.lock /data/wippy.lock && mkdir -p /data/.wippy/vendor && cp -R /app/.wippy/vendor/. /data/.wippy/vendor/ && exec /usr/local/bin/wippy run -c --profile postgres --set vars.postgres_sslmode=disable --set artifact.materialization_root=/data/.wippy/artifacts --set \"vars.postgres_history_dsn=host=$KICKSIDE_PG_HOST port=$KICKSIDE_PG_PORT dbname=$KICKSIDE_PG_DATABASE user=$KICKSIDE_PG_USERNAME password=$KICKSIDE_PG_PASSWORD sslmode=disable\" --set \"vars.postgres_history_schema=wippy_registry\" -o app.env:file:file_path=/data/.env --set vars.instance_data_dir=/data -o keeper.components:fe_fs:directory=/data/project/frontend -o keeper.components:previews_fs:directory=/data/project/static/public/previews -o keeper.components:project_fs:directory=/data/project -o keeper.components:pw_runtime_fs:directory=/data/.wippy/fe-playwright-runtime -o keeper.components:siblings_fs:directory=/data -o keeper.components:staging_fs:directory=/data/.wippy/fe-sessions -o keeper.gov:source_fs:directory=/data/project/src -o keeper.state:db:file=/data/.wippy/state_reflect.db"
+          ],
+          "working_directory": "/data",
+          "memory_bytes": 1073741824,
+          "temporal": null
+        }
+      }
+    }
+- name: deployment_endpoint
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_endpoint.input
+      path: .value
+  meta:
+    value_kind: cloud.endpoint
+    value_type: string
+  default: |
+    {
+      "name": "endpoint",
+      "application_id": "application",
+      "service_handle": {
+        "$ref": {
+          "resource_id": "${env.id}/application",
+          "output_key": "service_handle"
+        }
+      },
+      "network_id": "network",
+      "protocol": "https",
+      "port": 8085,
+      "exposure": "public",
+      "protection": "none",
+      "health_dependency": "application",
+      "dependencies": {
+        "application": {
+          "target": "application",
+          "kind": "health"
+        },
+        "network": {
+          "target": "network",
+          "kind": "attachment"
+        }
+      },
+      "compensation": "delete_on_fail",
+      "target_overrides": {
+        "kubernetes": {
+          "allow_tunnel": true,
+          "protocol": "http"
+        }
+      }
+    }
+- name: deployment_hub_token
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_hub_token.input
+      path: .value
+  meta:
+    value_kind: cloud.input
+    value_type: string
+  default: |
+    {
+      "name": "hub_token",
+      "type": "string",
+      "format": "password",
+      "secret": true,
+      "writeOnly": true,
+      "required": true
+    }
+- name: deployment_hub_token_secret
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_hub_token_secret.input
+      path: .value
+  meta:
+    value_kind: cloud.secret
+    value_type: string
+  default: |
+    {
+      "name": "hub-token",
+      "reference": {
+        "$ref": {
+          "resource_id": "${env.id}/secret-material",
+          "output_key": "HUB_TOKEN"
+        }
+      },
+      "key": "token",
+      "source_key": "HUB_TOKEN",
+      "dependencies": {
+        "material": {
+          "target": "secret-material",
+          "kind": "configure"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_admin_email
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_admin_email.input
+      path: .value
+  meta:
+    value_kind: cloud.input
+    value_type: string
+  default: |
+    {
+      "name": "admin_email",
+      "type": "string",
+      "format": "email",
+      "required": true
+    }
+- name: deployment_admin_password_secret
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_admin_password_secret.input
+      path: .value
+  meta:
+    value_kind: cloud.secret
+    value_type: string
+  default: |
+    {
+      "name": "admin-password",
+      "reference": {
+        "$ref": {
+          "resource_id": "${env.id}/secret-material",
+          "output_key": "ADMIN_PASSWORD"
+        }
+      },
+      "key": "password",
+      "source_key": "ADMIN_PASSWORD",
+      "dependencies": {
+        "material": {
+          "target": "secret-material",
+          "kind": "configure"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_database
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_database.input
+      path: .value
+  meta:
+    value_kind: cloud.postgresql
+    value_type: string
+  default: |
+    {
+      "name": "database",
+      "image": "public.ecr.aws/docker/library/postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0",
+      "database": "kickside",
+      "user": "kickside",
+      "password_secret": "database-password",
+      "password_secret_key": "password",
+      "volume_claim": "database-data",
+      "service": "database",
+      "cpu_millicores": 2000,
+      "memory_bytes": 1073741824,
+      "volume_bytes": 21474836480,
+      "dependencies": {
+        "password": {
+          "target": "database-password",
+          "kind": "configure"
+        },
+        "data": {
+          "target": "database-data",
+          "kind": "attachment"
+        },
+        "network": {
+          "target": "network",
+          "kind": "attachment"
+        }
+      },
+      "compensation": "delete_on_fail",
+      "target_overrides": {
+        "kubernetes": {
+          "image": "docker.io/library/postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0",
+          "cpu_millicores": 500,
+          "memory_bytes": 536870912,
+          "image_auth": "none"
+        }
+      }
+    }
+- name: deployment_database_data
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_database_data.input
+      path: .value
+  meta:
+    value_kind: cloud.volume
+    value_type: string
+  default: |
+    {
+      "name": "database-data",
+      "capacity_bytes": 21474836480,
+      "access_modes": [
+        "ReadWriteOnce"
+      ],
+      "retention": "delete",
+      "dependencies": {
+        "network": {
+          "target": "network",
+          "kind": "attachment"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_database_password_secret
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_database_password_secret.input
+      path: .value
+  meta:
+    value_kind: cloud.secret
+    value_type: string
+  default: |
+    {
+      "name": "database-password",
+      "reference": {
+        "$ref": {
+          "resource_id": "${env.id}/secret-material",
+          "output_key": "DATABASE_PASSWORD"
+        }
+      },
+      "key": "password",
+      "source_key": "DATABASE_PASSWORD",
+      "dependencies": {
+        "material": {
+          "target": "secret-material",
+          "kind": "configure"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_secret_material
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_secret_material.input
+      path: .value
+  meta:
+    value_kind: cloud.secret_material
+    value_type: string
+  default: |
+    {
+      "name": "secret-material",
+      "generate": {
+        "DATABASE_PASSWORD": {
+          "format": "password",
+          "length": 32
+        },
+        "ENCRYPTION_KEY": {
+          "format": "hex",
+          "bytes": 32
+        }
+      },
+      "import": {
+        "ADMIN_PASSWORD": "admin_password",
+        "HUB_TOKEN": "hub_token"
+      },
+      "compensation": "delete_on_fail"
+    }
+
+- name: deployment_runtime_image.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_application_data.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_encryption_key_secret.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_network.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_admin_password.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_application.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_endpoint.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_hub_token.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_hub_token_secret.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_admin_email.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_admin_password_secret.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_database.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_database_data.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_database_password_secret.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_secret_material.input
+  kind: registry.entry
+  value: null

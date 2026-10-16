@@ -1,0 +1,265 @@
+version: '1.0'
+namespace: app
+entries:
+- name: backoff_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://backoff_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_status: kickside.core.jobs.persist:lease_status
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: lifecycle_helpers_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://lifecycle_helpers_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: transitions_completion_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://transitions_completion_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_status: kickside.core.jobs.persist:lease_status
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: transitions_revocation_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://transitions_revocation_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_status: kickside.core.jobs.persist:lease_status
+    reclaim: kickside.core.jobs.persist:reclaim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: run_history_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://run_history_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_status: kickside.core.jobs.persist:lease_status
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: job_enqueue_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://job_enqueue_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    threads_writer: kickside.core.threads.persist:writer
+    retention_notifier: kickside.core.retention:notifier
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_status: kickside.core.jobs.persist:lease_status
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+- name: wake_demand_test
+  kind: function.lua
+  meta:
+    title: Job Lifecycle
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Backoff, run history, and guarded job transitions.
+  source: file://wake_demand_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    config: kickside.core.jobs:config
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_status: kickside.core.jobs.persist:lease_status
+    claim: kickside.core.jobs.persist:claim
+    jobs: kickside.core.jobs:jobs
+    wake: kickside.core.jobs.persist:wake
+    job_fixture: app:job_fixture
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+
+- name: slot_purge_race_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_core
+  source: file://slot_purge_race_test.lua
+  method: run
+  modules: [sql, uuid, time, channel]
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    slot_purge: kickside.core.jobs.persist:slot_purge
+- name: owner_listing_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_core
+  source: file://owner_listing_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
+- name: listing_pagination_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_core
+  source: file://listing_pagination_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    jobs: kickside.core.jobs:jobs
+    job_fixture: app:job_fixture
+- name: terminal_failure_test
+  kind: function.lua
+  meta:
+    title: Job Terminal Failure
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: One-shot jobs end dead at max_attempts; slots are not bounded by it.
+  source: file://terminal_failure_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    job_fixture: app:job_fixture
+    worker_completion: kickside.core.jobs.service:worker_completion

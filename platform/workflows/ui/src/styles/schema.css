@@ -1,0 +1,35 @@
+/* ══ SCHEMA EDITOR (wc-schema-editor) ════════════════════════════════════════
+   The one shared JSON-schema / JSON editor: code + optional form view, with an
+   AI-assist affordance on schema surfaces. */
+.wf-sed { display: flex; flex-direction: column; gap: 8px; container-type: inline-size; }
+.wf-sed-bar { display: flex; align-items: center; gap: 8px; }
+.wf-sed-label { margin: 0; }
+.wf-sed-spacer { flex: 1; }
+.wf-sed-views { flex: none; }
+.wf-sed-code { width: 100%; }
+.wf-sed-assist { display: flex; gap: 6px; align-items: stretch; }
+.wf-sed-intent { flex: 1; min-width: 0; }
+.wf-sed-go { flex: none; white-space: nowrap; }
+.wf-sed-draft {
+  display: grid; gap: 10px; padding: 10px 0 0 10px;
+  border-radius: 0;
+  background: transparent;
+  border: 0; border-left: 2px solid var(--wf-line-strong);
+  color: var(--p-text-color); font-size: var(--wf-fs-meta); line-height: 1.5;
+}
+.wf-sed-draft-copy { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px; min-width: 0; }
+.wf-sed-draft-copy > span { min-width: 0; overflow-wrap: anywhere; }
+.wf-sed-draft-copy > svg { width: 15px; height: 15px; flex: none; margin-top: 2px; color: var(--wf-accent-fg); }
+.wf-sed-draft-actions {
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px;
+  padding-top: 9px; border-top: 1px solid var(--p-content-border-color);
+}
+.wf-sed-draft-actions > * { flex: 0 0 auto; }
+.wf-sed-msg { margin: 2px 0 0; }
+
+/* Inspector panels are intentionally narrow. Keep the prompt readable instead of
+   squeezing it beside a wide action; this is the state users meet first on Start. */
+@container (max-width: 380px) {
+  .wf-sed-assist { flex-direction: column; }
+  .wf-sed-go { width: 100%; }
+}

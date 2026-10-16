@@ -1,0 +1,690 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/security. Provides the host resources the
+# module requires (app:db, app:processes, app:api, app:gateway, env storage, a
+# permissive actor scope) and boots contract/bootloader/migration so the
+# co-located suites drive the scope catalog and the DB -> security.scope
+# projection directly. Harness-only; never published.
+
+entries:
+  - name: projection_status_deny
+    kind: security.policy
+    policy:
+      actions: access
+      resources: kickside.security.api:projection_status.endpoint
+      effect: deny
+  - name: projection_status_probe
+    kind: function.lua
+    source: file://projection_status_probe.lua
+    method: run
+    imports:
+      api_errors: kickside.security.api:errors
+      projection_status: kickside.security.api:projection_status
+  - name: projection_status_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://projection_status_test.lua
+    method: run
+    modules: [registry, security, funcs]
+    imports:
+      test: wippy.test:test
+      scope_projection: kickside.security.service:scope_projection
+  - name: delegation_admin_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://delegation_admin_test.lua
+    method: run
+    modules: [registry, security, funcs, uuid, sql, json, channel, time]
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:registry_fixture
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_store: kickside.security.persist:scope_store
+      execution_identity: kickside.execution:execution_identity
+  - name: delegation_save
+    kind: function.lua
+    source: file://delegation_probe.lua
+    method: save
+    security:
+      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_validate_call]
+    imports:
+      delegation: kickside.security:delegation
+  - name: delegation_revoke
+    kind: function.lua
+    source: file://delegation_probe.lua
+    method: revoke
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
+    imports:
+      delegation: kickside.security:delegation
+  - name: delegation_list
+    kind: function.lua
+    source: file://delegation_probe.lua
+    method: list
+    imports:
+      delegation: kickside.security:delegation
+  - name: delegation_validation
+    kind: function.lua
+    source: file://delegation_validation_fixture.lua
+    method: check
+    modules: [registry, funcs]
+  - name: delegation_validation_call
+    kind: function.lua
+    source: file://delegation_validation_fixture.lua
+    method: call
+    modules: [registry, funcs]
+  - name: delegation_admin
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, access]
+      resources: '*'
+      effect: allow
+  - name: delegation_writer
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, registry.apply]
+      resources: '*'
+      effect: allow
+  - name: delegation_component_admin
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, kickside.component.admin]
+      resources: '*'
+      effect: allow
+
+  - name: invalidation_records
+    kind: store.memory
+    lifecycle: {auto_start: true}
+  - name: invalidate_sessions
+    kind: function.lua
+    source: file://invalidate_sessions.lua
+    method: run
+    modules: [store, security, time]
+
+  - name: fence_delegations
+    kind: function.lua
+    source: file://invalidate_sessions.lua
+    method: fence
+    modules: [store, security, time]
+
+  - name: declared_group
+    kind: registry.entry
+    meta: { type: kickside.security.group_composition }
+    group_id: app:declared_members
+    select:
+      meta.intent: module_access
+
+  - name: module_access
+    kind: security.policy
+    meta:
+      title: Module access
+      surface: test.module
+      intent: module_access
+      includes: [app:module_runtime]
+    policy:
+      actions: access
+      resources: app:module.endpoint
+      effect: allow
+
+  - name: module_runtime
+    kind: security.policy
+    meta: { private: true }
+    policy:
+      actions: [registry.get, registry.find, funcs.call]
+      resources: app:module_view
+      effect: allow
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    version: "*"
+    component: wippy/test
+
+  - name: scope_catalog_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+      comment: Scope catalog merges role descriptors with the policies carrying their groups and classifies internal scopes.
+    source: file://scope_catalog_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      scope_catalog: kickside.security.api:scope_catalog
+
+  - name: scope_projection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+      comment: DB custom scopes round-trip through the store and reconcile idempotently into security.scope registry entries.
+    source: file://scope_projection_test.lua
+    method: run
+    modules:
+      - registry
+      - time
+      - security
+      - store
+    imports:
+      test: wippy.test:test
+      scope_store: kickside.security.persist:scope_store
+      scope_projection: kickside.security.service:scope_projection
+      security_consts: kickside.security:security_consts
+
+  - name: run_as_projection_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+      comment: Concurrent requests for one group set share one projection pass.
+    source: file://run_as_projection_test.lua
+    method: run
+    modules: [registry, security, channel, time]
+    imports:
+      test: wippy.test:test
+
+  - name: scope_reconcile_handoff_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_security, group: KickSide Security }
+    source: file://scope_reconcile_handoff_test.lua
+    method: run
+    modules: [registry, channel, time, sql, security, funcs, uuid]
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      test: wippy.test:test
+      scope_projection: kickside.security.service:scope_projection
+      scope_store: kickside.security.persist:scope_store
+      security_consts: kickside.security:security_consts
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: scope_request_and_leave
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Sends a reconcile request whose reply destination is a function frame that has already returned.
+    source: file://scope_request_and_leave.lua
+    method: run
+
+  - name: registry_fixture
+    kind: library.lua
+    source: file://registry_fixture.lua
+    modules: [registry, time]
+
+  - name: registry_fixture_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security, group: KickSide Security}
+    source: file://registry_fixture_test.lua
+    method: run
+    modules: [registry, time]
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:registry_fixture
+
+  - name: scope_projector_lifecycle_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+      comment: The scope projector survives a departed caller, answers queued requests with shared projection passes, and restarts under its name after an exit.
+    source: file://scope_projector_lifecycle_test.lua
+    method: run
+    modules: [registry, security, channel, time, funcs, sql, store]
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:registry_fixture
+      security_consts: kickside.security:security_consts
+      scope_store: kickside.security.persist:scope_store
+      scope_projection: kickside.security.service:scope_projection
+
+  - name: scope_projector_upgrade_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security, group: KickSide Security}
+    source: file://scope_projector_upgrade_test.lua
+    method: run
+    modules: [registry, channel, time, store, funcs, security]
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:registry_fixture
+      security_consts: kickside.security:security_consts
+      scope_store: kickside.security.persist:scope_store
+
+  - name: reconcile_constrained
+    kind: security.policy
+    meta:
+      comment: Runtime scope without process messaging authority, as a group principal holds; reconcile requests reach the projector through the security identity.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, registry.get, registry.find, env.get, db.get]
+      effect: allow
+
+  - name: reconcile_probe
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Requests one projection pass through the shared client in the caller's frame.
+    source: file://reconcile_probe.lua
+    method: run
+    imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the security suites.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  - name: user
+    kind: security.policy
+    meta:
+      comment: Permissive scope the security suites run their actors under.
+    groups:
+      - security_test
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Security mounted as the single package root; this harness supplies every host seam it requires.
+    component: kickside/security
+    parameters:
+      - name: kickside.security:delegation_validator
+        value: app:delegation_validation
+      - name: kickside.security:target_db
+        value: app:db
+      - name: kickside.security:api_router
+        value: app:api
+      - name: kickside.security:ui_server
+        value: app:gateway
+      - name: kickside.security:sessions_invalidator
+        value: app:invalidate_sessions
+      - name: kickside.security:delegation_fencer
+        value: app:fence_delegations
+      - name: kickside.security:process_host
+        value: app:processes
+
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Shared contracts the security module's scope catalog binding implements.
+    component: kickside/contract
+    parameters:
+      - name: kickside.contract.http:user_security_scope
+        value: app:unassigned_endpoints
+
+  - name: dep.wippy.security
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Actor, scope, and access resolution framework; supplies the wippy.security:process group the bootloader service runs under.
+    component: wippy/security
+
+  - name: dep.wippy.migration
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Points the migration bootloader at the test database.
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Bootloader applies the security migrations on boot.
+    component: wippy/bootloader
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: producer_capability
+    kind: security.policy
+    meta: { private: true, service_only: true }
+    groups: [app:producer_service]
+    policy:
+      actions: threads.output.publish
+      resources: app:producer_event
+      effect: allow
+  - name: producer_wrapper
+    kind: security.policy
+    meta: { includes: [app:producer_capability] }
+    policy:
+      actions: registry.get
+      resources: app:producer_event
+      effect: allow
+  - name: producer_scope_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_security }
+    source: file://producer_scope_test.lua
+    modules: [security]
+    imports:
+      test: wippy.test:test
+      scope_catalog: kickside.security.api:scope_catalog
+      scope_store: kickside.security.persist:scope_store
+      scope_projection: kickside.security.service:scope_projection
+    method: run
+
+  - name: policy_composition_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://policy_composition_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      composition: kickside.security:policy_composition
+
+  - name: security_persistence_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://security_persistence_native_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      scopes: kickside.security.persist:scope_store
+      groups: kickside.security.persist:group_sets
+      projection: kickside.security.service:scope_projection
+
+  - name: native_fingerprint_failure
+    kind: library.lua
+    source: file://native_fingerprint_failure.lua
+  - name: membership_native_failure_binding
+    kind: function.lua
+    source: file://native_membership_failure_probe.lua
+    method: run
+    imports:
+      classifier: kickside.security.binding:classify_membership_effect
+      fingerprints: app:native_fingerprint_failure
+  - name: membership_native_failure_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://membership_native_failure_test.lua
+    method: run
+    modules: [funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: catalog_native_failure_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://catalog_native_failure_test.lua
+    method: run
+    modules: [sql, uuid, funcs, contract]
+    imports:
+      test: wippy.test:test
+      catalog: kickside.security.api:scope_catalog
+      scopes: kickside.security.persist:scope_store
+      canonical_json: kickside.contract:canonical_json
+
+  - name: http_context_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://http_context_native_test.lua
+    method: run
+    modules: [funcs, http]
+    imports:
+      test: wippy.test:test
+      canonical_json: kickside.contract:canonical_json
+
+  - name: http_writer_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://http_writer_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      api_errors: kickside.security.api:errors
+
+  - name: scope_write_ack_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://scope_write_ack_native_test.lua
+    method: run
+    modules: [sql, uuid, registry, funcs]
+    imports:
+      test: wippy.test:test
+      scopes: kickside.security.persist:scope_store
+      ack_probe: app:scope_write_ack_fixture
+
+  - name: scope_write_ack_fixture
+    kind: library.lua
+    source: file://scope_write_ack_probe.lua
+    imports:
+      scopes: kickside.security.persist:scope_store
+
+  - name: scope_write_ack_probe
+    kind: function.lua
+    source: file://scope_write_ack_probe.lua
+    method: run
+    imports:
+      scopes: kickside.security.persist:scope_store
+
+  - name: http_output_native_fixture
+    kind: library.lua
+    source: file://http_output_native_probe.lua
+    modules: [json]
+    imports:
+      api_errors: kickside.security.api:errors
+      list_scopes: kickside.security.api:list_scopes
+      list_policies: kickside.security.api:list_policies
+      save_scope: kickside.security.api:save_scope
+      delete_scope: kickside.security.api:delete_scope
+
+  - name: http_output_native_probe
+    kind: function.lua
+    source: file://http_output_native_probe.lua
+    method: run
+    modules: [json]
+    imports:
+      api_errors: kickside.security.api:errors
+      list_scopes: kickside.security.api:list_scopes
+      list_policies: kickside.security.api:list_policies
+      save_scope: kickside.security.api:save_scope
+      delete_scope: kickside.security.api:delete_scope
+
+  - name: http_output_native_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://http_output_native_test.lua
+    method: run
+    modules: [funcs, uuid, channel, time, sql, registry]
+    imports:
+      test: wippy.test:test
+      probe: app:http_output_native_fixture
+      scopes: kickside.security.persist:scope_store
+      reconcile: kickside.security:trigger_reconcile
+
+  - name: delegation_composition_probe
+    kind: function.lua
+    source: file://delegation_composition_probe.lua
+    method: run
+    modules: [sql, json]
+    imports:
+      scopes: kickside.security.persist:scope_store
+      composition: kickside.security:policy_composition
+  - name: delegation_composition_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://delegation_composition_test.lua
+    method: run
+    modules: [registry, security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      scopes: kickside.security.persist:scope_store
+      projection: kickside.security.service:scope_projection
+  - name: delegation_composition_admin
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, db.get, access]
+      resources: [app:delegation_composition_probe, app:db, kickside.security:db_config, 'kickside.security.api:*', 'app:*']
+      effect: allow
+  - name: delegation_composition_writer
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, db.get, registry.apply]
+      resources: '*'
+      effect: allow
+  - name: delegation_composition_component_admin
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, db.get, 'kickside.component.admin']
+      resources: '*'
+      effect: allow
+
+  - name: delegation_composition_scoped_writer
+    kind: security.policy
+    policy:
+      actions: registry.apply
+      resources: app:managed_execution_delegation
+      effect: allow
+  - name: delegation_composition_other_writer
+    kind: security.policy
+    policy:
+      actions: registry.apply
+      resources: app:different_execution_delegation
+      effect: allow
+
+  - name: policy_binding_continuity_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+    source: file://policy_binding_continuity_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      policy_groups: kickside.security.service:policy_groups
+      security_consts: kickside.security:security_consts
+
+  - name: policy_coverage_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://policy_coverage_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      policy_coverage: kickside.security:policy_coverage
+
+  - name: catalog_registry_failure_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://catalog_registry_failure_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      registry: app:security_dependency_fixture
+      catalog: app:catalog_registry_probe
+      scopes: kickside.security.persist:scope_store
+
+  - name: security_dependency_fixture
+    kind: library.lua
+    source: file://security_dependency_fixture.lua
+
+  - name: catalog_registry_probe
+    kind: library.lua
+    source: file://catalog_source.lua
+    imports:
+      registry: app:security_dependency_fixture
+      security_consts: kickside.security:security_consts
+      scope_store: kickside.security.persist:scope_store
+      security_types: kickside.security:security_types
+
+  - name: database_config_probe
+    kind: library.lua
+    source: file://database_config_source.lua
+    imports:
+      registry: app:security_dependency_fixture
+  - name: database_config_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://database_config_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:security_dependency_fixture
+      configured: app:database_config_probe
+      security_consts: kickside.security:security_consts
+      scopes: kickside.security.persist:scope_store
+      groups: kickside.security.persist:group_sets
+
+  - name: trigger_request_probe
+    kind: library.lua
+    source: file://trigger_request_source.lua
+    modules: [channel, time]
+    imports:
+      funcs: app:security_dependency_fixture
+      security_consts: kickside.security:security_consts
+  - name: trigger_request_failure_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://trigger_request_failure_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      funcs_fixture: app:security_dependency_fixture
+      trigger: app:trigger_request_probe
+
+  - name: projection_registry_probe
+    kind: library.lua
+    source: file://projection_source.lua
+    modules: [logger, funcs]
+    imports:
+      registry: app:security_dependency_fixture
+      security_consts: kickside.security:security_consts
+      scope_store: kickside.security.persist:scope_store
+      group_sets: kickside.security.persist:group_sets
+      policy_groups: kickside.security.service:policy_groups
+      policy_composition: kickside.security:policy_composition
+  - name: projection_registry_failure_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://projection_registry_failure_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      registry_fixture: app:security_dependency_fixture
+      projection: app:projection_registry_probe
+      policy_groups: kickside.security.service:policy_groups

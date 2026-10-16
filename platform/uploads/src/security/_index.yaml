@@ -1,0 +1,105 @@
+version: "1.0"
+namespace: kickside.uploads.security
+
+entries:
+  - name: retention_db_access
+    kind: security.policy
+    meta:
+      comment: Let the uploads retention callback open its configured database.
+    policy:
+      resources: '*'
+      actions: [db.get]
+      effect: allow
+
+  - name: retention_prune_boundary
+    kind: security.policy
+    meta:
+      comment: Let the uploads retention callback read the Core prune boundary of upload container threads, and no event content.
+    policy:
+      resources: kickside.uploads
+      actions: [threads.prune_boundary.read]
+      effect: allow
+
+  - name: deferred_owner
+    kind: security.policy
+    meta:
+      comment: Upload workers resolve uploader and callback authorizer from protected upload state.
+    policy:
+      resources:
+        - kickside.uploads:uploads
+      actions:
+        - kickside.execution.defer
+      effect: allow
+
+  - name: deferred_actor
+    kind: security.policy
+    meta:
+      comment: Upload workers construct the live principal actor after Users resolution.
+    policy:
+      resources:
+        - "*"
+      actions:
+        - security.actor.create
+      effect: allow
+
+  - name: uploads_endpoint_access
+    kind: security.policy
+    meta:
+      comment: Members access upload views and static assets.
+    groups: []
+    policy:
+      resources:
+      - kickside.uploads:settings_storage_view
+      - kickside.uploads:ui_static
+      - kickside.uploads:uploads_view
+      actions: access
+      effect: allow
+
+  - name: uploads_resource_access
+    kind: security.policy
+    meta:
+      comment: Upload requests resolve the configured database and blob storage resources.
+    groups: []
+    policy:
+      resources:
+        - kickside.uploads.env:database_resource
+        - kickside.uploads.env:storage_id
+        - kickside.uploads.env:storage_s3
+      actions: env.get
+      effect: allow
+
+  - name: user_security_scope
+    kind: ns.requirement
+    default: kickside.security.groups:members
+    meta:
+      value_kind: security.scope
+      comment: Application security group that may reach the uploads endpoints.
+      description: Application security group that may reach the uploads endpoints.
+    targets:
+      - entry: kickside.uploads.security:uploads_endpoint_access
+        path: ".groups +="
+      - entry: kickside.uploads.security:uploads_resource_access
+        path: ".groups +="
+      - entry: kickside.uploads.security:module_access
+        path: .groups +=
+      - entry: kickside.uploads.security:module_runtime
+        path: .groups +=
+
+  - name: projection_public_meta
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: component.runtime_meta.write
+      effect: allow
+      conditions:
+        - field: meta.impl_id
+          operator: eq
+          value: kickside.uploads:uploads_component
+
+  - name: upload_notify
+    kind: security.policy
+    meta: { private: true }
+    policy:
+      resources: kickside.realtime:notify
+      actions: realtime.notify
+      effect: allow

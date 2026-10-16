@@ -1,0 +1,66 @@
+version: '1.0'
+namespace: app
+entries:
+- name: append_proof_fixture
+  kind: library.lua
+  source: file://append_proof_fixture.lua
+- name: append_proof_sql
+  kind: library.lua
+  source: file://append_proof_sql.lua
+  imports:
+    fixture: app:append_proof_fixture
+  modules:
+  - sql
+- name: append_proof_normalize
+  kind: library.lua
+  source: file://append_proof_normalize.lua
+  imports:
+    fixture: app:append_proof_fixture
+    real: kickside.core.threads.persist:normalize
+- name: append_proof_subjects
+  kind: library.lua
+  source: file://append_proof_subjects.lua
+  imports:
+    fixture: app:append_proof_fixture
+    real: kickside.core.threads.persist:subjects
+- name: append_proof_source
+  kind: library.lua
+  source: file://append_proof_source.lua
+  modules:
+  - json
+  - uuid
+  imports:
+    clock: kickside.core.jobs:clock
+    jobs_wake: app:append_proof_wake
+    threads_consts: kickside.core.threads:consts
+    threads_normalize: app:append_proof_normalize
+    core_types: kickside.core:types
+    trace_context: kickside.execution:trace
+    retention_policy: app:append_proof_policy
+    row_size: kickside.core:row_size
+    subjects: app:append_proof_subjects
+    sql: app:append_proof_sql
+    sql_boundary: kickside.core.jobs.persist:sql_boundary
+    error_envelope: kickside.contract:error_envelope
+- name: append_proof_test
+  kind: function.lua
+  source: file://append_proof_test.lua
+  method: run
+  meta:
+    type: test
+    suite: core_append_proof
+  imports:
+    test: wippy.test:test
+    fixture: app:append_proof_fixture
+    api: app:append_proof_source
+    canonical_json: kickside.contract:canonical_json
+- name: append_proof_policy
+  kind: library.lua
+  source: file://append_proof_policy.lua
+  imports:
+    fixture: app:append_proof_fixture
+- name: append_proof_wake
+  kind: library.lua
+  source: file://append_proof_wake.lua
+  imports:
+    fixture: app:append_proof_fixture

@@ -1,0 +1,32 @@
+version: '1.0'
+namespace: kickside.skills.security
+entries:
+- name: create_output_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.skills.events:skill.created
+    actions: threads.output.publish
+    effect: allow
+- name: import_output_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources:
+    - kickside.skills.events:skill.created
+    - kickside.skills.events:skill.updated
+    actions: threads.output.publish
+    effect: allow
+- name: refine_output_publish
+  kind: security.policy
+  meta:
+    private: true
+    service_only: true
+  policy:
+    resources: kickside.skills.events:skill.updated
+    actions: threads.output.publish
+    effect: allow

@@ -1,0 +1,54 @@
+version: "1.0"
+namespace: app
+
+# Contract suite for saving registry and manual model cards through the admin
+# upsert endpoint. The handler and the admin list run from their real source
+# files (copied into ../fixtures by test/prepare.sh); only the HTTP module is
+# replaced by a small recording fake. The registry llm.model cards are
+# test-only and injected in the test code, not declared here: the harness
+# asserts that its registry declares no llm.model entry (models_smoke_test).
+# No real provider is used and no network call is made.
+
+entries:
+  - name: card_save_fake_http
+    kind: library.lua
+    meta: { comment: Recording stand-in for the http module used by the admin handlers. }
+    source: file://fake_http.lua
+
+  - name: card_save_upsert
+    kind: library.lua
+    meta: { comment: The real PUT /models/cards handler source. }
+    source: file://../fixtures/upsert_card.lua
+    modules: [json]
+    imports:
+      http: app:card_save_fake_http
+      models_repo: kickside.models.persist:repo
+      model_catalog: kickside.models.catalog:model_catalog
+
+  - name: card_save_admin
+    kind: library.lua
+    meta: { comment: The real GET /models/admin handler source. }
+    source: file://../fixtures/get_admin.lua
+    imports:
+      http: app:card_save_fake_http
+      models_repo: kickside.models.persist:repo
+      provider_read_model: kickside.models.providers:provider_read_model
+      model_catalog: kickside.models.catalog:model_catalog
+
+  - name: card_save_contract_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models_card_save
+      comment: Saving a card keeps registry provider options and route fields.
+    source: file://card_save_contract_test.lua
+    modules: [json]
+    method: run
+    imports:
+      test: wippy.test:test
+      fake_http: app:card_save_fake_http
+      save_handler: app:card_save_upsert
+      admin_handler: app:card_save_admin
+      registry_models: wippy.llm.discovery:models
+      models_repo: kickside.models.persist:repo
+      model_catalog: kickside.models.catalog:model_catalog

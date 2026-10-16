@@ -1,0 +1,22 @@
+version: "1.0"
+namespace: kickside.channel.events
+
+# Harness-only stand-in for the kickside.channel inbound event entry. The
+# kickside.channel code module is not mounted in this trigger harness, so this
+# recreates its published message.inbound event type (real id + schema) so the
+# channel_watch_e2e test drives the real trigger service and real
+# threads/projections through the real kickside.channel:channel_message_received
+# port id against a real kickside.channel-class thread.
+entries:
+  - name: message.inbound
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+    schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      type: object
+      properties:
+        text: { type: string }
+        provider: { type: string }
+        external_message_id: { type: string }
+      required: [text]

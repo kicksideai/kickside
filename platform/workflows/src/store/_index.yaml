@@ -1,0 +1,63 @@
+version: "1.0"
+namespace: kickside.workflows.store
+
+entries:
+  - name: store
+    kind: library.lua
+    meta:
+      comment: SQL layer — event append with per-workflow seq, projection, read model, purge.
+    source: file://store.lua
+    modules: [json, sql, time]
+    imports:
+      store_state: kickside.workflows.store:store_state
+      store_events: kickside.workflows.store:store_events
+      store_projection: kickside.workflows.store:store_projection
+      store_purge: kickside.workflows.store:store_purge
+      store_history: kickside.workflows.store:store_history
+
+  - name: store_state
+    kind: library.lua
+    meta: { comment: "Workflow persistence shared state, interface derivation, and DB access." }
+    source: file://state.lua
+    modules: [json, sql, time]
+    imports:
+      types: kickside.workflows:types
+      mapping: kickside.workflows.execution:mapping
+      schema_json: kickside.workflows.schema:schema_json
+      block_catalog: kickside.workflows.catalog:block_catalog
+
+  - name: store_events
+    kind: library.lua
+    meta: { comment: "Workflow event append and stream-backed lookup helpers." }
+    source: file://events.lua
+    imports:
+      store_state: kickside.workflows.store:store_state
+      row_limit: kickside.workflows.store:row_limit
+
+  - name: row_limit
+    kind: library.lua
+    meta: { comment: "Policy-owned workflow row size limit for one definition event or run row." }
+    source: file://row_limit.lua
+    modules: [registry]
+    imports:
+      row_size: kickside.core:row_size
+
+  - name: store_projection
+    kind: library.lua
+    meta: { comment: "Workflow read-model projection, ordered snapshot reads, and purge." }
+    source: file://projection.lua
+    imports:
+      store_state: kickside.workflows.store:store_state
+
+  - name: store_purge
+    kind: library.lua
+    meta: { comment: "Bounded workflow owner-row cleanup and durable continuation signal." }
+    source: file://purge.lua
+    modules: [sql]
+
+  - name: store_history
+    kind: library.lua
+    source: file://history.lua
+    modules: [json]
+    imports:
+      undo: kickside.workflows.undo:undo

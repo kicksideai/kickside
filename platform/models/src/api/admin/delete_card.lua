@@ -1,0 +1,27 @@
+local http = require("http")
+local models_repo = require("models_repo")
+
+local function handler()
+    local req = http.request()
+    local res = http.response()
+    if not req or not res then return nil, "Failed to get HTTP context" end
+    res:set_content_type(http.CONTENT.JSON)
+
+    local name = req:query("name")
+    if not name or name == "" then
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({ success = false, error = "Model name is required" })
+        return
+    end
+
+    local ok, err = models_repo.delete_card(name)
+    if not ok then
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({ success = false, error = err })
+        return
+    end
+    res:set_status(http.STATUS.OK)
+    res:write_json({ success = true })
+end
+
+return { handler = handler }

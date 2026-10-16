@@ -1,0 +1,35 @@
+version: "1.0"
+namespace: kickside.models.providers.openai_compat_plain
+
+entries:
+  - name: generate_implementation
+    kind: library.lua
+    meta:
+      comment: Focused implementation for kickside.models.providers.openai_compat_plain:generate; invoked by its one-method function wrapper.
+    source: file://generate.lua
+    modules: [json]
+    imports:
+      openai_client: wippy.llm.openai_compat:client
+      openai_mapper: wippy.llm.openai_compat:mapper
+      output: wippy.llm:output
+
+  - name: generate
+    kind: function.lua
+    meta:
+      comment: OpenAI-compatible generation for endpoints that require plain string Chat Completions message content.
+    source: file://_fn_generate.lua
+    imports:
+      operation_impl: kickside.models.providers.openai_compat_plain:generate_implementation
+    method: handler
+
+  - name: openai_compat_plain.generate
+    kind: function.lua
+    meta:
+      comment: OpenAI-compatible generation for endpoints that require plain string Chat Completions message content.
+    source: file://generate.lua
+    modules: [json]
+    imports:
+      openai_client: wippy.llm.openai_compat:client
+      openai_mapper: wippy.llm.openai_compat:mapper
+      output: wippy.llm:output
+    method: handler

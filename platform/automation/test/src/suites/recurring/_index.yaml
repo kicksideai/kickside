@@ -1,0 +1,85 @@
+version: "1.0"
+namespace: kickside.automation.recurring.fixture
+entries:
+  - name: test
+    kind: function.lua
+    meta: { type: test, suite: kickside_automation_recurring, timeout: 120s }
+    source: file://recurring_test.lua
+    method: run
+    modules: [funcs, security, json, registry, channel, time, uuid, process]
+    imports:
+      test: wippy.test:test
+      canonical_json: kickside.contract:canonical_json
+      component: kickside.component:component
+      round_harness: kickside.automation:round_harness
+      recurring_task: kickside.automation.recurring:task_lib
+      automations: kickside.automation:automation
+      lease_release: kickside.core.jobs:lease_release
+      retention_runner: kickside.core.retention.service:runner
+      worker_completion: kickside.core.jobs.service:worker_completion
+      reclaim: kickside.core.jobs.persist:reclaim
+      worker_loop: kickside.core.jobs.service:loop
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      worker_fence: kickside.core.jobs.service:worker_fence
+  - name: write
+    kind: function.lua
+    source: file://write.lua
+    method: write
+    modules: [sql, json, security, process]
+  - name: sink
+    kind: contract.binding
+    meta: { title: Recurring fixture, delivery: exactly_once, input_shape: record }
+    contracts:
+      - contract: kickside.data:writable
+        methods: { write: kickside.automation.recurring.fixture:write }
+  - name: action
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Recurring fixture }
+    binding: kickside.automation.recurring.fixture:sink
+    input_schema: '{ "type": "object" }'
+    operations: { upsert: {} }
+  - name: access_probe
+    kind: function.lua
+    source: file://access_probe.lua
+    method: call
+    imports:
+      automation: kickside.automation:automation
+      component: kickside.component:component
+  - name: workflow_action
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Workflow target fixture, recurring_target: workflow }
+    binding: kickside.automation.recurring.fixture:sink
+    input_schema: '{ "type": "object" }'
+    operations: { upsert: {} }
+  - name: agent_action
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Agent target fixture, recurring_target: agent }
+    binding: kickside.automation.recurring.fixture:sink
+    input_schema: '{ "type": "object" }'
+    operations: { upsert: {} }
+  - name: typed_action
+    kind: registry.entry
+    meta: { type: kickside.automation.port, title: Typed recurring action }
+    binding: kickside.automation.recurring.fixture:sink
+    input_schema: '{ "type": "object", "properties": { "text": { "type": "string" } }, "required": ["text"], "additionalProperties": false }'
+    config_schema:
+      flow_ref:
+        type: object
+        required: true
+        additionalProperties: false
+        properties:
+          kind: { type: string, const: flow, required: true }
+          id: { type: string, minLength: 1, required: true }
+          version: { type: integer, minimum: 1, required: true }
+    operations: { upsert: {} }
+
+  - name: manual_task_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_automation_round}
+    source: file://manual_task_test.lua
+    method: run
+    modules: [uuid, json]
+    imports:
+      test: wippy.test:test
+      canonical_json: kickside.contract:canonical_json
+      round_harness: kickside.automation:round_harness

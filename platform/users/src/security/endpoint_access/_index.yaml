@@ -1,0 +1,15 @@
+version: '1.0'
+namespace: kickside.users.security
+entries:
+- name: users_endpoint_access
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    actions: access
+    resources:
+    - kickside.users.api:me.endpoint
+    - kickside.users.api:update_me.endpoint
+    - kickside.users.api:logout.endpoint
+    effect: allow

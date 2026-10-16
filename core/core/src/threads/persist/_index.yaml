@@ -1,0 +1,196 @@
+version: "1.0"
+namespace: kickside.core.threads.persist
+
+entries:
+  # Persistence layer of the threads slice: thread + event reads/writes and the
+  # writer-side input normalization. Access is gated through the component
+  # contract (kickside.core.threads:component), not SQL joins. Shared vocabulary
+  # (consts, env), the component seam, notify, and the contract binding live in
+  # the slice root (kickside.core.threads).
+
+  - name: normalize
+    kind: library.lua
+    meta:
+      comment: Input normalization for the writers — trim, created_at coercion, body/attrs encoding.
+    source: file://normalize.lua
+    modules:
+      - json
+      - time
+    imports:
+      threads_consts: kickside.core.threads:consts
+      clock: kickside.core.jobs:clock
+
+  - name: reader
+    kind: library.lua
+    meta:
+      comment: Thread/event/children/edge reads; access via the component contract, not SQL joins.
+    source: file://reader.lua
+    modules:
+      - sql
+      - json
+    imports:
+      subjects: kickside.core.threads.persist:subjects
+      threads_component: kickside.core.threads:component
+      core_types: kickside.core:types
+
+  - name: append
+    kind: library.lua
+    meta:
+      comment: The one batched event writer; runs on the caller's transaction under the thread lock.
+    source: file://append.lua
+    modules:
+      - sql
+      - json
+      - uuid
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      clock: kickside.core.jobs:clock
+      jobs_wake: kickside.core.jobs.persist:wake
+      threads_consts: kickside.core.threads:consts
+      threads_normalize: kickside.core.threads.persist:normalize
+      core_types: kickside.core:types
+      trace_context: kickside.execution:trace
+      retention_policy: kickside.core:policy_config
+      row_size: kickside.core:row_size
+      subjects: kickside.core.threads.persist:subjects
+
+  - name: writer
+    kind: library.lua
+    meta:
+      comment: Gated event ingest over the one event writer, engine appends, and the thread lock order.
+    source: file://writer.lua
+    modules:
+      - sql
+      - logger
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      threads_normalize: kickside.core.threads.persist:normalize
+      threads_component: kickside.core.threads:component
+      core_types: kickside.core:types
+      retention_notifier: kickside.core.retention:notifier
+      jobs_wake: kickside.core.jobs.persist:wake
+      threads_append: kickside.core.threads.persist:append
+
+  - name: thread_row
+    kind: library.lua
+    meta:
+      comment: The one writer of a component's primary thread row and parent edge on a caller-owned transaction.
+    source: file://thread_row.lua
+    modules:
+      - sql
+      - uuid
+      - json
+    imports:
+      clock: kickside.core.jobs:clock
+      threads_consts: kickside.core.threads:consts
+      core_types: kickside.core:types
+      autoinit: kickside.component:autoinit
+      threads_normalize: kickside.core.threads.persist:normalize
+      natural_key: kickside.core.threads.persist:natural_key
+
+  - name: thread_crud
+    kind: library.lua
+    meta:
+      comment: Thread create/update; component-first attach, declared projections, retention policy.
+    source: file://thread_crud.lua
+    modules:
+      - sql
+      - uuid
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      clock: kickside.core.jobs:clock
+      threads_consts: kickside.core.threads:consts
+      threads_normalize: kickside.core.threads.persist:normalize
+      threads_component: kickside.core.threads:component
+      core_types: kickside.core:types
+      autoinit: kickside.component:autoinit
+      proj_writer: kickside.core.projections.persist:writer
+      retention_repo: kickside.core.retention.persist:repo
+      threads_writer: kickside.core.threads.persist:writer
+      threads_teardown: kickside.core.threads.persist:teardown
+      threads_thread_row: kickside.core.threads.persist:thread_row
+      natural_key: kickside.core.threads.persist:natural_key
+
+  - name: drop_notify
+    kind: library.lua
+    meta:
+      comment: Drop hooks declared on a thread's projections, fired onto subscriber threads inside the teardown transaction.
+    source: file://drop_notify.lua
+    modules:
+      - json
+      - time
+      - sql
+    imports:
+      threads_append: kickside.core.threads.persist:append
+      threads_normalize: kickside.core.threads.persist:normalize
+
+  - name: teardown
+    kind: library.lua
+    meta:
+      comment: Thread delete and component-driven purge with explicit dependent-row cascade.
+    source: file://teardown.lua
+    modules:
+      - sql
+    imports:
+      retention_notifier: kickside.core.retention:notifier
+      threads_normalize: kickside.core.threads.persist:normalize
+      threads_component: kickside.core.threads:component
+      core_types: kickside.core:types
+      threads_writer: kickside.core.threads.persist:writer
+      teardown_fence: kickside.core.threads.persist:teardown_fence
+      teardown_page: kickside.core.threads.persist:teardown_page
+      error_envelope: kickside.contract:error_envelope
+
+  - name: teardown_fence
+    kind: library.lua
+    meta:
+      comment: Durable bounded fence of surviving retention consumers before thread reap.
+    source: file://teardown_fence.lua
+    modules: [sql, time, contract]
+
+  - name: teardown_page
+    kind: library.lua
+    meta:
+      comment: Bounded Core-owned thread cleanup page with Jobs receipt acknowledgment.
+    source: file://teardown_page.lua
+    modules: [sql, json]
+    imports:
+      threads_writer: kickside.core.threads.persist:writer
+      threads_drop_notify: kickside.core.threads.persist:drop_notify
+      jobs_wake: kickside.core.jobs.persist:wake
+      jobs: kickside.core.jobs:jobs
+
+  - name: lifecycle
+    kind: library.lua
+    meta:
+      comment: Per-component lifecycle threads (raw, no backing component) + typed created/updated/deleted appends via the system seam.
+    source: file://lifecycle.lua
+    modules:
+      - sql
+      - json
+      - crypto
+    imports:
+      threads_consts: kickside.core.threads:consts
+      core_types: kickside.core:types
+      threads_writer: kickside.core.threads.persist:writer
+      error_envelope: kickside.contract:error_envelope
+
+  # ─── Tests ───────────────────────────────────────────────────────────
+
+  - name: subjects
+    kind: library.lua
+    source: file://subjects.lua
+
+  - name: natural_key
+    kind: library.lua
+    meta: {private: true}
+    source: file://natural_key.lua
+    modules: [crypto, json, sql]
+    imports:
+      threads_writer: kickside.core.threads.persist:writer
+      error_envelope: kickside.contract:error_envelope

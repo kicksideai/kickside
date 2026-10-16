@@ -1,0 +1,77 @@
+version: "1.0"
+namespace: kickside.core.jobs.migrations
+
+# Schema for the durable job engine.
+# The job and run tables reference the core
+# thread / event / projection tables, so they apply after core's 01_thread and
+# 02_projection in global timestamp order. target_db is injected by the module's
+# kickside.core.jobs:target_db requirement.
+#
+entries:
+  - name: 04_jobs
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Durable jobs and run history
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:04Z"
+    source: file://04_jobs.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 07_job_slots
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Canonical job identities, parked slots, wake demand, execution sequence, and worker heartbeat.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:07Z"
+    source: file://07_job_slots.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 14_worker_pulse
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Isolate worker heartbeat writes from claim-owned job markers.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:14Z"
+    source: file://14_worker_pulse.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 19_thread_cleanup
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Durable bounded Jobs-owned thread cleanup receipts and owner fences.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-01-01T00:00:17Z"
+    source: file://19_thread_cleanup.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 20_dispatch_requests
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-08T00:00:20Z"
+    source: file://20_dispatch_requests.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

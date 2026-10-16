@@ -1,0 +1,133 @@
+version: "1.0"
+namespace: app.deps
+entries:
+  - version: "*"
+    name: llm
+    kind: ns.dependency
+    meta: {}
+    component: wippy/llm
+    parameters:
+      - name: process_host
+        value: app:processes
+      - name: env_storage
+        value: app.env:store
+
+  # app.deps:migration
+  - version: "*"
+    name: migration
+    kind: ns.dependency
+    meta: {}
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  # app.deps:relay
+  - version: "*"
+    name: relay
+    kind: ns.dependency
+    meta: {}
+    component: wippy/relay
+    parameters:
+      - name: wippy.relay:user_security_scope
+        value: app.security:user
+      - name: env_storage
+        value: app.env:store
+      - name: application_host
+        value: app:processes
+      - name: max_connections_per_user
+        value: "12"
+      - name: queue_multiplier
+        value: "100"
+      - name: user_hub_inactivity_timeout
+        value: 7200s
+
+  # app.deps:renderers
+  - version: "*"
+    name: renderers
+    kind: ns.dependency
+    meta: {}
+    component: kickside/renderers
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+
+  # app.deps:security
+  - version: "*"
+    name: security
+    kind: ns.dependency
+    meta: {}
+    component: wippy/security
+
+  # app.deps:session
+  - version: "*"
+    name: session
+    kind: ns.dependency
+    meta: {}
+    component: wippy/session
+    parameters:
+      - name: wippy.session:api_router
+        value: app:api
+      - name: wippy.session:database_resource
+        value: app:db
+      - name: wippy.session:default_host
+        value: app:processes
+      - name: wippy.session:env_storage
+        value: app.env:store
+      - name: wippy.session:delegation_func_id
+        value: userspace.dataflow.session:delegate
+      - name: wippy.session:token_checkpoint_threshold
+        value: "128000"
+      - name: wippy.session:max_message_limit
+        value: "500"
+      - name: wippy.session:gc_interval
+        value: 300s
+
+  # app.deps:terminal
+  - version: "*"
+    name: terminal
+    kind: ns.dependency
+    meta: {}
+    component: wippy/terminal
+
+  # app.deps:uploads
+  - version: "*"
+    name: uploads
+    kind: ns.dependency
+    meta: {}
+    component: kickside/uploads
+    parameters:
+      - name: kickside.uploads:database_resource
+        value: app:db
+      - name: kickside.uploads:env_storage
+        value: app.env:store
+      - name: kickside.uploads:api_router
+        value: app:api
+      - name: kickside.uploads:storage_id
+        value: app:uploads
+      - name: kickside.uploads:ui_server
+        value: app:gateway
+
+  # app.deps:usage
+  - version: "*"
+    name: usage
+    kind: ns.dependency
+    meta: {}
+    component: wippy/usage
+    parameters:
+      - name: target_db
+        value: app:db
+
+  # app.deps:views
+  - version: "*"
+    name: views
+    kind: ns.dependency
+    meta: {}
+    component: wippy/views
+    parameters:
+      - name: wippy.views:api_router
+        value: app:api.views
+      - name: wippy.views:env_storage
+        value: app.env:store

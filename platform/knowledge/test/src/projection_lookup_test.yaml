@@ -1,0 +1,11 @@
+version: "1.0"
+namespace: app.knowledge_projection_lookup
+entries:
+  - name: projection_lookup_test
+    kind: function.lua
+    meta: {type: test, suite: knowledge_projection_lookup}
+    source: file://projection_lookup_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      status: kickside.knowledge.injection:thread_ingest_status

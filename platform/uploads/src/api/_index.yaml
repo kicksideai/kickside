@@ -1,0 +1,287 @@
+version: "1.0"
+namespace: kickside.uploads.api
+
+entries:
+  # kickside.uploads.api:complete_handler
+  - name: complete_handler
+    kind: function.lua
+    meta:
+      comment: File upload API handler
+    source: file://complete_upload.lua
+    modules:
+      - http
+      - security
+      - json
+    imports:
+      http_errors: kickside.contract:http_errors
+      upload_lib: kickside.uploads:uploads
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      types: kickside.uploads:types
+    method: handler
+    pool:
+      size: 5
+
+  # kickside.uploads.api:complete_handler.endpoint
+  - name: complete_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: File upload endpoint
+      router: router
+    method: POST
+    func: complete_handler
+    path: /uploads/complete
+
+  # kickside.uploads.api:delete_handler
+  - name: delete_handler
+    kind: function.lua
+    meta:
+      comment: Delete upload API handler
+    security:
+      policies:
+      - kickside.uploads:thread_deleted_publish
+    source: file://delete_upload.lua
+    modules:
+      - http
+      - security
+      - json
+    imports:
+      pipeline: kickside.uploads:pipeline
+      component: kickside.component:component
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+      upload_lib: kickside.uploads:uploads
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+    method: delete_handler
+    pool:
+      size: 2
+
+  # kickside.uploads.api:delete_handler.endpoint
+  - name: delete_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Delete upload endpoint
+      router: router
+    method: DELETE
+    func: delete_handler
+    path: /uploads/{uuid}
+
+  # kickside.uploads.api:get_handler
+  - name: get_handler
+    kind: function.lua
+    meta:
+      comment: Get file upload API handler
+    source: file://get_upload.lua
+    modules:
+      - http
+      - security
+    imports:
+      http_errors: kickside.contract:http_errors
+      upload_response: kickside.uploads.api:upload_response
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      types: kickside.uploads:types
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      component: kickside.component:component
+    method: get_handler
+    pool:
+      size: 2
+
+  # kickside.uploads.api:get_handler.endpoint
+  - name: get_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Get file upload endpoint
+      router: router
+    method: GET
+    func: get_handler
+    path: /uploads/{uuid}
+
+  # kickside.uploads.api:list_handler
+  - name: list_handler
+    kind: function.lua
+    meta:
+      comment: List uploads API handler
+    source: file://list_uploads.lua
+    modules:
+      - http
+      - security
+    imports:
+      http_errors: kickside.contract:http_errors
+      upload_response: kickside.uploads.api:upload_response
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      types: kickside.uploads:types
+    method: list_handler
+    pool:
+      size: 2
+
+  # kickside.uploads.api:list_handler.endpoint
+  - name: list_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: List uploads endpoint
+      router: router
+    method: GET
+    func: list_handler
+    path: /uploads/list
+
+  - name: upload_response
+    kind: library.lua
+    meta:
+      comment: Formats public upload API response bodies.
+    source: file://response.lua
+    modules:
+      - time
+    imports:
+      http_errors: kickside.contract:http_errors
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+
+  # kickside.uploads.api:presigned_handler
+  - name: presigned_handler
+    kind: function.lua
+    meta:
+      comment: File upload API handler
+    source: file://presign_upload.lua
+    modules:
+      - http
+      - security
+      - json
+    imports:
+      http_errors: kickside.contract:http_errors
+      upload_lib: kickside.uploads:uploads
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      types: kickside.uploads:types
+    method: handler
+    pool:
+      size: 5
+
+  # kickside.uploads.api:presigned_handler.endpoint
+  - name: presigned_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: File upload endpoint
+      router: router
+    method: POST
+    func: presigned_handler
+    path: /uploads/presigned
+
+  # kickside.uploads.api:upload_handler
+  - name: upload_handler
+    kind: function.lua
+    meta:
+      comment: File upload API handler
+    source: file://create_upload.lua
+    modules:
+      - http
+      - security
+      - json
+    imports:
+      http_errors: kickside.contract:http_errors
+      upload_lib: kickside.uploads:uploads
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      types: kickside.uploads:types
+    method: handler
+    pool:
+      size: 5
+
+  # kickside.uploads.api:upload_handler.endpoint
+  - name: upload_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: File upload endpoint
+      router: router
+    method: POST
+    func: upload_handler
+    path: /uploads
+
+  # kickside.uploads.api:raw_handler
+  - name: raw_handler
+    kind: function.lua
+    meta:
+      comment: Serve original upload bytes for inline preview.
+    source: file://get_raw.lua
+    imports:
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      component: kickside.component:component
+      upload_tokens: kickside.uploads.persist:upload_tokens
+    method: raw_handler
+    modules:
+      - http
+      - security
+      - fs
+    pool:
+      size: 4
+
+  # kickside.uploads.api:raw_handler.endpoint
+  - name: raw_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Raw upload bytes endpoint.
+      router: router
+    func: raw_handler
+    method: GET
+    path: /uploads/{uuid}/raw
+
+  # kickside.uploads.api:artifacts_handler
+  - name: artifacts_handler
+    kind: function.lua
+    meta:
+      comment: List upload artifact metadata for the uploads UI.
+    source: file://artifacts.lua
+    imports:
+      component: kickside.component:component
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      upload_tokens: kickside.uploads.persist:upload_tokens
+    method: artifacts_handler
+    modules:
+      - http
+      - security
+    pool:
+      size: 4
+
+  # kickside.uploads.api:artifacts_handler.endpoint
+  - name: artifacts_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Upload artifacts metadata endpoint.
+      router: router
+    func: artifacts_handler
+    method: GET
+    path: /uploads/{uuid}/artifacts
+
+  # kickside.uploads.api:artifact_raw_handler
+  - name: artifact_raw_handler
+    kind: function.lua
+    meta:
+      comment: Serve stored upload artifact bytes for inline preview.
+    source: file://artifacts.lua
+    imports:
+      component: kickside.component:component
+      types: kickside.uploads:types
+      http_errors: kickside.contract:http_errors
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      upload_tokens: kickside.uploads.persist:upload_tokens
+    method: artifact_raw_handler
+    modules:
+      - http
+      - security
+    pool:
+      size: 4
+
+  # kickside.uploads.api:artifact_raw_handler.endpoint
+  - name: artifact_raw_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Raw upload artifact bytes endpoint.
+      router: router
+    func: artifact_raw_handler
+    method: GET
+    path: /uploads/{uuid}/artifacts/{artifact_id}/raw

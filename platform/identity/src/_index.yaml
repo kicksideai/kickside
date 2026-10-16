@@ -1,0 +1,211 @@
+version: "1.0"
+namespace: kickside.identity
+
+# Universal external-identity linking. A KickSide user generates a short code in
+# the dashboard and proves ownership of an external account (e.g. by DMing a bot
+# "link <code>"); that links provider:external_id -> user_id. Any inbound transport
+# (discord/slack/telegram bot) then resolves an external sender to its KickSide
+# user provider-neutrally, so an agent runs as the real person -- no per-bot or
+# per-provider identity code.
+
+entries:
+  - name: credential_eligibility
+    kind: ns.requirement
+    meta:
+      description: Optional host credential eligibility function; a configured guard fails closed.
+    default: ''
+    targets:
+      - entry: kickside.identity:db_config
+        path: .meta.credential_eligibility
+      - entry: kickside.identity:credential_eligibility_call
+        path: ".policy.resources +="
+
+  - name: credential_eligibility_check
+    kind: library.lua
+    meta: {credential_admission: host}
+    source: file://credential_eligibility.lua
+    imports:
+      credential_eligibility: kickside.contract:credential_eligibility
+
+  - name: credential_eligibility_call
+    kind: security.policy
+    meta: {private: true}
+    groups: []
+    policy:
+      resources: [kickside.contract:host_credential_eligibility]
+      actions: [funcs.call, registry.find]
+      effect: allow
+
+  - name: contract_dependency
+    kind: ns.dependency
+    component: kickside/contract
+    version: "*"
+
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: KickSide Identity
+      comment: Provider-neutral linking of external accounts to KickSide users via short-lived dashboard codes; the resolve/link service every bot uses to answer "who is this external sender".
+
+  - name: dep.kickside.component
+    version: '*'
+    kind: ns.dependency
+    component: kickside/component
+
+  - name: dep.kickside.channel
+    version: '*'
+    kind: ns.dependency
+    component: kickside/channel
+
+  - name: dep.kickside.agents
+    version: '*'
+    kind: ns.dependency
+    component: kickside/agents
+
+  - name: dep.wippy.migration
+    version: '*'
+    kind: ns.dependency
+    component: wippy/migration
+
+  # ─── Dependency interface (ns.requirement) ───────────────────────────
+  - name: target_db
+    kind: ns.requirement
+    meta:
+      comment: SQL database backing kickside_external_links + kickside_link_codes.
+      description: SQL database backing kickside_external_links + kickside_link_codes.
+    targets:
+      - entry: kickside.identity.migrations:01_external_links
+        path: .meta.target_db
+      - entry: kickside.identity:db_config
+        path: .meta.db_id
+
+  - name: api_router
+    kind: ns.requirement
+    meta:
+      value_kind: http.router
+      comment: HTTP router the dashboard link endpoints attach to (must enforce auth).
+      description: HTTP router the dashboard link endpoints attach to (must enforce auth).
+    targets:
+      - entry: kickside.identity.api:generate_link_code.endpoint
+        path: .meta.router
+      - entry: kickside.identity.api:list_links.endpoint
+        path: .meta.router
+      - entry: kickside.identity.api:unlink.endpoint
+        path: .meta.router
+
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the configured identity DB id (rewritten by the target_db requirement).
+
+  - name: identity_consts
+    kind: library.lua
+    meta:
+      comment: DB id resolver + link-code parameters.
+    source: file://consts.lua
+    modules: [registry]
+
+  - name: link_service
+    kind: library.lua
+    meta:
+      comment: generate_code / verify_and_link / resolve / unlink / list_links -- the provider-neutral linking core.
+    source: file://link_service.lua
+    modules: [sql, crypto, time, uuid]
+    imports:
+      identity_consts: kickside.identity:identity_consts
+      credential_eligibility: kickside.identity:credential_eligibility_check
+      component: kickside.component:component
+      channel_cleanup: kickside.channel:cleanup_conversation
+      channel_cleanup_finalize: kickside.channel:complete_unlink
+      agent_ref: kickside.agents:agent_ref
+
+  - name: link_get
+    kind: function.lua
+    meta:
+      comment: Trusted lookup of a stable external link restriction by link_id.
+    source: file://link_get_func.lua
+    security:
+      policies: [kickside.identity:credential_eligibility_call]
+    method: get
+    imports:
+      link_service: kickside.identity:link_service
+
+  - name: cleanup_principal
+    kind: function.lua
+    meta:
+      type: kickside.lifecycle.principal_cleanup
+      comment: Deletes external identity links and pending link codes for a deleted principal.
+    source: file://link_service.lua
+    method: cleanup_principal
+    modules: [sql, crypto, time, uuid]
+    imports:
+      identity_consts: kickside.identity:identity_consts
+      credential_eligibility: kickside.identity:credential_eligibility_check
+      component: kickside.component:component
+      channel_cleanup: kickside.channel:cleanup_conversation
+      channel_cleanup_finalize: kickside.channel:complete_unlink
+      agent_ref: kickside.agents:agent_ref
+
+  # ─── Self-served UI (Linked accounts) ────────────────────────────────
+  # The module ships + serves its own web-component bundle and contributes a
+  # System settings tab the host mounts by tag -- no dependency on the app to host
+  # the bundle, same shape as kickside/settings.
+  - name: ui_server
+    kind: ns.requirement
+    meta:
+      value_kind: http.service
+      comment: HTTP server the linked-accounts UI bundle is served from.
+      description: HTTP server the linked-accounts UI bundle is served from.
+    targets:
+      - entry: kickside.identity:ui_static
+        path: .meta.server
+
+  - name: ui_fs
+    kind: fs.directory
+    meta: { comment: Built linked-accounts web component bundle (from ui/). }
+    directory: ./static
+    auto_init: true
+
+  - name: ui_static
+    kind: http.static
+    meta:
+      comment: Serves the linked-accounts bundle at /kickside-identity.
+    path: /kickside-identity
+    fs: kickside.identity:ui_fs
+    options:
+      # Stable bundle name (index.js) — without revalidation browsers cache it
+      # hard and never pick up rebuilds.
+      cache: "no-cache"
+      mime_types:
+        .js: application/javascript
+        .css: text/css
+        .map: application/json
+
+  - name: identity_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: identity_view
+      title: Linked accounts
+      description: >-
+        Linked-accounts modal: generates a link code the user DMs to a bot as
+        "link <code>" to bind an external chat account, lists linked accounts,
+        and unlinks them. Owns its modal chrome and emits a close event for
+        the host to dismiss it.
+      tag_name: kickside-identity-links
+      base_path: kickside-identity
+      entry_point: index.js
+      auto_register: false
+      secure: false
+      announced: true
+
+  - name: account.identity
+    kind: registry.entry
+    meta:
+      type: ui.account_item
+      comment: Linked accounts entry in the profile dropdown (opens the kickside/identity web component modal).
+    key: linked-accounts
+    label: Linked accounts
+    icon: tabler:link
+    order: 40
+    component_tag: kickside-identity-links

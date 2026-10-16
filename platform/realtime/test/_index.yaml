@@ -1,0 +1,120 @@
+version: "1.0"
+namespace: app
+
+# Standalone application harness for kickside/realtime. The production module
+# loads through the explicit local replacement; this source tree owns the suite
+# and the host-side Relay parameters and security fixtures.
+
+entries:
+  - name: dep.wippy.test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database resource for the PostgreSQL profile wiring.
+    file: "${sqlite_path}"
+
+  - name: realtime_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_realtime
+      group: KickSide Realtime
+      comment: Input validation, authorization, and delivery without caller process messaging authority for broadcast/notify over the contract.
+    source: file://src/realtime_test.lua
+    method: run
+    modules: [contract, security, uuid, channel, time, process]
+    imports:
+      test: wippy.test:test
+
+  - name: process_fixture
+    kind: library.lua
+    source: file://src/process_fixture.lua
+
+  - name: security_fixture
+    kind: library.lua
+    source: file://src/security_fixture.lua
+
+  - name: notify_policy_fixture
+    kind: library.lua
+    source: file://src/notify_policy_fixture.lua
+
+  - name: realtime_subject
+    kind: library.lua
+    source: file://src/realtime_subject.lua
+    imports:
+      process: app:process_fixture
+      security: app:security_fixture
+      notify_policy: app:notify_policy_fixture
+      error_envelope: kickside.contract:error_envelope
+
+  - name: realtime_cause_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_realtime
+      group: KickSide Realtime
+      comment: Realtime transport failures retain their native cause while classifying delivery as retryable unavailable.
+    source: file://src/realtime_cause_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      realtime: app:realtime_subject
+      process_fixture: app:process_fixture
+
+  - name: dep.kickside.realtime
+    kind: ns.dependency
+    meta:
+      comment: Test-only current-source root; fully qualified parameters configure the unpublished Relay edge without changing production declarations.
+    component: kickside/realtime
+    version: "*"
+    parameters:
+      - name: wippy.relay:application_host
+        value: app:processes
+      - name: wippy.relay:env_storage
+        value: app:env_storage
+      - name: wippy.relay:user_security_scope
+        value: app:self_notify
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: self_notify
+    kind: security.policy
+    meta:
+      comment: Harness baseline; self-notify is enforced in code by actor id.
+    policy:
+      resources: unused
+      actions: unused
+      effect: allow
+
+  - name: broadcast_realtime
+    kind: security.policy
+    meta:
+      comment: Harness authority for global realtime broadcast.
+    policy:
+      resources: kickside.realtime:*
+      actions: realtime.broadcast
+      effect: allow
+
+  - name: notify_any_realtime
+    kind: security.policy
+    meta:
+      comment: Harness authority for notifying another user's realtime hub.
+    policy:
+      resources: kickside.realtime:*
+      actions: realtime.notify
+      effect: allow

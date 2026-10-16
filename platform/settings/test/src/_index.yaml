@@ -1,0 +1,324 @@
+version: "1.0"
+namespace: app
+
+# Standalone harness for kickside/settings. Provides the host resources the module
+# requires (app:db, app:processes, app:api, app:gateway, env storage) plus the
+# fixtures the suites read: a namespace of typed settings declarations, the
+# validate_func one of them wires, a component-backed settings block, and the two
+# scopes the contract suite opens the service under (admin and non-admin runtime).
+# Harness-only; never published.
+
+entries:
+  - name: about_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+    source: file://about_test.lua
+    method: run
+    modules: [system]
+    imports:
+      about: kickside.settings:about_info
+      test: wippy.test:test
+
+  - name: dep.wippy.test
+    kind: ns.dependency
+    version: "*"
+    component: wippy/test
+
+  - name: blocks_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: Block catalog composition — auto-block synthesis, explicit-block precedence, humanized titles, ordering.
+    source: file://blocks_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      settings_blocks: kickside.settings:settings_blocks
+
+  - name: db_config_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: The writer resolves its DB id from the target_db requirement, not a hardcoded literal.
+    source: file://db_config_test.lua
+    method: run
+    modules:
+      - registry
+    imports:
+      test: wippy.test:test
+      settings_types: kickside.settings:settings_types
+
+  - name: settings_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: The settings contract end to end — defaults, overrides, typing, secrets at rest, provenance, cache ownership, admin gating.
+    source: file://settings_test.lua
+    method: run
+    modules:
+      - contract
+      - env
+      - registry
+      - security
+      - sql
+      - store
+      - time
+    imports:
+      test: wippy.test:test
+      settings_writer: kickside.settings.persist:settings_writer
+
+  - name: cache_bootloader_dedup_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_settings, group: KickSide Settings }
+    source: file://cache_bootloader_dedup_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+
+  - name: db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    meta:
+      comment: In-memory database for the settings suites.
+    file: "${sqlite_path}"
+
+  - name: env_storage
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    meta:
+      comment: Test HTTP server.
+    # An ephemeral port: harnesses of concurrent suite runs never collide on a
+    # fixed port, whose failed bind would stall this runtime's service starts.
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      comment: Test API router.
+      server: gateway
+    prefix: /api
+
+  # ─── Scopes the contract suite opens the settings service under ───────
+  - name: settings_admin_policy
+    kind: security.policy
+    meta:
+      comment: Administrator scope — reaches the settings list/write endpoints, so the service treats it as an admin caller.
+    groups:
+      - app.security:admin
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: settings_user_runtime_policy
+    kind: security.policy
+    meta:
+      comment: Ordinary signed-in runtime scope — runtime data access but no reach into the admin settings endpoints, so writes and listing are refused.
+    groups:
+      - app.security:user
+    policy:
+      resources:
+        - app:db
+        - kickside.settings:cache
+      actions:
+        - db.get
+        - store.get
+        - store.key.get
+      effect: allow
+
+  # ─── Settings declarations the contract suite drives ──────────────────
+  - name: setting_max_items
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Plain int setting with a default, used for override/unset/provenance assertions.
+    namespace: kickside.settings.test
+    key: max_items
+    title: Page size
+    category: Rendering
+    order: 7
+    ui: test-page-size
+    owner: test-renderer
+    value_type: int
+    default: 50
+    description: Maximum items rendered per page.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting_api_token
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Secret setting — encrypted at rest, plaintext via get, masked in list.
+    namespace: kickside.settings.test
+    key: api_token
+    value_type: secret
+    default: ""
+    description: Credential for the harness provider.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting_internal_flag
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Backend-only setting — excluded from the admin listing, still manageable through the contract.
+    namespace: kickside.settings.test
+    key: internal_flag
+    value_type: bool
+    default: false
+    description: Backend-managed flag with no admin form control.
+    scope: global
+    editable: true
+    visible: false
+
+  - name: setting_page_size
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Carries a per-setting JSON schema the listing surfaces to the admin form.
+    namespace: kickside.settings.test
+    key: page_size
+    value_type: int
+    default: 25
+    description: Page size offered by the harness provider.
+    scope: global
+    editable: true
+    visible: true
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 100
+
+  - name: setting_positive_quota
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Wires a validate_func so an invalid change is rejected before it is persisted.
+    namespace: kickside.settings.test
+    key: positive_quota
+    value_type: int
+    default: 5
+    description: Quota that may never go negative.
+    scope: global
+    editable: true
+    visible: true
+    validate_func: app:validate_positive_quota
+
+  - name: validate_positive_quota
+    kind: function.lua
+    meta:
+      comment: validate_func for the positive_quota setting; rejects a negative value with the message the suite asserts.
+    source: file://validate_positive_quota.lua
+    method: validate
+
+  - name: validate_false_transition
+    kind: function.lua
+    meta:
+      comment: Validates that a transition to true observes its stored false predecessor.
+    source: file://validate_false_transition.lua
+    method: validate
+
+  - name: setting_transition_flag
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Boolean transition fixture whose validation distinguishes false from its true default.
+    namespace: kickside.settings.test
+    key: transition_flag
+    value_type: bool
+    default: true
+    description: Tests preservation of false stored values during validation.
+    scope: global
+    editable: true
+    visible: false
+    validate_func: app:validate_false_transition
+
+  # ─── Settings block fixture ──────────────────────────────────────────
+  - name: block.settings
+    kind: registry.entry
+    meta:
+      type: kickside.settings:block
+      comment: Component-backed block mounting the module's own settings editor, so the block/view-component resolution assertion has something to check.
+    key: settings
+    title: Settings
+    group: Application
+    order: 10
+    component_tag: kickside-settings
+
+  - name: dep.kickside.settings
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Settings mounted as the single package root; this harness supplies every host seam it requires.
+    component: kickside/settings
+    parameters:
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.wippy.security
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Actor, scope, and access resolution framework; supplies the wippy.security:process group the bootloader service runs under.
+    component: wippy/security
+
+  - name: dep.wippy.migration
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Points the migration bootloader at the test database.
+    component: wippy/migration
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    version: "*"
+    meta:
+      comment: Bootloader applies the settings migrations and runs the cache warmer on boot.
+    component: wippy/bootloader
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+
+  - name: setting_admin_state
+    kind: registry.entry
+    meta: { type: kickside.settings:definition }
+    namespace: kickside.settings.test
+    key: admin_state
+    value_type: json
+    default: []
+    read_access: admin
+    visible: false

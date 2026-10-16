@@ -1,0 +1,46 @@
+organization: kickside
+module: connection
+type: plugin
+description: KickSide connections — provider credentials, resource discovery, and reply targets as components.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+  - kickside
+  - connections
+  - integrations
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support
+embed:
+  - kickside.connection:ui_fs
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "kickside.plugins.stubs:**"
+  - "kickside.plugins.discord:**"
+  - "kickside.plugins.jira:**"
+  - "kickside.plugins.confluence:**"
+  - "ui/node_modules/**"
+  - "ui/node_modules:**"
+  - "ui/coverage/**"
+  - "ui/coverage:**"
+  - "test/**"
+  - "test:**"
+  - ".wippy/**"
+  - ".wippy:**"
+  - "ui/dist/**"
+  - "static/*.map"
+  - "static/**/*.map"
+  - "test/stubs/**"
+  - "test/stubs:**"
+  - "src/**/stubs/**"
+  - "src/**/*.spec.ts"
+  - "src/**/*.spec.tsx"
+  - "ui/src/**/*.spec.ts"
+  - "ui/src/**/*.spec.tsx"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"

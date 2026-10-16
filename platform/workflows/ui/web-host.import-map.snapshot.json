@@ -1,0 +1,27 @@
+{
+  "releaseTag": "webcomponents-1.0.49",
+  "sourceUrl": "https://web-host.wippy.ai/webcomponents-1.0.49/import-map.json",
+  "sourceSha256": "b56716674ee6d7960ac65255bf8dba4e1aefad3bb5d20244ec947c8deeb5ec02",
+  "imports": {
+    "vue": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/vue.js",
+    "pinia": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/pinia.js",
+    "vue-router": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/vue-router.js",
+    "axios": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/axios.js",
+    "nanoevents": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/nanoevents.js",
+    "luxon": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/luxon.js",
+    "@iconify/vue": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/@iconify---vue.js",
+    "iconify-icon": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/iconify-icon.js",
+    "@tanstack/vue-query": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/@tanstack---vue-query.js",
+    "sanitize-html": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/sanitize-html.js",
+    "markdown-it": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/markdown-it.js",
+    "markdown-it-async": "https://web-host.wippy.ai/webcomponents-1.0.49/@vendor/markdown-it-async.js",
+    "@wippy-fe/proxy": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/proxy.js",
+    "@wippy-fe/markdown-iframe": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/markdown-iframe.js",
+    "@wippy-fe/log": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/log.js",
+    "@wippy-fe/log/default-receiver": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/log/default-receiver.js",
+    "@wippy-fe/log/logger": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/log/logger.js",
+    "@wippy-fe/log/sentry-transport": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/log/sentry-transport.js",
+    "@wippy-fe/log/console-transport": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/log/console-transport.js",
+    "@wippy-fe/log/gelf-transport": "https://web-host.wippy.ai/webcomponents-1.0.49/@wippy-fe/log/gelf-transport.js"
+  }
+}
