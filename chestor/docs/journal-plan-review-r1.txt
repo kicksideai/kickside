@@ -1,0 +1,45 @@
+1. Overall: strong information model, weak enforcement model; several “structural” guarantees are still conventions.
+2. F1 is only partly prevented: Complete can require a receipt, but cannot prove the test exercised the declared end boundary or passed honestly.
+3. F2 is not mechanically prevented: Decompose/Link is instructed “before building,” yet external work can begin without either call.
+4. F2 also persists because stable sibling order does not establish a valid dependency order; cycles and contradictory edges need rejection.
+5. F3 is not prevented: child input/output contracts lack schemas, versions, compatibility checks, and parent-side validation.
+6. F4 is partly prevented: Decide makes recorded judgments queryable, but nothing forces consequential choices through Decide.
+7. F5 is partly prevented: an active pointer preserves declared position, not whether it is current, correctly owned, or abandoned.
+8. F6 is only detected: health indicators expose known failures but do not prevent silent failure, stale health data, or a dead monitor.
+9. The protocol cannot enforce “first call of any session” unless all journal operations require an OpenBranch-issued session capability.
+10. It cannot enforce “before building” unless agents receive work capabilities only after an accepted plan and dependency validation.
+11. It cannot enforce checkpoint-on-compaction or abrupt termination; checkpoints need automatic snapshots plus explicit handoff records.
+12. Defaulting facts to the global active node is dangerous with multiple agents and makes misattachment mechanically easy.
+13. Direct task access can bypass Frontier; behind-gate work must be non-startable, not merely omitted from one recommendation query.
+14. Agent assignment, start, mutation, and completion all need server-side authorization against dependencies, gates, leases, and state.
+15. “Pure reads + idempotent writes” is asserted, not designed: idempotency keys, expected versions, retries, and conflict semantics are absent.
+16. Branch digests are generated interpretations; freshness, provenance, recomputation, and contradiction handling are unspecified.
+17. Structurally impossible should include invalid transitions, gate bypass, dependency cycles, stale concurrent writes, and receipt deletion/rebinding.
+18. Merely instructed can cover preferred decomposition quality, when to record low-impact observations, and checkpoint prose quality.
+19. Boundary ordering is unsound until a task declares an exact verifier policy; unit/api/browser/user is not a universal total order.
+20. “Browser ≥ API” may still be wrong when the claim concerns wire compatibility, persistence, authorization, or failure recovery.
+21. A verification must bind claim, task revision, code/data revision, environment, method, result, timestamp, and immutable artifact hash.
+22. Receipt existence is insufficient; verifiers should be typed, with machine-evaluated verdicts where feasible and reviewer identity otherwise.
+23. A task must not reuse an older receipt after relevant work or acceptance criteria change; invalidation rules are required.
+24. Gate pass and task completion should be separate transitions; otherwise passing evidence is conflated with finishing work.
+25. Refuse invalid completion, but provide an explicit audited exception state such as waived or accepted-risk—never silently call it done.
+26. Frontier should explain exclusions and blocked paths; returning nothing without reasons recreates lost position.
+27. The lens lacks sibling context, cross-subtree dependencies, recent changes elsewhere, ownership, leases, deadlines, and pending handoffs.
+28. It also lacks source/revision provenance, digest age, confidence, unresolved contradictions, and whether hidden descendants changed.
+29. “Never other subtrees” conflicts with whole-work understanding when a cross-branch risk or dependency materially affects the active task.
+30. Use bounded exception summaries for relevant cross-branch blockers instead of an absolute subtree prohibition.
+31. S1 lacks explicit owner/lease, last-updated and digest-freshness indicators, receipt status, and “changed since checkpoint.”
+32. S1 needs one authoritative next action with rationale, plus alternatives and why they are blocked—not only lists.
+33. S2 lacks defined zoom-level semantics, edge prioritization, cycle display, accessibility beyond color, and deterministic layout persistence.
+34. A1’s “entire effort in one graph” conflicts with 6,000-node legibility and the stated bounded lens; require complete queryability, not simultaneous rendering.
+35. B6 contradicts the research recommendation by specifying force while the chosen architecture calls for a nested layered graph.
+36. S3 lacks saved queries, result provenance, receipt preview/integrity, artifact availability, and visibility of contradictory decisions.
+37. “What happened?” needs a first-class change feed since checkpoint/handoff; hiding Timeline exclusively in branch drill-down is insufficient.
+38. Q1: implement per-agent leased pointers now; keep a separate journal-level nominated focus for the shared UI.
+39. Q2: store managed immutable artifacts when possible; allow external refs only with hash, metadata, availability state, and retention policy.
+40. Q3: hard-refuse missing or stale required verification; support a separately authorized, prominently visible waiver transition.
+41. Q4: use a virtualized outline plus server-computed focus slices and collapsed containers; never send or lay out all 6,000 nodes by default.
+42. Q5: retain Timeline as an audit/change lens, subordinate to S1, with journal-, subtree-, and since-checkpoint scopes.
+43. Build order is wrong: specify state machines, schemas, concurrency, boundary policies, invariants, and failure semantics before B1/B2.
+44. Then build transactional enforcement, receipt storage/invalidation, dependency validation, leases/checkpoints, health-of-health, and migration tests.
+45. Run adversarial protocol tests before UI work; build S1, Find/audit, and the chosen layered S2 last, deleting the old shell only after parity.

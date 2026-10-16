@@ -1,0 +1,8438 @@
+[
+  {
+    "id": "kickside.agents:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.agents:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.agents:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.agents:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.agents:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.agents:agents_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:agent_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:agent_block_config_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:block.agent",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:agent_edit_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:master_namespace_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents:agent_ref",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents:agent_resolver_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents:agents",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.agents:tools",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.agents:user_agent",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.agents:invoke_sink",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents:agent_resolver",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.agents.api:errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.api:query_params",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.api:pack_start_token",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_user_agents",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_user_agents.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:get_user_agent",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:get_user_agent.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:create_user_agent",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:create_user_agent.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:update_user_agent",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:update_user_agent.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:delete_user_agent",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:delete_user_agent.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:list_agents",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_agents.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:agents_by_name",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:agents_by_name.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:list_traits",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_traits.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:list_namespaces",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_namespaces.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:list_tools",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_tools.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.api:list_memory_options",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_memory_options_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.api:list_memory_options.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.agents.binding:delete_agent_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.binding:agent_status_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.binding:user_agents_func",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.wippy.agent",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.wippy.dataflow",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.wippy.llm",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.wippy.relay",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.wippy.session",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.wippy.views",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.dependencies:dep.kickside.connection",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.agents.invoke:agent_invoke_runtime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.invoke:agent_invoke_write",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.invoke:agent_invoke",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.pickers:agent_trait_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.registry:capability_visibility",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_create",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_find",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_upsert",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_update",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_attach_kb",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_detach_kb",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_attach_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:a_detach_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:agents_registry",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.agents.registry:tool_schema",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.registry:tool_visibility",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.registry:t_find",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:t_list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.registry:tools_registry",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.agents.security:agents_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.agents.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.agents.traits:artifacts",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:build_artifacts_catalog",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:create_artifact",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:redirect",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:init_redirect",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:delegate",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:init_delegate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:agents_action",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:composer_catalog",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:composer_traits_catalog_rows",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:composer_traits_catalog",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:curator_specs",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:trait_curator",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:trait_curator_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:active_traits_prompt",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:trait_master",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:platform_manager",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:platform_manager_support",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:platform_manager_discovery",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:platform_manager_agents",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:platform_manager_connections",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:platform_manager_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:master_ns",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:roster_list",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:agent_roster",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:init_agent_roster",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:time_aware",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.agents.traits:time_context",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:redirect_action",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.agents.traits:id_set",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:capability_context",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.agents.traits:validate_trait_context",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:failure_classification",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.automation:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.automation:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.automation:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.automation:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.automation:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.automation:automations_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation:binding_config_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation:trigger_config_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation:automation_create_kind",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.automation:runtime_reader_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.automation:source_delete_fence_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.automation:declaration_references",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:declaration_authority",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:declaration_writer_create",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:declaration_writer_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:identity_writer",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:identity_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:declaration_owner_verify",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.agent:automations_read",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.agent:automations_manage",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.agent:recurring_tasks",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.api:list_types",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:list_types.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:list_sources",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:list_sources.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:list_sinks",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:list_sinks.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:list.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:install",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:install.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:delete.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:read_state",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:read_state.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:read_config",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:read_config.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:export",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:export.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:import",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:import.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:reconfigure",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:reconfigure.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:update_meta",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:update_meta.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:control",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.api:status",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:status.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:health",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:health.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:set_execution_identity",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:set_execution_identity.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:drive_control",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:drive_control.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.api:call_action",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.api:call_action.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.automation.binding:source_delete_fence",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.binding:runtime_reader_list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.binding:runtime_reader_get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.binding:owned_resource_teardown",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:command_dispatcher",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:slot",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:command",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:binding_validation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:declaration_owner_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.automation:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation:dep.wippy.views",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation:dep.kickside.jobs",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.automation.engine:engine",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:support",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:drive_plan",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:declaration",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:schema",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:pins",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:slot_repair",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:declared",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:install",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:catalog",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:ports",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:sink_writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:state",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:state_write",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:artifact",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:actions",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:control",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:controls",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:recovery",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:observe",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.engine:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.automation.engine:composition_watcher_trust",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.engine:composition_watcher",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.automation.engine:composition_watcher.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.automation.migrations:06_trigger_item_ledger",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.migrations:10_drive_schema",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:owner_gc",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:owned_resource",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.automation:owned_resource_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.automation:noop_delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.recurring:task_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.recurring:install",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.recurring:reconfigure",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.recurring:deliver",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation.recurring:configurable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.automation.recurring:task",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.automation:row_limit",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:round_runner",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_write",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_prepared",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_claim",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_ledger",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:prepared_retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:receipt_retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_outcome",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_reconcile",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_commit",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_acquire",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:round_deliver",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:delivery_identity",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:round_position",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:drive",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation:automation_db",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:runtime_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:cadence",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:timer_pullable",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.automation:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:automation_ref",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation:automation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.automation.security:automation_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.security:declaration_writer",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.security:round_worker_defer",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.security:identity_writer_defer",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.security:round_worker_actor",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.security:declaration_deferred_resolution",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.automation.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.automation.traits:reader",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.automation.traits:manager",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.blocks:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.blocks:dep.wippy.dataflow",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.blocks:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.blocks:blocks",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.blocks:tool_adapter",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.blocks:contract",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.blocks:flow_contract",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.blocks:lower",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.blocks:list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.blocks:await",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.blocks:resume",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.blocks:resume_under_identity",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.blocks:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.channel:retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:retention_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel:reply_admission",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.channel:reserve_reply_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:verify_reply_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:complete_reply_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:reply_admission_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.channel:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.channel:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.channel:retention_db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.channel:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.channel:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel:process_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel:__dependency.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:__dependency.kickside.automation",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.connection",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.uploads",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.kickside.agents",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.wippy.agent",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.wippy.llm",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:dep.wippy.session",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.channel:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel:channel_kind",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.channel:channel_message_received",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel:hub_execution_trust",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel:thread_inbound_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel:receive_inject",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel:thread_reply_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel:thread_responder_session_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel:receive",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.channel:receive_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:refusal",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel:channel_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.channel:cleanup_conversation",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:complete_unlink",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.channel:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.channel.binding:inject_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.binding:cleanup_conversation",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.events:message.inbound",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.events:reply.sent",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.events:reply.failed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.migrations:01_channel",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.migrations:02_admission",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.migrations:03_session_archives",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.migrations:09_conversation_cleanup_counts",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.migrations:11_capacity",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.persist:session_delete_proof",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:conversation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:conversation_gc",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:turn_recovery",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:session_acquire",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:archive_retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.persist:idle_retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.responder:thread_status_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.channel.responder:runtime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.responder:install",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:status",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:read_config",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:configure",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:pause",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:resume",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:responder_projection",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.responder:responder_projection_worker",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.responder:create_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.responder:manage_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.responder:channel_responder_contract",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.channel.responder:channel_responder",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.channel.responder.events:status.changed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.responder.events:session.activated",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.responder.events:session.completed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.channel.service:bridge_support",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:reply_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:bridge",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.channel.service:execution_ref",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:thread_bridge",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:dedup",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:hub_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:turn_enrollment",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:receive_witness",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:turn_supervisor",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.channel.service:hub",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.channel.service:hub.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.channel.sink:channel_send_write",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.channel.sink:channel_sink",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.channel.sink:channel_post",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.component:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.component:retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component:retention_db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.component:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.component:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.component:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.component:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:access_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:envelope",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:component",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:identity_access",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:context_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:component_command",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:meta_service",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:autoinit",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:component_lifecycle",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:lifecycle_impl",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.component:component_lifecycle_unwired",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:lifecycle",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.component:declaration_owner",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.component.api:errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.api:access_model",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.api:access_model.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.component.api:list_component_access",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.api:list_component_access.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.component.api:share_component",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.api:share_component.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.component.binding:component_service_impl",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.component.binding:list_access_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:delete_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:get_access_context_by_meta_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:get_access_context_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:get_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:list_components_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:query_components_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:count_components_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:register_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:export_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:import_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:update_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:set_meta_component_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:set_placement_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:list_children_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:grant_subtree_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.binding:revoke_subtree_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:01_create_components_table",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:02_create_component_meta_table",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:03_create_component_access_table",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:07_identity_fence",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:08_derived_acl",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:11_declaration_fence",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.migrations:12_thread_reap",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.persist:pending_delete",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:cleanup_principal_access",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.component.persist:access_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:placement",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:access_subjects",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:component_reader",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:component_query",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:read_port",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:component_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:context_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:declaration_fence",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:declaration_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:declared_create",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:lifecycle_rollback",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:identity_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:audit_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:audit_retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:meta_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:delete_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:placement_ops",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.persist:teardown",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.portability:base_portable",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component.portability:portable_io",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.component:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.component:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.component:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.component:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.component:component_service",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.component.security:component_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.component.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.connection:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.connection:base_connection",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.connection:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.connection:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.connection:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.connection:connections_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.connection:onboard_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.connection:connection_trait_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.connection:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.connection:reply_provider",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.connection:connection",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.connection:connections",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.connection:reply_providers",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.connection:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection:html_text",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection:reply_sender",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection:reply_authorization",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.connection:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.connection.api:errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection.api:query_params",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection.api:list_connections",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:list_connections.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.api:create_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:create_connection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.api:create_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection.api:discover_providers",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:discover_providers.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.api:provider_badges",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:provider_badges.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.api:delete_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:delete_connection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.api:update_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:update_connection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.api:update_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection.api:discovery_envelope",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.connection.api:discover_resources",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.api:discover_resources.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.connection.registry:register",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:find",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:upsert",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:update",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:validate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:connections_registry",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.connection.registry:rp_create",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:rp_find",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:rp_upsert",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:rp_update",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:rp_delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:rp_list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.connection.registry:reply_providers_registry",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.connection.security:connection_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.connection.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.contract:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.contract:http_params",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.contract:canonical_json",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.contract:persisted_json",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.contract:component",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:content_provider",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:deletable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:portable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.data:writable_sink",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.data:pullable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.data.records:external_record_writer",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.data.records:data_connector_manifest_schema",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.data:writable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:resource_registry",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:scope_resolver",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:group_members",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:embeddable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:queryable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:realtime",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:directory",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:security_scopes",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:installable",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.contract:runtime_reader",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.trigger:round_consumer",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.trigger:trigger_spec_schema",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.core:http_status",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core:db",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core:policy_config",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:row_size",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:write_receipt",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:write_receipt_purge",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:source_delete_fence",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.core.lifecycle:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.lifecycle:user_lifecycle_grant",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.lifecycle:admin_lifecycle_grant",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.lifecycle:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:report",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:report_publish_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.core.lifecycle:report_publish_audit",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.core.lifecycle:publish_report",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:component_lifecycle_impl",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:component_lifecycle",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:component_lifecycle.updated",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:component_lifecycle.deleted",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:component_lifecycle_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.core.lifecycle:child_lifecycle_projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:reaper",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:system_lifecycle",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.core.lifecycle:boot_process",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.lifecycle:boot.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.lifecycle.events:principal.deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.lifecycle.events:component.deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core.migrations:00_encoding",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.migrations:01_thread",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.migrations:02_projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.migrations:05_retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.migrations:06_graph",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.migrations:07_retention_pins",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.migrations:08_write_receipts",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core.projections:policy_config",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections:apply",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections:invoke",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections:advance",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.projections:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections:get_read_model",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:register_projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:register_projection_request",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:register_projection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.projections.api:remove_projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:remove_projection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.projections.api:pause_projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:pause_projection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.projections.api:resume_projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:resume_projection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.projections.api:list_projection_cursors",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.projections.api:list_projection_cursors.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.projections.persist:worker",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections.persist:reader",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections.persist:register",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.projections.persist:writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.provenance:source_ref",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core:dep.kickside.jobs",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core:dep.wippy.security",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core:read_models",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.core:read_models_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.core:threads_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.core:threads",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.core.retention:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.retention:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.retention:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.retention:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention:sweeper",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention:notifier",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention:pin",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention:prune",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention.api:get_thread_retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.retention.api:get_thread_retention.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.retention.api:upsert_thread_retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.retention.api:upsert_thread_retention.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.retention.persist:repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention.service:sweeper_process",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.retention.service:owner_hooks",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention.service:runner",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.retention.service:sweeper.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.core.security:core_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.core.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.security:lifecycle_actor_delegation",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.core.security:lifecycle_converge_delegation",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.core.threads:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.threads:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.threads:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.threads:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:env",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:endpoint_resolver",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:component",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:component_identity",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:notify",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:emit_update",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:notify_consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:provision",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:workspace_plugin",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.threads:cursor_waiters",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:cursor_waiter",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.threads:cursor_waiter.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.core.threads:contract_common",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:contract_resource_crud",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:contract_resource",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:contract_event_authorization",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:contract_events",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:contract_graph",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:component_scope",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads:component_scope.readable_threads",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:thread_status",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:create_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:ensure_thread_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:converge_thread_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:emit_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:purge_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:find_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:upsert_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:update_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:delete_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:list_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:list_events_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:prune_boundary_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:find_event_by_external_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:append_events_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:append_event_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:list_children_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:list_edges_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:list_classes_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:register_projection_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:list_projections_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:catch_up_projection_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:pause_projection_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:resume_projection_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:remove_projection_method",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads:events_pullable",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:thread_access",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_jobs",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_jobs.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:list_job_runs",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_job_runs.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:create_thread",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:create_thread.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:get_thread",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:get_thread.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:update_thread",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:update_thread.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:delete_thread",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:delete_thread.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:list_threads",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_threads.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:list_classes",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_classes.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:list_children",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_children.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:get_graph",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:get_graph.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:post_message",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:post_message.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:post_event",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:post_event.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:list_events",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:list_events.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.api:ingest_events_batch",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.threads.api:ingest_events_batch.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.core.threads.persist:normalize",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:reader",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:append",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:thread_crud",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:drop_notify",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:teardown",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:teardown_fence",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:teardown_page",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.threads.persist:lifecycle",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.dashboard:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.dashboard:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.dashboard:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.dashboard:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.dashboard:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.dashboard:dashboard_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.dashboard:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.dashboard:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.dashboard:discovery",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.dashboard:overview",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.dashboard:overview.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.dashboard.security:dashboard_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.dashboard.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.convert.doc2md:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.convert.doc2md:assets",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.convert.doc2md:converter",
+    "kind": "function.wasm"
+  },
+  {
+    "id": "kickside.convert.doc2md:page_resources",
+    "kind": "function.wasm"
+  },
+  {
+    "id": "kickside.convert.doc2md:doc2md",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.execution:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.execution:execution_identity",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.execution:identity_restrictions",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.execution:identity_codec",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.execution:trace",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.hub:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.hub:dep.keeper",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.hub:dep.kickside.agents",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.hub:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.hub:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.hub:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.hub:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.hub:modules_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub:onboard_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub:splash.welcome.step.modules",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub:tab.modules",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub:tab.keeper",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub.api:hub_auth_status",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.api:hub_auth_status.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.hub.api:hub_auth_set",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.api:hub_auth_set.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.hub.api:hub_auth_clear",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.api:hub_auth_clear.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.hub.instruments:instruments_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.hub.instruments:admin_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.hub.instruments:recommender",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub.instruments:requirement_resolver",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.hub.instruments:requirement_resolution_runtime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:requirement_resolution",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:inspect_module_artifact",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:requirement_evidence_runtime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:inspect_registry_entries",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:requirement_resolution.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.hub.instruments:recommendations_runtime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:recommendations",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.hub.instruments:recommendations.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.identity:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.identity:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.identity:dep.kickside.channel",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.identity:dep.kickside.agents",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.identity:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.identity:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.identity:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.identity:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.identity:identity_consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.identity:link_service",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.identity:link_get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.identity:cleanup_principal",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.identity:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.identity:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.identity:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.identity:identity_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.identity:account.identity",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.identity.api:generate_link_code",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.identity.api:generate_link_code.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.identity.api:list_links",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.identity.api:list_links.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.identity.api:unlink",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.identity.api:unlink_response",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.identity.api:unlink.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.identity.migrations:01_external_links",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.identity.security:identity_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.identity.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.inbox:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.inbox:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.inbox:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.inbox:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.inbox:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.inbox:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.inbox:inbox_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:inbox_notice_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:item_type.notice",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:item_type.system",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:inbox_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox:inbox_item_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox:inbox_resolve",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox:inbox_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.inbox:item_created",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:item_resolved",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.inbox:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.inbox:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.inbox:dep.kickside.blocks",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.inbox.api:list_inbox",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.api:list_inbox_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox.api:list_inbox.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.inbox.api:list_item_types",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.api:list_item_types.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.inbox.api:create_item",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.api:create_item.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.inbox.api:resolve_item",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.api:resolve_item.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.inbox.api:delete_item",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.api:delete_item.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.inbox:block.review",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:arm_decision_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox:arm_decision",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox:create_decision",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox:preview_decision",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox:item_type.flow_decision",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox:resume_decision_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox:resume_decision",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.events:delivery.claimed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox.events:item.created",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox.events:item.resolved",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox.events:item.deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox.persist:object_fields",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox.persist:inbox_events",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox.persist:projection_worker",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.persist:projection_committed",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.persist:inbox_reader",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox.persist:inbox_writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.inbox.security:create_output_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.inbox.security:resolve_output_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.inbox.security:submit_output_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.inbox.security:delete_output_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.inbox.security:sink_output_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.inbox.security:inbox_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.inbox.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.inbox.sink:inbox_write",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.inbox.sink:inbox_sink",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.inbox.sink:inbox_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox.traits:inbox_submit",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.inbox.traits:inbox_submit_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.jobs:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.core.jobs:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.jobs:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core.jobs:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core.jobs:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.jobs:process_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.core.jobs:config",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:run_status",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:job_class",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:clock",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:proc_supervisor",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:lease_release",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:jobs",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core.jobs:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core.jobs:dep.wippy.security",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.core.jobs.api:scope",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.migrations:04_jobs",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.jobs.migrations:07_job_slots",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.jobs.migrations:14_worker_pulse",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.jobs.migrations:19_thread_cleanup",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:lifecycle",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:lifecycle_cancel",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:slot_purge",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:worker_marker",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:lifecycle_enqueue",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:thread_fence",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:thread_teardown",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:row_bytes",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:row_mutations",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:lease_status",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:claim",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:reclaim",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:claim_execution",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:completion",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:wake",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.persist:lease_heartbeat",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.jobs.security:jobs_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.core.jobs.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker_heartbeat",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker_fence",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:claim_refusal",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker_dispatch",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker_child",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker_completion",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker_pool",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:retention_schedule",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:loop",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:job_child",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.core.jobs.service:worker.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.mcp_client:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.mcp_client:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.mcp_client:dep.kickside.connection",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.mcp_client:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.mcp_client:dep.wippy.security",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.mcp_client:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp_client:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp_client:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp_client:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.mcp_client:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.mcp_client:connect_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.mcp_client:picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.mcp_client:client",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.mcp_client:protocol",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.mcp_client:http_client",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.mcp_client:broker",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.mcp_client:supervisor",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.mcp_client:supervisor.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.mcp_client:worker",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.mcp_client:surface",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.mcp_client:remote_connection",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.mcp_client:connection_implementation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.mcp_client:get_status",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:test_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:discover_resources",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:list_tools",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:call_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:tools_trait",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.mcp_client:build_tools",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client:invoke_tool",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client.api:reconnect",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.mcp_client.api:reconnect.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.models:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.models:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.models:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.models:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.models:cache",
+    "kind": "store.memory"
+  },
+  {
+    "id": "kickside.models:models_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models:model_resolver",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.models:openai_compat_plain.driver",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.models:openai_compat_plain.provider",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.models:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.models:models_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:tab.models",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:onboard_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.openai_compat",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.openai_compat_plain",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.openai",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.anthropic",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.google_generative_ai",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.google_vertex",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:provider_editor.bedrock",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.openai_compatible",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.api:list_models",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api:list_models.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api:list_model_classes",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api:list_model_classes.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api:models_by_name",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api:models_by_name.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:admin",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:admin.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:create_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:create_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:update_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:update_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:delete_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:delete_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:discover_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:discover_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:test_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:test_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:test_card",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:test_card.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:upsert_card",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:upsert_card.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.api.admin:delete_card",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.api.admin:delete_card.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.models.catalog:policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.catalog:card_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.catalog:model_catalog",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.catalog:model_resolver_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.classes:read_model",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.classes:class.nano",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.classes:class.fast",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.classes:class.balanced",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.classes:class.premium",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.classes:class.embed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.discovery:common",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:mapper",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:provider.openai_like",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:provider.anthropic",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:provider.google_genai",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:provider.bedrock",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:provider_registry",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:reference.openrouter",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:reference_registry",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.discovery:model_discovery",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.migrations:01_models_schema",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.persist:repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.persist:models_secrets",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.providers:provider_read_model",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.providers.google_vertex:token_engine",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.providers.google_vertex:vertex_token_supervisor",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.models.providers.google_vertex:vertex_token_supervisor.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.models.providers.google_vertex:google_vertex.validate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.providers.google_vertex:google_vertex.on_change",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.providers.openai_compat_plain:generate_implementation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.models.providers.openai_compat_plain:generate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.providers.openai_compat_plain:openai_compat_plain.generate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models:dep.wippy.llm",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.models:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.models:dep.wippy.security",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.models:preset.openai_compatible_plain",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.ollama",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.lmstudio",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.vllm",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.openrouter",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.together",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.groq",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.fireworks",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.mistral",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.deepinfra",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.xai",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.cerebras",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.openai",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.anthropic",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.google_gemini",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.google_vertex",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models:preset.bedrock",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.models.security:models_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.models.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.models.service:cache_bootloader",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.models.service:models_cache",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.oauth:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.oauth:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.oauth:dep.kickside.jobs",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.oauth:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.oauth:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.oauth:dep.wippy.views",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.oauth:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.oauth:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.oauth:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.oauth:public_api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.oauth:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.oauth:process_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.oauth:runtime_config",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:oauth_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:base_connector",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.oauth.api:errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.api:discover_providers",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api:discover_providers.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api:get_connection_details",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api:get_connection_details.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api:get_provider_info",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api:get_provider_info.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api:init_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api:init_connection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api:update_consistency",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.api:update_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api:update_connection.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api.public:callback_params",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.api.public:oauth_callback",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api.public:callback_waiter",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.api.public:oauth_callback.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api.public:oauth_callback_page",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.api.public:oauth_callback_page.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.oauth.api.public:callback_registry_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.api.public:callback_listen_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.api.public:callback_send_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.binding:delete_connection_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:get_access_token_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:get_connection_status_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:get_info_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:handle_callback_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:init_oauth_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:refresh_token_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:get_component_contract_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:get_connector_contract_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:get_provider_info_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:list_available_providers_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.binding:provider_discovery_impl",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.oauth.discovery:provider_discovery",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.oauth.discovery:provider_registry",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.migrations:01_create_oauth_connections_table",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.persist:oauth_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.persist:oauth_read_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.persist:oauth_token_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth.persist:oauth_repo_support",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:connector",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.oauth:form",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:creds",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:provider_errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:connection_manager",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:oauth_connection",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.oauth:oauth_connection_contract",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.oauth:token_refresh_core",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:refresh_schedule",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.oauth:refresh_connection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth:refresh_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth:dispatch_refresh",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.oauth.security:oauth_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.oauth.security:refresh_defer",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.security:refresh_actor",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.service:connection_negotiator",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.oauth.service:token_refresh",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.oauth.service:refresh_bootstrap",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.oauth.service:refresh_bootstrap.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.oauth.views:templates",
+    "kind": "template.set"
+  },
+  {
+    "id": "kickside.oauth.views:callback_template_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.views:callback_page_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.oauth.views:oauth_callback",
+    "kind": "template.jet"
+  },
+  {
+    "id": "kickside.oauth.views:theme",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.convert.pdf2image:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.convert.pdf2image:assets",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.convert.pdf2image:pages",
+    "kind": "function.wasm"
+  },
+  {
+    "id": "kickside.convert.pdf2image:render",
+    "kind": "function.wasm"
+  },
+  {
+    "id": "kickside.convert.pdf2image:pdf2image",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.convert.pdf2image:rasterize",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.convert.pdf2image:capability",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.convert.pdf2image:fixtures",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.realtime:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.realtime:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.realtime:dep.wippy.relay",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.realtime:broadcast",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.realtime:notify",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.realtime:realtime_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.renderers:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.renderers:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.renderers:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.renderers:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.renderers:renderers_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.renderers:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.renderers:resource_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_markdown",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_markdown_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_pdf",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_pdf_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_image",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_image_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_html",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_html_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_code",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_code_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_audio",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_audio_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_video",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_video_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_docx",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_docx_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_xlsx",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_xlsx_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_pptx",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:render_pptx_renderer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.renderers:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.renderers.api:list_renderers",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.renderers.api:list_renderers.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.security:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.security:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.security:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.security:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.security:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.security:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.security:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.security:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.security:security_consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.security:security_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.security:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.security:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.security:security_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.security:tab.security",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.security.api:scope_catalog",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.security.api:list_scopes",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.security.api:list_scopes.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.security.api:security_scopes_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.security.api:list_policies",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.security.api:list_policies.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.security.api:save_scope",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.security.api:save_scope.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.security.api:delete_scope",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.security.api:delete_scope.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.security.binding:list_scopes_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.security.migrations:01_security_scopes",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.security.persist:scope_store",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.security.service:scope_projection",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.security.service:scope_projection_proc",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.security.service:scope_projection_trust",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.security.service:scope_projection.service",
+    "kind": "process.service"
+  },
+  {
+    "id": "kickside.sessions:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sessions:dep.wippy.session",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sessions:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sessions:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sessions:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.sessions:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.sessions:sessions_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sessions:artifacts_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sessions:artifact_panel_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sessions:artifact_coordinator_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sessions:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sessions.api:errors",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sessions.api:start_token",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sessions.api:start_token.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sessions.api:favorite",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sessions.api:favorite.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.settings:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.settings:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.settings:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.settings:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.settings:cache",
+    "kind": "store.memory"
+  },
+  {
+    "id": "kickside.settings:settings_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.settings:settings_defs",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.settings:settings_blocks",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.settings:settings_cache",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.settings:settings_secrets",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.settings:reader_cache",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.settings:reader_registry",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.settings:get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings:set",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings:unset",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings:list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings:get_namespace",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings:cache_bootloader",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.settings:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.settings:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.settings:settings_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.settings:provider_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.settings:tab.settings",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.settings:settings",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.settings:settings_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.settings:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.settings.api:list_settings",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings.api:list_settings.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.settings.api:list_blocks",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings.api:list_blocks.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.settings.api:put_settings",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings.api:put_settings.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.settings.migrations:01_settings",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.settings.persist:settings_writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.settings.service:cache_bootloader",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sso:dep.kickside.settings",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sso:dep.kickside.users",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sso:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sso:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso:public_api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:flow_store",
+    "kind": "store.memory"
+  },
+  {
+    "id": "kickside.sso:providers_registry",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso:util",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso:config",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso:session",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso:provider_gate",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso:setting_enabled",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_auto_provision",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_allowed_email_domains",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_default_group",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_group_claim_name",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_group_mapping",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_post_login_redirect_allowlist",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:setting_public_base_path",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.sso:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.sso:sso_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:sso_admin_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:sso_provider_card_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso:block.sso",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.api:public_reader_policy",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.api:flow_store_policy",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.api:provider_http_egress_policy",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.api:list_providers",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:list_providers.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.api:list_admin_providers",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:list_admin_providers.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.api:list_connections",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:list_connections.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.api:link_start",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:link_start.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.api:unlink",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:unlink.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.api:start",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:start.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.api:callback",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.api:callback.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.sso.connectors:jwk",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.connectors:oidc",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.connectors:github",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.connectors:providers",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.env:envs",
+    "kind": "env.storage.os"
+  },
+  {
+    "id": "kickside.sso.env:google_client_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:google_client_secret",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:microsoft_client_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:microsoft_client_secret",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:microsoft_tenant",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:github_client_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:github_client_secret",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:oidc_issuer",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:oidc_client_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:oidc_client_secret",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:allowed_email_domains",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:default_group",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:public_base_path",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.sso.env:seed_plan",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.env:seed.env_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.env:seed.settings_write",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.env:seed_sso_settings",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.flow:flow_store",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.flow:cookies",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.flow:reqinfo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.flow:redirect",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.migrations:01_identities",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.persist:identities_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.persist:provisioner",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sso.providers.google:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sso.providers.google:provider",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.providers.google:validate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sso.providers.google:enabled",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.providers.google:client_id",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.providers.google:client_secret",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.providers.google:scopes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.providers.google:block.sso_provider",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sso.providers.google:dep.kickside.sso",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sso.providers.google:dep.kickside.settings",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sync:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sync:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sync:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.sync:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.sync:sync_create_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sync:sync_manage_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.sync:document",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sync:round_plan",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sync:round_deliver",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sync:destination_map",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sync:sync_runtime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.sync:sync_install",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sync:sync_reconfigure",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.sync:sync_contract",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.sync:sync",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.sync:dep.kickside.automation",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sync:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sync:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sync:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.sync:dep.kickside.transform",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.transform:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.transform:dep.wippy.llm",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.transform:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.transform:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.transform:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.transform:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.transform:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.transform:transform_assist_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.transform:schema_validate",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_none",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_expr",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_llm",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_reference",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_code",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_func",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:sink_input",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:apply",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategies",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:strategy",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.transform:strategy_none_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_none_describe",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_none_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.transform:strategy_expr_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_expr_describe",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_expr_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.transform:strategy_llm_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform.api:assist",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform.api:assist.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.transform.api:validate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform.api:validate.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.transform.api:snippet",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform.api:snippet.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.transform:snippet",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:generator",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.transform:node_snippet_search",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:node_analyze",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:node_iterate",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:generate_transform",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:publish_transform_snippet",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_llm_describe",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_llm_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.transform:strategy_code_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_code_describe",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_code_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.transform:strategy_func_apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_func_describe",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.transform:strategy_func_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.transform.security:transform_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.transform.security:code_execution_call",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.transform.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.ui:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:public_api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.ui:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.ui:branding_fs",
+    "kind": "fs.directory"
+  },
+  {
+    "id": "kickside.ui:branding_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.ui:appearance_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:tab.appearance",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_layout",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_overrides",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_categories",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_custom_items",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_title",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_logo_url",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_home",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_primary_color",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:nav_provider",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.ui:registry_nav_provider",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui:registry_nav_provider_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.ui:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui:nav",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui:nav_providers",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui.api:list_nav",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:list_nav.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:list_contributions",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:list_contributions.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:list_settings_tabs",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:list_settings_tabs.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:list_account_items",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:list_account_items.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:mark_splash_seen",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:mark_splash_seen.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:mark_splash_unseen.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:reset_splashes.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:set_config",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:set_config.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:upload_logo",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:upload_logo.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui.api:get_branding",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui.api:get_branding.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.ui:public_branding_settings_contract",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui:public_branding_settings_registry",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui:public_branding_settings_cache",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui:dep.kickside.settings",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.ui:dep.wippy.facade",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.ui:facade_resolver",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_static_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_content_fs_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_handler_settings_contract_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_handler_settings_registry_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_handler_settings_cache_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_handler_static_read_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_handler_content_fs_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_handler_contract_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.ui:facade_resolver_contract_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui:nav_badges",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui:contributions",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui:shell_discovery",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui:splash",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.ui:field.seen_splashes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:setting_completed_splashes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:splash.welcome",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:splash.welcome.step.workspace",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:splash.welcome.step.logo",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:splash.welcome.step.models",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:splash.welcome.step.mcp",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui:splash.welcome.step.done",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.ui.security:ui_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui.security:system_onboarding_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.ui.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.ui.security:admin_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:thread_deleted_publish",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.uploads:retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads:retention_policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:policy",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.uploads:types.generic",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:dependency.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:dependency.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:database_resource",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:storage_id",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:storage_s3",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:env_storage",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:document_image_artifacts_enabled",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:archive_max_zip_bytes",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.uploads:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.uploads:uploads_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:settings_storage_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads:content_provider",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.uploads:file_provider",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.uploads:metadata_sanitizer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:setting.process_max_execution_ms",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:settings.block.storage",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:net_safety",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:pipeline",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:uploads",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:uploads_mime",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:uploads_tokens",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:uploads_presigned",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.api:complete_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:complete_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:delete_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:delete_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:get_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:get_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:list_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:list_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:upload_response",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.api:presigned_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:presigned_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:upload_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:upload_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:raw_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:raw_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:artifacts_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:artifacts_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.api:artifact_raw_handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.api:artifact_raw_handler.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.uploads.archive:config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.archive:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.archive:zip_reader",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.archive:processor",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.archive:on_delete",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.archive:types.archive",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:uploads_component",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.uploads:attachment_ingest",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:uploads_resources",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:count_resources_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:get_content_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:get_info_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:list_resources_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:file_provider_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.binding:delete_uploads_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:dep.kickside.jobs",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:dep.wippy.views",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads:dep.wippy.session",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads.documents:dependency.doc2md",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.uploads.documents:env.document_image_artifacts_enabled",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.uploads.documents:setting.max_upload_bytes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.documents:processor",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.documents:types.documents",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.env:database_resource",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.uploads.env:storage_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.uploads.env:storage_s3",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.uploads.events:upload.completed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.events:upload.deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.images:processor",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.migrations:01_create_uploads_table",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.migrations:02_create_upload_read_model",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.migrations:04_create_artifact_tables",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:artifact_schema",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:artifact_content_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:artifact_parts_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:artifact_cleanup_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:upload_record_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:processing_intent_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:upload_query_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:upload_tokens",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:upload_read_model",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:uploads_events",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:uploads_projection_worker",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:read_model_retention",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:cleanup_principal",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.persist:read_model_owner_delete",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.rasterize:rasterizer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.rasterize:page_images",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.rasterize:stage",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.rasterize:stage.universal",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_empty_enabled",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_max_text_bytes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_min_source_bytes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_dpi",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_batch_pages",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_format",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_quality",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.rasterize:setting.rasterize_min_page_bytes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:upload_completed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.security:retention_db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.uploads.security:retention_prune_boundary",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.uploads.security:deferred_owner",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.uploads.security:deferred_actor",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.uploads.security:uploads_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.uploads.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.uploads.service:intent_maintenance",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.service:intent_reconcile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.service:intent_bootstrap",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.service:process_worker",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads.service:process_job_proc",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.uploads.service:callback_job",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.text:processor",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.traits:count_files",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.traits:file_manager",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads.traits:list_files",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.traits:view_files",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.traits:fetch_url",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads.traits:upload_file",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.uploads:upload_type",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.uploads:types.images",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:types.text",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.uploads:upload_status",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.users:env_storage",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:public_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:admin_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:login_role_resource",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:__dependency.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.users:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users:session",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users:revocation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users:setting.token_expiration",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:block.authentication",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.users:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.users:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.users:users_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:share_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:principal_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:profile_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:tab.users",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users:scope_resolver_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.users:group_members_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.users:user_provisioning",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.users:provisioning_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.users:dep.kickside.execution",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.users:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.users:dep.wippy.views",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.users:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.users:dep.kickside.settings",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.users.api:login",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:login.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:me",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:me.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:update_me",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:update_me.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:logout",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:logout.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:list_assignable_scopes",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:list_assignable_scopes.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:get_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:get_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:put_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:put_profile.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:principals_search",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:principals_search.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:principals_resolve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:principals_resolve.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:group_validation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.api:list_users",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:list_users.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:create_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:create_user.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:delete_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:delete_user.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:update_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:update_user.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:get_user_groups",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:get_user_groups.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.api:set_user_groups",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.api:set_user_groups.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.users.binding:group_members_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.binding:scope_resolver_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.binding:subject_lookup",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.directory:directory_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.directory:directory_search",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.directory:directory_resolve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.directory:directory_exists",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.directory:directory_groups",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.directory:directory_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.users.directory:directory_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.env:envs",
+    "kind": "env.storage.os"
+  },
+  {
+    "id": "kickside.users.env:database_resource",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.env:admin_group_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.env:admin_init_enabled",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.env:default_admin_email",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.env:default_admin_password",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.env:default_group_id",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.env:token_expiration",
+    "kind": "env.variable"
+  },
+  {
+    "id": "kickside.users.migrations:01_create_app_user_tables",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.migrations:02_init_admin_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.migrations:03_create_token_store_table",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.migrations:04_create_user_sessions",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.migrations:09_profile",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_repo_support",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_credentials_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_lifecycle_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_groups_support",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_groups_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_group_sources_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:user_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:admin_repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:session_index",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:session_revoker",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.persist:profile_writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.persist:cleanup_principal",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.persist:delete_principal",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.profile:db_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.profile:profile_types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.profile:profile_defs",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.profile:get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.profile:set",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.profile:unset",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.profile:list",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.profile:get_namespace",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.profile:profile_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.profile:profile",
+    "kind": "contract.definition"
+  },
+  {
+    "id": "kickside.users.profile:profile_binding",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.users.profile:field.display_name",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.profile:field.avatar_url",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.profile:field.bio",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.profile:field.locale",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.profile:field.timezone",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning_get_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning_create_passwordless_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning_assign_group",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning_complete_passwordless_user",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning_apply_sourced_groups",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.provisioning:provisioning_mint_session",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.users.security:login_db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.security:login_env_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.security:login_actor_create",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.security:login_role_resolve",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.security:login_token_mint",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.security:login_settings_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.security:token_storage",
+    "kind": "store.sql"
+  },
+  {
+    "id": "kickside.users.security:tokens",
+    "kind": "security.token_store"
+  },
+  {
+    "id": "kickside.users.security:users_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.users.traits:user_aware",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.users.traits:user_name",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.widgets:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.widgets:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.widgets:ui_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.widgets:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.widgets:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.widgets:icon_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets:model_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets:multiselect_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets:channel_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets:connection_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets:component_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets:schema_form_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.widgets.api:create_view_resolver",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.widgets.api:create_view_resolver.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "app:web",
+    "kind": "http.router"
+  },
+  {
+    "id": "app:documentation.home",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.developer-handbook",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.canonical-model",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.component-development",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.contracts-and-ports",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.threads-events-projections",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.connections-and-integrations",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.knowledge-uploads-automation-inbox",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.agents-skills-models",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-web-components",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.recipes",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.checklists",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.application-patterns",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.design-gaps",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.module-layout",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.testing",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.dev-loop",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.publishing",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.conventions",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.settings",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.blocks-flows-workflows",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.discovery-addressing-context",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.execution-identity-and-jobs",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.automations-and-dataflows",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.deals-crm",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-handbook",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-app-checklist",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-app-guide",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-best-practices",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-component-guide",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-host-spec",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.frontend-proxy-api",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.api.websocket:ws_endpoint",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.api.websocket:ws_endpoint.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app.composition:onboarding_profile.knowledge",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.workspace",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.automation",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.workflows",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.research",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.gtm",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.google_workspace",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.channels",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.composition:onboarding_profile.developer",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.deps:agent",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:bootloader",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:dataflow",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:facade",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:keeper",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_agents",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_automation",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_blocks",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_channel",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_connection",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_jobs",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_sso",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_sso_google",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:pdf2image",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:llm",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:relay",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:renderers",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:security",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:session",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:terminal",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:uploads",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:usage",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:views",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_dashboard",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_hub",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_identity",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_inbox",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_models",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_mcp_client",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_oauth",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_realtime",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_security",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_sessions",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_settings",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_sync",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_transform",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_ui",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_users",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.deps:kickside_widgets",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "app.env:file",
+    "kind": "env.storage.file"
+  },
+  {
+    "id": "app.env:os",
+    "kind": "env.storage.os"
+  },
+  {
+    "id": "app.env:defaults",
+    "kind": "env.storage.static"
+  },
+  {
+    "id": "app.env:store",
+    "kind": "env.storage.router"
+  },
+  {
+    "id": "app.env:pg_host",
+    "kind": "env.variable"
+  },
+  {
+    "id": "app.env:pg_port",
+    "kind": "env.variable"
+  },
+  {
+    "id": "app.env:pg_database",
+    "kind": "env.variable"
+  },
+  {
+    "id": "app.env:pg_username",
+    "kind": "env.variable"
+  },
+  {
+    "id": "app.env:pg_password",
+    "kind": "env.variable"
+  },
+  {
+    "id": "app.env:serve_public_env",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.env:public_env_endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app.health:db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.health:serve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.health:endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app.login:templates",
+    "kind": "template.set"
+  },
+  {
+    "id": "app.login:page",
+    "kind": "template.jet"
+  },
+  {
+    "id": "app.login:theme_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.login:handler",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.login:endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app:documentation.glossary",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.index-by-module",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.index-by-task",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.plugin-template",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.rfc-document-catalog",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation.navigation",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app:documentation",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app:app_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "app:facade_static_no_store",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app:gateway",
+    "kind": "http.service"
+  },
+  {
+    "id": "app:api.public",
+    "kind": "http.router"
+  },
+  {
+    "id": "app:api",
+    "kind": "http.router"
+  },
+  {
+    "id": "app:api.views",
+    "kind": "http.router"
+  },
+  {
+    "id": "app:processes",
+    "kind": "process.host"
+  },
+  {
+    "id": "app:data_dir",
+    "kind": "fs.directory"
+  },
+  {
+    "id": "app:db",
+    "kind": "db.sql.sqlite"
+  },
+  {
+    "id": "app:cache",
+    "kind": "store.memory"
+  },
+  {
+    "id": "app:uploads",
+    "kind": "fs.directory"
+  },
+  {
+    "id": "app:tmp",
+    "kind": "fs.directory"
+  },
+  {
+    "id": "app:app_fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "app.security:role_admin",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.security:role_user",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.security:role_ingress",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.security:admin.all_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:ingress.endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:public_env.read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:facade.template_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:facade_template_runtime_policy",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.security:encryption_key_guard",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.security:user.app_shell_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.view_registry_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.events_bus_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_data_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_registry_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.documentation_registry",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.documentation_tool",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_contracts",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_contract_methods",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_contract_context",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_function_context",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_actor_delegation",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_process_context",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_process_notifications",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_session_spawn",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_session_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_session_registry",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_oauth_spawn",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_process_host",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_oauth_registry",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_env_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_http_client",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.security:user.runtime_http_private_ip",
+    "kind": "security.policy"
+  },
+  {
+    "id": "app.seo:robots",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.seo:robots.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app.seo:llms",
+    "kind": "function.lua"
+  },
+  {
+    "id": "app.seo:llms.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "app.ui:system",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.views:main",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "app.deployment:deployment_runtime_image",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_application_data",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_encryption_key_secret",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_network",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_admin_password",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_application",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_endpoint",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_hub_token",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_hub_token_secret",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_admin_email",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_admin_password_secret",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_database",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_database_data",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_database_password_secret",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "app.deployment:deployment_secret_material",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.crm:dep.kickside.component",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:dep.kickside.contract",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:dep.kickside.inbox",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:dep.kickside.blocks",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:dep.kickside.core",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:dep.kickside.widgets",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:dep.wippy.migration",
+    "kind": "ns.dependency"
+  },
+  {
+    "id": "kickside.crm:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:thread_event_retention_days",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:write_origin_retention_days",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:sink_receipt_retention_days",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm:consts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm:types",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm:crm",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.api:access",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.api:bootstrap",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:bootstrap.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:create",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:create.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:get.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:panels",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:panels.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:apply.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:schema_implementation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.api:schema.get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:schema.get.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:schema.apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:schema.apply.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:import_config",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:import_config.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:export_config",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:export_config.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:query",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:query.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.api:resolve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.api:resolve.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.crm.binding:delete_func",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.binding:crm",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.crm.blocks:resolve",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.blocks:merge_review",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.command:writer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.domain:constraints",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.domain:validation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.domain:policy",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.events:record.created",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:record.updated",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:record.deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:merge.suggested",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:merge.decided",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:relation.linked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:relation.unlinked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:reference.linked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:reference.unlinked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:membership.set",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:membership.removed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:activity.logged",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:activity.deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:ai_attribute.filled",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:external_write.requested",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:external_write.succeeded",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.events:external_write.failed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.migrations:01_storage_catalog",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.migrations:02_activity_reference",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.migrations:06_conditional_outcome",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.migrations:07_pending_relation",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.persist:config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.persist:compiler",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.persist:repo",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.persist:sink_receipts",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.persist:materializer",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.persist:read_model",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.persist:projection",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.persist:write_origin",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.persist:write_origin_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:membership_set",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:record_created",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:record_updated",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:record_deleted",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:merge_suggested",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:merge_decided",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:relation_linked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:relation_unlinked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:activity_logged",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:reference_linked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:reference_unlinked",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:membership_removed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:ai_attribute_filled",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:external_write_requested",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:external_write_succeeded",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.ports:external_write_failed",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.read:alias_lookup",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.read:references",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.registry:record_panels",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.registry:default_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.registry:setting_thread_event_retention_days",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.registry:profile_list_views",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.resolution:normalize",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:aliases",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:resolve_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:resolve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:block_resolve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:suggest",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:merge_arm_lib",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:merge_arm",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:merge_on_resolve",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.resolution:validate_merge_resolution",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.schema:schema",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.schema:mutation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.schema:client",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.security:crm_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.crm.security:crm_config_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.crm.security:crm_surface_discovery",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.crm.security:crm_read_face_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.crm.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm.security:schema_mutation_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.crm.security:admin_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.crm.service:config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.service:schema_authority",
+    "kind": "process.lua"
+  },
+  {
+    "id": "kickside.crm.sink:crm_sink_implementation",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.sink:sink_commands",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.sink:receipt_retention",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.sink:receipt_retention_db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.crm.sink:receipt_retention_config",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.sink:crm_write",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.sink:crm_list_keys",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.sink:crm_sink",
+    "kind": "contract.binding"
+  },
+  {
+    "id": "kickside.crm.sink:crm_records",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:fs",
+    "kind": "fs.embed"
+  },
+  {
+    "id": "kickside.crm.surface:surface_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:create_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:record_picker_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:merge_review_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:item_type.crm_merge_review",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:nav_item",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:settings_view",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.surface:settings_tab",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.traits:crm_tool",
+    "kind": "library.lua"
+  },
+  {
+    "id": "kickside.crm.traits:crm_trait",
+    "kind": "registry.entry"
+  },
+  {
+    "id": "kickside.crm.traits:list_records",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:get_record",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:get_board",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:get_timeline",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:schema.get",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:schema.apply",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:resolve_record",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:create_record",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:update_record",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:set_membership",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:log_activity",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:delete_activity",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:link_reference",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.traits:unlink_reference",
+    "kind": "function.lua"
+  },
+  {
+    "id": "kickside.crm.ui:ui_static",
+    "kind": "http.static"
+  },
+  {
+    "id": "kickside.crm.workspace:create",
+    "kind": "library.lua"
+  }
+]

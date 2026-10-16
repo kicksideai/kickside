@@ -1,0 +1,96 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+
+const get = vi.fn(), post = vi.fn(), put = vi.fn(), del = vi.fn(), confirm = vi.fn()
+vi.mock('@wippy-fe/proxy', () => ({ api: { get: (...a: unknown[]) => get(...a), post: (...a: unknown[]) => post(...a), put: (...a: unknown[]) => put(...a), delete: (...a: unknown[]) => del(...a) }, host: { confirm: (...a: unknown[]) => confirm(...a) } }))
+vi.mock('@wippy-fe/webcomponent-vue', () => ({ useHostVisibilityRefresh: (callback: () => unknown) => callback() }))
+import Users from './users.vue'
+
+const bot = { user_id: 'bot-id', full_name: 'Build bot', email: 'bot-id@bots.invalid', status: 'active', bot_account: true, security_groups: ['operators'], created_at: '2026-10-10T00:00:00Z' }
+beforeEach(() => {
+  vi.resetAllMocks()
+  get.mockImplementation((url: string) => Promise.resolve({ data: url.endsWith('assignable-scopes') ? { success: true, scopes: [{ id: 'operators', label: 'Operators' }] } : { success: true, users: [bot] } }))
+  post.mockResolvedValue({ data: { success: true, user: bot } })
+  put.mockResolvedValue({ data: { success: true } })
+  del.mockResolvedValue({ data: { success: true } })
+  confirm.mockResolvedValue(true)
+})
+async function bots() {
+  const view = mount(Users, { global: { stubs: { Icon: true } } })
+  await flushPromises()
+  await view.get('button[role="tab"][aria-controls="users-bots"]').trigger('click')
+  await flushPromises()
+  return view
+}
+describe('BOT-ACCOUNT-ADMIN-CREATION ordinary User bot management', () => {
+  it('names the unfiltered inventory All users and keeps its account controls distinct from the host Users tab', async () => {
+    const view = mount(Users, { global: { stubs: { Icon: true } } })
+    await flushPromises()
+    expect(view.get('button[role="tab"][aria-controls="users-accounts"]').text()).toBe('All users')
+    expect(view.get('.ku-row').text()).toContain('Build bot')
+    view.unmount()
+  })
+  it('loads the dedicated bot inventory and labels marked accounts', async () => {
+    const view = await bots()
+    expect(get).toHaveBeenCalledWith('/api/v1/users/bots')
+    expect(view.get('.ku-row').text()).toContain('Bot')
+    expect(view.get('.ku-row').text()).toContain('Build bot')
+    view.unmount()
+  })
+  it.each([{ groups: [] }, { groups: ['operators'] }])('creates with explicit groups %j and no credential or default enrollment controls', async ({ groups }) => {
+    const view = await bots()
+    await view.get('button[aria-label="Create bot"]').trigger('click')
+    expect(view.find('input[type="email"]').exists()).toBe(false)
+    expect(view.find('input[type="password"]').exists()).toBe(false)
+    expect(view.find('input[aria-label="Use default membership"]').exists()).toBe(false)
+    await view.get('input[aria-label="Full name"]').setValue('Build bot')
+    if (groups.length) await view.get('input[type="checkbox"][value="operators"]').setValue(true)
+    await view.get('.ku-form').trigger('submit')
+    await flushPromises()
+    expect(post).toHaveBeenCalledWith('/api/v1/users/bots', { full_name: 'Build bot', groups })
+    expect(view.find('.ku-form').exists()).toBe(false)
+    view.unmount()
+  })
+  it('edits bot display name, status and groups without submitting its immutable email or credentials', async () => {
+    const view = await bots()
+    await view.get('button[aria-label="Edit Build bot"]').trigger('click')
+    expect(view.find('input[type="email"]').exists()).toBe(false)
+    expect(view.find('input[type="password"]').exists()).toBe(false)
+    await view.get('input[aria-label="Full name"]').setValue('Renamed bot')
+    await view.get('select[aria-label="Status"]').setValue('inactive')
+    await view.get('input[type="checkbox"][value="operators"]').setValue(false)
+    await view.get('.ku-form').trigger('submit')
+    await flushPromises()
+    expect(put).toHaveBeenCalledWith('/api/v1/users/bot-id', { full_name: 'Renamed bot', status: 'inactive', groups: [] })
+    view.unmount()
+  })
+  it('describes disable and retained history before using the existing lifecycle endpoint', async () => {
+    const view = await bots()
+    await view.get('button[aria-label="Disable Build bot"]').trigger('click')
+    await flushPromises()
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ header: 'Disable bot', acceptLabel: 'Disable', message: expect.stringContaining('retains') }))
+    expect(del).toHaveBeenCalledWith('/api/v1/users/bot-id')
+    view.unmount()
+  })
+  it('keeps the editor open and renders an unsuccessful save response', async () => {
+    put.mockResolvedValue({ data: { success: false, error: 'membership reduction unavailable' } })
+    const view = await bots()
+    await view.get('button[aria-label="Edit Build bot"]').trigger('click')
+    await view.get('.ku-form').trigger('submit')
+    await flushPromises()
+    expect(view.find('.ku-form').exists()).toBe(true)
+    expect(view.get('[role="alert"]').text()).toContain('membership reduction unavailable')
+    view.unmount()
+  })
+  it('shows readiness failure without treating creation as successful', async () => {
+    post.mockRejectedValue(new Error('Credential support is incomplete'))
+    const view = await bots()
+    await view.get('button[aria-label="Create bot"]').trigger('click')
+    await view.get('input[aria-label="Full name"]').setValue('Build bot')
+    await view.get('.ku-form').trigger('submit')
+    await flushPromises()
+    expect(view.find('.ku-form').exists()).toBe(true)
+    expect(view.get('[role="alert"]').text()).toContain('Credential support is incomplete')
+    view.unmount()
+  })
+})

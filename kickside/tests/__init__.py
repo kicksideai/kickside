@@ -1,0 +1,1 @@
+"""KickSide repository test suite."""

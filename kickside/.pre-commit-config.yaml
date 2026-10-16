@@ -1,0 +1,19 @@
+# Local quality gates. SOC 2-required controls (build, deploy) stay in
+# .gitlab-ci.yml; the frontend gate and the wippy hygiene/lint gate run here.
+# Install once with:
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+repos:
+  - repo: local
+    hooks:
+      - id: frontend-gate
+        name: frontend typecheck + tests + static freshness
+        entry: sh scripts/local-frontend-gate.sh
+        language: system
+        pass_filenames: false
+        files: '^(app/|platform/[^/]+/(ui|static)/|Makefile|scripts/(check-frontend|local-frontend-gate))'
+      - id: wippy-gate
+        name: release hygiene + workflow architecture + wippy lint
+        entry: sh scripts/local-wippy-gate.sh
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

@@ -1,0 +1,183 @@
+{
+  "entries": {
+    "kickside.ui.api:get_branding": {
+      "Data": {
+        "imports": {
+          "ui_types": "kickside.ui:types"
+        },
+        "method": "handler",
+        "modules": [
+          "http",
+          "contract"
+        ],
+        "security": {
+          "actor": {
+            "id": "kickside.ui.api:get_branding"
+          },
+          "policies": [
+            "kickside.ui:public_branding_settings_contract",
+            "kickside.ui:public_branding_settings_registry",
+            "kickside.ui:public_branding_settings_cache"
+          ]
+        },
+        "source": "-- GET /branding (public, unauthenticated) \u2014 the site title + logo URL, so the\n-- login page and the app shell can brand themselves before a session exists.\n-- Reads the kickside.ui settings (cached); degrades to defaults on any outage.\n\nlocal http = require(\"http\")\nlocal contract = require(\"contract\")\nlocal ui_types = require(\"ui_types\")\n\nlocal function handler()\n    local res = http.response()\n    if not res then return nil, \"no http context\" end\n    res:set_content_type(http.CONTENT.JSON)\n\n    local title = ui_types.DEFAULT_TITLE\n    local logo_url = \"\"\n\n    local def = contract.get(ui_types.CONTRACT.SETTINGS)\n    if def then\n        local inst = def:open()\n        if inst then\n            local r = inst:get_namespace({ namespace = ui_types.SETTINGS_NS })\n            if r and r.success and type(r.values) == \"table\" then\n                local v: any = r.values\n                if type(v.title) == \"string\" and v.title ~= \"\" then title = v.title end\n                logo_url = ui_types.safe_logo_url(v.logo_url)\n            end\n        end\n    end\n\n    res:set_status(http.STATUS.OK)\n    res:write_json({ success = true, title = title, logo_url = logo_url })\nend\n\nreturn { handler = handler }\n"
+      },
+      "Kind": "function.lua",
+      "Meta": {
+        "comment": "GET /branding \u2014 public title + logo_url read for pre-auth surfaces."
+      }
+    },
+    "kickside.ui.api:get_branding.endpoint": {
+      "Data": {
+        "func": "get_branding",
+        "method": "GET",
+        "path": "/branding"
+      },
+      "Kind": "http.endpoint",
+      "Meta": {
+        "router": ""
+      }
+    },
+    "kickside.ui:branding_fs": {
+      "Data": {
+        "targets": [
+          {
+            "entry": "kickside.ui:branding_storage",
+            "path": ".fs"
+          },
+          {
+            "entry": "kickside.ui:branding_static",
+            "path": ".fs"
+          }
+        ]
+      },
+      "Kind": "ns.requirement",
+      "Meta": {
+        "comment": "Instance-owned filesystem for admin-uploaded branding assets.",
+        "description": "Instance-owned filesystem for admin-uploaded branding assets.",
+        "value_kind": "fs.directory"
+      }
+    },
+    "kickside.ui:branding_static": {
+      "Data": {
+        "fs": "",
+        "path": "/kickside-branding"
+      },
+      "Kind": "http.static",
+      "Meta": {
+        "server": ""
+      }
+    },
+    "kickside.ui:branding_storage": {
+      "Data": {
+        "fs": ""
+      },
+      "Kind": "registry.entry",
+      "Meta": {
+        "comment": "Configured instance branding filesystem."
+      }
+    },
+    "kickside.ui:public_branding_settings_cache": {
+      "Data": {
+        "policy": {
+          "actions": [
+            "store.get",
+            "store.key.get"
+          ],
+          "effect": "allow",
+          "resources": [
+            "kickside.settings:cache"
+          ]
+        }
+      },
+      "Kind": "security.policy",
+      "Meta": {
+        "comment": "Public branding may read only the warmed settings cache, not DB/admin/write surfaces."
+      }
+    },
+    "kickside.ui:public_branding_settings_contract": {
+      "Data": {
+        "policy": {
+          "actions": [
+            "contract.get",
+            "contract.open",
+            "contract.call"
+          ],
+          "effect": "allow",
+          "resources": [
+            "kickside.settings:settings",
+            "kickside.settings:settings_binding",
+            "get_namespace"
+          ]
+        }
+      },
+      "Kind": "security.policy",
+      "Meta": {
+        "comment": "Public branding may open only the settings contract (and its canonical binding) it uses for title/logo defaults."
+      }
+    },
+    "kickside.ui:public_branding_settings_registry": {
+      "Data": {
+        "policy": {
+          "actions": [
+            "registry.find"
+          ],
+          "effect": "allow",
+          "resources": [
+            "kickside.*"
+          ]
+        }
+      },
+      "Kind": "security.policy",
+      "Meta": {
+        "comment": "Public branding may discover declared setting definitions needed to resolve title/logo defaults."
+      }
+    },
+    "kickside.ui:setting_logo_url": {
+      "Data": {
+        "default": "",
+        "description": "Logo image URL \u2014 set via the Appearance logo upload; empty uses the default mark.",
+        "editable": true,
+        "key": "logo_url",
+        "namespace": "kickside.ui",
+        "scope": "global",
+        "value_type": "string",
+        "visible": false
+      },
+      "Kind": "registry.entry",
+      "Meta": {
+        "comment": "Public URL of the uploaded logo (empty falls back to the default mark).",
+        "type": "kickside.settings:definition"
+      }
+    },
+    "kickside.ui:setting_title": {
+      "Data": {
+        "default": "Kickside",
+        "description": "Site title \u2014 shown in the app header and the browser tab.",
+        "editable": true,
+        "key": "title",
+        "namespace": "kickside.ui",
+        "scope": "global",
+        "value_type": "string",
+        "visible": false
+      },
+      "Kind": "registry.entry",
+      "Meta": {
+        "comment": "Site title shown in the header and the browser tab.",
+        "type": "kickside.settings:definition"
+      }
+    },
+    "kickside.ui:types": {
+      "Data": {
+        "source": "-- Kickside UI navigation runtime vocabulary and helpers.\n--\n-- A module or page declares a navigable surface as a registry.entry with\n-- meta.type = NAV_ITEM_TYPE carrying { label, icon, path, route_name, category,\n-- order }. The nav service discovers them and merges admin system controls\n-- (stored as kickside.ui settings) on top, so admins can reshape the UI \u2014\n-- reorder, hide, recategorize, add custom categories and pages \u2014 without code.\n\nlocal M = {}\n\n-- Registry meta.type a surface declares to appear in navigation.\nM.NAV_ITEM_TYPE = \"ui.nav_item\"\nM.NAV_CATEGORY_TYPE = \"ui.nav_category\"\nM.NAV_LIMITS = {\n    -- The menu is a request-path fan-out. Keep its work bounded even when an\n    -- installation has accumulated many optional modules.\n    PROVIDERS = 24,\n    ITEMS_PER_PROVIDER = 200,\n    CATEGORIES_PER_PROVIDER = 50,\n    PROVIDER_TIMEOUT_MS = 250,\n}\n\n-- Settings namespace the system controls live under (see _index.yaml\n-- kickside.settings:definition entries). All admin overrides flow through the\n-- kickside/settings contract, so they are cached and admin-editable.\nM.SETTINGS_NS = \"kickside.ui\"\n\nM.KEY = {\n    LAYOUT = \"layout\",          -- string: vertical | horizontal\n    OVERRIDES = \"overrides\",    -- json: { [route_name|id] = { hidden, order, category, label, icon } }\n    CATEGORIES = \"categories\",  -- json: [ { key, label, icon, order, collapsed } ]\n    CUSTOM_ITEMS = \"custom_items\", -- json: [ { id, label, icon, path, route_name, category, order } ]\n    TITLE = \"title\",            -- string: site title (header + browser tab)\n    LOGO_URL = \"logo_url\",      -- string: public URL of the uploaded logo (empty = default mark)\n    HOME = \"home\",              -- string: path of the surface used as the landing page (empty = \"/\")\n    PRIMARY_COLOR = \"primary_color\", -- string: base tone hex (#rrggbb), empty = built-in default\n}\n\n-- WCAG relative luminance of an sRGB triple (0-255 channels).\nlocal function tone_rel_luminance(r: number, g: number, b: number): number\n    local function lin(c: number): number\n        local s = c / 255\n        if s <= 0.03928 then return s / 12.92 end\n        return ((s + 0.055) / 1.055) ^ 2.4\n    end\n    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)\nend\n\nlocal function tone_contrast(l1: number, l2: number): number\n    local hi = math.max(l1, l2)\n    local lo = math.min(l1, l2)\n    return (hi + 0.05) / (lo + 0.05)\nend\n\n-- Legibility floor for a base tone. The generated ramp's -600 shade (the\n-- --p-primary-color accent: base mixed 12% toward black) must keep enough contrast\n-- against the light surface (#fff \u2014 white button text + light accent) and the dark\n-- content surface (#0c0e12 \u2014 dark accent) or the UI becomes invisible. Mirrors the\n-- client guard appearance_tone.ts evaluateTone (same 2.0 floor, ramp, and math), so a\n-- syntactically-valid hex the editor would block is also rejected here. Empty / already-\n-- invalid values are \"legible\" (they never reach the ramp). This is the server half of\n-- the guard: the editor disables Save; this defends a direct PUT /nav/config too.\nlocal TONE_MIN_CONTRAST = 2.0\nfunction M.is_legible_primary_color(value: string): boolean\n    local v = value:gsub(\"%s\", \"\"):gsub(\"^#\", \"\")\n    if #v == 3 then v = v:sub(1, 1):rep(2) .. v:sub(2, 2):rep(2) .. v:sub(3, 3):rep(2) end\n    if #v ~= 6 then return true end\n    local r = tonumber(v:sub(1, 2), 16)\n    local g = tonumber(v:sub(3, 4), 16)\n    local b = tonumber(v:sub(5, 6), 16)\n    if not r or not g or not b then return true end\n    -- accent = ramp -600 = each channel * 0.88, rounded (matches the resolver/client)\n    local al = tone_rel_luminance(math.floor(r * 0.88 + 0.5), math.floor(g * 0.88 + 0.5), math.floor(b * 0.88 + 0.5))\n    local on_light = tone_contrast(al, tone_rel_luminance(255, 255, 255))\n    local on_dark = tone_contrast(al, tone_rel_luminance(12, 14, 18))\n    return on_light >= TONE_MIN_CONTRAST and on_dark >= TONE_MIN_CONTRAST\nend\n\n-- Base tone must be an empty string (no override) or a #rgb / #rrggbb hex, so a bad\n-- value cannot corrupt the generated primary ramp. An illegible-but-valid tone (one that\n-- would render invisible UI) is also rejected \u2014 the same guard the editor enforces \u2014 so a\n-- direct API write cannot persist an invisible theme. Returns the normalized value or \"\"\n-- (which means \"no override \u2192 built-in default ramp\") when invalid or illegible.\nfunction M.safe_primary_color(value: any): string\n    if type(value) ~= \"string\" then return \"\" end\n    local v: string = value:gsub(\"%s\", \"\")\n    if v == \"\" then return \"\" end\n    if string.match(v, \"^#%x%x%x$\") or string.match(v, \"^#%x%x%x%x%x%x$\") then\n        local lowered = string.lower(v)\n        if not M.is_legible_primary_color(lowered) then return \"\" end\n        return lowered\n    end\n    return \"\"\nend\n\n-- Home path must be an in-app route (starts with \"/\"), never a scheme or\n-- protocol-relative URL, so a bad setting cannot redirect the landing page off-app.\nfunction M.safe_home_path(value: any): string\n    if type(value) ~= \"string\" or value == \"\" then return \"\" end\n    if value:sub(1, 1) ~= \"/\" then return \"\" end\n    if value:sub(1, 2) == \"//\" then return \"\" end\n    return value\nend\n\n-- Instance branding assets are served publicly under BRANDING_PUBLIC_PATH.\nM.BRANDING_PUBLIC_PATH = \"/kickside-branding\"\nM.DEFAULT_TITLE = \"Kickside\"\n\nM.TRUSTED_APP_LOGOS = {\n    [\"/app/kickside-icon.svg\"] = true,\n    [\"/app/wippy-logo.svg\"] = true,\n}\n\nM.BRANDING_IMAGE_EXT = {\n    png = true,\n    jpg = true,\n    jpeg = true,\n    webp = true,\n    gif = true,\n}\n\nlocal function path_without_suffix(value: string): string\n    return (value:gsub(\"[?#].*$\", \"\"))\nend\n\nlocal function safe_branding_ext(path: string): boolean\n    local ext = (path:match(\"%.([%a%d]+)$\") or \"\"):lower()\n    return M.BRANDING_IMAGE_EXT[ext] == true\nend\n\n-- Public branding is rendered before login. Keep logo URLs same-origin and\n-- constrained to app-owned static mounts so a bad setting cannot make the login\n-- screen load external trackers or scheme URLs.\nfunction M.safe_logo_url(value: any): string\n    if type(value) ~= \"string\" or value == \"\" then return \"\" end\n    local path = path_without_suffix(value)\n    if path:sub(1, #M.BRANDING_PUBLIC_PATH + 1) == M.BRANDING_PUBLIC_PATH .. \"/\"\n        and safe_branding_ext(path)\n    then\n        return value\n    end\n    if M.TRUSTED_APP_LOGOS[path] == true then\n        return value\n    end\n    return \"\"\nend\n\nM.LAYOUT = {\n    VERTICAL = \"vertical\",\n    HORIZONTAL = \"horizontal\",\n}\n\nM.DEFAULT_LAYOUT = M.LAYOUT.VERTICAL\nM.DEFAULT_ORDER = 500\n\n-- Nav badge: an optional binding on a nav_item that surfaces a live component-meta\n-- field (e.g. inbox pending_count on the nav badge). `source` is the extension\n-- point \u2014 a future aggregate is a NEW source value, not a new code path. The badge\n-- is resolved by nav_badges (a single access-filtered component.query) after the\n-- pure nav merge; nav.effective only carries the declared, validated spec.\nM.BADGE = {\n    SOURCE = { COMPONENT_META = \"component_meta\" },\n    STYLE = { COUNT = \"count\", DOT = \"dot\" },\n    SCOPE = { ACTOR = \"actor\" },\n    CARDINALITY = { SINGLETON = \"singleton\" },\n}\n\n-- Declared tone vocabulary. A badge names a tone, never a raw color; the shell maps\n-- the tone to its severity tokens. active_tone is selected only by a boolean\n-- tone_field \u2014 never inferred from a count.\nM.BADGE_TONES = {\n    neutral = true, accent = true, success = true, info = true, warn = true, danger = true,\n}\n\n-- Field types used to coerce TEXT component meta into a typed badge value, mirroring\n-- the automation public_state read coercion so both consumers read the same shape.\nM.BADGE_FIELD_TYPES = {\n    integer = true, number = true, boolean = true, checkbox = true,\n    object = true, array = true, text = true, string = true,\n}\n\n-- Declared spec (source..tone_field) plus the resolver-filled fields (value,\n-- component_id) and the client tone-reevaluation inputs (base_tone). One type flows\n-- from declaration through resolution to the shell.\ntype Badge = {\n    source: string,\n    impl_id: string,\n    scope: string,\n    cardinality: string,\n    field: string,\n    field_type: string,\n    style: string,\n    hide_zero: boolean,\n    tone: string,\n    base_tone: string,\n    active_tone: string?,\n    tone_field: string?,\n    value: number?,\n    component_id: string?,\n}\n\n-- Component ids and meta keys are the only free-form badge inputs; both are\n-- whitelisted to safe identifiers so a bad declaration yields no badge, never a\n-- nav error.\nlocal function badge_identifier(value: any): string?\n    if type(value) == \"string\" and string.match(value, \"^[%w][%w_.:-]*$\") then return value :: string end\n    return nil\nend\n\nlocal function badge_field_key(value: any): string?\n    if type(value) == \"string\" and string.match(value, \"^[%w_][%w_]*$\") then return value :: string end\n    return nil\nend\n\nlocal function badge_tone(value: any, fallback: string): string\n    if type(value) == \"string\" and M.BADGE_TONES[value] then return value :: string end\n    return fallback\nend\n\n-- normalize_badge validates a declared badge block into a typed spec, or nil when\n-- it is absent or malformed (an invalid badge is simply no badge). Only the\n-- component_meta source is understood today; other sources normalize to nil.\nfunction M.normalize_badge(raw: any): Badge?\n    if type(raw) ~= \"table\" then return nil end\n    local b = raw :: { [string]: any }\n    if b.source ~= M.BADGE.SOURCE.COMPONENT_META then return nil end\n    if type(b.component) ~= \"table\" then return nil end\n    local c = b.component :: { [string]: any }\n    local impl_id = badge_identifier(c.impl_id)\n    if not impl_id then return nil end\n    local field = badge_field_key(b.field)\n    if not field then return nil end\n    local field_type = (type(b.field_type) == \"string\" and M.BADGE_FIELD_TYPES[b.field_type])\n        and (b.field_type :: string) or \"text\"\n    local style = (b.style == M.BADGE.STYLE.DOT) and M.BADGE.STYLE.DOT or M.BADGE.STYLE.COUNT\n    local base_tone = badge_tone(b.tone, \"neutral\")\n    local active_tone = (type(b.active_tone) == \"string\" and M.BADGE_TONES[b.active_tone])\n        and (b.active_tone :: string) or nil\n    return {\n        source = M.BADGE.SOURCE.COMPONENT_META,\n        impl_id = impl_id,\n        scope = M.BADGE.SCOPE.ACTOR,\n        cardinality = M.BADGE.CARDINALITY.SINGLETON,\n        field = field,\n        field_type = field_type,\n        style = style,\n        hide_zero = b.hide_zero == true,\n        tone = base_tone,\n        base_tone = base_tone,\n        active_tone = active_tone,\n        tone_field = badge_field_key(b.tone_field),\n        value = nil,\n        component_id = nil,\n    }\nend\n\n-- Coerce a raw (TEXT) component-meta value to its declared field type; returns nil\n-- when the value is absent or cannot be coerced. Mirrors the automation public_state\n-- read coercion and the client componentRealtime coercion.\nfunction M.coerce_field_value(field_type: string, value: any): any\n    if value == nil then return nil end\n    if field_type == \"boolean\" or field_type == \"checkbox\" then\n        if type(value) == \"boolean\" then return value end\n        if type(value) == \"string\" then\n            local lowered = string.lower(value)\n            if lowered == \"true\" then return true end\n            if lowered == \"false\" then return false end\n        end\n        return nil\n    end\n    if field_type == \"number\" or field_type == \"integer\" then\n        if type(value) == \"number\" then return value end\n        if type(value) == \"string\" then\n            local n = tonumber(value)\n            if n ~= nil then return n end\n        end\n        return nil\n    end\n    return value\nend\n\n-- badge_visible is the single display predicate shared by the resolver tests and\n-- mirrored client-side: a count needs a numeric value and is hidden at 0 when\n-- hide_zero; a dot shows on presence and is hidden at an explicit 0 when hide_zero.\nfunction M.badge_visible(badge: Badge): boolean\n    if badge.style == M.BADGE.STYLE.DOT then\n        if badge.value == nil then return true end\n        return not (badge.hide_zero and badge.value == 0)\n    end\n    if type(badge.value) ~= \"number\" then return false end\n    return not (badge.hide_zero and badge.value == 0)\nend\n\n-- Cross-module contract ports this module depends on. Kept here (the module's\n-- one canonical place for ids) rather than inlined at each call site.\nM.CONTRACT = {\n    SETTINGS = \"kickside.settings:settings\",\n    REALTIME = \"kickside.contract:realtime\",\n    PROFILE = \"kickside.users.profile:profile\",\n    -- Component read port for nav badges; resolved at runtime (absent in minimal\n    -- contexts, where badges simply do not resolve).\n    COMPONENT = \"kickside.component:component_service\",\n    NAV_PROVIDER = \"kickside.ui:nav_provider\",\n    REGISTRY_NAV_PROVIDER_BINDING = \"kickside.ui:registry_nav_provider_binding\",\n}\n\n-- The component owner meta key (kickside.component OWNER_META_KEY). Named here to\n-- keep the ui module decoupled from the component runtime: a scope=actor badge is\n-- resolved against the actor's OWN component by matching this owner meta, so an\n-- admin who can READ many users' components still badges only their own.\nM.COMPONENT_OWNER_META_KEY = \"owner\"\n\n-- A splash is a full-screen surface shown once. Modules declare a registry.entry\n-- with meta.type = SPLASH_TYPE and a meta.scope from SPLASH_SCOPE (default USER).\n-- A USER splash is seen once per user: the record lives in the profile field\n-- SEEN_SPLASHES_KEY. An INSTANCE splash is completed once for the whole instance:\n-- the record lives in the setting COMPLETED_SPLASHES_KEY under SETTINGS_NS. Both\n-- are server-side, never client storage.\nM.SPLASH_TYPE = \"ui.splash\"\nM.SPLASH_SCOPE = {\n    USER = \"user\",\n    INSTANCE = \"instance\",\n}\nM.COMPLETED_SPLASHES_KEY = \"completed_splashes\"\n-- A step within a splash: declared per module, discovered + ordered, composed by\n-- the wizard shell. component_tag (optional) mounts the step's own web component.\nM.SPLASH_STEP_TYPE = \"ui.splash.step\"\nM.PROFILE_NS = \"kickside.ui\"\nM.SEEN_SPLASHES_KEY = \"seen_splashes\"\nM.PROFILE_LOCALE_NS = \"kickside.profile\"\nM.PROFILE_LOCALE_KEY = \"locale\"\nM.DEFAULT_LOCALE = \"en-US\"\n\n-- Expose the Badge alias for cross-module type references (nav.lua, nav_badges.lua).\nM.Badge = Badge\n\nreturn M\n"
+      },
+      "Kind": "library.lua",
+      "Meta": {
+        "comment": "Nav item/category meta.type + provider contract id + settings namespace/keys + layout vocabulary."
+      }
+    }
+  },
+  "module": "kickside/ui",
+  "sha256": "2b4f3b4ab0e29da12adbfa69f04ed510272f3f4312b6fc87ccb5a1e759fa6ea1",
+  "version": "0.1.36"
+}

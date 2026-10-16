@@ -1,0 +1,115 @@
+version: "1.0"
+namespace: kickside.convert.dxf2md
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: DXF to Markdown and Image
+      description: Convert a DXF CAD drawing, supplied as a URL or a binary blob, into structured Markdown (metadata, layers, text, entity summary) and a PNG render of its line work.
+
+  - name: assets
+    kind: fs.directory
+    meta:
+      comment: Filesystem holding the dxf2md WebAssembly component.
+    directory: ./src/dxf2md/assets
+
+  - name: to_markdown
+    kind: function.wasm
+    meta:
+      comment: Rust WebAssembly component method converting a DXF drawing to Markdown.
+    fs: kickside.convert.dxf2md:assets
+    path: dxf2md.wasm
+    hash: sha256:9aff74a5b50acd2f5f71361cf9de94b800c4185e2a5554e92c4177b353d9ada0
+    method: to-markdown
+    imports:
+      - wasi:io
+      - wasi:cli
+      - wasi:random
+    pool:
+      type: inline
+    # Per-call kill deadline for a hung whole-drawing markdown extraction.
+    # Overridable per deploy like pool settings.
+    limits:
+      max_execution_ms: 90000
+
+  - name: metadata
+    kind: function.wasm
+    meta:
+      comment: Rust WebAssembly component method returning structured DXF metadata.
+    fs: kickside.convert.dxf2md:assets
+    path: dxf2md.wasm
+    hash: sha256:9aff74a5b50acd2f5f71361cf9de94b800c4185e2a5554e92c4177b353d9ada0
+    method: metadata
+    imports:
+      - wasi:io
+      - wasi:cli
+      - wasi:random
+    pool:
+      type: inline
+    # Per-call kill deadline for a hung whole-drawing metadata extraction.
+    # Overridable per deploy like pool settings.
+    limits:
+      max_execution_ms: 90000
+
+  - name: to_image
+    kind: function.wasm
+    meta:
+      comment: Rust WebAssembly component method rendering a DXF drawing to a PNG.
+    fs: kickside.convert.dxf2md:assets
+    path: dxf2md.wasm
+    hash: sha256:9aff74a5b50acd2f5f71361cf9de94b800c4185e2a5554e92c4177b353d9ada0
+    method: to-image
+    imports:
+      - wasi:io
+      - wasi:cli
+      - wasi:random
+    pool:
+      type: inline
+    # Per-call kill deadline for a hung line-work render to PNG.
+    # Overridable per deploy like pool settings.
+    limits:
+      max_execution_ms: 45000
+
+  - name: dxf2md
+    kind: library.lua
+    meta:
+      comment: Public API. Returns a table exposing open(request) and new(runtime?); request is { bytes = <binary string> } or { url = <http(s) URL> }. The handle exposes .to_markdown(), .metadata() and .to_image([opts]) where opts is a dpi number or a table { dpi, width, height }. Errors are structured { message, kind, retryable } tables.
+    source: file://dxf2md.lua
+    modules:
+      - http_client
+      - funcs
+
+  - name: smoke_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: dxf2md.smoke
+      description: Sanity check that the test harness and module load.
+    source: file://smoke_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+
+  - name: convert_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: dxf2md.convert
+      description: End-to-end tests across markdown conversion, PNG render, and error paths.
+    source: file://convert_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      dxf2md: kickside.convert.dxf2md:dxf2md
+      fixtures: kickside.convert.dxf2md:fixtures
+
+  - name: fixtures
+    kind: library.lua
+    meta:
+      type: test_helper
+      comment: Base64-encoded sample DXF used by the convert tests.
+    source: file://fixtures.lua
+    modules:
+      - base64

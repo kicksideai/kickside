@@ -1,0 +1,37 @@
+{
+  "success": true,
+  "run": {
+    "dataflow_id": "59ffb3f9-4f79-4149-bc84-7d545856baf7",
+    "finished_at": "2026-07-09T15:14:57-04:00",
+    "error": "",
+    "run_id": "e754dc50-e290-4e2b-9c53-eef7e75bf4ca",
+    "flow_ref": {
+      "kind": "flow",
+      "id": "019f484d-f99c-7077-b275-ab01423423e9",
+      "version": 1
+    },
+    "trigger_kind": "manual",
+    "status": "completed",
+    "origin": "published",
+    "started_at": "2026-07-09T15:14:57-04:00",
+    "output": {
+      "x": "ok"
+    }
+  },
+  "nodes": [
+    {
+      "node_id": "c545b2b1-dd57-436f-8455-98d848135269",
+      "def_node_id": "start",
+      "type": "userspace.dataflow.node.func:node",
+      "status": "completed",
+      "title": "Start"
+    },
+    {
+      "type": "userspace.dataflow.node.func:node",
+      "status": "completed",
+      "title": "Finish",
+      "node_id": "a3752e72-2dbb-4dea-b701-559c47b38595",
+      "def_node_id": "finish"
+    }
+  ]
+}

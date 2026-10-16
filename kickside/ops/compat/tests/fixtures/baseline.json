@@ -1,0 +1,8 @@
+{
+  "sample:api": {"Kind": "http.endpoint", "Meta": {}, "Data": {"method": "GET", "path": "/items"}},
+  "sample:scope": {"Kind": "ns.requirement", "Meta": {}, "Data": {"default": "sample:user"}},
+  "sample:events": {"Kind": "registry.entry", "Meta": {"type": "event.type"}, "Data": {}},
+  "sample:trait": {"Kind": "registry.entry", "Meta": {"type": "trait"}, "Data": {}},
+  "sample:contract": {"Kind": "contract.definition", "Meta": {}, "Data": {"methods": [{"name": "list", "input_schemas": [{"format": "application/schema+json", "definition": "{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\"}},\"required\":[\"query\"]}"}], "output_schemas": []}]}},
+  "sample:nested": {"Kind": "function.lua", "Meta": {"input_schema": {"type": "object", "properties": {"payload": {"type": "object", "properties": {"text": {"type": "string"}}}}}}, "Data": {}}
+}

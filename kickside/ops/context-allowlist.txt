@@ -1,0 +1,6 @@
+# Context guard allowlist.
+#
+# Paths are repository-root relative shell globs. Keep this list short and only
+# allow files that are intentionally versioned but unsafe to inspect by default.
+document2markdown/src/doc2md/assets/doc2md.wasm
+platform/renderers/static/*

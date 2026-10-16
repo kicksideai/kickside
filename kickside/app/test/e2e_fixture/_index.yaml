@@ -1,0 +1,103 @@
+version: "1.0"
+namespace: app.test.e2e
+
+# Copied into a disposable app by the E2E runner; excluded from app/test packs.
+entries:
+  - name: pull
+    kind: function.lua
+    source: file://collection.lua
+    method: pull
+    modules: [time, logger]
+
+  - name: pull_keys
+    kind: function.lua
+    source: file://collection.lua
+    method: pull_keys
+    modules: [time, logger]
+
+  - name: records_binding
+    kind: contract.binding
+    meta:
+      title: E2E Collection Records
+    contracts:
+      - contract: kickside.data:pullable
+        methods:
+          pull: app.test.e2e:pull
+
+  - name: records
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: E2E Collection Records
+      comment: Test-only paged records supplied in the Data Sync declaration.
+    binding: app.test.e2e:records_binding
+    output_schema: '{ "type": "object", "properties": { "content": { "type": "string" } }, "required": ["content"] }'
+    reconcile:
+      pull_keys: app.test.e2e:pull_keys
+
+  - name: timer_install
+    kind: function.lua
+    source: file://timer.lua
+    method: install
+    modules: [logger, security]
+
+  - name: timer_deliver
+    kind: function.lua
+    source: file://timer.lua
+    method: deliver
+    modules: [logger, security]
+
+  - name: timer_kind
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: E2E Timer
+      class: automation
+      inputs:
+        type: object
+        properties:
+          interval: { type: string }
+    contracts:
+      - contract: kickside.contract:installable
+        methods:
+          install: app.test.e2e:timer_install
+      - contract: kickside.trigger:round_consumer
+        methods:
+          deliver: app.test.e2e:timer_deliver
+
+  - name: delayed_inbox_write
+    kind: function.lua
+    source: file://delayed_inbox.lua
+    method: write
+    modules: [time, logger, funcs]
+    imports:
+      component: kickside.component:component
+
+  - name: delayed_inbox_sink
+    kind: contract.binding
+    meta:
+      title: E2E Delayed Inbox
+      delivery: at_least_once
+      input_shape: content
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: app.test.e2e:delayed_inbox_write
+
+  - name: delayed_inbox_port
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: E2E Delayed Inbox
+    binding: app.test.e2e:delayed_inbox_sink
+    operations:
+      upsert: {}
+      delete:
+        requires_dest_ref: false
+    input_schema: '{ "type": "object", "properties": { "content": { "type": "string" } }, "required": ["content"] }'
+    config_schema:
+      delay_ms:
+        type: integer
+        default: 10000
+      resource_id:
+        type: string

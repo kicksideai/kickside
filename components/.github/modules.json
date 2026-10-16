@@ -1,0 +1,138 @@
+{
+  "repository": "components",
+  "checks": [
+    [
+      "python3",
+      "research/test/check_block_architecture.py"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_release_baseline.py"
+    ],
+    [
+      "node",
+      ".github/scripts/test_release_dry_run.cjs"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_packaging.py"
+    ]
+  ],
+  "modules": {
+    "dashboard": {
+      "path": "dashboard",
+      "organization": "kickside",
+      "module": "dashboard",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.dashboard:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "dashboard_test",
+      "extra_tests": []
+    },
+    "research": {
+      "path": "research",
+      "organization": "kickside",
+      "module": "research",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.research:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "research_test",
+      "extra_tests": [
+        [
+          "make",
+          "test"
+        ]
+      ]
+    },
+    "agent-onboarding": {
+      "path": "agent-onboarding",
+      "organization": "kickside",
+      "module": "agent-onboarding",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.agent_onboarding:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "typecheck",
+        "test-ui",
+        "setup"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "agent_onboarding_test",
+      "extra_tests": [
+        [
+          "make",
+          "test-ui"
+        ],
+        [
+          "make",
+          "typecheck"
+        ]
+      ]
+    },
+    "sso": {
+      "path": "sso",
+      "organization": "kickside",
+      "module": "sso",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.sso:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_sso",
+      "extra_tests": [
+        [
+          "make",
+          "test-ui"
+        ]
+      ]
+    }
+  }
+}

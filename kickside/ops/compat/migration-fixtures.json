@@ -1,0 +1,1042 @@
+{
+  "chestor.journal.migrations:05_drop_sessions": {
+    "assertions": [
+      {
+        "query": "SELECT id, goal, current_digest, status FROM chestor_journal_sessions",
+        "rows": [
+          {
+            "current_digest": "Published digest",
+            "goal": "Published goal",
+            "id": "session-1",
+            "status": "active"
+          }
+        ]
+      },
+      {
+        "query": "SELECT id, session_id FROM chestor_journal_events",
+        "rows": [
+          {
+            "id": "event-1",
+            "session_id": "session-1"
+          }
+        ]
+      },
+      {
+        "query": "SELECT id, session_id FROM chestor_journal_tasks",
+        "rows": [
+          {
+            "id": "task-1",
+            "session_id": "session-1"
+          }
+        ]
+      },
+      {
+        "query": "SELECT id, session_id FROM chestor_journal_artifacts",
+        "rows": [
+          {
+            "id": "artifact-1",
+            "session_id": "session-1"
+          }
+        ]
+      }
+    ],
+    "pending": true,
+    "seed": [
+      "INSERT INTO chestor_journal_sessions (journal_id, id, goal, current_digest, status, created_at, updated_at) VALUES ('journal-1', 'session-1', 'Published goal', 'Published digest', 'active', 1, 2)",
+      "INSERT INTO chestor_journal_events (journal_id, id, seq, ts, event_type, session_id, body, created_at) VALUES ('journal-1', 'event-1', 1, 1, 'fixture', 'session-1', 'Published event', 1)",
+      "INSERT INTO chestor_journal_tasks (journal_id, id, session_id, title, created_at, updated_at) VALUES ('journal-1', 'task-1', 'session-1', 'Published task', 1, 2)",
+      "INSERT INTO chestor_journal_artifacts (journal_id, id, session_id, title, created_at) VALUES ('journal-1', 'artifact-1', 'session-1', 'Published artifact', 1)"
+    ]
+  },
+  "kickside.automation.migrations:11_delivery_provenance": {
+    "after": [
+      {
+        "query": "SELECT admission_json FROM kickside_automation_drive WHERE automation_id='dc02-compat-owner'",
+        "rows": [
+          {
+            "admission_json": null
+          }
+        ]
+      },
+      {
+        "query": "SELECT execution_identity_json FROM kickside_automation_prepared WHERE automation_id='dc02-compat-owner'",
+        "rows": [
+          {
+            "execution_identity_json": null
+          }
+        ]
+      },
+      {
+        "query": "SELECT execution_identity_json FROM kickside_trigger_item_ledger WHERE owner_id='dc02-compat-owner'",
+        "rows": [
+          {
+            "execution_identity_json": null
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT automation_id,drive_key,cursor,unresolved_count FROM kickside_automation_drive WHERE automation_id='dc02-compat-owner'",
+        "rows": [
+          {
+            "automation_id": "dc02-compat-owner",
+            "cursor": "published-cursor",
+            "drive_key": "compat",
+            "unresolved_count": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT automation_id,idempotency_key,payload_hash,prepared_json,created_at FROM kickside_automation_prepared WHERE automation_id='dc02-compat-owner'",
+        "rows": [
+          {
+            "automation_id": "dc02-compat-owner",
+            "created_at": "2026-10-08T00:00:00Z",
+            "idempotency_key": "published-delivery",
+            "payload_hash": "published-hash",
+            "prepared_json": "{}"
+          }
+        ]
+      },
+      {
+        "query": "SELECT state,envelope_json,attempts,created_at FROM kickside_trigger_item_ledger WHERE owner_id='dc02-compat-owner'",
+        "rows": [
+          {
+            "attempts": 0,
+            "created_at": "2026-10-08T00:00:00Z",
+            "envelope_json": "{}",
+            "state": "waiting"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_automation_drive (automation_id,drive_key,source_kind,cursor,unresolved_count) VALUES ('dc02-compat-owner','compat','collection','published-cursor',1)",
+      "INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ('dc02-compat-owner','published-delivery','published-hash','{}','2026-10-08T00:00:00Z')",
+      "INSERT INTO kickside_trigger_item_ledger (owner_id,source_port,item_key,dedup_key,identity_key,envelope_json,state,attempts,first_failed_at,last_failed_at,error_code,retriable,terminal,created_at,updated_at,delivery_order) VALUES ('dc02-compat-owner','published-source','published-item','published-dedup','published-delivery','{}','waiting',0,'2026-10-08T00:00:00Z','2026-10-08T00:00:00Z','capacity',true,false,'2026-10-08T00:00:00Z','2026-10-08T00:00:00Z',1)"
+    ]
+  },
+  "kickside.automation.migrations:12_delivery_history": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_automation_delivery_history",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT automation_id,drive_key,cursor,unresolved_count FROM kickside_automation_drive WHERE automation_id='history-compat-owner'",
+        "rows": [
+          {
+            "automation_id": "history-compat-owner",
+            "cursor": "published-cursor",
+            "drive_key": "compat",
+            "unresolved_count": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT idempotency_key,payload_hash,prepared_json,created_at FROM kickside_automation_prepared WHERE automation_id='history-compat-owner'",
+        "rows": [
+          {
+            "created_at": "2026-10-08T00:00:00Z",
+            "idempotency_key": "published-delivery",
+            "payload_hash": "published-hash",
+            "prepared_json": "{\"original\":true}"
+          }
+        ]
+      },
+      {
+        "query": "SELECT state,envelope_json,attempts,created_at FROM kickside_trigger_item_ledger WHERE owner_id='history-compat-owner'",
+        "rows": [
+          {
+            "attempts": 0,
+            "created_at": "2026-10-08T00:00:00Z",
+            "envelope_json": "{\"original\":true}",
+            "state": "waiting"
+          }
+        ]
+      },
+      {
+        "query": "SELECT generation,digest,target_receipts_json,outcome_json,state FROM kickside_automation_op WHERE automation_id='history-compat-owner'",
+        "rows": [
+          {
+            "digest": "published-digest",
+            "generation": 1,
+            "outcome_json": "{\"result\":\"original\"}",
+            "state": "succeeded",
+            "target_receipts_json": "{\"pins\":{\"main\":9}}"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_automation_drive (automation_id,drive_key,source_kind,cursor,unresolved_count) VALUES ('history-compat-owner','compat','collection','published-cursor',1)",
+      "INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ('history-compat-owner','published-delivery','published-hash','{\"original\":true}','2026-10-08T00:00:00Z')",
+      "INSERT INTO kickside_trigger_item_ledger (owner_id,source_port,item_key,dedup_key,identity_key,envelope_json,state,attempts,first_failed_at,last_failed_at,error_code,retriable,terminal,created_at,updated_at,delivery_order) VALUES ('history-compat-owner','published-source','published-item','published-dedup','published-delivery','{\"original\":true}','waiting',0,'2026-10-08T00:00:00Z','2026-10-08T00:00:00Z','capacity',true,false,'2026-10-08T00:00:00Z','2026-10-08T00:00:00Z',1)",
+      "INSERT INTO kickside_automation_op (automation_id,request_id,generation,digest,target_receipts_json,outcome_json,state,created_at,completed_at) VALUES ('history-compat-owner','published-request',1,'published-digest','{\"pins\":{\"main\":9}}','{\"result\":\"original\"}','succeeded','2026-10-08T00:00:00Z','2026-10-08T00:00:00Z')"
+    ]
+  },
+  "kickside.component.migrations:13_unique_component_meta": {
+    "assertions": [
+      {
+        "query": "SELECT meta_id, key, value, created_at, updated_at FROM kickside_component_meta ORDER BY meta_id",
+        "rows": [
+          {
+            "created_at": "2026-10-01T00:00:00Z",
+            "key": "title",
+            "meta_id": "00000000-0000-0000-0000-000000000102",
+            "updated_at": "2026-10-02T00:00:00Z",
+            "value": "Published title"
+          },
+          {
+            "created_at": "2026-10-01T00:00:00Z",
+            "key": "description",
+            "meta_id": "00000000-0000-0000-0000-000000000103",
+            "updated_at": "2026-10-02T00:00:00Z",
+            "value": "Published description"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_components (component_id, impl_id, position) VALUES ('00000000-0000-0000-0000-000000000101', 'compat:fixture', 'n')",
+      "INSERT INTO kickside_component_meta (meta_id, component_id, key, value, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000101', 'title', 'Published title', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')",
+      "INSERT INTO kickside_component_meta (meta_id, component_id, key, value, created_at, updated_at) VALUES ('00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000101', 'description', 'Published description', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')"
+    ]
+  },
+  "kickside.core.jobs.migrations:20_dispatch_requests": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS requested FROM kickside_job WHERE owner_kind = 'fixture' AND dispatch_requested_at IS NOT NULL",
+        "rows": [
+          {
+            "requested": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT CAST(id AS TEXT) AS id, job_type, status, priority, queue_tier, job_identity, owner_kind, owner_id FROM kickside_job WHERE owner_kind = 'fixture' ORDER BY job_identity",
+        "rows": [
+          {
+            "id": "0199a000-0000-7000-8000-000000000002",
+            "job_identity": "fixture:done",
+            "job_type": "fixture.done",
+            "owner_id": "owner-1",
+            "owner_kind": "fixture",
+            "priority": 0,
+            "queue_tier": "backfill",
+            "status": "done"
+          },
+          {
+            "id": "0199a000-0000-7000-8000-000000000001",
+            "job_identity": "fixture:pending",
+            "job_type": "fixture.pending",
+            "owner_id": "owner-1",
+            "owner_kind": "fixture",
+            "priority": 5,
+            "queue_tier": "live",
+            "status": "pending"
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS due FROM kickside_job WHERE owner_kind = 'fixture' AND status = 'pending' AND scheduled_at IS NOT NULL",
+        "rows": [
+          {
+            "due": 1
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_job (id, job_type, status, priority, queue_tier, scheduled_at, job_identity, owner_kind, owner_id) VALUES ('0199a000-0000-7000-8000-000000000001', 'fixture.pending', 'pending', 5, 'live', '2026-10-01T00:00:00Z', 'fixture:pending', 'fixture', 'owner-1')",
+      "INSERT INTO kickside_job (id, job_type, status, priority, queue_tier, job_identity, owner_kind, owner_id) VALUES ('0199a000-0000-7000-8000-000000000002', 'fixture.done', 'done', 0, 'backfill', 'fixture:done', 'fixture', 'owner-1')"
+    ]
+  },
+  "kickside.core.migrations:10_thread_natural_keys": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_thread_natural_key",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT CAST(id AS TEXT) AS id,component_id,thread_class FROM kickside_thread WHERE id='132c2bd2-19bf-5bf4-b30f-ff70619d1ae7'",
+        "rows": [
+          {
+            "component_id": "132c2bd2-19bf-5bf4-b30f-ff70619d1ae7",
+            "id": "132c2bd2-19bf-5bf4-b30f-ff70619d1ae7",
+            "thread_class": "published:natural"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_thread (id,component_id,thread_class,attrs) VALUES ('132c2bd2-19bf-5bf4-b30f-ff70619d1ae7','132c2bd2-19bf-5bf4-b30f-ff70619d1ae7','published:natural','{\"external_ref\":\"opaque:ref\"}')"
+    ]
+  },
+  "kickside.kb10.migrations:05_retrieval_observations": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kb10_query_log",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kb10_tuning_state",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT id, component_id, embedding_model, kb_type FROM kb10_stores WHERE id = 'compat-retrieval-store'",
+        "rows": [
+          {
+            "component_id": "compat-retrieval-component",
+            "embedding_model": "published-model",
+            "id": "compat-retrieval-store",
+            "kb_type": "document"
+          }
+        ]
+      },
+      {
+        "query": "SELECT id, store_id, node_type, content, content_type FROM kb10_nodes WHERE store_id = 'compat-retrieval-store'",
+        "rows": [
+          {
+            "content": "Published retrieval document",
+            "content_type": "text/plain",
+            "id": "00000000-0000-0000-0000-000000000005",
+            "node_type": "document",
+            "store_id": "compat-retrieval-store"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kb10_stores (id, component_id, embedding_model, config, kb_type) VALUES ('compat-retrieval-store', 'compat-retrieval-component', 'published-model', '{}', 'document')",
+      "INSERT INTO kb10_nodes (id, store_id, node_type, content, content_type, metadata) VALUES ('00000000-0000-0000-0000-000000000005', 'compat-retrieval-store', 'document', 'Published retrieval document', 'text/plain', '{}')"
+    ]
+  },
+  "kickside.mcp.migrations:03_oauth_resource": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS bound FROM kickside_mcp_credentials WHERE credential_id LIKE 'fixture-%' AND oauth_resource IS NOT NULL",
+        "rows": [
+          {
+            "bound": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT credential_id, token_hash, token_prefix, actor_id, whitelist_json, label, status, policy_json FROM kickside_mcp_credentials WHERE credential_id LIKE 'fixture-%' ORDER BY credential_id",
+        "rows": [
+          {
+            "actor_id": "user-1",
+            "credential_id": "fixture-active",
+            "label": "Published active",
+            "policy_json": "{\"traits\":[]}",
+            "status": "active",
+            "token_hash": "hash-active",
+            "token_prefix": "mcp_act",
+            "whitelist_json": "[\"ReadToolResult\"]"
+          },
+          {
+            "actor_id": "user-1",
+            "credential_id": "fixture-revoked",
+            "label": "Published revoked",
+            "policy_json": "{}",
+            "status": "revoked",
+            "token_hash": "hash-revoked",
+            "token_prefix": "mcp_rev",
+            "whitelist_json": "[]"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_mcp_credentials (credential_id, token_hash, token_prefix, actor_id, whitelist_json, label, status, policy_json, context_json, created_at, updated_at) VALUES ('fixture-active', 'hash-active', 'mcp_act', 'user-1', '[\"ReadToolResult\"]', 'Published active', 'active', '{\"traits\":[]}', '{}', 1, 2)",
+      "INSERT INTO kickside_mcp_credentials (credential_id, token_hash, token_prefix, actor_id, label, status, created_at, updated_at, revoked_at, revoked_by) VALUES ('fixture-revoked', 'hash-revoked', 'mcp_rev', 'user-1', 'Published revoked', 'revoked', 1, 3, 3, 'user-1')"
+    ]
+  },
+  "kickside.mcp.migrations:04_authority_snapshot": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE credential_id LIKE 'authority-%' AND authority_json IS NULL",
+        "rows": [
+          {
+            "n": 2
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT credential_id, token_hash, token_prefix, actor_id, whitelist_json, label, status, policy_json FROM kickside_mcp_credentials WHERE credential_id LIKE 'authority-%' ORDER BY credential_id",
+        "rows": [
+          {
+            "actor_id": "user-1",
+            "credential_id": "authority-active",
+            "label": "Published active",
+            "policy_json": "{\"traits\":[]}",
+            "status": "active",
+            "token_hash": "authority-hash-active",
+            "token_prefix": "auth_act",
+            "whitelist_json": "[\"ReadToolResult\"]"
+          },
+          {
+            "actor_id": "user-1",
+            "credential_id": "authority-revoked",
+            "label": "Published revoked",
+            "policy_json": "{}",
+            "status": "revoked",
+            "token_hash": "authority-hash-revoked",
+            "token_prefix": "auth_rev",
+            "whitelist_json": "[]"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_mcp_credentials (credential_id, token_hash, token_prefix, actor_id, whitelist_json, label, status, policy_json, context_json, created_at, updated_at) VALUES ('authority-active', 'authority-hash-active', 'auth_act', 'user-1', '[\"ReadToolResult\"]', 'Published active', 'active', '{\"traits\":[]}', '{}', 1, 2)",
+      "INSERT INTO kickside_mcp_credentials (credential_id, token_hash, token_prefix, actor_id, label, status, created_at, updated_at, revoked_at, revoked_by) VALUES ('authority-revoked', 'authority-hash-revoked', 'auth_rev', 'user-1', 'Published revoked', 'revoked', 1, 3, 3, 'user-1')"
+    ]
+  },
+  "kickside.security.migrations:02_session_fences": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_security_session_fences",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT target, label, policies FROM kickside_security_scopes WHERE slug = 'compat-02_session_fences'",
+        "rows": [
+          {
+            "label": "Published group",
+            "policies": "[\"published:policy\"]",
+            "target": "published:group"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_security_scopes (slug, target, label, policies) VALUES ('compat-02_session_fences', 'published:group', 'Published group', '[\"published:policy\"]')"
+    ]
+  },
+  "kickside.security.migrations:03_session_fence_options": {
+    "after": [
+      {
+        "query": "SELECT group_id, allow_only FROM kickside_security_session_fences",
+        "rows": [
+          {
+            "allow_only": 0,
+            "group_id": "published:group"
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT target, label, policies FROM kickside_security_scopes WHERE slug = 'compat-03_session_fence_options'",
+        "rows": [
+          {
+            "label": "Published group",
+            "policies": "[\"published:policy\"]",
+            "target": "published:group"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_security_scopes (slug, target, label, policies) VALUES ('compat-03_session_fence_options', 'published:group', 'Published group', '[\"published:policy\"]')"
+    ],
+    "seed_before": [
+      "INSERT INTO kickside_security_session_fences (group_id) VALUES ('published:group')"
+    ]
+  },
+  "kickside.security.migrations:04_group_sets": {
+    "assertions": [
+      {
+        "query": "SELECT target, label, policies FROM kickside_security_scopes WHERE slug = 'compat-04_group_sets'",
+        "rows": [
+          {
+            "label": "Published group",
+            "policies": "[\"published:policy\"]",
+            "target": "published:group"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_security_scopes (slug, target, label, policies) VALUES ('compat-04_group_sets', 'published:group', 'Published group', '[\"published:policy\"]')"
+    ],
+    "step_after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_security_group_sets",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ]
+  },
+  "kickside.security.migrations:05_group_set_revisions": {
+    "after": [
+      {
+        "query": "SELECT scope_name, groups_json FROM kickside_security_group_sets WHERE scope_name = 'compat-published-group-set'",
+        "rows": [
+          {
+            "groups_json": "[\"published:group\",\"published:member\"]",
+            "scope_name": "compat-published-group-set"
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_security_group_sets WHERE scope_name = 'compat-published-group-set' AND materialized_revision IS NULL",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT target, label, policies FROM kickside_security_scopes WHERE slug = 'compat-05_group_set_revisions'",
+        "rows": [
+          {
+            "label": "Published group",
+            "policies": "[\"published:policy\"]",
+            "target": "published:group"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_security_scopes (slug, target, label, policies) VALUES ('compat-05_group_set_revisions', 'published:group', 'Published group', '[\"published:policy\"]')"
+    ],
+    "seed_before": [
+      "INSERT INTO kickside_security_group_sets (scope_name, groups_json) VALUES ('compat-published-group-set', '[\"published:group\",\"published:member\"]')"
+    ]
+  },
+  "kickside.security.migrations:06_authorization_audit": {
+    "after": [
+      {
+        "query": "SELECT groups_json FROM kickside_security_group_sets WHERE scope_name='compat-audit-group-set'",
+        "rows": [
+          {
+            "groups_json": "[\"published:operators\"]"
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_security_authorization_audit",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT target, label, policies FROM kickside_security_scopes WHERE slug='compat-06_authorization_audit'",
+        "rows": [
+          {
+            "label": "Published operators",
+            "policies": "[\"published:policy\"]",
+            "target": "published:operators"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_security_scopes (slug, target, label, policies) VALUES ('compat-06_authorization_audit', 'published:operators', 'Published operators', '[\"published:policy\"]')"
+    ],
+    "seed_before": [
+      "INSERT INTO kickside_security_group_sets (scope_name, groups_json) VALUES ('compat-audit-group-set', '[\"published:operators\"]')"
+    ],
+    "step_after": [
+      {
+        "query": "SELECT groups_json FROM kickside_security_group_sets WHERE scope_name='compat-audit-group-set'",
+        "rows": [
+          {
+            "groups_json": "[\"published:operators\"]"
+          }
+        ]
+      }
+    ]
+  },
+  "kickside.users.migrations:11_group_enrollments": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM app_user_group_enrollments",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT user_id, email, password_hash, status FROM app_users WHERE user_id = 'compat-user'",
+        "rows": [
+          {
+            "email": "compat@example.test",
+            "password_hash": "fixture-hash",
+            "status": "active",
+            "user_id": "compat-user"
+          }
+        ]
+      },
+      {
+        "query": "SELECT user_id, group_id, source, created_at FROM app_user_groups WHERE user_id = 'compat-user'",
+        "rows": [
+          {
+            "created_at": "2026-10-01T00:00:00Z",
+            "group_id": "app:members",
+            "source": "manual",
+            "user_id": "compat-user"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO app_users (user_id, email, full_name, password_hash, status, created_at, updated_at) VALUES ('compat-user', 'compat@example.test', 'Published user', 'fixture-hash', 'active', '2026-10-01T00:00:00Z', '2026-10-01T00:00:00Z')",
+      "INSERT INTO app_user_groups (user_id, group_id, source, created_at) VALUES ('compat-user', 'app:members', 'manual', '2026-10-01T00:00:00Z')"
+    ]
+  },
+  "kickside.users.migrations:12_delegation_epochs": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM app_user_delegation_epochs",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT user_id, email, password_hash, status FROM app_users WHERE user_id = 'compat-delegated-user'",
+        "rows": [
+          {
+            "email": "delegated@example.test",
+            "password_hash": "fixture-hash",
+            "status": "active",
+            "user_id": "compat-delegated-user"
+          }
+        ]
+      },
+      {
+        "query": "SELECT user_id, group_id, source, created_at FROM app_user_groups WHERE user_id = 'compat-delegated-user'",
+        "rows": [
+          {
+            "created_at": "2026-10-01T00:00:00Z",
+            "group_id": "app:members",
+            "source": "manual",
+            "user_id": "compat-delegated-user"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO app_users (user_id, email, full_name, password_hash, status, created_at, updated_at) VALUES ('compat-delegated-user', 'delegated@example.test', 'Published user', 'fixture-hash', 'active', '2026-10-01T00:00:00Z', '2026-10-01T00:00:00Z')",
+      "INSERT INTO app_user_groups (user_id, group_id, source, created_at) VALUES ('compat-delegated-user', 'app:members', 'manual', '2026-10-01T00:00:00Z')"
+    ]
+  },
+  "kickside.users.migrations:13_bot_accounts": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS count FROM app_user_bot_accounts",
+        "rows": [
+          {
+            "count": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT user_id,email,password_hash,status,auth_generation,created_at,updated_at FROM app_users WHERE user_id LIKE 'compat-human-%' ORDER BY user_id",
+        "rows": [
+          {
+            "auth_generation": 3,
+            "created_at": "2026-01-01T00:00:00Z",
+            "email": "compat-password@test.local",
+            "password_hash": "unchanged-password-hash",
+            "status": "active",
+            "updated_at": "2026-01-02T00:00:00Z",
+            "user_id": "compat-human-password"
+          },
+          {
+            "auth_generation": 7,
+            "created_at": "2026-01-01T00:00:00Z",
+            "email": "compat-sso@test.local",
+            "password_hash": "!sso:no-password",
+            "status": "active",
+            "updated_at": "2026-01-02T00:00:00Z",
+            "user_id": "compat-human-sso"
+          }
+        ]
+      },
+      {
+        "query": "SELECT user_id,group_id,source,created_at FROM app_user_groups WHERE user_id='compat-human-sso'",
+        "rows": [
+          {
+            "created_at": "2026-01-01T00:00:00Z",
+            "group_id": "app.security:members",
+            "source": "sso:existing",
+            "user_id": "compat-human-sso"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO app_users (user_id,email,password_hash,status,auth_generation,created_at,updated_at) VALUES ('compat-human-password','compat-password@test.local','unchanged-password-hash','active',3,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO app_users (user_id,email,password_hash,status,auth_generation,created_at,updated_at) VALUES ('compat-human-sso','compat-sso@test.local','!sso:no-password','active',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO app_user_groups (user_id,group_id,source,created_at) VALUES ('compat-human-sso','app.security:members','sso:existing','2026-01-01T00:00:00Z')"
+    ]
+  },
+  "kickside.users.migrations:14_bot_lifecycle_audit": {
+    "after": [
+      {
+        "query": "SELECT COUNT(*) AS count FROM app_user_bot_audit",
+        "rows": [
+          {
+            "count": 0
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT user_id,email,password_hash,status,auth_generation,created_at,updated_at FROM app_users WHERE user_id IN ('compat-lifecycle-human','compat-lifecycle-bot') ORDER BY user_id",
+        "rows": [
+          {
+            "auth_generation": 4,
+            "created_at": "2026-01-01T00:00:00Z",
+            "email": "compat-lifecycle-bot@bots.invalid",
+            "password_hash": "!sso:no-password",
+            "status": "active",
+            "updated_at": "2026-01-02T00:00:00Z",
+            "user_id": "compat-lifecycle-bot"
+          },
+          {
+            "auth_generation": 9,
+            "created_at": "2026-01-01T00:00:00Z",
+            "email": "lifecycle-human@example.test",
+            "password_hash": "unchanged-human-hash",
+            "status": "active",
+            "updated_at": "2026-01-02T00:00:00Z",
+            "user_id": "compat-lifecycle-human"
+          }
+        ]
+      },
+      {
+        "query": "SELECT user_id,created_by,created_at FROM app_user_bot_accounts WHERE user_id='compat-lifecycle-bot'",
+        "rows": [
+          {
+            "created_at": "2026-01-01T00:00:00Z",
+            "created_by": "deleted-creator",
+            "user_id": "compat-lifecycle-bot"
+          }
+        ]
+      },
+      {
+        "query": "SELECT user_id,group_id,source,created_at FROM app_user_groups WHERE user_id='compat-lifecycle-human'",
+        "rows": [
+          {
+            "created_at": "2026-01-01T00:00:00Z",
+            "group_id": "app.security:members",
+            "source": "manual",
+            "user_id": "compat-lifecycle-human"
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS count FROM kickside_user_auth_tokens WHERE token_key='compat-lifecycle-token' AND token_value='legacy-session-snapshot'",
+        "rows": [
+          {
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO app_users (user_id,email,password_hash,status,auth_generation,created_at,updated_at) VALUES ('compat-lifecycle-human','lifecycle-human@example.test','unchanged-human-hash','active',9,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO app_users (user_id,email,password_hash,status,auth_generation,created_at,updated_at) VALUES ('compat-lifecycle-bot','compat-lifecycle-bot@bots.invalid','!sso:no-password','active',4,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO app_user_bot_accounts (user_id,created_by,created_at) VALUES ('compat-lifecycle-bot','deleted-creator','2026-01-01T00:00:00Z')",
+      "INSERT INTO app_user_groups (user_id,group_id,source,created_at) VALUES ('compat-lifecycle-human','app.security:members','manual','2026-01-01T00:00:00Z')",
+      "INSERT INTO kickside_user_auth_tokens (token_key,token_value) VALUES ('compat-lifecycle-token','legacy-session-snapshot')"
+    ]
+  },
+  "kickside.workflows.migrations:05_undo_history": {
+    "after": [
+      {
+        "query": "SELECT workflow_id, tracker FROM workflow_undo_history",
+        "rows": []
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT workflow_id, seq, type, body, actor, created_at FROM workflow_def_events ORDER BY workflow_id, seq",
+        "rows": [
+          {
+            "actor": "published-author",
+            "body": "{\"id\":\"input\",\"kind\":\"start\",\"title\":\"Published input\",\"config\":{\"input_schema\":{\"type\":\"object\",\"properties\":{\"order\":{\"type\":\"string\"}}}},\"status\":\"active\"}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 1,
+            "type": "kickside.workflows.events:node.added",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"id\":\"output\",\"kind\":\"finish\",\"title\":\"Published output\",\"config\":{\"output_schema\":{\"type\":\"object\",\"properties\":{\"receipt\":{\"type\":\"string\"}}}},\"status\":\"active\"}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 2,
+            "type": "kickside.workflows.events:node.added",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"id\":\"published-edge\",\"source_id\":\"input\",\"target_id\":\"output\",\"source_port\":\"out\",\"target_port\":\"in\",\"transform\":{\"receipt\":\"$.order\"}}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 3,
+            "type": "kickside.workflows.events:edge.added",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"id\":\"published-note\",\"body\":\"Retain the published definition\",\"kind\":\"note\",\"color\":\"green\"}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 4,
+            "type": "kickside.workflows.events:note.added",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"node_id\":\"input\",\"x\":10,\"y\":20,\"width\":120,\"height\":80}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 5,
+            "type": "kickside.workflows.events:layout.position-set",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"node_id\":\"output\",\"x\":250,\"y\":20,\"width\":120,\"height\":80}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 6,
+            "type": "kickside.workflows.events:layout.position-set",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"key\":\"warehouse\",\"value\":\"Harbor\"}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 7,
+            "type": "kickside.workflows.events:param.set",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "actor": "published-author",
+            "body": "{\"labels\":[\"published\"]}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "seq": 8,
+            "type": "kickside.workflows.events:labels.set",
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      },
+      {
+        "query": "SELECT workflow_id, id, kind, title, config, status, created_by, created_at, updated_at FROM workflow_def_nodes ORDER BY workflow_id, id",
+        "rows": [
+          {
+            "config": "{\"input_schema\":{\"type\":\"object\",\"properties\":{\"order\":{\"type\":\"string\"}}}}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "created_by": "published-author",
+            "id": "input",
+            "kind": "start",
+            "status": "active",
+            "title": "Published input",
+            "updated_at": "2026-10-02T00:00:00Z",
+            "workflow_id": "compat-published-workflow"
+          },
+          {
+            "config": "{\"output_schema\":{\"type\":\"object\",\"properties\":{\"receipt\":{\"type\":\"string\"}}}}",
+            "created_at": "2026-10-01T00:00:00Z",
+            "created_by": "published-author",
+            "id": "output",
+            "kind": "finish",
+            "status": "active",
+            "title": "Published output",
+            "updated_at": "2026-10-02T00:00:00Z",
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      },
+      {
+        "query": "SELECT workflow_id, id, source_id, target_id, source_port, target_port, transform, created_by, created_at, updated_at FROM workflow_def_edges ORDER BY workflow_id, id",
+        "rows": [
+          {
+            "created_at": "2026-10-01T00:00:00Z",
+            "created_by": "published-author",
+            "id": "published-edge",
+            "source_id": "input",
+            "source_port": "out",
+            "target_id": "output",
+            "target_port": "in",
+            "transform": "{\"receipt\":\"$.order\"}",
+            "updated_at": "2026-10-02T00:00:00Z",
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      },
+      {
+        "query": "SELECT workflow_id, id, body, kind, color, created_by, created_at, updated_at FROM workflow_def_notes ORDER BY workflow_id, id",
+        "rows": [
+          {
+            "body": "Retain the published definition",
+            "color": "green",
+            "created_at": "2026-10-01T00:00:00Z",
+            "created_by": "published-author",
+            "id": "published-note",
+            "kind": "note",
+            "updated_at": "2026-10-02T00:00:00Z",
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      },
+      {
+        "query": "SELECT workflow_id, node_id, x, y, width, height, meta FROM workflow_def_layout ORDER BY workflow_id, node_id",
+        "rows": [
+          {
+            "height": 80,
+            "meta": "{\"collapsed\":false}",
+            "node_id": "input",
+            "width": 120,
+            "workflow_id": "compat-published-workflow",
+            "x": 10,
+            "y": 20
+          },
+          {
+            "height": 80,
+            "meta": "{}",
+            "node_id": "output",
+            "width": 120,
+            "workflow_id": "compat-published-workflow",
+            "x": 250,
+            "y": 20
+          }
+        ]
+      },
+      {
+        "query": "SELECT workflow_id, head_seq, definition_edit_seq, node_order, edge_order, note_order, params, labels, version_lineage FROM workflow_def_state ORDER BY workflow_id",
+        "rows": [
+          {
+            "definition_edit_seq": 0,
+            "edge_order": "[]",
+            "head_seq": 0,
+            "labels": "[]",
+            "node_order": "[]",
+            "note_order": "[]",
+            "params": "{}",
+            "version_lineage": "{}",
+            "workflow_id": "compat-empty-workflow"
+          },
+          {
+            "definition_edit_seq": 8,
+            "edge_order": "[\"published-edge\"]",
+            "head_seq": 8,
+            "labels": "[\"published\"]",
+            "node_order": "[\"input\",\"output\"]",
+            "note_order": "[\"published-note\"]",
+            "params": "{\"warehouse\":\"Harbor\"}",
+            "version_lineage": "{}",
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      },
+      {
+        "query": "SELECT workflow_id, version, def_seq, document, compiled_commands, allowlist, created_by, created_at FROM workflow_versions ORDER BY workflow_id, version",
+        "rows": [
+          {
+            "allowlist": "{}",
+            "compiled_commands": "[]",
+            "created_at": "2026-10-01T00:00:00Z",
+            "created_by": "published-author",
+            "def_seq": 8,
+            "document": "{\"nodes\":[{\"id\":\"input\",\"kind\":\"start\",\"title\":\"Published input\",\"config\":{\"input_schema\":{\"type\":\"object\",\"properties\":{\"order\":{\"type\":\"string\"}}}},\"status\":\"active\"},{\"id\":\"output\",\"kind\":\"finish\",\"title\":\"Published output\",\"config\":{\"output_schema\":{\"type\":\"object\",\"properties\":{\"receipt\":{\"type\":\"string\"}}}},\"status\":\"active\"}],\"edges\":[{\"id\":\"published-edge\",\"source_id\":\"input\",\"target_id\":\"output\",\"source_port\":\"out\",\"target_port\":\"in\",\"transform\":{\"receipt\":\"$.order\"}}],\"notes\":[{\"id\":\"published-note\",\"body\":\"Retain the published definition\",\"kind\":\"note\",\"color\":\"green\"}],\"layout\":{\"positions\":{\"input\":{\"x\":10,\"y\":20,\"width\":120,\"height\":80},\"output\":{\"x\":250,\"y\":20,\"width\":120,\"height\":80}}},\"params\":{\"warehouse\":\"Harbor\"},\"labels\":[\"published\"],\"head_seq\":8,\"counts\":{\"nodes\":2,\"edges\":1,\"notes\":1}}",
+            "version": 1,
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      },
+      {
+        "query": "SELECT run_id, workflow_id, version, trigger_kind, origin, status, started_at, finished_at FROM workflow_runs ORDER BY run_id",
+        "rows": [
+          {
+            "finished_at": "2026-10-02T00:00:00Z",
+            "origin": "published",
+            "run_id": "compat-published-run",
+            "started_at": "2026-10-01T00:00:00Z",
+            "status": "completed",
+            "trigger_kind": "manual",
+            "version": 1,
+            "workflow_id": "compat-published-workflow"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 1, 'kickside.workflows.events:node.added', '{\"id\":\"input\",\"kind\":\"start\",\"title\":\"Published input\",\"config\":{\"input_schema\":{\"type\":\"object\",\"properties\":{\"order\":{\"type\":\"string\"}}}},\"status\":\"active\"}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 2, 'kickside.workflows.events:node.added', '{\"id\":\"output\",\"kind\":\"finish\",\"title\":\"Published output\",\"config\":{\"output_schema\":{\"type\":\"object\",\"properties\":{\"receipt\":{\"type\":\"string\"}}}},\"status\":\"active\"}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 3, 'kickside.workflows.events:edge.added', '{\"id\":\"published-edge\",\"source_id\":\"input\",\"target_id\":\"output\",\"source_port\":\"out\",\"target_port\":\"in\",\"transform\":{\"receipt\":\"$.order\"}}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 4, 'kickside.workflows.events:note.added', '{\"id\":\"published-note\",\"body\":\"Retain the published definition\",\"kind\":\"note\",\"color\":\"green\"}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 5, 'kickside.workflows.events:layout.position-set', '{\"node_id\":\"input\",\"x\":10,\"y\":20,\"width\":120,\"height\":80}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 6, 'kickside.workflows.events:layout.position-set', '{\"node_id\":\"output\",\"x\":250,\"y\":20,\"width\":120,\"height\":80}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 7, 'kickside.workflows.events:param.set', '{\"key\":\"warehouse\",\"value\":\"Harbor\"}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_events (workflow_id, seq, type, body, actor, created_at) VALUES ('compat-published-workflow', 8, 'kickside.workflows.events:labels.set', '{\"labels\":[\"published\"]}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_def_nodes (workflow_id, id, kind, title, config, status, created_by, created_at, updated_at) VALUES ('compat-published-workflow', 'input', 'start', 'Published input', '{\"input_schema\":{\"type\":\"object\",\"properties\":{\"order\":{\"type\":\"string\"}}}}', 'active', 'published-author', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')",
+      "INSERT INTO workflow_def_nodes (workflow_id, id, kind, title, config, status, created_by, created_at, updated_at) VALUES ('compat-published-workflow', 'output', 'finish', 'Published output', '{\"output_schema\":{\"type\":\"object\",\"properties\":{\"receipt\":{\"type\":\"string\"}}}}', 'active', 'published-author', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')",
+      "INSERT INTO workflow_def_edges (workflow_id, id, source_id, target_id, source_port, target_port, transform, created_by, created_at, updated_at) VALUES ('compat-published-workflow', 'published-edge', 'input', 'output', 'out', 'in', '{\"receipt\":\"$.order\"}', 'published-author', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')",
+      "INSERT INTO workflow_def_notes (workflow_id, id, body, kind, color, created_by, created_at, updated_at) VALUES ('compat-published-workflow', 'published-note', 'Retain the published definition', 'note', 'green', 'published-author', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')",
+      "INSERT INTO workflow_def_layout (workflow_id, node_id, x, y, width, height, meta) VALUES ('compat-published-workflow', 'input', 10, 20, 120, 80, '{\"collapsed\":false}')",
+      "INSERT INTO workflow_def_layout (workflow_id, node_id, x, y, width, height, meta) VALUES ('compat-published-workflow', 'output', 250, 20, 120, 80, '{}')",
+      "INSERT INTO workflow_def_state (workflow_id, head_seq, definition_edit_seq, node_order, edge_order, note_order, params, labels, version_lineage) VALUES ('compat-published-workflow', 8, 8, '[\"input\",\"output\"]', '[\"published-edge\"]', '[\"published-note\"]', '{\"warehouse\":\"Harbor\"}', '[\"published\"]', '{}')",
+      "INSERT INTO workflow_def_state (workflow_id, head_seq, definition_edit_seq, node_order, edge_order, note_order, params, labels, version_lineage) VALUES ('compat-empty-workflow', 0, 0, '[]', '[]', '[]', '{}', '[]', '{}')",
+      "INSERT INTO workflow_versions (workflow_id, version, def_seq, document, compiled_commands, allowlist, created_by, created_at) VALUES ('compat-published-workflow', 1, 8, '{\"nodes\":[{\"id\":\"input\",\"kind\":\"start\",\"title\":\"Published input\",\"config\":{\"input_schema\":{\"type\":\"object\",\"properties\":{\"order\":{\"type\":\"string\"}}}},\"status\":\"active\"},{\"id\":\"output\",\"kind\":\"finish\",\"title\":\"Published output\",\"config\":{\"output_schema\":{\"type\":\"object\",\"properties\":{\"receipt\":{\"type\":\"string\"}}}},\"status\":\"active\"}],\"edges\":[{\"id\":\"published-edge\",\"source_id\":\"input\",\"target_id\":\"output\",\"source_port\":\"out\",\"target_port\":\"in\",\"transform\":{\"receipt\":\"$.order\"}}],\"notes\":[{\"id\":\"published-note\",\"body\":\"Retain the published definition\",\"kind\":\"note\",\"color\":\"green\"}],\"layout\":{\"positions\":{\"input\":{\"x\":10,\"y\":20,\"width\":120,\"height\":80},\"output\":{\"x\":250,\"y\":20,\"width\":120,\"height\":80}}},\"params\":{\"warehouse\":\"Harbor\"},\"labels\":[\"published\"],\"head_seq\":8,\"counts\":{\"nodes\":2,\"edges\":1,\"notes\":1}}', '[]', '{}', 'published-author', '2026-10-01T00:00:00Z')",
+      "INSERT INTO workflow_runs (run_id, workflow_id, version, trigger_kind, origin, status, started_at, finished_at) VALUES ('compat-published-run', 'compat-published-workflow', 1, 'manual', 'published', 'completed', '2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z')"
+    ]
+  }
+}

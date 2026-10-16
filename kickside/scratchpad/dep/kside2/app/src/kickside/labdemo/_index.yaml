@@ -1,0 +1,83 @@
+version: "1.0"
+namespace: kickside.labdemo
+
+entries:
+  # kickside.labdemo:console
+  - name: console
+    kind: registry.entry
+    meta:
+      type: kickside.automation.port
+      title: Lab Console v2
+      comment: Write each item to the runtime log — updated live through keeper fs sync.
+      icon: tabler:terminal-2
+    binding: kickside.labdemo:console_sink
+    config_schema:
+      label:
+        type: string
+        title: Log label
+        description: Prefix stamped on every logged item.
+        default: LAB
+        picker: wc-schema-form
+    input_schema: |
+      { "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "content": { "type": "string", "description": "Item body to log." }
+        } }
+    operations:
+      upsert: {}
+
+  # kickside.labdemo:console_sink
+  - name: console_sink
+    kind: contract.binding
+    meta:
+      title: Lab Console
+      comment: Log each incoming item to the runtime console.
+      group: Lab
+      icon: tabler:terminal-2
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.labdemo:console_write
+
+  # kickside.labdemo:console_write
+  - name: console_write
+    kind: function.lua
+    meta:
+      comment: kickside.data:writable.write — log the incoming item and acknowledge.
+    source: file://console_write.lua
+    modules:
+      - logger
+    method: write
+
+  # kickside.labdemo:__dependency.kickside.contract
+  - version: '*'
+    name: __dependency.kickside.contract
+    kind: ns.dependency
+    meta:
+      comment: Implements the shared writable store contract.
+    component: kickside/contract
+
+  # kickside.labdemo:definition
+  - name: definition
+    kind: ns.definition
+    meta:
+      title: Lab Demo
+      description: Standalone-developed demo package wired in through a lock replacement.
+
+  # kickside.labdemo:console_test
+  - name: console_test
+    kind: function.lua
+    meta:
+      type: test
+      comment: Console sink publishes its port and acknowledges writes.
+      group: Lab Demo
+      suite: kickside_labdemo
+    source: file://console_test.lua
+    modules:
+      - funcs
+      - registry
+      - security
+    imports:
+      test: wippy.test:test
+    method: run

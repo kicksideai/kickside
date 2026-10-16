@@ -1,0 +1,229 @@
+{
+  "chestor/db-schema": {
+    "parameters": [
+      {
+        "name": "chestor.db_schema.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "chestor/graph": {
+    "parameters": [
+      {
+        "name": "chestor.graph.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "chestor/journal": {
+    "parameters": [
+      {
+        "name": "chestor.journal.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "chestor/roadmap": {
+    "parameters": [
+      {
+        "name": "chestor.roadmap.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "chestor/workspace": {
+    "parameters": [
+      {
+        "name": "chestor.workspace.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/agents": {
+    "parameters": [
+      {
+        "name": "kickside.agents.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/automation": {
+    "parameters": [
+      {
+        "name": "kickside.automation.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/component": {
+    "parameters": [
+      {
+        "name": "kickside.component.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/connection": {
+    "parameters": [
+      {
+        "name": "kickside.connection.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/contract": {
+    "parameters": [
+      {
+        "name": "kickside.contract.http:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/core": {
+    "parameters": [
+      {
+        "name": "kickside.core.retention:user_security_scope",
+        "value": "app.security:members"
+      },
+      {
+        "name": "kickside.core.security:user_security_scope",
+        "value": "app.security:members"
+      },
+      {
+        "name": "kickside.core.threads:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/crm": {
+    "parameters": [
+      {
+        "name": "kickside.crm.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/dashboard": {
+    "parameters": [
+      {
+        "name": "kickside.dashboard.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/identity": {
+    "parameters": [
+      {
+        "name": "kickside.identity.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/inbox": {
+    "parameters": [
+      {
+        "name": "kickside.inbox.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/jobs": {
+    "parameters": [
+      {
+        "name": "kickside.core.jobs.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/knowledge": {
+    "parameters": [
+      {
+        "name": "kickside.knowledge.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/models": {
+    "parameters": [
+      {
+        "name": "kickside.models.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/oauth": {
+    "parameters": [
+      {
+        "name": "kickside.oauth.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/renderers": {
+    "parameters": [
+      {
+        "name": "kickside.renderers:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/research": {
+    "parameters": [
+      {
+        "name": "kickside.research.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/skills": {
+    "profile": "app.composition:onboarding_profile.developer"
+  },
+  "kickside/transfer": {
+    "parameters": [
+      {
+        "name": "kickside.transfer.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/transform": {
+    "parameters": [
+      {
+        "name": "kickside.transform.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/ui": {
+    "parameters": [
+      {
+        "name": "kickside.ui.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/uploads": {
+    "parameters": [
+      {
+        "name": "kickside.uploads.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/users": {
+    "parameters": [
+      {
+        "name": "kickside.users:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  },
+  "kickside/workflows": {
+    "parameters": [
+      {
+        "name": "kickside.workflows.security:user_security_scope",
+        "value": "app.security:members"
+      }
+    ]
+  }
+}

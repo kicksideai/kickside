@@ -1,0 +1,6 @@
+organization: kickside
+module: runtime-tokenstore-env-test
+type: application
+directories:
+  src: src
+  modules: .wippy

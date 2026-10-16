@@ -1,0 +1,34 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: dep.wippy_test
+    kind: ns.dependency
+    component: wippy/test
+    version: "*"
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+  - name: allow_all
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+  - name: db
+    kind: db.sql.sqlite
+    file: ":memory:"
+  - name: receiver
+    kind: process.lua
+    meta: { comment: receiver }
+    source: file://receiver.lua
+    method: main
+    modules: [process, channel, time]
+  - name: mailbox_test
+    kind: function.lua
+    meta: { type: test, suite: mailbox }
+    source: file://mailbox_test.lua
+    method: run
+    modules: [process, channel, time, registry, sql]
+    imports:
+      test: wippy.test:test

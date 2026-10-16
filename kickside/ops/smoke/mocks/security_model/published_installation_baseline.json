@@ -1,0 +1,138 @@
+{
+  "kickside/agents": {
+    "hash": "ba3984670597cde2ba76b07afa49b731cb4cf20fb8e4afde460ffc2706fd4dea",
+    "version": "0.1.55"
+  },
+  "kickside/automation": {
+    "hash": "97a86b5b31fb6a0f9daea4f40ba9de5bc24e7a8354b7e1bf58f06131c5f7bf93",
+    "version": "0.1.120"
+  },
+  "kickside/blocks": {
+    "hash": "1256ae77af9f8be50d1f2c8bcde039194aeb5e37be8ad104f0560837c88e3031",
+    "version": "0.1.32"
+  },
+  "kickside/channel": {
+    "hash": "3ab9da31608aada264efd5d6086203624e6441c60c039757f2a0dccd0badb443",
+    "version": "0.1.50"
+  },
+  "kickside/component": {
+    "hash": "d05d4a3742b8026f905fc910d5506534b70b0b0f9c143ee71fb6668f988d8d60",
+    "version": "0.1.62"
+  },
+  "kickside/connection": {
+    "hash": "809eca4869f9d0994024ffc6bba56ce5be1bc8f9642eb185c45a68601101d565",
+    "version": "0.1.48"
+  },
+  "kickside/contract": {
+    "hash": "ec21250340ed7d63abe0fc025f52fad056c5215a5aabe127292b7e4d16fba05a",
+    "version": "0.1.49"
+  },
+  "kickside/core": {
+    "hash": "e89f2e5788071c004501ac09546d6eefdc427e60f2961950c7b7d89ca3315fc3",
+    "version": "0.1.122"
+  },
+  "kickside/crm": {
+    "hash": "0624b66aa7365f9d6a1300065a4a04d057d418b499fe1d93e6790274eb731356",
+    "version": "0.3.10"
+  },
+  "kickside/dashboard": {
+    "hash": "623f51aef97d5eb58047007f2de749f7a67db07674c443649201f315470be53a",
+    "version": "0.1.14"
+  },
+  "kickside/doc2md": {
+    "hash": "40c34be2e6d04851e4460550a0e13fdda714415eae554889cfb268ba769916d0",
+    "version": "0.8.10"
+  },
+  "kickside/execution": {
+    "hash": "7cf046e44cc1a2f76b84bdf412f0fa6b84a2c518b8d97826806f7f615d0bb114",
+    "version": "0.1.33"
+  },
+  "kickside/hub": {
+    "hash": "e774a958bd2ead7c2a75b0b88a1250e43b93f69abac428d69635e66e345beb72",
+    "version": "0.1.56"
+  },
+  "kickside/identity": {
+    "hash": "0bb6c544870b91728305d8106d44425f5dbb9004a751cfe3ee77110055cbd4f3",
+    "version": "0.1.33"
+  },
+  "kickside/inbox": {
+    "hash": "37f5a7350c7b4a124a0db90fe9952a78491a53ab004cedd546b8ccad242f95f9",
+    "version": "0.1.54"
+  },
+  "kickside/jobs": {
+    "hash": "993b98090810da3b1cd57af7fc11661586508bbf3e0d708de0f4c78793358d4d",
+    "version": "0.1.48"
+  },
+  "kickside/kickside": {
+    "hash": "a2f842a7597b1591a545fc636884df8f27d4f829331e26b7fd38d741f7771959",
+    "version": "0.1.143"
+  },
+  "kickside/mcp-client": {
+    "hash": "ea8fbeb2267b46c7475eaef8447b5d3fbc33268045f53c129ec6bcba784f9f93",
+    "version": "0.1.9"
+  },
+  "kickside/models": {
+    "hash": "736fe0927b454bc049f72e71891e0e28dd5079067f0189f3610ea78d49e4fae9",
+    "version": "0.1.59"
+  },
+  "kickside/oauth": {
+    "hash": "e5cbb16889e34d0476fbcbc4d66b80a2c07087b5a3dd042f7ebc2fde063fd896",
+    "version": "0.1.30"
+  },
+  "kickside/pdf2image": {
+    "hash": "5c8600af10d956cc1ea8a0f0ad89bf5c2f8d30ece3e8cf403f70141fafa26fab",
+    "version": "0.7.8"
+  },
+  "kickside/realtime": {
+    "hash": "ca8448ceecddc69ec75016bf62061c3abc25ee4fe59d2205f3061fc51c9e5a14",
+    "version": "0.1.26"
+  },
+  "kickside/renderers": {
+    "hash": "455e4464a61245bbd6a8a56fb9a59815e7e7cad70824d522ac7d103a101d627d",
+    "version": "0.1.30"
+  },
+  "kickside/security": {
+    "hash": "acc0dfcc05ea9874162d506171ee865dd81a3d0bcfabcab3ddda5b106c52339f",
+    "version": "0.1.37"
+  },
+  "kickside/sessions": {
+    "hash": "ac6e5f37a2308f8de7c0b735a74c47723413fe7435b6f9477063134f9b39ee64",
+    "version": "0.1.33"
+  },
+  "kickside/settings": {
+    "hash": "b8e9b32c4939141f148717c815ea104022cca9fea1ec3cc6f5b505a7ac2bb785",
+    "version": "0.1.42"
+  },
+  "kickside/sso": {
+    "hash": "5dcd4e649b348acec8541d8d8c91c96572241f22569f666926e0095f0d72a662",
+    "version": "0.1.31"
+  },
+  "kickside/sso-google": {
+    "hash": "3a55a14b87776a67d26c846b63b92d789afcf79a3bc630bdaf930c75f6629671",
+    "version": "0.1.9"
+  },
+  "kickside/sync": {
+    "hash": "125321be4cd5b6f983184bcba5fc1a4a4a4482fa8fa2059a12a42ea02e361696",
+    "version": "0.1.72"
+  },
+  "kickside/transform": {
+    "hash": "d794392b8ff2ffc51e8a5ad7d5bd48e67e697ae2f6afd1abb7b1f8c9352bf22d",
+    "version": "0.1.40"
+  },
+  "kickside/ui": {
+    "hash": "ae24835fb4efed75e77da020c07bbd63d4e3d70bfd246a8b5bebdc099736cfeb",
+    "version": "0.1.33"
+  },
+  "kickside/uploads": {
+    "hash": "77a14d709a6f73ef7550ffed1ddc8cac9c5ade5b0e5946fa3d4659ff6a9c452f",
+    "version": "0.1.64"
+  },
+  "kickside/users": {
+    "hash": "30ec85b3d0ea45411ead1cc3681b856de0bcec83d922533b4d27de7d84bfcdd0",
+    "version": "0.1.50"
+  },
+  "kickside/widgets": {
+    "hash": "38fe3a4fea76a2f1dd60f538e318d3b59678e929c64c330b6c5638ccd4d5a9d5",
+    "version": "0.1.44"
+  }
+}

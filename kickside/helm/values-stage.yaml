@@ -1,0 +1,8 @@
+# Overrides for the wippy-cloud (staging) cluster / namespace.
+
+ingress:
+  host: kickside.stage.wippy.ai
+  # kickside_stage_wippy_ai_cert_arn output of iac/aws-prod-cloud.
+  certificateArn: "arn:aws:acm:us-east-1:927717055117:certificate/a3660b44-8e73-4142-a1f1-1ac5fe1d8bd1"
+  # VPC CIDR of vpc-09e1c94b330853633.
+  inboundCidrs: "10.1.0.0/16"

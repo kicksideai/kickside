@@ -1,0 +1,144 @@
+{
+  "version": "0.1.126",
+  "sha256": "4f255adfa0ca583fd603ae01e47a9616077bfc666635c2ecfd2a89ea04bb949b",
+  "schema": {
+    "type": "object",
+    "required": [
+      "action"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "create",
+          "list",
+          "get",
+          "pause",
+          "resume",
+          "update",
+          "delete",
+          "run_now"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "description": "Task id for get or changes."
+      },
+      "title": {
+        "type": "string"
+      },
+      "schedule": {
+        "type": "object",
+        "required": [
+          "type",
+          "expression"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "cron",
+              "interval"
+            ]
+          },
+          "expression": {
+            "type": "string",
+            "description": "UTC cron (five fields) or positive interval, e.g. 15m, 1h."
+          }
+        }
+      },
+      "target": {
+        "type": "object",
+        "title": "Target",
+        "additionalProperties": false,
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workflow",
+              "agent",
+              "action"
+            ]
+          },
+          "flow_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "id",
+              "version"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "flow"
+              },
+              "id": {
+                "type": "string",
+                "x-reference": {
+                  "kind": "flow",
+                  "access": "READ"
+                }
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "agent_id": {
+            "type": "string",
+            "x-reference": {
+              "kind": "agent",
+              "access": "READ"
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "port": {
+            "type": "string",
+            "minLength": 1
+          },
+          "config": {
+            "type": "object"
+          },
+          "input": {
+            "type": "object"
+          }
+        }
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "create only, defaults true."
+      },
+      "parent_id": {
+        "type": "string"
+      },
+      "principal": {
+        "type": "object",
+        "description": "create only: optional authorized group; calling user is the default. Group selection requires live membership and delegation.",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "group"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

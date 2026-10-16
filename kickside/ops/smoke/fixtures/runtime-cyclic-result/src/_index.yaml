@@ -1,0 +1,24 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: dep.test
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+  - name: runtime_access
+    kind: security.policy
+    policy: {actions: funcs.call, resources: 'app:cyclic_result', effect: allow}
+  - name: cyclic_result
+    kind: function.lua
+    source: file://cycle.lua
+    method: run
+  - name: cyclic_result_test
+    kind: function.lua
+    source: file://test.lua
+    method: run
+    modules: [funcs]
+    imports: {test: 'wippy.test:test'}
+    meta: {type: test, suite: upstream_runtime}
+    security:
+      actor: {id: app:probe}
+      policies: [app:runtime_access]

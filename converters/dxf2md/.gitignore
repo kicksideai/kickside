@@ -1,0 +1,10 @@
+wippy
+.wippy/
+.env
+.DS_Store
+dist/
+component/target/
+__pycache__/
+*.pyc
+mutants.out/
+mutants.out.old/

@@ -1,0 +1,29 @@
+version: "1.0"
+namespace: cluster_test
+entries:
+  - name: scope_access
+    kind: security.policy
+    policy:
+      actions:
+        - process.registry.register
+        - process.registry.register.eventual
+        - process.registry.register.consistent
+        - process.registry.register.strong
+        - process.registry.unregister
+        - process.registry.unregister.eventual
+        - process.registry.unregister.consistent
+        - process.registry.unregister.strong
+      resources: "cluster_test:scope_*"
+      effect: allow
+  - name: terminal
+    kind: terminal.host
+    hide_logs: false
+    lifecycle:
+      auto_start: true
+  - name: scope_probe
+    kind: process.lua
+    source: file://scope_probe.lua
+    method: main
+    modules: [process, io, json]
+    security:
+      policies: [cluster_test:scope_access]

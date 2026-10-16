@@ -1,0 +1,47 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: env_storage
+    kind: env.storage.os
+  - name: processes
+    kind: process.host
+    lifecycle: {auto_start: true}
+  - name: bootloader
+    kind: ns.dependency
+    component: wippy/bootloader
+    version: '*'
+    parameters:
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: wippy.bootloader:application_host
+        value: app:processes
+  - name: db
+    kind: db.sql.sqlite
+    file: database.sqlite
+    foreign_keys: true
+    pool: {max_open: 1, max_idle: 1}
+  - name: test
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+  - name: migration
+    kind: ns.dependency
+    component: wippy/migration
+    version: '*'
+    parameters:
+      - name: wippy.migration:app_db
+        value: app:db
+  - name: scope
+    kind: security.policy
+    policy: {resources: '*', actions: '*', effect: allow}
+  - name: plan
+    kind: library.lua
+    source: file://plan.lua
+    modules: [json]
+  - name: suite
+    kind: function.lua
+    source: file://suite.lua
+    method: run
+    meta: {type: test, suite: compatibility, timeout: 300s}
+    modules: [funcs, sql]
+    imports: {test: 'wippy.test:test', plan: 'app:plan'}

@@ -1,0 +1,27 @@
+[package]
+name = "dxf2md"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "WebAssembly component that converts DXF CAD drawings to Markdown and renders them to PNG"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.58"
+dxf = "0.6"
+tiny-skia = "0.12"
+
+# Vendored fork of `dxf` 0.6.1 with one change: the generated header's four
+# timestamp fields default to a fixed epoch instead of `Utc::now()`/`Local::now()`.
+# The upstream clock call panics on runtimes whose WASI clocks version differs from
+# the component's (e.g. wazero registering wall-clock@0.2.3 vs the rustc-emitted
+# @0.2.6); the timestamps are never read by this module. See vendor/dxf.
+[patch.crates-io]
+dxf = { path = "../vendor/dxf" }
+
+[profile.release]
+opt-level = "s"
+strip = true
+lto = true

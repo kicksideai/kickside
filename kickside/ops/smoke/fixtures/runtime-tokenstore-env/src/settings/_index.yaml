@@ -1,0 +1,9 @@
+version: '1.0'
+namespace: settings
+entries:
+  - name: os
+    kind: env.storage.os
+  - name: signing
+    kind: env.variable
+    storage: settings:os
+    variable: ENCRYPTION_KEY

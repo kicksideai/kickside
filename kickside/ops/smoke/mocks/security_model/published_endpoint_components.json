@@ -1,0 +1,22 @@
+{
+  "kickside.core.jobs.security:jobs_endpoint_access": {
+    "groups": [],
+    "policy": {
+      "actions": "access",
+      "effect": "allow",
+      "resources": [
+        "kickside.core.jobs.api:*"
+      ]
+    }
+  },
+  "kickside.mcp.security:mcp_endpoint_access": {
+    "groups": [],
+    "policy": {
+      "actions": "access",
+      "effect": "allow",
+      "resources": [
+        "kickside.mcp.api:*"
+      ]
+    }
+  }
+}

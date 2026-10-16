@@ -1,0 +1,58 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Literal idempotency key in an automation test fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/ops/smoke/scenarios_automation\.py$''']
+regexes = ['''^northwind\-receiving\-NW\-2048$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/platform/identity/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/platform/mcp/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Owner-verified dummy test credential"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/platform/security/test\-bot\-accounts/\.wippy\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Literal idempotency key and UUID identifiers in a UI fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/platform/automation/ui/src/app/automations\.interactions\.spec\.ts$''']
+regexes = ['''^019f4b1f\-df4d\-7009\-935c\-35b75aed03a7$''']
+
+[[allowlists]]
+description = "Literal idempotency key and UUID identifiers in a UI fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/platform/automation/ui/src/app/automations\.interactions\.spec\.ts$''']
+regexes = ['''^019f4b1f\-df4d\-7009\-935c\-35b75aed03a8$''']
+
+[[allowlists]]
+description = "UUID node identifier in a workflow UI fixture"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/platform/workflows/ui/src/app/__fixtures__/run\-88444c66\-agent\-node\.json$''']
+regexes = ['''^019f48ab\-3063\-7313\-ad9b\-481e0df7ddca$''']
+
+[[allowlists]]
+description = "Owner-verified encryption key for an isolated two-node test"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)kickside/tests/cluster\-2node/run\.py$''']
+regexes = ['''^a6386f623f6a60b314ecb98b7b3afc91d63bc8e6ab122a5ee1498a91438b733f$''']

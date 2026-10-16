@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kickside.fullname" . }}
+  labels:
+    {{- include "kickside.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.service.httpPort }}
+      targetPort: http-api
+  selector:
+    {{- include "kickside.selectorLabels" . | nindent 4 }}

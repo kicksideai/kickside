@@ -1,0 +1,295 @@
+version: "1.0"
+namespace: kickside.load
+
+entries:
+  - name: driver_support
+    kind: library.lua
+    meta:
+      comment: Shared database, state, timing, and fixture helpers for load measurements.
+    source: file://driver_support.lua
+    modules: [sql, time, uuid, contract, security, process, channel]
+
+  - name: driver_wake
+    kind: library.lua
+    meta:
+      comment: Wake publication, steady claims, and propagation measurements.
+    source: file://driver_wake.lua
+    modules: [sql, time, contract, security, process]
+    imports:
+      driver_support: kickside.load:driver_support
+
+  - name: empty_round
+    kind: library.lua
+    meta:
+      comment: Empty-round completion measurements.
+    source: file://empty_round.lua
+    modules: [sql, time, contract, security]
+    imports:
+      driver_support: kickside.load:driver_support
+
+  - name: driver_observe
+    kind: library.lua
+    meta:
+      comment: Worker monitoring and retention measurement phases.
+    source: file://driver_observe.lua
+    modules: [sql, time, contract, security]
+    imports:
+      driver_support: kickside.load:driver_support
+      prune_lib: kickside.core.retention:prune
+
+  - name: phases
+    kind: library.lua
+    meta:
+      comment: Command recovery and page-size measurement phases.
+    source: file://phases.lua
+    modules: [sql, time, uuid, process]
+    imports:
+      driver_support: kickside.load:driver_support
+      command_lib: kickside.automation:command
+      automations_lib: kickside.automation:automation
+      canonical_json: kickside.contract:canonical_json
+      slot: kickside.automation:slot
+      jobs: kickside.core.jobs:jobs
+
+  - name: workflows
+    kind: library.lua
+    meta:
+      comment: Workflows terminal recovery and terminal status checks.
+    source: file://workflows.lua
+    modules: [time, sql]
+    imports:
+      driver_support: kickside.load:driver_support
+      workflow_repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      maintenance: kickside.workflows.runs:maintenance
+      consts: userspace.dataflow:consts
+
+  - name: event
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+      comment: Load event the fixture automations consume.
+    schema: { type: object, properties: { text: { type: string } } }
+
+  - name: empty_probe
+    kind: registry.entry
+    meta:
+      type: kickside.core.threads.event
+      comment: Load event no fixture automation matches.
+    schema: { type: object }
+
+  - name: source_thread
+    kind: contract.binding
+    meta:
+      comment: Load source thread kind accepting the load input events.
+      events:
+        input:
+          - type: kickside.load:event
+          - type: kickside.load:empty_probe
+        output: []
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: runner_access
+    kind: security.policy
+    meta:
+      comment: Temporary load-runtime permission for its database fixture and owned worker probes.
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: event_install
+    kind: function.lua
+    source: file://driver_fixture.lua
+    method: install_event
+    modules: [sql, time]
+    imports:
+      driver_support: kickside.load:driver_support
+
+  - name: timer_install
+    kind: function.lua
+    source: file://driver_fixture.lua
+    method: install_timer
+    imports:
+      driver_support: kickside.load:driver_support
+
+  - name: event_deliver
+    kind: function.lua
+    source: file://driver_deliver.lua
+    method: deliver_event
+    modules: [sql, time]
+    imports:
+      driver_support: kickside.load:driver_support
+      component: kickside.component:component
+
+  - name: event_kind
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: Lane LOD event fixture
+      comment: Local automation fixture measured by the production round worker.
+      class: automation
+      inputs:
+        type: object
+        properties:
+          thread_id: { type: string }
+          start: { type: string }
+    contracts:
+      - contract: kickside.contract:installable
+        methods:
+          install: kickside.load:event_install
+      - contract: kickside.trigger:round_consumer
+        methods:
+          deliver: kickside.load:event_deliver
+
+  - name: timer_kind
+    kind: contract.binding
+    meta:
+      type: kickside.automation
+      title: Lane LOD interval fixture
+      comment: Local five-minute interval automation measured by the production round worker.
+      class: automation
+      inputs:
+        type: object
+    contracts:
+      - contract: kickside.contract:installable
+        methods:
+          install: kickside.load:timer_install
+      - contract: kickside.trigger:round_consumer
+        methods:
+          deliver: kickside.load:event_deliver
+
+  - name: prepare
+    kind: process.lua
+    source: file://driver_prepare.lua
+    method: prepare
+    modules: [sql, time, uuid, contract, security]
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+    imports:
+      driver_support: kickside.load:driver_support
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: install
+    kind: process.lua
+    source: file://driver_install.lua
+    method: install
+    modules: [sql, time, funcs, security, uuid, contract]
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+    imports:
+      driver_support: kickside.load:driver_support
+
+  - name: claim_probe
+    kind: process.lua
+    source: file://driver_claim.lua
+    method: claim_probe
+    modules: [sql, uuid, json, time, process, channel]
+    imports:
+      driver_support: kickside.load:driver_support
+      claim: kickside.core.jobs.persist:claim
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+
+  - name: sqlite_contention_child
+    kind: process.lua
+    source: file://driver_claim.lua
+    method: sqlite_contention_child
+    modules: [sql, uuid, json, time, process, channel]
+    imports:
+      driver_support: kickside.load:driver_support
+      claim: kickside.core.jobs.persist:claim
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+
+  - name: noop_child
+    kind: process.lua
+    source: file://noop.lua
+    method: run
+
+  - name: breakdown
+    kind: process.lua
+    source: file://breakdown.lua
+    method: run
+    modules: [sql, time, process, channel]
+    imports:
+      automations_lib: kickside.automation:automation
+      execution_identity: kickside.execution:execution_identity
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+
+  - name: append_samples
+    kind: process.lua
+    source: file://driver_wake.lua
+    method: append_samples
+    modules: [sql, contract, security, time, process]
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+    imports:
+      driver_support: kickside.load:driver_support
+
+  - name: sqlite_round_probe
+    kind: process.lua
+    source: file://sqlite_round_probe.lua
+    method: run
+    modules: [time, sql, contract, security]
+    imports:
+      driver_support: kickside.load:driver_support
+      jobs: kickside.core.jobs:jobs
+    security:
+      actor: { id: lane_lod_owner }
+      policies: [kickside.load:runner_access]
+
+  - name: monitor
+    kind: process.lua
+    source: file://driver_observe.lua
+    method: monitor
+    modules: [sql, time]
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+    imports:
+      driver_support: kickside.load:driver_support
+      prune_lib: kickside.core.retention:prune
+
+  - name: prune_only
+    kind: process.lua
+    source: file://driver_observe.lua
+    method: prune_only
+    modules: [sql, time]
+    imports:
+      driver_support: kickside.load:driver_support
+      prune_lib: kickside.core.retention:prune
+    security:
+      actor: { id: kickside.load:runner }
+      policies: [kickside.load:runner_access]
+
+  - name: run_worker
+    kind: process.lua
+    source: file://driver_worker.lua
+    method: run_worker
+    modules: [sql, time, process, channel, contract, security]
+    security:
+      actor: { id: lane_lod_owner }
+      policies: [kickside.load:runner_access]
+    imports:
+      driver_support: kickside.load:driver_support
+      driver_observe: kickside.load:driver_observe
+      driver_wake: kickside.load:driver_wake
+      empty_round: kickside.load:empty_round
+      phases: kickside.load:phases
+      workflows: kickside.load:workflows

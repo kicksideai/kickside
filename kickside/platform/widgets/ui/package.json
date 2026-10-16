@@ -1,0 +1,72 @@
+{
+  "name": "@kickside/widgets-icon-picker",
+  "version": "0.1.0",
+  "specification": "wippy-component-1.0",
+  "title": "KickSide Icon Picker",
+  "description": "Shared Tabler icon picker web component (<wc-icon-picker>) for kickside \u2014 the single icon chooser reused across agents, knowledge, skills, and navigation appearance.",
+  "browser": "dist/index.js",
+  "files": [
+    "dist/",
+    "src/",
+    "package.json"
+  ],
+  "type": "module",
+  "dependencies": {
+    "@kickside/ui-kit": "*",
+    "@wippy-fe/theme": "*",
+    "@wippy-fe/webcomponent-core": "*",
+    "@wippy-fe/webcomponent-vue": "*",
+    "primevue": "4.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vue/test-utils": "^2.4.11",
+    "@wippy-fe/proxy": "*",
+    "@wippy-fe/vite-plugin": "*",
+    "happy-dom": "^20.10.6",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.9",
+    "vue": "^3.5.0",
+    "vue-tsc": "^3.3.8"
+  },
+  "peerDependencies": {
+    "@wippy-fe/proxy": "*",
+    "vue": "^3.5.0"
+  },
+  "wippy": {
+    "description": "Shared picker and form-widget set for kickside \u2014 one build in this package produces seven web components served from /kickside-widgets: wc-icon-picker (this wippy block, index.js) plus wc-model-picker, wc-multiselect, wc-channel-picker, wc-connection-picker, wc-component-picker, and wc-schema-form, each its own bundle entry with a view.component registry entry in platform/widgets/src/_index.yaml carrying its full per-tag props schema. All widgets share one contract: the current selection goes in as string attributes (value, or config where a data-flow config form mounts them) and changes come back as DOM CustomEvents read from event.detail. Most emit change \u2014 detail {connection_id} (connection), {thread_id} (component), {connection_id, channel_id, channel_name} (channel), {selected, labels} (multiselect) \u2014 while the icon and model pickers emit select with the picked name string and the schema form emits config-changed with the merged values object. Data-loading pickers also emit load once ready and error ({message, error}) on a failed fetch; the connection and component pickers mirror change as config-changed, and the component picker can emit created ({thread_id}) from its inline create path. The props below describe only wc-icon-picker (value = selected icon name such as tabler:home, fallback = trigger icon when unset); consult the registry entries for every other tag's attributes.",
+    "tagName": "wc-icon-picker",
+    "type": "component",
+    "props": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "default": "",
+          "description": "Currently selected icon name (e.g. tabler:home)."
+        },
+        "fallback": {
+          "type": "string",
+          "default": "",
+          "description": "Icon shown on the trigger when no value is set."
+        }
+      }
+    },
+    "scripts": {
+      "build": "build"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run"
+  },
+  "workspaces": [
+    "./.wippy/npm/@*/*"
+  ]
+}

@@ -1,0 +1,323 @@
+[
+  {
+    "module": "kickside/asr",
+    "archives": [
+      {
+        "version": "0.1.1",
+        "sha256": "2a3a955fda8fa635f790fe22fc6a32e0b96f88f6f9c8c1e91df1aac855013f71"
+      },
+      {
+        "version": "0.1.0",
+        "sha256": "b7a7e088b21d2769903c71635158d6eed570e10a07f2b90180ee7533d06180ce"
+      }
+    ]
+  },
+  {
+    "module": "kickside/atlassian",
+    "archives": [
+      {
+        "version": "0.1.23",
+        "sha256": "cab43356d56a18862896b18e642cf71f01c9e112e858a14992800d3971de122b"
+      },
+      {
+        "version": "0.1.20",
+        "sha256": "bf0e630ee55205a71d7ccd807cd546d74d49c853f84973f8e536458c1f6e3bbf"
+      }
+    ]
+  },
+  {
+    "module": "kickside/bitbucket",
+    "archives": [
+      {
+        "version": "0.1.4",
+        "sha256": "3d4030b9b6ece691137afb425224b5357a6fdac02a3770a1c60bdd9cef558f78"
+      },
+      {
+        "version": "0.1.3",
+        "sha256": "16aeaba6f60aa4be016e131660937adc4412c21620fe3a04a3a2641ecf2bf670"
+      }
+    ]
+  },
+  {
+    "module": "kickside/code-execution",
+    "archives": [
+      {
+        "version": "0.1.18",
+        "sha256": "b12f9471a0efc06a553a30316d62227de47bf9f7451983a6a47735532b626f16"
+      },
+      {
+        "version": "0.1.15",
+        "sha256": "ef414401a1edb9052a1bf55f35e263fa0147acd4b7b1243b0cbc203e2b0ee6ba"
+      },
+      {
+        "version": "0.1.16",
+        "sha256": "c953de09fdcd8ad13ed31e77f5b0aceeea2ce6041a8dbf9e3735cfb14eae5b36"
+      }
+    ]
+  },
+  {
+    "module": "kickside/discord",
+    "archives": [
+      {
+        "version": "0.1.19",
+        "sha256": "9471ea66b8908eedacd82d9f18f951ae6171c0595eaff258e160a6a123d66e68"
+      },
+      {
+        "version": "0.1.16",
+        "sha256": "96eac127ce73a468f656ee7ceb8e990a231cea808fabf830d8f563e78c524e8e"
+      }
+    ]
+  },
+  {
+    "module": "kickside/fireflies",
+    "archives": [
+      {
+        "version": "0.1.20",
+        "sha256": "3f88430063d7f5290d7ff3121c486937aadff7d36de170d26be4d62cf47373f8"
+      },
+      {
+        "version": "0.1.17",
+        "sha256": "08ce7f16fd5ff5a137cc74139e7cc68aca504e4857e59ac7d6587078109a45f3"
+      }
+    ]
+  },
+  {
+    "module": "kickside/github",
+    "archives": [
+      {
+        "version": "0.1.18",
+        "sha256": "6182b00a691eadd90691a7d5e143da651dd8e95ea5fcd054a5868f658430b042"
+      },
+      {
+        "version": "0.1.15",
+        "sha256": "f7bb2cce835515e57d05e4fd9589ad0589945fd4f6741d49975c9f3fac1f9748"
+      }
+    ]
+  },
+  {
+    "module": "kickside/gitlab",
+    "archives": [
+      {
+        "version": "0.1.4",
+        "sha256": "5a7075a9ce535eb2497ef41c711ab78356460920eafa151adfc1012ca350c6c3"
+      },
+      {
+        "version": "0.1.3",
+        "sha256": "5ff8b71873c813a0751407a2bfe658215295f8f9f746abf9c21b75b387d05280"
+      }
+    ]
+  },
+  {
+    "module": "kickside/google",
+    "archives": [
+      {
+        "version": "0.1.22",
+        "sha256": "8d51171d5700797a251ca645fb6435f24993def6a7fe9c0a14901b308fac9227"
+      },
+      {
+        "version": "0.1.19",
+        "sha256": "bde0b7bb2c04b61e730263215f65824449f178b11681f730f4518b8c143aa35d"
+      }
+    ]
+  },
+  {
+    "module": "kickside/hubspot",
+    "archives": [
+      {
+        "version": "0.1.38",
+        "sha256": "b11e995d18ee270af7ba342a2216a71f5f051ce4f7aa91d607509675bc30b394"
+      },
+      {
+        "version": "0.1.34",
+        "sha256": "fdcf6e069363cd29b2ab43c762d59d80542183b7ed673152fcc31f17a5f8c543"
+      }
+    ]
+  },
+  {
+    "module": "kickside/kb10",
+    "archives": [
+      {
+        "version": "0.2.2",
+        "sha256": "b758ac72f1516cf77d1dd2560f665e957c27702e81610eb572200b1eafe99efa"
+      },
+      {
+        "version": "0.1.47",
+        "sha256": "e9985677c3af1022b35afe2851fcf51b701520446f65ffd878a2a68e182b4c51"
+      }
+    ]
+  },
+  {
+    "module": "kickside/llm-ocr",
+    "archives": [
+      {
+        "version": "0.1.11",
+        "sha256": "228e8fc5777d827f6430f4d228454b9b76d8aff262c503fd22f4dc4f0d6ac284"
+      },
+      {
+        "version": "0.1.9",
+        "sha256": "afe0034be25e951f74517bf460e9a070e9556c7b038349011d36300771a6e3ba"
+      }
+    ]
+  },
+  {
+    "module": "kickside/mcp-client",
+    "archives": [
+      {
+        "version": "0.1.12",
+        "sha256": "a0bdbd80cc5bdc61fe2d30e59c811508c29d9f8a4cebff9c2e6ae0068ed3407d"
+      },
+      {
+        "version": "0.1.9",
+        "sha256": "ea8fbeb2267b46c7475eaef8447b5d3fbc33268045f53c129ec6bcba784f9f93"
+      }
+    ]
+  },
+  {
+    "module": "kickside/memory",
+    "archives": [
+      {
+        "version": "0.1.11",
+        "sha256": "36eff7b1546c8fb861b6a930146b3833e711b64e25d83b9947594c0f399d2ca0"
+      }
+    ]
+  },
+  {
+    "module": "kickside/phantombuster",
+    "archives": [
+      {
+        "version": "0.1.22",
+        "sha256": "2081343d0a5bef6ed9456a05f6818040ebbe65373884196c8400d4e3c9537f14"
+      },
+      {
+        "version": "0.1.19",
+        "sha256": "4d4880e05ff9fd76e161477cd3006c6509bc8b61a00f672ae1e003dbf06cacc7"
+      }
+    ]
+  },
+  {
+    "module": "kickside/simplefin",
+    "archives": [
+      {
+        "version": "0.1.9",
+        "sha256": "d6f6492ff86ba4d32f97f136e6b55e0ea8b72c2cc58252900a4bf857bf00e20b"
+      },
+      {
+        "version": "0.1.6",
+        "sha256": "bb87f39d5317fbbbc6907f768004b56b92387a4c56fbbfd9ae1ceb40d28aee26"
+      }
+    ]
+  },
+  {
+    "module": "kickside/slack",
+    "archives": [
+      {
+        "version": "0.1.14",
+        "sha256": "771b1128565703683358cccaa4794d76a9b0c736917ffee0bc3b3b0e15f7c049"
+      },
+      {
+        "version": "0.1.12",
+        "sha256": "d6bd28f0b7cabe421eceb957ba0c4ba124737437af239c746085ac34d7f99297"
+      }
+    ]
+  },
+  {
+    "module": "kickside/sso-github",
+    "archives": [
+      {
+        "version": "0.1.11",
+        "sha256": "49fd76fe22929b96acafeda40a4b5ca45b7745baaa2d9714723f3c9c655e6677"
+      },
+      {
+        "version": "0.1.9",
+        "sha256": "8019368470555a0793c058d8efd58ae03ad00fae714ba5910a95f8b9a6c6c701"
+      }
+    ]
+  },
+  {
+    "module": "kickside/sso-google",
+    "archives": [
+      {
+        "version": "0.1.11",
+        "sha256": "59a8bb0d88a30c6d49528b97cdd50b27d5d3da9008bc68093a4ecaad519edcfa"
+      },
+      {
+        "version": "0.1.9",
+        "sha256": "3a55a14b87776a67d26c846b63b92d789afcf79a3bc630bdaf930c75f6629671"
+      }
+    ]
+  },
+  {
+    "module": "kickside/sso-microsoft",
+    "archives": [
+      {
+        "version": "0.1.11",
+        "sha256": "7b2c824a074630e1883f0b6808838465ecf1c213b8c75afaefcc98af1120a58d"
+      },
+      {
+        "version": "0.1.9",
+        "sha256": "a218113029bfb8b667dbece9018b01512243a027551bfef1ad5460fe8274d458"
+      }
+    ]
+  },
+  {
+    "module": "kickside/sso-oidc",
+    "archives": [
+      {
+        "version": "0.1.11",
+        "sha256": "8516eee22ba1e19eef2e5d087b8c5d9a0306d9ffc193a4dcf1907c2bf6ddea79"
+      },
+      {
+        "version": "0.1.10",
+        "sha256": "a51414dd70bb186a898b6c14c45333b319a74a26245b07a5883c6f7a88d49f6b"
+      }
+    ]
+  },
+  {
+    "module": "kickside/telegram",
+    "archives": [
+      {
+        "version": "0.2.1",
+        "sha256": "b06619c9a7f1cf6ab251188927b5d2a2da261a5d3102b2c95b69c15ff7dfb1bd"
+      },
+      {
+        "version": "0.1.9",
+        "sha256": "ef57f753e941b8875eef4455538cec05082ddbacbe356e065a59fcc36d818fc6"
+      }
+    ]
+  },
+  {
+    "module": "kickside/webscout",
+    "archives": [
+      {
+        "version": "0.1.30",
+        "sha256": "68927a9bd0f951ab705e728890dd7bdab953797f48d6dcfa487c317a2dd03768"
+      },
+      {
+        "version": "0.1.28",
+        "sha256": "9013054f1bb63780a426c25924195312c54a52d81c79355317cc6d983baa9c4b"
+      }
+    ]
+  },
+  {
+    "module": "kickside/webscout-brave",
+    "archives": [
+      {
+        "version": "0.1.3",
+        "sha256": "a76b68425ed6df2f9b274d7ed54cb5e630a14a37dff97af16592f0f76667eeca"
+      },
+      {
+        "version": "0.1.2",
+        "sha256": "0ba1684dd3880e02b9019d2102134290dd29791fe5b4ccbafb7566ec58a2e86d"
+      }
+    ]
+  },
+  {
+    "module": "kickside/webscout-tavily",
+    "archives": [
+      {
+        "version": "0.1.0",
+        "sha256": "865cefbf28e0d1dc2aa15a8fdccc16720a412644413f8af0d8ed7d78d073b5bb"
+      }
+    ]
+  }
+]

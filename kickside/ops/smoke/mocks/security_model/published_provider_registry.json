@@ -1,0 +1,634 @@
+[
+  {
+    "id": "kickside.asr.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.asr.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.asr:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.atlassian.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.atlassian.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.atlassian:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.atlassian:endpoint_authorization",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.atlassian:endpoint_gateway",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.atlassian:endpoint_resources",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.atlassian:endpoint_token",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.atlassian:endpoint_userinfo",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.atlassian:env_storage",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.atlassian:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.bitbucket.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.bitbucket.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.bitbucket:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.code_execution.security:endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.code_execution.security:eval_grant",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.code_execution.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.code_execution.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.code_execution.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.code_execution.security:worker_dispatch",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.code_execution:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.code_execution:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.code_execution:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.discord.gateway:gateway_health_trust",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.discord.gateway:gateway_ingress_trust",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.discord.gateway:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.discord.gateway:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.discord.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.discord.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.discord:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.discord:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.discord:endpoint_gateway",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.fireflies.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.fireflies.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.fireflies:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.fireflies:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.github.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.github.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.github:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.github:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.github:endpoint_authorization",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.github:endpoint_token",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.github:endpoint_userinfo",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.github:env_storage",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.github:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.gitlab.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.gitlab.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.gitlab:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.google.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.google.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.google:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.google:endpoint_analytics_admin",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_analytics_data",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_authorization",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_calendar",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_contacts",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_docs",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_drive",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_gmail",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_sheets",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_slides",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_token",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:endpoint_userinfo",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:env_storage",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.google:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.hubspot.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.hubspot.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.hubspot:default_field_mapping_ref",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.hubspot:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.hubspot:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.hubspot:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.kb10.graph:enrichment_deferred_owner",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.kb10.graph:placement_agent_spawn",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.kb10.graph:placement_registry",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.kb10.security:kb10_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.kb10.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.kb10.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.kb10.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.kb10:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.kb10:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.kb10:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.kb10:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.kb10:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.llm_ocr.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.llm_ocr.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.llm_ocr:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.mcp_client.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp_client.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp_client:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp_client:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.mcp_client:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp_client:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.memory.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.memory.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.memory:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.memory:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.phantombuster.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.phantombuster.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.phantombuster:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.phantombuster:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.phantombuster:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.simplefin.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.simplefin.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.simplefin.security:simplefin_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.simplefin.security:user_security_scope",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.simplefin:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.simplefin:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.simplefin:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.slack.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.slack.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.slack.socket:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.slack.socket:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.slack:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.slack:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.slack:endpoint_socket",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.github.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.github.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.github:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sso.providers.github:endpoint_authorize",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.github:endpoint_emails",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.github:endpoint_token",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.github:endpoint_userinfo",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.google.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.google.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.google:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sso.providers.google:endpoint_authorize",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.google:endpoint_issuer",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.google:endpoint_jwks",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.google:endpoint_token",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.google:endpoint_userinfo",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.microsoft.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.microsoft.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.microsoft:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.sso.providers.microsoft:endpoint_issuer_template",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.sso.providers.oidc.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.oidc.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.sso.providers.oidc:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.telegram.polling:process_host",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.telegram.polling:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.telegram.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.telegram.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.telegram:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.telegram:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.telegram:endpoint_file",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.webscout.providers.brave.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.webscout.providers.brave.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.webscout.providers.brave:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.webscout.providers.tavily.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.webscout.providers.tavily.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.webscout.providers.tavily:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.webscout.security:module_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.webscout.security:module_runtime",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.webscout:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.webscout:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.webscout:endpoint_api",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.webscout:ui_server",
+    "kind": "ns.requirement"
+  }
+]

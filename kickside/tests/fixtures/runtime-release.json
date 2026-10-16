@@ -1,0 +1,17 @@
+{
+  "version": "v0.3.47a",
+  "sources": {
+    "amd64": {
+      "url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-amd64",
+      "checksum": "0e2e4d2a1c11075e5ead793e4e32f7b37e838af643211e6e42d3fcfa6afdeb9e",
+      "signature": "U7rwuQJpA43IDB/SXhZFbeVYsl90DOQsaN2vSiQ/w0suMBApgMOvGi/F1lk5Pb/xCLEgtsnkqkKW/EjfP+XmCA==",
+      "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw="
+    },
+    "arm64": {
+      "url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-arm64",
+      "checksum": "171b81112e54db301e05e18e9a0bc9c43997514d8e38570fb334fecca4385f3d",
+      "signature": "uFCesv545uEhrwepxgxs7U0U6k5l5jAHzcKKP+PleTqlsg1QgxYEsW1xc0k9CUnFxzpn3nZV49Edj0j5EZNnBQ==",
+      "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw="
+    }
+  }
+}

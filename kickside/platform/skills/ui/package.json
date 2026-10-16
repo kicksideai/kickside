@@ -1,0 +1,78 @@
+{
+  "name": "@kickside/skills-ui",
+  "version": "0.1.0",
+  "specification": "wippy-component-1.0",
+  "title": "KickSide Skills",
+  "description": "Skills control page web component for kickside/skills, over the native skills CRUD/share API.",
+  "browser": "dist/index.js",
+  "files": [
+    "dist/",
+    "src/",
+    "package.json"
+  ],
+  "type": "module",
+  "dependencies": {
+    "@kickside/ui-kit": "*",
+    "@wippy-fe/shared": "*",
+    "@wippy-fe/theme": "*",
+    "@wippy-fe/webcomponent-core": "*",
+    "@wippy-fe/webcomponent-vue": "*",
+    "primevue": "4.5.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vue/test-utils": "^2.4.11",
+    "@wippy-fe/proxy": "*",
+    "@wippy-fe/vite-plugin": "*",
+    "happy-dom": "^20.10.6",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.9",
+    "vue": "^3.5.0",
+    "vue-tsc": "^3.3.8"
+  },
+  "peerDependencies": {
+    "@wippy-fe/proxy": "*",
+    "vue": "^3.5.0"
+  },
+  "wippy": {
+    "description": "Ships two web components from one package. kickside-skills (index.js, the browser entry) is the full Skills management surface: it lists the actor's skills from GET /api/v1/skills with client-side search and supports create, refine, share and delete, plus editing a skill's bundled files and browsing/previewing its version history. It takes no props, talks to the backend through the @wippy-fe/proxy authenticated api client and host helpers (host.toast/host.confirm), and declares no custom events of its own. kickside-skill-picker (picker.js, registered separately as the skill_picker_view view.component) is the Skills trait config editor the agent editor mounts by tag: it receives the trait context via the config prop ({ skill_ids: string[] } or a bare id array) and emits config-changed with { skill_ids } whenever the pinned skill set changes \u2014 that is the config-changed event described in the events schema below.",
+    "tagName": "kickside-skills",
+    "type": "component",
+    "props": {
+      "type": "object",
+      "properties": {}
+    },
+    "events": {
+      "type": "object",
+      "properties": {
+        "config-changed": {
+          "type": "object",
+          "properties": {
+            "skill_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Emitted by the kickside-skill-picker element (Skills trait config) when the pinned skill set changes."
+        }
+      }
+    },
+    "scripts": {
+      "build": "build"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run"
+  },
+  "workspaces": [
+    "./.wippy/npm/@*/*"
+  ]
+}

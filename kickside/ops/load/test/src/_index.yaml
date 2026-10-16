@@ -1,0 +1,124 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: db
+    kind: db.sql.sqlite
+    file: ${sqlite_path}
+  - name: tests
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+  - name: support
+    kind: library.lua
+    source: file://support.lua
+    modules: [sql]
+  - name: component_fixture
+    kind: library.lua
+    source: file://component.lua
+  - name: delivery
+    kind: library.lua
+    source: file://delivery.lua
+    modules: [time]
+    imports:
+      driver_support: app:support
+      component: app:component_fixture
+  - name: fixture
+    kind: library.lua
+    source: file://fixture.lua
+    modules: [time]
+    imports:
+      driver_support: app:support
+  - name: delivery_test
+    kind: function.lua
+    source: file://delivery_test.lua
+    method: run
+    meta:
+      type: test
+      suite: load_delivery
+    imports:
+      test: wippy.test:test
+      delivery: app:delivery
+      fixture: app:fixture
+      support: app:support
+
+  - name: phase_fixture
+    kind: library.lua
+    source: file://phase_fixture.lua
+  - name: phases
+    kind: library.lua
+    source: file://phases.lua
+    modules:
+    - sql
+    - time
+    - uuid
+    - process
+    imports:
+      driver_support: app:phase_fixture
+      command_lib: app:phase_command_lib
+      automations_lib: app:phase_automations_lib
+      canonical_json: app:phase_canonical_json
+      slot: app:phase_slot
+      jobs: app:phase_jobs
+  - name: phases_test
+    kind: function.lua
+    source: file://phases_test.lua
+    method: run
+    meta:
+      type: test
+      suite: load_phases
+    imports:
+      test: wippy.test:test
+      phases: app:phases
+      fixture: app:phase_fixture
+  - name: phase_command_lib
+    kind: library.lua
+    source: file://phase_dependency.lua
+    imports:
+      fixture: app:phase_fixture
+  - name: phase_automations_lib
+    kind: library.lua
+    source: file://phase_dependency.lua
+    imports:
+      fixture: app:phase_fixture
+  - name: phase_canonical_json
+    kind: library.lua
+    source: file://phase_dependency.lua
+    imports:
+      fixture: app:phase_fixture
+  - name: phase_slot
+    kind: library.lua
+    source: file://phase_dependency.lua
+    imports:
+      fixture: app:phase_fixture
+  - name: phase_jobs
+    kind: library.lua
+    source: file://phase_dependency.lua
+    imports:
+      fixture: app:phase_fixture
+  - name: round_probe_fixture
+    kind: library.lua
+    source: file://round_probe_fixture.lua
+  - name: round_probe
+    kind: library.lua
+    source: file://round_probe.lua
+    modules:
+    - time
+    imports:
+      driver_support: app:round_probe_fixture
+      jobs: app:round_probe_jobs
+  - name: round_probe_test
+    kind: function.lua
+    source: file://round_probe_test.lua
+    method: run
+    meta:
+      type: test
+      suite: load_round_probe
+    imports:
+      test: wippy.test:test
+      probe: app:round_probe
+      fixture: app:round_probe_fixture
+  - name: round_probe_jobs
+    kind: library.lua
+    source: file://phase_dependency.lua
+    imports:
+      fixture: app:round_probe_fixture

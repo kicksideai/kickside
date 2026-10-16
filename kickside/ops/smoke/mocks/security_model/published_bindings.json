@@ -1,0 +1,185 @@
+[
+  {
+    "component": "kickside/agents",
+    "parameters": [
+      {
+        "name": "kickside.agents.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/automation",
+    "parameters": [
+      {
+        "name": "kickside.automation.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/component",
+    "parameters": [
+      {
+        "name": "kickside.component.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/connection",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/core",
+    "parameters": [
+      {
+        "name": "kickside.core.security:user_security_scope",
+        "value": "app.security:user"
+      },
+      {
+        "name": "kickside.core.retention:user_security_scope",
+        "value": "app.security:user"
+      },
+      {
+        "name": "kickside.core.threads:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/jobs",
+    "parameters": [
+      {
+        "name": "kickside.core.jobs.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "wippy/relay",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/renderers",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/uploads",
+    "parameters": [
+      {
+        "name": "kickside.uploads.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/dashboard",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/hub",
+    "parameters": [
+      {
+        "name": "kickside.hub.instruments:admin_security_scope",
+        "value": "app.security:admin"
+      }
+    ]
+  },
+  {
+    "component": "kickside/identity",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/inbox",
+    "parameters": [
+      {
+        "name": "kickside.inbox.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/models",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/oauth",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/transform",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/ui",
+    "parameters": [
+      {
+        "name": "kickside.ui.security:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  },
+  {
+    "component": "kickside/users",
+    "parameters": [
+      {
+        "name": "user_security_scope",
+        "value": "app.security:user"
+      },
+      {
+        "name": "admin_security_scope",
+        "value": "app.security:admin"
+      }
+    ]
+  },
+  {
+    "component": "kickside/contract",
+    "parameters": [
+      {
+        "name": "kickside.contract.http:user_security_scope",
+        "value": "app.security:user"
+      }
+    ]
+  }
+]

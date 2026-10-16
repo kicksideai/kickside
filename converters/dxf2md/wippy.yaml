@@ -1,0 +1,27 @@
+organization: kickside
+module: dxf2md
+description: Convert a DXF CAD drawing — from a URL or a binary blob — into Markdown and a PNG render
+license: MIT
+repository: https://github.com/kicksideai/converters
+keywords:
+  - dxf
+  - cad
+  - markdown
+  - png
+  - render
+  - wasm
+embed:
+  - kickside.convert.dxf2md:assets
+exclude:
+  - "app:**"
+  - "app.env:**"
+  - "app.deps:**"
+  - "test/**"
+  - "tests/**"
+  - "test-support/**"
+  - "app.**:**"
+exclude_meta:
+  type:
+    - test
+    - test_helper
+    - test_support

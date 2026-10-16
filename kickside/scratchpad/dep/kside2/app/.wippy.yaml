@@ -1,0 +1,9 @@
+version: '1.0'
+registry:
+  history_type: sqlite
+  history_path: ./.wippy/registry-history.db
+override:
+  app.env:defaults:values.GOV_MANAGED_NAMESPACES: kickside.labdemo,app.deps
+workspace:
+  replacements:
+    kickside/contract: ../../../../core/contract

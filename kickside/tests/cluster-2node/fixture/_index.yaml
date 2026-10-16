@@ -1,0 +1,116 @@
+version: '1.0'
+namespace: app.test.cluster
+entries:
+- name: root
+  kind: security.policy
+  policy:
+    resources: '*'
+    actions: '*'
+    effect: allow
+- name: probe
+  kind: function.lua
+  source: file://probe.lua
+  method: handler
+  modules:
+  - http
+  - process
+  - sql
+  - system
+  - registry
+  - channel
+  - json
+  - contract
+  - security
+  imports: &id001
+    jobs: kickside.core.jobs:jobs
+    waiters: kickside.core.threads:cursor_waiters
+    realtime: kickside.realtime:realtime_lib
+  security:
+    actor:
+      id: cluster_test
+    policies:
+    - app.test.cluster:root
+- name: waiter
+  kind: process.lua
+  source: file://probe.lua
+  method: waiter
+  modules:
+  - http
+  - process
+  - sql
+  - system
+  - registry
+  - channel
+  - json
+  - contract
+  - security
+  imports: *id001
+  security:
+    actor:
+      id: cluster_test
+    policies:
+    - app.test.cluster:root
+- name: client
+  kind: process.lua
+  source: file://probe.lua
+  method: client
+  modules:
+  - http
+  - process
+  - sql
+  - system
+  - registry
+  - channel
+  - json
+  - contract
+  - security
+  imports: *id001
+  security:
+    actor:
+      id: cluster_test
+    policies:
+    - app.test.cluster:root
+- name: job
+  kind: process.lua
+  source: file://probe.lua
+  method: job
+  modules:
+  - http
+  - process
+  - sql
+  - system
+  - registry
+  - channel
+  - json
+  - contract
+  - security
+  imports: *id001
+  security:
+    actor:
+      id: cluster_test
+    policies:
+    - app.test.cluster:root
+- name: endpoint
+  kind: http.endpoint
+  meta:
+    router: app:api.public
+  method: POST
+  func: probe
+  path: /cluster-test
+- name: fold
+  kind: function.lua
+  meta:
+    type: projection.worker
+  source: file://probe.lua
+  method: fold
+  modules:
+  - http
+  - process
+  - sql
+  - system
+  - registry
+  - channel
+  - json
+  - contract
+  - security
+  imports: *id001

@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kickside.fullname" . }}
+  labels:
+    {{- include "kickside.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "kickside.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kickside.selectorLabels" . | nindent 8 }}
+      annotations:
+        # Forces a pod rollout whenever the kickside-env Secret contents
+        # change. The deploy job computes sha256sum($EKS_ENV) and passes it
+        # via --set envSecret.checksum; changing this annotation flips the
+        # pod template hash, so Deployment rolls a new ReplicaSet.
+        checksum/env-secret: {{ .Values.envSecret.checksum | default "none" | quote }}
+    spec:
+      securityContext:
+        fsGroup: 10001
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "kickside.selectorLabels" . | nindent 14 }}
+      containers:
+        - name: kickside
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Registry migrations run at boot ("migration.define" entries are
+          # applied by the runtime on startup), so there is no separate
+          # migrate step or initContainer.
+          args:
+            - "run"
+            - "-c"
+            - "--profile"
+            {{- if hasPrefix "postgres" .Values.wippy.profile }}
+            - "postgres"
+            {{- if ne .Values.wippy.profile "postgres" }}
+            - "--profile"
+            - {{ .Values.wippy.profile | quote }}
+            {{- end }}
+            {{- else }}
+            - {{ .Values.wippy.profile | quote }}
+            {{- end }}
+            - "--set"
+            - "vars.instance_data_dir=/data"
+            {{- if hasPrefix "postgres" .Values.wippy.profile }}
+            # Kubernetes expands the secret environment into shared database vars.
+            - "--set"
+            - "vars.postgres_host=$(KICKSIDE_PG_HOST)"
+            - "--set"
+            - "vars.postgres_port=$(KICKSIDE_PG_PORT)"
+            - "--set"
+            - "vars.postgres_database=$(KICKSIDE_PG_DATABASE)"
+            - "--set"
+            - "vars.postgres_username=$(KICKSIDE_PG_USERNAME)"
+            - "--set"
+            - "vars.postgres_password=$(KICKSIDE_PG_PASSWORD)"
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.httpPort }}
+              name: http-api
+          # Liveness verifies that the runtime and public router answer without
+          # coupling process restarts to a database outage. Readiness includes
+          # a database round trip so an unhealthy pod stops receiving traffic.
+          livenessProbe:
+            httpGet:
+              port: http-api
+              path: /api/public/env/public.js
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: http-api
+              path: /api/public/health
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.envSecret.secretName }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: instance-data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: instance-data
+          emptyDir: {}

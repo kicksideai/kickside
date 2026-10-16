@@ -1,0 +1,48 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: dep.test
+    kind: ns.dependency
+    component: wippy/test
+    version: '*'
+  - name: db
+    kind: db.sql.sqlite
+    file: '${sqlite_path}'
+  - name: token_storage
+    kind: store.sql
+    database: app:db
+    table_name: auth_tokens
+    id_column_name: token_key
+    payload_column_name: token_value
+    expire_column_name: expires_at
+    cleanup_interval: 0s
+    lifecycle: {auto_start: true}
+  - name: auth
+    kind: security.token_store
+    store: app:token_storage
+    token_key: ''
+    token_key_env: ENCRYPTION_KEY
+    token_length: 32
+  - name: probe_access
+    kind: security.policy
+    policy: {actions: '*', resources: '*', effect: allow}
+  - name: tokenstore_boot_env_test
+    kind: function.lua
+    source: file://test.lua
+    method: run
+    modules: [security, sql, registry, env]
+    imports: {test: 'wippy.test:test'}
+    meta: {type: test, suite: upstream_runtime}
+    security:
+      actor: {id: app:probe}
+      policies: [app:probe_access]
+  - name: unsigned_token_transition_test
+    kind: function.lua
+    source: file://unsigned_transition.lua
+    method: run
+    modules: [security, sql, registry]
+    imports: {test: 'wippy.test:test'}
+    meta: {type: test, suite: upstream_runtime}
+    security:
+      actor: {id: app:probe}
+      policies: [app:probe_access]

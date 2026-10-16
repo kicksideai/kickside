@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "run": {
+    "status": "failed",
+    "run_id": "589d3cb5-ec5c-4737-b6d2-632c566fbbac",
+    "dataflow_id": "178aaada-3248-4f75-b259-22fb2b1e7da0",
+    "flow_ref": {
+      "kind": "flow",
+      "id": "019f487a-472e-74d2-927a-a2a1fe92130e",
+      "version": 1
+    },
+    "trigger_kind": "manual",
+    "error": "Node [e924a6c6-f706-4a0e-bb59-c40cc3bd8f9c] failed: Failed",
+    "started_at": "2026-07-09T18:37:04-04:00",
+    "origin": "published",
+    "finished_at": "2026-07-09T18:37:11-04:00"
+  },
+  "nodes": [
+    {
+      "type": "userspace.dataflow.node.func:node",
+      "status": "completed",
+      "title": "Start",
+      "node_id": "7a32a179-6a90-4569-a485-8200ae99f842",
+      "def_node_id": "66223962-e59a-41e3-b0ef-adee4b38d870"
+    },
+    {
+      "status": "completed",
+      "title": "Google Search",
+      "node_id": "d0e42632-99a3-4590-bd0b-9831cefc81c2",
+      "def_node_id": "8a90be71-2e7a-427e-897b-f61e102b311c",
+      "type": "userspace.dataflow.node.func:node"
+    },
+    {
+      "def_node_id": "ca54a55b-20e0-4e66-884d-daa9f001ad62",
+      "type": "userspace.dataflow.node.func:node",
+      "status": "pending",
+      "title": "Read Web Page",
+      "node_id": "6c902545-292c-40f3-a2a5-608eab331d26"
+    },
+    {
+      "def_node_id": "6f563b76-c73c-4fe0-9dd9-9bcbc7c5c2f7",
+      "type": "userspace.dataflow.node.func:node",
+      "status": "pending",
+      "title": "Finish",
+      "node_id": "befb5804-dc96-4eb5-8761-648c361a5909"
+    },
+    {
+      "status": "pending",
+      "title": "Error",
+      "node_id": "0d9d912b-3d10-40cf-8f14-f3bc0438a4b3",
+      "def_node_id": "9e15dbc4-c794-4fca-8518-ffbdbd406f90",
+      "type": "userspace.dataflow.node.func:node"
+    },
+    {
+      "def_node_id": "e4ad0b36-9f1a-4f48-bc6a-cc80ceb4feee",
+      "type": "userspace.dataflow.node.agent:node",
+      "status": "failed",
+      "title": "Refund Triage",
+      "node_id": "e924a6c6-f706-4a0e-bb59-c40cc3bd8f9c"
+    }
+  ]
+}

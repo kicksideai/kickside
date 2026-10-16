@@ -1,0 +1,8 @@
+[
+  {
+    "component": "kickside/code-execution",
+    "parameters": [
+      {"name": "kickside.code_execution.security:user_security_scope", "value": "app.security:user"}
+    ]
+  }
+]

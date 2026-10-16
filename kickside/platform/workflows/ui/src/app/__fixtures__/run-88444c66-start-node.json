@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "data": [
+    {
+      "discriminator": "result.success",
+      "content_type": "application/json",
+      "created_at": "2026-07-09T16:56:42.273643368-04:00",
+      "metadata": {},
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "node_id": "175f63b7-2607-4fe6-9b63-9a10eb467090",
+      "content": "{\"success\":true,\"message\":\"Function executed successfully\",\"data_ids\":[\"019f48ab-201d-7606-bfd5-3608e780984e\"]}",
+      "data_id": "019f48ab-2021-755a-ba54-20a06ab9d829",
+      "type": "node.result"
+    },
+    {
+      "metadata": {},
+      "type": "node.input",
+      "data_id": "da25b9cd-b646-4ec9-8f0b-59f0700d2ffb",
+      "content_type": "application/json",
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "node_id": "175f63b7-2607-4fe6-9b63-9a10eb467090",
+      "discriminator": "default",
+      "created_at": "2026-07-09T16:56:42.25600882-04:00",
+      "content": "{\"topic\":\"industrial automation trends\",\"audience\":\"logistics executives\"}"
+    }
+  ]
+}

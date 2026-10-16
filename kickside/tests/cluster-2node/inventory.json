@@ -1,0 +1,92 @@
+[
+  {
+    "name": "kickside.core.threads.cursor_waiter_broker",
+    "file": "core/core/src/threads/cursor_waiters.lua",
+    "scope": "CONSISTENT",
+    "reason": "One broker receives cross-node committed cursor notifications."
+  },
+  {
+    "name": "kickside.core.jobs.worker_pool",
+    "file": "core/jobs/src/service/worker_pool.lua",
+    "scope": "CONSISTENT",
+    "reason": "One shared durable queue dispatcher and worker pool receives all post-commit wakes."
+  },
+  {
+    "name": "kickside.core.jobs.execution:<job_id>:<lease_token>",
+    "file": "core/jobs/src/service/worker_child.lua",
+    "scope": "CONSISTENT",
+    "reason": "Lease-qualified execution control must address the owner from any node."
+  },
+  {
+    "name": "kickside.core.retention.service:sweeper_process",
+    "file": "core/core/src/retention/service/sweeper_process.lua",
+    "scope": "CONSISTENT",
+    "reason": "One retention owner receives shared-table eligibility changes."
+  },
+  {
+    "name": "kickside.workflows.runs:maintenance",
+    "file": "platform/workflows/src/runs/maintenance_wake.lua",
+    "scope": "CONSISTENT",
+    "reason": "One maintenance scheduler recovers durable completion and expiry deadlines."
+  },
+  {
+    "name": "kickside.workflows.undo:<workflow_id>",
+    "file": "platform/workflows/src/undo/undo_process.lua",
+    "scope": "CONSISTENT",
+    "reason": "One per-workflow actor serializes edits; registration loser forwards to the winner."
+  },
+  {
+    "name": "kickside.channel.session_hub",
+    "file": "platform/channel/src/service/hub.lua",
+    "scope": "CONSISTENT",
+    "reason": "One conversation router owns route bridge placement and dedup state."
+  },
+  {
+    "name": "kickside.channel.bridge:<key>",
+    "file": "platform/channel/src/service/bridge.lua",
+    "scope": "CONSISTENT",
+    "reason": "One per-route conversation bridge and session owner."
+  },
+  {
+    "name": "oauth:connection:<state_token>",
+    "file": "platform/oauth/src/service/connection_negotiator.lua",
+    "scope": "CONSISTENT",
+    "reason": "An OAuth callback on another node must find the transient state owner."
+  },
+  {
+    "name": "kickside.security.scope_projection",
+    "file": "platform/security/src/service/scope_service.lua",
+    "scope": "LOCAL",
+    "reason": "Reconciliation installs security entries in the local configuration registry."
+  },
+  {
+    "name": "kickside.models.profile.changed",
+    "file": "platform/models/src/providers/google_vertex/token_supervisor.lua",
+    "scope": "LOCAL",
+    "reason": "Each node needs token refresh in its own memory store."
+  },
+  {
+    "name": "kickside.automation.engine:composition_watcher",
+    "file": "platform/automation/src/engine/composition_watcher.lua",
+    "scope": "LOCAL",
+    "reason": "Each node must rebuild its registry-derived composition snapshot."
+  },
+  {
+    "name": "kickside.core.jobs.execution_child:<job_id>:<lease_token>",
+    "file": "core/jobs/src/service/worker_loop.lua",
+    "scope": "CONSISTENT",
+    "reason": "Recovery on any node verifies the lease-qualified execution child."
+  },
+  {
+    "name": "kickside.core.jobs:lease_release_listener",
+    "file": "core/core/src/retention/service/sweeper_process.lua",
+    "scope": "CONSISTENT",
+    "reason": "The retention owner receives lease-release notifications from any node."
+  },
+  {
+    "name": "singleton registration",
+    "file": "core/jobs/src/proc_supervisor.lua",
+    "scope": "CONSISTENT",
+    "reason": "Shared registration and owner lookup retain consistent ownership for singleton callers."
+  }
+]

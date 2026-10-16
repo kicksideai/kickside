@@ -1,0 +1,43 @@
+{
+  "kickside/code-execution": [
+    {
+      "version": "0.1.16",
+      "hash": "c953de09fdcd8ad13ed31e77f5b0aceeea2ce6041a8dbf9e3735cfb14eae5b36",
+      "declared": false
+    },
+    {
+      "version": "0.1.17",
+      "hash": "c937a9dbc51e55039c57ad8d6102ef28da78e165b4f86b4874ae540347707d08",
+      "declared": true
+    },
+    {
+      "version": "0.1.18",
+      "hash": "b12f9471a0efc06a553a30316d62227de47bf9f7451983a6a47735532b626f16",
+      "declared": true
+    }
+  ],
+  "kickside/kb10": [
+    {
+      "version": "0.1.48",
+      "hash": "94a6f179d55d8804a039193b8a939fff59c84d7bb00d4ecf358fc63e45240a2c",
+      "declared": false
+    },
+    {
+      "version": "0.1.49",
+      "hash": "b9318fa54d67912b1b2f03f5044b1a595274e3a6ea8c00072f9d512f0c63276c",
+      "declared": true
+    }
+  ],
+  "kickside/simplefin": [
+    {
+      "version": "0.1.6",
+      "hash": "bb87f39d5317fbbbc6907f768004b56b92387a4c56fbbfd9ae1ceb40d28aee26",
+      "declared": false
+    },
+    {
+      "version": "0.1.7",
+      "hash": "41c3b93fb42f377b24b3907bdb81dfa00f9717b4c6dbf9944f63635c4341512d",
+      "declared": true
+    }
+  ]
+}

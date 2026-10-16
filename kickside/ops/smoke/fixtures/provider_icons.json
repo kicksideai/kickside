@@ -1,0 +1,274 @@
+[
+  {
+    "module": "atlassian",
+    "entry": "kickside.atlassian.connection:atlassian_connection",
+    "provider": "atlassian",
+    "before": "tabler:cloud",
+    "icon": "simple-icons:atlassian",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.atlassian:env_storage",
+        "value": "app.env:store"
+      }
+    ]
+  },
+  {
+    "module": "atlassian",
+    "entry": "kickside.atlassian:atlassian",
+    "provider": "atlassian",
+    "before": "tabler:cloud",
+    "icon": "simple-icons:atlassian",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.atlassian:env_storage",
+        "value": "app.env:store"
+      }
+    ]
+  },
+  {
+    "module": "bitbucket",
+    "entry": "kickside.bitbucket.connection:bitbucket_connection",
+    "provider": "bitbucket",
+    "before": "tabler:brand-bitbucket",
+    "icon": "tabler:brand-bitbucket",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "discord",
+    "entry": "kickside.discord.connection:discord_connection",
+    "provider": "discord",
+    "before": "tabler:brand-discord",
+    "icon": "tabler:brand-discord",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.discord.gateway:process_host",
+        "value": "app:processes"
+      },
+      {
+        "name": "kickside.discord.gateway:target_db",
+        "value": "app:db"
+      }
+    ]
+  },
+  {
+    "module": "fireflies",
+    "entry": "kickside.fireflies.connection:fireflies_connection",
+    "provider": "fireflies",
+    "before": "tabler:flame",
+    "icon": "tabler:flame",
+    "brand_available": false,
+    "parameters": []
+  },
+  {
+    "module": "github",
+    "entry": "kickside.github.connection:github_connection",
+    "provider": "github",
+    "before": "tabler:brand-github",
+    "icon": "tabler:brand-github",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.github:env_storage",
+        "value": "app.env:store"
+      },
+      {
+        "name": "kickside.github:ui_server",
+        "value": "app:gateway"
+      }
+    ]
+  },
+  {
+    "module": "github",
+    "entry": "kickside.github:github",
+    "provider": "github",
+    "before": "tabler:brand-github",
+    "icon": "tabler:brand-github",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.github:env_storage",
+        "value": "app.env:store"
+      },
+      {
+        "name": "kickside.github:ui_server",
+        "value": "app:gateway"
+      }
+    ]
+  },
+  {
+    "module": "gitlab",
+    "entry": "kickside.gitlab.connection:gitlab_connection",
+    "provider": "gitlab",
+    "before": "tabler:brand-gitlab",
+    "icon": "tabler:brand-gitlab",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "google",
+    "entry": "kickside.google:google",
+    "provider": "google",
+    "before": "tabler:brand-google",
+    "icon": "tabler:brand-google",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.google:env_storage",
+        "value": "app.env:store"
+      },
+      {
+        "name": "kickside.google:ui_server",
+        "value": "app:gateway"
+      }
+    ]
+  },
+  {
+    "module": "hubspot",
+    "entry": "kickside.hubspot.connection:hubspot_connection",
+    "provider": "hubspot",
+    "before": "simple-icons:hubspot",
+    "icon": "simple-icons:hubspot",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.hubspot:ui_server",
+        "value": "app:gateway"
+      }
+    ]
+  },
+  {
+    "module": "mcp-client",
+    "entry": "kickside.mcp_client:remote_connection",
+    "provider": "mcp_remote",
+    "before": "tabler:plug-connected",
+    "icon": "simple-icons:modelcontextprotocol",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "phantombuster",
+    "entry": "kickside.phantombuster.connection:phantombuster_connection",
+    "provider": "phantombuster",
+    "before": "tabler:ghost",
+    "icon": "tabler:ghost",
+    "brand_available": false,
+    "parameters": [
+      {
+        "name": "kickside.phantombuster:ui_server",
+        "value": "app:gateway"
+      }
+    ]
+  },
+  {
+    "module": "simplefin",
+    "entry": "kickside.simplefin.connection:simplefin_connection",
+    "provider": "simplefin",
+    "before": "tabler:building-bank",
+    "icon": "tabler:building-bank",
+    "brand_available": false,
+    "parameters": []
+  },
+  {
+    "module": "slack",
+    "entry": "kickside.slack.connection:slack_connection",
+    "provider": "slack",
+    "before": "tabler:brand-slack",
+    "icon": "tabler:brand-slack",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.slack.socket:process_host",
+        "value": "app:processes"
+      },
+      {
+        "name": "kickside.slack.socket:target_db",
+        "value": "app:db"
+      }
+    ]
+  },
+  {
+    "module": "sso-github",
+    "entry": "kickside.sso.providers.github:provider",
+    "provider": "github",
+    "before": "tabler:brand-github",
+    "icon": "tabler:brand-github",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "sso-google",
+    "entry": "kickside.sso.providers.google:provider",
+    "provider": "google",
+    "before": "tabler:brand-google",
+    "icon": "tabler:brand-google",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "sso-microsoft",
+    "entry": "kickside.sso.providers.microsoft:provider",
+    "provider": "microsoft",
+    "before": "tabler:brand-windows",
+    "icon": "logos:microsoft-icon",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "sso-oidc",
+    "entry": "kickside.sso.providers.oidc:provider",
+    "provider": "oidc",
+    "before": "tabler:key",
+    "icon": "simple-icons:openid",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "telegram",
+    "entry": "kickside.telegram.connection:telegram_connection",
+    "provider": "telegram",
+    "before": "tabler:brand-telegram",
+    "icon": "tabler:brand-telegram",
+    "brand_available": true,
+    "parameters": [
+      {
+        "name": "kickside.telegram.polling:process_host",
+        "value": "app:processes"
+      },
+      {
+        "name": "kickside.telegram.polling:target_db",
+        "value": "app:db"
+      }
+    ]
+  },
+  {
+    "module": "webscout",
+    "entry": "kickside.webscout.providers.google:provider",
+    "provider": "google",
+    "before": "tabler:brand-google",
+    "icon": "tabler:brand-google",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "webscout-brave",
+    "entry": "kickside.webscout.providers.brave:provider",
+    "provider": "brave",
+    "before": "simple-icons:brave",
+    "icon": "simple-icons:brave",
+    "brand_available": true,
+    "parameters": []
+  },
+  {
+    "module": "webscout-tavily",
+    "entry": "kickside.webscout.providers.tavily:provider",
+    "provider": "tavily",
+    "before": "tabler:world-www",
+    "icon": "thesvg:tavily",
+    "brand_available": true,
+    "parameters": []
+  }
+]

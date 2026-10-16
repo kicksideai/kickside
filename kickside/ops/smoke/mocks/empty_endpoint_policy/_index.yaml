@@ -1,0 +1,22 @@
+version: '1.0'
+namespace: smoke.empty_policy
+entries:
+- name: test_dependency
+  kind: ns.dependency
+  component: wippy/test
+  version: '*'
+- name: member_access
+  kind: security.policy
+  groups: []
+  policy:
+    actions: [registry.get]
+    resources: ['smoke.empty_policy:*']
+    effect: allow
+- name: empty_endpoint_policy_test
+  kind: function.lua
+  meta: {type: test, suite: endpoint_policy}
+  source: file://test.lua
+  method: run
+  modules: [security, registry]
+  imports:
+    test: wippy.test:test

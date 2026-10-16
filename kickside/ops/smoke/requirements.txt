@@ -1,0 +1,13 @@
+playwright
+PyYAML
+reportlab
+python-docx
+openpyxl
+python-pptx
+Pillow
+cryptography
+jsonschema
+ezdxf
+websockets
+msgpack
+zstandard

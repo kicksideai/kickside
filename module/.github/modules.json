@@ -1,0 +1,62 @@
+{
+  "repository": "module",
+  "checks": [
+    [
+      "node",
+      "scripts/check-module.mjs"
+    ],
+    [
+      "node",
+      "scripts/test-initializer.mjs"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_release_baseline.py"
+    ],
+    [
+      "node",
+      ".github/scripts/test_release_dry_run.cjs"
+    ],
+    [
+      "node",
+      ".github/scripts/test_template_release.mjs"
+    ]
+  ],
+  "modules": {
+    ".": {
+      "path": ".",
+      "organization": "acme",
+      "module": "starter",
+      "type": "plugin",
+      "visibility": "private",
+      "embed": [
+        "acme.starter:ui_fs"
+      ],
+      "targets": [
+        "init",
+        "setup",
+        "check",
+        "build",
+        "dev",
+        "lint",
+        "typecheck",
+        "test",
+        "test-pg",
+        "postgres-up",
+        "postgres-down",
+        "sync-handbook",
+        "check-handbook",
+        "verify",
+        "release-check",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "acme_test_starter",
+      "extra_tests": []
+    }
+  }
+}

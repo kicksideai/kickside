@@ -1,0 +1,51 @@
+{
+  "name": "@kickside/agent-onboarding-ui",
+  "version": "0.1.0",
+  "type": "module",
+  "specification": "wippy-component-1.0",
+  "browser": "dist/index.js",
+  "title": "First agent onboarding",
+  "description": "Create a first personal agent with optional installed capabilities.",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@wippy-fe/theme": "*",
+    "@wippy-fe/webcomponent-core": "*",
+    "@wippy-fe/webcomponent-vue": "*",
+    "primevue": "*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "*",
+    "@vitest/coverage-v8": "*",
+    "@vue/test-utils": "*",
+    "@wippy-fe/proxy": "*",
+    "@wippy-fe/vite-plugin": "*",
+    "happy-dom": "*",
+    "typescript": "^5.0.0",
+    "vite": "*",
+    "vitest": "*",
+    "vue": "*",
+    "vue-tsc": "*",
+    "@types/node": "*",
+    "es-module-lexer": "*"
+  },
+  "wippy": {
+    "tagName": "kickside-agent-onboarding",
+    "type": "component",
+    "props": {
+      "type": "object",
+      "properties": {}
+    },
+    "description": "First-agent creation for authenticated users who own no agent. Mount as a user-scoped splash step. The component uses the shared capability and model pickers, and creates through the canonical agents API. It emits navigate with {path, startToken} after creation and done with {status: skipped} on dismissal; the host persists completion before navigation.",
+    "scripts": {
+      "build": "build"
+    }
+  },
+  "peerDependencies": {
+    "vue": "*",
+    "@wippy-fe/proxy": "*"
+  }
+}

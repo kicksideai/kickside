@@ -1,0 +1,48 @@
+{{- if .Values.ingress.enabled }}
+{{- /*
+  NetBird-only Ingress: the ALB is provisioned with scheme internal, so it
+  only gets private VPC addresses and is unreachable from the internet.
+  Peers on the NetBird mesh reach it through the routing peers that
+  advertise the VPC CIDR (iac k8s-manifests/netbird-router.yaml).
+  Empty host/cert entries are filtered so placeholder values render inert.
+*/ -}}
+{{- $hosts := list -}}
+{{- if .Values.ingress.host -}}{{- $hosts = append $hosts .Values.ingress.host -}}{{- end -}}
+{{- range default (list) .Values.ingress.additionalHosts -}}{{- if . -}}{{- $hosts = append $hosts . -}}{{- end -}}{{- end -}}
+{{- $certs := list -}}
+{{- if .Values.ingress.certificateArn -}}{{- $certs = append $certs .Values.ingress.certificateArn -}}{{- end -}}
+{{- range default (list) .Values.ingress.additionalCertificateArns -}}{{- if . -}}{{- $certs = append $certs . -}}{{- end -}}{{- end -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "kickside.fullname" . }}
+  labels:
+    {{- include "kickside.labels" . | nindent 4 }}
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-path: /api/public/health
+    alb.ingress.kubernetes.io/certificate-arn: {{ join "," $certs }}
+    {{- if .Values.ingress.inboundCidrs }}
+    alb.ingress.kubernetes.io/inbound-cidrs: {{ .Values.ingress.inboundCidrs }}
+    {{- end }}
+    external-dns.alpha.kubernetes.io/hostname: {{ join "," $hosts }}
+spec:
+  ingressClassName: alb
+  rules:
+    {{- range $hosts }}
+    - host: {{ . }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "kickside.fullname" $ }}
+                port:
+                  name: http
+    {{- end }}
+{{- end }}

@@ -1,0 +1,901 @@
+{
+  "repository": "kickside",
+  "checks": [
+    [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-t",
+      "."
+    ],
+    [
+      "python3",
+      "scripts/check-release-hygiene.py",
+      "--root",
+      "."
+    ],
+    [
+      "python3",
+      "scripts/test-release-hygiene.py"
+    ],
+    [
+      "python3",
+      "scripts/check-workflow-architecture.py",
+      "--root",
+      "."
+    ],
+    [
+      "python3",
+      "scripts/check-source-conventions.py"
+    ],
+    [
+      "python3",
+      "scripts/check-contract-surface.py"
+    ],
+    [
+      "python3",
+      "app/scripts/check_dependency_pins.py",
+      "--app-dir",
+      "app"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_release_baseline.py"
+    ],
+    [
+      "node",
+      ".github/scripts/test_release_dry_run.cjs"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_packaging.py"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/release_paths.py",
+      "--check"
+    ],
+    [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "ops/load/test",
+      "-p",
+      "test_*.py"
+    ],
+    [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-p",
+      "test_harness_preparation.py"
+    ]
+  ],
+  "modules": {
+    "core/component": {
+      "path": "core/component",
+      "organization": "kickside",
+      "module": "component",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_component",
+      "extra_tests": []
+    },
+    "core/contract": {
+      "path": "core/contract",
+      "organization": "kickside",
+      "module": "contract",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_contract",
+      "extra_tests": []
+    },
+    "core/core": {
+      "path": "core/core",
+      "organization": "kickside",
+      "module": "core",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_core",
+      "extra_tests": []
+    },
+    "core/execution": {
+      "path": "core/execution",
+      "organization": "kickside",
+      "module": "execution",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": null,
+      "extra_tests": []
+    },
+    "core/jobs": {
+      "path": "core/jobs",
+      "organization": "kickside",
+      "module": "jobs",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_jobs",
+      "extra_tests": []
+    },
+    "platform/agents": {
+      "path": "platform/agents",
+      "organization": "kickside",
+      "module": "agents",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.agents:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "watch",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_agents",
+      "extra_tests": []
+    },
+    "platform/automation": {
+      "path": "platform/automation",
+      "organization": "kickside",
+      "module": "automation",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.automation:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_automation",
+      "extra_tests": []
+    },
+    "platform/blocks": {
+      "path": "platform/blocks",
+      "organization": "kickside",
+      "module": "blocks",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "native-wait-restart-proof",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_blocks",
+      "extra_tests": []
+    },
+    "platform/channel": {
+      "path": "platform/channel",
+      "organization": "kickside",
+      "module": "channel",
+      "type": "library",
+      "visibility": "public",
+      "embed": [
+        "kickside.channel:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_channel",
+      "extra_tests": []
+    },
+    "platform/connection": {
+      "path": "platform/connection",
+      "organization": "kickside",
+      "module": "connection",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.connection:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_connection",
+      "extra_tests": []
+    },
+    "platform/dm": {
+      "path": "platform/dm",
+      "organization": "kickside",
+      "module": "dm",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_dm",
+      "extra_tests": []
+    },
+    "platform/hub": {
+      "path": "platform/hub",
+      "organization": "kickside",
+      "module": "hub",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.hub:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish",
+        "test-ui",
+        "typecheck-ui"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_hub",
+      "extra_tests": []
+    },
+    "platform/identity": {
+      "path": "platform/identity",
+      "organization": "kickside",
+      "module": "identity",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.identity:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_identity",
+      "extra_tests": []
+    },
+    "platform/inbox": {
+      "path": "platform/inbox",
+      "organization": "kickside",
+      "module": "inbox",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.inbox:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_inbox",
+      "extra_tests": []
+    },
+    "platform/knowledge": {
+      "path": "platform/knowledge",
+      "organization": "kickside",
+      "module": "knowledge",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.knowledge:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_knowledge",
+      "extra_tests": []
+    },
+    "platform/mcp": {
+      "path": "platform/mcp",
+      "organization": "kickside",
+      "module": "mcp",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.mcp:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_mcp",
+      "extra_tests": []
+    },
+    "platform/models": {
+      "path": "platform/models",
+      "organization": "kickside",
+      "module": "models",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.models:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_models",
+      "extra_tests": []
+    },
+    "platform/oauth": {
+      "path": "platform/oauth",
+      "organization": "kickside",
+      "module": "oauth",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_oauth",
+      "extra_tests": []
+    },
+    "platform/realtime": {
+      "path": "platform/realtime",
+      "organization": "kickside",
+      "module": "realtime",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_realtime",
+      "extra_tests": []
+    },
+    "core/realtime-dispatch": {
+      "path": "core/realtime-dispatch",
+      "organization": "kickside",
+      "module": "realtime-dispatch",
+      "type": "library",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_realtime_dispatch",
+      "extra_tests": []
+    },
+    "platform/renderers": {
+      "path": "platform/renderers",
+      "organization": "kickside",
+      "module": "renderers",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.renderers:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_renderers",
+      "extra_tests": []
+    },
+    "platform/security": {
+      "path": "platform/security",
+      "organization": "kickside",
+      "module": "security",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.security:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_security",
+      "extra_tests": []
+    },
+    "platform/self-reflection": {
+      "path": "platform/self-reflection",
+      "organization": "kickside",
+      "module": "self-reflection",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [],
+      "targets": [
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_self_reflection",
+      "extra_tests": []
+    },
+    "platform/sessions": {
+      "path": "platform/sessions",
+      "organization": "kickside",
+      "module": "sessions",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.sessions:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "publish",
+        "test"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_sessions",
+      "extra_tests": []
+    },
+    "platform/settings": {
+      "path": "platform/settings",
+      "organization": "kickside",
+      "module": "settings",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.settings:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_settings",
+      "extra_tests": []
+    },
+    "platform/skills": {
+      "path": "platform/skills",
+      "organization": "kickside",
+      "module": "skills",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.skills:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_skills",
+      "extra_tests": []
+    },
+    "platform/sync": {
+      "path": "platform/sync",
+      "organization": "kickside",
+      "module": "sync",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.sync:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_sync",
+      "extra_tests": []
+    },
+    "platform/transfer": {
+      "path": "platform/transfer",
+      "organization": "kickside",
+      "module": "transfer",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.transfer:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_transfer",
+      "extra_tests": []
+    },
+    "platform/transform": {
+      "path": "platform/transform",
+      "organization": "kickside",
+      "module": "transform",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.transform:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_transform",
+      "extra_tests": []
+    },
+    "platform/ui": {
+      "path": "platform/ui",
+      "organization": "kickside",
+      "module": "ui",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.ui:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_ui",
+      "extra_tests": []
+    },
+    "platform/ui-kit": {
+      "path": "platform/ui-kit",
+      "organization": "kickside",
+      "module": "ui-kit",
+      "type": "library",
+      "visibility": "public",
+      "embed": [
+        "kickside.ui_kit:package_fs"
+      ],
+      "targets": [
+        "lint",
+        "publish"
+      ],
+      "harness": null,
+      "profiles": [],
+      "pg_database": null,
+      "extra_tests": []
+    },
+    "platform/uploads": {
+      "path": "platform/uploads",
+      "organization": "kickside",
+      "module": "uploads",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.uploads:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_uploads",
+      "extra_tests": []
+    },
+    "platform/users": {
+      "path": "platform/users",
+      "organization": "kickside",
+      "module": "users",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.users:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_users",
+      "extra_tests": []
+    },
+    "platform/webhooks": {
+      "path": "platform/webhooks",
+      "organization": "kickside",
+      "module": "webhooks",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.webhooks:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_webhooks",
+      "extra_tests": []
+    },
+    "platform/widgets": {
+      "path": "platform/widgets",
+      "organization": "kickside",
+      "module": "widgets",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.widgets:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_widgets",
+      "extra_tests": []
+    },
+    "platform/workflows": {
+      "path": "platform/workflows",
+      "organization": "kickside",
+      "module": "workflows",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "kickside.workflows:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "watch",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_workflows",
+      "extra_tests": []
+    },
+    "app": {
+      "path": "app",
+      "organization": "kickside",
+      "module": "kickside",
+      "type": "application",
+      "visibility": "public",
+      "embed": [
+        "app:app_fs"
+      ],
+      "targets": [
+        "build",
+        "build-facade-css",
+        "install-deps",
+        "refresh-deps",
+        "preboot-check",
+        "build-app-main",
+        "lint",
+        "dev",
+        "run",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "kickside_test_app",
+      "extra_tests": []
+    }
+  }
+}

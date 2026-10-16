@@ -1,0 +1,142 @@
+[
+  {
+    "id": "kickside.mcp:definition",
+    "kind": "ns.definition"
+  },
+  {
+    "id": "kickside.mcp:target_db",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp:api_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp:public_router",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp:ui_server",
+    "kind": "ns.requirement"
+  },
+  {
+    "id": "kickside.mcp.api:serve_mcp.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:create_credential.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:update_credential.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:list_credentials.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:revoke_credential.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:delete_credential.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:list_tools.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:list_components.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.api:list_presets.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:well_known_resource.standard_endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:well_known_auth_server.standard_endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:well_known_resource.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:well_known_auth_server.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:register.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:token.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:authorize.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:context.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.oauth:consent.endpoint",
+    "kind": "http.endpoint"
+  },
+  {
+    "id": "kickside.mcp.security:session",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:session_deny_control_plane",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_db_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_actor_create",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_deferred_execution",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_identity_resolver",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_identity_call",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_identity_binding",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_runtime_exec",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:endpoint_registry_read",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:mcp_endpoint_access",
+    "kind": "security.policy"
+  },
+  {
+    "id": "kickside.mcp.security:user_security_scope",
+    "kind": "ns.requirement"
+  }
+]

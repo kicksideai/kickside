@@ -1,0 +1,20 @@
+1. The catalog is wrong: it lists 26 invariants, not 24, so the claimed closure accounting already fails.
+2. I10.1/I5.1 are not testable until “valid lease,” renewal expiry, capability type, stale pointer, and fencing-token issuance are formally defined.
+3. I10.2 is ambiguous: “valid/fresh per verifier policy” and authorization for waiver/accepted-risk lack executable predicates and an authority model.
+4. I10.5 lacks definitions for Frontier, normal/audit lens schemas, “children,” and “open counts.”
+5. I10.6 leaves retry/idempotency behavior undefined; “exactly one event” cannot be tested without a transition request identity and atomicity boundary.
+6. I10.7/I12.1 lack the read-model scope and canonical serialization needed for “byte-equal”; generated digests, timestamps, and out-of-band health make literal equality contradictory.
+7. I9.4 has no deadline and does not define checkpoint versus auto-snapshot, their required contents, or their relationship to the abandon event.
+8. I6.1 has no interval value/test clock; I12.2 invokes undefined “health-of-health” that X6’s writer-liveness heartbeat does not provide.
+9. I7.1–2 are testable but do not establish freshness: a digest may remain permanently stale while both invariants pass.
+10. X9 fencing is broken: a fixed lease token is rejected after its first write by the “≤ highest seen” rule, while per-agent fencing does not reject agent A’s zombie after agent B acquires the task.
+11. X12 catch-up is unsound: replaying from the first newly included event into existing state can double-apply or misorder effects; require a clean/shadow rebuild, atomic swap, and failure/idempotency semantics.
+12. X1 proves registered authorship, not runner execution or receipt honesty; it omits signature, request, artifact, and policy validation, and the runner lease conflicts with “one WRITE lease per task.”
+13. X2’s Frontier resolution is hand-wavy: direct OpenBranch remains possible, “exclusively” is unenforced, and S1 is undefined; retain only the explicit residual-risk statement.
+14. X3’s same-major compatibility rule is unsound for JSON Schema; pin the dialect and compatibility algorithm, size limit, and stronger meaning of “independent” than unequal IDs.
+15. X3 requires a Decide for every breaking contract change, while X4 requires it only when in progress; X1 likewise requires all policy changes to Decide, while X4 names only gate policy changes.
+16. X10 requires Decide for reopen generally, but X4 lists only reopen(done); canceled reopening has no transition, and cancel/close guards plus “branch owner/authority” are undefined.
+17. X11 says a late blocker affects the next transition, but dependency guards exist only on start; enumerate whether complete, fold, and gate-pass are refused.
+18. Gate membership and “behind” are undefined, and gate-pass is not represented in task state; a passed-but-incomplete gate therefore has indeterminate blocking behavior.
+19. Omitting folded children from the normal lens contradicts a durable task-tree spine unless a collapsed tombstone remains; folding also lacks atomic parent-fact/branch-state semantics.
+20. Verdict: B0 is not closable until fencing, authority/capability and transition tables, canonical replay/rebuild, gate/fold/lens semantics, verifier/decision bindings, and digest/health SLAs are formalized and the corrected 26-item test catalog is produced.

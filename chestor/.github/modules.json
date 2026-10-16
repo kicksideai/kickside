@@ -1,0 +1,151 @@
+{
+  "repository": "chestor",
+  "checks": [
+    [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts/tests"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_release_baseline.py"
+    ],
+    [
+      "node",
+      ".github/scripts/test_release_dry_run.cjs"
+    ],
+    [
+      "python3",
+      "-B",
+      ".github/scripts/test_packaging.py"
+    ]
+  ],
+  "modules": {
+    "db-schema": {
+      "path": "db-schema",
+      "organization": "chestor",
+      "module": "db-schema",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "chestor.db_schema:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "chestor_db_schema_test",
+      "extra_tests": []
+    },
+    "graph": {
+      "path": "graph",
+      "organization": "chestor",
+      "module": "graph",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "chestor.graph:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "chestor_graph_test",
+      "extra_tests": [
+        [
+          "lua",
+          "test/apply_http_test.lua"
+        ]
+      ]
+    },
+    "journal": {
+      "path": "journal",
+      "organization": "chestor",
+      "module": "journal",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "chestor.journal:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "local",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "chestor_journal_test",
+      "extra_tests": []
+    },
+    "roadmap": {
+      "path": "roadmap",
+      "organization": "chestor",
+      "module": "roadmap",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "chestor.roadmap:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "chestor_roadmap_test",
+      "extra_tests": []
+    },
+    "workspace": {
+      "path": "workspace",
+      "organization": "chestor",
+      "module": "workspace",
+      "type": "plugin",
+      "visibility": "public",
+      "embed": [
+        "chestor.workspace:ui_fs"
+      ],
+      "targets": [
+        "build",
+        "dev",
+        "lint",
+        "test",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "chestor_workspace_test",
+      "extra_tests": []
+    }
+  }
+}

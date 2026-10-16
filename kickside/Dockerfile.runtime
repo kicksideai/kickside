@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.6
+#
+# Thin kickside runtime image. Ships only the wippy binary + CA certs and a
+# non-root user with a writable HOME and WORKDIR. It carries no application:
+# `wippy run <org/module@version>` pulls the app (SPA embedded via app:app_fs)
+# and its dependencies from the hub at run time and writes wippy.lock / the pack
+# cache under the writable dirs.
+#
+# The cloud deploy-graph supplies command/args (`wippy run <package> --profile
+# postgres ...`) and injects WIPPY_TOKEN + WIPPY_REGISTRY as env, so this image
+# is version-agnostic and does not rebuild per kickside release.
+#
+# Build:
+#   DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f Dockerfile.runtime -t wippy-kickside-runtime:dev .
+FROM docker.io/ubuntu:24.04 AS wippy-dl
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends ca-certificates curl jq \
+    && rm -rf /var/lib/apt/lists/*
+ARG WIPPY_VERSION=0.3.26a
+ARG WIPPY_CHANNEL=stable
+ARG WIPPY_HUB_URL=https://hub.prod.wippy.cloud
+RUN meta=$(curl --proto '=https' --tlsv1.2 -fsSL --retry 3 "$WIPPY_HUB_URL/api/v1/releases/$WIPPY_VERSION?channel=$WIPPY_CHANNEL") \
+    && expected=$(printf '%s' "$meta" | jq -r '.assets[] | select(.platform=="linux" and .arch=="amd64") | .sha256' | head -n1) \
+    && test -n "$expected" \
+    && curl --proto '=https' --tlsv1.2 -fsSL --retry 3 -o /usr/local/bin/wippy \
+        "$WIPPY_HUB_URL/api/v1/releases/$WIPPY_VERSION/download/linux/amd64?channel=$WIPPY_CHANNEL" \
+    && actual=$(sha256sum /usr/local/bin/wippy | cut -d' ' -f1) \
+    && test "$actual" = "$expected" \
+    && chmod +x /usr/local/bin/wippy
+
+FROM docker.io/ubuntu:24.04
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=wippy-dl /usr/local/bin/wippy /usr/local/bin/wippy
+RUN useradd -m -u 10001 kickside && mkdir -p /app && chown kickside:kickside /app
+USER kickside
+ENV HOME=/home/kickside
+WORKDIR /app
+EXPOSE 8085
+ENTRYPOINT ["wippy"]
+CMD ["run", "-c", "kickside/kickside", "--profile", "postgres"]

@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "modules": [
+    "core/contract",
+    "core/component",
+    "core/core",
+    "core/jobs",
+    "core/execution",
+    "platform/security"
+  ],
+  "allowances": [
+    {
+      "path": "core/component/src/persist/teardown.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"begin\"",
+      "count": 1,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/component/src/persist/teardown.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"commit\"",
+      "count": 2,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/component/src/persist/teardown.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"connect\"",
+      "count": 1,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/component/src/persist/teardown.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"delete\"",
+      "count": 10,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/component/src/persist/teardown.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"notify\"",
+      "count": 1,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/component/src/persist/teardown.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"pending\"",
+      "count": 1,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/jobs/src/persist/lifecycle_cancel.lua",
+      "rule": "error-text-decision",
+      "signature": "string . find ( row . last_error",
+      "count": 1,
+      "reason": "Existing durable termination fence stores its marker and token in last_error; stored-data compatibility requires a joint producer/consumer migration."
+    },
+    {
+      "path": "core/jobs/src/persist/reclaim.lua",
+      "rule": "error-text-decision",
+      "signature": "string . find ( last_error",
+      "count": 1,
+      "reason": "Existing durable termination fence stores its marker and token in last_error; stored-data compatibility requires a joint producer/consumer migration."
+    },
+    {
+      "path": "core/jobs/src/proc_supervisor.lua",
+      "rule": "error-text-decision",
+      "signature": "reason == \"cancelled\"",
+      "count": 1,
+      "reason": "Existing supervisor control vocabulary identifies a lifecycle reason, not rendered native error text."
+    },
+    {
+      "path": "core/jobs/src/proc_supervisor.lua",
+      "rule": "error-text-decision",
+      "signature": "reason == \"heartbeat lost\"",
+      "count": 1,
+      "reason": "Existing supervisor control vocabulary identifies a lifecycle reason, not rendered native error text."
+    },
+    {
+      "path": "core/jobs/src/proc_supervisor.lua",
+      "rule": "error-text-decision",
+      "signature": "reason == \"lease lost\"",
+      "count": 1,
+      "reason": "Existing supervisor control vocabulary identifies a lifecycle reason, not rendered native error text."
+    },
+    {
+      "path": "core/jobs/src/proc_supervisor.lua",
+      "rule": "error-text-decision",
+      "signature": "reason == \"revoked\"",
+      "count": 1,
+      "reason": "Existing supervisor control vocabulary identifies a lifecycle reason, not rendered native error text."
+    },
+    {
+      "path": "core/jobs/src/service/worker_child.lua",
+      "rule": "literal-error-return",
+      "signature": "return nil , \"revoked\"",
+      "count": 1,
+      "reason": "Published multi-result stage/control sentinel carries the native error in another result."
+    },
+    {
+      "path": "core/jobs/src/service/worker_dispatch.lua",
+      "rule": "error-text-decision",
+      "signature": "job_error ~= \"\"",
+      "count": 1,
+      "reason": "Existing published worker outcome validates a nonempty legacy job_error before native reconstruction."
+    }
+  ]
+}

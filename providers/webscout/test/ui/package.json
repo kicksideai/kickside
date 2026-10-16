@@ -1,0 +1,7 @@
+{
+  "name": "@kickside/webscout-ui-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --experimental-vm-modules --test settings-card.test.mjs" },
+  "devDependencies": { "happy-dom": "^20.14.5" }
+}

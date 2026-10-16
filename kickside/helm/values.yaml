@@ -1,0 +1,58 @@
+replicaCount: 1
+
+image:
+  repository: 927717055117.dkr.ecr.us-east-1.amazonaws.com/wippy-kickside
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  httpPort: 8085
+
+# Internal-only ALB: the whole point of this deployment is that kickside is
+# reachable exclusively over the NetBird mesh. scheme stays internal in every
+# environment; inboundCidrs restricts the ALB listener to VPC-sourced traffic
+# (NetBird-routed packets arrive SNATed from node addresses).
+ingress:
+  enabled: true
+  host: ""
+  certificateArn: ""
+  inboundCidrs: ""
+
+envSecret:
+  secretName: kickside-env
+
+extraEnv: []
+
+# Runtime profile from app/.wippy.yaml applied by `wippy run`. postgres reads
+# KICKSIDE_PG_* from the kickside-env Secret; postgres_large / _enterprise
+# raise pool and worker limits for bigger databases.
+wippy:
+  profile: postgres
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+# Boot applies registry migrations before the gateway serves traffic, so the
+# first readiness pass can take a while on a fresh database.
+probes:
+  readiness:
+    initialDelaySeconds: 15
+    periodSeconds: 15
+  liveness:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+
+nodeSelector:
+  karpenter.sh/nodepool: default
+
+# Uploads live on an emptyDir (pod-local, lost on reschedule) until the app
+# grows S3-backed storage; keep replicaCount at 1 so upload state is not
+# split across pods.
+autoscaling:
+  enabled: false

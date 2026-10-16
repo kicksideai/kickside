@@ -1,0 +1,35 @@
+package wippy:dxf2md;
+
+world dxf2md {
+    record convert-error {
+        code: u8,
+        message: string,
+    }
+
+    record entity-count {
+        kind: string,
+        count: u32,
+    }
+
+    record drawing-metadata {
+        version: string,
+        layers: list<string>,
+        entities: list<entity-count>,
+        text-count: u32,
+        has-extents: bool,
+        min-x: f64,
+        min-y: f64,
+        max-x: f64,
+        max-y: f64,
+    }
+
+    record render-options {
+        dpi: f32,
+        width: u32,
+        height: u32,
+    }
+
+    export to-markdown: func(blob: list<u8>) -> result<string, convert-error>;
+    export metadata: func(blob: list<u8>) -> result<drawing-metadata, convert-error>;
+    export to-image: func(blob: list<u8>, options: render-options) -> result<list<u8>, convert-error>;
+}

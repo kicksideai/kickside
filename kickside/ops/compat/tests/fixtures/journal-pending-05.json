@@ -1,0 +1,134 @@
+{
+  "entries": {
+    "chestor.journal.migrations:01_create_journal_tables": {
+      "Data": {
+        "imports": {
+          "migration": "wippy.migration:migration",
+          "ops": "chestor.journal.migrations:journal_tables_ops"
+        },
+        "method": "migrate",
+        "source": "local ops = require(\"ops\")\n\nlocal function create_tables(db: any, dialect: string)\n    local err = ops.create_tables(db, dialect)\n    if err then error(err) end\nend\n\nlocal function drop_tables(db: any)\n    local err = ops.drop_tables(db)\n    if err then error(err) end\nend\n\nreturn require(\"migration\").define(function()\n    migration(\"Create Chestor journal tables\", function()\n        database(\"postgres\", function()\n            up(function(db) create_tables(db, \"postgres\") end)\n            down(function(db) drop_tables(db) end)\n        end)\n\n        database(\"sqlite\", function()\n            up(function(db) create_tables(db, \"sqlite\") end)\n            down(function(db) drop_tables(db) end)\n        end)\n    end)\nend)\n"
+      },
+      "Kind": "function.lua",
+      "Meta": {
+        "comment": "Create journal projection, FTS, embedding, session, task, and artifact tables.",
+        "tags": [
+          "journal",
+          "read-model"
+        ],
+        "timestamp": "2026-07-08T00:00:01Z",
+        "type": "migration"
+      }
+    },
+    "chestor.journal.migrations:02_scope_fts_keys": {
+      "Data": {
+        "imports": {
+          "migration": "wippy.migration:migration"
+        },
+        "method": "migrate",
+        "source": "local migration_module = require(\"migration\")\n\nlocal function execute(db: any, statement: string)\n    local _, exec_err = db:execute(statement, {})\n    if exec_err then error(tostring(exec_err)) end\nend\n\nreturn migration_module.define(function()\n    migration(\"Scope Chestor journal FTS keys by journal\", function()\n        database(\"postgres\", function()\n            up(function(db)\n                execute(db, \"ALTER TABLE chestor_journal_fts DROP CONSTRAINT IF EXISTS chestor_journal_fts_pkey\")\n                execute(db, \"ALTER TABLE chestor_journal_fts ADD PRIMARY KEY (journal_id, event_id)\")\n            end)\n            down(function(db)\n                execute(db, \"ALTER TABLE chestor_journal_fts DROP CONSTRAINT IF EXISTS chestor_journal_fts_pkey\")\n                execute(db, \"ALTER TABLE chestor_journal_fts ADD PRIMARY KEY (event_id)\")\n            end)\n        end)\n\n        database(\"sqlite\", function()\n            up(function(_db) end)\n            down(function(_db) end)\n        end)\n    end)\nend)\n"
+      },
+      "Kind": "function.lua",
+      "Meta": {
+        "comment": "Scope PostgreSQL FTS event identities by journal; SQLite FTS5 needs no relational key change.",
+        "tags": [
+          "journal",
+          "read-model",
+          "postgres"
+        ],
+        "timestamp": "2026-07-31T00:00:02Z",
+        "type": "migration"
+      }
+    },
+    "chestor.journal.migrations:03_create_journal_graph_tables": {
+      "Data": {
+        "imports": {
+          "migration": "wippy.migration:migration",
+          "ops": "chestor.journal.migrations:journal_graph_tables_ops"
+        },
+        "method": "migrate",
+        "source": "local ops = require(\"ops\")\n\nreturn require(\"migration\").define(function()\n    migration(\"Create Chestor journal graph projections\", function()\n        database(\"postgres\", function()\n            up(function(db)\n                local err = ops.create_tables(db)\n                if err then error(err) end\n            end)\n            down(function(db)\n                local err = ops.drop_tables(db)\n                if err then error(err) end\n            end)\n        end)\n        database(\"sqlite\", function()\n            up(function(db)\n                local err = ops.create_tables(db)\n                if err then error(err) end\n            end)\n            down(function(db)\n                local err = ops.drop_tables(db)\n                if err then error(err) end\n            end)\n        end)\n    end)\nend)\n"
+      },
+      "Kind": "function.lua",
+      "Meta": {
+        "comment": "Create the bounded multi-graph Journal projection tables.",
+        "tags": [
+          "journal",
+          "graph",
+          "read-model"
+        ],
+        "timestamp": "2026-07-31T00:00:03Z",
+        "type": "migration"
+      }
+    },
+    "chestor.journal.migrations:04_dedupe_fts": {
+      "Data": {
+        "imports": {
+          "migration": "wippy.migration:migration"
+        },
+        "method": "migrate",
+        "source": "local migration_module = require(\"migration\")\n\nlocal function dedupe(db: any)\n    local _, err = db:execute([[\n        DELETE FROM chestor_journal_fts\n         WHERE rowid NOT IN (\n            SELECT MAX(rowid)\n              FROM chestor_journal_fts\n             GROUP BY journal_id, event_id\n         )\n    ]], {})\n    if err then error(tostring(err)) end\nend\n\nreturn migration_module.define(function()\n    migration(\"Deduplicate Chestor journal FTS rows\", function()\n        database(\"sqlite\", function()\n            up(dedupe)\n            down(function(_db) end)\n        end)\n        database(\"postgres\", function()\n            up(function(_db) end)\n            down(function(_db) end)\n        end)\n    end)\nend)\n"
+      },
+      "Kind": "function.lua",
+      "Meta": {
+        "comment": "Remove legacy duplicate SQLite FTS rows created by projection replay.",
+        "tags": [
+          "journal",
+          "read-model",
+          "sqlite"
+        ],
+        "timestamp": "2026-07-31T00:00:04Z",
+        "type": "migration"
+      }
+    },
+    "chestor.journal.migrations:05_drop_sessions": {
+      "Data": {
+        "imports": {
+          "migration": "wippy.migration:migration",
+          "ops": "chestor.journal.migrations:journal_drop_sessions_ops"
+        },
+        "method": "migrate",
+        "source": "local ops = require(\"ops\")\n\nlocal function drop_sessions(db: any, dialect: string)\n    local err = ops.drop_sessions(db, dialect)\n    if err then error(err) end\nend\n\nlocal function restore_sessions(db: any)\n    local err = ops.restore_sessions(db)\n    if err then error(err) end\nend\n\nreturn require(\"migration\").define(function()\n    migration(\"Drop Chestor journal sessions\", function()\n        database(\"postgres\", function()\n            up(function(db) drop_sessions(db, \"postgres\") end)\n            down(function(db) restore_sessions(db) end)\n        end)\n\n        database(\"sqlite\", function()\n            up(function(db) drop_sessions(db, \"sqlite\") end)\n            down(function(db) restore_sessions(db) end)\n        end)\n    end)\nend)\n"
+      },
+      "Kind": "function.lua",
+      "Meta": {
+        "comment": "Drop the journal session table, session_id columns, and session indexes.",
+        "tags": [
+          "journal",
+          "read-model"
+        ],
+        "timestamp": "2026-08-12T00:00:05Z",
+        "type": "migration"
+      }
+    },
+    "chestor.journal.migrations:journal_drop_sessions_ops": {
+      "Data": {
+        "source": "local M = {}\n\nlocal function exec(db: any, sql: string, params: any): string?\n    local _, err = db:execute(sql, params or {})\n    if err then return tostring(err) end\n    return nil\nend\n\nlocal function drop_column(db_type: string?, table_name: string, column: string): string\n    if db_type == \"postgres\" then\n        return \"ALTER TABLE \" .. table_name .. \" DROP COLUMN IF EXISTS \" .. column\n    end\n    return \"ALTER TABLE \" .. table_name .. \" DROP COLUMN \" .. column\nend\n\nfunction M.drop_sessions(db: any, db_type: string?): string?\n    local statements = {\n        \"DROP INDEX IF EXISTS idx_cjournal_events_session\",\n        \"DROP INDEX IF EXISTS idx_cjournal_sessions_status\",\n        \"DROP INDEX IF EXISTS idx_cjournal_artifacts_session\",\n        \"DROP TABLE IF EXISTS chestor_journal_sessions\",\n        drop_column(db_type, \"chestor_journal_events\", \"session_id\"),\n        drop_column(db_type, \"chestor_journal_tasks\", \"session_id\"),\n        drop_column(db_type, \"chestor_journal_artifacts\", \"session_id\"),\n    }\n    for _, statement in ipairs(statements) do\n        local err = exec(db, statement, {})\n        if err then return err end\n    end\n    return nil\nend\n\nfunction M.restore_sessions(db: any): string?\n    local statements = {\n        \"ALTER TABLE chestor_journal_events ADD COLUMN session_id TEXT\",\n        \"ALTER TABLE chestor_journal_tasks ADD COLUMN session_id TEXT\",\n        \"ALTER TABLE chestor_journal_artifacts ADD COLUMN session_id TEXT\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_sessions (\n                journal_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                parent_session_id TEXT,\n                task_id TEXT,\n                agent_id TEXT,\n                actor_id TEXT,\n                goal TEXT,\n                scope TEXT,\n                status TEXT NOT NULL DEFAULT 'active',\n                started_seq INTEGER,\n                last_event_seq INTEGER,\n                latest_checkpoint_seq INTEGER,\n                current_digest TEXT,\n                digest_updated_at INTEGER,\n                lease_expires_at INTEGER,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_events_session ON chestor_journal_events(journal_id, session_id)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_sessions_status ON chestor_journal_sessions(journal_id, status)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_artifacts_session ON chestor_journal_artifacts(journal_id, session_id)\",\n    }\n    for _, statement in ipairs(statements) do\n        local err = exec(db, statement, {})\n        if err then return err end\n    end\n    return nil\nend\n\nreturn M\n"
+      },
+      "Kind": "library.lua",
+      "Meta": {
+        "comment": "Migration operations dropping the Chestor journal session table, columns, and indexes."
+      }
+    },
+    "chestor.journal.migrations:journal_graph_tables_ops": {
+      "Data": {
+        "source": "local M = {}\n\nlocal function exec(db: any, statement: string): string?\n    local _, err = db:execute(statement, {})\n    if err then return tostring(err) end\n    return nil\nend\n\nfunction M.create_tables(db: any): string?\n    local statements = {\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graphs (\n                journal_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                title TEXT NOT NULL,\n                description TEXT NOT NULL DEFAULT '',\n                graph_kind TEXT NOT NULL DEFAULT 'automatic',\n                lifecycle TEXT NOT NULL DEFAULT 'active',\n                config_json TEXT NOT NULL DEFAULT '{}',\n                config_revision INTEGER NOT NULL DEFAULT 1,\n                graph_revision INTEGER NOT NULL DEFAULT 0,\n                node_count INTEGER NOT NULL DEFAULT 0,\n                edge_count INTEGER NOT NULL DEFAULT 0,\n                last_source_seq INTEGER NOT NULL DEFAULT 0,\n                health TEXT NOT NULL DEFAULT 'ready',\n                attention_error TEXT,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, graph_id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_graphs_active ON chestor_journal_graphs(journal_id, lifecycle, updated_at)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graph_nodes (\n                journal_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                semantic_key TEXT,\n                label TEXT NOT NULL,\n                node_kind TEXT NOT NULL DEFAULT 'concept',\n                summary TEXT,\n                status TEXT,\n                ref_id TEXT,\n                parent_id TEXT,\n                child_count INTEGER NOT NULL DEFAULT 0,\n                x REAL,\n                y REAL,\n                origin TEXT NOT NULL DEFAULT 'projector',\n                manual INTEGER NOT NULL DEFAULT 0,\n                pinned INTEGER NOT NULL DEFAULT 0,\n                locked INTEGER NOT NULL DEFAULT 0,\n                metadata TEXT NOT NULL DEFAULT '{}',\n                created_revision INTEGER NOT NULL,\n                updated_revision INTEGER NOT NULL,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, graph_id, id),\n                UNIQUE (journal_id, graph_id, semantic_key)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gnodes_kind ON chestor_journal_graph_nodes(journal_id, graph_id, node_kind, status)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gnodes_parent ON chestor_journal_graph_nodes(journal_id, graph_id, parent_id)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gnodes_ref ON chestor_journal_graph_nodes(journal_id, ref_id)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gnodes_time ON chestor_journal_graph_nodes(journal_id, graph_id, updated_at, id)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graph_edges (\n                journal_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                from_node_id TEXT NOT NULL,\n                to_node_id TEXT NOT NULL,\n                edge_kind TEXT NOT NULL DEFAULT 'related',\n                label TEXT,\n                origin TEXT NOT NULL DEFAULT 'projector',\n                manual INTEGER NOT NULL DEFAULT 0,\n                locked INTEGER NOT NULL DEFAULT 0,\n                metadata TEXT NOT NULL DEFAULT '{}',\n                created_revision INTEGER NOT NULL,\n                updated_revision INTEGER NOT NULL,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, graph_id, id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gedges_from ON chestor_journal_graph_edges(journal_id, graph_id, from_node_id)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gedges_to ON chestor_journal_graph_edges(journal_id, graph_id, to_node_id)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gedges_time ON chestor_journal_graph_edges(journal_id, graph_id, updated_at, id)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graph_evidence (\n                journal_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                target_type TEXT NOT NULL,\n                target_id TEXT NOT NULL,\n                event_id TEXT NOT NULL,\n                source_seq INTEGER,\n                relationship TEXT NOT NULL DEFAULT 'supports',\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, graph_id, target_type, target_id, event_id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gevidence_event ON chestor_journal_graph_evidence(journal_id, event_id)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graph_requests (\n                journal_id TEXT NOT NULL,\n                request_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                request_kind TEXT NOT NULL,\n                payload_json TEXT NOT NULL,\n                status TEXT NOT NULL,\n                error TEXT,\n                graph_revision INTEGER,\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, request_id)\n            )\n        ]],\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graph_changes (\n                journal_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                revision INTEGER NOT NULL,\n                operation TEXT NOT NULL,\n                target_type TEXT NOT NULL,\n                target_id TEXT NOT NULL,\n                payload_json TEXT NOT NULL DEFAULT '{}',\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, graph_id, revision, operation, target_type, target_id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gchanges_revision ON chestor_journal_graph_changes(journal_id, graph_id, revision)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_graph_jobs (\n                journal_id TEXT NOT NULL,\n                job_id TEXT NOT NULL,\n                graph_id TEXT NOT NULL,\n                source_from_seq INTEGER NOT NULL,\n                source_to_seq INTEGER NOT NULL,\n                config_revision INTEGER NOT NULL,\n                status TEXT NOT NULL DEFAULT 'queued',\n                execution_identity TEXT,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, job_id),\n                UNIQUE (journal_id, graph_id, source_from_seq, source_to_seq, config_revision)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_gjobs_pending ON chestor_journal_graph_jobs(journal_id, status, created_at)\",\n    }\n    for _, statement in ipairs(statements) do\n        local err = exec(db, statement)\n        if err then return err end\n    end\n    return nil\nend\n\nfunction M.drop_tables(db: any): string?\n    for _, table_name in ipairs({\n        \"chestor_journal_graph_jobs\",\n        \"chestor_journal_graph_changes\",\n        \"chestor_journal_graph_requests\",\n        \"chestor_journal_graph_evidence\",\n        \"chestor_journal_graph_edges\",\n        \"chestor_journal_graph_nodes\",\n        \"chestor_journal_graphs\",\n    }) do\n        local err = exec(db, \"DROP TABLE IF EXISTS \" .. table_name)\n        if err then return err end\n    end\n    return nil\nend\n\nreturn M\n"
+      },
+      "Kind": "library.lua",
+      "Meta": {
+        "comment": "Migration operations for Journal-owned graph catalog, projection, evidence, changes, and jobs."
+      }
+    },
+    "chestor.journal.migrations:journal_tables_ops": {
+      "Data": {
+        "source": "local M = {}\n\nlocal function exec(db: any, sql: string, params: any): string?\n    local _, err = db:execute(sql, params or {})\n    if err then return tostring(err) end\n    return nil\nend\n\nfunction M.create_tables(db: any, db_type: string?): string?\n    local statements = {\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_events (\n                journal_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                seq INTEGER NOT NULL,\n                ts INTEGER NOT NULL,\n                event_type TEXT NOT NULL,\n                title TEXT,\n                body TEXT,\n                actor_id TEXT,\n                actor_type TEXT,\n                session_id TEXT,\n                tags TEXT NOT NULL DEFAULT '[]',\n                linked_component_ids TEXT NOT NULL DEFAULT '[]',\n                linked_upload_ids TEXT NOT NULL DEFAULT '[]',\n                linked_file_paths TEXT NOT NULL DEFAULT '[]',\n                linked_task_ids TEXT NOT NULL DEFAULT '[]',\n                metadata TEXT NOT NULL DEFAULT '{}',\n                supersedes_event_id TEXT,\n                embedding_status TEXT NOT NULL DEFAULT 'pending',\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, id),\n                UNIQUE (journal_id, seq)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_events_seq ON chestor_journal_events(journal_id, seq)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_events_type ON chestor_journal_events(journal_id, event_type)\",\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_events_session ON chestor_journal_events(journal_id, session_id)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_sessions (\n                journal_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                parent_session_id TEXT,\n                task_id TEXT,\n                agent_id TEXT,\n                actor_id TEXT,\n                goal TEXT,\n                scope TEXT,\n                status TEXT NOT NULL DEFAULT 'active',\n                started_seq INTEGER,\n                last_event_seq INTEGER,\n                latest_checkpoint_seq INTEGER,\n                current_digest TEXT,\n                digest_updated_at INTEGER,\n                lease_expires_at INTEGER,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_sessions_status ON chestor_journal_sessions(journal_id, status)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_tasks (\n                journal_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                parent_task_id TEXT,\n                session_id TEXT,\n                title TEXT NOT NULL,\n                description TEXT,\n                status TEXT NOT NULL DEFAULT 'open',\n                priority TEXT,\n                assignee TEXT,\n                agent_id TEXT,\n                sort_order INTEGER NOT NULL DEFAULT 0,\n                metadata TEXT NOT NULL DEFAULT '{}',\n                created_event_id TEXT,\n                updated_event_id TEXT,\n                closed_event_id TEXT,\n                created_at INTEGER NOT NULL,\n                updated_at INTEGER NOT NULL,\n                closed_at INTEGER,\n                PRIMARY KEY (journal_id, id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_tasks_status ON chestor_journal_tasks(journal_id, status, sort_order)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_artifacts (\n                journal_id TEXT NOT NULL,\n                id TEXT NOT NULL,\n                event_id TEXT,\n                session_id TEXT,\n                kind TEXT NOT NULL DEFAULT 'artifact',\n                title TEXT,\n                summary TEXT,\n                component_id TEXT,\n                upload_id TEXT,\n                file_path TEXT,\n                url TEXT,\n                mime_type TEXT,\n                metadata TEXT NOT NULL DEFAULT '{}',\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, id)\n            )\n        ]],\n        \"CREATE INDEX IF NOT EXISTS idx_cjournal_artifacts_session ON chestor_journal_artifacts(journal_id, session_id)\",\n        [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_embeddings (\n                journal_id TEXT NOT NULL,\n                event_id TEXT NOT NULL,\n                embedding TEXT NOT NULL,\n                model TEXT NOT NULL,\n                dimensions INTEGER NOT NULL,\n                created_at INTEGER NOT NULL,\n                PRIMARY KEY (journal_id, event_id)\n            )\n        ]],\n    }\n    if db_type == \"sqlite\" then\n        statements[#statements + 1] = [[\n            CREATE VIRTUAL TABLE IF NOT EXISTS chestor_journal_fts USING fts5(\n                event_id UNINDEXED,\n                journal_id UNINDEXED,\n                event_type UNINDEXED,\n                title,\n                body,\n                tags,\n                tokenize = 'porter'\n            )\n        ]]\n    else\n        statements[#statements + 1] = [[\n            CREATE TABLE IF NOT EXISTS chestor_journal_fts (\n                event_id TEXT NOT NULL,\n                journal_id TEXT NOT NULL,\n                event_type TEXT NOT NULL,\n                title TEXT,\n                body TEXT,\n                tags TEXT,\n                PRIMARY KEY (journal_id, event_id)\n            )\n        ]]\n        statements[#statements + 1] = \"CREATE INDEX IF NOT EXISTS idx_cjournal_fts_journal ON chestor_journal_fts(journal_id)\"\n    end\n    for _, statement in ipairs(statements) do\n        local err = exec(db, statement, {})\n        if err then return err end\n    end\n    return nil\nend\n\nfunction M.drop_tables(db: any): string?\n    local statements = {\n        \"DROP TABLE IF EXISTS chestor_journal_fts\",\n        \"DROP TABLE IF EXISTS chestor_journal_embeddings\",\n        \"DROP INDEX IF EXISTS idx_cjournal_artifacts_session\",\n        \"DROP TABLE IF EXISTS chestor_journal_artifacts\",\n        \"DROP INDEX IF EXISTS idx_cjournal_tasks_status\",\n        \"DROP TABLE IF EXISTS chestor_journal_tasks\",\n        \"DROP INDEX IF EXISTS idx_cjournal_sessions_status\",\n        \"DROP TABLE IF EXISTS chestor_journal_sessions\",\n        \"DROP INDEX IF EXISTS idx_cjournal_events_session\",\n        \"DROP INDEX IF EXISTS idx_cjournal_events_type\",\n        \"DROP INDEX IF EXISTS idx_cjournal_events_seq\",\n        \"DROP TABLE IF EXISTS chestor_journal_events\",\n    }\n    for _, statement in ipairs(statements) do\n        local err = exec(db, statement, {})\n        if err then return err end\n    end\n    return nil\nend\n\nreturn M\n"
+      },
+      "Kind": "library.lua",
+      "Meta": {
+        "comment": "Migration operations for Chestor journal read-model/search tables."
+      }
+    }
+  },
+  "sha256": "01fcb9ce72022e18f61c004812130be4556970d9090b9b7fd7b4a957c8bb9d44",
+  "version": "0.2.46"
+}

@@ -1,0 +1,5 @@
+version: '1.0'
+vars:
+  sqlite_path: ':memory:'
+override:
+  'app:db:file': '${sqlite_path}'

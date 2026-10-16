@@ -1,0 +1,333 @@
+- name: before_0
+  kind: security.policy
+  policy:
+    actions: access
+    effect: allow
+    resources:
+    - app.api.websocket:*
+    - userspace.dataflow.api:*
+    - wippy.session.api:*
+  groups:
+  - security.model:before
+- name: before_1
+  kind: security.policy
+  policy:
+    actions: access
+    effect: allow
+    resources:
+    - wippy.views.api:list_pages.endpoint
+    - wippy.views.api:list_components.endpoint
+    - wippy.views.api:find_by_tag.endpoint
+    - wippy.views.api:render.endpoint
+    - wippy.views.api:public_url.endpoint
+    - wippy.views.api:list_routes.endpoint
+  groups:
+  - security.model:before
+- name: before_2
+  kind: security.policy
+  policy:
+    actions: pg.open
+    effect: allow
+    resources:
+    - keeper.events:bus
+  groups:
+  - security.model:before
+- name: before_3
+  kind: security.policy
+  policy:
+    actions:
+    - db.get
+    - fs.get
+    - store.get
+    - store.info
+    - store.key.get
+    - store.key.list
+    - store.key.set
+    - store.key.delete
+    - store.key.has
+    effect: allow
+    resources:
+    - app:db
+    - app:uploads
+    - kickside.models:cache
+    - app:cache
+  groups:
+  - security.model:before
+- name: before_4
+  kind: security.policy
+  policy:
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+    resources:
+    - kickside.*
+    - userspace.dataflow:*
+    - userspace.dataflow.*
+    - wippy.views:*
+    - wippy.session:*
+    - wippy.session.*
+    - wippy.agent:*
+    - wippy.agent.*
+    - wippy.llm:*
+    - wippy.llm.*
+    - app.api.websocket:*
+    - app.env:*
+  groups:
+  - security.model:before
+- name: before_5
+  kind: security.policy
+  policy:
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+    resources:
+    - app:definition
+    - app:documentation
+    - app:documentation.*
+  groups:
+  - security.model:before
+- name: before_6
+  kind: security.policy
+  policy:
+    actions:
+    - funcs.call
+    - funcs.security
+    effect: allow
+    resources:
+    - app:documentation
+  groups:
+  - security.model:before
+- name: before_7
+  kind: security.policy
+  policy:
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.implementations
+    - contract.security
+    - funcs.call
+    - funcs.security
+    effect: allow
+    resources:
+    - kickside.*
+    - userspace.dataflow:*
+    - userspace.dataflow.*
+    - wippy.session:*
+    - wippy.session.*
+    - wippy.agent:*
+    - wippy.agent.*
+    - wippy.llm:*
+    - wippy.llm.*
+    - security
+  groups:
+  - security.model:before
+- name: before_8
+  kind: security.policy
+  policy:
+    actions:
+    - contract.call
+    effect: allow
+    resources: '*'
+  groups:
+  - security.model:before
+- name: before_9
+  kind: security.policy
+  policy:
+    actions:
+    - contract.context
+    effect: allow
+    resources:
+    - context
+  groups:
+  - security.model:before
+- name: before_10
+  kind: security.policy
+  policy:
+    actions:
+    - funcs.context
+    effect: allow
+    resources:
+    - context
+  groups:
+  - security.model:before
+- name: before_11
+  kind: security.policy
+  policy:
+    actions:
+    - security.actor.create
+    effect: allow
+    resources:
+    - system:knowledge.injection
+  groups:
+  - security.model:before
+- name: before_12
+  kind: security.policy
+  policy:
+    actions:
+    - process.context
+    - process.security
+    effect: allow
+    resources:
+    - context
+    - security
+  groups:
+  - security.model:before
+- name: before_13
+  kind: security.policy
+  policy:
+    actions:
+    - process.send
+    effect: allow
+    resources:
+    - '*'
+  groups:
+  - security.model:before
+- name: before_14
+  kind: security.policy
+  policy:
+    actions:
+    - process.spawn
+    - process.spawn.monitored
+    - process.spawn.linked
+    effect: allow
+    resources:
+    - wippy.session.process:plugin
+    - wippy.session.process:session
+  groups:
+  - security.model:before
+- name: before_15
+  kind: security.policy
+  policy:
+    actions:
+    - read
+    - write
+    effect: allow
+    resources:
+    - session:*
+  groups:
+  - security.model:before
+- name: before_16
+  kind: security.policy
+  policy:
+    actions:
+    - process.registry.register
+    - process.registry.unregister
+    effect: allow
+    resources:
+    - session.*
+  groups:
+  - security.model:before
+- name: before_17
+  kind: security.policy
+  policy:
+    actions:
+    - process.spawn
+    effect: allow
+    resources:
+    - kickside.oauth.service:connection_negotiator
+  groups:
+  - security.model:before
+- name: before_18
+  kind: security.policy
+  policy:
+    actions:
+    - process.host
+    effect: allow
+    resources:
+    - app:processes
+  groups:
+  - security.model:before
+- name: before_19
+  kind: security.policy
+  policy:
+    actions:
+    - process.registry.register
+    - process.registry.unregister
+    effect: allow
+    resources:
+    - oauth:connection:*
+  groups:
+  - security.model:before
+- name: before_20
+  kind: security.policy
+  policy:
+    actions:
+    - env.get
+    effect: allow
+    resources:
+    - PUBLIC_API_URL
+    - ENCRYPTION_KEY
+    - KICKSIDE_COMPONENT_DB_ID
+    - KICKSIDE_THREAD_HYDRATION_DB_ID
+    - KICKSIDE_THREADS_DB_ID
+    - KICKSIDE_CORE_JOB_DB_ID
+    - KICKSIDE_PROJECTION_DB_ID
+    - KICKSIDE_PROJECTION_PROC_HOST
+    - wippy.session.env:*
+    - wippy.llm.openai:*
+    - wippy.llm.openai_compat:*
+    - wippy.llm.claude:*
+    - wippy.llm.google.env:*
+    - wippy.llm.bedrock:*
+    - OPENAI_API_KEY
+    - OPENAI_BASE_URL
+    - OPENAI_ORGANIZATION
+    - OPENAI_TIMEOUT
+    - OPENAI_COMPAT_API_KEY
+    - OPENAI_COMPAT_BASE_URL
+    - OPENAI_COMPAT_ORGANIZATION
+    - OPENAI_COMPAT_TIMEOUT
+    - ANTHROPIC_API_KEY
+    - ANTHROPIC_API_VERSION
+    - ANTHROPIC_BASE_URL
+    - ANTHROPIC_TIMEOUT
+    - GEMINI_API_KEY
+    - GOOGLE_CREDENTIALS
+    - GOOGLE_CLOUD_PROJECT
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_SESSION_TOKEN
+    - AWS_REGION
+    - AWS_DEFAULT_REGION
+    - AWS_CONTAINER_CREDENTIALS_FULL_URI
+    - AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
+    - AWS_CONTAINER_AUTHORIZATION_TOKEN
+    - BEDROCK_BASE_URL
+    - BEDROCK_TIMEOUT
+    - OPENROUTER_API_KEY
+    - TOGETHER_API_KEY
+    - GROQ_API_KEY
+    - FIREWORKS_API_KEY
+    - MISTRAL_API_KEY
+    - DEEPINFRA_API_KEY
+    - XAI_API_KEY
+    - CEREBRAS_API_KEY
+    - kickside.users.env:default_group_id
+    - kickside.users.env:admin_group_id
+    - kickside.users.env:database_resource
+    - APP_CACHE
+  groups:
+  - security.model:before
+- name: before_21
+  kind: security.policy
+  policy:
+    actions:
+    - http_client.request
+    effect: allow
+    resources:
+    - https://*
+    - http://*
+  groups:
+  - security.model:before
+- name: before_22
+  kind: security.policy
+  policy:
+    actions:
+    - http_client.private_ip
+    effect: allow
+    resources: '*'
+  groups:
+  - security.model:before

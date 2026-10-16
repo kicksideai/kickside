@@ -1,0 +1,40 @@
+version: "1.0"
+namespace: kickside.test.e2e
+entries:
+  - name: echo
+    kind: function.lua
+    source: file://dataflow.lua
+    method: echo
+    modules: [http, json, security]
+    imports: {flow: userspace.dataflow.flow:flow, df_client: userspace.dataflow:client}
+  - name: iteration
+    kind: function.lua
+    source: file://dataflow.lua
+    method: iteration
+    modules: [http, json, security]
+    imports: {flow: userspace.dataflow.flow:flow, df_client: userspace.dataflow:client}
+  - name: dataflow
+    kind: function.lua
+    source: file://dataflow.lua
+    method: handler
+    modules: [http, json, security]
+    imports: {flow: userspace.dataflow.flow:flow, df_client: userspace.dataflow:client}
+  - name: unrelated
+    kind: process.lua
+    source: file://dataflow.lua
+    method: unrelated
+    modules: [http, json, security]
+    imports: {flow: userspace.dataflow.flow:flow, df_client: userspace.dataflow:client}
+  - name: dataflow.endpoint
+    kind: http.endpoint
+    method: POST
+    path: /test/member-dataflow
+    func: dataflow
+    meta: {router: app:api}
+  - name: endpoint_access
+    kind: security.policy
+    groups: [app.security:user]
+    policy:
+      resources: [kickside.test.e2e:dataflow.endpoint]
+      actions: [access]
+      effect: allow

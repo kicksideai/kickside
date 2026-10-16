@@ -1,0 +1,72 @@
+{
+  "name": "@chestor/journal-ui",
+  "version": "0.2.0",
+  "specification": "wippy-component-1.0",
+  "title": "Journal",
+  "description": "Bounded temporal knowledge-graph renderer and multi-agent context workspace for Chestor Journal.",
+  "browser": "dist/index.js",
+  "files": [
+    "dist/",
+    "src/",
+    "package.json"
+  ],
+  "type": "module",
+  "dependencies": {
+    "@wippy-fe/theme": "*",
+    "@wippy-fe/webcomponent-core": "*",
+    "@wippy-fe/webcomponent-vue": "*",
+    "d3-force": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/test-utils": "^2.4.11",
+    "@wippy-fe/proxy": "*",
+    "@wippy-fe/vite-plugin": "*",
+    "happy-dom": "^20.10.6",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.10",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.0.0"
+  },
+  "peerDependencies": {
+    "@iconify/vue": "^5.0.1",
+    "@wippy-fe/proxy": "*",
+    "vue": "^3.5.0"
+  },
+  "wippy": {
+    "description": "Renders one Chestor Journal component as an interactive, bounded temporal knowledge workspace. Pass the workspace component id through entry-id; mode may be preview for compact recovery or full for the complete organization tree, force graph, exact and semantic recall, timeline, provenance inspector, and multi-agent cursor view. The component reads through the authenticated Journal API, subscribes to projection updates, requests only bounded graph windows, consumes no slotted content, and surfaces missing ids or unavailable projections as explicit states.",
+    "tagName": "chestor-journal",
+    "type": "component",
+    "props": {
+      "type": "object",
+      "properties": {
+        "entry-id": {
+          "type": "string",
+          "default": "",
+          "description": "Workspace Journal component id to load; an empty value renders the required-id state without issuing API requests."
+        },
+        "mode": {
+          "type": "string",
+          "default": "preview",
+          "description": "Rendering context supplied by the workspace host: preview keeps recovery compact, while full exposes every Journal lens and inspector."
+        },
+        "read-only": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disables editing while retaining full reading and inspection controls."
+        }
+      }
+    },
+    "scripts": {
+      "build": "build"
+    }
+  },
+  "scripts": {
+    "build": "vite build --outDir ../static --emptyOutDir",
+    "dev": "vite build --watch --outDir ../static --emptyOutDir",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit"
+  }
+}

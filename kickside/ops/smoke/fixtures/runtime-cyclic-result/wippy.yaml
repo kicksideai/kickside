@@ -1,0 +1,6 @@
+organization: kickside
+module: runtime-cyclic-result-test
+type: application
+directories:
+  src: src
+  modules: .wippy

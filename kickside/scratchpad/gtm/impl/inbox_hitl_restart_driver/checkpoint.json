@@ -1,0 +1,181 @@
+{
+  "phase": "awaiting-before-restart",
+  "createdAt": "2026-07-12T12:52:49.392Z",
+  "workflowId": "019f5662-aa25-7052-9abf-84221d7fbc98",
+  "workflowTitle": "CODEX-HITL-2026-07-12-12-52-09",
+  "reviewNodeId": "ac213047-138b-4e27-abf9-582df9f0d6f1",
+  "runId": "152cb428-17f1-499b-91e6-3f4c676e25f3",
+  "inboxItemId": "workflow-decision:90c469ae-353d-47ac-a2db-58575de1aa34:d726356b-e05d-4c84-8279-cc3c8f8749f1",
+  "selectedPrincipalLabel": "Default Administrator",
+  "controlsBeforeReload": [
+    {
+      "tag": "input",
+      "label": "",
+      "name": "",
+      "placeholder": "Search steps  (⌘K)",
+      "value": ""
+    },
+    {
+      "tag": "input",
+      "label": "Step title",
+      "name": "",
+      "placeholder": "",
+      "value": "Inbox review"
+    },
+    {
+      "tag": "wc-principal-picker",
+      "label": "",
+      "name": "",
+      "placeholder": "",
+      "value": ":root{--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, whit"
+    },
+    {
+      "tag": "textarea",
+      "label": "Describe this step",
+      "name": "",
+      "placeholder": "Explain how this step should behave…",
+      "value": "Create an urgent finance approval for the restart proof. Ask \"Approve invoice payment?\".\nUse context expression output.invoice. Collect a required text field named reason in a JSON form schema.\nLabel approve \"Pay invoice\" and reject \"Hold invoice\". Time out after 86400 seconds."
+    },
+    {
+      "tag": "textarea",
+      "label": "Context expressionOptional expr-lang expression evaluated against the upstream output before rendering the inbox item.",
+      "name": "",
+      "placeholder": "Optional expr-lang expression evaluated against the upstream output before rendering the inbox item.",
+      "value": "output.invoice"
+    },
+    {
+      "tag": "textarea",
+      "label": "Form schemaOptional JSON Schema object describing fields collected from the reviewer and returned with the decision.",
+      "name": "",
+      "placeholder": "Optional JSON Schema object describing fields collected from the reviewer and returned with the decision.",
+      "value": "{\n  \"required\": [\n    \"reason\"\n  ],\n  \"type\": \"object\",\n  \"properties\": {\n    \"reason\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+    },
+    {
+      "tag": "select",
+      "label": "Prioritylownormalhighurgent",
+      "name": "",
+      "placeholder": "",
+      "value": "urgent"
+    },
+    {
+      "tag": "textarea",
+      "label": "Prompt *",
+      "name": "",
+      "placeholder": "",
+      "value": "Approve invoice payment?"
+    },
+    {
+      "tag": "input",
+      "label": "Reject label",
+      "name": "",
+      "placeholder": "",
+      "value": "Hold invoice"
+    },
+    {
+      "tag": "input",
+      "label": "Timeout seconds",
+      "name": "",
+      "placeholder": "",
+      "value": "86400"
+    },
+    {
+      "tag": "input",
+      "label": "Approve label",
+      "name": "",
+      "placeholder": "",
+      "value": "Pay invoice now"
+    }
+  ],
+  "controlsAfterReload": [
+    {
+      "tag": "input",
+      "label": "",
+      "name": "",
+      "placeholder": "Search steps  (⌘K)",
+      "value": ""
+    },
+    {
+      "tag": "input",
+      "label": "Step title",
+      "name": "",
+      "placeholder": "",
+      "value": "Inbox review"
+    },
+    {
+      "tag": "wc-principal-picker",
+      "label": "",
+      "name": "",
+      "placeholder": "",
+      "value": ":root{--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, whit"
+    },
+    {
+      "tag": "textarea",
+      "label": "Describe this step",
+      "name": "",
+      "placeholder": "Explain how this step should behave…",
+      "value": ""
+    },
+    {
+      "tag": "input",
+      "label": "Reject label",
+      "name": "",
+      "placeholder": "",
+      "value": "Hold invoice"
+    },
+    {
+      "tag": "input",
+      "label": "Timeout seconds",
+      "name": "",
+      "placeholder": "",
+      "value": "86400"
+    },
+    {
+      "tag": "input",
+      "label": "Approve label",
+      "name": "",
+      "placeholder": "",
+      "value": "Pay invoice now"
+    },
+    {
+      "tag": "textarea",
+      "label": "Context expressionOptional expr-lang expression evaluated against the upstream output before rendering the inbox item.",
+      "name": "",
+      "placeholder": "Optional expr-lang expression evaluated against the upstream output before rendering the inbox item.",
+      "value": "output.invoice"
+    },
+    {
+      "tag": "textarea",
+      "label": "Form schemaOptional JSON Schema object describing fields collected from the reviewer and returned with the decision.",
+      "name": "",
+      "placeholder": "Optional JSON Schema object describing fields collected from the reviewer and returned with the decision.",
+      "value": "{\n  \"required\": [\n    \"reason\"\n  ],\n  \"type\": \"object\",\n  \"properties\": {\n    \"reason\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+    },
+    {
+      "tag": "select",
+      "label": "Prioritylownormalhighurgent",
+      "name": "",
+      "placeholder": "",
+      "value": "urgent"
+    },
+    {
+      "tag": "textarea",
+      "label": "Prompt *",
+      "name": "",
+      "placeholder": "",
+      "value": "Approve invoice payment?"
+    }
+  ],
+  "evidence": [
+    "01-created-workflow.png",
+    "02-ai-draft-preview.png",
+    "03-all-eight-controls.png",
+    "03a-compact-light.png",
+    "03b-compact-dark.png",
+    "04-reload-persistence.png",
+    "05-wired-review.png",
+    "06-published.png",
+    "07-run-waiting-for-approval.png",
+    "08-inbox-pending-before-restart.png"
+  ],
+  "consoleErrors": []
+}

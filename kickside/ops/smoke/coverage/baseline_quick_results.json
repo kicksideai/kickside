@@ -1,0 +1,118 @@
+{
+  "provenance": {
+    "original_results_sha256": "fdfad17a156dd0112d587346461b6f16075922eba86a1124e1a2f56e18626e71",
+    "run_id": "20261005T005244Z-adfa7c4b"
+  },
+  "published": "0.1.145",
+  "results": [
+    {
+      "duration": 12.017,
+      "engine": "sqlite",
+      "scenario": "boot",
+      "status": "passed"
+    },
+    {
+      "duration": 25.157,
+      "engine": "sqlite",
+      "scenario": "platform_onboarding",
+      "status": "passed"
+    },
+    {
+      "duration": 1.106,
+      "engine": "sqlite",
+      "scenario": "first_agent",
+      "status": "passed"
+    },
+    {
+      "duration": 3.439,
+      "engine": "sqlite",
+      "scenario": "chat_streams",
+      "status": "passed"
+    },
+    {
+      "duration": 2.49,
+      "engine": "sqlite",
+      "scenario": "upload_attach_send",
+      "status": "passed"
+    },
+    {
+      "duration": 5.097,
+      "engine": "sqlite",
+      "scenario": "kb_cited_answer",
+      "status": "passed"
+    },
+    {
+      "duration": 7.701,
+      "engine": "sqlite",
+      "scenario": "crm_record",
+      "status": "passed"
+    },
+    {
+      "duration": 9.208,
+      "engine": "sqlite",
+      "scenario": "restart_continuation",
+      "status": "passed"
+    },
+    {
+      "duration": 2.421,
+      "engine": "sqlite",
+      "scenario": "cleanup",
+      "status": "passed"
+    },
+    {
+      "duration": 18.212,
+      "engine": "postgres",
+      "scenario": "boot",
+      "status": "passed"
+    },
+    {
+      "duration": 22.741,
+      "engine": "postgres",
+      "scenario": "platform_onboarding",
+      "status": "passed"
+    },
+    {
+      "duration": 1.043,
+      "engine": "postgres",
+      "scenario": "first_agent",
+      "status": "passed"
+    },
+    {
+      "duration": 3.882,
+      "engine": "postgres",
+      "scenario": "chat_streams",
+      "status": "passed"
+    },
+    {
+      "duration": 2.555,
+      "engine": "postgres",
+      "scenario": "upload_attach_send",
+      "status": "passed"
+    },
+    {
+      "duration": 5.737,
+      "engine": "postgres",
+      "scenario": "kb_cited_answer",
+      "status": "passed"
+    },
+    {
+      "duration": 10.358,
+      "engine": "postgres",
+      "scenario": "crm_record",
+      "status": "passed"
+    },
+    {
+      "duration": 10.227,
+      "engine": "postgres",
+      "scenario": "restart_continuation",
+      "status": "passed"
+    },
+    {
+      "duration": 11.954,
+      "engine": "postgres",
+      "scenario": "cleanup",
+      "status": "passed"
+    }
+  ],
+  "tier": "quick"
+}

@@ -1,0 +1,10 @@
+{
+  "kickside/agents": {
+    "version": "0.1.55",
+    "hash": "ba3984670597cde2ba76b07afa49b731cb4cf20fb8e4afde460ffc2706fd4dea"
+  },
+  "kickside/connection": {
+    "version": "0.1.48",
+    "hash": "809eca4869f9d0994024ffc6bba56ce5be1bc8f9642eb185c45a68601101d565"
+  }
+}

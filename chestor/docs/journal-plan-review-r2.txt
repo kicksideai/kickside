@@ -1,0 +1,25 @@
+1. Overall: v2 fixes much of the enforcement architecture, but several guarantees remain underspecified rather than mechanically secured.
+2. Unresolved F1: receipt binding proves provenance, not that the verifier honestly exercised the declared claim; trusted execution or reviewer attestation is still missing.
+3. Unresolved F2: OpenBranch grants journal-write authority, not work authority; agents can perform external work before decomposition, dependency validation, or plan acceptance.
+4. Unresolved F3: “typed/versioned” lacks compatibility rules, schema negotiation, executable validation, and validation of semantic—not merely syntactic—LLM output.
+5. Unresolved F4: consequential choices can still bypass Decide through notes, task edits, commits, or external actions; no enforceable decision-trigger policy exists.
+6. Unresolved F5: an expired lease proves inactivity, not that the pointer was correct; automatic snapshots cannot recover reasoning or external work never recorded.
+7. Unresolved F6: an in-journal watchdog cannot report failure when the journal/watchdog path itself is unavailable; an independent heartbeat/alert channel is needed.
+8. Digest freshness remains weak: updates only on checkpoint/complete/fold leave active branches stale; define incremental recomputation, generator version, and failure behavior.
+9. Receipt invalidation is not operationally defined: “work changed” needs exact revision scope, dependency/environment effects, and automatic invalidation triggers.
+10. The session claim overstates enforcement: reads and external tools can precede OpenBranch, so “first call” is not structural as written.
+11. New lease hole: specify capability scope, audience, replay resistance, fencing tokens, renewal races, clock handling, revocation, and multi-agent access to one task.
+12. New capability hole: opening a blocked task must not issue capabilities that authorize mutation or downstream work beyond explicitly permitted planning actions.
+13. New recovery hole: “last activity window distilled” is generated interpretation; preserve an immutable raw event slice and label the digest as derived.
+14. New waiver hole: define who may waive, which verifier/gate, duration, rationale schema, revocation, downstream propagation, and whether waived work may become ordinary done.
+15. Waivers need abuse controls: separation of requester/approver where warranted, audit alerts, searchable counts, expiry, and prohibition on blanket or recursive waivers.
+16. Accepted-risk and waived should be distinct states: one accepts known failed evidence; the other authorizes absence or staleness of required evidence.
+17. Contract validation for LLM agents needs practical constraints: bounded schemas, artifact references, deterministic validators where possible, and explicit human-review receipts otherwise.
+18. Parent validation alone is circular when the parent is also incentivized to finish; high-impact contracts need independent validator identity or policy.
+19. Dependency mutation semantics remain open: clarify edge direction, removal, late-added blockers, completed-task invalidation, and auditability.
+20. The task state machine is still ambiguous around done versus closed, reopening, abandoned recovery, waiver states, and interaction with the experiment lifecycle.
+21. “Everything excluded” cannot be explained individually at 6,000 nodes; Frontier should return categorized exclusion counts plus drillable reasons.
+22. B0→B6 is broadly the right order: specification, enforcement, adversarial tests, read models, health, then primary UI and map.
+23. Adjust it by adding protocol/client usability tests after B2 and a migration rehearsal before B5; B5’s “real data” otherwise conflicts with migration waiting until B7.
+24. Move old-shell deletion after migrated A1–A8 verification, rollback testing, and cutover approval; run an API-level child-agent dry run before UI, then repeat it at B8.
+25. Verdict: sound enough to store as the v2 architecture, but build only after B0 resolves lines 2–20 as testable invariants and threat models; it is not yet a sufficient implementation contract.

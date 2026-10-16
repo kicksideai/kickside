@@ -1,0 +1,390 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: definition
+    kind: ns.definition
+    readme: file://README.md
+    meta:
+      title: KickSide
+      comment: Modular AI workspace. Bootstrap (gateway, routers, database, processes) plus the lean core dependency graph; optional capabilities are installed from the Hub.
+
+  - name: web
+    kind: http.router
+    meta:
+      server: gateway
+
+
+  - name: documentation.home
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: README.md
+      title: KickSide
+      document_kind: guide
+      status: stable
+      content: file://README.md
+
+  - name: documentation.developer-handbook
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/developer-handbook.md
+      title: KickSide Development Handbook
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/developer-handbook.md
+
+  - name: documentation.canonical-model
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/00-canonical-model.md
+      title: Canonical Model
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/00-canonical-model.md
+
+  - name: documentation.component-development
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/01-component-development.md
+      title: Component Development
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/01-component-development.md
+
+  - name: documentation.contracts-and-ports
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/02-contracts-and-ports.md
+      title: Contracts And Ports
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/02-contracts-and-ports.md
+
+  - name: documentation.threads-events-projections
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/03-threads-events-projections.md
+      title: Threads, Events, And Projections
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/03-threads-events-projections.md
+
+  - name: documentation.connections-and-integrations
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/04-connections-and-integrations.md
+      title: Connections And Integrations
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/04-connections-and-integrations.md
+
+  - name: documentation.knowledge-uploads-automation-inbox
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/05-knowledge-uploads-automation-inbox.md
+      title: Knowledge, Uploads, Automation, And Inbox
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/05-knowledge-uploads-automation-inbox.md
+
+  - name: documentation.agents-skills-models
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/06-agents-skills-models.md
+      title: Agents, Skills, And Models
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/06-agents-skills-models.md
+
+  - name: documentation.frontend-web-components
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/07-frontend-and-web-components.md
+      title: Frontend And Web Components
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/07-frontend-and-web-components.md
+
+  - name: documentation.recipes
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/08-recipes.md
+      title: Recipes
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/08-recipes.md
+
+  - name: documentation.checklists
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/09-checklists.md
+      title: Checklists
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/09-checklists.md
+
+  - name: documentation.application-patterns
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/10-application-patterns.md
+      title: Application Patterns
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/10-application-patterns.md
+
+  - name: documentation.design-gaps
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/11-design-gaps.md
+      title: Design Gaps
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/11-design-gaps.md
+
+  - name: documentation.module-layout
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/12-module-layout.md
+      title: Module Layout
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/12-module-layout.md
+
+  - name: documentation.testing
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/13-testing.md
+      title: Testing
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/13-testing.md
+
+  - name: documentation.dev-loop
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/14-dev-loop.md
+      title: Development Loop
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/14-dev-loop.md
+
+  - name: documentation.publishing
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/15-publishing.md
+      title: Publishing
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/15-publishing.md
+
+  - name: documentation.conventions
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/16-conventions.md
+      title: Conventions
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/16-conventions.md
+
+  - name: documentation.settings
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/17-settings.md
+      title: Settings
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/17-settings.md
+
+  - name: documentation.blocks-flows-workflows
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/18-blocks-flows-workflows.md
+      title: Blocks, Flows, Workflows, And Ports
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/18-blocks-flows-workflows.md
+
+  - name: documentation.discovery-addressing-context
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/19-discovery-addressing-and-context.md
+      title: Discovery, Addressing, And Context
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/19-discovery-addressing-and-context.md
+
+  - name: documentation.execution-identity-and-jobs
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/20-execution-identity-and-jobs.md
+      title: Execution Identity And Deadline Jobs
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/20-execution-identity-and-jobs.md
+
+  - name: documentation.automations-and-dataflows
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/21-automations-and-dataflows.md
+      title: Automations And Dataflows
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/21-automations-and-dataflows.md
+
+  - name: documentation.deals-crm
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/22-deals-crm.md
+      title: "Worked Application: Deals CRM"
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/22-deals-crm.md
+
+  - name: documentation.security-and-module-access
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/23-security-and-module-access.md
+      title: Security And Module Access
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/23-security-and-module-access.md
+
+  - name: documentation.frontend-handbook
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/frontend-handbook.md
+      title: Frontend Handbook
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/frontend-handbook.md
+
+  - name: documentation.frontend-app-checklist
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/app-checklist.md
+      title: Application Checklist
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/app-checklist.md
+
+  - name: documentation.frontend-app-guide
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/app-guide.md
+      title: Application Guide
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/app-guide.md
+
+  - name: documentation.frontend-best-practices
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/best-practices.md
+      title: Frontend Best Practices
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/best-practices.md
+
+  - name: documentation.frontend-component-guide
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/component-guide.md
+      title: Component Guide
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/component-guide.md
+
+  - name: documentation.frontend-host-spec
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/host-spec.md
+      title: Frontend Host Specification
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/host-spec.md
+
+  - name: documentation.frontend-proxy-api
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      path: docs/kickside-development/frontend/proxy-api.md
+      title: Proxy API
+      document_kind: guide
+      status: stable
+      content: file://docs/kickside-development/frontend/proxy-api.md
+
+  - name: documentation.rfc-document-catalog
+    kind: registry.entry
+    meta:
+      type: wippy.documentation.page
+    data:
+      document_kind: rfc
+      path: docs/rfcs/0001-registry-document-catalog.md
+      status: accepted
+      title: Registry Documentation Catalog
+      content: file://docs/rfcs/0001-registry-document-catalog.md

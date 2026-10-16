@@ -1,0 +1,250 @@
+{
+  "provenance": {
+    "original_results_sha256": "124969719b44afa80892fbf1d92283ffed96bc3bb02c517d23b1db038c543898",
+    "run_id": "20261005T005610Z-1c0d683b"
+  },
+  "published": "0.1.145",
+  "results": [
+    {
+      "duration": 12.074,
+      "engine": "sqlite",
+      "scenario": "boot",
+      "status": "passed"
+    },
+    {
+      "duration": 24.658,
+      "engine": "sqlite",
+      "scenario": "platform_onboarding",
+      "status": "passed"
+    },
+    {
+      "duration": 1.268,
+      "engine": "sqlite",
+      "scenario": "first_agent",
+      "status": "passed"
+    },
+    {
+      "duration": 3.192,
+      "engine": "sqlite",
+      "scenario": "chat_streams",
+      "status": "passed"
+    },
+    {
+      "duration": 2.738,
+      "engine": "sqlite",
+      "scenario": "upload_attach_send",
+      "status": "passed"
+    },
+    {
+      "duration": 5.464,
+      "engine": "sqlite",
+      "scenario": "kb_cited_answer",
+      "status": "passed"
+    },
+    {
+      "duration": 7.924,
+      "engine": "sqlite",
+      "scenario": "crm_record",
+      "status": "passed"
+    },
+    {
+      "duration": 9.351,
+      "engine": "sqlite",
+      "scenario": "restart_continuation",
+      "status": "passed"
+    },
+    {
+      "duration": 30.01,
+      "engine": "sqlite",
+      "scenario": "workflow_inbox_restart",
+      "status": "passed"
+    },
+    {
+      "duration": 5.113,
+      "engine": "sqlite",
+      "scenario": "automations",
+      "status": "passed"
+    },
+    {
+      "duration": 1.775,
+      "engine": "sqlite",
+      "scenario": "data_sync",
+      "status": "passed"
+    },
+    {
+      "duration": 11.863,
+      "engine": "sqlite",
+      "scenario": "webhooks",
+      "status": "passed"
+    },
+    {
+      "duration": 4.444,
+      "engine": "sqlite",
+      "scenario": "mcp_scoped_credential",
+      "status": "failed"
+    },
+    {
+      "duration": 12.112,
+      "engine": "sqlite",
+      "scenario": "research",
+      "status": "failed"
+    },
+    {
+      "duration": 25.168,
+      "engine": "sqlite",
+      "scenario": "chestor_entries",
+      "status": "passed"
+    },
+    {
+      "duration": 1.38,
+      "engine": "sqlite",
+      "scenario": "dashboard",
+      "status": "passed"
+    },
+    {
+      "duration": 0.902,
+      "engine": "sqlite",
+      "scenario": "member_access",
+      "status": "failed"
+    },
+    {
+      "duration": 1.804,
+      "engine": "sqlite",
+      "scenario": "provider_dialogs",
+      "status": "passed"
+    },
+    {
+      "duration": 3.603,
+      "engine": "sqlite",
+      "scenario": "converters",
+      "status": "failed"
+    },
+    {
+      "duration": 3.225,
+      "engine": "sqlite",
+      "scenario": "cleanup",
+      "status": "passed"
+    },
+    {
+      "duration": 19.321,
+      "engine": "postgres",
+      "scenario": "boot",
+      "status": "passed"
+    },
+    {
+      "duration": 23.099,
+      "engine": "postgres",
+      "scenario": "platform_onboarding",
+      "status": "passed"
+    },
+    {
+      "duration": 1.479,
+      "engine": "postgres",
+      "scenario": "first_agent",
+      "status": "passed"
+    },
+    {
+      "duration": 3.78,
+      "engine": "postgres",
+      "scenario": "chat_streams",
+      "status": "passed"
+    },
+    {
+      "duration": 3.507,
+      "engine": "postgres",
+      "scenario": "upload_attach_send",
+      "status": "passed"
+    },
+    {
+      "duration": 6.742,
+      "engine": "postgres",
+      "scenario": "kb_cited_answer",
+      "status": "passed"
+    },
+    {
+      "duration": 10.524,
+      "engine": "postgres",
+      "scenario": "crm_record",
+      "status": "passed"
+    },
+    {
+      "duration": 10.576,
+      "engine": "postgres",
+      "scenario": "restart_continuation",
+      "status": "passed"
+    },
+    {
+      "duration": 28.779,
+      "engine": "postgres",
+      "scenario": "workflow_inbox_restart",
+      "status": "passed"
+    },
+    {
+      "duration": 6.172,
+      "engine": "postgres",
+      "scenario": "automations",
+      "status": "passed"
+    },
+    {
+      "duration": 2.029,
+      "engine": "postgres",
+      "scenario": "data_sync",
+      "status": "passed"
+    },
+    {
+      "duration": 10.362,
+      "engine": "postgres",
+      "scenario": "webhooks",
+      "status": "passed"
+    },
+    {
+      "duration": 4.542,
+      "engine": "postgres",
+      "scenario": "mcp_scoped_credential",
+      "status": "failed"
+    },
+    {
+      "duration": 15.33,
+      "engine": "postgres",
+      "scenario": "research",
+      "status": "failed"
+    },
+    {
+      "duration": 54.47,
+      "engine": "postgres",
+      "scenario": "chestor_entries",
+      "status": "passed"
+    },
+    {
+      "duration": 1.682,
+      "engine": "postgres",
+      "scenario": "dashboard",
+      "status": "passed"
+    },
+    {
+      "duration": 1.361,
+      "engine": "postgres",
+      "scenario": "member_access",
+      "status": "failed"
+    },
+    {
+      "duration": 3.418,
+      "engine": "postgres",
+      "scenario": "provider_dialogs",
+      "status": "passed"
+    },
+    {
+      "duration": 7.393,
+      "engine": "postgres",
+      "scenario": "converters",
+      "status": "failed"
+    },
+    {
+      "duration": 10.765,
+      "engine": "postgres",
+      "scenario": "cleanup",
+      "status": "passed"
+    }
+  ],
+  "tier": "full"
+}

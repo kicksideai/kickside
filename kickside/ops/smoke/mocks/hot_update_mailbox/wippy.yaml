@@ -1,0 +1,7 @@
+organization: local
+module: upgrade-probe
+type: application
+description: Runtime probe for process.upgrade mailbox continuity.
+directories:
+  modules: .wippy
+  src: ./src
