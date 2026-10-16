@@ -34,6 +34,10 @@ entries:
     type: envstorage
   file_path: ./.wippy/test.env
   auto_create: true
+- name: uploads
+  kind: fs.directory
+  directory: ./.wippy/uploads/
+  auto_init: true
 - name: processes
   kind: process.host
   lifecycle:
@@ -239,6 +243,10 @@ entries:
     value: app:api
   - name: kickside.uploads:ui_server
     value: app:gateway
+  - name: kickside.uploads:database_resource
+    value: app:db
+  - name: kickside.uploads:storage_id
+    value: app:uploads
   - name: wippy.session:api_router
     value: app:api
   - name: wippy.session:env_storage
