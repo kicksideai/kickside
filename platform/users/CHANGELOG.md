@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6 (2026-10-16)
+
+- Verify password hashes from earlier releases and upgrade them after successful authentication.
+
 ## 0.2.2 (2026-10-09)
 
 - Keep the email-grant migration independent of later user schema, so updates from older installs apply (33436d34d).
