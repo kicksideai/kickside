@@ -3,6 +3,17 @@ namespace: kickside.mcp.migrations
 
 # target_db is injected by the root kickside.mcp:target_db requirement.
 entries:
+  - name: 05_retired_policy_credentials
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [kickside.mcp.migrations:04_authority_snapshot]
+      timestamp: '2026-10-16T22:00:00Z'
+    source: file://05_retired_policy_credentials.lua
+    modules: [time]
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
   - name: 03_oauth_resource
     kind: function.lua
     meta:
