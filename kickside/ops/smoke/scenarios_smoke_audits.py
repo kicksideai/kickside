@@ -15,6 +15,8 @@ def smoke_audits(ctx):
         'tests.test_selected_install_fixture', 'tests.test_authority_fixture_isolation',
         'tests.test_browser_driver_lifetime', 'tests.test_security_model',
         'tests.test_process_supervision',
+        'tests.test_module_harness',
+        'tests.test_native_guard_selections.NativeGuardSelectionTests.test_literal_native_guards_select_registered_tests_or_suites',
         'tests.test_access_ownership.OwnershipTests.test_store_facet_exercises_native_writable_contract_and_checks_destination',
         'tests.test_access_ownership.OwnershipTests.test_collection_facet_checks_native_rows_and_rejects_missing_fixture_data'],
         cwd=suite, capture_output=True, text=True, timeout=60)
@@ -27,4 +29,5 @@ REGISTRY = [Scenario('smoke_capture_and_issue_audit', 'regression', smoke_audits
                     issues=('SMOKE-CAPTURE-OWNERSHIP', 'SMOKE-ISSUE-AUDIT-CONSISTENCY', 'R5-E02', 'R5-E03',
                             'SMOKE-SHARED-SOURCE-FIXTURE-REENTRY', 'SMOKE-AUTHORITY-FIXTURE-ISOLATION',
                             'SMOKE-INDEPENDENT-BROWSER-DRIVER-LIFETIME',
-                            'SMOKE-WORKER-CLEANUP-DEADLINE', 'SMOKE-NATIVE-CAPABILITY-RESULTS'))]
+                            'SMOKE-WORKER-CLEANUP-DEADLINE', 'SMOKE-NATIVE-CAPABILITY-RESULTS',
+                            'SMOKE-HARNESS-TEMP-SOURCE-OWNERSHIP'))]

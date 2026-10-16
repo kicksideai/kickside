@@ -15,21 +15,29 @@ class NativeGuardSelectionTests(unittest.TestCase):
         cache = {}
         failures = []
         for path in sorted((root / 'ops/smoke').glob('scenarios*.py')):
-            for call in ast.walk(ast.parse(path.read_text())):
+            tree = ast.parse(path.read_text())
+            constants = {statement.targets[0].id: statement.value.value
+                         for statement in tree.body
+                         if isinstance(statement, ast.Assign) and len(statement.targets) == 1
+                         and isinstance(statement.targets[0], ast.Name)
+                         and isinstance(statement.value, ast.Constant)
+                         and isinstance(statement.value.value, str)}
+            for call in ast.walk(tree):
                 if not (isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
                         and call.func.id == 'run_focused_module_test' and len(call.args) >= 3):
                     continue
                 component, selection = call.args[1:3]
-                if not (isinstance(component, ast.Constant) and isinstance(selection, ast.Constant)
-                        and isinstance(component.value, str) and isinstance(selection.value, str)
-                        and component.value in modules):
+                name = (component.value if isinstance(component, ast.Constant)
+                        else constants.get(component.id) if isinstance(component, ast.Name) else None)
+                if not (isinstance(selection, ast.Constant) and isinstance(name, str)
+                        and isinstance(selection.value, str) and name in modules):
                     continue
-                if component.value not in cache:
-                    cache[component.value] = test_entries(modules[component.value])
-                entries = cache[component.value]
+                if name not in cache:
+                    cache[name] = test_entries(modules[name])
+                entries = cache[name]
                 if not any(selection.value in (identifier, row['name'], row.get('meta', {}).get('suite'))
                            for identifier, row in entries.items()):
-                    failures.append(f'{path.name}:{call.lineno}: {component.value}/{selection.value}')
+                    failures.append(f'{path.name}:{call.lineno}: {name}/{selection.value}')
         self.assertEqual(failures, [], '\n'.join(failures))
 
     def test_native_page_tables_select_registered_tests_or_suites(self):

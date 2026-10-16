@@ -10529,7 +10529,7 @@
       "guards": {
         "native_errors_security_authority": {
           "assertions": [
-            "scenarios_native_errors_security.py:security_authority_errors -> authority_native_failure_test drives false/numeric/empty group ids through actual reduction_pending and check_group_authority funcs.call, preserving published Unavailable plus source false retryability and the complete native Invalid cause; a run-owned real reduction fence remains Unavailable/true before cleanup and the same group succeeds after cleanup"
+            "The current native membership classifier preserves permanent Invalid argument errors and the complete nonretryable dependency cause behind its Unavailable response."
           ],
           "types": [
             "API-smoke"
@@ -16169,7 +16169,7 @@
         },
         "regression_delegated_membership_scopes": {
           "assertions": [
-            "The real persisted reduction fence refuses self and deferred Users resolution in ordinary and authority-only modes, then recovers after clearing; the fixture holds invalidation explicitly"
+            "The Users suites verify live membership resolution, delegation epochs and retained revocation for excluded actions, new denies and explicit revocation through covering groups."
           ],
           "types": [
             "API-smoke"
@@ -21613,8 +21613,7 @@
         },
         "regression_delegated_membership_scopes": {
           "assertions": [
-            "Authority-only subject lookup retains each live membership group and removes a revoked group while advancing the delegation epoch",
-            "Users scope resolution preserves the complete executable scope list and rejects malformed supplied descriptors; absent optional lists retain existing scope-name behavior"
+            "The Users suites verify live membership resolution, delegation epochs and retained revocation for excluded actions, new denies and explicit revocation through covering groups."
           ],
           "types": [
             "API-smoke"
@@ -21729,7 +21728,7 @@
       "guards": {
         "regression_delegated_membership_scopes": {
           "assertions": [
-            "scope_reduction_boundary_test retains refusal for self and deferred resolution in ordinary and authority-only modes while the real persisted reduction fence remains pending, then recovers after clearing"
+            "The Users suites verify live membership resolution, delegation epochs and retained revocation for excluded actions, new denies and explicit revocation through covering groups."
           ],
           "types": [
             "API-smoke"
@@ -21739,7 +21738,7 @@
       "harness": [
         "run-as/RA-H47/users"
       ],
-      "reason": "The reduction boundary fixture queues a fence that the asynchronous projector clears while the test checks pending authority. An explicit fixture invalidation hold and reconcile acknowledgement keep the pending state deterministic without reducing refusal, epoch or recovery assertions.",
+      "reason": "The retired asynchronous Security fence fixture races projection. The current Users authority epoch and token fencing suites assert the owning revocation boundary directly.",
       "user_visible": false
     },
     "USERS-RESOLVER-OWNED-READER": {
@@ -22069,7 +22068,7 @@
       "guards": {
         "browser_published_workflow_await_hub_ui_update": {
           "assertions": [
-            "The first published-release update and repeat retain the original saved definition; the first restart has precisely empty history with identical saved fields as authorized by the workflow-undo owner order. Later updates, repeat, restart and hard restart preserve exact stacks and definitions and browser undo/redo results. Captured Dataflow frames and every policy id remain exact and resolvable before original human approval resumes the held activation."
+            "The published baseline records its actual history schema and exact stacks. Updates preserve durable stacks; a baseline without persisted history starts empty after its first restart while saved definitions remain identical."
           ],
           "types": [
             "browser-UI",
@@ -22078,7 +22077,7 @@
         },
         "browser_workflow_durable_history": {
           "assertions": [
-            "The workflow-undo owner order permits only the first published-release transition to start with empty history and identical saved data. Later module update, repeat, restart and hard restart preserve the exact state and stack entries; browser undo/redo reproduce the same definitions and deny another workflow reader or editor."
+            "The published baseline records its actual history schema and exact stacks. Updates preserve durable stacks; a baseline without persisted history starts empty after its first restart while saved definitions remain identical."
           ],
           "types": [
             "browser-UI",
@@ -26228,6 +26227,315 @@
         "research/compact-list-detail"
       ],
       "reason": "Provider collection summaries and detail reads retain their declared fields and paging in API and native-module checks.",
+      "user_visible": false
+    },
+    "ARTIFACT-EMBED-PROMPT-CONFLICT": {
+      "guards": {
+        "ai_artifact_chart": {
+          "assertions": [
+            "Real chats render document, table and chart artifact embeds and verify their content."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "ai_artifact_document": {
+          "assertions": [
+            "Real chats render document, table and chart artifact embeds and verify their content."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "ai_artifact_table": {
+          "assertions": [
+            "Real chats render document, table and chart artifact embeds and verify their content."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Artifact guidance produces embeds that the chat renderer can display.",
+      "user_visible": true
+    },
+    "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES": {
+      "guards": {
+        "bot_accounts_identity_update": {
+          "assertions": [
+            "The published Identity update harness starts with its declared Uploads host resources and verifies the update."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "bot-accounts/identity-published-update/test_identity_bot_accounts_upgrade.py"
+      ],
+      "reason": "The independent Identity update harness declares the host resources required by Uploads.",
+      "user_visible": false
+    },
+    "EE2-2635": {
+      "guards": {
+        "upload_conversion_errors": {
+          "assertions": [
+            "The focused Uploads harness checks durable conversion failures and their native diagnostic fields."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "uploads/conversion-errors"
+      ],
+      "reason": "Native conversion failures retain diagnostics and persist failed upload status.",
+      "user_visible": false
+    },
+    "EE2-2636": {
+      "guards": {
+        "knowledge_ask_capability": {
+          "assertions": [
+            "The rendered Knowledge search component checks Ask availability from declared capabilities."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "regression_kb_query_capability": {
+          "assertions": [
+            "The actual Knowledge editor hides Ask without an Answer model and shows the Ask question control when an Answer model is configured."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Knowledge search exposes Ask when the declared capability is available.",
+      "user_visible": true
+    },
+    "MCP-RECONNECT-PAGED-TOOL-COUNT": {
+      "guards": {
+        "providers_mcp_reconnect": {
+          "assertions": [
+            "The reconnect endpoint returns the exact tool count from the fixture catalog."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The reconnect response counts tools from the native paged catalog.",
+      "user_visible": false
+    },
+    "RELEASE-APP-LOCK-HUB-PINS": {
+      "guards": {
+        "release_app_lock_hub_pins": {
+          "assertions": [
+            "Fresh release resolution checks that every resolved module has a Hub artifact hash."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Release dependency locks resolve published artifacts with content hashes.",
+      "user_visible": false
+    },
+    "RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE": {
+      "guards": {
+        "release_harness_configuration": {
+          "assertions": [
+            "The release harness runs native release content and packaging configuration checks."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Release content fixtures generate deterministic package inputs.",
+      "user_visible": false
+    },
+    "RELEASE-INSTALL-DEPENDENCY-PROVENANCE": {
+      "guards": {
+        "release_install_dependency_provenance": {
+          "assertions": [
+            "The delivery suite checks installation environment and dependency provenance."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Release installation retains the provenance of resolved dependencies.",
+      "user_visible": false
+    },
+    "RELEASE-UI-SERVED-BUNDLE-RESOLUTION": {
+      "guards": {
+        "knowledge_ask_capability": {
+          "assertions": [
+            "The native Knowledge search UI gate verifies capability behavior with resolved frontend dependencies."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "UI verification resolves the bundles required by component tests.",
+      "user_visible": false
+    },
+    "SMOKE-MODEL-TOKEN-ACCOUNTING": {
+      "guards": {
+        "regression_EE2_2572_direct_result_chat": {
+          "assertions": [
+            "The direct-result chat fixture exercises native tool output with deterministic model token accounting."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The deterministic model fixture accounts for tokens on each configured model card.",
+      "user_visible": false
+    },
+    "SMOKE-REVOKED-TOOL-CHAT-CONTRACT": {
+      "guards": {
+        "regression_mcp_unavailable_chat": {
+          "assertions": [
+            "The real chat names the rejected tool and displays its native failure after the preceding tool call."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The unavailable-tool fixture requests the rejected tool through its actual contract.",
+      "user_visible": false
+    },
+    "SMOKE-UPGRADE-SKILL-RECEIPT": {
+      "guards": {
+        "regression_skills_upgrade": {
+          "assertions": [
+            "After an application update the Skills editor opens the bundled reference and checks its exact content."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The upgrade fixture retains the bundled skill source and its receipt.",
+      "user_visible": false
+    },
+    "SMOKE-FRESH-TEST-TYPE-LINT": {
+      "guards": {
+        "regression_core_test_types": {
+          "assertions": [
+            "Harness lint and all selected native tests use isolated copies whose dependencies resolve fresh from local sources and the Hub."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "regression_jobs_test_types": {
+          "assertions": [
+            "Harness lint and all selected native tests use isolated copies whose dependencies resolve fresh from local sources and the Hub."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "regression_jobs_native_errors": {
+          "assertions": [
+            "Harness lint and all selected native tests use isolated copies whose dependencies resolve fresh from local sources and the Hub."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The type guard refreshes copied harnesses for execution but lints the original source harness with its stale dependency lock.",
+      "user_visible": false
+    },
+    "SMOKE-HARNESS-TEMP-SOURCE-OWNERSHIP": {
+      "guards": {
+        "smoke_capture_and_issue_audit": {
+          "assertions": [
+            "The module harness unit suite creates its scratch source trees outside the repository copied by concurrent focused scenarios."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Harness unit fixtures create temporary source trees inside the repository that concurrent scenarios copy, so source files disappear during traversal.",
+      "user_visible": false
+    },
+    "SMOKE-NATIVE-GUARD-SELECTIONS": {
+      "guards": {
+        "native_errors_security_authority": {
+          "assertions": [
+            "The scenario selects the current registered native suite for its authority boundary; the selector audit resolves literal module names and module constants."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "regression_delegated_membership_scopes": {
+          "assertions": [
+            "The scenario selects the current registered native suite for its authority boundary; the selector audit resolves literal module names and module constants."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Native smoke scenarios retain selectors for tests removed when authority ownership moves to membership classification and Users token fencing.",
+      "user_visible": false
+    },
+    "SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE": {
+      "guards": {
+        "browser_workflow_durable_history": {
+          "assertions": [
+            "The published baseline records its actual history schema and exact stacks. Updates preserve durable stacks; a baseline without persisted history starts empty after its first restart while saved definitions remain identical."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "browser_published_workflow_await_hub_ui_update": {
+          "assertions": [
+            "The published baseline records its actual history schema and exact stacks. Updates preserve durable stacks; a baseline without persisted history starts empty after its first restart while saved definitions remain identical."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The published baseline can already persist undo history, so an unconditional empty-history assertion rejects correct updates.",
       "user_visible": false
     }
   },

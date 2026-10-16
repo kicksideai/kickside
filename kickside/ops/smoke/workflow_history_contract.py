@@ -8,6 +8,11 @@ from scenarios_hot_update_work import database_rows
 
 
 def tracker(inst, workflow_id):
+    schema = ("SELECT table_name FROM information_schema.tables WHERE table_schema=current_schema() "
+              "AND table_name='workflow_undo_history'" if inst.engine == 'postgres' else
+              "SELECT name FROM sqlite_schema WHERE type='table' AND name='workflow_undo_history'")
+    if not database_rows(inst, schema):
+        return None
     rows = database_rows(inst, "SELECT tracker FROM workflow_undo_history WHERE workflow_id='" + workflow_id + "'")
     require(len(rows) <= 1, 'Workflow has duplicate history owners')
     return json.loads(rows[0]['tracker']) if rows else {'undo': [], 'redo': []}

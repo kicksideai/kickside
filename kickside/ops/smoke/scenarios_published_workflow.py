@@ -5,7 +5,7 @@ from urllib.parse import quote
 
 from harness import Scenario, require
 from scenarios import workflow
-from workflow_history_contract import durable_history
+from workflow_history_contract import durable_history, tracker
 from module_lifecycle_contract import update_source
 from scenarios_hot_update_work import database_rows, review_item, completed_workflow
 from scenarios_published_run_as import REGISTRY as PUBLISHED, browser_published_human_automation_update, install_source_through_hub_ui
@@ -107,6 +107,7 @@ def browser_published_workflow_await_hub_ui_update(ctx):
             wid, version = workflow(fixture, review=True)
             state.update(workflow=wid, version=version)
             state['definition'] = inst.request('GET', '/api/v1/workflows/' + wid + '/state')['state']
+            state['tracker'] = tracker(inst, wid)
             require(state['definition']['can_undo'] is True and state['definition']['can_redo'] is False,
                     'Published Workflow has no exact original in-memory history baseline')
             first = start(fixture, 'baseline')
@@ -120,11 +121,15 @@ def browser_published_workflow_await_hub_ui_update(ctx):
             require(rows(inst) == sorted(state['runs'].values(), key=lambda row: row['run_id']),
                     'Hub update rewrites or duplicates original Workflow identity, input or activation references')
             frame_policies(inst, phase)
-            expected = dict(state['definition'], can_undo=False, can_redo=False) if phase == 'restart' else state['definition']
+            expected = (dict(state['definition'], can_undo=False, can_redo=False)
+                        if phase == 'restart' and state['tracker'] is None else state['definition'])
             require(inst.request('GET', '/api/v1/workflows/' + state['workflow'] + '/state',
                                  label='published-workflow-definition-' + phase)['state'] == expected,
                     'Hub update changes the existing published Workflow definition or its authorized history boundary')
-            if phase in ('update', 'repeat'):
+            if state['tracker'] is not None:
+                require(tracker(inst, state['workflow']) == state['tracker'],
+                        'Hub update changes exact published Workflow history')
+            elif phase in ('update', 'repeat'):
                 require(not database_rows(inst, "SELECT workflow_id FROM workflow_undo_history WHERE workflow_id='" + state['workflow'] + "'"),
                         'First published transition invents unavailable in-memory Workflow history')
             for rid, completed in state['completed'].items():
@@ -161,4 +166,5 @@ REGISTRY = [Scenario('browser_published_workflow_await_hub_ui_update', 'regressi
     issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C07', 'BOT-PUBLISHED-WORKFLOW-AWAIT-CONTINUITY',
                                  'DATAFLOW-PUBLISHED-PROJECTED-POLICY-CONTINUITY',
                                  'WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',
-                                 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE'))]
+                                 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE',
+                                 'SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE'))]

@@ -49,4 +49,5 @@ def query_capability(ctx):
 
 
 REGISTRY = [Scenario('regression_kb_query_capability', 'regression', kb_query_capability,
-                     ('platform_onboarding',), issues=('KB10-ASK-CAPABILITY-SHADOW', 'SMOKE-PERSONAL-ONBOARDING-FIXTURE-LIFETIME',))]
+                     ('platform_onboarding',), issues=('KB10-ASK-CAPABILITY-SHADOW',
+                         'SMOKE-PERSONAL-ONBOARDING-FIXTURE-LIFETIME', 'EE2-2636'))]

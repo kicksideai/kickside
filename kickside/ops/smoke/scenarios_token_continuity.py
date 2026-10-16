@@ -212,7 +212,7 @@ def mcp_live_group_authorization(ctx):
 def delegated_membership_scopes(ctx):
     run_focused_module_test(ctx, MODULE, 'delegation_authority_test')
     run_focused_module_test(ctx, MODULE, 'users_directory_scope_resolution_test')
-    run_focused_module_test(ctx, MODULE, 'scope_reduction_boundary_test')
+    run_focused_module_test(ctx, MODULE, 'token_continuity_fencing_test')
 
 
 def disabled_webhook_principal(ctx):
@@ -249,7 +249,8 @@ def disabled_webhook_principal(ctx):
 
 REGISTRY = [
     Scenario('regression_delegated_membership_scopes', 'regression', delegated_membership_scopes,
-             issues=('USERS-DELEGATED-MEMBERSHIP-SCOPE-LOSS', 'USERS-REDUCTION-FENCE-FIXTURE-RACE', 'RA-H47')),
+             issues=('USERS-DELEGATED-MEMBERSHIP-SCOPE-LOSS', 'USERS-REDUCTION-FENCE-FIXTURE-RACE',
+                     'RA-H47', 'SMOKE-NATIVE-GUARD-SELECTIONS')),
     Scenario("regression_live_group_hub_policy_update", "regression", hub_policy_projection,
              ("boot",), issues=("SECURITY-LIVE-GROUP-HUB-POLICY-UPDATE",)),
     Scenario("regression_mcp_credential_live_groups", "regression", mcp_live_group_authorization,

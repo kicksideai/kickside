@@ -6392,7 +6392,7 @@
         "USERS-REDUCTION-FENCE-FIXTURE-RACE"
       ],
       "repository": "kickside/kickside",
-      "test": "platform/users/test/suites/scope_reduction_boundary_test.lua"
+      "test": "platform/users/test/suites/token_continuity_test.lua"
     },
     "run-as/RA-H48/users": {
       "engines": [
@@ -6677,7 +6677,7 @@
         "NE-32"
       ],
       "repository": "kickside/kickside",
-      "test": "platform/security/test/src/authority_native_failure_test.lua"
+      "test": "platform/security/test/src/membership_native_failure_test.lua"
     },
     "security/native-catalog-errors": {
       "engines": [
@@ -10384,7 +10384,11 @@
     "RELEASE-INSTALL-DEPENDENCY-PROVENANCE",
     "COMPAT-IDENTITY-UPLOADS-HOST-RESOURCES",
     "SECURITY-MEMBER-CATALOG-REGISTRY-AUTHORITY",
-    "SECURITY-RETIRED-SELECTION-SCOPE-CATALOG"
+    "SECURITY-RETIRED-SELECTION-SCOPE-CATALOG",
+    "SMOKE-FRESH-TEST-TYPE-LINT",
+    "SMOKE-HARNESS-TEMP-SOURCE-OWNERSHIP",
+    "SMOKE-NATIVE-GUARD-SELECTIONS",
+    "SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE"
   ],
   "schema_version": 1
 }

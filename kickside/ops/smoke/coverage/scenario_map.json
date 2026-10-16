@@ -6351,7 +6351,8 @@
         "BOT-PUBLISHED-WORKFLOW-AWAIT-CONTINUITY",
         "DATAFLOW-PUBLISHED-PROJECTED-POLICY-CONTINUITY",
         "WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY",
-        "WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE"
+        "WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE",
+        "SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE"
       ],
       "tier": "regression"
     },
@@ -6434,7 +6435,8 @@
     "browser_workflow_durable_history": {
       "features": [],
       "issues": [
-        "WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY"
+        "WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY",
+        "SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE"
       ],
       "tier": "regression"
     },
@@ -10410,7 +10412,8 @@
     "native_errors_security_authority": {
       "features": [],
       "issues": [
-        "NE-32"
+        "NE-32",
+        "SMOKE-NATIVE-GUARD-SELECTIONS"
       ],
       "tier": "regression"
     },
@@ -13286,7 +13289,8 @@
     "regression_core_test_types": {
       "features": [],
       "issues": [
-        "R5-T01"
+        "R5-T01",
+        "SMOKE-FRESH-TEST-TYPE-LINT"
       ],
       "tier": "regression"
     },
@@ -13330,7 +13334,8 @@
       "issues": [
         "USERS-DELEGATED-MEMBERSHIP-SCOPE-LOSS",
         "USERS-REDUCTION-FENCE-FIXTURE-RACE",
-        "RA-H47"
+        "RA-H47",
+        "SMOKE-NATIVE-GUARD-SELECTIONS"
       ],
       "tier": "regression"
     },
@@ -13528,14 +13533,16 @@
     "regression_jobs_native_errors": {
       "features": [],
       "issues": [
-        "NE-11"
+        "NE-11",
+        "SMOKE-FRESH-TEST-TYPE-LINT"
       ],
       "tier": "regression"
     },
     "regression_jobs_test_types": {
       "features": [],
       "issues": [
-        "R5-T02"
+        "R5-T02",
+        "SMOKE-FRESH-TEST-TYPE-LINT"
       ],
       "tier": "regression"
     },
@@ -13568,7 +13575,8 @@
       "features": [],
       "issues": [
         "KB10-ASK-CAPABILITY-SHADOW",
-        "SMOKE-PERSONAL-ONBOARDING-FIXTURE-LIFETIME"
+        "SMOKE-PERSONAL-ONBOARDING-FIXTURE-LIFETIME",
+        "EE2-2636"
       ],
       "tier": "regression"
     },
@@ -15072,7 +15080,8 @@
         "SMOKE-AUTHORITY-FIXTURE-ISOLATION",
         "SMOKE-INDEPENDENT-BROWSER-DRIVER-LIFETIME",
         "SMOKE-WORKER-CLEANUP-DEADLINE",
-        "SMOKE-NATIVE-CAPABILITY-RESULTS"
+        "SMOKE-NATIVE-CAPABILITY-RESULTS",
+        "SMOKE-HARNESS-TEMP-SOURCE-OWNERSHIP"
       ],
       "tier": "regression"
     },

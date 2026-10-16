@@ -18,7 +18,7 @@ def security_transport_errors(ctx):
 
 
 def security_authority_errors(ctx):
-    run_focused_module_test(ctx, 'kickside/security', 'authority_native_failure_test')
+    run_focused_module_test(ctx, 'kickside/security', 'membership_native_failure_test')
 
 
 def policy_authority_coverage(ctx):
@@ -43,7 +43,7 @@ REGISTRY = [
     Scenario('native_errors_security_transport', 'regression', security_transport_errors,
              issues=('NE-29', 'NE-30', 'NE-31', 'SMOKE-SECURITY-REGISTRY-FIXTURE-CONFLICT', 'SMOKE-SECURITY-FIXTURE-ENTRY-TYPING', 'SMOKE-SECURITY-FENCE-OBSERVATION', 'SECURITY-SCOPE-PROJECTION-LIVENESS')),
     Scenario('native_errors_security_authority', 'regression', security_authority_errors,
-             issues=('NE-32',)),
+             issues=('NE-32', 'SMOKE-NATIVE-GUARD-SELECTIONS')),
     Scenario('regression_scope_projector_native_upgrade', 'regression', scope_projector_upgrade,
              issues=('SECURITY-SCOPE-PROJECTOR-HOT-UPGRADE', 'SECURITY-NEW-MEMBER-HOT-LOGIN', 'SMOKE-SECURITY-REGISTRY-FIXTURE-CONFLICT')),
 ]

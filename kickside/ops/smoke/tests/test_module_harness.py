@@ -50,6 +50,23 @@ class Completed:
     stderr = ''
 
 
+class TestTypeHarnessTests(unittest.TestCase):
+    def test_type_checks_use_the_fresh_isolated_harness(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        import scenarios_test_types as guards
+
+        ctx = SimpleNamespace(inst=Mock(config={
+            'replace': {'module/fixture': '/unused/source'}, 'binary': '/bin/wippy'}))
+        with patch.object(guards, 'run_focused_module_test') as focused, \
+             patch('subprocess.run', return_value=Completed()) as direct:
+            guards.checked_test_types(ctx, 'module/fixture', ('first', 'second'))
+        self.assertFalse(direct.called, 'Type lint must use the refreshed harness copy')
+        self.assertEqual([call.args[2] for call in focused.call_args_list], ['first', 'second'])
+        self.assertEqual(sum(call.kwargs.get('lint', False)
+                             for call in focused.call_args_list), 1)
+
+
 def command_harness(command, kwargs):
     cwd = Path(kwargs['cwd'])
     return cwd / 'test' if command[0] == 'make' else cwd
@@ -59,7 +76,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_isolates_declared_sqlite_files_and_http_ports_for_every_focused_run(self):
         import yaml
         from module_harness import _write_config
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -79,7 +96,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_generated_postgres_profile_has_a_concrete_runtime_configuration(self):
         import yaml
         from module_harness import _write_config
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -92,7 +109,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
 
     def test_keeps_a_database_free_postgres_profile_free_of_sql_overrides(self):
         from module_harness import _write_config
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -107,7 +124,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
         import yaml
         from module_harness import _write_config
 
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             workspace = Path(directory)
@@ -134,7 +151,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
         from module_harness import _refresh_command
 
         instance = type('Instance', (), {'config': {'source': None}})()
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -146,7 +163,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
         from module_harness import _refresh_command
 
         instance = type('Instance', (), {'config': {'source': None}})()
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             module = Path(directory)
@@ -171,7 +188,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_refresh_uses_manifest_source_instead_of_stale_lock_source(self):
         from module_harness import _refresh_command
         instance = type('Instance', (), {'config': {'source': None}})()
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -183,7 +200,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_runs_only_the_named_test_with_fresh_lock_and_owned_postgres_databases(self):
         from module_harness import run_focused_module_test
 
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -243,10 +260,12 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_generates_configuration_only_in_the_disposable_copy(self):
         from module_harness import run_focused_app_test
 
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
+            self.assertFalse(root.is_relative_to(Path(__file__).resolve().parents[3]),
+                             'Harness fixtures must stay outside copied repository sources')
             declare_tests(root)
             instance = Instance(root / 'run', root / 'source')
             commands = []
@@ -268,7 +287,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
         from module_harness import run_focused_app_test
         import subprocess
 
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -296,7 +315,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_keeps_requested_replacements_for_the_disposable_run(self):
         from module_harness import run_focused_module_test
 
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -330,7 +349,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_native_refresh_discards_stale_absolute_replacement_locks(self):
         from module_harness import run_focused_module_test
 
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -367,7 +386,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_isolates_every_declared_database_and_profile_variable(self):
         from module_harness import run_focused_module_test
         import yaml
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -422,7 +441,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_rejects_unisolated_database_declarations_before_creation(self):
         from harness import Failure
         from module_harness import run_focused_module_test
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         for value in ('existing_shared', '${undeclared_database}'):
             with self.subTest(value=value), tempfile.TemporaryDirectory(dir=scratch) as directory:
@@ -445,7 +464,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_lint_failure_stops_execution_and_restores_owned_resources(self):
         from harness import Failure
         from module_harness import run_focused_module_test
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -469,7 +488,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
 
     def test_uses_the_repository_gate_for_a_named_suite_and_preserves_engine_selection(self):
         from module_harness import run_focused_module_suite
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -494,7 +513,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
 
     def test_repository_gate_runs_a_suite_declared_in_module_source(self):
         from module_harness import run_focused_module_suite
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -514,7 +533,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
     def test_repository_gate_resolves_the_module_under_test_from_its_isolated_copy(self):
         import yaml
         from module_harness import run_focused_module_suite
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             root = Path(directory)
@@ -554,7 +573,7 @@ class FocusedModuleHarnessTests(unittest.TestCase):
 
     def test_focused_commands_keep_replacement_sources_and_locks_unchanged(self):
         from module_harness import run_focused_module_test
-        scratch = Path(__file__).resolve().parent / '.module-harness-test-scratch'
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
             workspace = Path(directory)
