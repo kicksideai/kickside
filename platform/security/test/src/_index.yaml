@@ -701,7 +701,8 @@ entries:
     meta: {type: test, suite: kickside_security}
     source: file://member_scope_catalog_test.lua
     method: run
-    modules: [funcs, security]
+    modules: [funcs, security, registry]
     imports:
       test: wippy.test:test
       scope_store: kickside.security.persist:scope_store
+      scope_catalog: kickside.security.api:scope_catalog
