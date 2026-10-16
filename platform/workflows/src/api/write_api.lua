@@ -19,15 +19,14 @@ end
 
 local function write_error(res: any, err: any): ()
     local msg = error_message(err)
-    if msg:find("boundary_node_remove_refused", 1, true) then
-        local node_id = msg:match("node_id=([^%s]+)") or ""
-        local kind = msg:match("kind=([^%s]+)") or ""
+    local details = type(err) == "userdata" and err:details() or nil
+    if type(details) == "table" and details.reason == types.BOUNDARY_REMOVE_REFUSED then
         res:set_status(http.STATUS.BAD_REQUEST)
         res:write_json({
             success = false,
             error = "boundary_node_remove_refused",
             message = "Boundary nodes cannot be removed from a published workflow interface.",
-            details = { node_id = node_id, kind = kind },
+            details = { node_id = details.node_id, kind = details.kind },
         })
         return
     end

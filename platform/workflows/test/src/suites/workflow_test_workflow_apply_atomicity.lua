@@ -110,6 +110,34 @@ local function define_tests()
             test.is_false((start :: any).deletable)
         end)
 
+        test.it("reports a refused boundary removal as a structured invalid error", function()
+            local id = wid()
+            local _, aerr = workflow.apply(id, {
+                cmd(C.NODE_ADD, { id = "start", kind = "start", config = {
+                    input_schema = { type = "object", properties = { lead_id = { type = "string" } } },
+                } }),
+                cmd(C.NODE_ADD, { id = "finish", kind = "finish", config = {
+                    output_schema = { type = "object", properties = { score = { type = "number" } } },
+                } }),
+                cmd(C.NODE_ADD, { id = "score", kind = "block", ref = "app:block.engine_linear" }),
+                cmd(C.EDGE_ADD, { id = "e1", source_id = "start", source_port = "out", target_id = "score", target_port = "in" }),
+                cmd(C.EDGE_ADD, { id = "e2", source_id = "score", source_port = "result", target_id = "finish", target_port = "in" }),
+            }, "tester")
+            test.is_nil(aerr)
+            local published = select(1, version_publish.publish(id, "tester"))
+            test.is_true((published :: any).ok)
+
+            local _, err = workflow.apply(id, {
+                cmd(C.NODE_REMOVE, { id = "finish" }),
+            }, "tester")
+            test.not_nil(err)
+            test.eq((err :: any):kind(), errors.INVALID)
+            local details = (err :: any):details()
+            test.eq(details.reason, types.BOUNDARY_REMOVE_REFUSED)
+            test.eq(details.node_id, "finish")
+            test.eq(details.kind, "finish")
+        end)
+
         test.it("round-trips empty boundary schema properties as JSON objects", function()
             local id = wid()
             local _, err = workflow.apply(id, {
