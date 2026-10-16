@@ -153,9 +153,6 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
             createdb "$database"
             databases+=("$database")
-            database="${databases[0]}_mig"
-            createdb "$database"
-            databases+=("$database")
             database="${databases[0]}_transient"
             createdb "$database"
             databases+=("$database")
