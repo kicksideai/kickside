@@ -86,9 +86,9 @@ function M.expand(ids: any, get: ((string) -> (any?, any?))?): (any?, error?)
 end
 
 -- expand_available resolves the currently installed top-level contributors of a
--- registry-owned group composition. A removed module policy is absent from the
--- next projection pass; invalid present entries and missing transitive includes
--- remain errors.
+-- registry-owned group composition or a stored group selection. A policy that a
+-- module or application update removed is absent from the next projection pass;
+-- invalid present entries and missing transitive includes remain errors.
 function M.expand_available(ids: any, get: ((string) -> (any?, any?))?): (any?, error?)
     return walk(ids, get or registry.get, nil, false, true)
 end

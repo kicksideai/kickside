@@ -149,7 +149,7 @@ local function project(snap: any): (any, error?, any?)
     end
 
     for _, row in ipairs(rows :: { any }) do
-        local policies, policy_err = composition.expand((row :: any).policies, snapshot_get)
+        local policies, policy_err = composition.expand_available((row :: any).policies, snapshot_get)
         if policy_err then return nil, policy_err end
         local id = scope_entry_id(row)
         group_rows[id] = row
