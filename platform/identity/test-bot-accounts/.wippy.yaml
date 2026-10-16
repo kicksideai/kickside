@@ -55,7 +55,7 @@ workspace:
     kickside/webhooks: ../../webhooks
     kickside/widgets: ../../widgets
     kickside/workflows: ../../workflows
-    kickside/sso: ../../../sso
+    kickside/sso: ../../../../components/sso
     kickside/kickside: ../../../app
 vars:
   sqlite_path: ':memory:'

@@ -1,6 +1,7 @@
-"""PostgreSQL CI owns each stateful harness database."""
+"""Native harnesses resolve public inputs and own their CI databases."""
 from pathlib import Path
 import re
+import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,3 +27,20 @@ class PublicHarnessTests(unittest.TestCase):
                         self.assertIn('--set "vars.pg_database=${databases[0]}"', command)
             checked.append(module)
         self.assertTrue(checked, 'CI must exercise stateful PostgreSQL harnesses')
+
+    def test_workspace_replacements_resolve_from_public_sources(self):
+        paths = subprocess.check_output(['git', 'ls-files', '**/.wippy.yaml', '**/wippy.yaml'],
+                                        cwd=ROOT, text=True).splitlines()
+        checked = []
+        for path in paths:
+            config = ROOT / path
+            workspace = re.search(r'(?m)^workspace:\n  replacements:\n((?:[ \t]+[^\n]*\n|\n)*)',
+                                  config.read_text())
+            if workspace is None:
+                continue
+            for target in re.findall(r'(?m)^    [^#\s][^:]*: (.+)$', workspace[1]):
+                directory = config.parent / target.strip().strip("\"'")
+                with self.subTest(config=path, replacement=target):
+                    self.assertTrue(directory.is_dir(), 'Replacement must resolve from public sources')
+                checked.append(directory)
+        self.assertTrue(checked, 'Harness configurations must exercise local source replacements')
