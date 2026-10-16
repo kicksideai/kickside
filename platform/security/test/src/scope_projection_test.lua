@@ -625,6 +625,45 @@ local function define_tests()
             if not ok then error(failure) end
         end)
 
+        test.it("keeps projecting a stored group whose selected policy an update retired", function()
+            local slug = "retired_selection_group"
+            local retired_id = "app:retired_selection_before"
+            local kept_id = "app:retired_selection_kept"
+            local retired_resource = "app:retired.selection.before"
+            local kept_resource = "app:retired.selection.kept"
+            local sid = consts.CUSTOM_SCOPE_NS .. ":" .. slug
+            local ok, failure = pcall(function()
+                local changes = assert(registry.snapshot()):changes()
+                changes:create({id = retired_id, kind = "security.policy",
+                    data = {policy = {actions = "access", resources = retired_resource, effect = "allow"}}})
+                changes:create({id = kept_id, kind = "security.policy",
+                    data = {policy = {actions = "access", resources = kept_resource, effect = "allow"}}})
+                test.is_nil(select(2, changes:apply()))
+                test.not_nil((store.upsert({slug = slug, policies = {retired_id, kept_id}}, "tester")))
+                test.is_nil(select(2, projection.reconcile()))
+
+                changes = assert(registry.snapshot()):changes()
+                changes:delete(retired_id)
+                test.is_nil(select(2, changes:apply()))
+                local result, reconcile_err = projection.reconcile()
+                test.is_nil(reconcile_err)
+                test.not_nil(result)
+                local scope = assert(security.named_scope(sid))
+                local actor = security.new_actor("retired_selection_member")
+                test.eq(scope:evaluate(actor, "access", retired_resource), "undefined")
+                test.eq(scope:evaluate(actor, "access", kept_resource), "allow")
+                test.eq(table.concat(assert(store.get(slug)).policies, ","), retired_id .. "," .. kept_id)
+            end)
+            store.delete(slug)
+            local changes = assert(registry.snapshot()):changes()
+            for _, id in ipairs({retired_id, kept_id}) do
+                if registry.get(id) then changes:delete(id) end
+            end
+            test.is_nil(select(2, changes:apply()))
+            test.is_nil(select(2, projection.reconcile()))
+            if not ok then error(failure) end
+        end)
+
         test.it("projects a selected module policy with its declared companion grants", function()
             local slug = "projection_module_access"
             local row, save_err = store.upsert({ slug = slug, policies = { "app:module_access" } }, "tester")
