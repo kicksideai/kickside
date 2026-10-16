@@ -75,3 +75,17 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 21_retire_upload_intent_slot
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-16T00:00:21Z"
+    source: file://21_retire_upload_intent_slot.lua
+    modules: [sql]
+    imports:
+      migration: wippy.migration:migration
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    method: migrate

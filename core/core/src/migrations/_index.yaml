@@ -138,3 +138,17 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 11_bind_legacy_natural_keys
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-16T00:00:11Z"
+    source: file://11_bind_legacy_natural_keys.lua
+    modules: [sql]
+    imports:
+      migration: wippy.migration:migration
+      natural_key: kickside.core.threads.persist:natural_key
+    method: migrate

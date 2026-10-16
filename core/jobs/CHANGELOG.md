@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.58 (2026-10-16)
+
+- Cancel retired upload intent maintenance slots during boot migrations while preserving processing jobs and run history.
+
 ## 0.1.56 (2026-10-14)
 
 - Measure unclaimed due work against the claim candidate cutoff and retain errors for work that remains unclaimed.

@@ -29,6 +29,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:20_dispatch_requests
         path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:21_retire_upload_intent_slot
+        path: .meta.target_db
       - entry: kickside.core.jobs:db_config
         path: .meta.db_id
 

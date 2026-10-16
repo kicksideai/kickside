@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-10-16)
+
+- Preserve database errors when reporting unverifiable thread keys.
+
+- Bind verified legacy thread natural keys during boot migrations and report unverifiable rows without changing them.
+
 ## 0.2.2 (2026-10-09)
 
 - Retain projection control failure kinds and native cause metadata.

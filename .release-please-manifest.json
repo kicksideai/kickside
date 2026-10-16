@@ -1,9 +1,9 @@
 {
   "core/component": "0.3.0",
   "core/contract": "0.3.0",
-  "core/core": "0.3.0",
+  "core/core": "0.3.1",
   "core/execution": "0.2.4",
-  "core/jobs": "0.1.57",
+  "core/jobs": "0.1.58",
   "platform/agents": "0.2.0",
   "platform/automation": "0.1.129",
   "platform/blocks": "0.1.38",
