@@ -119,6 +119,7 @@ local function write_attempt(workflow_id: string, items: any, actor: any, from_c
     local events, verr = workflow_state.pipeline(items, pre_state, from_commands,
         { command_bytes = runtime_policy.command_bytes })
     if verr then
+        if type(verr) ~= "string" then return abort(verr) end
         return abort(errors.new({ message = verr, kind = errors.INVALID, retryable = false,
             details = { reason = "invalid_command_batch" } }))
     end
