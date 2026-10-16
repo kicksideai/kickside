@@ -24,7 +24,20 @@ entries:
     meta: { comment: "kickside.contract:security_scopes — list." }
     source: file://list_scopes_func.lua
     method: list
-    modules: [security]
+    modules: [security, funcs]
+    imports:
+      scope_catalog: kickside.security.api:scope_catalog
+  - name: read_assignable_scopes
+    kind: function.lua
+    meta:
+      private: true
+      comment: Non-internal scope catalog read under Security's registry and database authority.
+    source: file://read_assignable_scopes.lua
+    method: read
+    security:
+      policies:
+      - kickside.security.service:group_set_registry_read
+      - kickside.security.service:group_set_db
     imports:
       scope_catalog: kickside.security.api:scope_catalog
 

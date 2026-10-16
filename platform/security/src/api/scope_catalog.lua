@@ -82,14 +82,20 @@ local function role_descriptors(): (any?, error?)
     return by_id
 end
 
-local function resolve_policies(ids: any, by_id: { [string]: stypes.PolicySummary }): ({ stypes.PolicySummary }?, error?)
+-- resolve_policies summarizes a scope's policies. A stored selection (stored)
+-- lists only the policies still installed, the rule its projection applies; a
+-- registry-declared scope names policies that must exist.
+local function resolve_policies(ids: any, by_id: { [string]: stypes.PolicySummary }, stored: boolean): ({ stypes.PolicySummary }?, error?)
     local out: { stypes.PolicySummary } = {}
     if type(ids) ~= "table" then return out end
     for _, pid in ipairs(ids) do
         local s = by_id[tostring(pid)]
-        if not s then return nil, (errors.new({kind = errors.NOT_FOUND, retryable = false,
-            message = "policy unavailable: " .. tostring(pid)}) :: error) end
-        out[#out + 1] = s
+        if s then
+            out[#out + 1] = s
+        elseif not stored then
+            return nil, (errors.new({kind = errors.NOT_FOUND, retryable = false,
+                message = "policy unavailable: " .. tostring(pid)}) :: error)
+        end
     end
     return out
 end
@@ -114,12 +120,12 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     local function emit(scope: any): (boolean?, error?)
         if scope.internal and not include_internal then return true, nil end
         if seen[scope.id] then return true, nil end
-        local policies, policy_err = resolve_policies(scope.policies, by_id)
+        local policies, policy_err = resolve_policies(scope.policies, by_id, scope.source == consts.SOURCE.CUSTOM)
         if policy_err then return nil, policy_err end
         scope.policies = policies
         local overlay = overlays_by_target[scope.id]
         if overlay then
-            local overlay_policies, overlay_err = resolve_policies(overlay.policies, by_id)
+            local overlay_policies, overlay_err = resolve_policies(overlay.policies, by_id, true)
             if overlay_err then return nil, overlay_err end
             scope.overlay_policies = overlay_policies
             scope.overlay_slug = overlay.slug
