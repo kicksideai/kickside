@@ -38,7 +38,7 @@ entries:
     meta:
       comment: Shared database lookup and credential hashing functions for user repositories.
     source: file://user_repo_support.lua
-    modules: [sql, crypto]
+    modules: [sql, crypto, hash]
     imports:
       user_consts: kickside.users:consts
 

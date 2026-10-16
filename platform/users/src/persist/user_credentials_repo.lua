@@ -27,7 +27,7 @@ function M.verify_password(identifier, password)
         if timing_err then return false, timing_err end
         return false, eligibility_err
     end
-    local is_valid, cerr = check_password(tostring(user.password_hash), password)
+    local is_valid, cerr, needs_upgrade = check_password(tostring(user.password_hash), password)
     if cerr then
         return false, cerr
     end
@@ -35,6 +35,22 @@ function M.verify_password(identifier, password)
         return false, consts.ERROR.INVALID_PASSWORD
     end
 
+    if needs_upgrade then
+        local replacement, hash_err = hash_password(password)
+        if hash_err then return false, hash_err end
+        local db, db_err = get_db()
+        if db_err then return false, db_err end
+        local changed, change_err = sql.builder.update("app_users")
+            :where("user_id = ? AND password_hash = ? AND auth_generation = ? AND NOT " .. support.BOT_ACCOUNT_PREDICATE,
+                user.user_id, user.password_hash, tonumber(user.auth_generation) or 0)
+            :set("password_hash", replacement)
+            :set("updated_at", time.now():utc():format_rfc3339())
+            :run_with(db):exec()
+        db:release()
+        if change_err then return false, change_err end
+        if not changed or changed.rows_affected ~= 1 then return false, consts.ERROR.INVALID_PASSWORD end
+        user.password_hash = replacement
+    end
     return true, user
 end
 
