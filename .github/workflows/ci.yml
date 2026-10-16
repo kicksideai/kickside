@@ -153,6 +153,12 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
             createdb "$database"
             databases+=("$database")
+            database="${databases[0]}_mig"
+            createdb "$database"
+            databases+=("$database")
+            database="${databases[0]}_transient"
+            createdb "$database"
+            databases+=("$database")
             wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
@@ -1375,6 +1381,9 @@ jobs:
             cleanup_databases() { for database in "${databases[@]}"; do dropdb "$database"; done; }
             trap cleanup_databases EXIT
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
+            createdb "$database"
+            databases+=("$database")
+            database="${databases[0]}_mig"
             createdb "$database"
             databases+=("$database")
             wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
