@@ -26,7 +26,7 @@ end
 
 function M.conflict(reason: string): error
     return (errors.new({ message = "thread natural key integrity conflict: " .. reason,
-        kind = errors.CONFLICT, details = { reason = reason } }) :: error)
+        kind = errors.CONFLICT, details = { code = "thread_natural_key_integrity", reason = reason } }) :: error)
 end
 
 local function persistence_error(cause: error): error
@@ -105,7 +105,10 @@ function M.adopt_legacy(tx: any, dbtype: string, id: string): (table?, error?)
     if verified.reason then return {bound=false,reason=verified.reason}, nil end
     local existing, lookup_err = M.lookup(tx,dbtype,key)
     if lookup_err then
-        if errors.is(lookup_err,errors.CONFLICT) then return {bound=false,reason=lookup_err:details().reason}, nil end
+        local details = lookup_err:details()
+        if errors.is(lookup_err,errors.CONFLICT) and details and details.code == "thread_natural_key_integrity" then
+            return {bound=false,reason=details.reason}, nil
+        end
         return nil, lookup_err
     end
     if existing and tostring(existing.thread_id) ~= tostring(row.id) then

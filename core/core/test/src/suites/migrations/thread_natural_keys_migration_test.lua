@@ -15,6 +15,27 @@ end
 
 return test.run_cases(function()
     test.describe("legacy natural key boot migration", function()
+        test.it("propagates SQL conflicts instead of reporting a data refusal", function()
+            local key = natural.key("legacy", "database-conflict")
+            local id = natural.legacy_id(key)
+            local cause = errors.new({message="database query conflict",kind=errors.CONFLICT,
+                retryable=false,details={code="test_sql_conflict",reason="database_conflict"}})
+            local calls = 0
+            local executor = {query=function()
+                calls = calls + 1
+                if calls == 1 then
+                    return {{id=id,component_id=id,backing_id=id,thread_class=key.class,
+                        attrs=json.encode({external_ref=key.ref})}}, nil
+                end
+                return nil, cause
+            end}
+            local adopted, err = natural.adopt_legacy(executor,"sqlite",id)
+            test.is_nil(adopted)
+            test.is_true(errors.is(err,errors.CONFLICT))
+            test.eq(err:details().code,"test_sql_conflict")
+            test.eq(err:details().reason,"database_conflict")
+            test.eq(calls,2)
+        end)
         test.it("binds verified published rows, preserves data, reports refusals and replays safely", function()
             scratch.reset()
             scratch.migrate("kickside.core.migration_tests:legacy_thread_schema")
