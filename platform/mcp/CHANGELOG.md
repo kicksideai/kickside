@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5 (2026-10-16)
+
+- Revoke active credentials that capture retired policy restrictions while preserving their authority and audit data.
+
 ## 0.2.1 (2026-10-09)
 
 - fix(mcp): retain issuing authority and revoke reduced delegations (fd9953e90)

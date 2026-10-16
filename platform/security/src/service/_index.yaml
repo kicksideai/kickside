@@ -105,7 +105,8 @@ entries:
         groups:
           - kickside.security.service:scope_projection_writer
 
-  # A login reads its projected group set without a projection pass.
+  # Security reads registry entries independent of the caller's registry access:
+  # a login reads its projected group set, and the assignable catalog reads policies.
   - name: group_set_registry_read
     kind: security.policy
     meta: {private: true, service_only: true}

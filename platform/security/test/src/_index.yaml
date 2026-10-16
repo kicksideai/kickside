@@ -688,3 +688,21 @@ entries:
       registry_fixture: app:security_dependency_fixture
       projection: app:projection_registry_probe
       policy_groups: kickside.security.service:policy_groups
+
+  - name: member_catalog_caller
+    kind: security.policy
+    meta: {comment: A member reaches the Security catalog binding and its own Security entries but no other module's policies.}
+    policy:
+      actions: [funcs.call, registry.get, registry.find, db.get]
+      resources: [kickside.security:*, kickside.security.*, app:db]
+      effect: allow
+  - name: member_scope_catalog_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://member_scope_catalog_test.lua
+    method: run
+    modules: [funcs, security, registry]
+    imports:
+      test: wippy.test:test
+      scope_store: kickside.security.persist:scope_store
+      scope_catalog: kickside.security.api:scope_catalog

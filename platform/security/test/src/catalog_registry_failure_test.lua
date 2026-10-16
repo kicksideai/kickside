@@ -29,24 +29,52 @@ local function define_tests()
                 end)
             end
         end
-        for _, source in ipairs({"custom", "registry"}) do
-            test.it("rejects an unavailable policy in a " .. source .. " scope", function()
+        test.it("rejects an unavailable policy in a registry scope", function()
+            local original_find, original_list = registry.find, scopes.list
+            registry.find = function(filter)
+                if filter[".kind"] == "security.scope" then
+                    return {{id = "app:missing_policy_scope", data = {policies = {"app:unavailable_policy"}}}}, nil
+                end
+                return {}, nil
+            end
+            scopes.list = function() return {}, nil end
+            local ok, failure = pcall(function()
+                local result, err = catalog.scopes()
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.NOT_FOUND))
+            end)
+            registry.find, scopes.list = original_find, original_list
+            if not ok then error(failure) end
+        end)
+        for _, target in ipairs({"", "app.security:user"}) do
+            test.it("lists a stored selection over available policies with target '" .. target .. "'", function()
                 local original_find, original_list = registry.find, scopes.list
                 registry.find = function(filter)
-                    if source == "registry" and filter[".kind"] == "security.scope" then
-                        return {{id = "app:missing_policy_scope", data = {policies = {"app:unavailable_policy"}}}}, nil
+                    if filter[".kind"] == "security.policy" then
+                        return {{id = "app:available_policy", data = {groups = {"app.security:user"},
+                            policy = {actions = "access", resources = "app:available", effect = "allow"}}}}, nil
+                    end
+                    if filter[".kind"] == "registry.entry" then
+                        return {{id = "app:role_user", data = {role_id = "app.security:user"}}}, nil
                     end
                     return {}, nil
                 end
                 scopes.list = function()
-                    if source == "custom" then return {{slug = "missing_policy_scope", label = "", description = "",
-                        target = "", policies = {"app:unavailable_policy"}, enabled = true}}, nil end
-                    return {}, nil
+                    return {{slug = "missing_policy_scope", label = "", description = "", target = target,
+                        policies = {"app:unavailable_policy", "app:available_policy"}, enabled = true}}, nil
                 end
                 local ok, failure = pcall(function()
                     local result, err = catalog.scopes()
-                    test.is_nil(result)
-                    test.is_true(errors.is(err, errors.NOT_FOUND))
+                    test.is_nil(err)
+                    local listed
+                    for _, scope in ipairs(result or {}) do
+                        if scope.id == (target == "" and "kickside.security.scopes:missing_policy_scope" or target) then
+                            listed = target == "" and scope.policies or scope.overlay_policies
+                        end
+                    end
+                    test.not_nil(listed)
+                    test.eq(#listed, 1)
+                    test.eq(listed[1].id, "app:available_policy")
                 end)
                 registry.find, scopes.list = original_find, original_list
                 if not ok then error(failure) end

@@ -657,6 +657,7 @@ entries:
       policies: ["app:test_runtime"]
     imports:
       test: wippy.test:test
+      user_repo_support: kickside.users.persist:user_repo_support
       user_repo: kickside.users.persist:user_repo
       user_credentials_repo: kickside.users.persist:user_credentials_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo

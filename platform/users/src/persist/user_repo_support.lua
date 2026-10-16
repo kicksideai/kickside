@@ -1,6 +1,7 @@
 -- Shared database lookup and credential primitives for user persistence owners.
 local sql = require("sql")
 local crypto = require("crypto")
+local hash = require("hash")
 local consts = require("user_consts")
 local M = {}
 M.BOT_ACCOUNT_PREDICATE = "EXISTS (SELECT 1 FROM app_user_bot_accounts WHERE app_user_bot_accounts.user_id = app_users.user_id)"
@@ -74,9 +75,11 @@ local PBK2_ITERS = 210000        -- OWASP guidance for PBKDF2-HMAC-SHA512
 local PBK2_KEYLEN = 64           -- bytes; full SHA-512 output width
 local PBK2_HASH = "sha512"
 local PBK2_MAX_STORED_ITERS = 1000000
+local PBK1_PREFIX = "pbk1"
+local PBK1_MAX_STORED_ITERS = 4096
 local SALT_CHARSET = "0123456789abcdef"
 -- Fixed salt used only to burn KDF time for accounts that do not exist or whose
--- retired hash rejected the candidate. It is never stored or compared.
+-- unrecognized hash rejects the candidate. It is never stored or compared.
 local ABSENT_ACCOUNT_SALT = "00000000000000000000000000000000"
 
 -- crypto.pbkdf2 returns raw bytes; the stored format is hex, so encode before use.
@@ -104,22 +107,51 @@ local function hash_password(password: string)
     return PBK2_PREFIX .. "$" .. tostring(PBK2_ITERS) .. "$" .. salt .. "$" .. derived
 end
 
+-- Retired home-rolled HMAC chain, retained solely to upgrade existing users.
+local function derive_pbk1(password: string, salt: string, iters: number): (string?, string?)
+    local derived, err = hash.hmac_sha512(password, salt)
+    if err or not derived then return nil, "hmac failed: " .. tostring(err) end
+    for _ = 2, iters do
+        derived, err = hash.hmac_sha512(derived, salt)
+        if err or not derived then return nil, "hmac failed: " .. tostring(err) end
+    end
+    return derived, nil
+end
+
 local function rejection_cost_error(password: string): any?
     local _, err = derive_pbk2(password, ABSENT_ACCOUNT_SALT, PBK2_ITERS)
     return err
 end
 
-local function check_password(stored: string, password: string): (boolean, any?)
-    local iters_s, salt, expected = stored:match("^pbk2%$(%d+)%$(%x+)%$(%x+)$")
-    local iters = tonumber(iters_s)
-    if not iters or iters < 1 or iters > PBK2_MAX_STORED_ITERS or not salt or not expected or #expected ~= 128 then
-        return false, rejection_cost_error(password)
+-- Keep (valid, error) stable; callers that upgrade credentials consume the third result.
+local function check_password(stored: string, password: string): (boolean, any?, boolean)
+    local scheme, iters_s, salt, expected = stored:match("^(pbk%w+)%$(%d+)%$(%x+)%$(%x+)$")
+    if not scheme or not salt or not expected or #expected ~= 128 then
+        return false, rejection_cost_error(password), false
     end
-    local derived, err = derive_pbk2(password, salt, iters)
-    if err then return false, err end
-    local valid = crypto.constant_time_compare(expected, derived)
-    if iters < PBK2_ITERS and not valid then return false, rejection_cost_error(password) end
-    return valid, nil
+    local iters = tonumber(iters_s)
+    if not iters or iters < 1 then return false, rejection_cost_error(password), false end
+
+    if scheme == PBK2_PREFIX then
+        if iters > PBK2_MAX_STORED_ITERS then return false, rejection_cost_error(password), false end
+        local derived, err = derive_pbk2(password, salt, iters)
+        if err then return false, err, false end
+        local valid = crypto.constant_time_compare(expected, derived)
+        local stale = iters < PBK2_ITERS
+        if stale and not valid then return false, rejection_cost_error(password), false end
+        return valid, nil, valid and stale
+    end
+
+    if scheme == PBK1_PREFIX then
+        if iters > PBK1_MAX_STORED_ITERS then return false, rejection_cost_error(password), false end
+        local derived, err = derive_pbk1(password, salt, iters)
+        if err then return false, err, false end
+        if not crypto.constant_time_compare(expected, derived) then
+            return false, rejection_cost_error(password), false
+        end
+        return true, nil, true
+    end
+    return false, rejection_cost_error(password), false
 end
 
 -- Spend the same derivation cost a real verification would, so an unauthenticated

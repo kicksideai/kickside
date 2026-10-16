@@ -7,6 +7,15 @@ namespace: app
 # suite (src/persist/repo_test.lua) loads via directories.src=../src.
 
 entries:
+  - name: policy_retirement_upgrade_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_mcp}
+    source: file://policy_retirement_upgrade_test.lua
+    method: run
+    modules: [sql, json, funcs, uuid, security]
+    imports:
+      test: wippy.test:test
+      mcp_repo: kickside.mcp.persist:repo
   - name: dep.wippy.test
     kind: ns.dependency
     component: wippy/test

@@ -55,6 +55,8 @@ entries:
       comment: SQL database resource backing the MCP credential tables.
       description: SQL database resource backing the MCP credential tables.
     targets:
+      - entry: kickside.mcp.migrations:05_retired_policy_credentials
+        path: .meta.target_db
       - entry: kickside.mcp.migrations:04_authority_snapshot
         path: .meta.target_db
       - entry: kickside.mcp.migrations:01_mcp_credentials

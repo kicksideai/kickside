@@ -255,7 +255,7 @@ local function known_node_kind(allowed: any, kind: any): boolean
     return type(kind) == "string" and type(allowed) == "table" and allowed[kind] == true
 end
 
-function M.validate_command(state: any, etype: string, p: any, allowed_kinds: any?): string?
+function M.validate_command(state: any, etype: string, p: any, allowed_kinds: any?): any?
     state = seed(state)
     p = type(p) == "table" and p or {}
     local kinds = type(allowed_kinds) == "table" and allowed_kinds or allowed_node_kinds()
@@ -292,7 +292,12 @@ function M.validate_command(state: any, etype: string, p: any, allowed_kinds: an
         local node = state.nodes[tostring(p.id or "")]
         local kind = type(node) == "table" and tostring((node :: any).kind or "") or ""
         if state._published_interface == true and types.BOUNDARY_NODE_KINDS[kind] then
-            return types.BOUNDARY_REMOVE_REFUSED .. " node_id=" .. tostring(p.id) .. " kind=" .. kind
+            return errors.new({
+                message = types.BOUNDARY_REMOVE_REFUSED .. " node_id=" .. tostring(p.id) .. " kind=" .. kind,
+                kind = errors.INVALID,
+                retryable = false,
+                details = { reason = types.BOUNDARY_REMOVE_REFUSED, node_id = tostring(p.id), kind = kind },
+            })
         end
     elseif etype == E.EDGE_ADDED then
         if not is_str(p.id) then return "edge id required" end
@@ -413,7 +418,7 @@ end
 -- events, generates ids for adds that omit one, dedups removes, validates each
 -- event against the accumulating state, and folds it so later items see it. Any
 -- validation error aborts the whole batch.
-local function pipeline(items: any, state: any, from_commands: boolean, opts: any?): (any?, string?)
+local function pipeline(items: any, state: any, from_commands: boolean, opts: any?): (any?, any?)
     local working = seed(copy_tree(state))
     local kinds = allowed_node_kinds()
     local out: { any } = {}
@@ -472,6 +477,7 @@ local function pipeline(items: any, state: any, from_commands: boolean, opts: an
             -- deduped: contributes no event
         else
             local err = M.validate_command(working, etype, body, kinds)
+            if err and type(err) ~= "string" then return nil, err end
             if err then
                 return nil, "invalid workflow command at [" .. tostring(i) .. "] (" .. path .. ", " .. raw_type .. "): "
                     .. err .. "; " .. correction_hint(err)
@@ -485,7 +491,7 @@ end
 
 -- validate_and_fold(state, commands) -> (folded_state, err). Test/authoring helper:
 -- folds a command batch onto a copy of state, honoring the full batch pipeline.
-function M.validate_and_fold(state: any, commands: any, opts: any?): (any?, string?)
+function M.validate_and_fold(state: any, commands: any, opts: any?): (any?, any?)
     local events, err = pipeline(commands, state, true, opts)
     if err then return nil, err end
     local folded = seed(copy_tree(state))
