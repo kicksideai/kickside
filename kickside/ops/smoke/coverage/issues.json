@@ -1,5 +1,11 @@
 {
   "harness_guards": {
+    "research/host-bindings": {
+      "engines": ["sqlite", "postgres"],
+      "issues": ["HARNESS-TRANSITIVE-HOST-BINDINGS"],
+      "repository": "kickside/components",
+      "test": "research/test/src/host_bindings_test.lua"
+    },
     "agents/admitted-invoke": {
       "engines": [
         "sqlite",
@@ -9396,6 +9402,7 @@
     }
   },
   "issues": [
+    "HARNESS-TRANSITIVE-HOST-BINDINGS",
     "PROVIDER-OAUTH-DELETE-CLEANUP",
     "PROVIDER-BRAND-HUB-PLAN-CONFLICT",
     "PROVIDER-DECLARED-BRAND-ICONS",

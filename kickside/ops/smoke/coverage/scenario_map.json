@@ -14358,6 +14358,13 @@
       ],
       "tier": "regression"
     },
+    "research_host_bindings": {
+      "features": [],
+      "issues": [
+        "HARNESS-TRANSITIVE-HOST-BINDINGS"
+      ],
+      "tier": "regression"
+    },
     "research_structured_report": {
       "features": [],
       "issues": [
