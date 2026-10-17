@@ -870,21 +870,21 @@ var q = { regex: { rules: { class: { pattern: /^\.([a-zA-Z][\w-]*)$/, resolve(e)
   return zo(e, { prefix: t?.prefix });
 }, getCommon({ name: e = "", theme: t = {}, params: r, set: o, defaults: n }) {
   var i, a, l, s, c, p, u;
-  let { preset: d, options: h } = t, b, w, m, x, y, _, f;
+  let { preset: d, options: h } = t, b, w, m, x, y, _, v;
   if (N(d) && h.transform !== "strict") {
-    let { primitive: O, semantic: k, extend: T } = d, V = k || {}, { colorScheme: G } = V, ee = ne(V, ["colorScheme"]), J = T || {}, { colorScheme: Q } = J, te = ne(J, ["colorScheme"]), j = G || {}, { dark: re } = j, se = ne(j, ["dark"]), B = Q || {}, { dark: le } = B, ce = ne(B, ["dark"]), F = N(O) ? this._toVariables({ primitive: O }, h) : {}, D = N(ee) ? this._toVariables({ semantic: ee }, h) : {}, Z = N(se) ? this._toVariables({ light: se }, h) : {}, ye = N(re) ? this._toVariables({ dark: re }, h) : {}, oe = N(te) ? this._toVariables({ semantic: te }, h) : {}, Ne = N(ce) ? this._toVariables({ light: ce }, h) : {}, Re = N(le) ? this._toVariables({ dark: le }, h) : {}, [Ke, Ye] = [(i = F.declarations) != null ? i : "", F.tokens], [Ge, Je] = [(a = D.declarations) != null ? a : "", D.tokens || []], [Qe, Ze] = [(l = Z.declarations) != null ? l : "", Z.tokens || []], [Xe, et] = [(s = ye.declarations) != null ? s : "", ye.tokens || []], [v, $] = [(c = oe.declarations) != null ? c : "", oe.tokens || []], [pe, ue] = [(p = Ne.declarations) != null ? p : "", Ne.tokens || []], [W, Se] = [(u = Re.declarations) != null ? u : "", Re.tokens || []];
+    let { primitive: O, semantic: k, extend: T } = d, V = k || {}, { colorScheme: G } = V, ee = ne(V, ["colorScheme"]), J = T || {}, { colorScheme: Q } = J, te = ne(J, ["colorScheme"]), j = G || {}, { dark: re } = j, se = ne(j, ["dark"]), B = Q || {}, { dark: le } = B, ce = ne(B, ["dark"]), F = N(O) ? this._toVariables({ primitive: O }, h) : {}, D = N(ee) ? this._toVariables({ semantic: ee }, h) : {}, Z = N(se) ? this._toVariables({ light: se }, h) : {}, ye = N(re) ? this._toVariables({ dark: re }, h) : {}, oe = N(te) ? this._toVariables({ semantic: te }, h) : {}, Ne = N(ce) ? this._toVariables({ light: ce }, h) : {}, Re = N(le) ? this._toVariables({ dark: le }, h) : {}, [Ke, Ye] = [(i = F.declarations) != null ? i : "", F.tokens], [Ge, Je] = [(a = D.declarations) != null ? a : "", D.tokens || []], [Qe, Ze] = [(l = Z.declarations) != null ? l : "", Z.tokens || []], [Xe, et] = [(s = ye.declarations) != null ? s : "", ye.tokens || []], [f, $] = [(c = oe.declarations) != null ? c : "", oe.tokens || []], [pe, ue] = [(p = Ne.declarations) != null ? p : "", Ne.tokens || []], [W, Se] = [(u = Re.declarations) != null ? u : "", Re.tokens || []];
     b = this.transformCSS(e, Ke, "light", "variable", h, o, n), w = Ye;
     let je = this.transformCSS(e, `${Ge}${Qe}`, "light", "variable", h, o, n), tt = this.transformCSS(e, `${Xe}`, "dark", "variable", h, o, n);
     m = `${je}${tt}`, x = [.../* @__PURE__ */ new Set([...Je, ...Ze, ...et])];
-    let U = this.transformCSS(e, `${v}${pe}color-scheme:light`, "light", "variable", h, o, n), rt = this.transformCSS(e, `${W}color-scheme:dark`, "dark", "variable", h, o, n);
-    y = `${U}${rt}`, _ = [.../* @__PURE__ */ new Set([...$, ...ue, ...Se])], f = X(d.css, { dt: ve });
+    let U = this.transformCSS(e, `${f}${pe}color-scheme:light`, "light", "variable", h, o, n), rt = this.transformCSS(e, `${W}color-scheme:dark`, "dark", "variable", h, o, n);
+    y = `${U}${rt}`, _ = [.../* @__PURE__ */ new Set([...$, ...ue, ...Se])], v = X(d.css, { dt: ve });
   }
-  return { primitive: { css: b, tokens: w }, semantic: { css: m, tokens: x }, global: { css: y, tokens: _ }, style: f };
+  return { primitive: { css: b, tokens: w }, semantic: { css: m, tokens: x }, global: { css: y, tokens: _ }, style: v };
 }, getPreset({ name: e = "", preset: t = {}, options: r, params: o, set: n, defaults: i, selector: a }) {
   var l, s, c;
   let p, u, d;
   if (N(t) && r.transform !== "strict") {
-    let h = e.replace("-directive", ""), b = t, { colorScheme: w, extend: m, css: x } = b, y = ne(b, ["colorScheme", "extend", "css"]), _ = m || {}, { colorScheme: f } = _, O = ne(_, ["colorScheme"]), k = w || {}, { dark: T } = k, V = ne(k, ["dark"]), G = f || {}, { dark: ee } = G, J = ne(G, ["dark"]), Q = N(y) ? this._toVariables({ [h]: Y(Y({}, y), O) }, r) : {}, te = N(V) ? this._toVariables({ [h]: Y(Y({}, V), J) }, r) : {}, j = N(T) ? this._toVariables({ [h]: Y(Y({}, T), ee) }, r) : {}, [re, se] = [(l = Q.declarations) != null ? l : "", Q.tokens || []], [B, le] = [(s = te.declarations) != null ? s : "", te.tokens || []], [ce, F] = [(c = j.declarations) != null ? c : "", j.tokens || []], D = this.transformCSS(h, `${re}${B}`, "light", "variable", r, n, i, a), Z = this.transformCSS(h, ce, "dark", "variable", r, n, i, a);
+    let h = e.replace("-directive", ""), b = t, { colorScheme: w, extend: m, css: x } = b, y = ne(b, ["colorScheme", "extend", "css"]), _ = m || {}, { colorScheme: v } = _, O = ne(_, ["colorScheme"]), k = w || {}, { dark: T } = k, V = ne(k, ["dark"]), G = v || {}, { dark: ee } = G, J = ne(G, ["dark"]), Q = N(y) ? this._toVariables({ [h]: Y(Y({}, y), O) }, r) : {}, te = N(V) ? this._toVariables({ [h]: Y(Y({}, V), J) }, r) : {}, j = N(T) ? this._toVariables({ [h]: Y(Y({}, T), ee) }, r) : {}, [re, se] = [(l = Q.declarations) != null ? l : "", Q.tokens || []], [B, le] = [(s = te.declarations) != null ? s : "", te.tokens || []], [ce, F] = [(c = j.declarations) != null ? c : "", j.tokens || []], D = this.transformCSS(h, `${re}${B}`, "light", "variable", r, n, i, a), Z = this.transformCSS(h, ce, "dark", "variable", r, n, i, a);
     p = `${D}${Z}`, u = [.../* @__PURE__ */ new Set([...se, ...le, ...F])], d = X(x, { dt: ve });
   }
   return { css: p, tokens: u, style: d };
@@ -1216,7 +1216,7 @@ function Wo(e) {
 }
 var Uo = 0;
 function qo(e) {
-  var t = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, r = C(!1), o = C(e), n = C(null), i = pr() ? window.document : void 0, a = t.document, l = a === void 0 ? i : a, s = t.immediate, c = s === void 0 ? !0 : s, p = t.manual, u = p === void 0 ? !1 : p, d = t.name, h = d === void 0 ? "style_".concat(++Uo) : d, b = t.id, w = b === void 0 ? void 0 : b, m = t.media, x = m === void 0 ? void 0 : m, y = t.nonce, _ = y === void 0 ? void 0 : y, f = t.first, O = f === void 0 ? !1 : f, k = t.onMounted, T = k === void 0 ? void 0 : k, V = t.onUpdated, G = V === void 0 ? void 0 : V, ee = t.onLoad, J = ee === void 0 ? void 0 : ee, Q = t.props, te = Q === void 0 ? {} : Q, j = function() {
+  var t = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, r = C(!1), o = C(e), n = C(null), i = pr() ? window.document : void 0, a = t.document, l = a === void 0 ? i : a, s = t.immediate, c = s === void 0 ? !0 : s, p = t.manual, u = p === void 0 ? !1 : p, d = t.name, h = d === void 0 ? "style_".concat(++Uo) : d, b = t.id, w = b === void 0 ? void 0 : b, m = t.media, x = m === void 0 ? void 0 : m, y = t.nonce, _ = y === void 0 ? void 0 : y, v = t.first, O = v === void 0 ? !1 : v, k = t.onMounted, T = k === void 0 ? void 0 : k, V = t.onUpdated, G = V === void 0 ? void 0 : V, ee = t.onLoad, J = ee === void 0 ? void 0 : ee, Q = t.props, te = Q === void 0 ? {} : Q, j = function() {
   }, re = function(le) {
     var ce = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
     if (l) {
@@ -1899,33 +1899,33 @@ const _n = { class: "kx-wcmount" }, Sn = {
     const r = e, o = t, n = C(null), i = C(!1);
     let a = null, l = 0;
     const s = /* @__PURE__ */ new Set();
-    function c(f) {
-      f.composedPath()[0] === a && (f.stopPropagation(), o("change", f.detail));
+    function c(v) {
+      v.composedPath()[0] === a && (v.stopPropagation(), o("change", v.detail));
     }
-    function p(f) {
-      return f.composedPath()[0] !== a ? !1 : (f.stopPropagation(), !0);
+    function p(v) {
+      return v.composedPath()[0] !== a ? !1 : (v.stopPropagation(), !0);
     }
-    function u(f) {
-      p(f) && o("created", f.detail);
+    function u(v) {
+      p(v) && o("created", v.detail);
     }
-    function d(f) {
-      p(f) && o("close", f.detail);
+    function d(v) {
+      p(v) && o("close", v.detail);
     }
-    function h(f) {
-      p(f) && o("error", f.detail);
+    function h(v) {
+      p(v) && o("error", v.detail);
     }
-    function b(f) {
-      if (typeof f == "string") return f;
+    function b(v) {
+      if (typeof v == "string") return v;
       try {
-        return JSON.stringify(f ?? {});
+        return JSON.stringify(v ?? {});
       } catch {
         return null;
       }
     }
     function w() {
       if (!a) return;
-      const f = b(r.config);
-      if (f !== null && a.setAttribute("config", f), r.schema !== void 0 && r.schema !== null) {
+      const v = b(r.config);
+      if (v !== null && a.setAttribute("config", v), r.schema !== void 0 && r.schema !== null) {
         const k = b(r.schema);
         k !== null && a.setAttribute("schema", k);
       }
@@ -1943,25 +1943,25 @@ const _n = { class: "kx-wcmount" }, Sn = {
         V !== null && (a.setAttribute(k, V), s.add(k));
       }
     }
-    function m(f = a) {
-      f && (f.removeEventListener("config-changed", c), f.removeEventListener("change", c), f.removeEventListener("created", u), f.removeEventListener("close", d), f.removeEventListener("error", h), f === a && (a = null), s.clear());
+    function m(v = a) {
+      v && (v.removeEventListener("config-changed", c), v.removeEventListener("change", c), v.removeEventListener("created", u), v.removeEventListener("close", d), v.removeEventListener("error", h), v === a && (a = null), s.clear());
     }
-    async function x(f) {
-      if (!customElements.get(f))
+    async function x(v) {
+      if (!customElements.get(v))
         try {
-          await Fr(f, { timeoutMs: 8e3 });
+          await Fr(v, { timeoutMs: 8e3 });
         } catch {
         }
     }
     async function y() {
-      const f = ++l, O = n.value, k = r.tag;
+      const v = ++l, O = n.value, k = r.tag;
       if (i.value = !1, !!O && (m(), O.innerHTML = "", !!k))
         try {
-          if (await x(k), f !== l || n.value !== O || r.tag !== k) return;
+          if (await x(k), v !== l || n.value !== O || r.tag !== k) return;
           const T = document.createElement(k);
           T.classList.add("kx-wcmount-surface"), a = T, w(), T.addEventListener("config-changed", c), T.addEventListener("change", c), T.addEventListener("created", u), T.addEventListener("close", d), T.addEventListener("error", h), T.style.display = "block", O.appendChild(T), i.value = !customElements.get(k);
         } catch {
-          f === l && (i.value = !0);
+          v === l && (i.value = !0);
         }
     }
     async function _() {
@@ -1969,7 +1969,7 @@ const _n = { class: "kx-wcmount" }, Sn = {
     }
     return Yt(y), H(() => r.tag, y), H(() => [r.config, r.schema, r.meta, r.provider, r.label, r.attrs], w, { deep: !0 }), Qt(() => {
       l += 1, m();
-    }), (f, O) => (E(), L("div", _n, [
+    }), (v, O) => (E(), L("div", _n, [
       i.value ? (E(), L("div", Sn, [
         O[0] || (O[0] = S("span", null, "This setup panel couldn’t load.", -1)),
         S("button", {
@@ -2125,15 +2125,15 @@ const Hn = /* @__PURE__ */ ge({
         requestedMaxHeight: r.maxHeight,
         align: r.align,
         gap: r.gap
-      }, f = qt(_);
+      }, v = qt(_);
       Object.assign(m.style, {
         position: "fixed",
         left: "0px",
         top: "0px",
         right: "auto",
         bottom: "auto",
-        width: `${f.width}px`,
-        maxHeight: `${f.maxHeight}px`,
+        width: `${v.width}px`,
+        maxHeight: `${v.maxHeight}px`,
         visibility: "hidden"
       });
       const O = m.getBoundingClientRect(), k = qt({
@@ -2234,11 +2234,11 @@ const Hn = /* @__PURE__ */ ge({
       const m = l.value.trim().toLowerCase(), x = /* @__PURE__ */ new Map();
       for (const _ of r.items) {
         if (!r.remote && m && ![_.title, _.subtitle, _.id, _.group].some((k) => k?.toLowerCase().includes(m))) continue;
-        const f = _.group || "Other", O = x.get(f);
-        O ? O.push(_) : x.set(f, [_]);
+        const v = _.group || "Other", O = x.get(v);
+        O ? O.push(_) : x.set(v, [_]);
       }
       let y = 0;
-      return [...x.entries()].sort((_, f) => _[0].localeCompare(f[0])).map(([_, f]) => ({ group: _, items: f.map((O) => ({ item: O, index: y++ })) }));
+      return [...x.entries()].sort((_, v) => _[0].localeCompare(v[0])).map(([_, v]) => ({ group: _, items: v.map((O) => ({ item: O, index: y++ })) }));
     }), u = P(() => p.value.flatMap((m) => m.items)), d = P(() => r.items.find((m) => m.id === r.modelValue)), h = P(() => u.value[s.value] ? `${c}-${s.value}` : void 0);
     H(l, () => {
       s.value = 0;
@@ -2338,14 +2338,14 @@ const Hn = /* @__PURE__ */ ge({
                 key: y.group
               }, [
                 S("li", Zn, K(y.group), 1),
-                (E(!0), L(me, null, wt(y.items, ({ item: _, index: f }) => (E(), L("li", {
-                  id: `${g(c)}-${f}`,
+                (E(!0), L(me, null, wt(y.items, ({ item: _, index: v }) => (E(), L("li", {
+                  id: `${g(c)}-${v}`,
                   key: _.id,
-                  class: Zt(["p-select-option kx-ps-option", { "p-select-option-selected": _.id === e.modelValue, "p-focus": f === s.value }]),
+                  class: Zt(["p-select-option kx-ps-option", { "p-select-option-selected": _.id === e.modelValue, "p-focus": v === s.value }]),
                   role: "option",
                   "aria-selected": _.id === e.modelValue,
                   onClick: (O) => b(_),
-                  onMousemove: (O) => s.value = f
+                  onMousemove: (O) => s.value = v
                 }, [
                   R(g(ie), {
                     icon: _.icon || "tabler:point",
@@ -2526,31 +2526,31 @@ function Za(e) {
 const ka = "wc-component-picker", _a = "wc-schema-form", Kt = "Locked after install — reinstall the data sync to change it.";
 function Xa(e) {
   const t = e.managed, r = C(""), o = C(""), n = C({}), i = C(!1), a = C(!0), l = C({ v: 2 }), s = C(!1), c = C(""), p = C(void 0), u = C(""), d = C(null), h = C([]), b = C([]), w = P(() => {
-    const v = l.value.source;
-    return typeof v == "string" ? v : "";
-  }), m = P(() => h.value.filter((v) => v.id === w.value)), x = P(() => m.value[0] || null), y = P(() => b.value.find((v) => v.id === o.value) || null);
+    const f = l.value.source;
+    return typeof f == "string" ? f : "";
+  }), m = P(() => h.value.filter((f) => f.id === w.value)), x = P(() => m.value[0] || null), y = P(() => b.value.find((f) => f.id === o.value) || null);
   function _() {
     t || (i.value = !1);
   }
-  function f() {
+  function v() {
     n.value = {}, i.value = !1;
   }
-  function O(v) {
-    const $ = v ?? {};
+  function O(f) {
+    const $ = f ?? {};
     if (!$.spec || typeof $.spec != "object" || Array.isArray($.spec)) return;
     const pe = w.value;
     l.value = { ...$.spec }, s.value = $.valid === !0, c.value = typeof $.error == "string" ? $.error : "", $.output_schema !== void 0 && (p.value = $.output_schema), w.value !== pe && _();
   }
   const k = C([]), T = C(void 0), V = C(""), G = P(() => s.value && w.value ? JSON.stringify({ source: w.value, config: l.value.config ?? {}, limit: 1 }) : "");
-  H(G, async (v, $, pe) => {
+  H(G, async (f, $, pe) => {
     let ue = !0;
     if (pe(() => {
       ue = !1;
-    }), k.value = [], T.value = void 0, V.value = "", !!v)
+    }), k.value = [], T.value = void 0, V.value = "", !!f)
       try {
         const { data: W } = await nt.post(
           "/api/v1/automations/source-samples",
-          JSON.parse(v)
+          JSON.parse(f)
         );
         if (!ue) return;
         if (W.success !== !0 || !Array.isArray(W.samples)) throw new Error(lt(W.error, "Could not read source samples."));
@@ -2559,32 +2559,32 @@ function Xa(e) {
         ue && (V.value = lt(W, "Could not read source samples."));
       }
   });
-  const ee = P(() => JSON.stringify(k.value)), J = P(() => {
-    for (const v of m.value) {
-      const $ = v.reconcile;
+  const ee = P(() => JSON.stringify(k.value.map((f) => ({ payload: f })))), J = P(() => {
+    for (const f of m.value) {
+      const $ = f.reconcile;
       if ($ && typeof $.pull_keys == "string" && $.pull_keys) return $;
     }
     return null;
-  }), Q = P(() => !J.value || !y.value || !m.value.some(($) => $.surface === "collection") ? !1 : !!(y.value.operations || {}).delete), te = P(() => b.value.map((v) => ({
-    id: v.id,
-    title: v.title || v.name || v.id,
-    icon: v.icon || "tabler:database",
-    group: v.group || "Destinations",
-    subtitle: v.description
+  }), Q = P(() => !J.value || !y.value || !m.value.some(($) => $.surface === "collection") ? !1 : !!(y.value.operations || {}).delete), te = P(() => b.value.map((f) => ({
+    id: f.id,
+    title: f.title || f.name || f.id,
+    icon: f.icon || "tabler:database",
+    group: f.group || "Destinations",
+    subtitle: f.description
   }))), j = P(() => kr(y.value, "SyncForm")), re = P(() => {
     if (j.value?.tag !== ka) return;
-    const v = String(y.value?.class || "");
-    if (v)
-      return { type: "thread", thread_class: v, title: j.value?.title ?? "", component: y.value?.component, delete_endpoint: j.value?.deleteEndpoint || "" };
+    const f = String(y.value?.class || "");
+    if (f)
+      return { type: "thread", thread_class: f, title: j.value?.title ?? "", component: y.value?.component, delete_endpoint: j.value?.deleteEndpoint || "" };
   }), se = P(() => j.value?.tag || _a), B = P(() => ga(y.value, "SyncForm")), le = P(() => j.value?.schema ?? B.value), ce = P(() => !!j.value && ya(B.value)), F = P(() => y.value ? j.value ? Object.keys(n.value).length > 0 : !0 : !1), D = P(() => {
     if (T.value != null) return He(T.value);
-    for (const v of m.value)
-      if (v.output_schema != null) return He(v.output_schema);
+    for (const f of m.value)
+      if (f.output_schema != null) return He(f.output_schema);
     return null;
   }), Z = P(() => He(y.value?.input_schema) ?? (y.value ? { properties: { content: { type: "string" } }, required: ["content"] } : null)), ye = P(() => {
     if (!w.value || !y.value) return null;
-    const v = Z.value;
-    if (!v || !v.properties) return { needed: !1, reason: "Destination accepts the item as-is — no transform needed." };
+    const f = Z.value;
+    if (!f || !f.properties) return { needed: !1, reason: "Destination accepts the item as-is — no transform needed." };
     const $ = new Set(Object.keys(D.value?.properties || {})), pe = /* @__PURE__ */ new Set(), ue = /* @__PURE__ */ new Map(), W = y.value?.config_schema || {};
     for (const [U, rt] of Object.entries(W)) {
       const be = rt || {};
@@ -2593,17 +2593,17 @@ function Xa(e) {
       const ot = n.value[U];
       ot != null && ot !== "" && pe.add(be.supplies);
     }
-    const Se = (v.required || []).filter((U) => !$.has(U) && !pe.has(U));
+    const Se = (f.required || []).filter((U) => !$.has(U) && !pe.has(U));
     if (Se.length === 0) return { needed: !1, reason: "Fields line up — pass through works." };
     const je = t ? [] : Se.map((U) => ue.get(U)).filter((U) => !!U), tt = je.length ? `, or fill ${je.join(", ")} below` : "";
     return { needed: !0, reason: `Destination needs ${Se.join(", ")}, not in the source — map it with an Expression or LLM${tt}.` };
   }), oe = P(() => !!w.value && !!y.value), Ne = P(() => JSON.stringify(D.value ?? {})), Re = P(() => JSON.stringify(Z.value ?? {})), Ke = P(() => y.value?.input_shape ?? ""), Ye = P(() => {
     if (!oe.value) return "";
-    const v = x.value?.title || x.value?.name || "source", $ = y.value?.title || y.value?.name || "destination";
-    return `Map ${v} items into ${$} input.`;
+    const f = x.value?.title || x.value?.name || "source", $ = y.value?.title || y.value?.name || "destination";
+    return `Map ${f} items into ${$} input.`;
   }), Ge = P(() => d.value ? JSON.stringify(d.value) : "");
-  function Je(v) {
-    const $ = v.detail?.transform;
+  function Je(f) {
+    const $ = f.detail?.transform;
     $ && typeof $.kind == "string" && (d.value = $);
   }
   const Qe = P(() => {
@@ -2611,22 +2611,22 @@ function Xa(e) {
     if (!s.value) return c.value || "Source is required.";
     if (!o.value) return "Destination is required.";
     if (!F.value) return "Destination configuration is required.";
-    const v = d.value;
-    return v ? v.kind === "expr" && !v.expr.trim() ? "Expression is required." : v.kind === "llm" && !v.prompt.trim() ? "Prompt is required." : v.kind === "code" && !v.code.trim() ? "Code is required." : "" : "Transform selection is required.";
+    const f = d.value;
+    return f ? f.kind === "expr" && !f.expr.trim() ? "Expression is required." : f.kind === "llm" && !f.prompt.trim() ? "Prompt is required." : f.kind === "code" && !f.code.trim() ? "Code is required." : "" : "Transform selection is required.";
   });
   async function Ze() {
     try {
-      const [v, $] = await Promise.all([
+      const [f, $] = await Promise.all([
         nt.get("/api/v1/automations/sources"),
         nt.get("/api/v1/automations/sinks")
       ]);
-      return h.value = v.data?.sources || [], b.value = $.data?.sinks || [], !t && b.value.length === 1 && (o.value = b.value[0].id), "";
-    } catch (v) {
-      return lt(v, "failed to load catalog");
+      return h.value = f.data?.sources || [], b.value = $.data?.sinks || [], !t && b.value.length === 1 && (o.value = b.value[0].id), "";
+    } catch (f) {
+      return lt(f, "failed to load catalog");
     }
   }
-  function Xe(v) {
-    r.value = v.title, u.value = v.trigger, l.value = v.trigger, p.value = v.output_schema, d.value = v.transform, o.value = v.sink_port, n.value = v.sink_config, i.value = v.reconcile != null, a.value = v.enabled;
+  function Xe(f) {
+    r.value = f.title, u.value = f.trigger, l.value = f.trigger, p.value = f.output_schema, d.value = f.transform, o.value = f.sink_port, n.value = f.sink_config, i.value = f.reconcile != null, a.value = f.enabled;
   }
   function et() {
     return _r({
@@ -2673,7 +2673,7 @@ function Xa(e) {
     sampleError: V,
     onTriggerChange: O,
     onAssistConfirmed: Je,
-    onSinkChange: f,
+    onSinkChange: v,
     loadCatalog: Ze,
     seed: Xe,
     currentInput: et
@@ -2818,4 +2818,4 @@ export {
   Fa as v,
   Ua as z
 };
-//# sourceMappingURL=styles-BcGpvr5Y.js.map
+//# sourceMappingURL=styles-rz7ylPj1.js.map
