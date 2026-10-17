@@ -9382,6 +9382,17 @@
       ],
       "repository": "spiralscout/meetings",
       "test": "test/src/inbox_resolve_test.lua"
+    },
+    "meetings/shared-implementation-access": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MEETINGS-SHARED-IMPLEMENTATION-ACCESS"
+      ],
+      "repository": "spiralscout/meetings",
+      "test": "test/src/api_test.lua"
     }
   },
   "issues": [
@@ -10522,7 +10533,8 @@
     "TRANSFORM-EXPLICIT-SKIP",
     "MEETINGS-EXPLICIT-SKIP",
     "MEETINGS-HARNESS-NESTED-INJECTION",
-    "SMOKE-NATIVE-SOURCE-CHECKOUT"
+    "SMOKE-NATIVE-SOURCE-CHECKOUT",
+    "MEETINGS-SHARED-IMPLEMENTATION-ACCESS"
   ],
   "schema_version": 1
 }
