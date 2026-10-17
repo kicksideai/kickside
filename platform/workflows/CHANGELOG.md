@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.116 (2026-10-16)
+
+- Return boundary removal refusals as structured errors with their native cause.
+
 ## 0.1.112 (2026-10-08)
 
 - fix(workflows): arm due maintenance deadlines with a positive timer (297dd8612)
