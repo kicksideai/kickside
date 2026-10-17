@@ -48,6 +48,44 @@
       "INSERT INTO chestor_journal_artifacts (journal_id, id, session_id, title, created_at) VALUES ('journal-1', 'artifact-1', 'session-1', 'Published artifact', 1)"
     ]
   },
+  "chestor.journal.migrations:20_state_event_sequence": {
+    "after": [
+      {
+        "query": "SELECT journal_id, active_task_seq, digest_event_seq FROM chestor_journal_state",
+        "rows": [
+          {
+            "active_task_seq": 7,
+            "digest_event_seq": 10,
+            "journal_id": "journal-state-1"
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT journal_id, active_task_id, digest, digest_updated_at, digest_source_seq, projection_input_hash, updated_at FROM chestor_journal_state",
+        "rows": [
+          {
+            "active_task_id": "task-1",
+            "digest": "Published digest",
+            "digest_source_seq": 6,
+            "digest_updated_at": 101,
+            "journal_id": "journal-state-1",
+            "projection_input_hash": "published-input-hash",
+            "updated_at": 102
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO chestor_journal_state (journal_id, active_task_id, digest, digest_updated_at, updated_at, digest_source_seq, projection_input_hash) VALUES ('journal-state-1', 'task-1', 'Published digest', 101, 102, 6, 'published-input-hash')",
+      "INSERT INTO chestor_journal_events (journal_id, id, seq, ts, event_type, task_id, body, created_at) VALUES ('journal-state-1', 'event-1', 4, 100, 'task.focused', 'task-1', 'Published focus', 100)",
+      "INSERT INTO chestor_journal_events (journal_id, id, seq, ts, event_type, task_id, body, created_at) VALUES ('journal-state-1', 'event-2', 7, 101, 'task.focused', 'task-1', 'Published focus', 101)",
+      "INSERT INTO chestor_journal_events (journal_id, id, seq, ts, event_type, task_id, body, created_at) VALUES ('journal-state-1', 'event-3', 8, 101, 'digest.updated', NULL, 'Published digest', 101)",
+      "INSERT INTO chestor_journal_events (journal_id, id, seq, ts, event_type, task_id, body, created_at) VALUES ('journal-state-1', 'event-4', 10, 101, 'digest.updated', NULL, 'Published digest', 101)",
+      "INSERT INTO chestor_journal_events (journal_id, id, seq, ts, event_type, task_id, body, created_at) VALUES ('journal-state-1', 'event-5', 11, 102, 'digest.updated', NULL, 'Newer digest', 102)"
+    ]
+  },
   "kickside.automation.migrations:11_delivery_provenance": {
     "after": [
       {

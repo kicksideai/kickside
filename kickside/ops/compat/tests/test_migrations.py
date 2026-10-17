@@ -55,6 +55,14 @@ class MigrationPlanTests(unittest.TestCase):
                 self.assertTrue(selected['assertions'])
                 self.assertTrue(selected['after'])
 
+    def test_journal_state_event_sequence_has_a_preservation_recipe(self):
+        from ops.compat.migrations import select_fixtures
+        recipes = json.loads((ROOT / 'ops/compat/migration-fixtures.json').read_text())
+        selected = select_fixtures(['chestor.journal.migrations:20_state_event_sequence'], recipes)
+        self.assertTrue(selected['seed'])
+        self.assertTrue(selected['assertions'])
+        self.assertTrue(selected['after'])
+
     def test_harness_preserves_environment_storage_metadata(self):
         import os
         from pathlib import Path
