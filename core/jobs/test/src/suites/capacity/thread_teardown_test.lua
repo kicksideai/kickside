@@ -3,6 +3,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local jobs = require("jobs")
 local thread_fence = require("thread_fence")
+local thread_teardown = require("thread_teardown")
 local job_fixture = require("job_fixture")
 
 local function open_db(): sql.DB
@@ -37,6 +38,68 @@ local function define_tests()
             test.eq(tonumber(held.next_page_seq), 7)
             test.eq(first_reads, 1)
             test.eq(reads, 2)
+        end)
+
+        test.it("commits a truthful retained-row receipt when a competing detach follows discovery", function()
+            local db = open_db()
+            local dbtype, type_err = db:type()
+            test.is_nil(type_err)
+            local thread_id, owner_id, job_id = uuid.v7(), uuid.v7(), uuid.v7()
+            local _, thread_err = db:execute([[INSERT INTO kickside_thread
+                (id,thread_class,component_id,event_count) VALUES ($1,'jobs-cleanup',$2,0)]], { thread_id, thread_id })
+            test.is_nil(thread_err, tostring(thread_err))
+            local _, job_err = db:execute([[INSERT INTO kickside_job
+                (id,thread_id,job_type,job_identity,owner_kind,owner_id,status)
+                VALUES ($1,$2,'test.thread_cleanup',$3,'automation',$4,'done')]],
+                { job_id, thread_id, "retained-race:" .. job_id, owner_id })
+            test.is_nil(job_err, tostring(job_err))
+            local competing: sql.DB? = nil
+            if dbtype == sql.type.POSTGRES then competing = open_db() end
+            local detached = false
+            local observed: any = {
+                begin = function()
+                    local tx, begin_err = db:begin()
+                    if begin_err or not tx then return tx, begin_err end
+                    return job_fixture.observe_tx(tx, function(statement)
+                        if dbtype ~= sql.type.POSTGRES or detached
+                            or statement:find("SELECT id,status,owner_kind,owner_id FROM kickside_job WHERE", 1, true) ~= 1
+                            or not statement:find("thread_id=$1 AND NOT (owner_kind='thread' AND owner_id=$2)", 1, true) then return end
+                        local changed, detach_err = (competing :: sql.DB):execute([[UPDATE kickside_job SET thread_id=NULL
+                            WHERE id=$1 AND thread_id=$2]], { job_id, thread_id })
+                        test.is_nil(detach_err, tostring(detach_err))
+                        test.eq(tonumber(changed.rows_affected), 1)
+                        detached = true
+                    end), nil
+                end,
+            }
+            local page, page_err = thread_teardown.page(observed, dbtype, thread_id, 0)
+            if competing then competing:release() end
+            test.is_nil(page_err, tostring(page_err))
+            test.not_nil(page)
+            test.eq(page.processed, 1)
+            test.is_true(page.done)
+            local receipt, receipt_err = db:query([[SELECT processed,done FROM kickside_job_thread_cleanup_receipt
+                WHERE thread_id=$1 AND page_seq=0]], { thread_id })
+            test.is_nil(receipt_err, tostring(receipt_err))
+            test.eq(#receipt, 1)
+            test.eq(tonumber(receipt[1].processed), 1)
+            test.is_true(receipt[1].done == true or receipt[1].done == 1)
+            local retained, retained_err = db:query("SELECT thread_id,owner_kind,owner_id,status FROM kickside_job WHERE id=$1", { job_id })
+            test.is_nil(retained_err, tostring(retained_err))
+            test.eq(#retained, 1)
+            test.is_nil(retained[1].thread_id)
+            test.eq(retained[1].owner_kind, "automation")
+            test.eq(retained[1].owner_id, owner_id)
+            test.eq(retained[1].status, "done")
+            local _, delete_receipt_err = db:execute("DELETE FROM kickside_job_thread_cleanup_receipt WHERE thread_id=$1", { thread_id })
+            test.is_nil(delete_receipt_err, tostring(delete_receipt_err))
+            local _, delete_fence_err = db:execute("DELETE FROM kickside_job_thread_cleanup WHERE thread_id=$1", { thread_id })
+            test.is_nil(delete_fence_err, tostring(delete_fence_err))
+            local _, delete_job_err = db:execute("DELETE FROM kickside_job WHERE id=$1", { job_id })
+            test.is_nil(delete_job_err, tostring(delete_job_err))
+            local _, delete_thread_err = db:execute("DELETE FROM kickside_thread WHERE id=$1", { thread_id })
+            test.is_nil(delete_thread_err, tostring(delete_thread_err))
+            db:release()
         end)
 
         test.it("pages bounded cleanup with durable receipts and recovers a lost acknowledgment", function()

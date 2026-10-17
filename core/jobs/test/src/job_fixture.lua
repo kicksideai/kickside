@@ -348,9 +348,13 @@ function fixture.observe_db(db: sql.DB, on_query: (() -> ())?, on_begin: (() -> 
 end
 
 
-function fixture.observe_tx(tx: sql.Transaction, on_query: () -> (), on_execute: (() -> ())?): sql.Transaction
+function fixture.observe_tx(tx: sql.Transaction, on_query: (string) -> (), on_execute: (() -> ())?): sql.Transaction
     return {
-        query = function(_, statement: string, ...) on_query(); return tx:query(statement, ...) end,
+        query = function(_, statement: string, ...)
+            local rows, err = tx:query(statement, ...)
+            on_query(statement)
+            return rows, err
+        end,
         execute = function(_, statement: string, ...) if on_execute then on_execute() end; return tx:execute(statement, ...) end,
         prepare = function(_, statement: string) return tx:prepare(statement) end,
         savepoint = function(_, name: string) return tx:savepoint(name) end,

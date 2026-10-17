@@ -7,11 +7,11 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
 local routes = {
     {api = "page", mode = "empty", stages = {"begin", "fence", "candidate_1", "candidate_2", "candidate_3", "candidate_4", "continuation_1", "continuation_2", "encode_1", "encode_2", "insert", "state", "commit"},
         proofs = {"begin", "fence", "candidate_1", "encode_1", "encode_2", "insert", "state"}, counts = {"insert", "state"}},
-    {api = "page", mode = "selected", stages = {"mutation_1", "mutation_2", "mutation_3", "mutation_4"}, proofs = {}, counts = {"mutation_1", "mutation_2", "mutation_3", "mutation_4"}},
+    {api = "page", mode = "selected", stages = {"mutation_1", "mutation_2"}, proofs = {}, counts = {"mutation_1", "mutation_2"}},
     {api = "page", mode = "prior", stages = {"previous", "previous_ack"}, proofs = {"previous", "previous_ack"}, counts = {"previous_ack"}},
     {api = "page", mode = "replay", stages = {"receipt", "decode_1", "decode_2", "commit"}, proofs = {"receipt", "decode_1", "decode_2"}, counts = {}},
     {api = "reclaim", mode = "empty", stages = {"owners", "begin", "fence", "candidate_1", "candidate_2", "candidate_3", "candidate_4", "continuation_1", "continuation_2", "commit"}, proofs = {"owners", "begin", "candidate_1"}, counts = {}},
-    {api = "reclaim", mode = "selected", stages = {"mutation_1", "mutation_2", "mutation_3", "mutation_4"}, proofs = {}, counts = {"mutation_1", "mutation_2", "mutation_3", "mutation_4"}},
+    {api = "reclaim", mode = "selected", stages = {"mutation_1", "mutation_2"}, proofs = {}, counts = {"mutation_1", "mutation_2"}},
     {api = "ack", mode = "empty", stages = {"begin", "fence", "receipt", "ack_update", "completed", "commit"}, proofs = {"begin", "receipt", "ack_update", "completed"}, counts = {"ack_update", "completed"}},
 }
 local function invoke(route, dialect): (any?, error?)
