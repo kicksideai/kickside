@@ -14817,7 +14817,8 @@
         "kickside/sessions|navigation|kickside.sessions:nav_item"
       ],
       "issues": [
-        "SESSION-EXTERNAL-MUTATION-NOTIFICATION"
+        "SESSION-EXTERNAL-MUTATION-NOTIFICATION",
+        "SMOKE-MOUNTED-SESSION-CLEANUP-OWNERSHIP"
       ],
       "tier": "full"
     },

@@ -23,6 +23,6 @@ REGISTRY = [
         issues=('SESSION-POSTGRES-TIMESTAMP-OFFSET',), features=
         ('kickside/sessions|navigation|kickside.sessions:nav_item',), instance_setup=True),
     Scenario('sessions_mounted_freshness', 'full', session_freshness, ('first_agent',),
-        issues=('SESSION-EXTERNAL-MUTATION-NOTIFICATION',), features=
+        issues=('SESSION-EXTERNAL-MUTATION-NOTIFICATION', 'SMOKE-MOUNTED-SESSION-CLEANUP-OWNERSHIP'), features=
         ('kickside/sessions|navigation|kickside.sessions:nav_item',), instance_setup=True),
 ]

@@ -1,8 +1,13 @@
 {
   "harness_guards": {
     "research/host-bindings": {
-      "engines": ["sqlite", "postgres"],
-      "issues": ["HARNESS-TRANSITIVE-HOST-BINDINGS"],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "HARNESS-TRANSITIVE-HOST-BINDINGS"
+      ],
       "repository": "kickside/components",
       "test": "research/test/src/host_bindings_test.lua"
     },
@@ -10543,7 +10548,8 @@
     "SMOKE-NATIVE-SOURCE-CHECKOUT",
     "MEETINGS-SHARED-IMPLEMENTATION-ACCESS",
     "SMOKE-PROVENANCE-FIXTURE-REPLACEMENTS",
-    "RUNTIME-INSTALL-LIFECYCLE-COMPLETION"
+    "RUNTIME-INSTALL-LIFECYCLE-COMPLETION",
+    "SMOKE-MOUNTED-SESSION-CLEANUP-OWNERSHIP"
   ],
   "schema_version": 1
 }

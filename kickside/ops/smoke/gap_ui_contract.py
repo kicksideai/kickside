@@ -78,11 +78,13 @@ def mounted_new_session(ctx):
         session = inst.wait(created, 'New chat persists one session', seconds=30, pump=browser.page.wait_for_timeout)
         inst.wait(lambda: panel.locator('.kx-row').count() == count + 1, 'Mounted session panel reflects creation', seconds=30, pump=browser.page.wait_for_timeout)
         yield inst, browser, panel, retained, session
-        other.clean(0)
     finally:
         inst.evidence.save('mounted-session-relay', browser.frames[start:])
         if session:
             inst.request('DELETE', '/api/v1/sessions/delete?session_id=' + session['session_id'], label='fresh-session-cleanup')
+            inst.wait(lambda: panel.locator('.kx-row').count() == count,
+                      'Mounted session panel reflects cleanup', seconds=30, pump=browser.page.wait_for_timeout)
+        other.clean(0)
         other.close()
 
 
@@ -100,10 +102,10 @@ def session_freshness(ctx):
         inst.evidence.save('mounted-session-freshness', {'session_id': session['session_id'], 'title': title, 'row': row.inner_text()})
         renamed = title + ' renamed'
         inst.request('POST', '/api/v1/sessions/rename', {'session_id': session['session_id'], 'title': renamed}, label='second-external-session-rename')
-        panel.locator('.kx-name').get_by_text(renamed, exact=True).wait_for(timeout=30000)
+        renamed_row = panel.locator('.kx-name').get_by_text(renamed, exact=True)
+        renamed_row.wait_for(timeout=30000)
         require(retained.evaluate('el => el.isConnected'), 'Rename refresh replaces the mounted panel')
-        inst.request('DELETE', '/api/v1/sessions/delete?session_id=' + session['session_id'], label='fresh-session-delete')
-        panel.locator('.kx-name').get_by_text(renamed, exact=True).wait_for(state='detached', timeout=30000)
+    renamed_row.wait_for(state='detached', timeout=30000)
 
 
 def session_recent_time(ctx):
