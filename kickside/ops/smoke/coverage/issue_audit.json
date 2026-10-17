@@ -27241,6 +27241,23 @@
       ],
       "reason": "WebScout provider packages declare their host bindings and retain installed package documentation. This is a source, API or native contract check without a browser interaction.",
       "user_visible": false
+    },
+    "JOURNAL-SKIPPED-HISTORY-REPLAY": {
+      "guards": {
+        "journal_skipped_history_replay": {
+          "assertions": [
+            "The native Journal history suite preserves later digest, focus, task, artifact, cursor, coverage and dependency state while indexing older events on SQLite and PostgreSQL. It preserves receipt freshness and command evidence, exercises mixed-order batches and repeated replay, and checks the resumable state-provenance migration against the earlier schema."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "journal/skipped-history-replay"
+      ],
+      "reason": "The projector deduplicates indexed events but applies a newly indexed older event to derived state without comparing its sequence with the event that produces the current value.",
+      "user_visible": true
     }
   },
   "schema_version": 1

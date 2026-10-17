@@ -9590,6 +9590,17 @@
       ],
       "repository": "kickside/crm",
       "test": "test/src/crm_sink_contract_test.lua"
+    },
+    "journal/skipped-history-replay": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOURNAL-SKIPPED-HISTORY-REPLAY"
+      ],
+      "repository": "kickside/chestor",
+      "test": "journal/test/src/projection_test.lua"
     }
   },
   "issues": [
@@ -10746,7 +10757,8 @@
     "TEMPLATE-PUBLIC-RELEASE-WORKFLOW",
     "JOBS-RETAINED-DETACH-RACE",
     "RUNTIME-HTTP-UNREAD-BODY-CLOSE",
-    "RUNTIME-HUB-UNCHANGED-DEPENDENCY-PARAMETERS"
+    "RUNTIME-HUB-UNCHANGED-DEPENDENCY-PARAMETERS",
+    "JOURNAL-SKIPPED-HISTORY-REPLAY"
   ],
   "schema_version": 1
 }

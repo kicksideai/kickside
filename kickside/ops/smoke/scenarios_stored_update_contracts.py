@@ -12,7 +12,13 @@ def research_topic(ctx):
     run_focused_module_test(ctx, 'kickside/research', 'structured_report_test')
 
 
+def journal_history(ctx):
+    run_focused_module_test(ctx, 'chestor/journal', 'journal_history_replay_test')
+
+
 REGISTRY = [
+    Scenario('journal_skipped_history_replay', 'regression', journal_history,
+             issues=('JOURNAL-SKIPPED-HISTORY-REPLAY',)),
     Scenario('update_record_delete_replay', 'regression', record_delete_replay,
              issues=('UPDATE-SYNC-RECORD-DELETE-REPLAY',)),
     Scenario('research_topic_tool_schema', 'regression', research_topic,

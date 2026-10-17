@@ -8323,6 +8323,13 @@
       ],
       "tier": "regression"
     },
+    "journal_skipped_history_replay": {
+      "features": [],
+      "issues": [
+        "JOURNAL-SKIPPED-HISTORY-REPLAY"
+      ],
+      "tier": "regression"
+    },
     "kb10_browser_deadline": {
       "features": [],
       "issues": [
