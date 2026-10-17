@@ -13806,6 +13806,20 @@
       ],
       "tier": "full"
     },
+    "regression_meetings_engagement_skip": {
+      "features": [],
+      "issues": [
+        "MEETINGS-EXPLICIT-SKIP"
+      ],
+      "tier": "regression"
+    },
+    "regression_meetings_nested_library_injection": {
+      "features": [],
+      "issues": [
+        "MEETINGS-HARNESS-NESTED-INJECTION"
+      ],
+      "tier": "regression"
+    },
     "regression_module_engine_profiles": {
       "features": [],
       "issues": [
@@ -14134,6 +14148,13 @@
       "features": [],
       "issues": [
         "TRANSFORM-REQUIREMENT-ENDPOINT-ACCESS"
+      ],
+      "tier": "regression"
+    },
+    "regression_transform_skip": {
+      "features": [],
+      "issues": [
+        "TRANSFORM-EXPLICIT-SKIP"
       ],
       "tier": "regression"
     },

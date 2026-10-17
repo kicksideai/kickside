@@ -9338,6 +9338,50 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/mcp/test/src/policy_retirement_upgrade_test.lua"
+    },
+    "transform/explicit-skip": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "TRANSFORM-EXPLICIT-SKIP"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/transform/test/src/suites/skip_outcome_test.lua"
+    },
+    "sync/explicit-skip": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "TRANSFORM-EXPLICIT-SKIP"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/sync/test/src/round_consumer_test.lua"
+    },
+    "meetings/engagement-skip": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MEETINGS-EXPLICIT-SKIP"
+      ],
+      "repository": "spiralscout/meetings",
+      "test": "test/src/crm_engagement_test.lua"
+    },
+    "meetings/nested-library-injection": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MEETINGS-HARNESS-NESTED-INJECTION"
+      ],
+      "repository": "spiralscout/meetings",
+      "test": "test/src/inbox_resolve_test.lua"
     }
   },
   "issues": [
@@ -10474,7 +10518,10 @@
     "UPDATE-SYNC-RECORD-DELETE-REPLAY",
     "RESEARCH-TOPIC-TOOL-SCHEMA",
     "MCP-STORED-RETIRED-POLICY-CREDENTIALS",
-    "APP-DOCUMENTATION-REGISTRY-YAML"
+    "APP-DOCUMENTATION-REGISTRY-YAML",
+    "TRANSFORM-EXPLICIT-SKIP",
+    "MEETINGS-EXPLICIT-SKIP",
+    "MEETINGS-HARNESS-NESTED-INJECTION"
   ],
   "schema_version": 1
 }
