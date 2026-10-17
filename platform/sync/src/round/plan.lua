@@ -10,7 +10,7 @@
 --                                  declares (design v5 §6.2, CONTRACTS §14)
 --   keeps(plan, item)           -- whether the filter keeps the item; an
 --                                  evaluation failure is the item's own
---   transform(plan, d, item, k) -- { present, value? } once per delivery: a
+--   transform(plan, d, item, k) -- { present, value?, skip? } once per delivery: a
 --                                  replay-unsafe strategy's output is persisted
 --                                  under the item's idempotency key before the
 --                                  write and reused by every retry; every
@@ -173,7 +173,7 @@ function M.compute(request: Map): (Map?, any)
         local e = a.error :: Map
         return nil, { kind = e.kind, code = e.code, retriable = e.retriable == true, message = "transform: " .. tostring(e.message) }
     end
-    return { present = a.present == true, value = a.value }, nil
+    return { present = a.present == true, value = a.value, skip = a.skip }, nil
 end
 
 function M.evaluate_pure(plan: Map, item: Map): (Map?, any)
@@ -181,7 +181,7 @@ function M.evaluate_pure(plan: Map, item: Map): (Map?, any)
     return M.compute({plan=plan,item=item})
 end
 
--- transform(plan, drive, item, keys) -> { present, value? } or the item's failure.
+-- transform(plan, drive, item, keys) -> { present, value?, skip? } or the item's failure.
 function M.payload_hash(plan: Map, item: Map): (string?, any)
     if plan.replay_safe then return nil, nil end
     return canonical_json.hash({ strategy = plan.strategy, config = plan.transform,

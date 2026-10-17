@@ -10,7 +10,8 @@ local function trim(value: any): string
 end
 
 -- func calls the configured function with the item envelope and its config.
--- The raw output is returned as is, including scalars; only nil is absent.
+-- The output is returned as is, including scalars and the contract's explicit
+-- {present=false, skip=reason} outcome; the binding preserves that outcome.
 -- Authorization is enforced before the call, never after.
 function M.apply(config: any, env: any, authorization: any): (any, string?, string?)
     local c = type(config) == "table" and config or {}

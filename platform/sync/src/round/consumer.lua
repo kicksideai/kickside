@@ -101,6 +101,9 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
             return "failed_items", unsent
         end
         local t = transformed :: Map
+        if t.skip ~= nil then
+            return "skipped_items", { key = key, reason = t.skip, prepared_key = unsent.prepared_key }
+        end
         -- A present false is a value; only an absent result is nil.
         local value: any = nil
         if t.present then value = t.value end

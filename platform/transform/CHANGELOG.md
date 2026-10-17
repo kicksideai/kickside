@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.50 (2026-10-17)
+
+- Add explicit skip reasons to transform outcomes and sample validation.
+
 ## 0.1.46 (2026-10-09)
 
 - Preserve native snippet failures before registry writes and retain confirmed artifacts (0f3687962).

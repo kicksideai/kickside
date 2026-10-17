@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.81 (2026-10-17)
+
+- Settle explicit transform skips without sink writes or delivery failures.
+
 ## 0.1.77 (2026-10-09)
 
 - Preserve native normalization failures through strategy and installation boundaries.

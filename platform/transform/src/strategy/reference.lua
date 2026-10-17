@@ -97,13 +97,16 @@ end
 -- binding(strategy) -> the kickside.transform:strategy binding methods over a
 -- strategy library { apply(config, env, authorization) -> (value, message?,
 -- code?), describe(config) -> (references?, message?) }:
---   apply({ config, env, authorization }) -> { present, value? } | { error = { code, message } }
+--   apply({ config, env, authorization }) -> { present, value?, skip? } | { error = { code, message } }
+-- An explicit {present=false, skip=reason} output is an absent outcome;
+-- other tables remain raw values. The apply resolver validates the outcome.
 --   describe({ config }) -> { references } | { error = { message } }
 function M.binding(strategy: any): (any, any)
     local function apply(request: any): (any, any)
         local r = type(request) == "table" and request or {}
         local value, message, code = strategy.apply((r :: any).config or {}, (r :: any).env or {}, (r :: any).authorization)
         if message ~= nil then return { error = { code = code or "strategy_failed", message = message } }, nil end
+        if type(value) == "table" and value.present == false and value.skip ~= nil then return value, nil end
         if value == nil then return { present = false }, nil end
         return { present = true, value = value }, nil
     end

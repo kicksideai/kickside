@@ -70,6 +70,7 @@ end
 
 -- apply_strategy(config, sample, index) -> ({ present, value? }?, err?): one
 -- sample through its strategy, the sample's payload as the strategy input.
+-- Explicit skip reasons pass through with absent outcomes.
 function M.apply_strategy(config: Map, sample: any, index: integer): (Map?, string?)
     local item = type(sample) == "table" and (sample :: Map) or {}
     local payload = item.payload
@@ -81,7 +82,7 @@ function M.apply_strategy(config: Map, sample: any, index: integer): (Map?, stri
         item = { item_key = key, envelope = { item_key = key }, input = payload } })
     if request_err or not answer then return nil, tostring(request_err) end
     if type(answer.error) == "table" then return nil, tostring(answer.error.message) end
-    return { present = answer.present == true, value = answer.value }, nil
+    return { present = answer.present == true, value = answer.value, skip = answer.skip }, nil
 end
 
 -- validate_transform(config, sink_schema, samples, opts) -> (ok, errors, outputs).
@@ -89,7 +90,8 @@ end
 -- (opts.apply_fn(config, sample, index) -> { present, value? } replaces it),
 -- normalizes each value into the sink's declared opts.input_shape (record or
 -- content) and validates it against sink_schema. ok is true only when there is
--- at least one sample and every one produces a schema-valid output; outputs
+-- at least one sample and every one produces a schema-valid output or an
+-- explicit skip; outputs
 -- carries the produced items, shaped where they could be (for a UI preview). This is the single
 -- execute+validate loop; run_gate and the /validate endpoint both go through it.
 function M.validate_transform(config: any, sink_schema: any, samples: any, opts: any?): (boolean, {string}, {any})
@@ -110,6 +112,8 @@ function M.validate_transform(config: any, sink_schema: any, samples: any, opts:
         local answer, err = run(config, item, i)
         if err or not answer then
             errors[#errors + 1] = "sample " .. i .. ": " .. tostring(err or "produced no answer")
+        elseif answer.skip ~= nil then
+            outputs[#outputs + 1] = { present = false, skip = answer.skip }
         elseif answer.present ~= true then
             errors[#errors + 1] = "sample " .. i .. ": produced no output"
         else

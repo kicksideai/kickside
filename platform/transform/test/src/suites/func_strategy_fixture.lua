@@ -2,6 +2,8 @@ local M = {}
 
 -- run receives the strategy call shape: {item = {item_key, envelope, input}, config}.
 function M.run(args)
+    if args.config.absent then return nil end
+    if args.config.output ~= nil then return args.config.output end
     if args.config.scalar then return "scalar" end
     return {
         content = args.item.input.title,

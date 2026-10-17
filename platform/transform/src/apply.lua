@@ -10,6 +10,7 @@ end
 local ERROR_KIND: { [string]: string } = {
     unknown_strategy = "INVALID",
     invalid_configuration = "INVALID",
+    invalid_result = "INVALID",
     invalid_expression = "INVALID",
     missing_function = "INVALID",
     missing_code = "INVALID",
@@ -42,7 +43,8 @@ function M.build_env(item: any): { [string]: any }
 end
 
 -- apply evaluates one strategy once and returns the raw value plus replay
--- metadata. present=false is the exact nil result; false stays a value.
+-- metadata. present=false without skip is the exact nil result; false stays
+-- a value. An explicit absent skip carries a non-empty reason.
 function M.apply(request: any): ({ [string]: any }?, error?)
     if type(request) ~= "table" then
         return invalid("request", "apply requires {strategy, config?, item={item_key, envelope?, input?}}")
@@ -78,6 +80,13 @@ function M.apply(request: any): ({ [string]: any }?, error?)
     local a = type(answer) == "table" and answer or {}
     if type((a :: any).error) == "table" then
         return fail(tostring((a :: any).error.code or "strategy_failed"), (a :: any).error.message, replay_safe), nil
+    end
+    if (a :: any).skip ~= nil then
+        if (a :: any).present ~= false or (a :: any).value ~= nil
+            or type((a :: any).skip) ~= "string" or not string.find((a :: any).skip, "%S") then
+            return fail("invalid_result", "a transform skip requires present=false, a non-empty reason and no value", replay_safe), nil
+        end
+        return { present = false, skip = (a :: any).skip, replay_safe = replay_safe }, nil
     end
     if (a :: any).present ~= true then return { present = false, replay_safe = replay_safe }, nil end
     return { present = true, value = (a :: any).value, replay_safe = replay_safe }, nil

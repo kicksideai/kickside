@@ -216,7 +216,7 @@ entries:
     kind: contract.definition
     meta:
       title: Transform Strategy
-      comment: "A transform strategy: apply({config, env, authorization?}) -> {present, value?} | {error}; describe({config}) -> {references} | {error}."
+      comment: "A transform strategy: apply({config, env, authorization?}) -> {present, value?, skip?} | {error}; describe({config}) -> {references} | {error}. A skip is {present=false, skip=reason}, with a non-empty string reason and no value. Function transforms return this same shape to skip; other outputs remain raw values. Absent values without skip remain absent and fail sink normalization."
     methods:
       - { name: apply, description: "Apply one configuration to one item env under an optional authorization." }
       - { name: describe, description: "Describe the resources a configuration uses, or refuse one whose use cannot be enforced." }
