@@ -261,6 +261,109 @@
       "INSERT INTO kickside_job (id, job_type, status, priority, queue_tier, job_identity, owner_kind, owner_id) VALUES ('0199a000-0000-7000-8000-000000000002', 'fixture.done', 'done', 0, 'backfill', 'fixture:done', 'fixture', 'owner-1')"
     ]
   },
+  "kickside.core.jobs.migrations:21_retire_upload_intent_slot": {
+    "after": [
+      {
+        "query": "SELECT status,last_error,CASE WHEN finished_at IS NOT NULL THEN 1 ELSE 0 END AS finished,CASE WHEN lease_token IS NULL AND lease_until IS NULL AND heartbeat_at IS NULL THEN 1 ELSE 0 END AS released FROM kickside_job WHERE id='00000000-0000-4000-8000-000000000800'",
+        "rows": [
+          {
+            "finished": 1,
+            "last_error": "cancelled",
+            "released": 1,
+            "status": "cancelled"
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job WHERE 1=1 AND id='00000000-0000-4000-8000-000000000800' AND job_type='kickside.uploads.service:intent_reconcile' AND job_identity='fixture:retired-slot-0' AND slot=TRUE AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND payload='{\"retained\":true}' AND actor_id='fixture:actor' AND actor_context='{\"origin\":\"fixture\"}' AND attempts=0 AND generation=2 AND execution_seq=0 AND queue_tier='maintenance' AND priority=7 AND created_at='2026-01-01T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job WHERE 1=1 AND id='00000000-0000-4000-8000-000000000801' AND job_type='kickside.uploads.service:intent_reconcile' AND status='done' AND job_identity='fixture:retired-slot-1' AND slot=TRUE AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND payload='{\"retained\":true}' AND actor_id='fixture:actor' AND actor_context='{\"origin\":\"fixture\"}' AND attempts=1 AND generation=2 AND execution_seq=1 AND queue_tier='maintenance' AND priority=7 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND finished_at='2026-01-03T00:00:00Z' AND last_error='published result' AND lease_token IS NULL AND lease_until IS NULL AND heartbeat_at IS NULL",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job_run WHERE 1=1 AND id='00000000-0000-4000-8000-000000000811' AND job_id='00000000-0000-4000-8000-000000000801' AND job_type='kickside.uploads.service:intent_reconcile' AND attempt_no=1 AND status='success' AND execution_seq=1 AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND result_json='{\"retained\":true}' AND actions_json='{\"events\":[]}' AND error_text='published history' AND worker_pid='fixture:worker' AND lease_token='fixture:historical-lease' AND started_at='2026-01-01T00:00:00Z' AND finished_at='2026-01-02T00:00:00Z' AND duration_ms=17 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job WHERE 1=1 AND id='00000000-0000-4000-8000-000000000802' AND job_type='kickside.uploads.service:intent_reconcile' AND status='dead' AND job_identity='fixture:retired-slot-2' AND slot=TRUE AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND payload='{\"retained\":true}' AND actor_id='fixture:actor' AND actor_context='{\"origin\":\"fixture\"}' AND attempts=2 AND generation=2 AND execution_seq=2 AND queue_tier='maintenance' AND priority=7 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND finished_at='2026-01-03T00:00:00Z' AND last_error='published result' AND lease_token IS NULL AND lease_until IS NULL AND heartbeat_at IS NULL",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job_run WHERE 1=1 AND id='00000000-0000-4000-8000-000000000812' AND job_id='00000000-0000-4000-8000-000000000802' AND job_type='kickside.uploads.service:intent_reconcile' AND attempt_no=1 AND status='failed' AND execution_seq=2 AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND result_json='{\"retained\":true}' AND actions_json='{\"events\":[]}' AND error_text='published history' AND worker_pid='fixture:worker' AND lease_token='fixture:historical-lease' AND started_at='2026-01-01T00:00:00Z' AND finished_at='2026-01-02T00:00:00Z' AND duration_ms=17 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job WHERE 1=1 AND id='00000000-0000-4000-8000-000000000803' AND job_type='kickside.uploads.service:intent_reconcile' AND status='cancelled' AND job_identity='fixture:retired-slot-3' AND slot=TRUE AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND payload='{\"retained\":true}' AND actor_id='fixture:actor' AND actor_context='{\"origin\":\"fixture\"}' AND attempts=3 AND generation=2 AND execution_seq=3 AND queue_tier='maintenance' AND priority=7 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND finished_at='2026-01-03T00:00:00Z' AND last_error='published result' AND lease_token IS NULL AND lease_until IS NULL AND heartbeat_at IS NULL",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job_run WHERE 1=1 AND id='00000000-0000-4000-8000-000000000813' AND job_id='00000000-0000-4000-8000-000000000803' AND job_type='kickside.uploads.service:intent_reconcile' AND attempt_no=1 AND status='failed' AND execution_seq=3 AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND result_json='{\"retained\":true}' AND actions_json='{\"events\":[]}' AND error_text='published history' AND worker_pid='fixture:worker' AND lease_token='fixture:historical-lease' AND started_at='2026-01-01T00:00:00Z' AND finished_at='2026-01-02T00:00:00Z' AND duration_ms=17 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job WHERE 1=1 AND id='00000000-0000-4000-8000-000000000804' AND job_type='kickside.uploads.service:intent_reconcile' AND status='running' AND job_identity='fixture:retired-slot-4' AND slot=TRUE AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND payload='{\"retained\":true}' AND actor_id='fixture:actor' AND actor_context='{\"origin\":\"fixture\"}' AND attempts=4 AND generation=2 AND execution_seq=4 AND queue_tier='maintenance' AND priority=7 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND finished_at IS NULL AND last_error='published result' AND lease_token='fixture:lease' AND lease_until IS NULL AND heartbeat_at IS NULL",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_job WHERE 1=1 AND id='00000000-0000-4000-8000-000000000805' AND job_type='fixture:retained_job' AND status='pending' AND job_identity='fixture:retired-slot-5' AND slot=TRUE AND owner_kind='fixture' AND owner_id='fixture:slot-owner' AND payload='{\"retained\":true}' AND actor_id='fixture:actor' AND actor_context='{\"origin\":\"fixture\"}' AND attempts=5 AND generation=2 AND execution_seq=5 AND queue_tier='maintenance' AND priority=7 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND finished_at IS NULL AND last_error='published result' AND lease_token IS NULL AND lease_until IS NULL AND heartbeat_at IS NULL",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      }
+    ],
+    "registry": {
+      "kickside.core.jobs:policy": {}
+    },
+    "seed": [
+      "INSERT INTO kickside_job (id,job_type,status,job_identity,slot,owner_kind,owner_id,payload,actor_id,actor_context,attempts,generation,execution_seq,queue_tier,priority,created_at,updated_at,finished_at,last_error,lease_token,lease_until,heartbeat_at) VALUES ('00000000-0000-4000-8000-000000000800','kickside.uploads.service:intent_reconcile','pending','fixture:retired-slot-0',TRUE,'fixture','fixture:slot-owner','{\"retained\":true}','fixture:actor','{\"origin\":\"fixture\"}',0,2,0,'maintenance',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',NULL,'published result',NULL,NULL,NULL)",
+      "INSERT INTO kickside_job (id,job_type,status,job_identity,slot,owner_kind,owner_id,payload,actor_id,actor_context,attempts,generation,execution_seq,queue_tier,priority,created_at,updated_at,finished_at,last_error,lease_token,lease_until,heartbeat_at) VALUES ('00000000-0000-4000-8000-000000000801','kickside.uploads.service:intent_reconcile','done','fixture:retired-slot-1',TRUE,'fixture','fixture:slot-owner','{\"retained\":true}','fixture:actor','{\"origin\":\"fixture\"}',1,2,1,'maintenance',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z','2026-01-03T00:00:00Z','published result',NULL,NULL,NULL)",
+      "INSERT INTO kickside_job_run (id,job_id,job_type,attempt_no,status,execution_seq,owner_kind,owner_id,result_json,actions_json,error_text,worker_pid,lease_token,started_at,finished_at,duration_ms,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000811','00000000-0000-4000-8000-000000000801','kickside.uploads.service:intent_reconcile',1,'success',1,'fixture','fixture:slot-owner','{\"retained\":true}','{\"events\":[]}','published history','fixture:worker','fixture:historical-lease','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',17,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO kickside_job (id,job_type,status,job_identity,slot,owner_kind,owner_id,payload,actor_id,actor_context,attempts,generation,execution_seq,queue_tier,priority,created_at,updated_at,finished_at,last_error,lease_token,lease_until,heartbeat_at) VALUES ('00000000-0000-4000-8000-000000000802','kickside.uploads.service:intent_reconcile','dead','fixture:retired-slot-2',TRUE,'fixture','fixture:slot-owner','{\"retained\":true}','fixture:actor','{\"origin\":\"fixture\"}',2,2,2,'maintenance',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z','2026-01-03T00:00:00Z','published result',NULL,NULL,NULL)",
+      "INSERT INTO kickside_job_run (id,job_id,job_type,attempt_no,status,execution_seq,owner_kind,owner_id,result_json,actions_json,error_text,worker_pid,lease_token,started_at,finished_at,duration_ms,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000812','00000000-0000-4000-8000-000000000802','kickside.uploads.service:intent_reconcile',1,'failed',2,'fixture','fixture:slot-owner','{\"retained\":true}','{\"events\":[]}','published history','fixture:worker','fixture:historical-lease','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',17,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO kickside_job (id,job_type,status,job_identity,slot,owner_kind,owner_id,payload,actor_id,actor_context,attempts,generation,execution_seq,queue_tier,priority,created_at,updated_at,finished_at,last_error,lease_token,lease_until,heartbeat_at) VALUES ('00000000-0000-4000-8000-000000000803','kickside.uploads.service:intent_reconcile','cancelled','fixture:retired-slot-3',TRUE,'fixture','fixture:slot-owner','{\"retained\":true}','fixture:actor','{\"origin\":\"fixture\"}',3,2,3,'maintenance',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z','2026-01-03T00:00:00Z','published result',NULL,NULL,NULL)",
+      "INSERT INTO kickside_job_run (id,job_id,job_type,attempt_no,status,execution_seq,owner_kind,owner_id,result_json,actions_json,error_text,worker_pid,lease_token,started_at,finished_at,duration_ms,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000813','00000000-0000-4000-8000-000000000803','kickside.uploads.service:intent_reconcile',1,'failed',3,'fixture','fixture:slot-owner','{\"retained\":true}','{\"events\":[]}','published history','fixture:worker','fixture:historical-lease','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',17,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO kickside_job (id,job_type,status,job_identity,slot,owner_kind,owner_id,payload,actor_id,actor_context,attempts,generation,execution_seq,queue_tier,priority,created_at,updated_at,finished_at,last_error,lease_token,lease_until,heartbeat_at) VALUES ('00000000-0000-4000-8000-000000000804','kickside.uploads.service:intent_reconcile','running','fixture:retired-slot-4',TRUE,'fixture','fixture:slot-owner','{\"retained\":true}','fixture:actor','{\"origin\":\"fixture\"}',4,2,4,'maintenance',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',NULL,'published result','fixture:lease',NULL,NULL)",
+      "INSERT INTO kickside_job (id,job_type,status,job_identity,slot,owner_kind,owner_id,payload,actor_id,actor_context,attempts,generation,execution_seq,queue_tier,priority,created_at,updated_at,finished_at,last_error,lease_token,lease_until,heartbeat_at) VALUES ('00000000-0000-4000-8000-000000000805','fixture:retained_job','pending','fixture:retired-slot-5',TRUE,'fixture','fixture:slot-owner','{\"retained\":true}','fixture:actor','{\"origin\":\"fixture\"}',5,2,5,'maintenance',7,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',NULL,'published result',NULL,NULL,NULL)"
+    ]
+  },
   "kickside.core.migrations:10_thread_natural_keys": {
     "after": [
       {
@@ -286,6 +389,147 @@
     ],
     "seed": [
       "INSERT INTO kickside_thread (id,component_id,thread_class,attrs) VALUES ('132c2bd2-19bf-5bf4-b30f-ff70619d1ae7','132c2bd2-19bf-5bf4-b30f-ff70619d1ae7','published:natural','{\"external_ref\":\"opaque:ref\"}')"
+    ]
+  },
+  "kickside.core.migrations:11_bind_legacy_natural_keys": {
+    "after": [
+      {
+        "query": {
+          "postgres": "SELECT encode(key_digest,'hex') AS digest,key_class,key_ref,CAST(thread_id AS TEXT) AS thread_id,origin,CASE WHEN ready THEN 1 ELSE 0 END AS ready FROM kickside_thread_natural_key WHERE thread_id='303a70d1-7e8e-59c4-b2c0-ae8a09771d31'",
+          "sqlite": "SELECT lower(hex(key_digest)) AS digest,key_class,key_ref,CAST(thread_id AS TEXT) AS thread_id,origin,CASE WHEN ready THEN 1 ELSE 0 END AS ready FROM kickside_thread_natural_key WHERE thread_id='303a70d1-7e8e-59c4-b2c0-ae8a09771d31'"
+        },
+        "rows": [
+          {
+            "digest": "9e73080d6ee9e58971c5596ae14df1536e6f5887a694e2f5d94c762e1238e7d6",
+            "key_class": "fixture:legacy",
+            "key_ref": " opaque:ref ",
+            "origin": "legacy",
+            "ready": 1,
+            "thread_id": "303a70d1-7e8e-59c4-b2c0-ae8a09771d31"
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_thread_natural_key WHERE thread_id='00000000-0000-4000-8000-000000000711'",
+        "rows": [
+          {
+            "n": 0
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_thread_natural_key WHERE thread_id IN ('303a70d1-7e8e-59c4-b2c0-ae8a09771d31','00000000-0000-4000-8000-000000000711','00000000-0000-4000-8000-000000000712')",
+        "rows": [
+          {
+            "n": 2
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_components WHERE 1=1 AND component_id='303a70d1-7e8e-59c4-b2c0-ae8a09771d31' AND impl_id='fixture:thread' AND private_context='{\"retained\":true}' AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND context_revision=3 AND identity_generation=2",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_thread WHERE 1=1 AND id='303a70d1-7e8e-59c4-b2c0-ae8a09771d31' AND component_id='303a70d1-7e8e-59c4-b2c0-ae8a09771d31' AND thread_class='fixture:legacy' AND state='open' AND attrs='{\"external_ref\":\" opaque:ref \",\"retained\":\"published\"}' AND event_count=1 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_event WHERE 1=1 AND id='00000000-0000-4000-8000-000000000720' AND thread_id='303a70d1-7e8e-59c4-b2c0-ae8a09771d31' AND type='fixture:retained' AND role='user' AND body='{\"retained\":true}' AND seq=1 AND created_at='2026-01-01T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_components WHERE 1=1 AND component_id='00000000-0000-4000-8000-000000000711' AND impl_id='fixture:thread' AND private_context='{\"retained\":true}' AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND context_revision=3 AND identity_generation=2",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_thread WHERE 1=1 AND id='00000000-0000-4000-8000-000000000711' AND component_id='00000000-0000-4000-8000-000000000711' AND thread_class='fixture:unverifiable' AND state='open' AND attrs='{\"external_ref\":\"edited\",\"retained\":\"published\"}' AND event_count=1 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_event WHERE 1=1 AND id='00000000-0000-4000-8000-000000000721' AND thread_id='00000000-0000-4000-8000-000000000711' AND type='fixture:retained' AND role='user' AND body='{\"retained\":true}' AND seq=1 AND created_at='2026-01-01T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_components WHERE 1=1 AND component_id='00000000-0000-4000-8000-000000000712' AND impl_id='fixture:thread' AND private_context='{\"retained\":true}' AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z' AND context_revision=3 AND identity_generation=2",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_thread WHERE 1=1 AND id='00000000-0000-4000-8000-000000000712' AND component_id='00000000-0000-4000-8000-000000000712' AND thread_class='fixture:bound' AND state='open' AND attrs='{\"external_ref\":\"bound\",\"retained\":\"published\"}' AND event_count=1 AND created_at='2026-01-01T00:00:00Z' AND updated_at='2026-01-02T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_event WHERE 1=1 AND id='00000000-0000-4000-8000-000000000722' AND thread_id='00000000-0000-4000-8000-000000000712' AND type='fixture:retained' AND role='user' AND body='{\"retained\":true}' AND seq=1 AND created_at='2026-01-01T00:00:00Z'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": {
+          "postgres": "SELECT encode(key_digest,'hex') AS digest,key_class,key_ref,CAST(thread_id AS TEXT) AS thread_id,origin,CASE WHEN ready THEN 1 ELSE 0 END AS ready FROM kickside_thread_natural_key WHERE thread_id='00000000-0000-4000-8000-000000000712'",
+          "sqlite": "SELECT lower(hex(key_digest)) AS digest,key_class,key_ref,CAST(thread_id AS TEXT) AS thread_id,origin,CASE WHEN ready THEN 1 ELSE 0 END AS ready FROM kickside_thread_natural_key WHERE thread_id='00000000-0000-4000-8000-000000000712'"
+        },
+        "rows": [
+          {
+            "digest": "00eaab16463fce5e357c3da88d28b0317823afaa2f88f2ab7e83d451f4fa827f",
+            "key_class": "fixture:bound",
+            "key_ref": "bound",
+            "origin": "v2",
+            "ready": 0,
+            "thread_id": "00000000-0000-4000-8000-000000000712"
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_components (component_id,impl_id,private_context,created_at,updated_at,context_revision,identity_generation) VALUES ('303a70d1-7e8e-59c4-b2c0-ae8a09771d31','fixture:thread','{\"retained\":true}','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',3,2)",
+      "INSERT INTO kickside_thread (id,component_id,thread_class,state,attrs,event_count,created_at,updated_at) VALUES ('303a70d1-7e8e-59c4-b2c0-ae8a09771d31','303a70d1-7e8e-59c4-b2c0-ae8a09771d31','fixture:legacy','open','{\"external_ref\":\" opaque:ref \",\"retained\":\"published\"}',1,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO kickside_event (id,thread_id,type,role,body,seq,created_at) VALUES ('00000000-0000-4000-8000-000000000720','303a70d1-7e8e-59c4-b2c0-ae8a09771d31','fixture:retained','user','{\"retained\":true}',1,'2026-01-01T00:00:00Z')",
+      "INSERT INTO kickside_components (component_id,impl_id,private_context,created_at,updated_at,context_revision,identity_generation) VALUES ('00000000-0000-4000-8000-000000000711','fixture:thread','{\"retained\":true}','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',3,2)",
+      "INSERT INTO kickside_thread (id,component_id,thread_class,state,attrs,event_count,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000711','00000000-0000-4000-8000-000000000711','fixture:unverifiable','open','{\"external_ref\":\"edited\",\"retained\":\"published\"}',1,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO kickside_event (id,thread_id,type,role,body,seq,created_at) VALUES ('00000000-0000-4000-8000-000000000721','00000000-0000-4000-8000-000000000711','fixture:retained','user','{\"retained\":true}',1,'2026-01-01T00:00:00Z')",
+      "INSERT INTO kickside_components (component_id,impl_id,private_context,created_at,updated_at,context_revision,identity_generation) VALUES ('00000000-0000-4000-8000-000000000712','fixture:thread','{\"retained\":true}','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',3,2)",
+      "INSERT INTO kickside_thread (id,component_id,thread_class,state,attrs,event_count,created_at,updated_at) VALUES ('00000000-0000-4000-8000-000000000712','00000000-0000-4000-8000-000000000712','fixture:bound','open','{\"external_ref\":\"bound\",\"retained\":\"published\"}',1,'2026-01-01T00:00:00Z','2026-01-02T00:00:00Z')",
+      "INSERT INTO kickside_event (id,thread_id,type,role,body,seq,created_at) VALUES ('00000000-0000-4000-8000-000000000722','00000000-0000-4000-8000-000000000712','fixture:retained','user','{\"retained\":true}',1,'2026-01-01T00:00:00Z')",
+      {
+        "postgres": "INSERT INTO kickside_thread_natural_key (key_digest,key_class,key_ref,thread_id,origin,ready) VALUES (decode('00eaab16463fce5e357c3da88d28b0317823afaa2f88f2ab7e83d451f4fa827f','hex'),'fixture:bound','bound','00000000-0000-4000-8000-000000000712','v2',FALSE)",
+        "sqlite": "INSERT INTO kickside_thread_natural_key (key_digest,key_class,key_ref,thread_id,origin,ready) VALUES (X'00eaab16463fce5e357c3da88d28b0317823afaa2f88f2ab7e83d451f4fa827f','fixture:bound','bound','00000000-0000-4000-8000-000000000712','v2',FALSE)"
+      }
     ]
   },
   "kickside.kb10.migrations:05_retrieval_observations": {
@@ -421,6 +665,79 @@
     "seed": [
       "INSERT INTO kickside_mcp_credentials (credential_id, token_hash, token_prefix, actor_id, whitelist_json, label, status, policy_json, context_json, created_at, updated_at) VALUES ('authority-active', 'authority-hash-active', 'auth_act', 'user-1', '[\"ReadToolResult\"]', 'Published active', 'active', '{\"traits\":[]}', '{}', 1, 2)",
       "INSERT INTO kickside_mcp_credentials (credential_id, token_hash, token_prefix, actor_id, label, status, created_at, updated_at, revoked_at, revoked_by) VALUES ('authority-revoked', 'authority-hash-revoked', 'auth_rev', 'user-1', 'Published revoked', 'revoked', 1, 3, 3, 'user-1')"
+    ]
+  },
+  "kickside.mcp.migrations:05_retired_policy_credentials": {
+    "after": [
+      {
+        "query": "SELECT status,revoked_by,CASE WHEN revoked_at>19 AND updated_at=revoked_at THEN 1 ELSE 0 END AS audited FROM kickside_mcp_credentials WHERE credential_id='retirement-authority'",
+        "rows": [
+          {
+            "audited": 1,
+            "revoked_by": "policy-retirement",
+            "status": "revoked"
+          }
+        ]
+      },
+      {
+        "query": "SELECT status,revoked_by,CASE WHEN revoked_at>19 AND updated_at=revoked_at THEN 1 ELSE 0 END AS audited FROM kickside_mcp_credentials WHERE credential_id='retirement-execution'",
+        "rows": [
+          {
+            "audited": 1,
+            "revoked_by": "policy-retirement",
+            "status": "revoked"
+          }
+        ]
+      }
+    ],
+    "assertions": [
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE 1=1 AND credential_id='retirement-authority' AND token_hash='fixture-hash-authority' AND token_prefix='fixture_authority' AND actor_id='fixture:actor' AND whitelist_json='[\"fixture:read\"]' AND label='Published authority' AND policy_json='{\"retained\":true}' AND context_json='{\"origin\":\"fixture\"}' AND expires_at=2000000000 AND created_at=11 AND last_used_at=17 AND execution_identity_json='{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-authority\",\"captured_at\":\"2026-01-01T00:00:00Z\"}' AND authority_json='{\"policy_ids\":[\"app.security:user.self_service\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}' AND oauth_resource='https://example.test/mcp'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE 1=1 AND credential_id='retirement-execution' AND token_hash='fixture-hash-execution' AND token_prefix='fixture_execution' AND actor_id='fixture:actor' AND whitelist_json='[\"fixture:read\"]' AND label='Published execution' AND policy_json='{\"retained\":true}' AND context_json='{\"origin\":\"fixture\"}' AND expires_at=2000000000 AND created_at=11 AND last_used_at=17 AND execution_identity_json='{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-execution\",\"captured_at\":\"2026-01-01T00:00:00Z\",\"restriction\":{\"policy_ids\":[\"app.security:user.self_service\"]}}' AND authority_json='{\"policy_ids\":[\"fixture:available\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}' AND oauth_resource='https://example.test/mcp'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE 1=1 AND credential_id='retirement-available' AND token_hash='fixture-hash-available' AND token_prefix='fixture_available' AND actor_id='fixture:actor' AND whitelist_json='[\"fixture:read\"]' AND label='Published available' AND status='active' AND policy_json='{\"retained\":true}' AND context_json='{\"origin\":\"fixture\"}' AND expires_at=2000000000 AND created_at=11 AND updated_at=19 AND last_used_at=17 AND revoked_at IS NULL AND revoked_by IS NULL AND execution_identity_json='{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-available\",\"captured_at\":\"2026-01-01T00:00:00Z\"}' AND authority_json='{\"policy_ids\":[\"fixture:available\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}' AND oauth_resource='https://example.test/mcp'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE 1=1 AND credential_id='retirement-unrestricted' AND token_hash='fixture-hash-unrestricted' AND token_prefix='fixture_unrestricted' AND actor_id='fixture:actor' AND whitelist_json='[\"fixture:read\"]' AND label='Published unrestricted' AND status='active' AND policy_json='{\"retained\":true}' AND context_json='{\"origin\":\"fixture\"}' AND expires_at=2000000000 AND created_at=11 AND updated_at=19 AND last_used_at=17 AND revoked_at IS NULL AND revoked_by IS NULL AND execution_identity_json IS NULL AND authority_json IS NULL AND oauth_resource='https://example.test/mcp'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      },
+      {
+        "query": "SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE 1=1 AND credential_id='retirement-revoked' AND token_hash='fixture-hash-revoked' AND token_prefix='fixture_revoked' AND actor_id='fixture:actor' AND whitelist_json='[\"fixture:read\"]' AND label='Published revoked' AND status='revoked' AND policy_json='{\"retained\":true}' AND context_json='{\"origin\":\"fixture\"}' AND expires_at=2000000000 AND created_at=11 AND updated_at=19 AND last_used_at=17 AND revoked_at=19 AND revoked_by='fixture:original-revoker' AND execution_identity_json='{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-revoked\",\"captured_at\":\"2026-01-01T00:00:00Z\"}' AND authority_json='{\"policy_ids\":[\"app.security:user.self_service\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}' AND oauth_resource='https://example.test/mcp'",
+        "rows": [
+          {
+            "n": 1
+          }
+        ]
+      }
+    ],
+    "seed": [
+      "INSERT INTO kickside_mcp_credentials (credential_id,token_hash,token_prefix,actor_id,whitelist_json,label,status,policy_json,context_json,expires_at,created_at,updated_at,last_used_at,revoked_at,revoked_by,execution_identity_json,authority_json,oauth_resource) VALUES ('retirement-authority','fixture-hash-authority','fixture_authority','fixture:actor','[\"fixture:read\"]','Published authority','active','{\"retained\":true}','{\"origin\":\"fixture\"}',2000000000,11,19,17,NULL,NULL,'{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-authority\",\"captured_at\":\"2026-01-01T00:00:00Z\"}','{\"policy_ids\":[\"app.security:user.self_service\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}','https://example.test/mcp')",
+      "INSERT INTO kickside_mcp_credentials (credential_id,token_hash,token_prefix,actor_id,whitelist_json,label,status,policy_json,context_json,expires_at,created_at,updated_at,last_used_at,revoked_at,revoked_by,execution_identity_json,authority_json,oauth_resource) VALUES ('retirement-execution','fixture-hash-execution','fixture_execution','fixture:actor','[\"fixture:read\"]','Published execution','active','{\"retained\":true}','{\"origin\":\"fixture\"}',2000000000,11,19,17,NULL,NULL,'{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-execution\",\"captured_at\":\"2026-01-01T00:00:00Z\",\"restriction\":{\"policy_ids\":[\"app.security:user.self_service\"]}}','{\"policy_ids\":[\"fixture:available\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}','https://example.test/mcp')",
+      "INSERT INTO kickside_mcp_credentials (credential_id,token_hash,token_prefix,actor_id,whitelist_json,label,status,policy_json,context_json,expires_at,created_at,updated_at,last_used_at,revoked_at,revoked_by,execution_identity_json,authority_json,oauth_resource) VALUES ('retirement-available','fixture-hash-available','fixture_available','fixture:actor','[\"fixture:read\"]','Published available','active','{\"retained\":true}','{\"origin\":\"fixture\"}',2000000000,11,19,17,NULL,NULL,'{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-available\",\"captured_at\":\"2026-01-01T00:00:00Z\"}','{\"policy_ids\":[\"fixture:available\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}','https://example.test/mcp')",
+      "INSERT INTO kickside_mcp_credentials (credential_id,token_hash,token_prefix,actor_id,whitelist_json,label,status,policy_json,context_json,expires_at,created_at,updated_at,last_used_at,revoked_at,revoked_by,execution_identity_json,authority_json,oauth_resource) VALUES ('retirement-unrestricted','fixture-hash-unrestricted','fixture_unrestricted','fixture:actor','[\"fixture:read\"]','Published unrestricted','active','{\"retained\":true}','{\"origin\":\"fixture\"}',2000000000,11,19,17,NULL,NULL,NULL,NULL,'https://example.test/mcp')",
+      "INSERT INTO kickside_mcp_credentials (credential_id,token_hash,token_prefix,actor_id,whitelist_json,label,status,policy_json,context_json,expires_at,created_at,updated_at,last_used_at,revoked_at,revoked_by,execution_identity_json,authority_json,oauth_resource) VALUES ('retirement-revoked','fixture-hash-revoked','fixture_revoked','fixture:actor','[\"fixture:read\"]','Published revoked','revoked','{\"retained\":true}','{\"origin\":\"fixture\"}',2000000000,11,19,17,19,'fixture:original-revoker','{\"version\":2,\"principal\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"authorized_by\":{\"kind\":\"user\",\"id\":\"fixture:actor\"},\"credential_id\":\"retirement-revoked\",\"captured_at\":\"2026-01-01T00:00:00Z\"}','{\"policy_ids\":[\"app.security:user.self_service\"],\"groups\":[\"fixture:group\"],\"epochs\":{\"fixture:epoch\":2}}','https://example.test/mcp')"
     ]
   },
   "kickside.security.migrations:02_session_fences": {

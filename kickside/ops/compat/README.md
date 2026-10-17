@@ -38,13 +38,19 @@ The comparison covers registry ids/kinds, HTTP endpoint paths/methods, namespace
 requirements and their defaults, contract methods and schemas, declared event
 schemas, and event/trait discovery metadata. New required properties without
 defaults, narrowed types, and removed properties fail recursively. Unknown
-schema constraint changes fail conservatively. Defaults in a declaration do not
+schema constraint changes fail conservatively. An added `anyOf` is compatible
+when the published constraints already imply a complete alternative; defaults
+do not establish that implication. Defaults in a declaration do not
 implement a migration; the product still needs a supported update path.
 
 Every added migration requires its own recipe in `migration-fixtures.json`.
 Recipes contain baseline `seed` SQL, `assertions` that preserve representative
 records, optional `after` assertions, and any required environment values or
-resolved registry configuration. The harness creates the database using only
+resolved registry configuration. Fixture registry identities load from each
+phase's inventory, including configuration read dynamically by migration helpers.
+A seed statement or assertion query can map `sqlite` and `postgres` to their
+engine-specific SQL when binary literals differ. The harness creates the database
+using only
 published migration code and helpers, seeds it, restarts with current helpers,
 then applies the added migrations twice on SQLite and Postgres. A recipe can supply `seed_before` SQL to seed a table created by an earlier
 added migration immediately before its own step. These records receive the same
@@ -100,3 +106,8 @@ SHA-addressed bundles; new exports transfer any remaining legacy references.
 The permanent proof creates files with the published 0.1.38 writer, restarts
 with current sources, reads as a shared reader, imports the published export,
 removes the old artifact, and verifies repeated and refined reads on both engines.
+
+Historical focused proofs construct their pre-upgrade schema with
+`upgrade_checkpoint` from the published inventory before the selected migrations.
+Only the selected current migrations and their dependency closure enter the update.
+Later published or source migrations do not enter that historical checkpoint.

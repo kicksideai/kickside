@@ -144,3 +144,80 @@ class CompareTests(unittest.TestCase):
         new = copy.deepcopy(old)
         new['s:kind']['Meta']['events']['input'] = []
         self.assertEqual(compare('s/module', '1', old, new)[0]['code'], 'removed_event')
+
+
+class AlternativeConstraintTests(unittest.TestCase):
+    def compare_schema(self, old, new):
+        def entry(value):
+            return {'Kind': 'function.lua', 'Meta': {'input_schema': value}, 'Data': {}}
+        return compare('sample/module', '1.0.0', {'sample:tool': entry(old)},
+                       {'sample:tool': entry(new)})
+
+    def test_alternatives_preserve_a_previously_required_input(self):
+        old = {'type': 'object', 'properties': {'first': {'type': 'string'}}, 'required': ['first']}
+        new = {'type': 'object', 'properties': {'first': {'type': 'string'},
+                                              'second': {'type': 'string'}},
+               'anyOf': [{'required': ['first']}, {'required': ['second']}]}
+        self.assertEqual(self.compare_schema(old, new), [])
+
+    def test_added_alternatives_cannot_introduce_requirements(self):
+        old = {'type': 'object', 'properties': {'first': {'type': 'string'}}}
+        new = dict(old, anyOf=[{'required': ['first']}])
+        self.assertTrue(self.compare_schema(old, new))
+        old['properties']['first']['default'] = 'example'
+        self.assertTrue(self.compare_schema(old, new), 'a default does not satisfy a schema alternative')
+
+    def test_alternatives_cannot_narrow_a_required_value(self):
+        old = {'type': 'object', 'properties': {'first': {'type': 'string'}}, 'required': ['first']}
+        for branch in ({'required': ['second']},
+                       {'properties': {'first': {'type': 'string', 'minLength': 5}}},
+                       {'properties': {'first': {'type': 'number'}}},
+                       {'maxProperties': 1}):
+            with self.subTest(branch=branch):
+                self.assertTrue(self.compare_schema(old, dict(old, anyOf=[branch])))
+
+    def test_alternative_proof_keeps_outer_constraints_and_unknown_changes(self):
+        old = {'type': 'object', 'required': ['first'],
+               'properties': {'first': {'type': 'string'}}}
+        for addition in ({'maxProperties': 1}, {'unknownConstraint': True}):
+            with self.subTest(addition=addition):
+                new = dict(old, anyOf=[{'required': ['first']}, {'required': ['second']}], **addition)
+                self.assertTrue(self.compare_schema(old, new))
+
+    def test_nested_alternatives_use_their_own_published_constraints(self):
+        old = {'type': 'object', 'properties': {'payload': {
+            'type': 'object', 'required': ['first'], 'properties': {'first': {'type': 'string'}}}}}
+        new = copy.deepcopy(old)
+        payload = new['properties']['payload']
+        payload.pop('required')
+        payload['anyOf'] = [{'required': ['first']}, {'required': ['second']}]
+        self.assertEqual(self.compare_schema(old, new), [])
+        payload['anyOf'] = [{'required': ['second']}]
+        self.assertTrue(self.compare_schema(old, new))
+
+    def test_alternative_implication_preserves_default_named_instance_data(self):
+        old = {'const': {'default': 'published'}}
+        self.assertTrue(self.compare_schema(old, dict(old, anyOf=[{'const': {'default': 'changed'}}])))
+        old = {'type': 'object', 'required': ['default'],
+               'properties': {'default': {'type': 'string'}}}
+        new = dict(old, anyOf=[{'properties': {'default': {'type': 'number'}}}])
+        self.assertTrue(self.compare_schema(old, new))
+
+    def test_alternative_cannot_restrict_previously_unconstrained_properties(self):
+        for branch in ({'properties': {'extra': {'type': 'number'}}},
+                       {'additionalProperties': {'properties': {'extra': {'type': 'number'}}}},
+                       {'patternProperties': {'^extra': {'type': 'number'}}}):
+            with self.subTest(branch=branch):
+                self.assertTrue(self.compare_schema({'type': 'object'},
+                                {'type': 'object', 'anyOf': [branch]}))
+
+    def test_alternative_cannot_add_overlapping_exclusive_branches(self):
+        old = {'oneOf': [{'type': 'number'}]}
+        branch = {'oneOf': [{'type': 'number'}, {'type': 'integer'}]}
+        self.assertTrue(self.compare_schema(old, dict(old, anyOf=[branch])))
+
+    def test_pattern_matched_values_do_not_inherit_additional_property_exclusion(self):
+        old = {'type': 'object', 'additionalProperties': False,
+               'patternProperties': {'^extra': {'type': 'string'}}}
+        branch = {'properties': {'extra': {'type': 'number'}}}
+        self.assertTrue(self.compare_schema(old, dict(old, anyOf=[branch])))
