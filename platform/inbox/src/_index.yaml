@@ -209,7 +209,6 @@ entries:
         scope: user
       retention:
         event_days: 7
-        drain_aware: true
       projections:
         - kind: "kickside.inbox:items"
           worker_ref: "func://kickside.inbox.persist:projection_worker"

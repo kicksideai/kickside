@@ -1,7 +1,7 @@
 organization: kickside
 module: automation
 type: plugin
-description: KickSide automations — the generic install/control/uninstall engine for the unified automation model (component-backed instances, id-based rollback, reflection-dispatched controls, cron-backed scheduled actions). Domain types are contributed by their own modules.
+description: The generic install/control/uninstall engine for the unified automation model.
 license: LicenseRef-KickSide-Community-1.0
 repository: https://github.com/kicksideai/kickside
 homepage: https://wippy.ai

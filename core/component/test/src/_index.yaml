@@ -363,7 +363,6 @@ entries:
               - type: kickside.component.events:deleted
       retention:
         event_days: 30
-        drain_aware: true
       events:
         input:
           - type: kickside.test.workspace.events:trigger

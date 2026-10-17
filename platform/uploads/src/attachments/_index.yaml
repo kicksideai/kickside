@@ -16,7 +16,6 @@ entries:
         scope: user
       retention:
         event_days: 7
-        drain_aware: true
       projections:
         - kind: "kickside.uploads:summary"
           worker_ref: "func://kickside.uploads.persist:uploads_projection_worker"

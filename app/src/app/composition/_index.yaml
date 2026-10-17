@@ -171,6 +171,11 @@ entries:
     order: 50
     packages:
       - component: kickside/webscout
+        parameters:
+          - name: kickside.webscout:api_router
+            value: app:api
+          - name: kickside.webscout:ui_server
+            value: app:gateway
 
   - name: onboarding_profile.gtm
     kind: registry.entry
@@ -183,8 +188,16 @@ entries:
     order: 60
     packages:
       - component: kickside/hubspot
+        parameters:
+          - name: kickside.hubspot:ui_server
+            value: app:gateway
       - component: kickside/phantombuster
       - component: kickside/webscout
+        parameters:
+          - name: kickside.webscout:api_router
+            value: app:api
+          - name: kickside.webscout:ui_server
+            value: app:gateway
 
   - name: onboarding_profile.google_workspace
     kind: registry.entry
@@ -225,6 +238,9 @@ entries:
     packages:
       - component: kickside/github
       - component: kickside/atlassian
+        parameters:
+          - name: kickside.atlassian:ui_server
+            value: app:gateway
       - component: kickside/skills
         parameters:
           - name: kickside.skills:api_router

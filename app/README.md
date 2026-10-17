@@ -234,4 +234,4 @@ resource access determine which tools are available.
 
 [KickSide Community License 1.0](LICENSE).
 
-[KickSide](https://kickside.ai) · [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+[KickSide](https://kickside.ai) · [Module authoring](https://github.com/kicksideai/docs/blob/main/building-modules/index.md)

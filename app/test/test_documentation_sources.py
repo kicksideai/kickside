@@ -38,6 +38,7 @@ class DocumentationCheckerTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory(prefix='wiki-check-', dir=app / 'test')
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
+        (self.root / 'node_modules').symlink_to(app / 'node_modules', target_is_directory=True)
         files = {
             'scripts/check-wiki-sources.mjs': (app / 'scripts/check-wiki-sources.mjs').read_text(),
             'templates/plugin/README.md': '# Template\n',

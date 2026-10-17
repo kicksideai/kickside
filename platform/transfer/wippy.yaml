@@ -1,7 +1,7 @@
 organization: kickside
 module: transfer
 type: plugin
-description: KickSide Transfer — export and import a user's own components (and their backing data) between environments. Owns the exportable-component picker, the batch orchestrator, archive packaging, and the export/import API.
+description: Exports and imports a user's own components and their backing data between environments.
 license: LicenseRef-KickSide-Community-1.0
 repository: https://github.com/kicksideai/kickside
 homepage: https://wippy.ai

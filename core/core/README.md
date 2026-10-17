@@ -45,6 +45,8 @@ variables in the harness configuration for your test server.
 
 Declare a kind’s exact input/output events and append them through the Threads contract. Projection workers materialize committed facts and advance only after their writes commit. Realtime wakes readers to refetch; it does not replace the stored event or read model.
 
+A component kind declares lifecycle projections with `meta.projections[].on: lifecycle`. Workers receive committed `kickside.component.events:created`, `updated`, and `deleted` events under the framework system identity. The cursor persists across updates and deletion. Use `on: child.lifecycle` to observe children; omit `on` to use the primary thread.
+
 ## Reference
 
 - [Module reference](src/README.md)
@@ -80,12 +82,10 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## Links
 
 - [KickSide](https://kickside.ai)
-- [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+- [Module authoring](https://github.com/kicksideai/docs/blob/main/building-modules/index.md)
 - [Wippy documentation](https://wippy.ai)
 - [Wippy Hub](https://hub.wippy.ai/kickside/core)
 
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
-
-A component kind declares a projection on its own lifecycle log with `meta.projections[].on: lifecycle`. The worker receives committed `kickside.component.events:created`, `updated`, and `deleted` events under the framework system identity. The cursor persists across updates and deletion, and failed workers retry through the projection engine. `on: child.lifecycle` continues to observe children; omitted `on` continues to use the primary thread.

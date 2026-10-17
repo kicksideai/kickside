@@ -1,7 +1,7 @@
 organization: kickside
 module: ui-kit
 type: library
-description: KickSide UI Kit — the shared frontend vocabulary (CSS, and later components) that modules consume at build time. Ships as a materializable npm package rather than a served bundle, so a module in any repository can resolve it.
+description: Shared frontend vocabulary (CSS) that modules consume at build time.
 license: LicenseRef-KickSide-Community-1.0
 repository: https://github.com/kicksideai/kickside
 homepage: https://wippy.ai

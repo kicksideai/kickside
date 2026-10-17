@@ -76,11 +76,9 @@ type ProjectionBinding = {
     events: EventContract?,
 }
 
--- The retention strategy for a kind's thread. drain_aware floors event sweeps at the
--- slowest bound cursor so a lagging handler never loses unread events.
+-- The retention window for a kind's thread. Event sweeps always protect live cursors.
 type Retention = {
     event_days: integer?,
-    drain_aware: boolean?,
 }
 
 -- A declared additional access grant applied to the provisioned component beyond the
@@ -178,7 +176,6 @@ local function parse_retention(raw: any): Retention?
     local entry = raw :: { [string]: any }
     return {
         event_days = type(entry.event_days) == "number" and math.floor(entry.event_days :: number) or nil,
-        drain_aware = entry.drain_aware == true or nil,
     }
 end
 

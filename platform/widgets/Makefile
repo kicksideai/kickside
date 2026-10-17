@@ -4,7 +4,7 @@ MODULE  := widgets
 TYPE    := plugin
 VIS     := public
 
-.PHONY: build dev publish lint
+.PHONY: build dev publish lint test
 build:
 	$(MAKE) -C ../.. build MOD=$(MODULE)
 dev:
@@ -16,6 +16,7 @@ publish: build
 	@exit 1
 
 .PHONY: test-backend lint-backend lockrefresh
+test: test-backend
 test-backend:
 	bash test/prepare.sh
 	cd test && wippy test $(WIPPY_TEST_ARGS)
