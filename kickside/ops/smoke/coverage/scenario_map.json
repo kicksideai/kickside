@@ -6425,7 +6425,8 @@
       "issues": [
         "TRANSFORM-REQUIREMENT-ENDPOINT-ACCESS",
         "TRANSFORM-COMPONENT-INPUT-SCHEMA",
-        "SYNC-TRANSFORM-SOURCE-SAMPLES"
+        "SYNC-TRANSFORM-SOURCE-SAMPLES",
+        "SYNC-TRANSFORM-SAMPLE-ENVELOPE"
       ],
       "tier": "regression"
     },

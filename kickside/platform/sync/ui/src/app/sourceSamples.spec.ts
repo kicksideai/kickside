@@ -29,7 +29,7 @@ describe('Sync source samples', () => {
     expect(api.post).toHaveBeenCalledWith('/api/v1/automations/source-samples', {
       source: 'fixture:source', config: { thread_id: 'selected' }, limit: 1,
     })
-    expect(JSON.parse(value.assistSamples.value)).toEqual(samples)
+    expect(JSON.parse(value.assistSamples.value)).toEqual([{ payload: samples[0] }])
     expect(JSON.parse(value.assistSourceSchema.value)).toEqual(schema)
     select(value, 'selected', false)
     await flushPromises()
@@ -67,6 +67,15 @@ describe('Sync source samples', () => {
     await flushPromises()
     resolveFirst({ data: { success: true, samples: [{ title: 'First source' }] } })
     await flushPromises()
-    expect(JSON.parse(value.assistSamples.value)).toEqual([{ title: 'Second source' }])
+    expect(JSON.parse(value.assistSamples.value)).toEqual([{ payload: { title: 'Second source' } }])
+  })
+
+  it('keeps a source payload field inside the Transform item payload', async () => {
+    const sample = { payload: { title: 'Nested source value' }, title: 'Source value' }
+    vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true, samples: [sample] } } as any)
+    const { value } = form()
+    select(value, 'selected')
+    await flushPromises()
+    expect(JSON.parse(value.assistSamples.value)).toEqual([{ payload: sample }])
   })
 })

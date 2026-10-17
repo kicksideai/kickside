@@ -55,10 +55,10 @@ def browser_transform_member_validation(ctx):
         inst.evidence.save('member-transform-widget-inputs', {
             'attributes': transform.evaluate('element => Object.fromEntries([...element.attributes].map(a => [a.name, a.value]))'),
             'generation_disabled': transform.locator('[data-test="generate"]').is_disabled()})
-        inst.wait(lambda: transform.get_attribute('samples') == json.dumps([sample], separators=(',', ':')),
+        inst.wait(lambda: transform.get_attribute('samples') == json.dumps([{'payload': sample}], separators=(',', ':')),
             'Sync passes its real source item to Transform', seconds=30, pump=browser.page.wait_for_timeout)
-        expected = {'title': title, 'content': 'Northwind ordinary member validated output'}
-        expression = json.dumps(expected)
+        expected = {'title': title, 'content': sample['product']}
+        expression = '{title: ' + json.dumps(title) + ', content: payload.product}'
         records = []
         for value, valid in ((expression, True), ('(', False), (expression, True)):
             with browser.page.expect_response(lambda response: response.request.method == 'POST'
@@ -94,6 +94,6 @@ def browser_transform_member_validation(ctx):
 REGISTRY = [Scenario('browser_transform_member_validation', 'regression', browser_transform_member_validation,
     ('boot',), instance_setup=True,
     issues=('TRANSFORM-REQUIREMENT-ENDPOINT-ACCESS', 'TRANSFORM-COMPONENT-INPUT-SCHEMA',
-            'SYNC-TRANSFORM-SOURCE-SAMPLES'),
+            'SYNC-TRANSFORM-SOURCE-SAMPLES', 'SYNC-TRANSFORM-SAMPLE-ENVELOPE'),
     features=http('transform', 'POST /api/v1/transform/validate')
         + http('automation', 'POST /api/v1/automations/source-samples'))]

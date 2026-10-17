@@ -93,7 +93,7 @@ describe('SyncCreate transform assist', () => {
     // The assist validates each output into the sink's declared input shape.
     expect(el!.getAttribute('input-shape')).toBe('content')
 
-    expect(JSON.parse(el!.getAttribute('samples') || 'null')).toEqual([{ title: 'Actual source record', id: 'sample-record' }])
+    expect(JSON.parse(el!.getAttribute('samples') || 'null')).toEqual([{ payload: { title: 'Actual source record', id: 'sample-record' } }])
 
     expect(el!.getAttribute('hint')).toContain('Fireflies')
     w.unmount()

@@ -26583,6 +26583,22 @@
       "harness": [],
       "reason": "Registry apply acknowledges asynchronous supervisor commands before the affected service lifecycle transitions complete.",
       "user_visible": true
+    },
+    "SYNC-TRANSFORM-SAMPLE-ENVELOPE": {
+      "guards": {
+        "browser_transform_member_validation": {
+          "assertions": [
+            "The Sync editor supplies source payloads as Transform sample items, validates an expression that reads the source payload field, and shows the exact source-derived preview before saving."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Sync forwards raw sampled payloads to Transform instead of its declared sample item shape; expressions reading payload fields receive nil.",
+      "user_visible": true
     }
   },
   "schema_version": 1
