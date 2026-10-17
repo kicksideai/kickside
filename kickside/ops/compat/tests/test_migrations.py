@@ -148,3 +148,70 @@ class HarnessEnvironmentTests(unittest.TestCase):
         recipes = json.loads((ROOT / 'ops/compat/migration-fixtures.json').read_text())
         for identity, recipe in recipes.items():
             self.assertFalse(set(recipe.get('env', {})) & set(HARNESS_ENV), identity)
+
+
+class PublishedCheckpointTests(unittest.TestCase):
+    def test_later_migrations_cannot_enter_a_published_upgrade_checkpoint(self):
+        from ops.compat.migrations import closure, upgrade_checkpoint
+        entry = MigrationPlanTests().entry
+        published = {'m:create': entry('1'), 'm:upgrade': entry('2'),
+                     'm:later': entry('3'), 'other:create': entry('1')}
+        published['m:upgrade']['Meta']['depends_on'] = ['m:create']
+        published['m:later']['Meta']['depends_on'] = ['m:upgrade']
+        current = dict(published, **{'m:future': entry('4')})
+        current['m:future']['Meta']['depends_on'] = ['m:later']
+        current['m:create'] = entry('1', 'current helper change')
+        before, after = upgrade_checkpoint(published, current, {'m:upgrade'})
+        self.assertEqual(set(before), {'m:create', 'other:create'})
+        self.assertEqual(before['m:create'], published['m:create'])
+        self.assertEqual(set(closure(before, migration_plan(before, before)['baseline'])), set(before))
+        self.assertEqual(migration_plan(before, after)['added'], ['m:upgrade'])
+        self.assertEqual(after['m:create'], current['m:create'])
+
+    def test_added_migration_recipes_cover_the_previous_published_data(self):
+        from ops.compat.migrations import select_fixtures
+        recipes = json.loads((ROOT / 'ops/compat/migration-fixtures.json').read_text())
+        for identity in ('kickside.core.migrations:11_bind_legacy_natural_keys',
+                         'kickside.core.jobs.migrations:21_retire_upload_intent_slot',
+                         'kickside.mcp.migrations:05_retired_policy_credentials'):
+            with self.subTest(identity=identity):
+                selected = select_fixtures([identity], recipes)
+                self.assertTrue(selected['seed'])
+                self.assertTrue(selected['assertions'])
+                self.assertTrue(selected['after'])
+
+    def test_engine_sql_is_selected_without_omitting_common_seed_statements(self):
+        from ops.compat.migrations import select_fixtures
+        recipes = {'m:bind': {'seed': ['common', {'sqlite': 'sqlite bytes', 'postgres': 'postgres bytes'}],
+                             'assertions': [{'query': {'sqlite': 'sqlite query', 'postgres': 'postgres query'}, 'rows': []}]}}
+        for engine in ('sqlite', 'postgres'):
+            self.assertEqual(select_fixtures(['m:bind'], recipes, engine=engine)['seed'],
+                             ['common', engine + ' bytes'])
+            self.assertEqual(select_fixtures(['m:bind'], recipes, engine=engine)['assertions'][0]['query'],
+                             engine + ' query')
+        del recipes['m:bind']['seed'][1]['postgres']
+        with self.assertRaises(ValueError):
+            select_fixtures(['m:bind'], recipes, engine='postgres')
+
+    def test_fixture_loads_recipe_configuration_from_each_phase_inventory(self):
+        import os
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        from ops.compat.migrations import closure, rehearse
+        class Prepared(Exception):
+            pass
+        old = {'m:create': MigrationPlanTests().entry('1'),
+               'm:policy': {'Kind': 'registry.entry', 'Meta': {'limit': 7}, 'Data': {}}}
+        new = dict(old, **{'m:extend': MigrationPlanTests().entry('2')})
+        new['m:policy'] = {'Kind': 'registry.entry', 'Meta': {'limit': 9}, 'Data': {}}
+        recipe = {'m:extend': {'seed': ['INSERT baseline'],
+                              'assertions': [{'query': 'SELECT baseline', 'rows': []}],
+                              'registry': {'m:policy': {}}}}
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory, \
+             patch('ops.compat.migrations.closure', wraps=closure) as collect, \
+             patch('ops.compat.migrations.command', side_effect=Prepared):
+            with self.assertRaises(Prepared):
+                rehearse(old, new, Path(directory) / 'runtime', recipe)
+            self.assertIn('m:policy', collect.call_args_list[0].args[1])
+            self.assertIn('m:policy', collect.call_args_list[1].args[1])

@@ -5,7 +5,8 @@ import tempfile
 import unittest
 
 from ops.compat.inventory import ROOT, discover, local_entries
-from ops.compat.migrations import rehearse
+from ops.compat.fetch_baselines import Hub
+from ops.compat.migrations import rehearse, upgrade_checkpoint
 
 
 class DelegationUpgradeTests(unittest.TestCase):
@@ -15,11 +16,15 @@ class DelegationUpgradeTests(unittest.TestCase):
         recipes = json.loads((ROOT / 'ops/compat/migration-fixtures.json').read_text())
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             work = Path(directory)
-            current = {}
-            for index, module in enumerate(discover([ROOT]).values()):
-                current.update(local_entries(module, work / str(index)))
+            current, published = {}, {}
+            hub = Hub()
+            for index, (identity, module) in enumerate(discover([ROOT]).items()):
+                module_work = work / str(index)
+                module_work.mkdir()
+                current.update(local_entries(module, module_work / 'current'))
+                published.update(hub.fetch(identity, module_work)['entries'])
             self.assertTrue(steps <= current.keys())
-            baseline = {identity: row for identity, row in current.items() if identity not in steps}
+            baseline, current = upgrade_checkpoint(published, current, steps)
             result = rehearse(baseline, current, work / 'migration', recipes)
             self.assertEqual(set(result['plan']['added']), steps)
             self.assertEqual(result['engines']['sqlite']['status'], 'pass')

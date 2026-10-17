@@ -7,6 +7,51 @@ def schema(value):
     return json.loads(value) if isinstance(value, str) else value
 
 
+def without_defaults(value):
+    """Remove schema annotations without changing property names or instance data."""
+    if not isinstance(value, dict):
+        return value
+    result = dict(value)
+    result.pop('default', None)
+    for key in ('properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas'):
+        if isinstance(result.get(key), dict):
+            result[key] = {name: without_defaults(item) for name, item in result[key].items()}
+    for key in ('allOf', 'anyOf', 'oneOf', 'prefixItems'):
+        if isinstance(result.get(key), list):
+            result[key] = [without_defaults(item) for item in result[key]]
+    for key in ('items', 'additionalItems', 'contains', 'additionalProperties',
+                'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'not', 'if', 'then', 'else'):
+        if isinstance(result.get(key), dict):
+            result[key] = without_defaults(result[key])
+    return result
+
+
+def implied_schema(old, constraint):
+    """Prove a partial constraint from the published schema, or fail conservatively."""
+    if constraint is True or old is False:
+        return True
+    if not isinstance(old, dict) or not isinstance(constraint, dict):
+        return old == constraint
+    before = without_defaults(old)
+    after = dict(before, **without_defaults(constraint))
+    if 'oneOf' in constraint and constraint['oneOf'] != old.get('oneOf'):
+        return False
+    for key in ('properties', 'patternProperties', 'dependentSchemas'):
+        for name, item in constraint.get(key, {}).items():
+            inherited = before.get(key, {}).get(name,
+                before.get('additionalProperties', {}) if key == 'properties' and not before.get('patternProperties') else {})
+            if not implied_schema({} if inherited is True else inherited, item):
+                return False
+        if key in constraint:
+            after[key] = before.get(key, {})
+    for key in ('items', 'additionalProperties'):
+        if isinstance(constraint.get(key), dict):
+            inherited = before.get(key, {})
+            if not implied_schema({} if inherited is True else inherited, constraint[key]):
+                return False
+    return not list(schema_changes(before, after))
+
+
 def schema_changes(old, new, path=''):
     if not isinstance(old, dict) or not isinstance(new, dict):
         if old != new:
@@ -41,6 +86,9 @@ def schema_changes(old, new, path=''):
                     yield 'schema_changed', path + '/' + key + '/' + name
                 else:
                     yield from schema_changes(a[name], b[name], path + '/' + key + '/' + name)
+        elif key == 'anyOf' and a is None and isinstance(b, list):
+            if not any(implied_schema(old, branch) for branch in b):
+                yield 'schema_changed', path + '/' + key
         elif key in {'oneOf', 'anyOf'} and isinstance(a, list) and isinstance(b, list):
             for index, branch in enumerate(a):
                 if not any(not list(schema_changes(branch, candidate)) for candidate in b):

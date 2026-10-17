@@ -43,6 +43,20 @@ def checkpoint_entries(entries, identity):
     return subset(before), subset(through)
 
 
+def upgrade_checkpoint(published, current, identities):
+    """Rehearse selected migrations from the published schema before their checkpoint."""
+    ordered = migration_plan(published, published)['baseline']
+    boundary = min(ordered.index(identity) for identity in identities)
+    baseline_ids = ordered[:boundary]
+    baseline = closure(published, baseline_ids)
+    if set(identities) & baseline.keys():
+        raise ValueError('published checkpoint depends on a selected upgrade migration')
+    baseline.update({key: row for key, row in published.items() if row['Kind'] == 'env.variable'})
+    update = dict(baseline, **closure(current, identities))
+    update.update({key: row for key, row in current.items() if row['Kind'] == 'env.variable'})
+    return baseline, update
+
+
 def database_baseline(plan, recipes, current=None):
     root = Path(__file__).resolve().parents[2]
     declarations = {}
@@ -75,16 +89,28 @@ def database_baseline(plan, recipes, current=None):
     return baseline, declarations
 
 
-def select_fixtures(added, recipes):
+def select_fixtures(added, recipes, *, engine=None):
     selected = {'seed': [], 'assertions': [], 'after': [], 'env': {}, 'registry': {}, 'before': {}, 'step_after': {}}
     for identity in added:
         recipe = recipes.get(identity)
         if not recipe or not recipe.get('seed') or not recipe.get('assertions'):
             raise ValueError(f'{identity}: added migration requires representative seed and preservation assertions')
-        selected['before'][identity] = recipe.get('seed_before', [])
-        selected['step_after'][identity] = recipe.get('step_after', [])
-        for key in ('seed', 'assertions', 'after'):
-            selected[key].extend(recipe.get(key, []))
+        def statement(value):
+            if isinstance(value, str) and value.strip():
+                return value
+            if (not isinstance(value, dict) or set(value) != {'sqlite', 'postgres'}
+                    or not all(isinstance(sql, str) and sql.strip() for sql in value.values())):
+                raise ValueError(f'{identity}: fixture SQL needs a statement for both engines')
+            return value[engine] if engine is not None else value
+
+        def cases(values):
+            return [dict(case, query=statement(case['query'])) for case in values]
+
+        selected['before'][identity] = [statement(value) for value in recipe.get('seed_before', [])]
+        selected['step_after'][identity] = cases(recipe.get('step_after', []))
+        selected['seed'].extend(statement(value) for value in recipe['seed'])
+        for key in ('assertions', 'after'):
+            selected[key].extend(cases(recipe.get(key, [])))
         selected['env'].update(recipe.get('env', {}))
         for identity, row in recipe.get('registry', {}).items():
             if identity in selected['registry'] and selected['registry'][identity] != row:
@@ -150,9 +176,10 @@ def rehearse(old, new, work, fixture, engines=('sqlite', 'postgres')):
     if not plan['added']:
         return {'plan': plan, 'engines': {engine: {'status': 'no_added_migrations'} for engine in engines}}
     baseline_ids, external = database_baseline(plan, fixture, current=new)
-    fixture = select_fixtures(plan['added'], fixture)
-    baseline_rows = closure(old, baseline_ids)
-    current_rows = closure(new, plan['added'])
+    recipes = fixture
+    fixture = select_fixtures(plan['added'], recipes)
+    baseline_rows = closure(old, baseline_ids + [key for key in fixture['registry'] if key in old])
+    current_rows = closure(new, plan['added'] + list(fixture['registry']))
     baseline_rows.update({i: row for i, row in old.items() if row['Kind'] == 'env.variable'})
     current_rows.update({i: row for i, row in new.items() if row['Kind'] == 'env.variable'})
     for rows in (baseline_rows, current_rows):
@@ -177,6 +204,7 @@ def rehearse(old, new, work, fixture, engines=('sqlite', 'postgres')):
     command(['wippy', 'update'], work, log, env)
     command(['wippy', 'install'], work, log, env)
     for engine in engines:
+        fixture = select_fixtures(plan['added'], recipes, engine=engine)
         database = os.environ.get('COMPAT_DATABASE_PREFIX', 'compat_') + uuid.uuid4().hex
         config = {'version': '1.0', 'directories': {'src': 'src', 'modules': '.wippy'}, 'registry': {'history': {'enabled': False}}}
         if engine == 'sqlite':

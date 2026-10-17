@@ -13287,6 +13287,15 @@
       ],
       "tier": "regression"
     },
+    "regression_compat_migration_fixtures": {
+      "features": [],
+      "issues": [
+        "COMPAT-PUBLISHED-MIGRATION-CHECKPOINT",
+        "COMPAT-MIGRATION-PRESERVATION-RECIPES",
+        "COMPAT-IMPLIED-SCHEMA-ALTERNATIVES"
+      ],
+      "tier": "regression"
+    },
     "regression_compat_suite_fixtures": {
       "features": [],
       "issues": [
