@@ -14328,6 +14328,13 @@
       ],
       "tier": "regression"
     },
+    "research_topic_tool_schema": {
+      "features": [],
+      "issues": [
+        "RESEARCH-TOPIC-TOOL-SCHEMA"
+      ],
+      "tier": "regression"
+    },
     "restart_continuation": {
       "features": [
         "kickside/kickside|http|GET /api/v1/ws/join",
@@ -15269,6 +15276,13 @@
       "features": [],
       "issues": [
         "CORE-LEGACY-NATURAL-KEY-UPGRADE"
+      ],
+      "tier": "regression"
+    },
+    "update_record_delete_replay": {
+      "features": [],
+      "issues": [
+        "UPDATE-SYNC-RECORD-DELETE-REPLAY"
       ],
       "tier": "regression"
     },

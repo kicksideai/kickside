@@ -9305,6 +9305,28 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/jobs/test/src/suites/service/worker_parts/worker_process_test.lua"
+    },
+    "automation/record-delete-migration": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "UPDATE-SYNC-RECORD-DELETE-REPLAY"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/delete_replay_migration_test.lua"
+    },
+    "research/topic-tool-schema": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "RESEARCH-TOPIC-TOOL-SCHEMA"
+      ],
+      "repository": "kickside/components",
+      "test": "research/test/src/structured_report_test.lua"
     }
   },
   "issues": [
@@ -10437,7 +10459,9 @@
     "COMPAT-IMPLIED-SCHEMA-ALTERNATIVES",
     "CORE-LEGACY-NATURAL-KEY-UPGRADE",
     "JOBS-RETIRED-UPLOAD-SLOT-UPGRADE",
-    "USERS-PUBLISHED-PASSWORD-HASH-UPDATE"
+    "USERS-PUBLISHED-PASSWORD-HASH-UPDATE",
+    "UPDATE-SYNC-RECORD-DELETE-REPLAY",
+    "RESEARCH-TOPIC-TOOL-SCHEMA"
   ],
   "schema_version": 1
 }
