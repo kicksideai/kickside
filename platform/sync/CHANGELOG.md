@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.83 (2026-10-17)
+
+- Supply source samples as Transform items for generation and validation.
+
 ## 0.1.82 (2026-10-17)
 
 - Provide real source samples and the selected source schema to Transform generation and validation.
