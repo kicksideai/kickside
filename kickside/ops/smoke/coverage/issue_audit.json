@@ -26552,6 +26552,37 @@
       "reason": "The source assertion reads the private overlay as product source when coverage tests are loaded from that overlay.",
       "user_visible": false,
       "harness": []
+    },
+    "SMOKE-PROVENANCE-FIXTURE-REPLACEMENTS": {
+      "guards": {
+        "launch_installed_module_source": {
+          "assertions": [
+            "The provenance fixture preserves unrelated candidate sources and resolves only the compared modules from the Hub before applying the tested replacement."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The provenance fixture drops all candidate replacements and tests the published dependency instead of the selected source.",
+      "user_visible": false
+    },
+    "RUNTIME-INSTALL-LIFECYCLE-COMPLETION": {
+      "guards": {
+        "regression_published_installation_update": {
+          "assertions": [
+            "The synchronous Hub install response is followed immediately by login and access checks against changed services, without waiting for a later restart."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Registry apply acknowledges asynchronous supervisor commands before the affected service lifecycle transitions complete.",
+      "user_visible": true
     }
   },
   "schema_version": 1

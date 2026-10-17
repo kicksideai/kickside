@@ -18,7 +18,8 @@ def installed_module_source(ctx):
     # for a second root. The dependency endpoint must expose distinct, explicit
     # sources for both roots; the UI must not infer either one from registry state.
     config = deepcopy(ctx.inst.config)
-    config['replace'] = {}
+    config['replace'] = {name: path for name, path in config['replace'].items()
+                         if name not in (HUB_COMPONENT, REPLACEMENT_COMPONENT)}
     with isolated_fixture(ctx, config=config) as fixture:
         inst = fixture.inst
         inst.install(HUB_COMPONENT)
@@ -52,4 +53,4 @@ def installed_module_source(ctx):
 
 REGISTRY = [Scenario('launch_installed_module_source', 'regression', installed_module_source,
                      ('boot',), instance_setup=True,
-                     issues=('LAUNCH-INSTALLED-MODULE-SOURCE',))]
+                     issues=('LAUNCH-INSTALLED-MODULE-SOURCE', 'SMOKE-PROVENANCE-FIXTURE-REPLACEMENTS'))]
