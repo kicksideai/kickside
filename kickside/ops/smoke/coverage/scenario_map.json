@@ -13822,6 +13822,13 @@
       ],
       "tier": "regression"
     },
+    "regression_meetings_shared_access": {
+      "features": [],
+      "issues": [
+        "MEETINGS-SHARED-IMPLEMENTATION-ACCESS"
+      ],
+      "tier": "regression"
+    },
     "regression_module_engine_profiles": {
       "features": [],
       "issues": [
