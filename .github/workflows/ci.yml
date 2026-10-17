@@ -1534,6 +1534,7 @@ jobs:
             source_root="$PWD"
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
+            npm ci --prefix app --no-audit --no-fund
             python3 -m unittest discover -s app/test -p test_documentation_sources.py
             make -C app lockrefresh
             cd app/test
@@ -1552,6 +1553,7 @@ jobs:
             source_root="$PWD"
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
+            npm ci --prefix app --no-audit --no-fund
             python3 -m unittest discover -s app/test -p test_documentation_sources.py
             make -C app lockrefresh
             cd app/test

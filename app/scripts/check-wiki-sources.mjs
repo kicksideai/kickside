@@ -1,11 +1,11 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { dirname, extname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parse } from 'yaml'
 
 const appRoot = fileURLToPath(new URL('..', import.meta.url))
 const sourceRoot = resolve(appRoot, 'src/app')
 const docsRoot = resolve(sourceRoot, 'docs')
-const definitionPath = resolve(sourceRoot, '_index.yaml')
 
 const pairs = [
   ['templates/plugin/README.md', 'src/app/templates/plugin/plugin-template.md'],
@@ -34,25 +34,26 @@ async function walk(directory) {
   return out
 }
 
-const definition = await readFile(definitionPath, 'utf8')
 // Documentation entries live in any registry index under src/app, not only the
 // namespace definition file.
 const registryIndexes = (await walk(sourceRoot)).filter((file) => file.endsWith(`${sep}_index.yaml`)).sort()
-const registryEntries = (await Promise.all(registryIndexes.map(async (file) =>
-  (await readFile(file, 'utf8')).split(/\n(?= {2}- name: )/).map((text) => ({ text, base: dirname(file) }))))).flat()
-if (/^\s+wiki:/m.test(definition)) {
+const registryEntries = (await Promise.all(registryIndexes.map(async (file) => {
+  const registry = parse(await readFile(file, 'utf8'))
+  return (registry.entries ?? []).map((entry) => ({ entry, base: dirname(file) }))
+}))).flat()
+if (registryEntries.some(({ entry }) => entry.kind === 'ns.definition' && Object.hasOwn(entry, 'wiki'))) {
   console.error('Documentation must use wippy.documentation.page registry entries, not ns.definition.wiki')
   failed = true
 }
 
 const documentEntries = registryEntries
-  .flatMap(({ text: entry, base }) => {
-    if (!/^ {2}- name: .+\n {4}kind: registry\.entry\n {4}meta:\n {6}type: wippy\.documentation\.page$/m.test(entry)) return []
-    const name = entry.match(/^ {2}- name: ([^\s]+)$/m)?.[1]
-    const path = entry.match(/^ {6}path: ([^\s]+\.md)$/m)?.[1]
-    const content = entry.match(/^ {6}content: file:\/\/([^\s]+\.md)$/m)?.[1]
-    const kind = entry.match(/^ {6}document_kind: ([^\s]+)$/m)?.[1]
-    if (!name || !path || !content || !kind) {
+  .flatMap(({ entry, base }) => {
+    if (entry.kind !== 'registry.entry' || entry.meta?.type !== 'wippy.documentation.page') return []
+    const name = entry.name
+    const { path, content: source, document_kind: kind } = entry.data ?? {}
+    const content = typeof source === 'string' ? source.match(/^file:\/\/(.+\.md)$/)?.[1] : undefined
+    if (typeof name !== 'string' || !name || typeof path !== 'string' || !path.endsWith('.md')
+      || !content || typeof kind !== 'string' || !kind) {
       console.error(`Invalid documentation page entry: ${name ?? 'unknown'}`)
       failed = true
       return []
@@ -88,15 +89,23 @@ for (const entry of documentEntries) {
   documentPaths.add(entry.path)
 }
 
-const navigationEntry = registryEntries.map(({ text }) => text).find((entry) =>
-  /^ {2}- name: documentation\.navigation\n {4}kind: registry\.entry\n {4}meta:\n {6}type: wippy\.documentation\.navigation$/m.test(entry),
+function* navigationDocuments(items) {
+  for (const item of items) {
+    if (Object.hasOwn(item, 'document')) yield item.document
+    if (item.items) yield* navigationDocuments(item.items)
+  }
+}
+
+const navigationEntry = registryEntries.map(({ entry }) => entry).find((entry) =>
+  entry.name === 'documentation.navigation' && entry.kind === 'registry.entry'
+    && entry.meta?.type === 'wippy.documentation.navigation',
 )
 if (!navigationEntry) {
   console.error('Missing documentation.navigation registry entry')
   failed = true
 } else {
   const documentIDs = new Set(documentEntries.map((entry) => entry.id))
-  for (const [, id] of navigationEntry.matchAll(/^\s+- document: ([^\s]+)$/gm)) {
+  for (const id of navigationDocuments(navigationEntry.data.items)) {
     if (!documentIDs.has(id)) {
       console.error(`Documentation navigation references an unknown page: ${id}`)
       failed = true
