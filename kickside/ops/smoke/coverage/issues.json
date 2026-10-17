@@ -2805,7 +2805,8 @@
         "postgres"
       ],
       "issues": [
-        "JOBS-TEARDOWN-OWNER-LEFTOVERS"
+        "JOBS-TEARDOWN-OWNER-LEFTOVERS",
+        "JOBS-RETAINED-DETACH-RACE"
       ],
       "repository": "kickside/kickside",
       "test": "core/jobs/test/src/suites/capacity/thread_teardown_test.lua"
@@ -9404,6 +9405,180 @@
       ],
       "repository": "spiralscout/meetings",
       "test": "test/src/api_test.lua"
+    },
+    "providers/mcp-client-make-test": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "MCP-CLIENT-UI-TEST-TARGET"
+      ],
+      "repository": "kickside/providers",
+      "test": "mcp-client/Makefile"
+    },
+    "components/agent-onboarding-static-metadata": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "COMPONENTS-UI-STATIC-METADATA"
+      ],
+      "repository": "kickside/components",
+      "test": "agent-onboarding/test/suite.lua"
+    },
+    "providers/webscout-brave-host-bindings": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WEBSCOUT-PROVIDER-HOST-BINDINGS"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout-brave/test/_index.yaml"
+    },
+    "providers/webscout-tavily-host-bindings": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WEBSCOUT-PROVIDER-HOST-BINDINGS"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout-tavily/test/_index.yaml"
+    },
+    "kickside/renderers-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/renderers/Makefile"
+    },
+    "kickside/widgets-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/widgets/Makefile"
+    },
+    "components/research-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/components",
+      "test": "research/Makefile"
+    },
+    "components/agent-onboarding-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/components",
+      "test": "agent-onboarding/Makefile"
+    },
+    "providers/code-execution-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/providers",
+      "test": "code_execution/Makefile"
+    },
+    "providers/webscout-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout/Makefile"
+    },
+    "providers/hubspot-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/providers",
+      "test": "hubspot/Makefile"
+    },
+    "chestor/db-schema-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/chestor",
+      "test": "db-schema/Makefile"
+    },
+    "chestor/graph-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/chestor",
+      "test": "graph/Makefile"
+    },
+    "chestor/roadmap-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/chestor",
+      "test": "roadmap/Makefile"
+    },
+    "chestor/workspace-make-test": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODULE-MAKE-TEST-TARGETS"
+      ],
+      "repository": "kickside/chestor",
+      "test": "workspace/Makefile"
+    },
+    "module/public-release-workflow": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "TEMPLATE-PUBLIC-RELEASE-WORKFLOW"
+      ],
+      "repository": "kickside/module",
+      "test": ".github/scripts/test_delivery.py"
     }
   },
   "issues": [
@@ -10549,7 +10724,15 @@
     "MEETINGS-SHARED-IMPLEMENTATION-ACCESS",
     "SMOKE-PROVENANCE-FIXTURE-REPLACEMENTS",
     "RUNTIME-INSTALL-LIFECYCLE-COMPLETION",
-    "SMOKE-MOUNTED-SESSION-CLEANUP-OWNERSHIP"
+    "SMOKE-MOUNTED-SESSION-CLEANUP-OWNERSHIP",
+    "DRAIN-AWARE-DECLARATION",
+    "REQUIREMENT-HOST-DEFAULTS",
+    "MCP-CLIENT-UI-TEST-TARGET",
+    "COMPONENTS-UI-STATIC-METADATA",
+    "WEBSCOUT-PROVIDER-HOST-BINDINGS",
+    "MODULE-MAKE-TEST-TARGETS",
+    "TEMPLATE-PUBLIC-RELEASE-WORKFLOW",
+    "JOBS-RETAINED-DETACH-RACE"
   ],
   "schema_version": 1
 }

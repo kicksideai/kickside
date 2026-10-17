@@ -1838,7 +1838,8 @@
       "features": [],
       "issues": [
         "SECURITY-REQUIREMENT-DEFAULTS",
-        "KEEPER-FIRST-INSTALL-SOURCE"
+        "KEEPER-FIRST-INSTALL-SOURCE",
+        "REQUIREMENT-HOST-DEFAULTS"
       ],
       "tier": "full"
     },
@@ -5925,7 +5926,9 @@
     },
     "brave_package_readme": {
       "features": [],
-      "issues": [],
+      "issues": [
+        "WEBSCOUT-PROVIDER-HOST-BINDINGS"
+      ],
       "tier": "full"
     },
     "browser_agent_background_run": {
@@ -7191,7 +7194,8 @@
         "kickside/ui|http|GET /api/v1/nav/list"
       ],
       "issues": [
-        "ONBOARDING-DEPENDENCY-INSTALL-CONFLICT"
+        "ONBOARDING-DEPENDENCY-INSTALL-CONFLICT",
+        "COMPONENTS-UI-STATIC-METADATA"
       ],
       "tier": "full"
     },
@@ -7393,7 +7397,9 @@
         "kickside/core|http|DELETE /api/v1/threads/{id}",
         "kickside/core|http|GET /api/v1/threads"
       ],
-      "issues": [],
+      "issues": [
+        "JOBS-RETAINED-DETACH-RACE"
+      ],
       "tier": "full"
     },
     "core_thread_events": {
@@ -14300,7 +14306,9 @@
         "NE-235",
         "NE-242",
         "SMOKE-CARRIER-JSON-CLONE-CONVENTION",
-        "RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE"
+        "RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE",
+        "MODULE-MAKE-TEST-TARGETS",
+        "TEMPLATE-PUBLIC-RELEASE-WORKFLOW"
       ],
       "tier": "full"
     },
@@ -15374,7 +15382,8 @@
     "user_provision_declaration_read": {
       "features": [],
       "issues": [
-        "USER-PROVISION-DECLARATION-READ-ERROR"
+        "USER-PROVISION-DECLARATION-READ-ERROR",
+        "DRAIN-AWARE-DECLARATION"
       ],
       "tier": "regression"
     },

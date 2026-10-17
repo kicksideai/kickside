@@ -426,6 +426,42 @@ def hub_requirement_defaults(ctx):
     inst = Instance(ctx.inst.config, ctx.inst.engine,
         ctx.inst.evidence.root / ctx.inst.evidence.label / ('fresh-hub-defaults-' + uuid.uuid4().hex[:8]))
     matrix = []
+    host_requirements = {
+        'kickside/agent-onboarding': {
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+        'kickside/dashboard': {
+            'api_router': ('http.router', 'app:api'),
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+        'kickside/research': {
+            'target_db': ('db.sql', 'app:db'),
+            'api_router': ('http.router', 'app:api'),
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+        'kickside/crm': {
+            'target_db': ('db.sql', 'app:db'),
+            'api_router': ('http.router', 'app:api'),
+            'ui_server': ('http.service', 'app:gateway'),
+            'admin_security_scope': ('security.scope', 'app.security:admin'),
+        },
+        'kickside/mcp-client': {
+            'process_host': ('process.host', 'app:processes'),
+            'api_router': ('http.router', 'app:api'),
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+        'kickside/simplefin': {
+            'api_router': ('http.router', 'app:api'),
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+        'kickside/webscout': {
+            'api_router': ('http.router', 'app:api'),
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+        'kickside/atlassian': {
+            'ui_server': ('http.service', 'app:gateway'),
+        },
+    }
     try:
         inst.boot()
         for module in ('kickside/crm', 'chestor/workspace', 'kickside/knowledge'):
@@ -450,6 +486,22 @@ def hub_requirement_defaults(ctx):
             matrix.append({'module': module, 'requirement': row['full_id'], 'default': row['value'],
                            'explicit_binding': explicit['value'],
                            'install_source': row['value_source'], 'update_source': bound['value_source']})
+        for module, expected in host_requirements.items():
+            plan = inst.request('POST', '/api/v1/keeper/hub/dependencies/plan',
+                {'component': module, 'run_migrations': True}, label=module.replace('/', '-') + '-host-plan', timeout=120)
+            rows = {row['name']: row for row in plan['requirements'] if row['module'] == module}
+            for name, (kind, value) in expected.items():
+                row = rows.get(name)
+                require(row is not None, 'Hub omits host requirement ' + module + ':' + name)
+                require(row.get('expected_kind') == kind,
+                        'Host requirement has the wrong value kind: ' + json.dumps(row))
+                require(row.get('default') is None,
+                        'Host requirement declares a module default: ' + json.dumps(row))
+                require(row.get('value') == value and row.get('value_source') in ('provided', 'provided_bare', 'existing', 'existing_bare', 'registry')
+                        and not row.get('missing') and not row.get('invalid'),
+                        'Application host binding does not resolve the planned requirement: ' + json.dumps(row))
+                matrix.append({'module': module, 'requirement': row['full_id'], 'kind': kind,
+                               'value': row.get('value'), 'source': row.get('value_source')})
         ctx.inst.evidence.save('fresh-hub-defaults', matrix)
     finally:
         failures = inst.cleanup.run()
@@ -457,7 +509,8 @@ def hub_requirement_defaults(ctx):
 
 
 REGISTRY += [Scenario('access_hub_requirement_defaults', 'full', hub_requirement_defaults,
-    ('boot',), instance_setup=True, issues=('SECURITY-REQUIREMENT-DEFAULTS', 'KEEPER-FIRST-INSTALL-SOURCE'))]
+    ('boot',), instance_setup=True, issues=('SECURITY-REQUIREMENT-DEFAULTS', 'KEEPER-FIRST-INSTALL-SOURCE',
+                                            'REQUIREMENT-HOST-DEFAULTS'))]
 
 
 def users_security_update_bindings(ctx):

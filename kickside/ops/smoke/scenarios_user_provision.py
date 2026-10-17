@@ -16,5 +16,5 @@ REGISTRY = [
     Scenario("user_provision_owner_scope", "regression", owner_scope,
              issues=("UPLOAD-INTENT-RECOVERY-REGISTRY-ACCESS",)),
     Scenario("user_provision_declaration_read", "regression", declaration_read,
-             issues=("USER-PROVISION-DECLARATION-READ-ERROR",)),
+             issues=("USER-PROVISION-DECLARATION-READ-ERROR", "DRAIN-AWARE-DECLARATION")),
 ]

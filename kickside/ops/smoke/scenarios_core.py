@@ -835,7 +835,7 @@ def core_replay_setup(ctx):
 BASE = ('core_ready',)
 REGISTRY = [
     Scenario('core_ready', 'full', core_ready, features=http('kickside', 'GET /login', 'GET /api/public/health', 'GET /api/public/env/public.js', 'GET /llms.txt', 'GET /robots.txt')),
-    Scenario('core_platform', 'full', core_platform, ('core_ready',), True, issues=('ONBOARDING-DEPENDENCY-INSTALL-CONFLICT',),
+    Scenario('core_platform', 'full', core_platform, ('core_ready',), True, issues=('ONBOARDING-DEPENDENCY-INSTALL-CONFLICT', 'COMPONENTS-UI-STATIC-METADATA'),
              features=navigation('ui', 'kickside.ui:splash.welcome', 'kickside.ui:splash.welcome.step.workspace', 'kickside.ui:splash.welcome.step.logo', 'kickside.ui:splash.welcome.step.models', 'kickside.ui:splash.welcome.step.mcp', 'kickside.ui:splash.welcome.step.done')
              + navigation('hub', 'kickside.hub:splash.welcome.step.modules') + http('users', 'POST /api/public/user/token') + http('ui', 'POST /api/v1/ui/splash/{id}/seen', 'GET /api/v1/nav/list'), instance_setup=True),
     Scenario('core_personal_agent', 'full', core_personal_agent, ('core_platform',),
@@ -859,7 +859,7 @@ REGISTRY = [
     Scenario('core_retention', 'full', core_retention, BASE, features=http('core', 'POST /api/v1/threads', 'GET /api/v1/threads/{id}/retention', 'PUT /api/v1/threads/{id}/retention')),
     Scenario('core_projections', 'full', core_projections, BASE, features=http('core', 'POST /api/v1/threads', 'POST /api/v1/threads/{id}/projections', 'GET /api/v1/threads/{id}/projections', 'PUT /api/v1/threads/{id}/projections/pause', 'PUT /api/v1/threads/{id}/projections/resume', 'POST /api/v1/threads/{id}/projections/remove')),
     Scenario('core_projection_proc_error', 'full', verify_projection_proc_error, BASE, issues=('B03',), features=http('core', 'POST /api/v1/threads/{id}/projections', 'GET /api/v1/threads/{id}/projections', 'GET /api/v1/job-runs', 'GET /api/v1/jobs'), instance_setup=True),
-    Scenario('core_thread_delete', 'full', core_thread_delete, BASE, features=http('core', 'POST /api/v1/threads', 'DELETE /api/v1/threads/{id}', 'GET /api/v1/threads')),
+    Scenario('core_thread_delete', 'full', core_thread_delete, BASE, issues=('JOBS-RETAINED-DETACH-RACE',), features=http('core', 'POST /api/v1/threads', 'DELETE /api/v1/threads/{id}', 'GET /api/v1/threads')),
     Scenario('core_workspace_dashboard', 'full', core_workspace_dashboard, ('core_personal_agent',), features=http('dashboard', 'GET /api/v1/dashboard/overview') + navigation('dashboard', 'kickside.dashboard:nav_item'), instance_setup=True),
     Scenario('core_transfer', 'full', core_transfer, ('core_personal_agent',), features=http('transfer', 'GET /api/v1/transfer/exportable', 'POST /api/v1/transfer/export', 'POST /api/v1/transfer/import') + navigation('transfer', 'kickside.transfer:account.transfer'), instance_setup=True),
     Scenario('core_identity', 'full', core_identity, ('core_personal_agent',), features=http('identity', 'GET /api/v1/identity/links', 'POST /api/v1/identity/link-codes', 'POST /api/v1/identity/unlink') + navigation('identity', 'kickside.identity:account.identity')),

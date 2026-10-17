@@ -34,7 +34,7 @@ def brave_package_readme(ctx):
     require(dependency['data']['version'] == '*', 'Brave constrains the shared WebScout dependency')
 
 
-REGISTRY += [Scenario('brave_package_readme', 'full', brave_package_readme, ('boot',))]
+REGISTRY += [Scenario('brave_package_readme', 'full', brave_package_readme, ('boot',), issues=('WEBSCOUT-PROVIDER-HOST-BINDINGS',))]
 
 REGISTRY += [Scenario('data_contracts', 'full', data_contracts, ('boot',))]
 
@@ -64,7 +64,7 @@ def release_harness_configuration(ctx):
 REGISTRY += [Scenario('release_harness_configuration', 'full', release_harness_configuration,
                       issues=('R5-RELEASE-HISTORY-DSN', 'R5-RELEASE-HARNESS-SQLITE-PATH',
                               'R5-RELEASE-HARNESS-COVERAGE', 'NE-09', 'NE-68', 'NE-15', 'NE-01', 'NE-02', 'NE-07', 'NE-23', 'NE-71',
-                              'COMPAT-INITIAL-RELEASE-CANDIDATE', 'RELEASE-FRESH-BUILD-INPUTS', 'NE-50', 'NE-235', 'NE-242', 'SMOKE-CARRIER-JSON-CLONE-CONVENTION', 'RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE'))]
+                              'COMPAT-INITIAL-RELEASE-CANDIDATE', 'RELEASE-FRESH-BUILD-INPUTS', 'NE-50', 'NE-235', 'NE-242', 'SMOKE-CARRIER-JSON-CLONE-CONVENTION', 'RELEASE-CONTENT-DETERMINISTIC-PACK-FIXTURE', 'MODULE-MAKE-TEST-TARGETS', 'TEMPLATE-PUBLIC-RELEASE-WORKFLOW'))]
 
 
 def release_contract_invokers(ctx):
