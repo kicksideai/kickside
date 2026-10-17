@@ -153,8 +153,8 @@ make lint       # type-check the main app
 make run        # build and run the app
 ```
 
-Source development starts with `make refresh-deps` and `make preboot-check`.
-The root README describes repository gates and SQLite/PostgreSQL module tests.
+Source development starts with `make refresh-deps`. Each module's README lists
+its test targets.
 
 ## Frontend Boundary
 
@@ -205,7 +205,7 @@ that type or use `app:documentation` for list/read convenience.
 - [KickSide Module Template](https://github.com/kicksideai/module) -
   GitHub template with initialization, backend, API,
   migration, contract, port, web component, SQLite/Postgres harness, CI,
-  Wiki, and agent instructions.
+  and the development handbook.
 - [Frontend Documentation](https://github.com/kicksideai/docs/blob/main/building-modules/frontend.md) -
   host and module-owned web component conventions.
 
