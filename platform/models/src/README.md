@@ -4,7 +4,8 @@ The LLM model catalog and provider-profile settings surface for KickSide.
 
 This module has two layers:
 
-- Static defaults: shipped `llm.model` registry entries in `catalog/_index.yaml`.
+- Registry defaults: provider adapters, safe presets, and catalog policy in
+  `catalog/_index.yaml`; no static model cards are seeded.
 - Runtime overlay: DB-backed provider profiles and model cards, cached in `store.memory`.
 
 Registry is only for shipped adapters/defaults, provider editor web components,
@@ -100,7 +101,7 @@ profile can either store an encrypted secret value directly or store an
 resolved runtime context is the same either way.
 
 Google Vertex AI has a models-owned background service:
-`kickside.models:vertex_token_supervisor.service`. It auto-starts on the
+`kickside.models.providers.google_vertex:vertex_token_supervisor.service`. It auto-starts on the
 configured `process_host`, scans enabled DB provider profiles for
 `wippy.llm.google.vertex:provider`, signs the service-account JWT itself, and
 refreshes the OAuth2 access token into the cache used by the current Vertex

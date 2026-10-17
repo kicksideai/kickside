@@ -18,11 +18,12 @@ migration policy, and lists installed modules.
 
 ## Data
 
-All data comes from existing app endpoints — the keeper hub API
+Package and registry data comes from Keeper — the Hub API
 (`/api/v1/keeper/hub/*`), the registry-entry search
 (`/api/v1/keeper/registry/entries`), and `/api/v1/user/me`. This module ships no
-backend functions or routers of its own; it only serves a static bundle and
-declares a System tab.
+package-lifecycle backend: Keeper owns that boundary. Hub supplies its own
+Hub credential, required-setup, instrument-recommendation, and requirement-
+resolution endpoints, as well as the static bundle and System tab.
 
 The onboarding component discovers starter profiles from `registry.entry`
 declarations with `meta.type: kickside.hub:onboarding_profile`. Profile display

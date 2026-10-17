@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -49,6 +42,27 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=models` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+In **System → Models**, create a provider profile, configure its credentials, discover or add model cards, and assign model classes. Profiles and discovered cards live in the database; registry declarations provide adapters and presets. Agents can select a model or an administrator-assigned `class:<name>`.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.models:target_db`](src/_index.yaml) | Host supplies the value |
+| [`kickside.models:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.models:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.models:process_host`](src/_index.yaml) | Host supplies the value |
+| [`kickside.models.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

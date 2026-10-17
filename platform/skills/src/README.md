@@ -28,23 +28,12 @@ This module owns:
   (`init_skills`) pins specific skills' bodies + manifests into an agent's prompt
   when the agent supplies `context.skill_ids`.
 
-## Script execution (follow-on, self-contained)
+## Bundled scripts
 
-Bundled `scripts/` files are **stored, not executed** in V1. The architecture spot
-is reserved entirely inside this module so a follow-on runner can be added without
-touching any other package:
-
-- `skill_files.kind = "script"` + the `executable` flag are persisted; a script's
-  language is inferred from its extension into the file metadata.
-- A version's `allowed_tools_json` / `compatibility_json` are persisted.
-- `kickside.skills:skill_runtime` exposes only implemented file-runtime methods:
-  `activate`, `list_files`, and `read_file`.
-- `runtime/` is the home for a future runner: a `docker_runner.lua` (a finite job over
-  `userspace.docker:containers`, resolved against the `kickside.skill_runner`
-  registry allowlist — not arbitrary images) + a `stage_bundle.lua` (stage a
-  version's scripts/assets to a temp dir, mount `/skill` read-only + `/out`
-  read-write). A future `SkillScript` tool slots into the trait's tool list
-  alongside `Skill` + `SkillFile`.
+Scripts are stored as bundle files and are not executed. A version’s manifest
+retains file kinds, executable metadata, allowed tools, and compatibility
+metadata. The implemented runtime contract exposes `activate`, `list_files`,
+and `read_file`; activation retains the agent’s existing authority.
 
 ## Boundary
 
@@ -59,7 +48,7 @@ code coupling to the agents module.
 
 The consuming host wires these via `ns.dependency`:
 
-- `api_router` — required router the six HTTP routes attach to; must
+- `api_router` — required router the HTTP routes attach to; must
   enforce auth + endpoint firewall.
 - `ui_server` — required HTTP server for the bundled Skills UI.
 - `upload_storage` — required filesystem for bundle bytes.
@@ -70,5 +59,6 @@ The consuming host wires these via `ns.dependency`:
 make test
 ```
 
-Boots the Skills dependency graph and runs the co-located `*_test.lua` suites
-(store CRUD/share, the Skill tool e2e, and skill pinning into a compiled agent).
+Run `make lockrefresh` first. The standalone harness runs thread-backed CRUD,
+sharing, version/file reads, tool behavior, and agent pinning suites. Use its
+PostgreSQL profile with a dedicated database for the second engine.

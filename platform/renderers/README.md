@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See [src/](src/) for registry declarations and implementation.
 
 ## Requirements
 
@@ -43,6 +39,21 @@ make test
 
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=renderers` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Consumers resolve the installed renderer matching a content type. Renderers display supported content in isolated web components and read through the owning content interface; installing a renderer supplies no access to private source data.
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.renderers:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.renderers:user_security_scope`](src/_index.yaml) | `kickside.security.groups:members` |
+| [`kickside.renderers:api_router`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 

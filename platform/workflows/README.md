@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 Undo and redo history belongs to each workflow and is shared by its editors.
 The definition writer commits each forward/inverse batch and its definition
@@ -46,13 +42,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -60,6 +53,38 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=workflows` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Create a Workflow draft, add and connect Blocks, validate, and publish an immutable version. Launch or trigger that exact version and inspect its run history. A durable wait resumes under the run’s saved execution identity; the reviewer supplies a decision rather than becoming its executor.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Agent tools
+
+Tool names link to their input/output schemas. Capabilities and the caller’s
+resource access determine which tools are available.
+
+| Tool | Selection and paging inputs |
+| --- | --- |
+| [`RunFlow`](src/agent/_index.yaml) | See the operation schema |
+| [`WorkflowsRead`](src/agent/_index.yaml) | `limit`, `offset` |
+| [`WorkflowsManage`](src/agent/_index.yaml) | See the operation schema |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.workflows:target_db`](src/_index.yaml) | Host supplies the value |
+| [`kickside.workflows:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.workflows:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.workflows:process_host`](src/_index.yaml) | Host supplies the value |
+| [`kickside.workflows.security:user_security_scope`](src/security/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

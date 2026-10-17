@@ -20,7 +20,7 @@ user-facing CRUD API.
   cross this seam — they are the engine's own internal concern (kb10's
   `node_store`). kb10 owns the `kb10_*` schema and binds the lifecycle contract.
 - **Workers** — ingestion/injection (`injection`). Concept-graph enrichment,
-  digest, and node/graph reading moved to the kb10 engine with the store split.
+  digest, and node/graph reading belong to the KB engine.
 - **Agent surface** — KB memory recall, query/ingest tools, a Knowledge Manager
   trait for engine discovery and KB lifecycle, and a `wippy.agent:memory`
   binding (`agent`, `traits`).
@@ -63,15 +63,15 @@ required `api_router`, which must enforce auth + endpoint_firewall.
 
 Add one `registry.entry` with `meta.type = kickside.kb_engine` per public
 `kb_type`. The entry is the routing contract: declare `impl_id`,
-`query_binding`, `store_contract`, optional `materializer_contract`, UI tags,
+`query_binding`, `store_contract`, UI tags,
 stats labels, and default config there. The knowledge control plane resolves
 create, read/list, query, delete, and source projection from that descriptor
 instead of branching on engine names.
 
-Engines that want durable content ingestion bind the declared materializer
-contract and implement `replace_document` plus delete-by-external-id. Public
-content writes still go through the KB-owned thread; the materializer is only
-the projection of canonical thread events into engine storage.
+Engines that support durable content ingestion declare source projections in
+the descriptor. Those workers materialize canonical KB content events into the
+engine’s storage. Public content writes go through the KB-owned thread;
+source materialization does not add a public store-mutation contract.
 
 Ask uses only the configured `analysis_model`; document summarization has its own
 model. With no analysis model, Ask returns ranked passages without generation.

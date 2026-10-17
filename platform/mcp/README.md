@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See [src/](src/) for registry declarations and implementation.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -49,6 +42,24 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=mcp` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Create an MCP credential from **MCP**, choose allowed capabilities and resources, and copy its token once. Use the displayed endpoint and bearer token in the external client. Tool calls retain the credential’s authority ceiling and Component restrictions; changing group access can reduce or revoke authority. Use `kickside/mcp-client` for outbound connections to an external server.
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.mcp:credential_eligibility`](src/_index.yaml) | Empty string |
+| [`kickside.mcp:target_db`](src/_index.yaml) | Host supplies the value |
+| [`kickside.mcp:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.mcp:public_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.mcp:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.mcp.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

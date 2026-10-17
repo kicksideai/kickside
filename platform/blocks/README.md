@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,18 +31,42 @@ Development uses Make and the Wippy CLI.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
 afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
+
+## Use
+
+Discover exact Block declarations through `kickside.blocks:blocks`. A Block lowers to one native function, agent, or wait node; the composing caller owns edges and the graph. Public tools appear as virtual Blocks from their authoritative schemas. Headless composition does not require visual Workflows.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Agent tools
+
+Tool names link to their input/output schemas. Capabilities and the caller’s
+resource access determine which tools are available.
+
+| Tool | Selection and paging inputs |
+| --- | --- |
+| [`list_blocks`](src/_index.yaml) | `limit`, `cursor` |
+| [`get_block`](src/_index.yaml) | See the operation schema |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.blocks:process_host`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 

@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -49,6 +42,44 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=uploads` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Add a file in **Uploads** and inspect its processing state and preview. Installed processors select conversion and derived artifacts. Consumers read through Uploads content interfaces or signed purpose-bound tokens; original bytes, derived artifacts, and metadata remain owned by Uploads.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Agent tools
+
+Tool names link to their input/output schemas. Capabilities and the caller’s
+resource access determine which tools are available.
+
+| Tool | Selection and paging inputs |
+| --- | --- |
+| [`CountFiles`](src/traits/_index.yaml) | See the operation schema |
+| [`ListFiles`](src/traits/_index.yaml) | `limit` |
+| [`ViewFiles`](src/traits/_index.yaml) | See the operation schema |
+| [`FetchURL`](src/traits/_index.yaml) | See the operation schema |
+| [`UploadFile`](src/traits/_index.yaml) | See the operation schema |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.uploads:database_resource`](src/_index.yaml) | Host supplies the value |
+| [`kickside.uploads:storage_id`](src/_index.yaml) | Host supplies the value |
+| [`kickside.uploads:storage_s3`](src/_index.yaml) | Empty string |
+| [`kickside.uploads:env_storage`](src/_index.yaml) | Host supplies the value |
+| [`kickside.uploads:document_image_artifacts_enabled`](src/_index.yaml) | `true` |
+| [`kickside.uploads:archive_max_zip_bytes`](src/_index.yaml) | `2147483648` |
+| [`kickside.uploads:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.uploads:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.uploads.security:user_security_scope`](src/security/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

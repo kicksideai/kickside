@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 `kickside.connection:endpoints` resolves `get(descriptor_id, key)` from a
 provider declaration's `endpoints` map. Providers declare namespace requirements
@@ -50,13 +46,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -64,6 +57,34 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=connection` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Open **Connections → Connect app** and select an installed provider. The provider supplies credential fields or OAuth authorization. Select the resulting resource on the consuming capability or Automation and share it when needed. Installing a provider does not connect an external account.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.connection:reply_provider`](src/_index.yaml) | `send_reply`, `update_reply`, `send_status` |
+| [`kickside.connection:connection`](src/_index.yaml) | `get_status`, `test_connection`, `discover_resources` |
+| [`kickside.connection:connections`](src/_index.yaml) | `register`, `find`, `upsert`, `update`, `delete`, `list`, `validate` |
+| [`kickside.connection:reply_providers`](src/_index.yaml) | `create`, `find`, `upsert`, `update`, `delete`, `list` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.connection:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.connection:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.connection.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

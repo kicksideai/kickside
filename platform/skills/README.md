@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -49,6 +42,41 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=skills` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Create a versioned skill procedure and its files, then attach or activate it through an agent capability. The runtime exposes activation, file listing, and file reads under the agent’s execution identity. Updating a procedure does not grant new resource authority.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.skills:skill_runtime`](src/_index.yaml) | `activate`, `list_files`, `read_file` |
+
+### Agent tools
+
+Tool names link to their input/output schemas. Capabilities and the caller’s
+resource access determine which tools are available.
+
+| Tool | Selection and paging inputs |
+| --- | --- |
+| [`Skill`](src/traits/_index.yaml) | `limit`, `cursor` |
+| [`SkillFile`](src/traits/_index.yaml) | `limit`, `cursor` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.skills:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.skills:upload_storage`](src/_index.yaml) | Host supplies the value |
+| [`kickside.skills:ui_server`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 

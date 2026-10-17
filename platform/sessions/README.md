@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See [src/](src/) for registry declarations and implementation.
 
 ## Requirements
 
@@ -41,6 +37,20 @@ wippy lint
 
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=sessions` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Open **Sessions** to resume, rename, favorite, restart, preview, or delete an accessible chat. The module renders the session runtime’s state and artifacts; the runtime owns the conversation and execution.
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.sessions:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.sessions:ui_server`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 

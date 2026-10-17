@@ -1,6 +1,6 @@
 # kickside/execution
 
-Execution identity (IDENTITY-1): the principal codec, actor keys, delegation encoding and the live
+Execution identity: the principal codec, actor keys, delegation encoding and the live
 capture/resolve/bind/run_as path; and the execution trace context (`kickside.execution:trace`): the
 canonical trace_context vocabulary, its row codec and the opaque correlation token. A leaf module: it
 depends on no KickSide module.
