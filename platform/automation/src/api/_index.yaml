@@ -412,3 +412,19 @@ entries:
     method: POST
     func: call_action
     path: /automations/{id}/actions/{method}
+
+  - name: source_samples
+    kind: function.lua
+    source: file://source_samples.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      automations_lib: kickside.automation:automation
+      api_errors: kickside.automation.api:errors
+
+  - name: source_samples.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: source_samples
+    path: /automations/source-samples

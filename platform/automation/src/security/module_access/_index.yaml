@@ -49,6 +49,7 @@ entries:
     - kickside.automation.api:list.endpoint
     - kickside.automation.api:list_sinks.endpoint
     - kickside.automation.api:list_sources.endpoint
+    - kickside.automation.api:source_samples.endpoint
     - kickside.automation.api:list_types.endpoint
     - kickside.automation.api:read_config.endpoint
     - kickside.automation.api:read_state.endpoint

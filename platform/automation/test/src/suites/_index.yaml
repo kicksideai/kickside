@@ -652,3 +652,12 @@ entries:
     test: wippy.test:test
     drive: kickside.automation:drive
     round_harness: kickside.automation:round_harness
+
+- name: source_samples_test
+  kind: function.lua
+  meta: { type: test, suite: kickside_automation }
+  source: file://source_samples_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    engine_harness: kickside.automation:automation_test_engine

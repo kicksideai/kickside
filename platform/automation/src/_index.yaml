@@ -41,6 +41,8 @@ entries:
     targets:
       - entry: kickside.automation.api:list_types.endpoint
         path: .meta.router
+      - entry: kickside.automation.api:source_samples.endpoint
+        path: .meta.router
       - entry: kickside.automation.api:list_sources.endpoint
         path: .meta.router
       - entry: kickside.automation.api:list_sinks.endpoint

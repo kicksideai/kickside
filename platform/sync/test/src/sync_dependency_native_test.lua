@@ -13,7 +13,7 @@ end
 
 local function define_tests()
     test.describe("native sync dependency failures", function()
-        for _, stage in ipairs({"resolve_source", "resolve_sink", "component_id_for_actor"}) do
+        for _, stage in ipairs({"resolve_source", "resolve_sink", "source_thread"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID,
                 errors.PERMISSION_DENIED, errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED,
                 errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
@@ -35,7 +35,7 @@ local function define_tests()
         for _, case in ipairs({
             {stage = "resolve_source", code = "sync_endpoint_missing", field = "trigger.source"},
             {stage = "resolve_sink", code = "sync_endpoint_missing", field = "sink_port"},
-            {stage = "component_id_for_actor", code = "source_identity_missing", field = "trigger.config.thread_id"},
+            {stage = "source_thread", code = "source_identity_missing", field = "trigger.config.thread_id"},
         }) do
             test.it("classifies the absent " .. case.stage .. " dependency result", function()
                 local service = runtime({[case.stage] = function() return nil end})

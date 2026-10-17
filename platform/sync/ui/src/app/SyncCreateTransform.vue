@@ -14,6 +14,8 @@ const props = defineProps<{
   canAssist: boolean
   detected: { needed: boolean; reason: string } | null
   transform: SyncTransform | null
+  samples: string
+  sampleError: string
   sourceSchema: string
   sinkSchema: string
   inputShape: string
@@ -40,9 +42,11 @@ function onConfirmed(e: Event) { emit('transform-confirmed', e) }
         <Icon :icon="props.detected.needed ? 'tabler:alert-triangle' : 'tabler:circle-check'" aria-hidden="true" />
         <span>{{ props.detected.reason }}</span>
       </div>
+      <p v-if="props.sampleError" class="kx-stage-desc" role="alert">{{ props.sampleError }}</p>
       <component
         :is="TRANSFORM_ASSIST_TAG"
         data-test="pl-transform"
+        :samples="props.samples"
         :source-schema="props.sourceSchema"
         :sink-schema="props.sinkSchema"
         :input-shape="props.inputShape"

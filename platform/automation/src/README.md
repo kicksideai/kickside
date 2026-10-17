@@ -36,6 +36,15 @@ carry stable item identity and per-delivery idempotency keys through that path.
 The sink confirms writes with classified results; the engine records receipts
 and advances only after the round's durable work succeeds.
 
+Editors read real payload samples with `POST /api/v1/automations/source-samples`:
+`{ "source": "port-entry-id", "config": {}, "limit": 1 }`. The limit is an integer
+from 1 through 100. The response contains `samples` and the selected instance's
+`output_schema` when declared. This reads one bounded source page under the
+caller's identity through the existing acquisition path and leaves installed
+drive positions unchanged. Deleted items supply no payload sample; an empty
+source returns an empty array. Sync passes these samples to Transform for
+validation and generation.
+
 Writable bindings must declare `meta.delivery` (`exactly_once`, `at_least_once`,
 `at_most_once`) and `meta.input_shape` (`record`, `content`); `describe_sink`
 refuses missing or invalid values. Round consumers answer each input exactly

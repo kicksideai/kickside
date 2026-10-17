@@ -121,27 +121,6 @@ local function backfill_since(backfill: any, now: any): (string?, error?)
     return nil, invalid("a collection source requires backfill all, none, { since } or { last_days }", "trigger.backfill")
 end
 
--- source_thread(endpoint, thread_id) -> the thread an events source reads: the
--- selected one, or the installing actor's one instance of a picker-less
--- per-user source.
-local function source_thread(endpoint: Map, thread_id: string?): (string?, error?)
-    if thread_id and thread_id ~= "" then return thread_id, nil end
-    for _, field in pairs(type(endpoint.config_schema) == "table" and (endpoint.config_schema :: Map) or {}) do
-        local picker = type(field) == "table" and (field :: Map).picker or nil
-        if type(picker) == "string" and picker ~= "" and picker ~= "wc-schema-form" then
-            return nil, invalid("the events source " .. tostring(endpoint.id) .. " requires a selected thread_id", "trigger.config.thread_id")
-        end
-    end
-    local resolved, err = automations_lib.component_id_for_actor(trim(endpoint.class))
-    if err then return nil, (errors.wrap(err, "the events source " .. tostring(endpoint.id) .. " has no instance") :: error) end
-    if not resolved or trim(resolved) == "" then
-        return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
-            message = "the events source " .. tostring(endpoint.id) .. " has no instance",
-            details = {code = "source_identity_missing", field = "trigger.config.thread_id"}}) :: error)
-    end
-    return trim(resolved), nil
-end
-
 -- main_source(endpoint, trigger, state, now) -> the main drive source (A22).
 local function main_source(endpoint: Map, trigger: Map, state: Map, now: any): (Map?, error?)
     local port = tostring(endpoint.id or "")
@@ -152,8 +131,18 @@ local function main_source(endpoint: Map, trigger: Map, state: Map, now: any): (
         if trigger.backfill ~= "all" and trigger.backfill ~= "none" then
             return nil, invalid("the events source " .. port .. " requires backfill all (its history) or none (only new)", "trigger.backfill")
         end
-        local thread_id, thread_err = source_thread(endpoint, (state.source :: Map).thread_id)
-        if thread_err then return nil, thread_err end
+        local thread_id, thread_err = automations_lib.source_thread(endpoint, (state.source :: Map).thread_id)
+        if thread_err then
+            if errors.is(thread_err, errors.INVALID) and thread_err:details().code == "source_instance_required" then
+                return nil, invalid(thread_err:message(), "trigger.config.thread_id")
+            end
+            return nil, thread_err
+        end
+        if not thread_id or trim(thread_id) == "" then
+            return nil, errors.new({kind = errors.INTERNAL, retryable = false,
+                message = "the events source " .. tostring(endpoint.id) .. " has no instance",
+                details = {code = "source_identity_missing", field = "trigger.config.thread_id"}})
+        end
         source = { source_kind = "event", source_ref = port, source_thread_id = thread_id,
             start = trigger.backfill == "all" and "all" or "new", event_type = endpoint.event }
     elseif endpoint.surface == "collection" then
