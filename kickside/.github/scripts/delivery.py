@@ -110,23 +110,38 @@ def prepare_harness(module, harness):
 
 def test_harness(module, harness, engine):
     prepare_harness(module, harness)
+    import yaml
+    config = yaml.safe_load((harness / '.wippy.yaml').read_text()) if (harness / '.wippy.yaml').exists() else {}
     args = []
-    database = None
+    database_names = []
+    databases = []
     if engine == 'postgres' and 'postgres' in module['profiles']:
         args += ['--profile', 'postgres']
         if module['pg_database']:
             database = 'ci_' + re.sub(r'[^a-z0-9_]', '_', module['path'].lower()) + '_' + str(os.getpid())
-            run(['createdb', database])
-            args += ['--set', 'vars.pg_database=' + database,
-                     '--set', 'vars.pg_host=127.0.0.1', '--set', 'vars.pg_port=5433']
+            profile = config.get('profiles', {}).get('postgres', {})
+            variables = dict(config.get('vars', {}), **profile.get('vars', {}))
+            for name, suffixes in sorted(module['pg_database'].items()):
+                if name != 'pg_database' and name not in variables:
+                    raise ValueError('Postgres database variable is undeclared: ' + name)
+                value = database if name == 'pg_database' else database + '_' + hashlib.sha256(name.encode()).hexdigest()[:8]
+                args += ['--set', 'vars.' + name + '=' + value]
+                for suffix in suffixes:
+                    owned = value + suffix
+                    if not re.fullmatch(r'[a-z][a-z0-9_]{0,62}', owned):
+                        raise ValueError('Postgres test database name is invalid: ' + owned)
+                    if owned not in database_names:
+                        database_names.append(owned)
+            args += ['--set', 'vars.pg_host=127.0.0.1', '--set', 'vars.pg_port=5433']
     sqlite_path = None
-    import yaml
-    config = yaml.safe_load((harness / '.wippy.yaml').read_text()) if (harness / '.wippy.yaml').exists() else {}
     if engine == 'sqlite' and 'sqlite_path' in config.get('vars', {}):
         sqlite_path = harness / '.wippy' / ('ci-' + str(os.getpid()) + '.sqlite')
         sqlite_path.parent.mkdir(parents=True, exist_ok=True)
         args += ['--set', 'vars.sqlite_path=' + str(sqlite_path)]
     try:
+        for database in database_names:
+            run(['createdb', database])
+            databases.append(database)
         run(['wippy', 'lint', *args], harness)
         if module.get('test_runner') == 'crm':
             output = run(['bash', './run.sh', *args], harness, capture=True)
@@ -134,7 +149,7 @@ def test_harness(module, harness, engine):
             output = run(['wippy', 'test', *args], harness, capture=True)
         check_test_output(output)
     finally:
-        if database:
+        for database in reversed(databases):
             run(['dropdb', '--force', database])
         if sqlite_path:
             for path in (sqlite_path, Path(str(sqlite_path) + '-wal'), Path(str(sqlite_path) + '-shm')):

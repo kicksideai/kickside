@@ -19,6 +19,92 @@ def fixture_directory():
 
 
 class PublicationTest(unittest.TestCase):
+    def test_database_manifest_declares_ownership_for_every_profile(self):
+        for module in DELIVERY.plan()['modules'].values():
+            if module['pg_database'] is None:
+                continue
+            with self.subTest(module=module['path']):
+                self.assertIsInstance(module['pg_database'], dict)
+                self.assertIn('pg_database', module['pg_database'])
+                for variable, suffixes in module['pg_database'].items():
+                    self.assertRegex(variable, r'^[A-Za-z_][A-Za-z0-9_]*$')
+                    self.assertIsInstance(suffixes, list)
+                    self.assertTrue(suffixes)
+                    for suffix in suffixes:
+                        self.assertIsInstance(suffix, str)
+                        self.assertRegex(suffix, r'^[a-z0-9_]*$')
+
+    def test_test_owned_databases_are_not_provisioned_by_the_driver(self):
+        with tempfile.TemporaryDirectory(dir=DELIVERY.ROOT) as directory:
+            harness = Path(directory)
+            (harness / '.wippy.yaml').write_text(
+                'profiles:\n  postgres:\n    override:\n'
+                '      app:db:database: ${pg_database}\n'
+                '      app:scratch:database: ${pg_database}_scratch\n')
+            module = {'path': 'example', 'profiles': ['postgres'],
+                      'pg_database': {'pg_database': ['']}}
+            with patch.object(DELIVERY, 'prepare_harness'), patch.object(DELIVERY, 'run', return_value='3 tests PASSED') as run:
+                DELIVERY.test_harness(module, harness, 'postgres')
+            commands = [call.args[0] for call in run.call_args_list]
+            created = [command[1] for command in commands if command[0] == 'createdb']
+            dropped = [command[-1] for command in commands if command[0] == 'dropdb']
+            self.assertEqual(len(created), 1)
+            self.assertEqual(dropped, created)
+
+    def test_database_creation_failure_drops_only_successful_creates(self):
+        with tempfile.TemporaryDirectory(dir=DELIVERY.ROOT) as directory:
+            harness = Path(directory)
+            (harness / '.wippy.yaml').write_text(
+                'vars:\n  pg_database: unused\nprofiles:\n  postgres:\n    override:\n'
+                '      app:db:database: ${pg_database}\n'
+                '      app:migration:database: ${pg_database}_mig\n')
+            module = {'path': 'example', 'profiles': ['postgres'], 'pg_database': {'pg_database': ['', '_mig']}}
+            failure = RuntimeError('database creation refused')
+            def invoke(command, *args, **kwargs):
+                if command[0] == 'createdb' and command[1].endswith('_mig'):
+                    raise failure
+                return '3 tests PASSED'
+            with patch.object(DELIVERY, 'prepare_harness'), patch.object(DELIVERY, 'run', side_effect=invoke) as run:
+                with self.assertRaises(RuntimeError) as caught:
+                    DELIVERY.test_harness(module, harness, 'postgres')
+            self.assertIs(caught.exception, failure)
+            commands = [call.args[0] for call in run.call_args_list]
+            primary = next(command[1] for command in commands if command[0] == 'createdb')
+            self.assertEqual(commands[-1], ['dropdb', '--force', primary])
+            self.assertFalse(any(command[:2] == ['wippy', 'lint'] for command in commands))
+
+
+    def test_postgres_provisions_declared_auxiliary_databases(self):
+        with tempfile.TemporaryDirectory(dir=DELIVERY.ROOT) as directory:
+            harness = Path(directory)
+            (harness / '.wippy.yaml').write_text(
+                'vars:\n  pg_database: unused\n  pg_schema_database: unused_schema\n'
+                'profiles:\n  postgres:\n    override:\n'
+                '      app:db:database: ${pg_database}\n'
+                '      app:migration:database: ${pg_database}_mig\n'
+                '      app:isolated:database: ${pg_schema_database}\n')
+            module = {'path': 'example', 'profiles': ['postgres'], 'pg_database': {'pg_database': ['', '_mig'], 'pg_schema_database': ['']}}
+            with patch.object(DELIVERY, 'prepare_harness'), patch.object(DELIVERY, 'run', return_value='3 tests PASSED') as run:
+                DELIVERY.test_harness(module, harness, 'postgres')
+            commands = [call.args[0] for call in run.call_args_list]
+            created = [command[1] for command in commands if command[0] == 'createdb']
+            dropped = [command[-1] for command in commands if command[0] == 'dropdb']
+            test = next(command for command in commands if command[:2] == ['wippy', 'test'])
+            settings = dict(value.removeprefix('vars.').split('=', 1)
+                            for value in test if value.startswith('vars.'))
+            self.assertEqual(set(created), {settings['pg_database'],
+                             settings['pg_database'] + '_mig', settings['pg_schema_database']})
+            self.assertEqual(dropped, list(reversed(created)))
+            self.assertNotIn('unused_schema', created)
+
+    def test_primary_harness_uses_owning_lockrefresh_target(self):
+        module = {'path': 'example', 'harness': 'test'}
+        harness = DELIVERY.ROOT / 'example/test'
+        with patch.object(DELIVERY, 'run') as run:
+            DELIVERY.prepare_harness(module, harness)
+        self.assertEqual([call.args[0] for call in run.call_args_list],
+                         [['make', '-C', 'example', 'lockrefresh']])
+
     def module(self):
         return {'path': 'platform/inbox', 'type': 'plugin', 'visibility': 'public',
                 'embed': ['kickside.inbox:ui_fs']}
@@ -89,7 +175,7 @@ class PublicationTest(unittest.TestCase):
                 with self.subTest(engine=engine, runner=runner), fixture_directory() as directory:
                     harness = Path(directory)
                     (harness / '.wippy.yaml').write_text('vars:\n  sqlite_path: ":memory:"\n')
-                    module = {'path': 'fixture', 'profiles': ['postgres'], 'pg_database': 'fixture'}
+                    module = {'path': 'fixture', 'profiles': ['postgres'], 'pg_database': {'pg_database': ['']}}
                     if runner:
                         module['test_runner'] = runner
                     with patch.object(DELIVERY, 'prepare_harness'), patch.object(DELIVERY, 'run', return_value='3 tests PASSED') as run:
@@ -112,7 +198,7 @@ class PublicationTest(unittest.TestCase):
         with fixture_directory() as directory:
             harness = Path(directory)
             (harness / '.wippy.yaml').write_text('vars: {}\n')
-            module = {'path': 'fixture', 'profiles': ['postgres'], 'pg_database': 'fixture'}
+            module = {'path': 'fixture', 'profiles': ['postgres'], 'pg_database': {'pg_database': ['']}}
             failure = RuntimeError('fixture lint error')
             def invoke(args, *positional, **keywords):
                 if args[:2] == ['wippy', 'lint']:
@@ -175,7 +261,11 @@ class PublicationTest(unittest.TestCase):
                 self.assertTrue(set(config.get('profiles', {})) <= set(module['profiles']),
                                 'Native engine profiles must participate in delivery gates')
                 if 'postgres' in config.get('profiles', {}):
-                    self.assertEqual(module['pg_database'], config['vars']['pg_database'])
+                    self.assertEqual(module['pg_database'], {'pg_database': ['']})
+                    self.assertIn('pg_database', config['vars'])
+                    database_bindings = [value for key, value in config['profiles']['postgres']['override'].items()
+                                         if key.endswith(':database')]
+                    self.assertEqual(set(database_bindings), {'${pg_database}'})
 
     def test_dashboard_harness_declares_its_test_library(self):
         declaration = yaml.safe_load((DELIVERY.ROOT / 'dashboard/test/src/_index.yaml').read_text())

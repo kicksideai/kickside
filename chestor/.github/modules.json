@@ -46,7 +46,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "chestor_db_schema_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "graph": {
@@ -69,7 +73,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "chestor_graph_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "lua",
@@ -98,7 +106,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "chestor_journal_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "roadmap": {
@@ -121,7 +133,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "chestor_roadmap_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "workspace": {
@@ -144,7 +160,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "chestor_workspace_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     }
   }

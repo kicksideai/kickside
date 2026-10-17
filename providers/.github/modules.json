@@ -60,7 +60,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_asr",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "atlassian": {
@@ -83,7 +87,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_atlassian",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "bitbucket": {
@@ -102,7 +110,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_bitbucket",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "code_execution": {
@@ -124,7 +136,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_code_execution",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "discord": {
@@ -143,7 +159,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_discord",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "fireflies": {
@@ -162,7 +182,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_fireflies_v2",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "github": {
@@ -184,7 +208,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_github_v2",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "gitlab": {
@@ -203,7 +231,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_gitlab",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "google": {
@@ -225,7 +257,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_google",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "hubspot": {
@@ -247,7 +283,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_hubspot",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "kb10": {
@@ -273,7 +313,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_kb10",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "make",
@@ -305,7 +349,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_llm_ocr_v2",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "mcp-client": {
@@ -327,7 +375,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_mcp_client",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "memory": {
@@ -352,7 +404,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_memory",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "make",
@@ -379,7 +435,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_phantombuster_v2",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "simplefin": {
@@ -401,7 +461,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_simplefin_v2",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "slack": {
@@ -420,7 +484,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_slack",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "sso-github": {
@@ -440,7 +508,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sso_github",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "sso-google": {
@@ -460,7 +532,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sso_google",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "sso-microsoft": {
@@ -480,7 +556,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sso_microsoft",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "sso-oidc": {
@@ -500,7 +580,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sso_oidc",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "telegram": {
@@ -519,7 +603,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_telegram",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "webscout": {
@@ -542,7 +630,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_webscout",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "make",
@@ -566,7 +658,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_webscout_brave",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "webscout-tavily": {
@@ -585,7 +681,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_webscout_tavily",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     }
   }

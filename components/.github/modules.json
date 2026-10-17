@@ -41,7 +41,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "dashboard_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "research": {
@@ -64,7 +68,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "research_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "make",
@@ -94,7 +102,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "agent_onboarding_test",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "make",
@@ -126,7 +138,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sso",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": [
         [
           "make",

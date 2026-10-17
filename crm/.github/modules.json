@@ -59,7 +59,14 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_crm",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ],
+        "pg_receipt_schema_database": [
+          ""
+        ]
+      },
       "extra_tests": [],
       "test_runner": "crm"
     }

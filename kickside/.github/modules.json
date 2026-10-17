@@ -101,7 +101,14 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_component",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ],
+        "pg_metadata_migration_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "core/contract": {
@@ -120,7 +127,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_contract",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "core/core": {
@@ -139,7 +150,12 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_core",
+      "pg_database": {
+        "pg_database": [
+          "",
+          "_transient"
+        ]
+      },
       "extra_tests": []
     },
     "core/execution": {
@@ -177,7 +193,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_jobs",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/agents": {
@@ -201,7 +221,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_agents",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/automation": {
@@ -224,7 +248,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_automation",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/blocks": {
@@ -244,7 +272,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_blocks",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/channel": {
@@ -267,7 +299,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_channel",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/connection": {
@@ -290,7 +326,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_connection",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/dm": {
@@ -309,7 +349,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_dm",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/hub": {
@@ -334,7 +378,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_hub",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/identity": {
@@ -357,7 +405,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_identity",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/inbox": {
@@ -380,7 +432,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_inbox",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/knowledge": {
@@ -403,7 +459,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_knowledge",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/mcp": {
@@ -426,7 +486,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_mcp",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/models": {
@@ -449,7 +513,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_models",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/oauth": {
@@ -468,7 +536,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_oauth",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/realtime": {
@@ -487,7 +559,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_realtime",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "core/realtime-dispatch": {
@@ -506,7 +582,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_realtime_dispatch",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/renderers": {
@@ -529,7 +609,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_renderers",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/security": {
@@ -552,7 +636,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_security",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/self-reflection": {
@@ -571,7 +659,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_self_reflection",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/sessions": {
@@ -594,7 +686,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sessions",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/settings": {
@@ -617,7 +713,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_settings",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/skills": {
@@ -640,7 +740,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_skills",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/sync": {
@@ -663,7 +767,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_sync",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/transfer": {
@@ -686,7 +794,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_transfer",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/transform": {
@@ -709,7 +821,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_transform",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/ui": {
@@ -732,7 +848,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_ui",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/ui-kit": {
@@ -773,7 +893,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_uploads",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/users": {
@@ -796,7 +920,12 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_users",
+      "pg_database": {
+        "pg_database": [
+          "",
+          "_mig"
+        ]
+      },
       "extra_tests": []
     },
     "platform/webhooks": {
@@ -819,7 +948,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_webhooks",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/widgets": {
@@ -842,7 +975,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_widgets",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "platform/workflows": {
@@ -866,7 +1003,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_workflows",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     },
     "app": {
@@ -894,7 +1035,11 @@
       "profiles": [
         "postgres"
       ],
-      "pg_database": "kickside_test_app",
+      "pg_database": {
+        "pg_database": [
+          ""
+        ]
+      },
       "extra_tests": []
     }
   }
