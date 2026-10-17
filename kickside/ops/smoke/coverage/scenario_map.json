@@ -8278,6 +8278,13 @@
       ],
       "tier": "regression"
     },
+    "jobs_dispatch_fixture_settlement": {
+      "features": [],
+      "issues": [
+        "HOT-UPDATE-INFLIGHT-EXACTLY-ONCE"
+      ],
+      "tier": "regression"
+    },
     "jobs_native_cancel_contract": {
       "features": [],
       "issues": [
@@ -15248,6 +15255,20 @@
       "features": [],
       "issues": [
         "UI-HARNESS-LIVE-PRINCIPAL"
+      ],
+      "tier": "regression"
+    },
+    "update_legacy_thread_keys": {
+      "features": [],
+      "issues": [
+        "CORE-LEGACY-NATURAL-KEY-UPGRADE"
+      ],
+      "tier": "regression"
+    },
+    "update_retired_upload_slot": {
+      "features": [],
+      "issues": [
+        "JOBS-RETIRED-UPLOAD-SLOT-UPGRADE"
       ],
       "tier": "regression"
     },

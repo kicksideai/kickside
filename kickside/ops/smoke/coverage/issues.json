@@ -9272,6 +9272,39 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/security/test/src/catalog_registry_failure_test.lua"
+    },
+    "core/legacy-natural-key-upgrade": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CORE-LEGACY-NATURAL-KEY-UPGRADE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/migrations/thread_natural_keys_migration_test.lua"
+    },
+    "jobs/retired-upload-slot-upgrade": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-RETIRED-UPLOAD-SLOT-UPGRADE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/jobs/test/src/suites/persist/migration_cases/retired_upload_slot_migration_test.lua"
+    },
+    "jobs/dispatch-fixture-settlement": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "HOT-UPDATE-INFLIGHT-EXACTLY-ONCE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/jobs/test/src/suites/service/worker_parts/worker_process_test.lua"
     }
   },
   "issues": [
@@ -10401,7 +10434,9 @@
     "PUBLIC-HARNESS-CONTENT-CLASSIFICATION",
     "COMPAT-PUBLISHED-MIGRATION-CHECKPOINT",
     "COMPAT-MIGRATION-PRESERVATION-RECIPES",
-    "COMPAT-IMPLIED-SCHEMA-ALTERNATIVES"
+    "COMPAT-IMPLIED-SCHEMA-ALTERNATIVES",
+    "CORE-LEGACY-NATURAL-KEY-UPGRADE",
+    "JOBS-RETIRED-UPLOAD-SLOT-UPGRADE"
   ],
   "schema_version": 1
 }
