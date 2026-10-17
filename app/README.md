@@ -32,8 +32,8 @@ wippy run kickside/kickside -c --profile quickstart \
 ```
 
 `quickstart` is an explicit local-evaluation profile, not the default profile.
-The base configuration uses SQLite for application data and the runtime’s
-default in-memory registry history; `quickstart` additionally selects the local address and the
+The base configuration uses SQLite for application data and durable SQLite
+registry history; `quickstart` additionally selects the local address and the
 documented development credentials. Without it, no fixed admin credentials are
 injected.
 
@@ -58,6 +58,13 @@ This does not resolve new package versions. Use the module command for initial
 installation and the update controls when you intentionally want to change the
 locked application graph.
 
+## Update an installation
+
+Use **System → Modules → Update all**, review and apply the plan, then restart
+from the same directory. Module migrations update existing data. Keep the lock,
+databases, uploads, and encryption key together; updates do not require manual
+data conversion.
+
 ## Where Your Data Lives
 
 Everything is stored under `./.wippy/` in the directory you ran from — that
@@ -68,9 +75,9 @@ directory IS your instance:
   do not supply one). Tokens are signed with it; keep it stable for the life of
   the instance.
 
-Registry history is in memory unless `postgres` selects durable history.
-Runtime registry edits do not survive a restart with memory history; preserve
-the deployment lock and configuration to reproduce the installed module graph.
+Registry history is durable SQLite at `./.wippy/registry.db` by default.
+The `postgres` profile selects PostgreSQL history instead. Preserve the
+deployment lock, configuration, and registry history with the application data.
 
 Keep the directory to keep the instance. Delete the directory for a clean
 install. Never edit the files under `./.wippy/` by hand.
@@ -109,24 +116,23 @@ wippy run kickside/kickside -c \
   --set vars.postgres_database=kickside \
   --set vars.postgres_username=kickside \
   --set vars.postgres_password="<database-password>" \
+  --set vars.postgres_history_dsn="host=db.example.com port=5432 dbname=kickside user=kickside password=<database-password> sslmode=require" \
   --set vars.postgres_sslmode=require
 ```
 
-The `postgres` profile derives the registry history DSN from the same
-`postgres_host`, `postgres_port`, `postgres_database`, `postgres_username`,
-`postgres_password`, and `postgres_sslmode` variables as the application
-connection. Supply these through `--set vars.*`; no separate history DSN is
-required. History uses the same database and the `wippy_registry` schema;
-`vars.postgres_history_schema` selects its namespace. Preserve uploads and the
-encryption key as well. For a local PostgreSQL server without TLS, set
-`vars.postgres_sslmode=disable`.
-
-The DSN uses quoted libpq values. Runtime variable substitution lacks libpq
-escaping for single quotes and backslashes in connection values.
+The application connection uses `postgres_host`, `postgres_port`,
+`postgres_database`, `postgres_username`, `postgres_password`, and
+`postgres_sslmode`. Registry history requires its own libpq DSN in
+`vars.postgres_history_dsn`; the profile does not derive it from those fields.
+Use the same database or another database intended for registry history.
+`vars.postgres_history_schema` defaults to `wippy_registry`.
+Supply a correctly escaped libpq DSN when values contain special characters.
+For a PostgreSQL server without TLS, set `vars.postgres_sslmode=disable` and
+`sslmode=disable` in the history DSN. Preserve uploads and the encryption key.
 
 For larger installs, apply `--profile postgres --profile postgres_large`
 (bigger pool and lease limits) or `--profile postgres --profile postgres_enterprise`
-(highest limits). These tuning profiles do not select a history backend.
+(highest limits). These tuning profiles retain the PostgreSQL history DSN and schema settings.
 
 ## Capability Bundles
 
@@ -209,6 +215,20 @@ Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
 for the contracts declared by the module.
 SQLite or PostgreSQL supplies application persistence. Frontend builds use
 Node.js 22, npm, and Make.
+
+## Reference
+
+- [Module reference](src/app/README.md)
+
+### Agent tools
+
+Tool names link to their input/output schemas. Capabilities and the caller’s
+resource access determine which tools are available.
+
+| Tool | Selection and paging inputs |
+| --- | --- |
+| [`read_kickside_documentation`](src/app/registry/documentation/_index.yaml) | `page`, `limit`, `cursor` |
+
 
 ## License
 

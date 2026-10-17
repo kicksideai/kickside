@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -36,9 +32,7 @@ Development uses Make and the Wippy CLI.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
 cd test
@@ -47,6 +41,14 @@ wippy test --profile postgres
 
 Run consumers with SQLite and PostgreSQL when changing execution or authority
 boundaries that reach persistence.
+
+## Use
+
+Synchronous work retains the caller’s actor and scope. Deferred owners capture a canonical identity and resolve live authority before work. Selecting another principal requires delegation; sharing a component does not grant that selection permission. Jobs carry no execution identity of their own.
+
+## Reference
+
+- [Module reference](src/README.md)
 
 ## Links
 

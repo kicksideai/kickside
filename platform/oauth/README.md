@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,18 +31,40 @@ Development uses Make and the Wippy CLI.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
 afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.oauth.discovery:provider_discovery`](src/discovery/_index.yaml) | `list_available_providers`, `get_provider_info`, `get_connector_contract`, `get_component_contract` |
+| [`kickside.oauth:connector`](src/registry/connection/_index.yaml) | `init_oauth`, `handle_callback`, `refresh_token` |
+| [`kickside.oauth:oauth_connection_contract`](src/registry/connection_contracts/_index.yaml) | `get_access_token`, `get_info` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.oauth:target_db`](src/_index.yaml) | Host supplies the value |
+| [`kickside.oauth:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.oauth:public_api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.oauth:process_host`](src/_index.yaml) | Host supplies the value |
+| [`kickside.oauth.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

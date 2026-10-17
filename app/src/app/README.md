@@ -105,7 +105,8 @@ wippy run kickside/kickside -c \
   --set vars.postgres_port=5432 \
   --set vars.postgres_database=kickside \
   --set vars.postgres_username=kickside \
-  --set vars.postgres_password=<database-password> \
+  --set vars.postgres_password="<database-password>" \
+  --set vars.postgres_history_dsn="host=db.example.com port=5432 dbname=kickside user=kickside password=<database-password> sslmode=require" \
   --set vars.postgres_sslmode=require
 ```
 
@@ -113,8 +114,10 @@ Postgres values may also come from the environment (`KICKSIDE_PG_HOST`,
 `KICKSIDE_PG_PORT`, `KICKSIDE_PG_DATABASE`, `KICKSIDE_PG_USERNAME`,
 `KICKSIDE_PG_PASSWORD`). With Postgres, the registry history moves into the
 database as well (`wippy_registry` schema), so instances survive on the
-database alone. For a local Docker Postgres without TLS, set
-`vars.postgres_sslmode=disable`.
+database alone. Supply the correctly escaped libpq DSN separately in
+`vars.postgres_history_dsn`; the profile does not derive it from application
+connection fields. For PostgreSQL without TLS, set `vars.postgres_sslmode=disable`
+and `sslmode=disable` in the history DSN.
 
 Profile tiers for larger installs: `postgres_large` (bigger pool and lease
 limits) and `postgres_enterprise` (highest limits).

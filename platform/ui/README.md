@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -49,6 +42,36 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=ui` from this directory;
 commit regenerated tracked assets with the source.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.ui:nav_provider`](src/_index.yaml) | `list` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.ui:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.ui:public_api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.ui:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.ui:branding_fs`](src/_index.yaml) | `kickside.ui:legacy_branding_fs` |
+| [`kickside.ui:facade_resolver_handler_settings_contract_policy`](src/registry/facade/_index.yaml) | `kickside.ui:public_branding_settings_contract` |
+| [`kickside.ui:facade_resolver_handler_settings_registry_policy`](src/registry/facade/_index.yaml) | `kickside.ui:public_branding_settings_registry` |
+| [`kickside.ui:facade_resolver_handler_settings_cache_policy`](src/registry/facade/_index.yaml) | `kickside.ui:public_branding_settings_cache` |
+| [`kickside.ui:facade_resolver_handler_static_read_policy`](src/registry/facade/_index.yaml) | `kickside.ui:facade_resolver_static_read` |
+| [`kickside.ui:facade_resolver_handler_content_fs_policy`](src/registry/facade/_index.yaml) | `kickside.ui:facade_resolver_content_fs_read` |
+| [`kickside.ui:facade_resolver_handler_contract_policy`](src/registry/facade/_index.yaml) | `kickside.ui:facade_resolver_contract_access` |
+| [`kickside.ui.security:admin_scope`](src/security/_index.yaml) | Host supplies the value |
+| [`kickside.ui.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

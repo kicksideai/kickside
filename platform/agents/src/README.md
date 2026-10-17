@@ -65,8 +65,7 @@ fixed non-executable subset. The tool emits the session contract's canonical
 session-owned content kind. The session runtime owns persistence and inline-token
 generation.
 
-The currently published `wippy/session` release persists standalone artifacts
-but does not emit the standalone message/card consumed by Sessions. Publishing
-and installing [wippy/session PR #22](https://github.com/wippyai/session/pull/22)
-is required before standalone cards appear in chat. Until then, clients must not
-claim that a card is visible merely because artifact creation succeeded.
+Session owns standalone artifact persistence and chat messages, while Web Host
+owns rendering. Use current compatible releases and verify the result in chat
+or the gallery under the intended user. A successful creation response does not
+prove the client renders an artifact.

@@ -33,6 +33,7 @@ Import tokens before the styles that use them:
 ```css
 @import "@kickside/ui-kit/kx-tokens.css";
 @import "@kickside/ui-kit/kx-card.css";
+```
 
 The package provides cards, headers, modal headers, state displays, focus
 styles, animation, tag sizing, and decorative category tones. Theme severity

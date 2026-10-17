@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See the [registry and API reference](src/README.md) for the module contract.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -49,6 +42,39 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=users` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+**System → Users** manages accounts and group memberships. Users management is a separate policy from directory discovery and the signed-in user’s profile. Bots are ordinary User principals classified as bots; they cannot authenticate or own credentials. Configure their group access and grant an operator selection authority separately.
+
+## Reference
+
+- [Module reference](src/README.md)
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.users:user_provisioning`](src/_index.yaml) | `get_user`, `create_passwordless_user`, `assign_group`, `complete_passwordless_user`, `apply_sourced_groups`, `mint_session` |
+| [`kickside.users.profile:profile`](src/profile/_index.yaml) | `get`, `set`, `unset`, `list`, `get_namespace` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.users:bot_account_consumers`](src/_index.yaml) | `[]` |
+| [`kickside.users:baseline_security_scope`](src/_index.yaml) | Empty string |
+| [`kickside.users:env_storage`](src/_index.yaml) | `kickside.users.env:envs` |
+| [`kickside.users:public_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.users:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.users:target_db`](src/_index.yaml) | Host supplies the value |
+| [`kickside.users:user_security_scope`](src/_index.yaml) | `kickside.security.groups:members` |
+| [`kickside.users:admin_security_scope`](src/_index.yaml) | Host supplies the value |
+| [`kickside.users:login_role_resource`](src/_index.yaml) | Host supplies the value |
+| [`kickside.users:ui_server`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 

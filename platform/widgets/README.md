@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See [src/](src/) for registry declarations and implementation.
 
 ## Requirements
 
@@ -43,6 +39,20 @@ make test
 
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=widgets` from this directory;
 commit regenerated tracked assets with the source.
+
+## Use
+
+Reuse declared picker, form, and creation widgets from the installed view catalog. Pass their declared configuration and handle their emitted events. The owning server validates resource selection and authorization again on submission.
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.widgets:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.widgets:api_router`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 

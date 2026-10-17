@@ -18,10 +18,6 @@ Apply host bindings and migrations through the application install plan.
 Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
-## Key concepts
-
-Registry declarations define the public entries, dependencies, and host requirements.
-See [src/](src/) for registry declarations and implementation.
 
 ## Requirements
 
@@ -35,13 +31,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -62,6 +55,34 @@ wippy test --profile postgres --set vars.pg_database=kickside_readme_test \
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=sync` from this directory;
 commit regenerated tracked assets with the source.
 
+## Acquisition and LLM settings
+
+Published `trigger.poll.page_size`, `max_pages_per_run`, and `max_items_per_run`
+map to `round.page_size`, `round.max_pages`, and `round.max_items`. Their bounds
+and acquisition behavior remain unchanged. `transform.temperature`,
+`transform.max_tokens`, and the runtime values of `transform.generation_policy`
+reach the transform LLM strategy; [Transform configuration](../transform/README.md#llm-runtime-configuration)
+defines their validation and omitted-option defaults.
+
+## Use
+
+Create a **Data Sync** Automation, select an event or collection source port, configure a transform, and select a writable destination. Validate against captured source envelopes before enabling it. The shared Automation engine owns scheduling and delivery; deleting the sync retains destination records.
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.sync:sync_contract`](src/_index.yaml) | `reconfigure` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.sync:ui_server`](src/_index.yaml) | Host supplies the value |
+
 ## Links
 
 - [KickSide](https://kickside.ai)
@@ -72,12 +93,3 @@ commit regenerated tracked assets with the source.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
-
-## Acquisition and LLM settings
-
-Published `trigger.poll.page_size`, `max_pages_per_run`, and `max_items_per_run`
-map to `round.page_size`, `round.max_pages`, and `round.max_items`. Their bounds
-and acquisition behavior remain unchanged. `transform.temperature`,
-`transform.max_tokens`, and the runtime values of `transform.generation_policy`
-reach the transform LLM strategy; [Transform configuration](../transform/README.md#llm-runtime-configuration)
-defines their validation and omitted-option defaults.

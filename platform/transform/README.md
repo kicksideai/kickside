@@ -20,17 +20,21 @@ Host resources and security groups bind through the install plan.
 
 ## Key concepts
 
-For `kind: expr`, the expression receives `item` (the source envelope) and
-`payload` (`item.payload`). These are the bindings used by
-`kickside.transform:transform`; `input` and `inputs` are not aliases.
+The public `kickside.transform:apply` library accepts
+`{strategy, config, item = {item_key, envelope, input}}`. Data Sync converts the
+source envelope into this strategy item: `input` contains the source payload,
+and `envelope` contains source identity and event metadata.
 
-For an event whose payload contains `name` and `message`, for example:
+For `kind: expr`, `payload` and `input` both refer to that input value;
+`item` is the strategy item and `envelope` is its envelope metadata.
+For a source payload with `name` and `message`:
 
 ```text
 {title: payload.name, content: payload.message}
+```
 
-A function transform instead receives `{ item = envelope, config = ... }`.
-These are different interfaces; use the interface for the selected transform kind.
+A function transform receives `{item = strategy_item, config = ...}` and reads
+payload fields through `request.item.input`. `inputs` is not a binding.
 
 Validate before installation using `POST /api/v1/transform/validate` with
 `transform`, `sink_schema`, and real `samples` (an array of source envelopes).
@@ -68,13 +72,10 @@ Frontend development also uses Node.js 22, npm, and Make.
 From this module directory:
 
 ```sh
-cd test
-wippy install
-cd ..
+make lockrefresh
 make lint
 make test
-cd test
-wippy test --profile postgres --set vars.pg_database=kickside_readme_test
+(cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
 
 Create a dedicated PostgreSQL database before the profile run and drop it
@@ -82,6 +83,29 @@ afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
 variables in the harness configuration for your test server.
 Edit frontend source under `ui/` and run `make -C ../../ build MOD=transform` from this directory;
 commit regenerated tracked assets with the source.
+
+A strategy binding may declare `meta.validate_at_install: true` when applying a synthetic schema sample is safe during installation. `generator.validate_install` executes only these strategies through the existing transform validation gate. An absent flag preserves installation behavior and avoids invoking effectful strategies. Runtime output validation applies to every strategy.
+
+## Use
+
+Data Sync maps a source envelope into the strategy item described above. Successful application returns `present` and `value`. An explicit `{present = false, skip = "reason"}` skips the item without writing to the sink; an absent output without a skip fails. The Automation round records skips separately from failed deliveries.
+
+### Contracts
+
+| Definition | Methods |
+| --- | --- |
+| [`kickside.transform:strategy`](src/_index.yaml) | `apply`, `describe` |
+
+### Host requirements
+
+Bind these exact requirement IDs through the module’s dependency declaration
+or Hub plan. Existing explicit bindings take precedence over defaults.
+
+| Requirement | Declared default |
+| --- | --- |
+| [`kickside.transform:api_router`](src/_index.yaml) | Host supplies the value |
+| [`kickside.transform:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.transform.security:user_security_scope`](src/security/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 
@@ -93,5 +117,3 @@ commit regenerated tracked assets with the source.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
-
-A strategy binding may declare `meta.validate_at_install: true` when applying a synthetic schema sample is safe during installation. `generator.validate_install` executes only these strategies through the existing transform validation gate. An absent flag preserves installation behavior and avoids invoking effectful strategies. Runtime output validation applies to every strategy.

@@ -5,7 +5,7 @@ A centralized contract for pushing topics to connected UIs, over `wippy/relay`.
 Modules call one seam instead of touching the relay directly, so realtime stays
 decoupled and consistent across the app.
 
-## Contract `kickside.realtime:realtime`
+## Contract `kickside.contract:realtime`
 
 - `broadcast({ topic, data? })` — fan a topic out to **every** connected client.
   The relay central hub (`wippy.central`) forwards any non-control topic to all
