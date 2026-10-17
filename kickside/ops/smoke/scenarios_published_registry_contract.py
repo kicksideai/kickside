@@ -55,4 +55,5 @@ def published_registry_contract(ctx):
 
 
 REGISTRY = [Scenario('published_registry_contract', 'regression', published_registry_contract,
-                     issues=('CRM-PUBLISHED-REGISTRY-CONTRACT', 'MODULE-PUBLISHED-REGISTRY-IDENTITY', 'SMOKE-PUBLISHED-OWNER-TRANSITION'))]
+                     issues=('CRM-PUBLISHED-REGISTRY-CONTRACT', 'MODULE-PUBLISHED-REGISTRY-IDENTITY',
+                             'SMOKE-PUBLISHED-OWNER-TRANSITION', 'REQUIREMENT-DEFAULT-REMOVAL-COMPATIBILITY'))]
