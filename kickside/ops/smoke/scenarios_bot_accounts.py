@@ -140,7 +140,7 @@ def bot_accounts_identity_auth_exclusion(ctx):
 
 
 REGISTRY += [Scenario('bot_accounts_identity_auth_exclusion', 'regression', bot_accounts_identity_auth_exclusion,
-                      issues=('RA-H34', 'RA-H45', 'RA-H51', 'RA-C05', 'RA-C06', 'SMOKE-IDENTITY-HTTP-AUTH-BOUNDARY'))]
+                      issues=('RA-H34', 'RA-H45', 'RA-H51', 'RA-C05', 'RA-C06', 'SMOKE-IDENTITY-HTTP-AUTH-BOUNDARY', 'PUBLIC-IDENTITY-HARNESS-DEPENDENCY-PATH'))]
 
 
 def bot_accounts_identity_update(ctx):

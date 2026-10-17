@@ -19,4 +19,4 @@ def publication_boundary(ctx):
 
 
 REGISTRY = [Scenario('regression_publication_boundary', 'regression', publication_boundary,
-                     issues=('PUBLIC-SOURCE-INTERNAL-BOUNDARY', 'PUBLIC-SOURCE-LICENSE-METADATA'))]
+                     issues=('PUBLIC-SOURCE-INTERNAL-BOUNDARY', 'PUBLIC-SOURCE-LICENSE-METADATA', 'PUBLIC-HARNESS-CONTENT-CLASSIFICATION'))]

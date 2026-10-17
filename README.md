@@ -26,7 +26,7 @@ for repo in kickside components providers converters crm chestor module; do
 done
 ```
 
-The copy uses the same private-path restoration as the existing internal CI workflows. It restores operations, Python checks, UI tests, handbook source, registry documentation declarations and complete Makefiles. Lua module tests and their native harnesses remain with product source. No generated checkout or combined repository is required.
+The copy uses the same private-path restoration as the existing internal CI workflows. It restores private operations, maintainer checks, release automation, and complete Makefiles. Native module harnesses, application documentation declarations, and handbook source remain with public product source. The module template maintains its handbook copy from the public application repository. No generated checkout or combined repository is required.
 
 Edit product files in their product repository. Commit private path changes in `kickside-internal/<repository>/<original path>`, then copy those paths into the lane checkout for verification. Makefiles and package manifests with private targets have complete copies in the mirror; preserve the public command subset when changing either copy. Keep the exact product and internal commit SHAs with verification evidence. Never commit the restored private paths in a product repository.
 

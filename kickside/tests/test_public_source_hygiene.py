@@ -68,7 +68,7 @@ class PublicSourceHygieneTest(unittest.TestCase):
         )
         private = re.compile(
             r"(^|/)(ops|scratchpad|helm|evidence|internal|runbooks|handbook)/|"
-            r"\.py[wco]?$|\.(test|spec)\.[cm]?[jt]sx?$|"
+            r"\.py[co]$|"
             r"(^|/)(AGENTS|CLAUDE|REPORT|MEMORY|SECURITY-REVIEW)\.md$"
         )
         roots = [ROOT] + sorted(path for path in ROOT.parent.iterdir()
@@ -93,6 +93,29 @@ class PublicSourceHygieneTest(unittest.TestCase):
                         if prohibited.search(line):
                             findings.append(f"{identity}:{number}: internal reference")
         self.assertEqual(findings, [])
+
+    def test_source_language_does_not_define_privacy(self):
+        def archive_for(path, text):
+            stream = io.BytesIO()
+            with tarfile.open(fileobj=stream, mode="w") as source:
+                member = tarfile.TarInfo(path)
+                data = text.encode()
+                member.size = len(data)
+                source.addfile(member, io.BytesIO(data))
+            return stream.getvalue()
+
+        for path in ("test/test_sources.py", "ui/src/app/navigation.spec.ts",
+                     "scripts/check_sources.py"):
+            with self.subTest(path=path), patch("subprocess.check_output",
+                                                return_value=archive_for(path, "assert True\n")):
+                self.test_publication_boundary()
+        for path, text in (("ops/check_sources.py", "assert True\n"),
+                           ("test/test_sources.pyc", "compiled fixture\n"),
+                           ("test/test_sources.py", "https://wj.wippy.ai\n")):
+            with self.subTest(path=path), patch("subprocess.check_output",
+                                                return_value=archive_for(path, text)):
+                with self.assertRaises(AssertionError):
+                    self.test_publication_boundary()
 
     def test_repository_license_policy(self):
         policy = {

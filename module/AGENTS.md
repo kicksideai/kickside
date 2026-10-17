@@ -18,8 +18,8 @@ repository.
 ## Live documentation
 
 The canonical handbook source is
-`kickside/app/src/app/docs/kickside-development` in
-[`kicksideai/kickside-internal`](https://github.com/kicksideai/kickside-internal). Its published
+`app/src/app/docs/kickside-development` in
+[`kicksideai/kickside`](https://github.com/kicksideai/kickside). Its published
 copy is the KickSide wiki on the Hub. Keep this checkout's
 `docs/kickside-development/` directory as an exact copy of the source:
 

@@ -5620,7 +5620,8 @@
         "RA-H51",
         "RA-C05",
         "RA-C06",
-        "SMOKE-IDENTITY-HTTP-AUTH-BOUNDARY"
+        "SMOKE-IDENTITY-HTTP-AUTH-BOUNDARY",
+        "PUBLIC-IDENTITY-HARNESS-DEPENDENCY-PATH"
       ],
       "tier": "regression"
     },
@@ -12545,6 +12546,38 @@
       ],
       "tier": "full"
     },
+    "public_application_documentation_sources": {
+      "features": [],
+      "issues": [
+        "PUBLIC-APPLICATION-DOCUMENTATION-SOURCES"
+      ],
+      "tier": "regression"
+    },
+    "public_documentation_workflow_sources": {
+      "features": [],
+      "issues": [
+        "PUBLIC-DOCUMENTATION-WORKFLOW-SOURCES",
+        "PUBLIC-MODULE-CATALOG-SOURCE-DRIFT"
+      ],
+      "tier": "regression"
+    },
+    "public_module_handbook_sources": {
+      "features": [],
+      "issues": [
+        "PUBLIC-MODULE-HANDBOOK-SOURCES",
+        "PUBLIC-MODULE-VERIFICATION-SOURCES",
+        "PUBLIC-TEMPLATE-TEMPORARY-WORKSPACE"
+      ],
+      "tier": "regression"
+    },
+    "public_ui_harness_sources": {
+      "features": [],
+      "issues": [
+        "PUBLIC-UI-HARNESS-SOURCES",
+        "PUBLIC-UI-POSTGRES-DATABASE-OWNERSHIP"
+      ],
+      "tier": "regression"
+    },
     "published_registry_contract": {
       "features": [],
       "issues": [
@@ -13784,7 +13817,8 @@
       "features": [],
       "issues": [
         "PUBLIC-SOURCE-INTERNAL-BOUNDARY",
-        "PUBLIC-SOURCE-LICENSE-METADATA"
+        "PUBLIC-SOURCE-LICENSE-METADATA",
+        "PUBLIC-HARNESS-CONTENT-CLASSIFICATION"
       ],
       "tier": "regression"
     },
