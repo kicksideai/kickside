@@ -198,6 +198,81 @@ local function define_tests(section: string)
         end)
 
         if section == "delivery" then
+            test.it("skips explicit transform outcomes and replays their prepared reason without writing", function()
+                local round_outcome = require("round_outcome")
+                local round_commit = require("round_commit")
+                local config = declaration("app.fixture:round_record", func_transform(shared))
+                local events = { item("skip", { directive = "skip" }) }
+                local final: Map = {}
+                receipt("skip", "", "rec:existing")
+                for _ = 1, 2 do
+                    local out, err = deliver(events, config)
+                    test.is_nil(err, tostring(err))
+                    test.eq(#out.skipped_items, 1, json.encode(out))
+                    test.eq(#out.failed_items, 0)
+                    test.eq(#out.delivered_items, 0)
+                    test.eq(#out.waiting_items, 0)
+                    test.eq(#out.uncertain_items, 0)
+                    local skipped = by_key(out.skipped_items)[delivery_key("skip")]
+                    test.eq(skipped.reason, "no matching record")
+                    test.eq(skipped.prepared_key, delivery_key("skip"))
+                    final = out
+                end
+                test.eq(transform_calls("skip"), 1)
+                test.eq(#writes(identity("skip")), 0)
+                local prepared = query("SELECT prepared_json FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id })
+                test.eq(#prepared, 1)
+                test.eq(json.decode(prepared[1].prepared_json).skip, "no matching record")
+                test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1", { automation_id }), 0)
+                local destination = query("SELECT dest_ref_json FROM kickside_automation_receipt WHERE owner_id=$1", { automation_id })[1]
+                test.eq(json.decode(destination.dest_ref_json).id, "rec:existing")
+
+                local recorded, receipts = round_outcome.ledger_outcomes(events,
+                    { delivered = final.delivered_items, skipped = final.skipped_items, waiting = final.waiting_items,
+                        uncertain = final.uncertain_items, failed = final.failed_items }, {})
+                test.eq(recorded[1].state, "resolved")
+                test.eq(receipts[1].prepared_key, delivery_key("skip"))
+                local db, db_err = sql.get(DB)
+                test.is_nil(db_err)
+                local tx = db:begin()
+                local committed, commit_err = round_commit.commit_tx(tx,
+                    { automation_id = automation_id, drive_key = "main", source_port = SOURCE, receipt_port = SOURCE,
+                        captured = { round_token = "round-" .. automation_id, round_until = "2999-01-01T00:00:00Z",
+                            revision = 1, rewind_generation = 0, command_generation = 0 },
+                        now = drive.utc_now(), resolved_expires_at = "2999-01-01T00:00:00Z" },
+                    { acquired = true, cursor = { page = 2 }, event_seq = 9, outcomes = recorded, receipts = receipts })
+                if commit_err then tx:rollback() else tx:commit() end
+                db:release()
+                test.is_nil(commit_err, tostring(commit_err))
+                test.is_true(committed.committed)
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1", { automation_id }), 0,
+                    "a skip on first delivery creates no unresolved item")
+                local state = query("SELECT state FROM kickside_automation_delivery_history WHERE automation_id=$1", { automation_id })
+                test.eq(#state, 1)
+                test.eq(state[1].state, "resolved")
+                local progress = query("SELECT cursor,event_seq,unresolved_count FROM kickside_automation_drive WHERE automation_id=$1", { automation_id })[1]
+                test.eq(json.decode(progress.cursor).page, 2)
+                test.eq(tonumber(progress.event_seq), 9)
+                test.eq(tonumber(progress.unresolved_count), 0)
+                test.eq(#query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1", { automation_id }), 1)
+            end)
+
+            test.it("skips replay-safe transforms before record and content normalization without preparing output", function()
+                for _, sink in ipairs({ "app.fixture:round_record", "app.fixture:round_content" }) do
+                    local key = "pure-skip-" .. sink
+                    local out, err = deliver({ item(key, {}) }, declaration(sink,
+                        { kind = "expr", expr = '{"present": false, "skip": "no matching record"}' }))
+                    test.is_nil(err, tostring(err))
+                    test.eq(#out.skipped_items, 1, json.encode(out))
+                    test.eq(out.skipped_items[1].reason, "no matching record")
+                    test.is_nil(out.skipped_items[1].prepared_key)
+                    test.eq(#out.failed_items, 0)
+                    test.eq(#writes(identity(key)), 0)
+                end
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+            end)
+
             test.it("writes each item through the declared sink under stable keys and answers every key once", function()
                 local out, err = deliver({ item("ok", { directive = "" }), item("busy", { directive = "capacity" }),
                     item("bad", { directive = "invalid" }) }, declaration("app.fixture:round_record", RECORD_EXPR))

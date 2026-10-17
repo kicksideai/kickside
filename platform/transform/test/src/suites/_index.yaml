@@ -2,6 +2,17 @@ version: "1.0"
 namespace: kickside.transform
 
 entries:
+  - name: skip_outcome_test
+    kind: function.lua
+    meta: { type: test, suite: transform }
+    source: file://skip_outcome_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      apply: kickside.transform:apply
+      sink_input: kickside.transform:sink_input
+      generator: kickside.transform:generator
+
   - name: packaging_test
     kind: function.lua
     meta:

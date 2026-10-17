@@ -80,6 +80,8 @@ entries:
     method: run_delivery
     modules: [sql, json, uuid, funcs, contract, security]
     imports:
+      round_outcome: kickside.automation:round_outcome
+      round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
       test: wippy.test:test
       drive: kickside.automation:drive
@@ -96,6 +98,8 @@ entries:
     method: run_storage
     modules: [sql, json, uuid, funcs, contract, security]
     imports:
+      round_outcome: kickside.automation:round_outcome
+      round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
       test: wippy.test:test
       drive: kickside.automation:drive
@@ -112,6 +116,8 @@ entries:
     method: run_authorization
     modules: [sql, json, uuid, funcs, contract, security]
     imports:
+      round_outcome: kickside.automation:round_outcome
+      round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
       test: wippy.test:test
       drive: kickside.automation:drive

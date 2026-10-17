@@ -3,6 +3,7 @@
 local M = {}
 
 function M.apply(request: any): (any, any)
+    if type(request.config.outcome) == "table" then return request.config.outcome, nil end
     local env = type(request) == "table" and request.env or {}
     local input = type(env) == "table" and env.input or nil
     local text = type(input) == "table" and input.text or nil

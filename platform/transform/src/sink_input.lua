@@ -22,7 +22,7 @@ function M.normalize(value: any, input_shape: string, configured_content: any?):
     if input_shape ~= M.RECORD and input_shape ~= M.CONTENT then
         return nil, invalid("the sink input shape must be record or content, got " .. tostring(input_shape))
     end
-    if value == nil then return nil, invalid("the transform produced no value; skip items through an explicit filter") end
+    if value == nil then return nil, invalid("the transform produced no value; use an explicit transform skip or filter") end
     if input_shape == M.CONTENT then
         if type(value) == "string" then return { content = value }, nil end
         if type(value) == "table" then

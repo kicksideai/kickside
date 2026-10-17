@@ -71,6 +71,7 @@ local function transform(args: any): (any, any)
         if revoke_err then return nil, revoke_err end
     end
     if input.directive == "none" then return nil, nil end
+    if input.directive == "skip" then return { present = false, skip = "no matching record" }, nil end
     return { directive = input.directive, title = "transformed " .. tostring(item.item_key) }, nil
 end
 
