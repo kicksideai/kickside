@@ -37,6 +37,7 @@ local function define_tests()
                 ["kickside.automation.api:list.endpoint"] = true,
                 ["kickside.automation.api:list_sinks.endpoint"] = true,
                 ["kickside.automation.api:list_sources.endpoint"] = true,
+                ["kickside.automation.api:source_samples.endpoint"] = true,
                 ["kickside.automation.api:list_types.endpoint"] = true,
                 ["kickside.automation.api:read_config.endpoint"] = true,
                 ["kickside.automation.api:read_state.endpoint"] = true,

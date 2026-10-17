@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import { errMsg } from '@widgets/app/errMsg'
 import { parseSchema, primaryPicker, schemaFormFields, schemaHasProps, type PickerItem } from '@widgets/app/ports'
@@ -92,6 +92,31 @@ export function useSyncForm(options: { managed: boolean }) {
     if (sourceBinding.value !== prevBinding) onSourceChange()
   }
 
+  const sourceSamples = ref<unknown[]>([])
+  const sampleSchema = ref<unknown>(undefined)
+  const sampleError = ref('')
+  const sampleRequest = computed(() => triggerValid.value && sourceBinding.value
+    ? JSON.stringify({ source: sourceBinding.value, config: triggerSpec.value.config ?? {}, limit: 1 }) : '')
+  watch(sampleRequest, async (request, _previous, onCleanup) => {
+    let current = true
+    onCleanup(() => { current = false })
+    sourceSamples.value = []
+    sampleSchema.value = undefined
+    sampleError.value = ''
+    if (!request) return
+    try {
+      const { data } = await api.post<{ success?: boolean; samples?: unknown[]; output_schema?: unknown; error?: unknown }>(
+        '/api/v1/automations/source-samples', JSON.parse(request))
+      if (!current) return
+      if (data.success !== true || !Array.isArray(data.samples)) throw new Error(errMsg(data.error, 'Could not read source samples.'))
+      sourceSamples.value = data.samples
+      sampleSchema.value = data.output_schema
+    } catch (cause) {
+      if (current) sampleError.value = errMsg(cause, 'Could not read source samples.')
+    }
+  })
+  const assistSamples = computed(() => JSON.stringify(sourceSamples.value))
+
   // Reconcile is only meaningful for a pulled source whose key set can be
   // enumerated: the source declares reconcile.pull_keys and the destination
   // declares delete.
@@ -139,6 +164,7 @@ export function useSyncForm(options: { managed: boolean }) {
   // Transform auto-detect: does the source's output_schema already satisfy the
   // destination's write input? Drives the hint shown under the Transform stage.
   const sourceItemSchema = computed(() => {
+    if (sampleSchema.value != null) return parseSchema(sampleSchema.value)
     for (const row of sourceRows.value) {
       if (row.output_schema != null) return parseSchema(row.output_schema)
     }
@@ -259,7 +285,7 @@ export function useSyncForm(options: { managed: boolean }) {
     sources, sinks, selectedSource, selectedSink, supportsReconcile,
     sinkItems, sinkPickerMeta, sinkConfigTag, sinkConfigSchema, sinkOptionsSchema, sinkHasOptions,
     transformDetected, canAssist, assistSourceSchema, assistSinkSchema, assistInputShape, assistHint, assistValue,
-    validationError,
+    validationError, assistSamples, sampleError,
     onTriggerChange, onAssistConfirmed, onSinkChange, loadCatalog, seed, currentInput,
   }
 }

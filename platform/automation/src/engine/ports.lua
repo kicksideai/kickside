@@ -293,6 +293,61 @@ function part.attach(M: any, dependencies: any, P: any): ()
         return (desc :: Map?), err
     end
 
+    -- source_thread(endpoint, thread_id) -> the thread an events source reads: the
+    -- selected one, or the installing actor's one instance of a picker-less
+    -- per-user source.
+    function M.source_thread(endpoint: Map, thread_id: string?): (string?, error?)
+        if thread_id and thread_id ~= "" then return thread_id, nil end
+        for _, field in pairs(type(endpoint.config_schema) == "table" and (endpoint.config_schema :: Map) or {}) do
+            local picker = type(field) == "table" and (field :: Map).picker or nil
+            if type(picker) == "string" and picker ~= "" and picker ~= "wc-schema-form" then
+                return nil, errors.new({kind = errors.INVALID, retryable = false, message = "the events source " .. tostring(endpoint.id) .. " requires a selected thread_id", details = {code = "source_instance_required", field = "trigger.config.thread_id"}})
+            end
+        end
+        local resolved, err = M.component_id_for_actor(trim(endpoint.class))
+        if err then return nil, (errors.wrap(err, "the events source " .. tostring(endpoint.id) .. " has no instance") :: error) end
+        if not resolved or trim(resolved) == "" then
+            return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
+                message = "the events source " .. tostring(endpoint.id) .. " has no instance",
+                details = {code = "source_identity_missing", field = "trigger.config.thread_id"}}) :: error)
+        end
+        return trim(resolved), nil
+    end
+
+    function M.source_samples(port_id: string, config: any, limit: any): (Map?, any)
+        if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 100 then
+            return nil, errors.new({kind = errors.INVALID, message = "sample limit must be an integer between 1 and 100", retryable = false})
+        end
+        local desc, resolve_err = M.resolve_source(port_id)
+        if resolve_err or not desc then return nil, resolve_err end
+        local selected = type(config) == "table" and (config :: Map) or {}
+        local request: Map = { source_ref = port_id, config = selected, limit = limit, idempotency_key = (dependencies.uuid :: any).v7() }
+        if desc.surface == "events" then
+            local thread_id, thread_err = M.source_thread(desc, trim(selected.thread_id))
+            if thread_err then return nil, thread_err end
+            request.source_kind, request.source_thread_id, request.event_type = "event", thread_id, desc.event
+        else
+            request.source_kind = "collection"
+        end
+        local page, call_err = (dependencies.funcs :: any).new():call("kickside.automation:round_acquire", request)
+        local acquired, acquire_err = (dependencies.failure_classification :: any).native_result(page, call_err)
+        if acquire_err then return nil, acquire_err end
+        if type(acquired) ~= "table" or type(acquired.items) ~= "table" then
+            return nil, errors.new({kind = errors.INTERNAL, message = "source acquisition returns no items"})
+        end
+        local samples: {any} = {}
+        for _, item in ipairs(acquired.items) do
+            if #samples >= limit then break end
+            if item.op ~= "delete" and item.payload ~= nil then samples[#samples + 1] = item.payload end
+        end
+        local schema_config: Map = {}
+        for key, value in pairs(selected) do schema_config[key] = value end
+        if request.source_thread_id then schema_config.thread_id = request.source_thread_id end
+        local output_schema, schema_err = M.source_schema(port_id, schema_config)
+        if schema_err then return nil, schema_err end
+        return { samples = samples, output_schema = output_schema }, nil
+    end
+
     -- Resolve a selected source's payload face through its optional contract.
     -- Static catalog descriptors remain immutable and kind-wide.
     function M.source_schema(port_id: string, config: any): (any?, any)
