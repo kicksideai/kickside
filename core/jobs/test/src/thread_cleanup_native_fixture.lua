@@ -29,7 +29,7 @@ function M.database(): any
         if statement:find("FROM kickside_job_thread_cleanup_receipt", 1, true) then
             return M.result(M.mode == "prior" and "previous" or "receipt", {M.row})
         end
-        if statement:find("FOR UPDATE", 1, true) then
+        if statement:find("WHERE id=$1 FOR UPDATE", 1, true) then
             return M.result(statement:find("FROM kickside_job_run", 1, true) and "lock_run" or "lock_job", {{id = "job"}})
         end
         if statement:find("LIMIT 1", 1, true) then
@@ -50,7 +50,10 @@ function M.database(): any
             stage = M.mode == "prior" and "previous_ack" or "ack_update"
         elseif statement:find("SET started=", 1, true) then stage = "state"
         elseif statement:find("UPDATE kickside_job_thread_cleanup", 1, true) then stage = "completed"
-        else M.mutations = M.mutations + 1; stage = "mutation_" .. tostring(M.mutations) end
+        else
+            M.mutations = M.mutations + 1
+            stage = "mutation_" .. tostring(M.mutations)
+        end
         return M.result(stage, {rows_affected = 1})
     end
     return db
