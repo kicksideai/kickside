@@ -1839,7 +1839,8 @@
       "issues": [
         "SECURITY-REQUIREMENT-DEFAULTS",
         "KEEPER-FIRST-INSTALL-SOURCE",
-        "REQUIREMENT-HOST-DEFAULTS"
+        "REQUIREMENT-HOST-DEFAULTS",
+        "REQUIREMENT-DEFAULT-REMOVAL-COMPATIBILITY"
       ],
       "tier": "full"
     },
