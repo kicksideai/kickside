@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.130 (2026-10-17)
+
+- Expose bounded source samples through the existing acquisition path.
+
 ## 0.1.126 (2026-10-09)
 
 - Classify actor-source identity refusals with native errors before resolving a source instance (c885fef67).
