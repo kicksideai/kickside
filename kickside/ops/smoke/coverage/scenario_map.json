@@ -12633,6 +12633,13 @@
       ],
       "tier": "regression"
     },
+    "published_requirement_default_compatibility": {
+      "features": [],
+      "issues": [
+        "REQUIREMENT-DEFAULT-REMOVAL-COMPATIBILITY"
+      ],
+      "tier": "regression"
+    },
     "published_root_caller_upgrade_order": {
       "features": [],
       "issues": [

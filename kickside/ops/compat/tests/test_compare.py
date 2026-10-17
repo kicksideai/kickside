@@ -50,6 +50,15 @@ class CompareTests(unittest.TestCase):
         del new['sample:scope']['Data']['default']
         self.assertEqual({r['code'] for r in self.findings(new)}, {'new_requirement', 'requirement_default_removed'})
 
+    def test_requirement_default_removal_fails_with_resource_metadata(self):
+        old = {'sample:resource': {'Kind': 'ns.requirement',
+                                   'Meta': {'value_kind': 'http.router'},
+                                   'Data': {'default': 'app:api'}}}
+        new = copy.deepcopy(old)
+        new['sample:resource']['Data'].pop('default')
+        self.assertEqual(compare('sample/module', '1.0.0', old, new)[0]['code'],
+                         'requirement_default_removed')
+
     def test_schema_type_and_enum_narrowing_fail(self):
         new = copy.deepcopy(BASE)
         new['sample:nested']['Meta']['input_schema']['properties']['payload']['type'] = 'string'
