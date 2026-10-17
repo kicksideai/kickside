@@ -64,6 +64,7 @@ const STORED_INPUT = {
 
 function catalogs() {
   return {
+    '/automations/source-samples': { success: true, samples: [{ title: 'Source item' }] },
     '/automations/sources': { sources: [SOURCE] },
     '/automations/sinks': { sinks: [SINK] },
   }
@@ -157,7 +158,9 @@ describe('SyncManage', () => {
     await w.find('form').trigger('submit')
     await flushPromises()
 
-    expect(vi.mocked(api.post)).not.toHaveBeenCalled()
+    expect(vi.mocked(api.post).mock.calls).toEqual([[
+      '/api/v1/automations/source-samples', { source: SOURCE.id, config: { connection_id: 'conn-1' }, limit: 1 },
+    ]])
     expect(vi.mocked((api as any).patch)).not.toHaveBeenCalled()
     expect(vi.mocked(api.put)).toHaveBeenCalledTimes(1)
     const [url, body] = vi.mocked(api.put).mock.calls[0] as [string, any]
@@ -235,6 +238,7 @@ describe('SyncManage', () => {
       config_schema: { ...SINK.config_schema, content: { type: 'string', title: 'Message', supplies: 'content' } },
     }
     ;(globalThis as any).__api__ = {
+      '/automations/source-samples': { success: true, samples: [{ title: 'Source item' }] },
       '/automations/sources': { sources: [SOURCE] },
       '/automations/sinks': { sinks: [needsContent] },
       '/automations/auto-1/config': { success: true, id: 'auto-1', config: {
@@ -261,6 +265,7 @@ describe('SyncManage', () => {
       config_schema: { ...SINK.config_schema, content: { type: 'string', title: 'Message', supplies: 'content' } },
     }
     ;(globalThis as any).__api__ = {
+      '/automations/source-samples': { success: true, samples: [{ title: 'Source item' }] },
       '/automations/sources': { sources: [SOURCE] },
       '/automations/sinks': { sinks: [needsContent] },
       '/automations/auto-1/config': { success: true, id: 'auto-1', config: {
@@ -316,8 +321,11 @@ describe('SyncManage', () => {
     await flushPromises()
 
     expect(vi.mocked(api.put)).not.toHaveBeenCalled()
-    expect(vi.mocked(api.post)).toHaveBeenCalledTimes(1)
-    const [url, body] = vi.mocked(api.post).mock.calls[0] as [string, any]
+    expect(vi.mocked(api.post)).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(api.post).mock.calls[0]).toEqual([
+      '/api/v1/automations/source-samples', { source: SOURCE.id, config: { connection_id: 'conn-1' }, limit: 1 },
+    ])
+    const [url, body] = vi.mocked(api.post).mock.calls[1] as [string, any]
     expect(url).toBe('/api/v1/automations')
     expect(body.type).toBe('kickside.sync:sync')
     expect(body.input.output_schema).toEqual(SOURCE.output_schema)

@@ -44,6 +44,8 @@ cd kickside
 make compat COMPAT_PYTHON="$SMOKE_PYTHON" COMPAT_ARGS="--baseline $PWD/app/wippy.lock --output $LANE_ROOT/evidence/compat"
 ```
 
+Run coverage tests with the restored product checkout as the working directory. The native-error integration assertion scans that directory; test and policy files may also be loaded directly from the adjacent private overlay. Running from the private mirror cannot validate product source. The repository CI restores the overlay into `source` and runs the same coverage and scenario-map checks there.
+
 Refresh each tested module's native harness through its existing `lockrefresh` target. Harness replacements point at the lane's GitHub source checkout; dependencies outside locally owned modules resolve fresh from the Hub. Pass engine-specific database names through the existing native profile variables. App dependency resolution uses `make -C app refresh-deps`; test locks do not act as release baselines.
 
 The documentation site uses the sibling `docs` checkout: run `make -C docs-site build PYTHON="$DOCS_PYTHON" CONTENT=../docs`. Existing source synchronization accepts `SOURCES=<absolute directory containing the restored product checkouts>`.

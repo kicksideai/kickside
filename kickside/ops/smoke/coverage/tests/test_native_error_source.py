@@ -1,5 +1,7 @@
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 import unittest
 
@@ -54,10 +56,17 @@ class NativeErrorSourceTests(unittest.TestCase):
                      'core/jobs/.wippy/vendor/item.lua', 'core/jobs/tests/job.lua']:
             self.assertFalse(CHECK.source_path(Path(path)))
 
+    def test_overlay_assertion_scans_the_working_checkout(self):
+        mirror = Path.cwd().parent / "kickside-internal/kickside/ops/smoke/coverage/tests"
+        result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(mirror),
+            "-p", "test_native_error_source.py", "-k", "committed_converted_modules_and_existing_lint_path_pass"],
+            cwd=Path.cwd(), capture_output=True, text=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_committed_converted_modules_and_existing_lint_path_pass(self):
         config = json.loads((ROOT / "ops/scripts/native-error-source.json").read_text())
         self.assertTrue({"core/contract", "core/component", "core/core", "core/jobs", "core/execution", "platform/security"} <= set(config["modules"]))
-        self.assertEqual(CHECK.check(ROOT, config), [])
+        self.assertEqual(CHECK.check(Path.cwd(), config), [])
         script = (ROOT / "ops/scripts/lint-test-all.sh").read_text()
         self.assertIn("check-native-errors.py", script)
         self.assertLess(script.index("check-native-errors.py"), script.index("while IFS="))

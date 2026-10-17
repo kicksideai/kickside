@@ -217,6 +217,8 @@ def verify_module(module, engine):
 def repository_checks():
     for args in plan()['checks']:
         run(args)
+    run([sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'ops/smoke/coverage'])
+    run([sys.executable, '-B', 'ops/smoke/coverage/export_map.py', '--check'])
     run([sys.executable, '-B', '.github/scripts/test_delivery.py'])
     run([sys.executable, '-B', '.github/scripts/test_release_content.py'])
 

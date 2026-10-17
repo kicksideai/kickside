@@ -6416,7 +6416,8 @@
     },
     "browser_transform_member_validation": {
       "features": [
-        "kickside/transform|http|POST /api/v1/transform/validate"
+        "kickside/transform|http|POST /api/v1/transform/validate",
+        "kickside/automation|http|POST /api/v1/automations/source-samples"
       ],
       "issues": [
         "TRANSFORM-REQUIREMENT-ENDPOINT-ACCESS",
@@ -10515,7 +10516,8 @@
     "native_errors_source_ratchet": {
       "features": [],
       "issues": [
-        "NE-272"
+        "NE-272",
+        "SMOKE-NATIVE-SOURCE-CHECKOUT"
       ],
       "tier": "regression"
     },

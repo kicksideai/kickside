@@ -38,6 +38,10 @@ def browser_transform_member_validation(ctx):
         aid, hook, _, title = sync_fixture(fixture, auth=token)
         inst.cleanup.add('member Sync', lambda: inst.request('DELETE', '/api/v1/automations/' + aid, auth=token))
         inst.cleanup.add('member webhook', lambda: inst.request('DELETE', '/api/v1/webhooks/' + hook['webhook_id'], auth=token))
+        sample = {'product': 'Sample source item'}
+        inst.request('POST', '/api/public/hooks/' + hook['webhook_id'], sample,
+            auth=hook['secret'], expect=(202,), headers={'Idempotency-Key': uuid.uuid4().hex},
+            label='member-transform-source-item')
         browser = fixture.browser_check()
         browser.login(email, inst.password)
         nav(fixture, 'Automations')
@@ -51,6 +55,8 @@ def browser_transform_member_validation(ctx):
         inst.evidence.save('member-transform-widget-inputs', {
             'attributes': transform.evaluate('element => Object.fromEntries([...element.attributes].map(a => [a.name, a.value]))'),
             'generation_disabled': transform.locator('[data-test="generate"]').is_disabled()})
+        inst.wait(lambda: transform.get_attribute('samples') == json.dumps([sample], separators=(',', ':')),
+            'Sync passes its real source item to Transform', seconds=30, pump=browser.page.wait_for_timeout)
         expected = {'title': title, 'content': 'Northwind ordinary member validated output'}
         expression = json.dumps(expected)
         records = []
@@ -89,4 +95,5 @@ REGISTRY = [Scenario('browser_transform_member_validation', 'regression', browse
     ('boot',), instance_setup=True,
     issues=('TRANSFORM-REQUIREMENT-ENDPOINT-ACCESS', 'TRANSFORM-COMPONENT-INPUT-SCHEMA',
             'SYNC-TRANSFORM-SOURCE-SAMPLES'),
-    features=http('transform', 'POST /api/v1/transform/validate'))]
+    features=http('transform', 'POST /api/v1/transform/validate')
+        + http('automation', 'POST /api/v1/automations/source-samples'))]

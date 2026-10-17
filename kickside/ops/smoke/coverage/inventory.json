@@ -1213,6 +1213,14 @@
         },
         {
           "category": "http",
+          "entry": "kickside.automation.api:source_samples.endpoint",
+          "id": "kickside/automation|http|POST /api/v1/automations/source-samples",
+          "label": "POST /api/v1/automations/source-samples",
+          "method": "POST",
+          "path": "/api/v1/automations/source-samples"
+        },
+        {
+          "category": "http",
           "entry": "kickside.automation.api:call_action.endpoint",
           "id": "kickside/automation|http|POST /api/v1/automations/{id}/actions/{method}",
           "label": "POST /api/v1/automations/{id}/actions/{method}",
@@ -5496,10 +5504,14 @@
       ]
     }
   },
-  "feature_count": 751,
+  "feature_count": 752,
   "provenance": {
     "basis": "published registry with optional modules",
     "local_module_updates": {
+      "kickside/automation": {
+        "basis": "resolved local source endpoint with application router binding",
+        "lock_sha256": "770dcf6f423a6e1462dc0beb7009f679037514c19a3d3a93b294e169cf6cbb3b"
+      },
       "kickside/hub": {
         "basis": "resolved local source registry",
         "lock_sha256": "5ea181c12f0293af2e50c90cb8c5dc34ea893216a870b96843c228c0a30628d0"

@@ -24694,7 +24694,7 @@
       "guards": {
         "browser_transform_member_validation": {
           "assertions": [
-            "The ordinary-member Sync editor supplies real source samples to the shared Transform widget; valid and invalid edits produce native validation requests and the exact final declaration persists. The guard remains red because the host omits samples."
+            "The ordinary-member Sync editor reads a real source item, supplies its exact payload to Transform, validates valid and invalid expressions, and persists the exact final declaration."
           ],
           "types": [
             "browser-UI",
@@ -26537,6 +26537,21 @@
       "harness": [],
       "reason": "The published baseline can already persist undo history, so an unconditional empty-history assertion rejects correct updates.",
       "user_visible": false
+    },
+    "SMOKE-NATIVE-SOURCE-CHECKOUT": {
+      "guards": {
+        "native_errors_source_ratchet": {
+          "assertions": [
+            "The native-error source assertion scans every converted module in the restored working checkout and rejects missing source; repository CI executes coverage and validates the scenario map after restoration."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "reason": "The source assertion reads the private overlay as product source when coverage tests are loaded from that overlay.",
+      "user_visible": false,
+      "harness": []
     }
   },
   "schema_version": 1

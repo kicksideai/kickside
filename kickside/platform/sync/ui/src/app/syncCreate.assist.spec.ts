@@ -55,6 +55,7 @@ async function fireTrigger(w: ReturnType<typeof mount>, sourceId: string) {
 
 async function mountFlow(source: Record<string, unknown>, sink?: Record<string, unknown>) {
   ;(globalThis as any).__api__ = {
+    '/automations/source-samples': { success: true, samples: [{ title: 'Actual source record', id: 'sample-record' }] },
     '/automations/sources': { sources: [source] },
     '/automations/sinks': { sinks: sink ? [sink] : [] },
   }
@@ -92,9 +93,7 @@ describe('SyncCreate transform assist', () => {
     // The assist validates each output into the sink's declared input shape.
     expect(el!.getAttribute('input-shape')).toBe('content')
 
-    // No sample is fabricated client-side: the generator synthesizes one from
-    // source_schema server-side, so no samples attribute is handed over.
-    expect(el!.getAttribute('samples')).toBeNull()
+    expect(JSON.parse(el!.getAttribute('samples') || 'null')).toEqual([{ title: 'Actual source record', id: 'sample-record' }])
 
     expect(el!.getAttribute('hint')).toContain('Fireflies')
     w.unmount()

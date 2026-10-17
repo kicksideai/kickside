@@ -14,6 +14,14 @@ DELIVERY = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DELIVERY)
 
 class PublicationTest(unittest.TestCase):
+    def test_repository_checks_run_coverage_from_restored_source(self):
+        with patch.object(DELIVERY, 'plan', return_value={'checks': []}), patch.object(DELIVERY, 'run') as run:
+            DELIVERY.repository_checks()
+        commands = [call.args[0] for call in run.call_args_list]
+        self.assertIn([DELIVERY.sys.executable, '-B', '-m', 'unittest', 'discover', '-s', 'ops/smoke/coverage'], commands)
+        self.assertIn([DELIVERY.sys.executable, '-B', 'ops/smoke/coverage/export_map.py', '--check'], commands)
+        self.assertEqual(DELIVERY.run.__defaults__[0], DELIVERY.ROOT)
+
     def test_database_manifest_declares_ownership_for_every_profile(self):
         for module in DELIVERY.plan()['modules'].values():
             if module['pg_database'] is None:
