@@ -495,9 +495,9 @@ def hub_requirement_defaults(ctx):
                 require(row is not None, 'Hub omits host requirement ' + module + ':' + name)
                 require(row.get('expected_kind') == kind,
                         'Host requirement has the wrong value kind: ' + json.dumps(row))
-                require(row.get('default') is None,
-                        'Host requirement declares a module default: ' + json.dumps(row))
-                require(row.get('value') == value and row.get('value_source') in ('provided', 'provided_bare', 'existing', 'existing_bare', 'registry')
+                require(row.get('default') == value,
+                        'Host requirement has the wrong default binding: ' + json.dumps(row))
+                require(row.get('value') == value and row.get('value_source') in ('default', 'provided', 'provided_bare', 'existing', 'existing_bare', 'registry')
                         and not row.get('missing') and not row.get('invalid'),
                         'Application host binding does not resolve the planned requirement: ' + json.dumps(row))
                 matrix.append({'module': module, 'requirement': row['full_id'], 'kind': kind,
@@ -510,7 +510,7 @@ def hub_requirement_defaults(ctx):
 
 REGISTRY += [Scenario('access_hub_requirement_defaults', 'full', hub_requirement_defaults,
     ('boot',), instance_setup=True, issues=('SECURITY-REQUIREMENT-DEFAULTS', 'KEEPER-FIRST-INSTALL-SOURCE',
-                                            'REQUIREMENT-HOST-DEFAULTS'))]
+                                            'REQUIREMENT-HOST-DEFAULTS', 'REQUIREMENT-DEFAULT-REMOVAL-COMPATIBILITY'))]
 
 
 def users_security_update_bindings(ctx):
