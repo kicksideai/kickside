@@ -8179,6 +8179,13 @@
       ],
       "tier": "full"
     },
+    "hub_update_password_hashes": {
+      "features": [],
+      "issues": [
+        "USERS-PUBLISHED-PASSWORD-HASH-UPDATE"
+      ],
+      "tier": "regression"
+    },
     "hubspot_capacity_boundary": {
       "features": [],
       "issues": [

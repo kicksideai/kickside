@@ -1,0 +1,14 @@
+version: "1.0"
+namespace: app.hub_update
+entries:
+  - name: branding_test
+    kind: function.lua
+    meta: {type: test, suite: hub_update_branding}
+    source: file://branding_test.lua
+    method: run
+    modules: [fs, registry]
+    imports:
+      test: wippy.test:test
+      branding: kickside.ui:branding
+      settings_writer: kickside.settings.persist:settings_writer
+      migration_runner: wippy.migration:runner

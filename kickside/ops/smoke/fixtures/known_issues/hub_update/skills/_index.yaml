@@ -1,0 +1,31 @@
+version: "1.0"
+namespace: app.hub_update
+entries:
+  - name: bundles_test
+    kind: function.lua
+    meta: {type: test, suite: hub_update_skill_bundles}
+    source: file://bundles_test.lua
+    method: run
+    modules: [hash]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+      version_append: kickside.skills:version_append
+      types: kickside.skills:types
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      migration_runner: wippy.migration:runner
+  - name: seed_bundle
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://bundles_test.lua
+    method: seed
+    modules: [hash]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+      version_append: kickside.skills:version_append
+      types: kickside.skills:types
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      migration_runner: wippy.migration:runner
