@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.82 (2026-10-17)
+
+- Provide real source samples and the selected source schema to Transform generation and validation.
+
 ## 0.1.81 (2026-10-17)
 
 - Settle explicit transform skips without sink writes or delivery failures.
