@@ -12570,7 +12570,8 @@
     "public_application_documentation_sources": {
       "features": [],
       "issues": [
-        "PUBLIC-APPLICATION-DOCUMENTATION-SOURCES"
+        "PUBLIC-APPLICATION-DOCUMENTATION-SOURCES",
+        "APP-DOCUMENTATION-REGISTRY-YAML"
       ],
       "tier": "regression"
     },

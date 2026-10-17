@@ -65,7 +65,7 @@ REGISTRY = [
     Scenario('public_ui_harness_sources', 'regression', ui_harness,
              issues=('PUBLIC-UI-HARNESS-SOURCES', 'PUBLIC-UI-POSTGRES-DATABASE-OWNERSHIP')),
     Scenario('public_application_documentation_sources', 'regression', documentation_sources,
-             issues=('PUBLIC-APPLICATION-DOCUMENTATION-SOURCES',)),
+             issues=('PUBLIC-APPLICATION-DOCUMENTATION-SOURCES', 'APP-DOCUMENTATION-REGISTRY-YAML')),
     Scenario('public_documentation_workflow_sources', 'regression', documentation_workflows,
              issues=('PUBLIC-DOCUMENTATION-WORKFLOW-SOURCES', 'PUBLIC-MODULE-CATALOG-SOURCE-DRIFT')),
     Scenario('public_module_handbook_sources', 'regression', module_handbook,

@@ -17,6 +17,7 @@ build-facade-css:
 # /components/{id}/{action} route) that registry.commit
 # rejects at boot but `wippy lint` does not. Run before any cold-boot/deploy.
 install-deps:
+	npm ci --no-audit --no-fund
 	$(WIPPY) install
 
 refresh-deps:
