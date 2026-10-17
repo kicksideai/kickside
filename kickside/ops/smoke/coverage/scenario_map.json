@@ -13925,6 +13925,7 @@
     "regression_published_installation_update": {
       "features": [],
       "issues": [
+        "RUNTIME-HUB-UNCHANGED-DEPENDENCY-PARAMETERS",
         "SMOKE-PUBLISHED-WORKSPACE-FIXTURE",
         "PUBLISHED-SESSION-SECURITY-IDENTITY",
         "SECURITY-RETIRED-POLICY-GROUP-UPDATE",
@@ -14428,6 +14429,13 @@
         "RA-H13"
       ],
       "tier": "full"
+    },
+    "runtime_http_unread_body_close": {
+      "features": [],
+      "issues": [
+        "RUNTIME-HTTP-UNREAD-BODY-CLOSE"
+      ],
+      "tier": "regression"
     },
     "runtime_hub_batch_resident_modules": {
       "features": [],

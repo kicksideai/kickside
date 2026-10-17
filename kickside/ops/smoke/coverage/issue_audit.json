@@ -22161,7 +22161,7 @@
       "harness": [
         "platform/workflows-undo-signals"
       ],
-      "reason": "The Workflows standalone undo-handoff harness loads the canonical Jobs supervisor but omits its error_envelope import, so fresh native lint fails before tests run.",
+      "reason": "Static lint repeatedly traverses shared type subgraphs during placeholder classification and return-growth detection, so the fresh import closure reaches its deadline before the undo suite executes.",
       "user_visible": false
     },
     "WORKFLOW-TERMINAL-PUBLICATION-DRAIN": {
@@ -26599,6 +26599,37 @@
       "harness": [],
       "reason": "Sync forwards raw sampled payloads to Transform instead of its declared sample item shape; expressions reading payload fields receive nil.",
       "user_visible": true
+    },
+    "RUNTIME-HUB-UNCHANGED-DEPENDENCY-PARAMETERS": {
+      "guards": {
+        "regression_published_installation_update": {
+          "assertions": [
+            "An application update preserves login and application checks after replacing its package declarations, including dependencies whose selected package version does not change."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Updating the root package retains previously linked entries for unchanged dependencies even when the new declarations change their requirement parameters.",
+      "user_visible": true
+    },
+    "RUNTIME-HTTP-UNREAD-BODY-CLOSE": {
+      "guards": {
+        "runtime_http_unread_body_close": {
+          "assertions": [
+            "An authenticated registry endpoint returns a complete response and clean EOF when a closing request carries a body the endpoint ignores."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Closing an HTTP connection with unread request bytes can reset the socket after the endpoint completes.",
+      "user_visible": false
     }
   },
   "schema_version": 1
