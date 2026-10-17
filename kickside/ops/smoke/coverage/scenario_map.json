@@ -7514,6 +7514,13 @@
       "issues": [],
       "tier": "full"
     },
+    "credential_policy_retirement_upgrade": {
+      "features": [],
+      "issues": [
+        "MCP-STORED-RETIRED-POLICY-CREDENTIALS"
+      ],
+      "tier": "regression"
+    },
     "crm_callable_ownership": {
       "features": [],
       "issues": [

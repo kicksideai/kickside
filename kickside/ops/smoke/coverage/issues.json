@@ -9327,6 +9327,17 @@
       ],
       "repository": "kickside/components",
       "test": "research/test/src/structured_report_test.lua"
+    },
+    "mcp/stored-authority-upgrade": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MCP-STORED-RETIRED-POLICY-CREDENTIALS"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/mcp/test/src/policy_retirement_upgrade_test.lua"
     }
   },
   "issues": [
@@ -10461,7 +10472,8 @@
     "JOBS-RETIRED-UPLOAD-SLOT-UPGRADE",
     "USERS-PUBLISHED-PASSWORD-HASH-UPDATE",
     "UPDATE-SYNC-RECORD-DELETE-REPLAY",
-    "RESEARCH-TOPIC-TOOL-SCHEMA"
+    "RESEARCH-TOPIC-TOOL-SCHEMA",
+    "MCP-STORED-RETIRED-POLICY-CREDENTIALS"
   ],
   "schema_version": 1
 }
