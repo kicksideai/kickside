@@ -104,7 +104,9 @@ def make(module, target):
 def prepare_harness(module, harness):
     if (harness / 'prepare.sh').exists():
         run(['bash', './prepare.sh'], harness)
-    run(['wippy', 'update'], harness)
+    manifest = yaml.safe_load((harness / 'wippy.yaml').read_text())
+    source = manifest.get('directories', {}).get('src', 'src')
+    run(['wippy', 'update', '--src-dir', source], harness)
 
 def test_harness(module, harness, engine):
     prepare_harness(module, harness)

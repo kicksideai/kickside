@@ -260,6 +260,22 @@ class PublicationTest(unittest.TestCase):
         DELIVERY.check_test_output('3 tests PASSED')
 
 
+    def test_harness_preparation_resolves_declared_source_directory(self):
+        for source in (None, '.', 'fixtures/registry'):
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as directory:
+                harness = Path(directory)
+                manifest = {'organization': 'example', 'module': 'harness'}
+                if source is not None:
+                    manifest['directories'] = {'src': source}
+                (harness / 'wippy.yaml').write_text(yaml.safe_dump(manifest))
+                (harness / 'prepare.sh').write_text('#!/bin/sh\n')
+                with patch.object(DELIVERY, 'run') as run:
+                    DELIVERY.prepare_harness({'path': 'fixture'}, harness)
+                self.assertEqual([call.args for call in run.call_args_list], [
+                    (['bash', './prepare.sh'], harness),
+                    (['wippy', 'update', '--src-dir', source if source is not None else 'src'], harness),
+                ])
+
     def test_harness_lint_uses_the_test_engine_and_database(self):
         for engine in ['sqlite', 'postgres']:
             for runner in [None, 'crm']:
