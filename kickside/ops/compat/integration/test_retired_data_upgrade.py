@@ -8,7 +8,7 @@ import unittest
 from ops.compat.integration.test_run_as_upgrade import evidence_directory
 from ops.compat.fetch_baselines import Hub
 from ops.compat.inventory import ROOT, discover, local_entries
-from ops.compat.migrations import closure, rehearse, select_fixtures
+from ops.compat.migrations import closure, rehearse, select_fixtures, upgrade_checkpoint
 
 
 class RetiredDataUpgradeTests(unittest.TestCase):
@@ -34,7 +34,8 @@ class RetiredDataUpgradeTests(unittest.TestCase):
                      'kickside.core.jobs.migrations:21_retire_upload_intent_slot',
                      'kickside.mcp.migrations:05_retired_policy_credentials']
             configuration = list(select_fixtures(steps, recipes)['registry'])
-            current = dict(published, **closure(current, steps + configuration))
+            published, checkpoint = upgrade_checkpoint(published, current, steps)
+            current = dict(checkpoint, **closure(current, configuration))
             try:
                 result = rehearse(published, current, work / 'migration', recipes)
             finally:
