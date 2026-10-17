@@ -10,6 +10,20 @@ ROOT = Path(__file__).resolve().parents[1]
 CASES = [('app/test', 'app/src/app/registry/documentation/_index.yaml', 'src/documentation_tool_fixture.yaml', 'documentation', {'source': 'file://fixtures/documentation.lua'}), ('platform/uploads/test', 'app/src/app/security/_index.yaml', 'src/fixtures/app_upload_policy.yaml', 'user.runtime_contracts', {}), ('platform/uploads/test', 'app/src/app/registry/storage/_index.yaml', 'src/fixtures/app_upload_storage.yaml', 'uploads', {})]
 
 class HarnessPreparationTests(unittest.TestCase):
+    def test_app_preparation_produces_unique_registry_entries(self):
+        harness = ROOT / 'app/test'
+        subprocess.run(['bash', str(harness / 'prepare.sh')], check=True, timeout=30)
+        declarations = {}
+        for path in sorted((harness / 'src').rglob('*.yaml')):
+            document = yaml.safe_load(path.read_text())
+            if not isinstance(document, dict) or 'namespace' not in document:
+                continue
+            for entry in document.get('entries', []):
+                identity = (document['namespace'], entry['name'])
+                self.assertNotIn(identity, declarations,
+                                 f'{identity}: {declarations.get(identity)} and {path}')
+                declarations[identity] = path
+
     def test_regression_runs_in_repository_gate(self):
         self.assertIn(['python3', '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_harness_preparation.py'], json.loads((ROOT / ".github/modules.json").read_text())["checks"])
 
