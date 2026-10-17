@@ -1281,8 +1281,14 @@ jobs:
             make build MOD=ui
             make -C platform/ui lockrefresh
             cd platform/ui/test
-            wippy lint --ns kickside.ui --ns 'kickside.ui.*' --profile postgres --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
-            wippy test --profile postgres --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
+            databases=()
+            cleanup_databases() { for database in "${databases[@]}"; do dropdb "$database"; done; }
+            trap cleanup_databases EXIT
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
+            createdb "$database"
+            databases+=("$database")
+            wippy lint --ns kickside.ui --ns 'kickside.ui.*' --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
+            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
             cd "$source_root"
@@ -1528,6 +1534,7 @@ jobs:
             source_root="$PWD"
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
+            python3 -m unittest discover -s app/test -p test_documentation_sources.py
             make -C app lockrefresh
             cd app/test
             mkdir -p .wippy
@@ -1545,6 +1552,7 @@ jobs:
             source_root="$PWD"
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
+            python3 -m unittest discover -s app/test -p test_documentation_sources.py
             make -C app lockrefresh
             cd app/test
             databases=()
@@ -1608,6 +1616,8 @@ jobs:
         path: providers
         token: ${{ secrets.SOURCE_READ_TOKEN || github.token }}
         persist-credentials: false
+    - name: Check native harness database ownership
+      run: python3 -m unittest discover -s tests -p test_public_harnesses.py
     - name: Build, lint and Lua module tests
       run: ${{ matrix.commands }}
     defaults:
