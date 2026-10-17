@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.40 (2026-10-16)
+
+- Include native test host inputs in the public source package.
+
 ## 0.1.36 (2026-10-08)
 
 - build: rebuild bundles from source (6c884fef9)

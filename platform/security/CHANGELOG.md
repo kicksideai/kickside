@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.8 (2026-10-16)
+
+- Project stored groups over available policies and expose the complete assignable scope catalog.
+
 ## 0.2.6 (2026-10-14)
 
 - Complete pending delegation fences before taking the projection snapshot so ongoing registry changes permit scope projection completion and convergence.

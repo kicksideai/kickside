@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2026-10-16)
+
+- Include the native test harness and its source preparation inputs in the public source package.
+
 ## 0.1.38 (2026-10-09)
 
 - Build frontend assets with the current published UI Kit stylesheet.
