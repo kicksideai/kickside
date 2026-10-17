@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.14 (2026-10-16)
+
+- Include the developer handbook sources and refresh the application lock to published module releases.
+
 ## 0.2.11 (2026-10-13)
 
 - Compose equivalent baseline runtime permissions into fewer policies and retain every legacy policy identity and rule.
