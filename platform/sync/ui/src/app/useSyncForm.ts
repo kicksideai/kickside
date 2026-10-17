@@ -115,7 +115,7 @@ export function useSyncForm(options: { managed: boolean }) {
       if (current) sampleError.value = errMsg(cause, 'Could not read source samples.')
     }
   })
-  const assistSamples = computed(() => JSON.stringify(sourceSamples.value))
+  const assistSamples = computed(() => JSON.stringify(sourceSamples.value.map(payload => ({ payload }))))
 
   // Reconcile is only meaningful for a pulled source whose key set can be
   // enumerated: the source declares reconcile.pull_keys and the destination
