@@ -3902,13 +3902,22 @@
             "API-smoke",
             "browser-UI"
           ]
+        },
+        "jobs_dispatch_fixture_settlement": {
+          "assertions": [
+            "The native worker process test settles its dispatch fixture while preserving the existing inflight ownership contract."
+          ],
+          "types": [
+            "API-smoke"
+          ]
         }
       },
       "harness": [
         "core/HOT-UPDATE-INFLIGHT-EXACTLY-ONCE/drain-ceiling",
         "core/HOT-UPDATE-INFLIGHT-EXACTLY-ONCE/inflight-finishes-once",
         "core/HOT-UPDATE-INFLIGHT-EXACTLY-ONCE/pool-handover",
-        "core/HOT-UPDATE-INFLIGHT-EXACTLY-ONCE/supervisor-retires"
+        "core/HOT-UPDATE-INFLIGHT-EXACTLY-ONCE/supervisor-retires",
+        "jobs/dispatch-fixture-settlement"
       ],
       "reason": "A live Hub module update preserves admitted work, one durable effect per upload/automation/workflow, and the logged-in browser. Barriers hold real upload and automation calls while a workflow waits for review; the Hub applies changed executable Lua source without stopping the runtime, and a new executable revision is observed.",
       "user_visible": true
@@ -26629,6 +26638,608 @@
       },
       "harness": [],
       "reason": "Closing an HTTP connection with unread request bytes can reset the socket after the endpoint completes.",
+      "user_visible": false
+    },
+    "APP-DOCUMENTATION-REGISTRY-YAML": {
+      "guards": {
+        "public_application_documentation_sources": {
+          "assertions": [
+            "Documentation registry declarations parse as YAML and remain in the application source package."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Documentation registry declarations parse as YAML and remain in the application source package. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "COMPAT-IMPLIED-SCHEMA-ALTERNATIVES": {
+      "guards": {
+        "regression_compat_migration_fixtures": {
+          "assertions": [
+            "Compatibility fixtures preserve schema alternatives implied by previously published declarations."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Compatibility fixtures preserve schema alternatives implied by previously published declarations. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "COMPAT-MIGRATION-PRESERVATION-RECIPES": {
+      "guards": {
+        "regression_compat_migration_fixtures": {
+          "assertions": [
+            "Compatibility checks require preservation evidence for migrations that retire stored data shapes."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Compatibility checks require preservation evidence for migrations that retire stored data shapes. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "COMPAT-PUBLISHED-MIGRATION-CHECKPOINT": {
+      "guards": {
+        "regression_compat_migration_fixtures": {
+          "assertions": [
+            "Migration checks begin from the published migration checkpoint instead of an empty database."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Migration checks begin from the published migration checkpoint instead of an empty database. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "COMPONENTS-UI-STATIC-METADATA": {
+      "guards": {
+        "core_platform": {
+          "assertions": [
+            "The onboarding static mount serves its component through typed static metadata."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [
+        "components/agent-onboarding-static-metadata"
+      ],
+      "reason": "The onboarding static mount serves its component through typed static metadata.",
+      "user_visible": true
+    },
+    "CORE-LEGACY-NATURAL-KEY-UPGRADE": {
+      "guards": {
+        "update_legacy_thread_keys": {
+          "assertions": [
+            "Forward migrations preserve existing thread natural keys and idempotent lookup behavior."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/legacy-natural-key-upgrade"
+      ],
+      "reason": "Forward migrations preserve existing thread natural keys and idempotent lookup behavior. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "DRAIN-AWARE-DECLARATION": {
+      "guards": {
+        "user_provision_declaration_read": {
+          "assertions": [
+            "Provisioning reads the component declaration with its owning authority and preserves declaration lookup errors."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Provisioning reads the component declaration with its owning authority and preserves declaration lookup errors. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "HARNESS-TRANSITIVE-HOST-BINDINGS": {
+      "guards": {
+        "research_host_bindings": {
+          "assertions": [
+            "The Research harness explicitly binds transitive WebScout router and static resources."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "research/host-bindings"
+      ],
+      "reason": "The Research harness explicitly binds transitive WebScout router and static resources. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "JOBS-RETAINED-DETACH-RACE": {
+      "guards": {
+        "core_thread_delete": {
+          "assertions": [
+            "Thread deletion settles retained job ownership before removing its durable thread."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/jobs-thread-teardown-owned"
+      ],
+      "reason": "Thread deletion settles retained job ownership before removing its durable thread. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "JOBS-RETIRED-UPLOAD-SLOT-UPGRADE": {
+      "guards": {
+        "update_retired_upload_slot": {
+          "assertions": [
+            "A forward Jobs migration retires upload slots while preserving existing job ownership."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "jobs/retired-upload-slot-upgrade"
+      ],
+      "reason": "A forward Jobs migration retires upload slots while preserving existing job ownership. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "MCP-CLIENT-UI-TEST-TARGET": {
+      "guards": {},
+      "harness": [
+        "providers/mcp-client-make-test"
+      ],
+      "reason": "The MCP client Makefile exposes its frontend test target. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "MCP-STORED-RETIRED-POLICY-CREDENTIALS": {
+      "guards": {
+        "credential_policy_retirement_upgrade": {
+          "assertions": [
+            "Stored credentials with obsolete policy ceilings are revoked while their captured evidence is retained."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "mcp/stored-authority-upgrade"
+      ],
+      "reason": "Stored credentials with obsolete policy ceilings are revoked while their captured evidence is retained. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "MEETINGS-EXPLICIT-SKIP": {
+      "guards": {
+        "regression_meetings_engagement_skip": {
+          "assertions": [
+            "Engagement transforms preserve the explicit skip result through their native contract."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "meetings/engagement-skip"
+      ],
+      "reason": "Engagement transforms preserve the explicit skip result through their native contract. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "MEETINGS-HARNESS-NESTED-INJECTION": {
+      "guards": {
+        "regression_meetings_nested_library_injection": {
+          "assertions": [
+            "Nested fixture libraries receive the harness dependencies required by their native tests."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "meetings/nested-library-injection"
+      ],
+      "reason": "Nested fixture libraries receive the harness dependencies required by their native tests. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "MEETINGS-SHARED-IMPLEMENTATION-ACCESS": {
+      "guards": {
+        "regression_meetings_shared_access": {
+          "assertions": [
+            "Shared implementation methods retain their declared access boundary."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "meetings/shared-implementation-access"
+      ],
+      "reason": "Shared implementation methods retain their declared access boundary. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "MODULE-MAKE-TEST-TARGETS": {
+      "guards": {
+        "release_harness_configuration": {
+          "assertions": [
+            "Published module Makefiles expose the native test targets used by verification."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "chestor/db-schema-make-test",
+        "chestor/graph-make-test",
+        "chestor/roadmap-make-test",
+        "chestor/workspace-make-test",
+        "components/agent-onboarding-make-test",
+        "components/research-make-test",
+        "kickside/renderers-make-test",
+        "kickside/widgets-make-test",
+        "providers/code-execution-make-test",
+        "providers/hubspot-make-test",
+        "providers/webscout-make-test"
+      ],
+      "reason": "Published module Makefiles expose the native test targets used by verification. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-APPLICATION-DOCUMENTATION-SOURCES": {
+      "guards": {
+        "public_application_documentation_sources": {
+          "assertions": [
+            "The application package contains its documentation harness declarations and source."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The application package contains its documentation harness declarations and source. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-DOCUMENTATION-WORKFLOW-SOURCES": {
+      "guards": {
+        "public_documentation_workflow_sources": {
+          "assertions": [
+            "Documentation builds use their declared source repositories and workflow inputs."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Documentation builds use their declared source repositories and workflow inputs. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-HARNESS-CONTENT-CLASSIFICATION": {
+      "guards": {
+        "regression_publication_boundary": {
+          "assertions": [
+            "Publication content checks classify native harness sources at their owning package boundary."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Publication content checks classify native harness sources at their owning package boundary. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-IDENTITY-HARNESS-DEPENDENCY-PATH": {
+      "guards": {
+        "bot_accounts_identity_auth_exclusion": {
+          "assertions": [
+            "The standalone Identity harness resolves its declared dependency source path."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The standalone Identity harness resolves its declared dependency source path. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-MODULE-CATALOG-SOURCE-DRIFT": {
+      "guards": {
+        "public_documentation_workflow_sources": {
+          "assertions": [
+            "Module catalogs and documentation workflows use consistent source declarations."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Module catalogs and documentation workflows use consistent source declarations. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-MODULE-HANDBOOK-SOURCES": {
+      "guards": {
+        "public_module_handbook_sources": {
+          "assertions": [
+            "The module template includes the application handbook source required by verification."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The module template includes the application handbook source required by verification. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-MODULE-VERIFICATION-SOURCES": {
+      "guards": {
+        "public_module_handbook_sources": {
+          "assertions": [
+            "Module verification uses the declared product source and harness locations."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Module verification uses the declared product source and harness locations. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-TEMPLATE-TEMPORARY-WORKSPACE": {
+      "guards": {
+        "public_module_handbook_sources": {
+          "assertions": [
+            "Template verification creates its temporary workspace beneath its configured scratch root."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Template verification creates its temporary workspace beneath its configured scratch root. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-UI-HARNESS-SOURCES": {
+      "guards": {
+        "public_ui_harness_sources": {
+          "assertions": [
+            "Frontend verification sources remain in their owning product packages."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Frontend verification sources remain in their owning product packages. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "PUBLIC-UI-POSTGRES-DATABASE-OWNERSHIP": {
+      "guards": {
+        "public_ui_harness_sources": {
+          "assertions": [
+            "Frontend verification creates and removes only its own Postgres database."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Frontend verification creates and removes only its own Postgres database. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "REQUIREMENT-HOST-DEFAULTS": {
+      "guards": {
+        "access_hub_requirement_defaults": {
+          "assertions": [
+            "Hub plans resolve typed host requirements from application bindings without module-owned host defaults."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Hub plans resolve typed host requirements from application bindings without module-owned host defaults. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "RESEARCH-TOPIC-TOOL-SCHEMA": {
+      "guards": {
+        "research_topic_tool_schema": {
+          "assertions": [
+            "Research preserves the published topic input in its structured report tool schema."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "research/topic-tool-schema"
+      ],
+      "reason": "Research preserves the published topic input in its structured report tool schema. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "SECURITY-MEMBER-CATALOG-REGISTRY-AUTHORITY": {
+      "guards": {
+        "regression_published_installation_update": {
+          "assertions": [
+            "Member catalog discovery retains registry authority across application updates."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "regression_published_installation_credentials_update": {
+          "assertions": [
+            "Member catalog discovery retains registry authority across application updates."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [
+        "security/member-catalog-registry-authority"
+      ],
+      "reason": "Member catalog discovery retains registry authority across application updates.",
+      "user_visible": true
+    },
+    "SECURITY-RETIRED-SELECTION-SCOPE-CATALOG": {
+      "guards": {
+        "regression_published_installation_update": {
+          "assertions": [
+            "Updated catalog selection excludes retired scopes while existing member access remains usable."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "regression_published_installation_credentials_update": {
+          "assertions": [
+            "Updated catalog selection excludes retired scopes while existing member access remains usable."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [
+        "security/member-catalog-registry-authority",
+        "security/retired-selection-scope-catalog"
+      ],
+      "reason": "Updated catalog selection excludes retired scopes while existing member access remains usable.",
+      "user_visible": true
+    },
+    "SMOKE-MOUNTED-SESSION-CLEANUP-OWNERSHIP": {
+      "guards": {
+        "sessions_mounted_freshness": {
+          "assertions": [
+            "Mounted session freshness fixtures retain their users until scenario cleanup completes."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Mounted session freshness fixtures retain their users until scenario cleanup completes.",
+      "user_visible": true
+    },
+    "TEMPLATE-PUBLIC-RELEASE-WORKFLOW": {
+      "guards": {
+        "release_harness_configuration": {
+          "assertions": [
+            "The module template includes its release workflow and verification inputs."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "module/public-release-workflow"
+      ],
+      "reason": "The module template includes its release workflow and verification inputs. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "TRANSFORM-EXPLICIT-SKIP": {
+      "guards": {
+        "regression_transform_skip": {
+          "assertions": [
+            "Transform and Sync distinguish an explicit skip outcome from a missing result."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "sync/explicit-skip",
+        "transform/explicit-skip"
+      ],
+      "reason": "Transform and Sync distinguish an explicit skip outcome from a missing result. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "UPDATE-SYNC-RECORD-DELETE-REPLAY": {
+      "guards": {
+        "update_record_delete_replay": {
+          "assertions": [
+            "The CRM reconciliation contract deletes a record and an activity from the upsert destination reference without transform output. The Automation round control test explicitly replays dead and uncertain deliveries with a caller request id, redelivers them and preserves request idempotency."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/record-delete-migration",
+        "crm/record-delete-destination"
+      ],
+      "reason": "Record deletes use their stored destination references, and failed deliveries remain available to the explicit replay control.",
+      "user_visible": false
+    },
+    "USERS-PUBLISHED-PASSWORD-HASH-UPDATE": {
+      "guards": {
+        "hub_update_password_hashes": {
+          "assertions": [
+            "The native password format contract preserves password hash validation across updates."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The native password format contract preserves password hash validation across updates. This is a source, API or native contract check without a browser interaction.",
+      "user_visible": false
+    },
+    "WEBSCOUT-PROVIDER-HOST-BINDINGS": {
+      "guards": {
+        "brave_package_readme": {
+          "assertions": [
+            "WebScout provider packages declare their host bindings and retain installed package documentation."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "providers/webscout-brave-host-bindings",
+        "providers/webscout-tavily-host-bindings"
+      ],
+      "reason": "WebScout provider packages declare their host bindings and retain installed package documentation. This is a source, API or native contract check without a browser interaction.",
       "user_visible": false
     }
   },

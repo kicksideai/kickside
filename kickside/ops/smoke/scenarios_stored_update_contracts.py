@@ -4,7 +4,8 @@ from module_harness import run_focused_module_test
 
 
 def record_delete_replay(ctx):
-    run_focused_module_test(ctx, 'kickside/automation', 'delete_replay_migration_test')
+    run_focused_module_test(ctx, 'kickside/automation', 'round_control_test_2')
+    run_focused_module_test(ctx, 'kickside/crm', 'crm_sink_reconciliation_test')
 
 
 def research_topic(ctx):

@@ -9327,7 +9327,7 @@
         "UPDATE-SYNC-RECORD-DELETE-REPLAY"
       ],
       "repository": "kickside/kickside",
-      "test": "platform/automation/test/src/suites/delete_replay_migration_test.lua"
+      "test": "platform/automation/test/src/suites/round/control_test.lua"
     },
     "research/topic-tool-schema": {
       "engines": [
@@ -9579,6 +9579,17 @@
       ],
       "repository": "kickside/module",
       "test": ".github/scripts/test_delivery.py"
+    },
+    "crm/record-delete-destination": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "UPDATE-SYNC-RECORD-DELETE-REPLAY"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_sink_contract_test.lua"
     }
   },
   "issues": [

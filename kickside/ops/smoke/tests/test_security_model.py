@@ -13,11 +13,28 @@ import scenarios_security_model as model
 class PublishedBindings(unittest.TestCase):
     def test_hub_update_preserves_an_explicit_nondefault_member_binding(self):
         from unittest.mock import Mock, patch
+        from tests.test_endpoint_policy_components import entries, module_repositories, module_sources
+        modules = module_sources(module_repositories())
+        host_values = {'http.router': 'app:api', 'http.service': 'app:gateway',
+                       'db.sql': 'app:db', 'process.host': 'app:processes',
+                       'security.scope': 'app.security:admin'}
         inst = Mock()
         installed = {}
         inst.install.side_effect = lambda module, parameters=None: installed.update({module: parameters})
         def request(method, path, body, **kwargs):
             module = body['component']
+            if kwargs['label'].endswith('-host-plan'):
+                requirements = []
+                for identifier, entry in entries(modules[module] / 'src').items():
+                    if entry['kind'] != 'ns.requirement' or entry.get('default') is not None:
+                        continue
+                    kind = entry.get('meta', {}).get('value_kind')
+                    if kind in host_values:
+                        requirements.append({'module': module, 'name': identifier.split(':')[1],
+                            'full_id': identifier, 'expected_kind': kind, 'default': None,
+                            'value': host_values[kind], 'value_source': 'registry',
+                            'missing': False, 'invalid': False})
+                return {'requirements': requirements}
             identifier = module.replace('/', '.') + '.security:user_security_scope'
             default = 'kickside.security.groups:members'
             parameters = installed.get(module)
@@ -33,6 +50,8 @@ class PublishedBindings(unittest.TestCase):
         with patch('runtime.Instance', return_value=inst):
             model.hub_requirement_defaults(ctx)
         self.assertEqual(len(installed), 3)
+        self.assertEqual(sum(call.kwargs['label'].endswith('-host-plan')
+                             for call in inst.request.call_args_list), 8)
         for module, parameters in installed.items():
             self.assertEqual(parameters, [{'name': module.replace('/', '.') + '.security:user_security_scope',
                                           'value': 'app.security:members'}])

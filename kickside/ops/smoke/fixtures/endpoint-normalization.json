@@ -9,7 +9,8 @@
       "method": "GET",
       "path": "/workspace/db-schema/{id}",
       "func": "get_schema",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.db_schema:api_router"
     },
     {
       "module": "chestor/db-schema",
@@ -20,7 +21,8 @@
       "method": "POST",
       "path": "/workspace/db-schema/{id}/apply",
       "func": "apply_schema",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.db_schema:api_router"
     },
     {
       "module": "chestor/db-schema",
@@ -31,7 +33,8 @@
       "method": "GET",
       "path": "/workspace/db-schema/{id}/tables",
       "func": "list_tables",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.db_schema:api_router"
     },
     {
       "module": "chestor/db-schema",
@@ -42,7 +45,8 @@
       "method": "GET",
       "path": "/workspace/db-schema/{id}/relations",
       "func": "list_relations",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.db_schema:api_router"
     },
     {
       "module": "chestor/db-schema",
@@ -53,7 +57,8 @@
       "method": "GET",
       "path": "/workspace/db-schema/{id}/indexes",
       "func": "list_indexes",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.db_schema:api_router"
     },
     {
       "module": "chestor/graph",
@@ -64,7 +69,8 @@
       "method": "GET",
       "path": "/workspace/graphs/{id}",
       "func": "get_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -75,7 +81,8 @@
       "method": "POST",
       "path": "/workspace/graphs/{id}/apply",
       "func": "apply_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -86,7 +93,8 @@
       "method": "POST",
       "path": "/workspace/graphs/{id}/undo",
       "func": "undo_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -97,7 +105,8 @@
       "method": "POST",
       "path": "/workspace/graphs/{id}/redo",
       "func": "redo_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -108,7 +117,8 @@
       "method": "GET",
       "path": "/workspace/graphs/{id}/nodes",
       "func": "list_nodes",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -119,7 +129,8 @@
       "method": "GET",
       "path": "/workspace/graphs/{id}/edges",
       "func": "list_edges",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -130,7 +141,8 @@
       "method": "GET",
       "path": "/workspace/graphs/{id}/materials",
       "func": "list_materials",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/graph",
@@ -141,7 +153,8 @@
       "method": "GET",
       "path": "/workspace/graphs/{id}/schema",
       "func": "get_schema",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.graph:api_router"
     },
     {
       "module": "chestor/journal",
@@ -152,7 +165,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}",
       "func": "get_journal",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -163,7 +177,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/health",
       "func": "get_health",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -174,7 +189,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/apply",
       "func": "apply_events",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -185,7 +201,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/events",
       "func": "append_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -196,7 +213,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/events",
       "func": "list_events",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -207,7 +225,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/events/{event_id}",
       "func": "get_event",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -218,7 +237,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/updates",
       "func": "get_updates",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -229,7 +249,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/context_pack",
       "func": "get_context_pack",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -240,7 +261,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/branch",
       "func": "get_branch",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -251,7 +273,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/frontier",
       "func": "get_frontier",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -262,7 +285,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/cursors",
       "func": "get_cursors",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -273,7 +297,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/spans",
       "func": "get_spans",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -284,7 +309,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/activity",
       "func": "get_activity",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -295,7 +321,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/changes",
       "func": "get_changes",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -306,7 +333,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/tree",
       "func": "get_tree",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -317,7 +345,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/tasks",
       "func": "upsert_task",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -328,7 +357,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/tasks/{task_id}/transition",
       "func": "transition_task",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -339,7 +369,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/artifacts",
       "func": "link_artifact",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -350,7 +381,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/focus",
       "func": "focus_task",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -361,7 +393,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/search",
       "func": "search_journal",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -372,7 +405,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/search_text",
       "func": "search_journal_text",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -383,7 +417,8 @@
       "method": "PUT",
       "path": "/workspace/journals/{id}/digest",
       "func": "update_digest",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -394,7 +429,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/checkpoints",
       "func": "create_checkpoint",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -405,7 +441,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/graphs",
       "func": "list_graphs",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -416,7 +453,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/graphs/{graph_id}",
       "func": "query_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -427,7 +465,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/graphs/{graph_id}/ops",
       "func": "apply_graph_ops",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -438,7 +477,8 @@
       "method": "PUT",
       "path": "/workspace/journals/{id}/graphs/{graph_id}/config",
       "func": "configure_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -449,7 +489,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/events/{event_id}/graphs",
       "func": "event_graphs",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -460,7 +501,8 @@
       "method": "POST",
       "path": "/workspace/journals/{id}/graphs/{graph_id}/assemble",
       "func": "assemble_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/journal",
@@ -471,7 +513,8 @@
       "method": "GET",
       "path": "/workspace/journals/{id}/graphs/{graph_id}/assemble",
       "func": "get_assembly",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.journal:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -482,7 +525,8 @@
       "method": "GET",
       "path": "/workspace/roadmaps/{id}",
       "func": "get_roadmap",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -493,7 +537,8 @@
       "method": "POST",
       "path": "/workspace/roadmaps/{id}/apply",
       "func": "apply_roadmap",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -504,7 +549,8 @@
       "method": "POST",
       "path": "/workspace/roadmaps/{id}/undo",
       "func": "undo_roadmap",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -515,7 +561,8 @@
       "method": "POST",
       "path": "/workspace/roadmaps/{id}/redo",
       "func": "redo_roadmap",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -526,7 +573,8 @@
       "method": "GET",
       "path": "/workspace/roadmaps/{id}/initiatives",
       "func": "list_initiatives",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -537,7 +585,8 @@
       "method": "GET",
       "path": "/workspace/roadmaps/{id}/dependencies",
       "func": "get_dependencies",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -548,7 +597,8 @@
       "method": "GET",
       "path": "/workspace/roadmaps/{id}/critical",
       "func": "get_critical",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/roadmap",
@@ -559,7 +609,8 @@
       "method": "GET",
       "path": "/workspace/roadmaps/{id}/schema",
       "func": "get_schema",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.roadmap:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -570,7 +621,8 @@
       "method": "GET",
       "path": "/workspace/entries",
       "func": "list_entries",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -581,7 +633,8 @@
       "method": "GET",
       "path": "/workspace/entries/types",
       "func": "list_entry_types",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -592,7 +645,8 @@
       "method": "GET",
       "path": "/workspace/entries/{id}",
       "func": "get_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -603,7 +657,8 @@
       "method": "GET",
       "path": "/workspace/entries/{id}/breadcrumbs",
       "func": "get_breadcrumbs",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -614,7 +669,8 @@
       "method": "POST",
       "path": "/workspace/entries",
       "func": "create_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -625,7 +681,8 @@
       "method": "PUT",
       "path": "/workspace/entries/{id}",
       "func": "update_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -636,7 +693,8 @@
       "method": "POST",
       "path": "/workspace/entries/{id}/move",
       "func": "move_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -647,7 +705,8 @@
       "method": "DELETE",
       "path": "/workspace/entries/{id}",
       "func": "delete_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -658,7 +717,8 @@
       "method": "POST",
       "path": "/workspace/entries/{id}/grant",
       "func": "grant_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "chestor/workspace",
@@ -669,7 +729,8 @@
       "method": "POST",
       "path": "/workspace/entries/{id}/revoke",
       "func": "revoke_entry",
-      "router": null
+      "router": null,
+      "router_requirement": "chestor.workspace:api_router"
     },
     {
       "module": "kickside/agents",
@@ -680,7 +741,8 @@
       "method": "GET",
       "path": "/user-agents",
       "func": "list_user_agents",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -691,7 +753,8 @@
       "method": "GET",
       "path": "/user-agents/{id}",
       "func": "get_user_agent",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -702,7 +765,8 @@
       "method": "POST",
       "path": "/user-agents",
       "func": "create_user_agent",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -713,7 +777,8 @@
       "method": "PUT",
       "path": "/user-agents/{id}",
       "func": "update_user_agent",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -724,7 +789,8 @@
       "method": "DELETE",
       "path": "/user-agents/{id}",
       "func": "delete_user_agent",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -735,7 +801,8 @@
       "method": "GET",
       "path": "/agents/list",
       "func": "list_agents",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -746,7 +813,8 @@
       "method": "GET",
       "path": "/agents/by-name",
       "func": "agents_by_name",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -757,7 +825,8 @@
       "method": "GET",
       "path": "/agents/traits",
       "func": "list_traits",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -768,7 +837,8 @@
       "method": "GET",
       "path": "/agents/namespaces",
       "func": "list_namespaces",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -779,7 +849,8 @@
       "method": "GET",
       "path": "/agents/tools",
       "func": "list_tools",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/agents",
@@ -790,7 +861,8 @@
       "method": "GET",
       "path": "/agents/memory-options",
       "func": "list_memory_options",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.agents:api_router"
     },
     {
       "module": "kickside/automation",
@@ -801,7 +873,8 @@
       "method": "GET",
       "path": "/automations/types",
       "func": "list_types",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -812,7 +885,8 @@
       "method": "GET",
       "path": "/automations/sources",
       "func": "list_sources",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -823,7 +897,8 @@
       "method": "GET",
       "path": "/automations/sinks",
       "func": "list_sinks",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -834,7 +909,8 @@
       "method": "GET",
       "path": "/automations",
       "func": "list",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -845,7 +921,8 @@
       "method": "POST",
       "path": "/automations",
       "func": "install",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -856,7 +933,8 @@
       "method": "POST",
       "path": "/automations/selected",
       "func": "install_selected",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -867,7 +945,8 @@
       "method": "DELETE",
       "path": "/automations/{id}",
       "func": "delete",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -878,7 +957,8 @@
       "method": "GET",
       "path": "/automations/{id}/state",
       "func": "read_state",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -889,7 +969,8 @@
       "method": "GET",
       "path": "/automations/{id}/config",
       "func": "read_config",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -900,7 +981,8 @@
       "method": "GET",
       "path": "/automations/{id}/export",
       "func": "export",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -911,7 +993,8 @@
       "method": "POST",
       "path": "/automations/import",
       "func": "import",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -922,7 +1005,8 @@
       "method": "PUT",
       "path": "/automations/{id}",
       "func": "reconfigure",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -933,7 +1017,8 @@
       "method": "PATCH",
       "path": "/automations/{id}",
       "func": "update_meta",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -944,7 +1029,8 @@
       "method": "GET",
       "path": "/automations/{id}/status",
       "func": "status",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -955,7 +1041,8 @@
       "method": "GET",
       "path": "/automations/{id}/history",
       "func": "history",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -966,7 +1053,8 @@
       "method": "GET",
       "path": "/automations/health",
       "func": "health",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -977,7 +1065,8 @@
       "method": "GET",
       "path": "/automations/{id}/identity",
       "func": "get_execution_identity",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -988,7 +1077,8 @@
       "method": "POST",
       "path": "/automations/{id}/identity",
       "func": "set_execution_identity",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -999,7 +1089,8 @@
       "method": "POST",
       "path": "/automations/{id}/control",
       "func": "drive_control",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/automation",
@@ -1010,7 +1101,8 @@
       "method": "POST",
       "path": "/automations/{id}/actions/{method}",
       "func": "call_action",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.automation:api_router"
     },
     {
       "module": "kickside/code-execution",
@@ -1021,7 +1113,8 @@
       "method": "GET",
       "path": "/code-execution/sdk-reference",
       "func": "sdk_reference",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.code_execution:api_router"
     },
     {
       "module": "kickside/code-execution",
@@ -1032,7 +1125,8 @@
       "method": "POST",
       "path": "/code-execution/assist",
       "func": "assist",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.code_execution:api_router"
     },
     {
       "module": "kickside/code-execution",
@@ -1043,7 +1137,8 @@
       "method": "POST",
       "path": "/code-execution/recommend-tools",
       "func": "recommend_tools_api",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.code_execution:api_router"
     },
     {
       "module": "kickside/component",
@@ -1054,7 +1149,8 @@
       "method": "GET",
       "path": "/components/access-model",
       "func": "access_model",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.component:api_router"
     },
     {
       "module": "kickside/component",
@@ -1065,7 +1161,8 @@
       "method": "GET",
       "path": "/component-access/grants/{id}",
       "func": "list_component_access",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.component:api_router"
     },
     {
       "module": "kickside/component",
@@ -1076,7 +1173,8 @@
       "method": "POST",
       "path": "/component-access/share/{id}",
       "func": "share_component",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.component:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1087,7 +1185,8 @@
       "method": "GET",
       "path": "/connections",
       "func": "list_connections",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1098,7 +1197,8 @@
       "method": "POST",
       "path": "/connections",
       "func": "create_connection",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1109,7 +1209,8 @@
       "method": "GET",
       "path": "/connections/providers/discover",
       "func": "discover_providers",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1120,7 +1221,8 @@
       "method": "GET",
       "path": "/connections/providers/badges",
       "func": "provider_badges",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1131,7 +1233,8 @@
       "method": "DELETE",
       "path": "/connections/{id}",
       "func": "delete_connection",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1142,7 +1245,8 @@
       "method": "PUT",
       "path": "/connections/{id}",
       "func": "update_connection",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/connection",
@@ -1153,7 +1257,8 @@
       "method": "POST",
       "path": "/connections/{id}/discover_resources",
       "func": "discover_resources",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.connection:api_router"
     },
     {
       "module": "kickside/core",
@@ -1164,7 +1269,8 @@
       "method": "GET",
       "path": "/threads/{id}/retention",
       "func": "get_thread_retention",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.retention:api_router"
     },
     {
       "module": "kickside/core",
@@ -1175,7 +1281,8 @@
       "method": "PUT",
       "path": "/threads/{id}/retention",
       "func": "upsert_thread_retention",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.retention:api_router"
     },
     {
       "module": "kickside/core",
@@ -1186,7 +1293,8 @@
       "method": "GET",
       "path": "/jobs",
       "func": "list_jobs",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1197,7 +1305,8 @@
       "method": "GET",
       "path": "/job-runs",
       "func": "list_job_runs",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1208,7 +1317,8 @@
       "method": "POST",
       "path": "/threads",
       "func": "create_thread",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1219,7 +1329,8 @@
       "method": "GET",
       "path": "/threads/{id}",
       "func": "get_thread",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1230,7 +1341,8 @@
       "method": "PATCH",
       "path": "/threads/{id}",
       "func": "update_thread",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1241,7 +1353,8 @@
       "method": "DELETE",
       "path": "/threads/{id}",
       "func": "delete_thread",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1252,7 +1365,8 @@
       "method": "GET",
       "path": "/threads",
       "func": "list_threads",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1263,7 +1377,8 @@
       "method": "GET",
       "path": "/thread-classes",
       "func": "list_classes",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1274,7 +1389,8 @@
       "method": "GET",
       "path": "/threads/{id}/children",
       "func": "list_children",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1285,7 +1401,8 @@
       "method": "GET",
       "path": "/threads/{id}/graph",
       "func": "get_graph",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1296,7 +1413,8 @@
       "method": "POST",
       "path": "/threads/{id}/messages",
       "func": "post_message",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1307,7 +1425,8 @@
       "method": "POST",
       "path": "/threads/{id}/events",
       "func": "post_event",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1318,7 +1437,8 @@
       "method": "GET",
       "path": "/threads/{id}/events",
       "func": "list_events",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/core",
@@ -1329,7 +1449,8 @@
       "method": "POST",
       "path": "/threads/{id}/events/batch",
       "func": "ingest_events_batch",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.core.threads:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1340,7 +1461,8 @@
       "method": "GET",
       "path": "/workspace/crm",
       "func": "bootstrap",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1351,7 +1473,8 @@
       "method": "GET",
       "path": "/workspace/crm/{id}",
       "func": "get",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1362,7 +1485,8 @@
       "method": "GET",
       "path": "/workspace/crm/{id}/panels/{object_type}",
       "func": "panels",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1373,7 +1497,8 @@
       "method": "POST",
       "path": "/workspace/crm/{id}/apply",
       "func": "apply",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1384,7 +1509,8 @@
       "method": "GET",
       "path": "/workspace/crm/{id}/schema",
       "func": "schema.get",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1395,7 +1521,8 @@
       "method": "GET",
       "path": "/workspace/crm/{id}/config/export",
       "func": "export_config",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1406,7 +1533,8 @@
       "method": "POST",
       "path": "/workspace/crm/{id}/query",
       "func": "query",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/crm",
@@ -1417,7 +1545,8 @@
       "method": "POST",
       "path": "/workspace/crm/{id}/resolve",
       "func": "resolve",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.crm:api_router"
     },
     {
       "module": "kickside/dashboard",
@@ -1428,7 +1557,8 @@
       "method": "GET",
       "path": "/dashboard/overview",
       "func": "overview",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.dashboard:api_router"
     },
     {
       "module": "kickside/identity",
@@ -1439,7 +1569,8 @@
       "method": "POST",
       "path": "/identity/link-codes",
       "func": "generate_link_code",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.identity:api_router"
     },
     {
       "module": "kickside/identity",
@@ -1450,7 +1581,8 @@
       "method": "GET",
       "path": "/identity/links",
       "func": "list_links",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.identity:api_router"
     },
     {
       "module": "kickside/identity",
@@ -1461,7 +1593,8 @@
       "method": "POST",
       "path": "/identity/unlink",
       "func": "unlink",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.identity:api_router"
     },
     {
       "module": "kickside/inbox",
@@ -1472,7 +1605,8 @@
       "method": "GET",
       "path": "/inbox",
       "func": "list_inbox",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.inbox:api_router"
     },
     {
       "module": "kickside/inbox",
@@ -1483,7 +1617,8 @@
       "method": "GET",
       "path": "/inbox/item-types",
       "func": "list_item_types",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.inbox:api_router"
     },
     {
       "module": "kickside/inbox",
@@ -1494,7 +1629,8 @@
       "method": "POST",
       "path": "/inbox",
       "func": "create_item",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.inbox:api_router"
     },
     {
       "module": "kickside/inbox",
@@ -1505,7 +1641,8 @@
       "method": "POST",
       "path": "/inbox/{id}/{action}",
       "func": "resolve_item",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.inbox:api_router"
     },
     {
       "module": "kickside/inbox",
@@ -1516,7 +1653,8 @@
       "method": "DELETE",
       "path": "/inbox/{id}",
       "func": "delete_item",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.inbox:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1527,7 +1665,8 @@
       "method": "GET",
       "path": "/kb10/{id}/browse",
       "func": "browse",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1538,7 +1677,8 @@
       "method": "GET",
       "path": "/kb10/{id}/graph",
       "func": "graph",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1549,7 +1689,8 @@
       "method": "GET",
       "path": "/kb10/{id}/search",
       "func": "search",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1560,7 +1701,8 @@
       "method": "DELETE",
       "path": "/kb10/{id}/nodes/{node_id}",
       "func": "delete_node",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1571,7 +1713,8 @@
       "method": "POST",
       "path": "/kb10/{id}/concepts",
       "func": "concepts_create",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1582,7 +1725,8 @@
       "method": "PATCH",
       "path": "/kb10/{id}/concepts/{node_id}",
       "func": "concepts_update",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1593,7 +1737,8 @@
       "method": "PUT",
       "path": "/kb10/{id}/concepts/{node_id}/parent",
       "func": "concepts_move",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1604,7 +1749,8 @@
       "method": "DELETE",
       "path": "/kb10/{id}/concepts/{node_id}",
       "func": "concepts_delete",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1615,7 +1761,8 @@
       "method": "GET",
       "path": "/kb10/{id}/nodes/{node_id}/source",
       "func": "source",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1626,7 +1773,8 @@
       "method": "POST",
       "path": "/kb10/{id}/enrichment",
       "func": "enrichment",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1637,7 +1785,8 @@
       "method": "POST",
       "path": "/kb10/{id}/reembed",
       "func": "reembed",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1648,7 +1797,8 @@
       "method": "POST",
       "path": "/kb10/{id}/resummarize",
       "func": "resummarize",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kb10",
@@ -1659,7 +1809,8 @@
       "method": "GET",
       "path": "/kb10/{id}/maintenance",
       "func": "maintenance_get",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.kb10:api_router"
     },
     {
       "module": "kickside/kickside",
@@ -1670,7 +1821,8 @@
       "method": "GET",
       "path": "/ws/join",
       "func": "ws_endpoint",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": null
     },
     {
       "module": "kickside/knowledge",
@@ -1681,7 +1833,8 @@
       "method": "GET",
       "path": "/knowledge/list",
       "func": "list_kb",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1692,7 +1845,8 @@
       "method": "GET",
       "path": "/knowledge/engines",
       "func": "list_engines",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1703,7 +1857,8 @@
       "method": "POST",
       "path": "/knowledge/create",
       "func": "create_kb",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1714,7 +1869,8 @@
       "method": "GET",
       "path": "/knowledge/{id}",
       "func": "get_kb",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1725,7 +1881,8 @@
       "method": "DELETE",
       "path": "/knowledge/{id}",
       "func": "delete_kb",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1736,7 +1893,8 @@
       "method": "PUT",
       "path": "/knowledge/{id}",
       "func": "update_kb",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1747,7 +1905,8 @@
       "method": "POST",
       "path": "/knowledge/{id}/upload-token",
       "func": "upload_token",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1758,7 +1917,8 @@
       "method": "POST",
       "path": "/knowledge/{id}/ingest",
       "func": "ingest_content",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1769,7 +1929,8 @@
       "method": "DELETE",
       "path": "/knowledge/{id}/content",
       "func": "delete_content",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1780,7 +1941,8 @@
       "method": "POST",
       "path": "/knowledge/{id}/ingest-upload",
       "func": "ingest_existing_upload",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1791,7 +1953,8 @@
       "method": "POST",
       "path": "/knowledge/{id}/search",
       "func": "search",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1802,7 +1965,8 @@
       "method": "POST",
       "path": "/knowledge/{id}/ask",
       "func": "ask",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1813,7 +1977,8 @@
       "method": "GET",
       "path": "/knowledge/models",
       "func": "list_embedding_models",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/knowledge",
@@ -1824,7 +1989,8 @@
       "method": "POST",
       "path": "/knowledge/organize",
       "func": "organize",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.knowledge:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1835,7 +2001,8 @@
       "method": "POST",
       "path": "/mcp/credentials",
       "func": "create_credential",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1846,7 +2013,8 @@
       "method": "PATCH",
       "path": "/mcp/credentials/{id}",
       "func": "update_credential",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1857,7 +2025,8 @@
       "method": "GET",
       "path": "/mcp/credentials",
       "func": "list_credentials",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1868,7 +2037,8 @@
       "method": "POST",
       "path": "/mcp/credentials/{id}/revoke",
       "func": "revoke_credential",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1879,7 +2049,8 @@
       "method": "DELETE",
       "path": "/mcp/credentials/{id}",
       "func": "delete_credential",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1890,7 +2061,8 @@
       "method": "GET",
       "path": "/mcp/tools",
       "func": "list_tools",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1901,7 +2073,8 @@
       "method": "GET",
       "path": "/mcp/components",
       "func": "list_components",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1912,7 +2085,8 @@
       "method": "GET",
       "path": "/mcp/presets",
       "func": "list_presets",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1923,7 +2097,8 @@
       "method": "GET",
       "path": "/mcp/oauth/context",
       "func": "context",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp",
@@ -1934,7 +2109,8 @@
       "method": "POST",
       "path": "/mcp/oauth/consent",
       "func": "consent",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.mcp:api_router"
     },
     {
       "module": "kickside/mcp-client",
@@ -1945,7 +2121,8 @@
       "method": "PUT",
       "path": "/mcp-client/connections/{id}",
       "func": "reconnect",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.mcp_client:api_router"
     },
     {
       "module": "kickside/models",
@@ -1956,7 +2133,8 @@
       "method": "GET",
       "path": "/models/list",
       "func": "list_models",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.models:api_router"
     },
     {
       "module": "kickside/models",
@@ -1967,7 +2145,8 @@
       "method": "GET",
       "path": "/models/classes",
       "func": "list_model_classes",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.models:api_router"
     },
     {
       "module": "kickside/models",
@@ -1978,7 +2157,8 @@
       "method": "GET",
       "path": "/models/by-name",
       "func": "models_by_name",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.models:api_router"
     },
     {
       "module": "kickside/oauth",
@@ -1989,7 +2169,8 @@
       "method": "GET",
       "path": "/oauth/providers/discover",
       "func": "discover_providers",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.oauth:api_router"
     },
     {
       "module": "kickside/oauth",
@@ -2000,7 +2181,8 @@
       "method": "GET",
       "path": "/oauth/connections/{component_id}",
       "func": "get_connection_details",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.oauth:api_router"
     },
     {
       "module": "kickside/oauth",
@@ -2011,7 +2193,8 @@
       "method": "GET",
       "path": "/oauth/providers/{provider_name}",
       "func": "get_provider_info",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.oauth:api_router"
     },
     {
       "module": "kickside/oauth",
@@ -2022,7 +2205,8 @@
       "method": "POST",
       "path": "/oauth/providers/{provider_name}/init",
       "func": "init_connection",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.oauth:api_router"
     },
     {
       "module": "kickside/oauth",
@@ -2033,7 +2217,8 @@
       "method": "PUT",
       "path": "/oauth/connections/{component_id}",
       "func": "update_connection",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.oauth:api_router"
     },
     {
       "module": "kickside/renderers",
@@ -2044,7 +2229,8 @@
       "method": "GET",
       "path": "/renderers",
       "func": "list_renderers",
-      "router": "api_router"
+      "router": "api_router",
+      "router_requirement": "kickside.renderers:api_router"
     },
     {
       "module": "kickside/research",
@@ -2055,7 +2241,8 @@
       "method": "POST",
       "path": "/research",
       "func": "submit",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.research:api_router"
     },
     {
       "module": "kickside/research",
@@ -2066,7 +2253,8 @@
       "method": "GET",
       "path": "/research/list",
       "func": "status",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.research:api_router"
     },
     {
       "module": "kickside/research",
@@ -2077,7 +2265,8 @@
       "method": "GET",
       "path": "/research/{id}/events",
       "func": "detail",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.research:api_router"
     },
     {
       "module": "kickside/sessions",
@@ -2088,7 +2277,8 @@
       "method": "POST",
       "path": "/sessions/start-token",
       "func": "start_token",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.sessions:api_router"
     },
     {
       "module": "kickside/sessions",
@@ -2099,7 +2289,8 @@
       "method": "POST",
       "path": "/sessions/favorite",
       "func": "favorite",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.sessions:api_router"
     },
     {
       "module": "kickside/simplefin",
@@ -2110,7 +2301,8 @@
       "method": "PUT",
       "path": "/simplefin/connections/{id}",
       "func": "rotate",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.simplefin:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2121,7 +2313,8 @@
       "method": "GET",
       "path": "/skills",
       "func": "list_skills",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2132,7 +2325,8 @@
       "method": "GET",
       "path": "/skills/{id}",
       "func": "get_skill",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2143,7 +2337,8 @@
       "method": "GET",
       "path": "/skills/{id}/versions",
       "func": "list_versions",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2154,7 +2349,8 @@
       "method": "POST",
       "path": "/skills",
       "func": "create_skill",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2165,7 +2361,8 @@
       "method": "PATCH",
       "path": "/skills/{id}",
       "func": "refine_skill",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2176,7 +2373,8 @@
       "method": "DELETE",
       "path": "/skills/{id}",
       "func": "delete_skill",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/skills",
@@ -2187,7 +2385,8 @@
       "method": "GET",
       "path": "/skills/{id}/file",
       "func": "read_file",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.skills:api_router"
     },
     {
       "module": "kickside/sso",
@@ -2198,7 +2397,8 @@
       "method": "GET",
       "path": "/sso/connections",
       "func": "list_connections",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.sso:api_router"
     },
     {
       "module": "kickside/sso",
@@ -2209,7 +2409,8 @@
       "method": "POST",
       "path": "/sso/{provider}/link",
       "func": "link_start",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.sso:api_router"
     },
     {
       "module": "kickside/sso",
@@ -2220,7 +2421,8 @@
       "method": "DELETE",
       "path": "/sso/{provider}/link",
       "func": "unlink",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.sso:api_router"
     },
     {
       "module": "kickside/transfer",
@@ -2231,7 +2433,8 @@
       "method": "GET",
       "path": "/transfer/exportable",
       "func": "list_exportable",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.transfer:api_router"
     },
     {
       "module": "kickside/transfer",
@@ -2242,7 +2445,8 @@
       "method": "POST",
       "path": "/transfer/export",
       "func": "export",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.transfer:api_router"
     },
     {
       "module": "kickside/transfer",
@@ -2253,7 +2457,8 @@
       "method": "POST",
       "path": "/transfer/import",
       "func": "import",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.transfer:api_router"
     },
     {
       "module": "kickside/transform",
@@ -2264,7 +2469,8 @@
       "method": "POST",
       "path": "/transform/assist",
       "func": "assist",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.transform:api_router"
     },
     {
       "module": "kickside/transform",
@@ -2275,7 +2481,8 @@
       "method": "POST",
       "path": "/transform/validate",
       "func": "validate",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.transform:api_router"
     },
     {
       "module": "kickside/transform",
@@ -2286,7 +2493,8 @@
       "method": "POST",
       "path": "/transform/snippet",
       "func": "snippet",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.transform:api_router"
     },
     {
       "module": "kickside/ui",
@@ -2297,7 +2505,8 @@
       "method": "GET",
       "path": "/nav/list",
       "func": "list_nav",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.ui:api_router"
     },
     {
       "module": "kickside/ui",
@@ -2308,7 +2517,8 @@
       "method": "GET",
       "path": "/ui/contributions",
       "func": "list_contributions",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.ui:api_router"
     },
     {
       "module": "kickside/ui",
@@ -2319,7 +2529,8 @@
       "method": "GET",
       "path": "/account/items",
       "func": "list_account_items",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.ui:api_router"
     },
     {
       "module": "kickside/ui",
@@ -2330,7 +2541,8 @@
       "method": "POST",
       "path": "/ui/splash/{id}/seen",
       "func": "mark_splash_seen",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.ui:api_router"
     },
     {
       "module": "kickside/ui",
@@ -2341,7 +2553,8 @@
       "method": "DELETE",
       "path": "/ui/splash/{id}/seen",
       "func": "mark_splash_seen",
-      "router": ""
+      "router": "",
+      "router_requirement": "kickside.ui:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2352,7 +2565,8 @@
       "method": "POST",
       "path": "/uploads/complete",
       "func": "complete_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2363,7 +2577,8 @@
       "method": "DELETE",
       "path": "/uploads/{uuid}",
       "func": "delete_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2374,7 +2589,8 @@
       "method": "GET",
       "path": "/uploads/{uuid}",
       "func": "get_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2385,7 +2601,8 @@
       "method": "GET",
       "path": "/uploads/list",
       "func": "list_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2396,7 +2613,8 @@
       "method": "POST",
       "path": "/uploads/presigned",
       "func": "presigned_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2407,7 +2625,8 @@
       "method": "POST",
       "path": "/uploads",
       "func": "upload_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2418,7 +2637,8 @@
       "method": "GET",
       "path": "/uploads/{uuid}/raw",
       "func": "raw_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2429,7 +2649,8 @@
       "method": "GET",
       "path": "/uploads/{uuid}/artifacts",
       "func": "artifacts_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/uploads",
@@ -2440,7 +2661,8 @@
       "method": "GET",
       "path": "/uploads/{uuid}/artifacts/{artifact_id}/raw",
       "func": "artifact_raw_handler",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.uploads:api_router"
     },
     {
       "module": "kickside/users",
@@ -2451,7 +2673,8 @@
       "method": "GET",
       "path": "/users/run-as-candidates",
       "func": "run_as_candidates",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2462,7 +2685,8 @@
       "method": "GET",
       "path": "/user/me",
       "func": "me",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2473,7 +2697,8 @@
       "method": "PUT",
       "path": "/user/me",
       "func": "update_me",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2484,7 +2709,8 @@
       "method": "POST",
       "path": "/user/logout",
       "func": "logout",
-      "router": "router"
+      "router": "router",
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2495,7 +2721,8 @@
       "method": "GET",
       "path": "/profile",
       "func": "get_profile",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2506,7 +2733,8 @@
       "method": "PUT",
       "path": "/profile",
       "func": "put_profile",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2517,7 +2745,8 @@
       "method": "GET",
       "path": "/principals/search",
       "func": "principals_search",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/users",
@@ -2528,7 +2757,8 @@
       "method": "POST",
       "path": "/principals/resolve",
       "func": "principals_resolve",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.users:api_router"
     },
     {
       "module": "kickside/webhooks",
@@ -2539,7 +2769,8 @@
       "method": "POST",
       "path": "/webhooks",
       "func": "create_webhook",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.webhooks:api_router"
     },
     {
       "module": "kickside/webhooks",
@@ -2550,7 +2781,8 @@
       "method": "GET",
       "path": "/webhooks",
       "func": "list_webhooks",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.webhooks:api_router"
     },
     {
       "module": "kickside/webhooks",
@@ -2561,7 +2793,8 @@
       "method": "PATCH",
       "path": "/webhooks/{id}",
       "func": "update_webhook",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.webhooks:api_router"
     },
     {
       "module": "kickside/webhooks",
@@ -2572,7 +2805,8 @@
       "method": "POST",
       "path": "/webhooks/{id}/revoke",
       "func": "revoke_webhook",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.webhooks:api_router"
     },
     {
       "module": "kickside/webhooks",
@@ -2583,7 +2817,8 @@
       "method": "DELETE",
       "path": "/webhooks/{id}",
       "func": "delete_webhook",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.webhooks:api_router"
     },
     {
       "module": "kickside/webscout",
@@ -2594,7 +2829,8 @@
       "method": "GET",
       "path": "/webscout/providers",
       "func": "list_providers",
-      "router": "app:api"
+      "router": "app:api",
+      "router_requirement": "kickside.webscout:api_router"
     },
     {
       "module": "kickside/widgets",
@@ -2605,7 +2841,8 @@
       "method": "GET",
       "path": "/component-kinds/create-view",
       "func": "create_view_resolver",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.widgets:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2616,7 +2853,8 @@
       "method": "POST",
       "path": "/workflows",
       "func": "create_workflow",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2627,7 +2865,8 @@
       "method": "GET",
       "path": "/workflows",
       "func": "list_workflows",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2638,7 +2877,8 @@
       "method": "GET",
       "path": "/workflows/published",
       "func": "list_published",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2649,7 +2889,8 @@
       "method": "GET",
       "path": "/workflows/{id}/state",
       "func": "get_state",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2660,7 +2901,8 @@
       "method": "GET",
       "path": "/workflows/{id}/export",
       "func": "export_definition",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2671,7 +2913,8 @@
       "method": "POST",
       "path": "/workflows/import",
       "func": "import_definition",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2682,7 +2925,8 @@
       "method": "GET",
       "path": "/workflows/{id}/events",
       "func": "get_events",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2693,7 +2937,8 @@
       "method": "POST",
       "path": "/workflows/{id}/apply",
       "func": "apply",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2704,7 +2949,8 @@
       "method": "POST",
       "path": "/workflows/{id}/labels",
       "func": "set_workflow_labels",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2715,7 +2961,8 @@
       "method": "POST",
       "path": "/workflows/{id}/undo",
       "func": "undo",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2726,7 +2973,8 @@
       "method": "POST",
       "path": "/workflows/{id}/redo",
       "func": "redo",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2737,7 +2985,8 @@
       "method": "DELETE",
       "path": "/workflows/{id}",
       "func": "delete_workflow",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2748,7 +2997,8 @@
       "method": "POST",
       "path": "/workflows/{id}/publish",
       "func": "publish",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2759,7 +3009,8 @@
       "method": "GET",
       "path": "/workflows/{id}/versions",
       "func": "list_versions",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2770,7 +3021,8 @@
       "method": "GET",
       "path": "/workflows/{id}/versions/{n}",
       "func": "get_version",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2781,7 +3033,8 @@
       "method": "GET",
       "path": "/workflows/{id}/versions/diff",
       "func": "diff_versions",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2792,7 +3045,8 @@
       "method": "POST",
       "path": "/workflows/{id}/versions/{n}/restore",
       "func": "restore_version",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2803,7 +3057,8 @@
       "method": "POST",
       "path": "/workflows/{id}/run",
       "func": "run",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2814,7 +3069,8 @@
       "method": "POST",
       "path": "/workflows/{id}/simulate",
       "func": "simulate",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2825,7 +3081,8 @@
       "method": "GET",
       "path": "/workflows/{id}/runs",
       "func": "list_runs",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2836,7 +3093,8 @@
       "method": "GET",
       "path": "/workflows/{id}/runs/{run_id}",
       "func": "get_run",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2847,7 +3105,8 @@
       "method": "GET",
       "path": "/workflows/{id}/runs/{run_id}/nodes/{def_node_id}/data",
       "func": "run_node_data",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2858,7 +3117,8 @@
       "method": "GET",
       "path": "/workflows/{id}/runs/{run_id}/events",
       "func": "run_events",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2869,7 +3129,8 @@
       "method": "GET",
       "path": "/workflows/{id}/runs/{run_id}/export",
       "func": "run_export",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2880,7 +3141,8 @@
       "method": "POST",
       "path": "/workflows/{id}/assist/edge",
       "func": "assist_edge",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2891,7 +3153,8 @@
       "method": "POST",
       "path": "/workflows/{id}/assist/binding",
       "func": "assist_binding",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2902,7 +3165,8 @@
       "method": "POST",
       "path": "/workflows/assist/schema",
       "func": "assist_schema",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2913,7 +3177,8 @@
       "method": "POST",
       "path": "/workflows/{id}/assist/config",
       "func": "assist_config",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     },
     {
       "module": "kickside/workflows",
@@ -2924,7 +3189,8 @@
       "method": "GET",
       "path": "/workflows/blocks",
       "func": "blocks_api",
-      "router": null
+      "router": null,
+      "router_requirement": "kickside.workflows:api_router"
     }
   ]
 }

@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scenarios_endpoint_access import pattern_conditions
+from ops.smoke.coverage.inventory import router_binding
 
 ROOT = Path(__file__).resolve().parents[3]
 MODULES = {
@@ -108,6 +109,7 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
     def test_normalized_endpoints_preserve_published_transport(self):
         modules = module_sources(module_repositories())
         fixture = json.loads((ROOT / 'ops/smoke/fixtures/endpoint-normalization.json').read_text())
+        bindings = json.loads((ROOT / 'ops/smoke/coverage/modules.json').read_text())['router_bindings']
         declarations = {}
         seen = set()
         for row in fixture['endpoints']:
@@ -124,7 +126,19 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                 self.assertEqual(current['kind'], 'http.endpoint')
                 for field in ('method', 'path', 'func'):
                     self.assertEqual(current[field], row[field])
-                self.assertEqual(current.get('meta', {}).get('router'), row['router'])
+                router = current.get('meta', {}).get('router')
+                requirements = []
+                for identifier, requirement in registry.items():
+                    if requirement['kind'] != 'ns.requirement':
+                        continue
+                    if {'entry': row['new'], 'path': '.meta.router'} in requirement.get('targets', []):
+                        requirements.append(identifier)
+                        router = router_binding(identifier, bindings)
+                expected_requirement = row['router_requirement']
+                self.assertEqual(requirements, [expected_requirement] if expected_requirement else [])
+                expected_router = (router_binding(expected_requirement, bindings)
+                                   if expected_requirement else row['router'])
+                self.assertEqual(router, expected_router)
         self.assertEqual(len(seen), 266)
 
     def test_endpoint_free_member_policies_retain_included_runtime_grants(self):
