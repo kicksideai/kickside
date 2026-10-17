@@ -14,4 +14,4 @@ configuration, and development.
 | [jobs](jobs/README.md) | `kickside/jobs` | Durable job slots, leases, worker supervision, and persisted wake demand. |
 | [realtime-dispatch](realtime-dispatch/README.md) | `kickside/realtime-dispatch` | Bounded audience dispatch through the selected realtime owner. |
 
-[KickSide](https://kickside.ai) · [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+[KickSide](https://kickside.ai) · [Module authoring](https://github.com/kicksideai/docs/blob/main/building-modules/index.md)

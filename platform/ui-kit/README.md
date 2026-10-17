@@ -66,7 +66,7 @@ There is no build target in this module: the package directory is embedded as-is
 ## Links
 
 - [KickSide](https://kickside.ai)
-- [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+- [Module authoring](https://github.com/kicksideai/docs/blob/main/building-modules/index.md)
 - [Wippy documentation](https://wippy.ai)
 
 ## License

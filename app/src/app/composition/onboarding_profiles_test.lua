@@ -164,12 +164,23 @@ local function define_tests()
             assert_packages(value(research, "packages"), {
                 "kickside/webscout",
             })
+            assert_parameters(value(research, "packages")[1], {
+                { "kickside.webscout:api_router", "app:api" },
+                { "kickside.webscout:ui_server", "app:gateway" },
+            })
 
             test.eq(value(gtm, "profile"), "gtm")
             assert_packages(value(gtm, "packages"), {
                 "kickside/hubspot",
                 "kickside/phantombuster",
                 "kickside/webscout",
+            })
+            assert_parameters(value(gtm, "packages")[1], {
+                { "kickside.hubspot:ui_server", "app:gateway" },
+            })
+            assert_parameters(value(gtm, "packages")[3], {
+                { "kickside.webscout:api_router", "app:api" },
+                { "kickside.webscout:ui_server", "app:gateway" },
             })
 
             test.eq(value(google_workspace, "profile"), "google_workspace")
@@ -193,6 +204,9 @@ local function define_tests()
                 "kickside/skills",
                 "kickside/self-reflection",
                 "kickside/transfer",
+            })
+            assert_parameters(value(developer, "packages")[2], {
+                { "kickside.atlassian:ui_server", "app:gateway" },
             })
             assert_parameters(value(developer, "packages")[3], {
                 { "kickside.skills:api_router", "app:api" },

@@ -38,4 +38,4 @@ configuration, and development.
 | [widgets](widgets/README.md) | `kickside/widgets` | Reusable model, icon, schedule, and selection web components. |
 | [workflows](workflows/README.md) | `kickside/workflows` | Optional visual authoring, versioning, and execution of Block-based Flows. |
 
-[KickSide](https://kickside.ai) · [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+[KickSide](https://kickside.ai) · [Module authoring](https://github.com/kicksideai/docs/blob/main/building-modules/index.md)

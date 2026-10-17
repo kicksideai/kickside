@@ -25,11 +25,6 @@ events in one transaction. History retains the latest 50 edit batches across
 module updates and process restarts; a new edit clears redo. Workflow access
 gates history reads and edits, and workflow deletion removes its history.
 
-The first update from a release that holds history only in its editor actor
-starts durable history empty when that actor exits. Saved definitions retain
-their exact data. Subsequent updates and restarts retain the exact undo and redo
-batches.
-
 ## Requirements
 
 Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
@@ -89,7 +84,7 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## Links
 
 - [KickSide](https://kickside.ai)
-- [Module authoring](https://kicksideai.github.io/docs/building-modules/)
+- [Module authoring](https://github.com/kicksideai/docs/blob/main/building-modules/index.md)
 - [Wippy documentation](https://wippy.ai)
 - [Wippy Hub](https://hub.wippy.ai/kickside/workflows)
 

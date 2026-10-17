@@ -224,7 +224,6 @@ entries:
           input_mode: prefetch_events
       retention:
         event_days: 7
-        drain_aware: true
       events:
         input:
           - type: kickside.lifecycle.events:principal.deleted

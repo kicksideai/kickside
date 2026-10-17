@@ -1,7 +1,7 @@
 organization: kickside
 module: identity
 type: plugin
-description: Universal external-identity linking — map a provider account (discord, slack, telegram, …) to a KickSide user via short-lived dashboard-issued codes, so any bot resolves "who is this external sender" provider-neutrally.
+description: Links a provider account (Discord, Slack, Telegram, and others) to a KickSide user through short-lived dashboard-issued codes, so any bot resolves an external sender provider-neutrally.
 license: LicenseRef-KickSide-Community-1.0
 repository: https://github.com/kicksideai/kickside
 homepage: https://wippy.ai

@@ -256,7 +256,6 @@ entries:
       class: automation
       retention:
         event_days: 30
-        drain_aware: true
       component:
         create: { view: kickside.channel.responder:create_view }
         manage: { view: kickside.channel.responder:manage_view }

@@ -29,7 +29,7 @@ local function define_tests()
             return nil
         end
 
-        test.it("parses the autoinit declaration with projections and retention", function()
+        test.it("parses retention without an unused drain flag", function()
             local decl = find_decl("test_workspace")
             test.not_nil(decl)
             test.eq(decl.scope, "user")
@@ -39,7 +39,7 @@ local function define_tests()
             test.eq(decl.projections[1].worker_ref, "func://app:test_autoinit_worker")
             test.not_nil(decl.retention)
             test.eq(decl.retention.event_days, 30)
-            test.is_true(decl.retention.drain_aware)
+            test.is_nil((decl.retention :: { [string]: any }).drain_aware)
         end)
 
         test.it("parses projection-level child.lifecycle event filters", function()

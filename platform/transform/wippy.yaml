@@ -1,7 +1,7 @@
 organization: kickside
 module: transform
 type: plugin
-description: KickSide transform — the shared item transform (none|expr|llm|code|func) that maps a source item into sink/endpoint input. Exposed as a library so every automation (poller, webhook, reaction) runs identical transform semantics from one place.
+description: Shared item transform (none, expr, llm, code, or func) that maps a source item into sink or endpoint input.
 license: LicenseRef-KickSide-Community-1.0
 repository: https://github.com/kicksideai/kickside
 homepage: https://wippy.ai
