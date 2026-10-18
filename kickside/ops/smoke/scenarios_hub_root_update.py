@@ -25,6 +25,12 @@ def root_descriptor_literals(ctx):
 def root_application_hub_plan(ctx):
     with published_fixture(ctx, published_app=True) as fixture:
         inst = fixture.inst
+        inventory = inst.request('GET', '/api/v1/keeper/hub/dependencies',
+                                 label='root-application-update-inventory')
+        roots = [row for row in inventory.get('modules', [])
+                 if row.get('name') == 'kickside/kickside' and row.get('is_root')]
+        require(len(roots) == 1 and roots[0].get('version'),
+                'Update all cannot discover the installed application root')
         latest = versions(inst, 'kickside/kickside')[-1]
         plan = inst.request('POST', '/api/v1/keeper/hub/dependencies/plan',
                             {'component': 'kickside/kickside', 'version': '>=' + latest,
@@ -189,7 +195,7 @@ REGISTRY = [Scenario('regression_keeper_bulk_update_plan', 'regression', keeper_
             Scenario('regression_keeper_changelog_errors', 'regression', keeper_changelog_error_guard,
                      ('boot',), issues=('KEEPER-CHANGELOG-WRITE-ERROR',)),
             Scenario('regression_hub_root_application_update_plan', 'regression', root_application_hub_plan,
-                     ('boot',), instance_setup=True, issues=('HUB-ROOT-APPLICATION-UPDATE-PLAN',)),
+                     ('boot',), instance_setup=True, issues=('HUB-ROOT-APPLICATION-UPDATE-PLAN', 'HUB-DEPLOYMENT-APPLICATION-INVENTORY')),
             Scenario('regression_hub_root_descriptor_literals', 'regression', root_descriptor_literals,
                      issues=('HUB-ROOT-DESCRIPTOR-LITERAL-TYPES',)),
             Scenario('regression_hub_provider_update_dependency_capability', 'regression',

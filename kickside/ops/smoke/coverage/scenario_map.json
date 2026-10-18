@@ -13546,7 +13546,8 @@
     "regression_hub_root_application_update_plan": {
       "features": [],
       "issues": [
-        "HUB-ROOT-APPLICATION-UPDATE-PLAN"
+        "HUB-ROOT-APPLICATION-UPDATE-PLAN",
+        "HUB-DEPLOYMENT-APPLICATION-INVENTORY"
       ],
       "tier": "regression"
     },
@@ -14051,6 +14052,13 @@
         "B02"
       ],
       "tier": "full"
+    },
+    "regression_replacement_declared_version": {
+      "features": [],
+      "issues": [
+        "RUNTIME-REPLACEMENT-DECLARED-VERSION"
+      ],
+      "tier": "regression"
     },
     "regression_requirement_choice_registry_filter": {
       "features": [],
