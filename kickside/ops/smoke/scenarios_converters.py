@@ -100,3 +100,33 @@ def html2pdf_sdk(ctx):
 REGISTRY = [Scenario(
     'converters_html2pdf_sdk', 'full', html2pdf_sdk, ('boot',),
     features=('kickside/html2pdf|converter|kickside.convert.html2pdf:render',), issues=('R5-T07',), instance_setup=True)]
+
+
+def wasm_artifact_paths(ctx):
+    from pathlib import Path
+    import hashlib
+    import re
+    import subprocess
+
+    rows = []
+    for module, directory in sorted(ctx.inst.config['replace'].items()):
+        source = Path(directory)
+        for artifact in sorted((source / 'src').rglob('*.wasm')):
+            tracked = subprocess.check_output(['git', '-C', str(source), 'ls-files', '--',
+                                               str(artifact.relative_to(source))], text=True).strip()
+            if not tracked:
+                continue
+            raw = artifact.read_bytes()
+            local_paths = any(marker in raw for marker in (b'/home/', b'/Users/'))
+            local_paths = local_paths or re.search(rb'[A-Za-z]:[\\/]+Users[\\/]', raw) is not None
+            local_paths = local_paths or str(source.resolve()).encode() in raw
+            rows.append({'module': module, 'artifact': str(artifact.relative_to(source)),
+                         'sha256': hashlib.sha256(raw).hexdigest(), 'portable_paths': not local_paths})
+    ctx.inst.evidence.save('wasm-artifact-paths', rows)
+    require(rows, 'Wasm artifact guard requires declared component sources')
+    require(all(row['portable_paths'] for row in rows),
+            'Wasm artifacts contain local source paths: ' + str([row for row in rows if not row['portable_paths']]))
+
+
+REGISTRY += [Scenario('wasm_artifact_paths', 'regression', wasm_artifact_paths,
+                      issues=('WASM-ARTIFACT-PORTABLE-PATHS',))]

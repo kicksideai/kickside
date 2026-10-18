@@ -15447,6 +15447,13 @@
       ],
       "tier": "full"
     },
+    "wasm_artifact_paths": {
+      "features": [],
+      "issues": [
+        "WASM-ARTIFACT-PORTABLE-PATHS"
+      ],
+      "tier": "regression"
+    },
     "webhooks": {
       "features": [
         "kickside/webhooks|http|DELETE /api/v1/webhooks/{id}",
