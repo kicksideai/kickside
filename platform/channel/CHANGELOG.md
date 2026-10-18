@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4 (2026-10-17)
+
+- Remove retired retention metadata and refresh packaged documentation.
+
 ## 0.2.1 (2026-10-09)
 
 - Preserve native Execution validation errors and migrate trace consumers (5fda907df)

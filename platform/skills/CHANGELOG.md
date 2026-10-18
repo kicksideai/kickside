@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.43 (2026-10-17)
+
+- Remove retired retention metadata and refresh packaged documentation.
+
 ## 0.1.40 (2026-10-09)
 
 - Preserve native Component validation failures and service error metadata (cb9e09252)

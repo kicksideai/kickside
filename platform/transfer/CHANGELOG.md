@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.34 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.31 (2026-10-08)
 
 - build: rebuild bundles from source (6c884fef9)

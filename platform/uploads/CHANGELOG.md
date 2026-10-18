@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.73 (2026-10-17)
+
+- Remove retired retention metadata and refresh packaged documentation.
+
 ## 0.1.70 (2026-10-12)
 
 - Compose the existing document converter policy into Uploads member access.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.59 (2026-10-17)
+
+- Keep thread teardown consistent during concurrent lifecycle changes.
+
 ## 0.1.58 (2026-10-16)
 
 - Cancel retired upload intent maintenance slots during boot migrations while preserving processing jobs and run history.

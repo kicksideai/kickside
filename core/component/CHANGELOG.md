@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 (2026-10-17)
+
+- Remove retired retention metadata from component autoinitialization.
+
 ## 0.2.5 (2026-10-13)
 
 - Authorize only implementations selected by the caller’s SQL grant and query filters before pagination.

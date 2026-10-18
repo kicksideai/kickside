@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 (2026-10-17)
+
+- Remove retired retention metadata and refresh packaged documentation.
+
 ## 0.3.1 (2026-10-16)
 
 - Preserve database errors when reporting unverifiable thread keys.

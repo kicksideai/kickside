@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (2026-10-17)
+
+- Refresh packaged frontend assets and documentation.
+
 ## 0.2.1 (2026-10-16)
 
 - Include the native test harness and its source preparation inputs in the public source package.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.51 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.50 (2026-10-17)
 
 - Add explicit skip reasons to transform outcomes and sample validation.

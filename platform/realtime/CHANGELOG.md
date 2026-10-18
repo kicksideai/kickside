@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.32 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.29 (2026-10-09)
 
 - fix(component): dispatch bounded notifications and preserve owner failures (7bc3d6e27)

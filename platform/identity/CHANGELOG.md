@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.41 (2026-10-17)
+
+- Refresh packaged frontend assets and documentation.
+
 ## 0.1.40 (2026-10-16)
 
 - Include native test host inputs in the public source package.
