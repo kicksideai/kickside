@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7 (2026-10-17)
+
+- Refresh packaged frontend assets and documentation.
+
 ## 0.2.6 (2026-10-16)
 
 - Verify password hashes from earlier releases and upgrade them after successful authentication.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.63 (2026-10-17)
+
+- Remove retired retention metadata and refresh packaged documentation.
+
 ## 0.1.59 (2026-10-09)
 
 - Build frontend assets with the current published UI Kit stylesheet.

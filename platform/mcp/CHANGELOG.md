@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.6 (2026-10-17)
+
+- Refresh packaged frontend assets and documentation.
+
 ## 0.2.5 (2026-10-16)
 
 - Revoke active credentials that capture retired policy restrictions while preserving their authority and audit data.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.2.1 (2026-10-09)
 
 - fix(mcp): retain issuing authority and revoke reduced delegations (fd9953e90)

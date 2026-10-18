@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.131 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.130 (2026-10-17)
 
 - Expose bounded source samples through the existing acquisition path.

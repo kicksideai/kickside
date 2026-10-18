@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.117 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.116 (2026-10-16)
 
 - Return boundary removal refusals as structured errors with their native cause.

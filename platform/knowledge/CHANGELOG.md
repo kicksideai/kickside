@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.64 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.60 (2026-10-09)
 
 - Preserve native Execution validation errors and migrate trace consumers (5fda907df)

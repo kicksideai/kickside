@@ -1,7 +1,7 @@
 {
   "name": "@kickside/ui-kit",
   "_version": "MUST equal the kickside/ui-kit module version being published; wippy publish validates it. The 1.x line was published before the extraction ticket was finished and the package should be back on 0.x; the hub refuses any version below its latest, so that cleanup needs the 1.x versions withdrawn hub-side first. Continuing on 1.x until then.",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "description": "KickSide shared frontend vocabulary. Materialized into a consumer by `wippy artifacts materialize`, so it resolves from any repository.",
   "license": "LicenseRef-KickSide-Community-1.0",
   "type": "module",

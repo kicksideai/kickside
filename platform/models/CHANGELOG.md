@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.67 (2026-10-17)
+
+- Refresh packaged module descriptions and documentation.
+
 ## 0.1.63 (2026-10-09)
 
 - Build frontend assets with the current published UI Kit stylesheet.

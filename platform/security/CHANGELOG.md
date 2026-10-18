@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.9 (2026-10-17)
+
+- Refresh packaged frontend assets and documentation.
+
 ## 0.2.8 (2026-10-16)
 
 - Project stored groups over available policies and expose the complete assignable scope catalog.
