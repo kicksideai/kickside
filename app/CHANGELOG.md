@@ -3,7 +3,7 @@
 ## 0.2.16 (2026-10-19)
 
 - The external-agent setup step issues an MCP client config with `"type": "http"`, so clients such as Claude Code load the pasted config.
-- Refresh the application lock to published module releases.
+- Refresh the application lock and the page app build inputs (`kickside/ui-kit` 1.5.7) to published releases.
 
 ## 0.2.15 (2026-10-17)
 
