@@ -98,7 +98,7 @@ const brand = computed(() => props.splash.title || 'Welcome')
 // window.location.origin is "null", so the URL must come from the backend.
 const mcpUrl = ref('')
 const mcpConfig = computed(() => JSON.stringify(
-  { mcpServers: { kickside: { url: mcpUrl.value, headers: { Authorization: `Bearer ${mcpToken.value}` } } } },
+  { mcpServers: { kickside: { type: 'http', url: mcpUrl.value, headers: { Authorization: `Bearer ${mcpToken.value}` } } } },
   null, 2,
 ))
 
