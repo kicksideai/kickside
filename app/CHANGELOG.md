@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.16 (2026-10-19)
+
+- The external-agent setup step issues an MCP client config with `"type": "http"`, so clients such as Claude Code load the pasted config.
+- Refresh the application lock to published module releases.
+
 ## 0.2.15 (2026-10-17)
 
 - Refresh published module dependencies, packaged documentation and application assets.
