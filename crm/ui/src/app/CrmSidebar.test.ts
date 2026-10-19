@@ -49,6 +49,16 @@ describe('CRM instrument rail', () => {
     expect(wrapper.get('.crm-rail-scope').text()).toContain('GTM')
   })
 
+  it('re-reads counts when the CRM data revision advances', async () => {
+    const wrapper = make({ revision: 0 })
+    await flushPromises()
+    expect(wrapper.findAll('.crm-rail-count').map((node) => node.text())).toContain('42')
+    countRecords.mockImplementation((_id: string, type: string) => Promise.resolve(type === 'person' ? 1284 : 50))
+    await wrapper.setProps({ revision: 1 })
+    await flushPromises()
+    expect(wrapper.findAll('.crm-rail-count').map((node) => node.text())).toContain('50')
+  })
+
   it('folds to read-only by removing mutation affordances', async () => {
     const wrapper = make({ canWrite: false })
     await flushPromises()
