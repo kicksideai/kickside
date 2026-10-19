@@ -266,3 +266,36 @@ describe('Splash presentation', () => {
     wrapper.unmount()
   })
 })
+
+describe('SplashHost external agent step', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('issues a client config that MCP clients load as a streamable HTTP server', async () => {
+    api.get.mockResolvedValue({ data: { success: true, config: { url: 'http://localhost:8085/keeper-mcp/' } } } as never)
+    api.post.mockResolvedValue({ data: { success: true, token: { token: 'wkmcp_test' } } } as never)
+    const wrapper = mount(SplashHost, {
+      props: {
+        splash: {
+          id: 'welcome',
+          title: 'KickSide',
+          steps: [{ id: 'agent', title: 'Connect an external agent', field: 'mcp' }],
+        },
+      },
+    })
+
+    await wrapper.get('.sp-field .sp-btn.sp-p').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('.sp-mcp-cfg').exists()).toBe(true))
+
+    expect(JSON.parse(wrapper.get('.sp-mcp-cfg').text())).toEqual({
+      mcpServers: {
+        kickside: {
+          type: 'http',
+          url: 'http://localhost:8085/keeper-mcp/',
+          headers: { Authorization: 'Bearer wkmcp_test' },
+        },
+      },
+    })
+  })
+})
