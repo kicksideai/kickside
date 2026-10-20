@@ -342,6 +342,27 @@ local function define_tests()
             test.is_true(found, "published workflow missing from the actor's list")
         end)
 
+        test.it("runs a published version through the manage tool without waiting for it", function()
+            local owner = "tool-runner-" .. uuid_v4() .. "@local.test"
+            local created = call_tool(owner, MANAGE_TOOL, { action = "create", title = "MCP run" })
+            local id = tostring((created.workflow :: Map).id)
+            call_tool(owner, MANAGE_TOOL, { action = "apply", id = id, commands = seed_commands() })
+            local published = call_tool(owner, MANAGE_TOOL, { action = "publish", id = id })
+            test.is_true(published.success, tostring(published.error))
+
+            local launched = call_tool(owner, MANAGE_TOOL, {
+                action = "run", id = id, version = 1, input = { lead_id = "lead-1" },
+            })
+            test.is_true(launched.success, tostring(launched.error))
+            test.is_true(tostring(launched.run_id) ~= "")
+            local detail = read_object(owner, { action = "run_detail", id = id, run_id = launched.run_id })
+            test.eq(detail.run.run_id, launched.run_id)
+
+            test.not_nil(call_error(owner, MANAGE_TOOL, { action = "run", id = id, version = 9, input = { lead_id = "l" } }))
+            test.contains(tostring(call_error("stranger-" .. owner, MANAGE_TOOL,
+                { action = "run", id = id, version = 1, input = { lead_id = "l" } })), "access denied")
+        end)
+
         test.it("pages callable Flow headers with exact selectable identities", function()
             local owner = "catalog-pages-" .. uuid_v4() .. "@local.test"
             local created = call_tool(owner, MANAGE_TOOL, {action = "create", title = "Flow page"})

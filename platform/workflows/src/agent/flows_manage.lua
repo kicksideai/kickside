@@ -1,8 +1,9 @@
 -- Write-side Workflow-management tool for agents: create a draft, import a
 -- portable Flow artifact, apply a definition command batch, publish, restore a
--- frozen version as a new draft, and delete. Every action reuses the exact
+-- frozen version as a new draft, delete, and run a published version. Every action reuses the exact
 -- internal seam the HTTP API uses — the workflow writer for command batches, the
--- versions engine for publish, the definitions importer for artifacts — so MCP
+-- versions engine for publish, the definitions importer for artifacts, the run
+-- request behind the Run button — so MCP
 -- writes carry the same validation, undo tracking, and realtime broadcast as
 -- the product UI.
 
@@ -13,6 +14,7 @@ local version_publish = require("version_publish")
 local definitions_api = require("definitions_api")
 local workflow = require("workflow")
 local realtime = require("workflow_realtime")
+local exec_api = require("exec_api")
 
 type Map = { [string]: any }
 
@@ -99,6 +101,33 @@ local function do_delete(args: Map): (Map?, error?)
     return { success = true, id = id }
 end
 
+-- Launch an exact published version the way the Run button does: READ access, the
+-- same run request, and an immediate run_id. The run continues on its own, including
+-- while it waits for a person, and WorkflowsRead run_detail follows it.
+local function do_run(args: Map): (Map?, error?)
+    local id, id_err = require_id(args)
+    if not id then return nil, id_err end
+    local access_err = repo.require_access(id :: string, repo.ACCESS.READ :: number)
+    if access_err then return tool_result.fail(errors.PERMISSION_DENIED, "access denied") end
+    local launched, err = exec_api.run_request(id :: string, {
+        version = args.version,
+        input = type(args.input) == "table" and args.input or {},
+    })
+    if err then
+        local body = exec_api.launch_error_body(err)
+        return nil, errors.new({ kind = errors.INVALID, message = tostring(body.error or "workflow launch failed"),
+            details = body })
+    end
+    local result = launched :: Map
+    return {
+        success = true,
+        id = id,
+        run_id = result.run_id,
+        dataflow_id = result.dataflow_id,
+        deduped = result.deduped == true,
+    }
+end
+
 local function handler(args: any): (any, error?)
     local a: Map = (type(args) == "table") and args or {}
     local actor = actor_id()
@@ -111,6 +140,7 @@ local function handler(args: any): (any, error?)
     if action == "publish" then return do_publish(a, actor :: string) end
     if action == "restore" then return do_restore(a, actor :: string) end
     if action == "delete" then return do_delete(a) end
+    if action == "run" then return do_run(a) end
     return tool_result.fail(errors.INVALID, "unknown action: " .. action)
 end
 
