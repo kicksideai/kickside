@@ -65,6 +65,11 @@ entries:
       token_store: kickside.users.security:tokens
     post_middleware: [endpoint_firewall]
     prefix: /member-policy
+  - name: endpoint_policy_public_router
+    kind: http.router
+    meta: {server: app:endpoint_policy_gateway}
+    prefix: /public-policy
+
   - name: endpoint_policy_handler
     kind: function.lua
     source: return {run = function() return true end}
@@ -107,9 +112,20 @@ entries:
     component: kickside/mcp-client
     version: '*'
     parameters:
+    - {name: kickside.mcp_client:public_router, value: app:endpoint_policy_public_router}
     - {name: process_host, value: app.security:processes}
     - {name: api_router, value: app:endpoint_policy_router}
     - {name: ui_server, value: app:endpoint_policy_gateway}
+
+  - name: dep.kickside.oauth
+    kind: ns.dependency
+    component: kickside/oauth
+    version: '*'
+    parameters:
+    - {name: kickside.oauth:target_db, value: app:db}
+    - {name: kickside.oauth:api_router, value: app:endpoint_policy_router}
+    - {name: kickside.oauth:public_api_router, value: app:endpoint_policy_public_router}
+    - {name: kickside.oauth:process_host, value: app.security:processes}
 
   - name: dep.kickside.security
     kind: ns.dependency
