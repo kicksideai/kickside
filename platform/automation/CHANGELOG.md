@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.132](https://github.com/kicksideai/kickside/compare/automation-v0.1.131...automation-v0.1.132) (2026-10-20)
+
+
+### Bug Fixes
+
+* **automation:** add structured task setup forms and published workflow selection ([#33](https://github.com/kicksideai/kickside/issues/33)) ([52fb507](https://github.com/kicksideai/kickside/commit/52fb5074f8cc57ee6b9a5053092559774796315a))
+
 ## 0.1.131 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.38](https://github.com/kicksideai/kickside/compare/oauth-v0.1.37...oauth-v0.1.38) (2026-10-20)
+
+
+### Features
+
+* **oauth:** support resource-specific provider options and issuer validation ([#37](https://github.com/kicksideai/kickside/issues/37)) ([fb172f1](https://github.com/kicksideai/kickside/commit/fb172f15dcc32688a520f2b90476a7374efc0121))
+
 ## 0.1.33 (2026-10-08)
 
 - Deliver scope reconcile, OAuth, upload and profile signals under service identities (90ce38da7)
