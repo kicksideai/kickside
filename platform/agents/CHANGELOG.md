@@ -1,9 +1,5 @@
 # Changelog
 
-## 0.2.3 (2026-10-19)
-
-- Use the config-host picker contract to select, restore, and emit the declared agent reference.
-
 ## 0.2.2 (2026-10-19)
 
 - The Agent step documents its model field: a model class or exact model id, required with inline instructions unless the step input carries model.
