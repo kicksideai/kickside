@@ -9675,6 +9675,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/workflows/ui/src/app/embed/WorkflowPicker.test.ts"
+    },
+    "workflows/empty-object-schema": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/test/src/suites/block_catalog_test.lua"
     }
   },
   "issues": [
@@ -10846,7 +10857,8 @@
     "AUTOMATION-RECURRING-CADENCE-VOCABULARY",
     "AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE",
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
-    "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE"
+    "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
+    "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA"
   ],
   "schema_version": 1
 }

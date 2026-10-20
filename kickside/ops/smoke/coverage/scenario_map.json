@@ -15622,7 +15622,8 @@
     "workflows_declared_cases": {
       "features": [],
       "issues": [
-        "NATIVE-DECLARED-CASE-EXECUTION"
+        "NATIVE-DECLARED-CASE-EXECUTION",
+        "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA"
       ],
       "tier": "regression"
     },
