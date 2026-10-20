@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (2026-10-19)
+
+- The Agent step documents its model field: a model class or exact model id, required with inline instructions unless the step input carries model.
+
 ## 0.2.1 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

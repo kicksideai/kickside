@@ -159,7 +159,10 @@ entries:
             agent_id: { type: string, title: Existing agent }
             instructions: { type: string, title: Instructions }
             name: { type: string, title: Name }
-            model: { type: string, title: Model }
+            model:
+              type: string
+              title: Model
+              description: Model class (class:nano, class:fast, class:balanced, class:premium) or an exact model id. Required with instructions unless the step input carries model.
             tools:
               type: array
               title: Tools

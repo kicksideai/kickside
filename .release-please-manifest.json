@@ -4,7 +4,7 @@
   "core/core": "0.3.2",
   "core/execution": "0.2.5",
   "core/jobs": "0.1.59",
-  "platform/agents": "0.2.1",
+  "platform/agents": "0.2.2",
   "platform/automation": "0.1.131",
   "platform/blocks": "0.1.38",
   "platform/channel": "0.2.4",
