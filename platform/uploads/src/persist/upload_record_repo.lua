@@ -314,6 +314,64 @@ function upload_record_repo.mark_storage_failed(uuid)
     return mark_storage_state(uuid, "failed")
 end
 
+-- Return a failed upload to the uploaded state so its processing runs again.
+-- Only a failed upload changes, so a concurrent retry or a live job is not reset.
+function upload_record_repo.mark_failed_for_retry(uuid, processing_max_execution_ms: integer)
+    if not uuid or uuid == "" then
+        return nil, "Upload ID is required"
+    end
+
+    local db, err = resources.get_db()
+    if err then
+        return nil, err
+    end
+
+    local result, exec_err = sql.builder.update("kickside_uploads")
+        :set("storage_state", "uploaded")
+        :set("processing_intent_state", "pending")
+        :set("processing_max_execution_ms", processing_max_execution_ms)
+        :set("updated_at", now_rfc3339())
+        :where("uuid = ? AND storage_state = ?", uuid, "failed")
+        :run_with(db)
+        :exec()
+
+    db:release()
+
+    if exec_err then
+        return nil, "Failed to mark upload for retry: " .. exec_err
+    end
+
+    return result.rows_affected > 0, nil
+end
+
+-- A failed upload leaves content deduplication, so the same bytes can be uploaded
+-- again as a new upload that is processed again.
+function upload_record_repo.release_content_hash(uuid)
+    if not uuid or uuid == "" then
+        return nil, "Upload ID is required"
+    end
+
+    local db, err = resources.get_db()
+    if err then
+        return nil, err
+    end
+
+    local result, exec_err = sql.builder.update("kickside_uploads")
+        :set("content_sha256", sql.as.null())
+        :set("updated_at", now_rfc3339())
+        :where("uuid = ? AND storage_state = ?", uuid, "failed")
+        :run_with(db)
+        :exec()
+
+    db:release()
+
+    if exec_err then
+        return nil, "Failed to release upload content hash: " .. exec_err
+    end
+
+    return result.rows_affected > 0, nil
+end
+
 -- Update upload storage
 function upload_record_repo.update_storage(uuid, storage_id, storage_path)
     if not uuid or uuid == "" then

@@ -8,6 +8,8 @@ local jobs = require("jobs")
 local hash = require("hash")
 local security = require("security")
 local funcs = require("funcs")
+local artifact_parts_repo = require("artifact_parts_repo")
+local metadata_sanitizer = require("metadata_sanitizer")
 
 -- Private upload-metadata key carrying the uploader's stored execution identity
 -- ({ actor_id, actor_context }). It uses the canonical managed-context spelling
@@ -116,6 +118,38 @@ end
 
 local function stage_error(stage_title: any, processor_id: any, message: any): string
     return "upload stage \"" .. tostring(stage_title) .. "\" (" .. tostring(processor_id) .. ") failed: " .. tostring(message)
+end
+
+-- Transcription stages report a soft failure as success = true plus a code under
+-- <kind>_error, so the upload must read that code or it settles as completed with
+-- no text. Content outcomes describe the file, not a failure; permanent codes fail
+-- at once; any other code retries. Provider text is stored as transcription_failed.
+local TRANSCRIPTION_CONTENT_OUTCOMES = { no_text_detected = true, too_large = true, transcript_too_large = true }
+local TRANSCRIPTION_PERMANENT_ERRORS = { storage_pointer_missing = true }
+
+local TRANSCRIPTION_KEYS = { ocr_error = true, asr_error = true, conversion_error = true }
+
+-- Returns the failing key, its stable code and the reported text. A known
+-- transcription key is rewritten to its stable code before it is stored.
+local function transcription_error(metadata: any): (string?, string?, string?)
+    if type(metadata) ~= "table" then return nil, nil, nil end
+    for key, value in pairs(metadata) do
+        if type(key) == "string" and key:match("_error$") and type(value) == "string" and value ~= ""
+            and not TRANSCRIPTION_CONTENT_OUTCOMES[value] then
+            local code = metadata_sanitizer.transcription_code(value)
+            if TRANSCRIPTION_KEYS[key] then metadata[key] = code end
+            return key, code, value
+        end
+    end
+    return nil, nil, nil
+end
+
+-- Transcription only enriches an upload that already has primary text, so its
+-- failure must not discard that text.
+local function has_primary_text(upload_id: any): boolean
+    local primary, err = artifact_parts_repo.read_primary_content(upload_id)
+    if err or type(primary) ~= "table" or type(primary.content) ~= "string" then return false end
+    return (primary.content :: string):match("%S") ~= nil
 end
 
 local function callback_idempotency_key(upload: any, token: string, success: any): string
@@ -307,6 +341,35 @@ function pipeline_lib.process_upload(upload, opts)
             end
         end
 
+        local reported_error: string? = nil
+        local retriable = true
+        if result.success == false then
+            reported_error = tostring(result.error or ("Processing failed at step " .. i))
+            retriable = (result :: any).retriable ~= false
+        else
+            local reported_key, reported_code, reported_text = transcription_error(result.metadata)
+            if reported_key then
+                reported_error = reported_key .. ": " .. tostring(reported_code)
+                retriable = not TRANSCRIPTION_PERMANENT_ERRORS[reported_code]
+                if reported_text ~= reported_code then
+                    log:warn("upload processor reported provider text", {
+                        upload_id = upload.uuid,
+                        processor_id = processor_id,
+                        stage = stage_title,
+                        detail = reported_text,
+                    })
+                end
+                if (not retriable or opts.final_attempt == true) and has_primary_text(upload.uuid) then
+                    log:warn("upload keeps primary text after transcription failure", {
+                        upload_id = upload.uuid,
+                        stage = stage_title,
+                        error = reported_error,
+                    })
+                    reported_error = nil
+                end
+            end
+        end
+
         -- If the processor returned updated metadata, merge with existing metadata
         if result.metadata then
             -- Get existing metadata
@@ -325,19 +388,8 @@ function pipeline_lib.process_upload(upload, opts)
             end
         end
 
-        local reported_error = result.success == false and
-            tostring(result.error or ("Processing failed at step " .. i)) or nil
-        if not reported_error and type(result.metadata) == "table" then
-            for key, value in pairs(result.metadata) do
-                if type(key) == "string" and key:match("_error$") and type(value) == "string" and value ~= "" then
-                    reported_error = key .. ": " .. value
-                    break
-                end
-            end
-        end
         if reported_error then
             local error_msg = stage_error(stage_title, processor_id, reported_error)
-            local retriable = (result :: any).retriable ~= false
             log:error("upload processor reported failure", {
                 upload_id = upload.uuid,
                 processor_id = processor_id,

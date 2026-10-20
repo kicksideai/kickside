@@ -20,6 +20,7 @@ local function define_tests()
                 "kickside.uploads.api:list_handler.endpoint",
                 "kickside.uploads.api:presigned_handler.endpoint",
                 "kickside.uploads.api:raw_handler.endpoint",
+                "kickside.uploads.api:retry_handler.endpoint",
                 "kickside.uploads.api:upload_handler.endpoint",
             }) do
                 local entry, entry_err = registry.get(id)

@@ -247,6 +247,8 @@ entries:
         path: .meta.router
       - entry: kickside.uploads.api:list_handler.endpoint
         path: .meta.router
+      - entry: kickside.uploads.api:retry_handler.endpoint
+        path: .meta.router
       - entry: kickside.uploads.api:presigned_handler.endpoint
         path: .meta.router
       - entry: kickside.uploads.api:upload_handler.endpoint
@@ -351,6 +353,8 @@ entries:
       types: kickside.uploads:types
       execution_identity: kickside.execution:execution_identity
       jobs: kickside.core.jobs:jobs
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
 
   - name: uploads
     kind: library.lua

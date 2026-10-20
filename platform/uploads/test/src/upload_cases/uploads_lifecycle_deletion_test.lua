@@ -381,6 +381,29 @@ local function define_tests()
             test.eq(bytes, (storage:readfile(first_path)))
         end)
 
+        test.it("uploads identical bytes again as a new upload after the first one failed", function()
+            local user_id = "dedup-failed-user-" .. uuid_v4()
+            local bytes = "failed content " .. uuid_v4()
+
+            local first, first_err = upload_as(user_id, bytes, "scan.txt", #bytes, "text/plain", "app:uploads", client_metadata("scan.txt", { source = "uploads.test" }))
+            test.is_nil(first_err)
+            test.not_nil(first)
+            local _, mark_err = upload_record_repo.mark_storage_failed(first.uuid)
+            test.is_nil(mark_err)
+
+            local second, second_err = upload_as(user_id, bytes, "scan.txt", #bytes, "text/plain", "app:uploads", client_metadata("scan.txt", { source = "uploads.test" }))
+            test.is_nil(second_err)
+            test.not_nil(second)
+            test.is_nil(second.deduped)
+            test.is_true(second.uuid ~= first.uuid)
+            test.eq(first.content_sha256, second.content_sha256)
+
+            local failed, failed_err = upload_query_repo.get(first.uuid)
+            test.is_nil(failed_err)
+            test.eq("failed", failed.storage_state)
+            test.is_nil(failed.content_sha256)
+        end)
+
         -- The HTTP create endpoint parses the multipart body and hands the stream to
         -- upload_lib.upload_file under the request actor; the reference upload below
         -- is that same call. The tool upload must be indistinguishable from it.

@@ -143,6 +143,7 @@ local function run(input: any): (any, any?)
 
 
     local success, proc_err, processed_upload, retriable = pipeline_lib.process_upload(upload, {
+        final_attempt = is_final_attempt(job),
         should_continue = function(_phase)
             return ensure_running(job)
         end,
