@@ -1,8 +1,8 @@
 local http_client = require("http_client")
 local common = require("discovery_common")
 
--- Reference-catalog adapter backed by OpenRouter's public model list
--- (https://openrouter.ai/api/v1/models -- no auth required). It is a read-only
+-- Reference-catalog adapter backed by OpenRouter's public model lists
+-- (no auth required). It is a read-only
 -- metadata source: given a provider + model id it returns the context window and
 -- per-token pricing OpenRouter publishes, used to fill gaps for providers whose
 -- own /models API omits those fields (OpenAI, Anthropic, Bedrock). It is one
@@ -11,7 +11,12 @@ local M = {}
 
 M.source_id = "openrouter"
 
-local CATALOG_URL = "https://openrouter.ai/api/v1/models"
+-- OpenRouter publishes chat/completion models and embedding models as two
+-- catalogs; both feed one index so either kind of model finds its limits.
+local CATALOG_URLS = {
+    "https://openrouter.ai/api/v1/models",
+    "https://openrouter.ai/api/v1/embeddings/models",
+}
 local TTL_SECONDS = 3600
 
 -- Process-local cache: the catalog is large and stable, so fetch at most once an
@@ -55,14 +60,17 @@ local function ensure_loaded(): (boolean, any?)
     local now = os.time() :: number
     if cache.by_full ~= nil and (now - cache.at) < TTL_SECONDS then return true end
 
-    local response, err = http_client.get(CATALOG_URL, {
-        timeout = "20s",
-        headers = { ["Content-Type"] = "application/json" },
-    })
-    if err then return false, err end
-    local parsed, parse_err = common.decode_response(response, "openrouter catalog")
-    if parse_err then return false, parse_err end
-    local rows = common.model_rows(parsed)
+    local rows: { any } = {}
+    for _, url in ipairs(CATALOG_URLS) do
+        local response, err = http_client.get(url, {
+            timeout = "20s",
+            headers = { ["Content-Type"] = "application/json" },
+        })
+        if err then return false, err end
+        local parsed, parse_err = common.decode_response(response, "openrouter catalog")
+        if parse_err then return false, parse_err end
+        for _, row in ipairs(common.model_rows(parsed)) do rows[#rows + 1] = row end
+    end
 
     cache.by_full = build_index(rows)
     cache.at = now

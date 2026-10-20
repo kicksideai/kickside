@@ -15,7 +15,7 @@
   "platform/inbox": "0.1.63",
   "platform/knowledge": "0.1.64",
   "platform/mcp": "0.2.6",
-  "platform/models": "0.1.67",
+  "platform/models": "0.1.68",
   "platform/oauth": "0.1.37",
   "platform/realtime": "0.1.32",
   "core/realtime-dispatch": "0.1.1",
