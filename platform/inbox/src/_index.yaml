@@ -91,7 +91,8 @@ entries:
       title: Notice
       description: >-
         Built-in detail renderer for notice inbox items: reads its content and
-        data-meta attributes and renders escaped text plus a label/value table
+        data-meta attributes and renders content as Markdown through the shared
+        wc-render-markdown renderer plus a label/value table
         from the data-meta JSON fields array.
       tag_name: kickside-inbox-notice
       base_path: kickside-inbox

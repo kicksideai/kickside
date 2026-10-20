@@ -1,5 +1,6 @@
 import { WippyElement, define } from '@wippy-fe/webcomponent-core'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-core'
+import { loadByTagName } from '@wippy-fe/proxy'
 
 /** Parsed props: schema keys are the literal attribute names, camelCased. */
 interface NoticeProps {
@@ -16,7 +17,7 @@ interface NoticeField {
 const inlineCss = `
   :host { display: block; color: inherit; font-family: inherit; }
   .notice { display: flex; flex-direction: column; gap: 14px; }
-  .content { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--p-text-color, currentColor); }
+  .content { display: block; margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--p-text-color, currentColor); }
   .fields { border: 1px solid var(--p-content-border-color, #d4d4d8); border-radius: 10px; overflow: hidden; }
   .field { display: flex; justify-content: space-between; gap: 18px; padding: 10px 12px; border-bottom: 1px solid var(--p-content-border-color, #d4d4d8); font-size: 13px; }
   .field:last-child { border-bottom: 0; }
@@ -49,7 +50,7 @@ function renderNotice(props: NoticeProps): string {
   const content = props.content ?? ''
   const fields = readFields(props.dataMeta ?? '')
 
-  const contentHtml = content ? `<p class="content">${esc(content)}</p>` : ''
+  const contentHtml = content ? `<wc-render-markdown class="content" source="${esc(content)}"></wc-render-markdown>` : ''
   const fieldsHtml = fields.length
     ? `<div class="fields">${fields
         .map((f) => `<div class="field"><span class="label">${esc(f.label)}</span><span class="value">${esc(f.value)}</span></div>`)
@@ -90,6 +91,7 @@ class KicksideInboxNoticeElement extends WippyElement<NoticeProps> {
   protected onMount(_shadow: ShadowRoot, container: HTMLElement, initialProps: NoticeProps): void {
     this.container = container
     container.innerHTML = renderNotice(initialProps)
+    void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).catch((error: unknown) => this.onError(error))
   }
 
   protected onPropsChanged(props: NoticeProps): void {
