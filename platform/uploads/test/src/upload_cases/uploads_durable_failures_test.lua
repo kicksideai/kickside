@@ -495,6 +495,14 @@ local function define_tests()
                 metadata = { ocr_error = "Page 1: ocr: generate failed: provider failure" },
             })
             test.eq("transcription_failed", preview.meta.ocr_error)
+
+            local row = upload_response.format_list_upload({
+                uuid = "legacy-upload", status = "error", error = "failed",
+                metadata = { filename = "scan.png", ocr_error = "Page 1: ocr: generate failed: provider failure", storage_path = "private" },
+            })
+            test.eq("transcription_failed", row.meta.ocr_error)
+            test.is_nil(row.meta.storage_path)
+            test.is_nil(row.meta.filename)
         end)
 
         test.it("retries a failed upload on its stored bytes", function()
