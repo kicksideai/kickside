@@ -260,6 +260,30 @@ entries:
           default: ""
           description: Monotonic host command; each new non-empty value submits the embedded form once.
 
+  - name: workflow_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: workflow_picker_view
+      title: Published Workflow Picker
+      announced: true
+      auto_register: true
+      tag_name: wc-workflow-picker
+      base_path: kickside-workflows
+      entry_point: workflow_picker.js
+      icon: tabler:route
+    props:
+      type: object
+      properties:
+        config:
+          type: string
+          default: "{}"
+          description: Current configuration as JSON containing the pinned published workflow reference.
+        schema:
+          type: string
+          default: ""
+          description: Primary picker field schema as JSON; its property key names the reference (flow_ref by default).
+
   # The embed lets any module run a published Flow in place (picker or pinned flow-id,
   # Start-schema form, live status + Finish
   # output). auto_register so a consumer can drop the tag into a template without loadByTagName.

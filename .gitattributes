@@ -15,3 +15,6 @@ release/private-app-components.txt export-ignore
 *.js.map export-ignore
 platform/users/test/scratch/ export-ignore
 app/test/health/verify_wiring.py export-ignore
+
+# Generated bundles preserve whitespace inside dependency strings.
+platform/*/static/*.js whitespace=-blank-at-eol

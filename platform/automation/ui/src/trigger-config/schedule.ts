@@ -96,13 +96,13 @@ function parseCron(expression: unknown): null | { preset: CronPreset; time: stri
 
 // Read a stored schedule into the widgets. An expression the presets cannot
 // express reads through the custom face verbatim rather than being rewritten.
-export function formFromSchedule(schedule: TriggerSchedule | null): ScheduleForm {
+export function formFromSchedule(schedule: TriggerSchedule | null, defaultPreset: CronPreset = 'custom'): ScheduleForm {
   if (!schedule || !schedule.expression) {
     return {
       specificTimes: true,
       periodicEvery: 0,
       periodicUnit: 'm',
-      cronPreset: 'custom',
+      cronPreset: defaultPreset,
       cronTime: '',
       cronWeekday: '',
       cronMonthday: 0,
@@ -166,4 +166,19 @@ export function scheduleFromForm(form: ScheduleForm): TriggerSchedule | null {
     return day == null ? null : { type: 'cron', expression: `${m} ${h} ${Math.min(31, day)} * *` }
   }
   return { type: 'cron', expression: `${m} ${h} * * *` }
+}
+
+export interface RecurringSchedule {
+  type: 'cron' | 'interval'
+  expression: string
+}
+
+export function fromRecurringSchedule(schedule: RecurringSchedule | null): TriggerSchedule | null {
+  if (!schedule) return null
+  return { type: schedule.type === 'interval' ? CANONICAL_PERIODIC_TYPE : 'cron', expression: schedule.expression }
+}
+
+export function toRecurringSchedule(schedule: TriggerSchedule | null): RecurringSchedule | null {
+  if (!schedule || schedule.type === 'once') return null
+  return { type: schedule.type === 'cron' ? 'cron' : 'interval', expression: schedule.expression }
 }

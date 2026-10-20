@@ -1,0 +1,34 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+@import './trigger-config/styles.css';
+
+.task-form, .task-target { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.task-form { padding: 2px; }
+.task-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-weight: 600; }
+.task-field input, .task-field select, .task-field textarea, .task-form .kx-tc-select {
+  box-sizing: border-box; width: 100%; min-width: 0; padding: 9px 10px; font: inherit;
+  color: var(--p-text-color); background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color); border-radius: 8px;
+}
+.task-field textarea { resize: vertical; font-weight: 400; }
+.task-check { display: flex; align-items: center; gap: 8px; }
+.task-check input { accent-color: var(--p-primary-color); }
+.task-hint { margin: 0 0 7px; color: var(--p-text-muted-color); font-size: 12px; }
+.task-error, .task-target [role='alert'] { color: var(--p-danger-500); }
+.task-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.task-actions button {
+  padding: 8px 14px; border: 1px solid var(--p-content-border-color); border-radius: 8px;
+  font: inherit; color: var(--p-text-color); background: var(--p-content-background); cursor: pointer;
+}
+.task-actions button[type='submit'] { color: var(--p-primary-contrast-color); background: var(--p-primary-color); }
+.task-form :disabled { opacity: .6; cursor: default; }
+.task-form :is(input, select, textarea, button):focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset); box-shadow: var(--p-focus-ring-shadow);
+}
+.task-target .wf-embed-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow: auto; }
+.task-target .wf-embed-row { display: flex; gap: 10px; width: 100%; text-align: left; padding: 10px; border-radius: 8px; }
+.task-target .wf-embed-main { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.task-target .wf-embed-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--p-text-muted-color); font-size: 12px; }
+.task-target .wf-embed-io { display: flex; gap: 6px; }
+.task-target .wf-search { margin-bottom: 8px; }
+.task-target .wf-search input { width: 100%; }
