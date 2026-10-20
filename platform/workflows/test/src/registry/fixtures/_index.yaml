@@ -303,6 +303,7 @@ entries:
     method: run
     imports:
       block_catalog: kickside.workflows.catalog:block_catalog
+      json: json
       test: wippy.test:test
 
   - name: migration_schema_test
