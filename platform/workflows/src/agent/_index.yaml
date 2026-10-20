@@ -48,7 +48,7 @@ entries:
       output_schema:
         type: object
         additionalProperties: true
-        description: The Flow's Finish output; a run that ends failed returns { success = false, error, run_id }.
+        description: The Flow's Finish output; a run waiting for a person returns { status = waiting, run_id }; a run that ends failed returns { success = false, error, run_id }.
       llm_alias: RunFlow
       llm_description: Run an exact published Workflow selected from the current user's Workflow catalog.
       comment: Hidden generic Workflow tool. Re-resolves actor-scoped access and Start schema before native Dataflow execution.
@@ -241,7 +241,8 @@ entries:
                 "apply",
                 "publish",
                 "restore",
-                "delete"
+                "delete",
+                "run"
               ]
             },
             "title": {
@@ -333,6 +334,10 @@ entries:
             "version": {
               "type": "integer",
               "minimum": 1
+            },
+            "input": {
+              "type": "object",
+              "description": "run: arguments for the published version's Start interface."
             }
           },
           "required": [
@@ -525,6 +530,32 @@ entries:
               "required": [
                 "action",
                 "id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "const": "run"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "input": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "action",
+                "id",
+                "version"
               ],
               "additionalProperties": false
             }
@@ -1334,7 +1365,7 @@ entries:
           "required": ["success"]
         }
       llm_alias: WorkflowsManage
-      llm_description: "Build and publish workflows, including Lua scripts with the Run Code Block from WorkflowsRead catalog. For recurring tasks (every minute, hourly, or cron), publish first then schedule its exact {kind: flow, id, version} with RecurringTasks from the Automations Manager capability. Manage workflows: create a draft, import a portable Flow artifact (from flows_read export) as a new unpublished draft, apply a definition command batch through the workflow writer, publish an immutable version, restore a frozen version as a new draft, or delete. Writes carry the same validation and realtime broadcast as the editor. Failures return no result and a typed tool error with a clear message."
+      llm_description: "Build and publish workflows, including Lua scripts with the Run Code Block from WorkflowsRead catalog. For recurring tasks (every minute, hourly, or cron), publish first then schedule its exact {kind: flow, id, version} with RecurringTasks from the Automations Manager capability. Manage workflows: create a draft, import a portable Flow artifact (from flows_read export) as a new unpublished draft, apply a definition command batch through the workflow writer, publish an immutable version, restore a frozen version as a new draft, delete, or run a published version (returns run_id at once; the run continues, including while it waits for an Inbox review, and WorkflowsRead run_detail follows it). Writes carry the same validation and realtime broadcast as the editor. Failures return no result and a typed tool error with a clear message."
       mcp:
         required_scopes: [state.write]
     source: file://flows_manage.lua
@@ -1348,3 +1379,4 @@ entries:
       definitions_api: kickside.workflows.api:definitions_api
       workflow: kickside.workflows:workflow
       workflow_realtime: kickside.workflows:realtime
+      exec_api: kickside.workflows.api:exec_api

@@ -153,8 +153,9 @@ local function output_result(sample: any): any
     return sample
 end
 
--- flow_run_handler returns the Flow's output; a run that ends failed is the
--- tool's domain error carrying its run_id.
+-- flow_run_handler returns the Flow's output; a run that is waiting for a person
+-- returns { status = "waiting", run_id }; a run that ends failed is the tool's
+-- domain error carrying its run_id.
 function M.flow_run_handler(args: any): (any?, error?)
     local a = map(args)
     local ref, ref_err = exact_flow_ref.validate(a.flow_ref)
@@ -177,6 +178,12 @@ function M.flow_run_handler(args: any): (any?, error?)
     if run_err then return nil, run_err end
     if not descriptor then return tool_result.fail(errors.INTERNAL, "Flow execution returned no descriptor") end
     if str(descriptor.run_id) == "" then return tool_result.fail(errors.INTERNAL, "Flow execution returned no run_id") end
+    -- A run that paused for a person (an Inbox review, an approval) is still running:
+    -- it resumes on that decision, so the caller gets its run_id to follow.
+    if descriptor.status == "running" then
+        return { status = "waiting", run_id = descriptor.run_id,
+            message = "The Flow is waiting for a person, such as an Inbox review; it continues after their decision." }, nil
+    end
     if descriptor.success == false then
         return tool_result.domain_error(str(descriptor.error) ~= "" and descriptor.error or "Flow execution failed",
             { run_id = descriptor.run_id })

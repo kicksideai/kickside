@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.118 (2026-10-19)
+
+- WorkflowsManage runs a published version (action run) the way the Run button does: it returns the run_id at once and the run continues, including while it waits for an Inbox review.
+- RunFlow reports a run that is waiting for a person as { status = waiting, run_id } instead of a failure.
+
 ## 0.1.117 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

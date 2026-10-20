@@ -367,6 +367,25 @@ local function define_tests()
             test.eq(((captured.opts :: Map).session_id), "session-chat-1")
         end)
 
+        test.it("reports a run that is waiting on a person as waiting, not failed", function()
+            local real_catalog = agent_tool._catalog
+            local real_runner = agent_tool._execute
+            local ref = { kind = "flow", id = "wf-review", version = 1 }
+            agent_tool._catalog = function(): (any?, string?)
+                return {{ title = "Review", flow_ref = ref, input_schema = { type = "object" }, output_schema = { type = "object" } }}, nil
+            end
+            agent_tool._execute = function(): (Map?, string?)
+                return { run_id = "run-waiting", dataflow_id = "df-waiting", status = "running", success = false }, nil
+            end
+            local result, err = agent_tool.flow_run_handler({ flow_ref = ref, input = {} })
+            agent_tool._catalog = real_catalog
+            agent_tool._execute = real_runner
+
+            test.is_nil(err)
+            test.eq((result :: Map).status, "waiting")
+            test.eq((result :: Map).run_id, "run-waiting")
+        end)
+
         test.it("refuses an inexact Flow reference at the agent boundary", function()
             local result, err = agent_tool.flow_run_handler({ flow_ref = { kind = "flow", id = "wf" }, input = {} })
             test.is_nil(result)
