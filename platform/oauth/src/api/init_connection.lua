@@ -78,6 +78,14 @@ local function handler()
             res:write_json({ success = false, error = msg })
             return
         end
+        local rows, read_err = component.query({component_ids = {body.component_id}, include = {meta = true}, limit = 1})
+        local meta = rows and rows[1] and rows[1].meta
+        local is_oauth = meta and (meta.oauth_connection == true or meta.oauth_connection == "true")
+        if read_err or not is_oauth or meta.provider ~= provider_name then
+            res:set_status(STATUS.BAD_REQUEST)
+            res:write_json({success = false, error = "Reconnect requires an OAuth connection for the same provider. Create a new connection to change providers or authentication type."})
+            return
+        end
     end
 
     logger:debug("OAuth connection initialization started", {
@@ -178,7 +186,10 @@ local function handler()
 
     local init_result, err = oauth_instance:init_oauth({
         redirect_uri = redirect_uri,
-        scopes = final_scopes
+        scopes = final_scopes,
+        -- Provider-owned options are input to the connector, never runtime
+        -- context overrides. Dynamic providers validate their own allowlist.
+        provider_options = body.provider_options
     })
     if err then
         res:set_status(STATUS.INTERNAL_ERROR)

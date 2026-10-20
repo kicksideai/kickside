@@ -458,6 +458,7 @@ entries:
     kind: registry.entry
     meta: { oauth_provider: native-refresh-test }
     data:
+      component_contract_id: app:refresh_fixture_connector
       connector_contract:
         implementation_id: app:refresh_fixture_connector
         context_values: {}

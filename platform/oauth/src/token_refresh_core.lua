@@ -193,7 +193,9 @@ local function handle(request_dto)
             or current.refresh_enabled == false or current.refresh_enabled == 0 then return { success = true, stale = true } end
     end
     local refresh_result, err = oauth_instance:refresh_token({
-        refresh_token = connection_data.tokens.refresh_token
+        refresh_token = connection_data.tokens.refresh_token,
+        client_credentials = connection_data.client_credentials,
+        provider_specific = connection_data.provider_specific
     })
 
     if type(refresh_result) ~= "table" then

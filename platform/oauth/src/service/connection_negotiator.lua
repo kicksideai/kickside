@@ -141,6 +141,7 @@ local function run(args)
     local callback_result, err = oauth_instance:handle_callback({
         code = callback_data.code,
         state = callback_data.state,
+        iss = callback_data.iss,
         stored_data = connection_data.oauth_data
     })
 
