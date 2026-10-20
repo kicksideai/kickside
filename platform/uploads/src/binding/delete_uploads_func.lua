@@ -38,9 +38,17 @@ local function handle(request_dto)
         if not rows or #rows == 0 then break end
         local before = deleted
         for _, u in ipairs(rows) do
-            local _, del_err = upload_lib.delete_upload(tostring((u :: any).uuid))
+            local upload_id = tostring((u :: any).uuid)
+            local _, del_err = upload_lib.delete_upload(upload_id)
             if del_err then
-                logger:warn("upload teardown failed", { upload_id = (u :: any).uuid, error = del_err })
+                -- Another teardown, such as the retention sweeper, can remove the same
+                -- upload first. An upload that is already gone counts as deleted.
+                local _, get_err = upload_query_repo.get(upload_id)
+                if get_err == "Upload not found" then
+                    deleted = deleted + 1
+                else
+                    logger:warn("upload teardown failed", { upload_id = upload_id, error = del_err })
+                end
             else
                 deleted = deleted + 1
             end
