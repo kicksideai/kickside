@@ -7614,6 +7614,13 @@
       ],
       "tier": "regression"
     },
+    "crm_schema_select_contract": {
+      "features": [],
+      "issues": [
+        "CRM-SCHEMA-SELECT-VOCABULARY"
+      ],
+      "tier": "regression"
+    },
     "crm_sink_receipt_integrity": {
       "features": [],
       "issues": [

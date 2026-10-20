@@ -15,7 +15,13 @@ def callable_ownership(ctx):
     run_focused_module_test(ctx, "kickside/crm", "crm_callable_owner_test")
 
 
+def schema_select_contract(ctx):
+    run_focused_module_test(ctx, "kickside/crm", "crm_agent_surface_test")
+
+
 REGISTRY = [
+    Scenario("crm_schema_select_contract", "regression", schema_select_contract,
+             issues=("CRM-SCHEMA-SELECT-VOCABULARY",)),
     Scenario("crm_schema_index_cause", "regression", schema_index_cause,
              issues=("CRM-SCHEMA-INDEX-CAUSE",)),
     Scenario("crm_sink_receipt_integrity", "regression", sink_receipt_integrity,

@@ -9601,6 +9601,17 @@
       ],
       "repository": "kickside/chestor",
       "test": "journal/test/src/projection_test.lua"
+    },
+    "crm/schema-select-contract": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-SCHEMA-SELECT-VOCABULARY"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_agent_surface_test.lua"
     }
   },
   "issues": [
@@ -10762,7 +10773,8 @@
     "REQUIREMENT-DEFAULT-REMOVAL-COMPATIBILITY",
     "WASM-ARTIFACT-PORTABLE-PATHS",
     "HUB-DEPLOYMENT-APPLICATION-INVENTORY",
-    "RUNTIME-REPLACEMENT-DECLARED-VERSION"
+    "RUNTIME-REPLACEMENT-DECLARED-VERSION",
+    "CRM-SCHEMA-SELECT-VOCABULARY"
   ],
   "schema_version": 1
 }
