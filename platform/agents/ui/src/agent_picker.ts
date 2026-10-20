@@ -8,11 +8,12 @@ interface AgentPickerProps {
   selected?: string | string[]
   multi?: boolean
   placeholder?: string
-  value?: string
+  config?: string
+  schema?: string
 }
 
 interface AgentPickerEvents {
-  change: { selected: string[]; labels?: string[]; agent_id?: string }
+  change: { selected: string[]; labels?: string[] } | Record<string, string>
 }
 
 const PROPS_SCHEMA: WippyPropsSchema = {
@@ -21,10 +22,8 @@ const PROPS_SCHEMA: WippyPropsSchema = {
     selected: { type: 'array', items: { type: 'string' }, default: [] },
     multi: { type: 'boolean', default: true },
     placeholder: { type: 'string' },
-    // Config-host convention (WcMount): the current config as a JSON object string
-    // whose agent_id names the selection, or a bare agent ref. Presence switches the
-    // picker to single-select and adds agent_id to the change detail.
-    value: { type: 'string', default: '' },
+    config: { type: 'string', default: '' },
+    schema: { type: 'string', default: '' },
   },
 }
 
