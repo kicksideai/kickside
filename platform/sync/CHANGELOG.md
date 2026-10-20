@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.84](https://github.com/kicksideai/kickside/compare/sync-v0.1.83...sync-v0.1.84) (2026-10-20)
+
+
+### Bug Fixes
+
+* honor agent picker configuration in data syncs ([#29](https://github.com/kicksideai/kickside/issues/29)) ([8764097](https://github.com/kicksideai/kickside/commit/87640977328f797c127bb54c40c6c6194a7fd188))
+
 ## 0.1.83 (2026-10-17)
 
 - Supply source samples as Transform items for generation and validation.

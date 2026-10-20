@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.64](https://github.com/kicksideai/kickside/compare/inbox-v0.1.63...inbox-v0.1.64) (2026-10-20)
+
+
+### Bug Fixes
+
+* **inbox:** render notice content as Markdown ([#30](https://github.com/kicksideai/kickside/issues/30)) ([f54180e](https://github.com/kicksideai/kickside/commit/f54180e85834b4744d20f95d5dea17679d8706dd))
+
 ## 0.1.63 (2026-10-17)
 
 - Remove retired retention metadata and refresh packaged documentation.
