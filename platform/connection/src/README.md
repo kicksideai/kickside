@@ -41,3 +41,9 @@ the host.
   endpoints attach to.
 
 The module provisions no database of its own.
+
+## Native HTTP provider adapters
+
+`kickside.connection.client:driver` executes closed, provider-owned action definitions. `driver.new(config).run(action, params, connection_id, write, deadline)` validates the action schema before resolving a credential, verifies the provider and current actor's component access, and applies the connection capacity gate. Read and write actions are separate. Configuration supplies endpoints and routes; callers supply only action-specific data.
+
+The client supports access tokens and the OAuth token-source contract, a single refresh after HTTP 401, JSON and RPC APIs, fixed GraphQL documents with variables, multipart and binary file requests, cursor/offset pagination, and bounded transfers. Network failures after writes are not replayed. A provider's own OAuth component advertises its authentication protocol and scopes. No shell or host SDK is required.

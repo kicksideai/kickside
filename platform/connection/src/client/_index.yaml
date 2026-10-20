@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: kickside.connection.client
+entries:
+  - name: types
+    kind: library.lua
+    source: file://types.lua
+  - name: schema
+    kind: library.lua
+    source: file://schema.lua
+    modules: [json]
+    imports:
+      types: kickside.connection.client:types
+  - name: http
+    kind: library.lua
+    source: file://http.lua
+    modules: [http_client, json, time, base64]
+    imports:
+      component: kickside.component:component
+      capacity_http: kickside.connection:capacity_http
+      types: kickside.connection.client:types
+  - name: driver
+    kind: library.lua
+    source: file://driver.lua
+    modules: [json, base64, uuid, hash]
+    imports:
+      http: kickside.connection.client:http
+      schema: kickside.connection.client:schema
+      types: kickside.connection.client:types
