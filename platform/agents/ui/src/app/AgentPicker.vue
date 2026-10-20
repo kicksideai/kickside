@@ -2,81 +2,40 @@
 import { computed } from 'vue'
 import { useProps, useEvents } from '@wippy-fe/webcomponent-vue'
 import MultiSelectField from '@widgets/app/MultiSelectField.vue'
+import { parseSelectedId, parseSelectedIds } from '@widgets/app/pickerValue'
+import { parseSchema } from '@widgets/app/ports'
 
-// Canonical agent picker, declared by the agents module as <wc-agent-picker>.
-// Binds the shared multi-select to /api/v1/agents/list with the agent field
-// mapping, so any surface selects agents by their canonical ref ("user_agent:<id>"
-// or a registry id) without repeating the endpoint or key wiring. Contract mirrors
-// wc-multiselect: `selected` in (JSON array, csv, or single id), `change` out with
-// detail.selected as a string[] (single-select emits 0 or 1).
-//
-// Config hosts (WcMount mounting a schema-declared `picker: wc-agent-picker` field)
-// drive it through `value` instead: a JSON object string whose agent_id names the
-// selection, or a bare agent ref. A present value attribute switches the picker to
-// single-select and the change detail additionally carries agent_id, so the host
-// stores it under the schema field key.
 interface AgentPickerProps {
   selected?: string | string[]
   multi?: boolean
   placeholder?: string
-  value?: string
+  config?: string
+  schema?: string
 }
 interface AgentPickerEvents {
-  change: { selected: string[]; labels?: string[]; agent_id?: string }
+  change: { selected: string[]; labels?: string[] } | Record<string, string>
 }
 
 const props = useProps<AgentPickerProps>()
 const emit = useEvents<AgentPickerEvents>()
 
-function toIds(v: unknown): string[] {
-  if (Array.isArray(v)) return v.map(String).filter(Boolean)
-  if (typeof v === 'string') {
-    const s = v.trim()
-    if (!s) return []
-    if (s.startsWith('[')) {
-      try {
-        const arr = JSON.parse(s)
-        if (Array.isArray(arr)) return arr.map(String).filter(Boolean)
-      } catch { /* fall through to csv */ }
-    }
-    return s.split(',').map(x => x.trim()).filter(Boolean)
-  }
-  return []
-}
-
-// The agent ref named by the config-host `value` attribute: a JSON object's agent_id,
-// or the raw string as a bare ref. Empty when the attribute is absent/blank.
-function valueAgentId(v: unknown): string {
-  if (typeof v !== 'string') return ''
-  const s = v.trim()
-  if (!s) return ''
-  if (s.startsWith('{')) {
-    try {
-      const o = JSON.parse(s)
-      if (o && typeof o === 'object' && typeof o.agent_id === 'string') return o.agent_id
-      return ''
-    } catch { return '' }
-  }
-  if (s.startsWith('[')) return ''
-  return s
-}
-
+// Config hosts pass the current object and the primary field's schema as JSON.
 const configMode = computed(() => {
-  const v = props.value?.value
-  return typeof v === 'string' && v.trim() !== ''
+  const config = props.value?.config
+  return typeof config === 'string' && config.trim() !== ''
 })
-const configAgentId = computed(() => valueAgentId(props.value?.value))
+const configKey = computed(() => Object.keys(parseSchema(props.value?.schema)?.properties || {})[0] || 'agent_id')
 const selected = computed(() => {
-  const explicit = toIds(props.value?.selected)
-  if (explicit.length) return explicit
-  return configAgentId.value ? [configAgentId.value] : []
+  if (!configMode.value) return parseSelectedIds(props.value?.selected)
+  const id = parseSelectedId(props.value?.config, configKey.value)
+  return id ? [id] : []
 })
 const multi = computed(() => (configMode.value ? false : props.value?.multi !== false))
 const placeholder = computed(() => props.value?.placeholder || 'Search agents…')
 
 function onChange(ids: string[], labels?: string[]) {
   if (configMode.value) {
-    emit('change', { selected: ids, labels, agent_id: ids[0] || '' })
+    emit('change', { [configKey.value]: ids[0] || '' })
     return
   }
   emit('change', { selected: ids, labels })

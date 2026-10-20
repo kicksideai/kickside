@@ -40,7 +40,7 @@ watch(() => props.value.config, value => {
   contextText.value = current.value.context ? JSON.stringify(current.value.context, null, 2) : ''
 })
 
-const pickerValue = computed(() => JSON.stringify({ agent_id: current.value.agent_id || '' }))
+const pickerConfig = computed(() => JSON.stringify({ agent_id: current.value.agent_id || '' }))
 
 function publish() {
   const next: AgentBlockConfigValue = { ...current.value }
@@ -62,8 +62,9 @@ function selectMode(next: Mode) {
 }
 
 function onAgentChange(event: Event) {
-  const detail = (event as CustomEvent).detail as { agent_id?: string; selected?: string[] } | undefined
-  current.value.agent_id = detail?.agent_id || detail?.selected?.[0] || ''
+  if (event.composedPath()[0] !== event.currentTarget) return
+  const detail = (event as CustomEvent).detail as { agent_id?: string } | undefined
+  current.value.agent_id = detail?.agent_id || ''
   publish()
 }
 
@@ -139,7 +140,7 @@ onMounted(async () => {
         <ProgressSpinner class="kx-agent-block__spinner" stroke-width="4" aria-label="Loading Agent picker" />
         <span>Loading Agent picker…</span>
       </div>
-      <wc-agent-picker v-else :value="pickerValue" @change="onAgentChange"></wc-agent-picker>
+      <wc-agent-picker v-else :config="pickerConfig" @change="onAgentChange"></wc-agent-picker>
       <small v-if="pickerReady">Select one exact installed Agent.</small>
     </div>
     <label v-else class="kx-agent-block__field">

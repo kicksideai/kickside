@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.84 (2026-10-19)
+
+- Require the destination’s primary picker value before creating a data sync.
+
 ## 0.1.83 (2026-10-17)
 
 - Supply source samples as Transform items for generation and validation.
