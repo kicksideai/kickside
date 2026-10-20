@@ -50,7 +50,7 @@ vi.mock('./share', () => ({ mountWorkflowShare: vi.fn() }))
 vi.mock('./catalog/catalog', () => ({ loadCatalog: canvas.loadCatalog }))
 vi.mock('@wippy-fe/proxy', () => ({
   on: vi.fn(() => () => {}),
-  api: { get: vi.fn(async () => ({ data: { success: true, user: { user_id: 'editor-fixture' } } })) },
+  api: { get: vi.fn(async () => ({ data: { success: true, user: { id: 'editor-fixture' } } })) },
 }))
 vi.mock('@vue-flow/core', () => ({
   VueFlow: { template: '<div><slot /></div>' },

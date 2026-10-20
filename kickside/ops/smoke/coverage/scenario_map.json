@@ -5233,6 +5233,16 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_task_create_forms": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-TASK-CREATE-FORMS",
+        "AUTOMATION-RECURRING-CADENCE-VOCABULARY",
+        "AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE",
+        "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE"
+      ],
+      "tier": "regression"
+    },
     "automation_transform_assist": {
       "features": [
         "kickside/transform|http|POST /api/v1/transform/assist",
@@ -13089,6 +13099,7 @@
       "features": [
         "kickside/automation|http|POST /api/v1/automations",
         "kickside/automation|http|GET /api/v1/automations/{id}/config",
+        "kickside/automation|http|POST /api/v1/automations/{id}/actions/{method}",
         "kickside/inbox|http|GET /api/v1/inbox"
       ],
       "issues": [],
@@ -15619,6 +15630,13 @@
       "features": [],
       "issues": [
         "WORKFLOWS-PUBLISHED-OUTPUT-SHAPE"
+      ],
+      "tier": "regression"
+    },
+    "workflows_published_picker_config_host": {
+      "features": [],
+      "issues": [
+        "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST"
       ],
       "tier": "regression"
     }

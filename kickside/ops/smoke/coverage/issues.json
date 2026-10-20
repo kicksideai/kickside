@@ -9652,6 +9652,29 @@
       ],
       "repository": "kickside/kickside",
       "test": "ops/smoke/tests/test_onboarding_model_limits.py"
+    },
+    "automation/task-create-forms": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "AUTOMATION-TASK-CREATE-FORMS",
+        "AUTOMATION-RECURRING-CADENCE-VOCABULARY",
+        "AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE",
+        "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/ui/src/app/TaskCreate.spec.ts"
+    },
+    "workflows/published-picker-config-host": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/ui/src/app/embed/WorkflowPicker.test.ts"
     }
   },
   "issues": [
@@ -10818,7 +10841,12 @@
     "AGENT-PICKER-CONFIG-HOST",
     "SYNC-REQUIRED-DESTINATION-PICKER",
     "INBOX-NOTICE-MARKDOWN",
-    "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS"
+    "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS",
+    "AUTOMATION-TASK-CREATE-FORMS",
+    "AUTOMATION-RECURRING-CADENCE-VOCABULARY",
+    "AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE",
+    "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
+    "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE"
   ],
   "schema_version": 1
 }

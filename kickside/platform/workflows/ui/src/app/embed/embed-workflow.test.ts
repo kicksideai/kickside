@@ -26,7 +26,7 @@ describe('EmbedWorkflow mount', () => {
     get.mockResolvedValueOnce({ data: { success: true, workflows: [] } })
     const wrapper = mount(EmbedWorkflow)
     await flushPromises()
-    expect(get).toHaveBeenCalledWith('/api/v1/workflows?published=true&limit=100&offset=0')
+    expect(get).toHaveBeenCalledWith('/api/v1/workflows?published=true&fields=labels%2Chead_seq%2Cinterface%2Cpublished_interface%2Cpublished_def_seq%2Chas_draft_changes%2Cparent_id%2Cparent_name%2Cbreadcrumb%2Clast_run%2Cnode_count%2Crun_count&limit=100&offset=0')
     expect(wrapper.text()).toContain('No published Workflows available.')
   })
 

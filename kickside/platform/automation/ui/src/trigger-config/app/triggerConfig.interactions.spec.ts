@@ -88,12 +88,6 @@ function dispatch(w: ReturnType<typeof mount>, selector: string, event: string, 
   expect(el, `mounted element ${selector}`).toBeTruthy()
   el!.dispatchEvent(new CustomEvent(event, { detail }))
 }
-// The unit/preset/weekday/history choosers are now PrimeVue Selects (they render a
-// <div>, so native setValue()/.element.value no longer apply). data-test lands on
-// the Select root (ptmi merges $attrs), so match it against the mounted Select
-// components. Driving a selection emits the same pair PrimeVue emits on pick:
-// update:modelValue (updates the v-model / :model-value binding) and change (the
-// event the schedule fields listen on to re-derive the spec).
 function selectByTest(w: ReturnType<typeof mount>, test: string) {
   const el = w.find(`[data-test="${test}"]`).element
   const comp = w.findAllComponents(Select).find(c => c.element === el)
@@ -101,9 +95,12 @@ function selectByTest(w: ReturnType<typeof mount>, test: string) {
   return comp!
 }
 function selectValue(w: ReturnType<typeof mount>, test: string): unknown {
-  return selectByTest(w, test).props('modelValue')
+  const field = w.get(`[data-test="${test}"]`)
+  return field.element.tagName === 'SELECT' ? (field.element as HTMLSelectElement).value : selectByTest(w, test).props('modelValue')
 }
 async function setSelect(w: ReturnType<typeof mount>, test: string, value: string) {
+  const field = w.get(`[data-test="${test}"]`)
+  if (field.element.tagName === 'SELECT') { await field.setValue(value); await flushPromises(); return }
   const comp = selectByTest(w, test)
   comp.vm.$emit('update:modelValue', value)
   comp.vm.$emit('change', { value })
@@ -528,6 +525,17 @@ describe('seeding + edit mode', () => {
     await w.find('.kx-tc-retry').trigger('click')
     await flushPromises()
     expect(w.find('[data-test="tc-load-error"]').exists()).toBe(false)
+    w.unmount()
+  })
+})
+
+ describe('empty cadence', () => {
+  it('keeps the Data Sync trigger empty state on custom cron', async () => {
+    ;(globalThis as any).__props__ = { allowed: 'timer' }
+    const w = mount(TriggerConfig); await flushPromises()
+    expect(selectValue(w, 'tc-cron-preset')).toBe('custom')
+    expect(w.get('[data-test="tc-custom-cron"]').element).toHaveProperty('value', '')
+    expect(lastChange().valid).toBe(false)
     w.unmount()
   })
 })

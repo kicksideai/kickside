@@ -2418,19 +2418,30 @@ def regression_recurring_json_ui(ctx):
     panel.get_by_role('button', name='Add automation', exact=False).first.click()
     dialog = browser.frame.get_by_role('dialog')
     dialog.get_by_role('button', name='Recurring task', exact=False).click()
-    dialog.get_by_label('Title', exact=False).fill('Northwind JSON recurring regression')
-    dialog.get_by_label('Enabled', exact=True).check()
-    dialog.get_by_label('Schedule (UTC)', exact=False).fill(json.dumps({'type': 'interval', 'expression': '2s'}))
-    dialog.get_by_label('Target', exact=False).fill(json.dumps({'kind': 'action', 'port': 'kickside.inbox.sink:inbox_item',
-           'config': {}, 'input': {'title': 'Northwind JSON notice', 'content': 'NW-JSON-731'}}))
+    form = dialog.locator('kickside-recurring-task-create')
+    form.get_by_label('Title', exact=True).fill('Scheduled inbox notice')
+    form.get_by_label('Enabled', exact=True).check()
+    form.get_by_label('Cadence', exact=True).select_option('weekdays')
+    form.get_by_label('Time (UTC)', exact=True).fill('08:00')
+    form.get_by_label('Target kind', exact=True).select_option('action')
+    form.get_by_role('combobox', name='Writable action', exact=True).click()
+    form.get_by_role('option', name='Create Inbox Item', exact=False).click()
+    input_form = form.locator('[data-test="task-target-input"] wc-schema-form')
+    input_form.get_by_label(re.compile(r'^title')).fill('Scheduled notice')
+    input_form.get_by_label(re.compile(r'^content\b')).fill('Scheduled task delivery')
     with browser.page.expect_response(lambda r: '/api/v1/automations' in r.url and r.request.method == 'POST') as response:
         dialog.get_by_role('button', name='Create', exact=True).click()
     value = response.value.json()
     require(response.value.status == 200 and value.get('id'), 'Recurring UI does not submit structured objects: ' + str(value))
     aid = value['id']
     config = request(ctx, 'write', 'GET', '/automations/' + aid + '/config')
-    require('interval' in json.dumps(config) and 'Northwind JSON notice' in json.dumps(config), 'Recurring UI config does not persist')
-    ctx.inst.wait(lambda: 'NW-JSON-731' in json.dumps(request(ctx, 'write', 'GET', '/inbox?status=all&limit=200')),
+    require('0 8 * * 1-5' in json.dumps(config) and 'Scheduled notice' in json.dumps(config), 'Recurring UI config does not persist')
+    row = panel.locator('.kx-row').filter(has_text='Scheduled inbox notice')
+    row.get_by_role('button', name='More actions for Scheduled inbox notice', exact=True).click()
+    with browser.page.expect_response(lambda r: '/actions/run_now' in r.url and r.request.method == 'POST') as run_response:
+        browser.frame.get_by_role('menuitem', name='Run Scheduled inbox notice now', exact=False).click()
+    require(run_response.value.status == 200 and run_response.value.json().get('success'), 'Recurring UI does not accept Run now')
+    ctx.inst.wait(lambda: 'Scheduled task delivery' in json.dumps(request(ctx, 'write', 'GET', '/inbox?status=all&limit=200')),
                   'UI recurring task delivers its event', seconds=60)
     browser.clean(ctx.state['access_browser_error_start'])
 
@@ -2553,7 +2564,7 @@ UI_REGRESSIONS = (
     ('QA-P07', regression_upload_error_presentation, False, http('kickside/uploads', 'POST /api/v1/uploads', 'GET /api/v1/uploads/{uuid}'), False),
     ('QA-P08', regression_kb_keyboard_controls, True, http('kickside/kb10', 'GET /api/v1/kb10/{id}/browse', 'GET /api/v1/kb10/{id}/graph') +
      http('kickside/knowledge', 'POST /api/v1/knowledge/create', 'POST /api/v1/knowledge/{id}/ingest', 'POST /api/v1/knowledge/{id}/search'), True),
-    ('QP-003', regression_recurring_json_ui, False, http('kickside/automation', 'POST /api/v1/automations', 'GET /api/v1/automations/{id}/config') + http('kickside/inbox', 'GET /api/v1/inbox'), True),
+    ('QP-003', regression_recurring_json_ui, False, http('kickside/automation', 'POST /api/v1/automations', 'GET /api/v1/automations/{id}/config', 'POST /api/v1/automations/{id}/actions/{method}') + http('kickside/inbox', 'GET /api/v1/inbox'), True),
     ('QP-018', regression_mcp_setup_mounted, False, http('kickside/connection', 'GET /api/v1/connections/providers/discover'), True),
     ('R2-004', regression_mcp_nested_trait_selection, True, http('kickside/mcp', 'POST /api/v1/mcp/credentials', 'POST /api/public/mcp', 'GET /api/v1/mcp/components'), True),
     ('QA-R2-02', regression_mcp_reconnect_identity, True, http('kickside/connection', 'POST /api/v1/connections', 'GET /api/v1/connections') + http('kickside/mcp-client', 'PUT /api/v1/mcp-client/connections/{id}'), True),
