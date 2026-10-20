@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.68 (2026-10-20)
+
+- Model discovery reads OpenRouter's embeddings catalog as well, so provider embedding models (OpenAI text-embedding-3) get their context window and can be enabled for knowledge bases.
+
 ## 0.1.67 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.
