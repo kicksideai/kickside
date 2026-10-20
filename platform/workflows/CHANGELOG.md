@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.119](https://github.com/kicksideai/kickside/compare/workflows-v0.1.118...workflows-v0.1.119) (2026-10-20)
+
+
+### Bug Fixes
+
+* **automation:** add structured task setup forms and published workflow selection ([#33](https://github.com/kicksideai/kickside/issues/33)) ([52fb507](https://github.com/kicksideai/kickside/commit/52fb5074f8cc57ee6b9a5053092559774796315a))
+
 ## 0.1.118 (2026-10-19)
 
 - WorkflowsManage runs a published version (action run) the way the Run button does: it returns the run_id at once and the run continues, including while it waits for an Inbox review.
