@@ -9,6 +9,7 @@ local CONTENT = http.CONTENT
 type CallbackMessage = {
     code: string?,
     state: string?,
+    iss: string?,
     error: string?,
     error_description: string?,
 }
@@ -90,6 +91,7 @@ local function handler()
     local callback_message: CallbackMessage = {
         code = optional_string(callback_data.code),
         state = optional_string(callback_data.state),
+        iss = optional_string(callback_data.iss),
         error = optional_string(callback_data.error),
         error_description = optional_string(callback_data.error_description),
     }

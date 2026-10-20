@@ -38,12 +38,14 @@ local function handler()
     local query = {}
     local code = req:query("code")
     local state = req:query("state")
+    local issuer = req:query("iss")
     local error_param = req:query("error")
     local error_description = req:query("error_description")
     local provider = req:query("provider")
 
     if code then query.code = code end
     if state then query.state = state end
+    if issuer then query.iss = issuer end
     if error_param then query.error = error_param end
     if error_description then query.error_description = error_description end
     if provider then query.provider = provider end
