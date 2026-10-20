@@ -3039,6 +3039,14 @@
       ],
       "tier": "regression"
     },
+    "agent_picker_config_host": {
+      "features": [],
+      "issues": [
+        "AGENT-PICKER-CONFIG-HOST",
+        "SYNC-REQUIRED-DESTINATION-PICKER"
+      ],
+      "tier": "regression"
+    },
     "agents_declared_cases": {
       "features": [],
       "issues": [

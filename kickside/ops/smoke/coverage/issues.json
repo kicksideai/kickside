@@ -9612,6 +9612,26 @@
       ],
       "repository": "kickside/crm",
       "test": "test/src/crm_agent_surface_test.lua"
+    },
+    "agents/config-host": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "AGENT-PICKER-CONFIG-HOST"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/agents/ui/src/app/AgentPicker.spec.ts"
+    },
+    "sync/required-destination-picker": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "SYNC-REQUIRED-DESTINATION-PICKER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/sync/ui/src/app/syncCreate.picker.spec.ts"
     }
   },
   "issues": [
@@ -10774,7 +10794,9 @@
     "WASM-ARTIFACT-PORTABLE-PATHS",
     "HUB-DEPLOYMENT-APPLICATION-INVENTORY",
     "RUNTIME-REPLACEMENT-DECLARED-VERSION",
-    "CRM-SCHEMA-SELECT-VOCABULARY"
+    "CRM-SCHEMA-SELECT-VOCABULARY",
+    "AGENT-PICKER-CONFIG-HOST",
+    "SYNC-REQUIRED-DESTINATION-PICKER"
   ],
   "schema_version": 1
 }

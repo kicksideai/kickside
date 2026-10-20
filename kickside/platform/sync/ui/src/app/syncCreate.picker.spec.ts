@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { api } from '@wippy-fe/proxy'
 import { nextTick } from 'vue'
@@ -165,4 +165,68 @@ it('creates a trigger automation with the exact destination supplied by its owni
   await flushPromises()
   expect(api.post).toHaveBeenCalledWith('/api/v1/automations', expect.objectContaining({ parent_id: 'wf-42', input: expect.objectContaining({ sink_port: 'fixture:run', sink_config: { flow_ref: ref } }) }))
   wrapper.unmount()
+})
+
+if (!customElements.get('wc-agent-picker')) {
+  customElements.define('wc-agent-picker', class extends HTMLElement {})
+}
+
+describe('SyncCreate required destination picker', () => {
+  beforeEach(() => {
+    ;(globalThis as any).__props__ = { config: {} }
+    vi.clearAllMocks()
+  })
+
+  async function readyForm(field = 'agent_id', required = true) {
+    const wrapper = await mountWithIo(SOURCE, {
+      id: 'fixture:destination', title: 'Run Agent',
+      config_schema: { [field]: { type: 'string', required, picker: 'wc-agent-picker' } },
+      operations: { upsert: {} },
+    })
+    await wrapper.get('[data-test="pl-title"]').setValue('Content automation')
+    wrapper.element.querySelector('kickside-transform-assist')!.dispatchEvent(new CustomEvent('transform-confirmed', {
+      detail: { transform: { kind: 'none' } },
+    }))
+    await flushPromises()
+    return wrapper
+  }
+
+  it.each([{}, { selected: ['user_agent:example-agent'], labels: ['Example agent'] }, { agent_id: '' }, { agent_id: null }, { agent_id: [] }, { content: 'Options alone' }])(
+    'refuses installation without the required primary field: %j', async config => {
+      const wrapper = await readyForm()
+      wrapper.element.querySelector('wc-agent-picker')!.dispatchEvent(new CustomEvent('change', { detail: config }))
+      await flushPromises()
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      expect(api.post).not.toHaveBeenCalledWith('/api/v1/automations', expect.anything())
+      expect(wrapper.get('[role="alert"]').text()).toBe('Destination configuration is required.')
+      wrapper.unmount()
+    },
+  )
+
+  it.each(['agent_id', 'reviewer'])('submits the required picker field %s unchanged', async field => {
+    const wrapper = await readyForm(field)
+    const picker = wrapper.element.querySelector('wc-agent-picker')!
+    expect(picker.getAttribute('config')).toBe('{}')
+    expect(JSON.parse(picker.getAttribute('schema')!).properties[field].required).toBe(true)
+    const sinkConfig = { [field]: 'user_agent:example-agent' }
+    picker.dispatchEvent(new CustomEvent('change', { detail: sinkConfig }))
+    await flushPromises()
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/api/v1/automations', expect.objectContaining({
+      input: expect.objectContaining({ sink_config: sinkConfig }),
+    }))
+    wrapper.unmount()
+  })
+
+  it('permits an empty optional primary picker', async () => {
+    const wrapper = await readyForm('agent_id', false)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/api/v1/automations', expect.objectContaining({
+      input: expect.objectContaining({ sink_config: {} }),
+    }))
+    wrapper.unmount()
+  })
 })

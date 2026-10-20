@@ -42,6 +42,34 @@ describe('AgentBlockConfig', () => {
     expect(wrapper.find('textarea[placeholder="What should this step do?"]').exists()).toBe(true)
   })
 
+  it('configures the agent picker through the canonical config attribute', async () => {
+    webComponentBridge.props.value.config = { agent_id: 'user_agent:example-agent' }
+    webComponentBridge.emit.mockClear()
+    const wrapper = mount(AgentBlockConfig)
+    await flushPromises()
+    const picker = wrapper.get('wc-agent-picker')
+    expect(JSON.parse(picker.attributes('config')!)).toEqual({ agent_id: 'user_agent:example-agent' })
+    expect(picker.attributes('value')).toBeUndefined()
+    picker.element.dispatchEvent(new CustomEvent('change', { detail: { agent_id: 'fixture.agents:another' } }))
+    expect(webComponentBridge.emit).toHaveBeenLastCalledWith('config-changed', { agent_id: 'fixture.agents:another' })
+  })
+
+  it('consumes only the agent picker’s own keyed change event', async () => {
+    webComponentBridge.props.value.config = { agent_id: 'user_agent:example-agent' }
+    const wrapper = mount(AgentBlockConfig)
+    await flushPromises()
+    const picker = wrapper.get('wc-agent-picker').element
+    const inner = document.createElement('input')
+    picker.attachShadow({ mode: 'open' }).appendChild(inner)
+    webComponentBridge.emit.mockClear()
+    inner.dispatchEvent(new CustomEvent('change', {
+      detail: { selected: ['fixture.agents:another'], labels: ['Another agent'] }, bubbles: true, composed: true,
+    }))
+    expect(webComponentBridge.emit).not.toHaveBeenCalled()
+    picker.dispatchEvent(new CustomEvent('change', { detail: { agent_id: 'fixture.agents:another' } }))
+    expect(webComponentBridge.emit).toHaveBeenCalledExactlyOnceWith('config-changed', { agent_id: 'fixture.agents:another' })
+  })
+
   it('emits inline instructions through the canonical config contract', async () => {
     webComponentBridge.props.value.config = {}
     webComponentBridge.emit.mockClear()

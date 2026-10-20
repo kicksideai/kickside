@@ -16,5 +16,5 @@ export default defineConfig({
       "@wippy-fe/webcomponent-vue": resolve(__dirname, "node_modules/@wippy-fe/webcomponent-vue"),
     },
   },
-  test: { environment: "happy-dom", setupFiles: ["src/test-setup.ts"], include: ["src/**/*.{test,spec}.ts"], coverage: { reporter: ["text"], include: ["src/**"], exclude: ["**/coverage/**","src/**/*.{test,spec}.ts","src/*.ts","src/test-setup.ts"] } },
+  test: { server: { deps: { inline: [/@wippy-fe\/webcomponent-(core|vue)/] } }, environment: "happy-dom", setupFiles: ["src/test-setup.ts"], include: ["src/**/*.{test,spec}.ts"], coverage: { reporter: ["text"], include: ["src/**"], exclude: ["**/coverage/**","src/**/*.{test,spec}.ts","src/*.ts","src/test-setup.ts"] } },
 })
