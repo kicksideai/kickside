@@ -1,9 +1,5 @@
 # Changelog
 
-## 0.1.64 (2026-10-20)
-
-- Render notice content with the shared Markdown renderer and preserve metadata fields.
-
 ## 0.1.63 (2026-10-17)
 
 - Remove retired retention metadata and refresh packaged documentation.
