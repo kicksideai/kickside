@@ -9632,6 +9632,26 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/sync/ui/src/app/syncCreate.picker.spec.ts"
+    },
+    "inbox/notice-markdown": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "INBOX-NOTICE-MARKDOWN"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/inbox/ui/src/notice.spec.ts"
+    },
+    "smoke/onboarding-install-batch-readiness": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS"
+      ],
+      "repository": "kickside/kickside",
+      "test": "ops/smoke/tests/test_onboarding_model_limits.py"
     }
   },
   "issues": [
@@ -10796,7 +10816,9 @@
     "RUNTIME-REPLACEMENT-DECLARED-VERSION",
     "CRM-SCHEMA-SELECT-VOCABULARY",
     "AGENT-PICKER-CONFIG-HOST",
-    "SYNC-REQUIRED-DESTINATION-PICKER"
+    "SYNC-REQUIRED-DESTINATION-PICKER",
+    "INBOX-NOTICE-MARKDOWN",
+    "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS"
   ],
   "schema_version": 1
 }

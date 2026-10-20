@@ -8273,6 +8273,17 @@
       ],
       "tier": "regression"
     },
+    "inbox_notice_markdown": {
+      "features": [
+        "kickside/inbox|inbox_kind|kickside.inbox:item_type.notice",
+        "kickside/inbox|http|POST /api/v1/inbox",
+        "kickside/inbox|navigation|kickside.inbox:nav_item"
+      ],
+      "issues": [
+        "INBOX-NOTICE-MARKDOWN"
+      ],
+      "tier": "regression"
+    },
     "inbox_resolution_native_errors": {
       "features": [],
       "issues": [
@@ -11735,7 +11746,8 @@
       ],
       "issues": [
         "ONBOARDING-DEPENDENCY-INSTALL-CONFLICT",
-        "SMOKE-ONBOARDING-EXPLICIT-MODEL-LIMITS"
+        "SMOKE-ONBOARDING-EXPLICIT-MODEL-LIMITS",
+        "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS"
       ],
       "tier": "quick"
     },

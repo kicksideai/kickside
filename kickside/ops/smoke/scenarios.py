@@ -134,6 +134,7 @@ def platform_onboarding(ctx, *, embedding_dimensions=512):
         with browser.successful_response('POST', '/api/v1/keeper/hub/dependencies/install',
                                         'onboarding-module-install'):
             action.click()
+            modules.get_by_role('button', name=re.compile('^Continue with this setup')).wait_for(state='visible', timeout=300000)
     modules.get_by_role('button', name=re.compile('^Continue with this setup')).click(timeout=300000)
     frame.get_by_role('heading', name='Connect an external agent', exact=True).wait_for(timeout=30000)
     with browser.page.expect_response(lambda r: '/api/v1/keeper/mcp/tokens' in r.url and r.request.method == 'POST') as response:
@@ -945,7 +946,7 @@ FEATURES = {
 
 REGISTRY = [
     Scenario('boot', 'quick', boot, issues=('R5-RELEASE-FRONTEND-ARTIFACTS', 'SMOKE-SOURCE-FRESH-RESOLUTION'), features=FEATURES['boot']),
-    Scenario('platform_onboarding', 'quick', platform_onboarding, ('boot',), issues=('ONBOARDING-DEPENDENCY-INSTALL-CONFLICT', 'SMOKE-ONBOARDING-EXPLICIT-MODEL-LIMITS'), features=FEATURES['platform_onboarding'], instance_setup=True),
+    Scenario('platform_onboarding', 'quick', platform_onboarding, ('boot',), issues=('ONBOARDING-DEPENDENCY-INSTALL-CONFLICT', 'SMOKE-ONBOARDING-EXPLICIT-MODEL-LIMITS', 'SMOKE-ONBOARDING-INSTALL-BATCH-READINESS'), features=FEATURES['platform_onboarding'], instance_setup=True),
     Scenario('first_agent', 'quick', first_agent, ('platform_onboarding',), issues=('ONBOARD-FIRST-AGENT', 'R5-RELEASE-FRONTEND-ARTIFACTS', 'FE-SHELL-COMPONENT-LOADER-OWNERSHIP'), features=FEATURES['first_agent'], instance_setup=True, capture_navigation=('session',)),
     Scenario('first_agent_dialog', 'full', first_agent_dialog, ('first_agent',), issues=('ONBOARD-FIRST-AGENT',), features=FEATURES['first_agent'] +
              ('kickside/ui|http|POST /api/v1/ui/splash/{id}/seen', 'kickside/ui|http|GET /api/v1/nav/list')),

@@ -41,3 +41,34 @@ class OnboardingModelLimitsTests(unittest.TestCase):
         with patch('playwright.sync_api.expect'), patch.object(scenarios, 'select_onboarding_models', select):
             with self.assertRaises(SelectionsReady):
                 scenarios.platform_onboarding(ctx)
+
+    def test_install_batch_finishes_before_the_response_context_settles_network_requests(self):
+        from contextlib import contextmanager
+        browser = MagicMock()
+        modules = MagicMock()
+        browser.frame.locator.side_effect = lambda tag: modules if tag == 'kickside-onboard-modules' else MagicMock()
+        action = MagicMock()
+        action.inner_text.return_value = 'Install 3 packages'
+        continuation = MagicMock()
+        def button(role, name, **kwargs):
+            if getattr(name, 'pattern', '') == '^Continue with this setup':
+                return continuation
+            return MagicMock(first=action)
+        modules.get_by_role.side_effect = button
+        completed = False
+        def ready(**kwargs):
+            nonlocal completed
+            self.assertEqual(kwargs, {'state': 'visible', 'timeout': 300000})
+            completed = True
+        continuation.wait_for.side_effect = ready
+        class BatchVerified(Exception):
+            pass
+        @contextmanager
+        def capture(*args, **kwargs):
+            yield
+            self.assertTrue(completed, 'The first response does not finish the package batch')
+            raise BatchVerified
+        browser.successful_response.side_effect = capture
+        ctx = SimpleNamespace(inst=SimpleNamespace(config={'model': None}), browser_check=lambda: browser)
+        with patch('playwright.sync_api.expect'), self.assertRaises(BatchVerified):
+            scenarios.platform_onboarding(ctx)
