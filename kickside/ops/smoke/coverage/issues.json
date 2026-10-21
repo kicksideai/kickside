@@ -9707,6 +9707,28 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "webscout-brave/core-minimum": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WEBSCOUT-PROVIDER-CORE-MINIMUM"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout-brave/test/suites/provider_test.lua"
+    },
+    "webscout-tavily/core-minimum": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WEBSCOUT-PROVIDER-CORE-MINIMUM"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout-tavily/test/suites/provider_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10902,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "WEBSCOUT-PROVIDER-CORE-MINIMUM"
   ],
   "schema_version": 1
 }
