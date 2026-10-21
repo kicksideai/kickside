@@ -4766,6 +4766,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_at_most_once_lost_write_answer": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-AT-MOST-ONCE-LOST-WRITE-ANSWER"
+      ],
+      "tier": "regression"
+    },
     "automation_blocks_tool": {
       "features": [
         "kickside/blocks|mcp_tool|kickside.blocks:list"
