@@ -9729,6 +9729,28 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/recovery_dispatch_test.lua"
+    },
+    "automation/immediate-redelivery": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/round/ledger_order_test.lua"
+    },
+    "automation/authority-resume": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/round/authority_test.lua"
     }
   },
   "issues": [
@@ -10903,7 +10925,8 @@
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
     "TEMPLATE-MOUNTED-PAGE-REFRESH",
-    "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+    "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION",
+    "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
   ],
   "schema_version": 1
 }

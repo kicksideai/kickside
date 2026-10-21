@@ -4971,6 +4971,13 @@
       ],
       "tier": "regression"
     },
+    "automation_immediate_redelivery_deadline": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+      ],
+      "tier": "regression"
+    },
     "automation_inbox_api": {
       "features": [
         "kickside/inbox|http|POST /api/v1/inbox",
