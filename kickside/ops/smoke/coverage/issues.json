@@ -9707,6 +9707,17 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "workflows/revoked-owner-terminal-publication": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/test/src/suites/launch_reconciliation_live_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10891,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER"
   ],
   "schema_version": 1
 }
