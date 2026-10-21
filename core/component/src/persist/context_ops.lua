@@ -350,7 +350,7 @@ function M.set_execution_identity_tx(tx: Executor, token: any): (component_types
     end
     local credential_id, link_id, introduced, restriction_err = preserved_restrictions((state :: any).context, prepared)
     if restriction_err then return nil, restriction_err end
-    local replays, replay_err = sql.builder.select("record_json"):from(identity.AUDIT_TABLE)
+    local replays, replay_err = sql.builder.select("record_json", "identity_generation"):from(identity.AUDIT_TABLE)
         :where("component_id = ?", component_id):where("request_id = ?", prepared.request_id)
         :limit(1):run_with(tx):query()
     if replay_err then
@@ -368,7 +368,7 @@ function M.set_execution_identity_tx(tx: Executor, token: any): (component_types
         return {
             component_id = component_id,
             principal = prepared.principal,
-            identity_generation = (state :: any).generation,
+            identity_generation = tonumber((replays[1] :: any).identity_generation),
             request_id = prepared.request_id,
             changes_made = false,
         }, nil
