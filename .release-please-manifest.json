@@ -8,7 +8,7 @@
   "platform/automation": "0.1.132",
   "platform/blocks": "0.1.38",
   "platform/channel": "0.2.4",
-  "platform/connection": "0.3.0",
+  "platform/connection": "0.3.1",
   "platform/dm": "0.1.32",
   "platform/hub": "0.1.63",
   "platform/identity": "0.1.41",
@@ -16,7 +16,7 @@
   "platform/knowledge": "0.1.64",
   "platform/mcp": "0.2.6",
   "platform/models": "0.1.68",
-  "platform/oauth": "0.1.38",
+  "platform/oauth": "0.1.39",
   "platform/realtime": "0.1.32",
   "core/realtime-dispatch": "0.1.1",
   "platform/renderers": "0.1.35",
@@ -34,6 +34,6 @@
   "platform/users": "0.2.7",
   "platform/webhooks": "0.1.39",
   "platform/widgets": "0.1.49",
-  "platform/workflows": "0.1.119",
-  "app": "0.2.17"
+  "platform/workflows": "0.1.120",
+  "app": "0.2.18"
 }

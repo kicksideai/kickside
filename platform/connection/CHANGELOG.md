@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kicksideai/kickside/compare/connection-v0.3.0...connection-v0.3.1) (2026-10-21)
+
+
+### Features
+
+* **connection:** support native productivity provider adapters ([#43](https://github.com/kicksideai/kickside/issues/43)) ([1efcf58](https://github.com/kicksideai/kickside/commit/1efcf58af4a637bde446dcf2902ece5eb866c90c))
+
 ## 0.2.4 (2026-10-14)
 
 - Resolve connection icons from the provider connection declaration regardless of source and sink binding order.
