@@ -1,5 +1,7 @@
 -- Resolve only resource fields explicitly declared by a kind's input schema.
 -- The result is stable JSON data suitable for a durable command record.
+local canonical_json = require("canonical_json")
+
 local M = {}
 
 local KINDS = { component = true, connection = true, thread = true,
@@ -67,6 +69,54 @@ local function walk(schema: any, value: any, path: string, result: { any }): err
                 if err then return err end
             end
         end
+    end
+    return nil
+end
+
+local function field(value: any, key: any): any
+    if type(value) == "table" then return value[key] end
+    return nil
+end
+
+-- Compare marked values against the protected declaration, including removal
+-- of an enclosing object or array item. Opaque objects compare as whole values.
+local function authority_change(schema: any, previous: any, current: any, path: string): (string?, error?)
+    if type(schema) ~= "table" then return nil, nil end
+    if schema["x-authority"] ~= nil then
+        if schema["x-authority"] ~= "subject" then return nil, invalid("invalid x-authority at " .. path) end
+        local before, before_err = canonical_json.encode(previous)
+        if before_err then return nil, before_err end
+        local after, after_err = canonical_json.encode(current)
+        if after_err then return nil, after_err end
+        if before ~= after then return path, nil end
+        return nil, nil
+    end
+    if schema.type == "object" then
+        for name, child in pairs(schema.properties or {}) do
+            local changed, err = authority_change(child, field(previous, name), field(current, name),
+                path == "" and name or path .. "." .. name)
+            if changed or err then return changed, err end
+        end
+    elseif schema.type == "array" and schema.items ~= nil then
+        local count = math.max(type(previous) == "table" and #previous or 0,
+            type(current) == "table" and #current or 0)
+        for i = 1, count do
+            local changed, err = authority_change(schema.items, field(previous, i), field(current, i),
+                path .. "[" .. tostring(i) .. "]")
+            if changed or err then return changed, err end
+        end
+    end
+    return nil, nil
+end
+
+-- Both admission and the trusted writer enforce the same schema policy.
+function M.validate_edit(schema: any, previous: any, current: any, operator_id: string, subject_id: string): error?
+    if operator_id == subject_id then return nil end
+    local changed, err = authority_change(schema, previous, current, "")
+    if err then return err end
+    if changed then
+        return (errors.new({ message = "only the execution subject may change authority-bearing field " .. changed,
+            kind = errors.PERMISSION_DENIED, retryable = false, details = { error_kind = "access" } }) :: error)
     end
     return nil
 end

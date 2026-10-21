@@ -140,6 +140,7 @@ local function verify(request: any): (any?, error?)
     local owner = staging and "kickside.automation:declaration_writer_create_selected"
         or (pending.kind == "install" and "kickside.automation:declaration_writer_create"
             or "kickside.automation:declaration_writer_apply")
+    local previous_declaration: any = {}
     local operator_refs = current_refs
     if pending.kind == "reconfigure" then
         -- The trusted writer derives the baseline from the component, never
@@ -148,6 +149,7 @@ local function verify(request: any): (any?, error?)
         local context, context_err = component.get_private_context(pending.automation_id)
         if context_err or not context then return nil, context_err end
         local stored = type(context._portable_input) == "table" and context._portable_input or {}
+        previous_declaration = stored
         local previous_refs, previous_err = references.collect(input.schema, stored)
         if previous_err or not previous_refs then return nil, previous_err end
         operator_refs = references.added(current_refs, previous_refs)
@@ -163,6 +165,9 @@ local function verify(request: any): (any?, error?)
         subject_id, current_refs, owner)
     if subject_err then return nil, subject_err end
     if not subject_valid then return nil, denied("execution subject lacks a declared resource grant") end
+    local edit_err = references.validate_edit(input.schema, previous_declaration, input.declaration,
+        input.operator_id, subject_id)
+    if edit_err then return nil, edit_err end
     return {
         valid = true,
         operator_valid = operator_valid,

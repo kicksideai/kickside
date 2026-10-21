@@ -73,6 +73,31 @@ that ID conflicts. `set_execution_identity` is an ADMIN control for changing the
 execution principal and also requires a caller ID and expected identity
 generation.
 
+## Authority-bearing inputs
+
+Kind input schemas can mark a field with `x-authority: subject`. Only the
+execution subject can change that field, including adding or removing it.
+The annotation applies to the whole value of an object or array; nested
+properties and array item schemas can also carry it. For example:
+
+```yaml
+inputs:
+  type: object
+  properties:
+    title: { type: string }
+    behavior:
+      type: object
+      x-authority: subject
+```
+
+Mark opaque function targets and configuration, code, tool configuration and
+LLM settings that execute with the subject's authority. The declaration
+validator compares against the protected stored input before reserving a
+reconfigure command; the trusted writer repeats the check before writing.
+Unmarked fields retain their existing authorization rules. Existing
+declarations keep running; an edit that leaves marked values unchanged can
+proceed under the existing reference grants.
+
 ## Further reading
 
 For authoring and operational details, use the developer handbook chapters

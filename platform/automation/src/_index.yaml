@@ -355,8 +355,10 @@ entries:
   - name: declaration_references
     kind: library.lua
     meta:
-      comment: Resolve only x-reference annotated kind input fields into durable reference records.
+      comment: Resolve schema-declared references and validate authority-bearing declaration edits.
     source: file://declaration_references.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
 
   - name: declaration_authority
     kind: library.lua
