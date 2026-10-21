@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.48](https://github.com/kicksideai/kickside/compare/settings-v0.1.47...settings-v0.1.48) (2026-10-21)
+
+
+### Features
+
+* **uploads:** offload processed content through owned S3 storage ([#47](https://github.com/kicksideai/kickside/issues/47)) ([33c7e72](https://github.com/kicksideai/kickside/commit/33c7e72a784cbc9e0b0733767373fbe3c0932596))
+
 ## 0.1.45 (2026-10-09)
 
 - Build frontend assets with the current published UI Kit stylesheet.
