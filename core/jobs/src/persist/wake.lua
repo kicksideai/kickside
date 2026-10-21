@@ -232,7 +232,9 @@ local function prepare_tx(tx, key: string, dbtype: string, completion_job_id: st
     local candidates, continuation_id, acknowledged, discovery_err = discover_tx(tx, key, generation, fanout_limit, dbtype)
     if discovery_err then return nil, discovery_err end
     local extras: { string } = {}
-    if completion_job_id then extras[#extras + 1] = tostring(completion_job_id) end
+    if completion_job_id and #candidates > 0 and not continuation_id then
+        extras[#extras + 1] = tostring(completion_job_id)
+    end
     if continuation_id then
         -- An existing continuation defers fan-out and is not updated here.
         -- The wake-row lock orders its acknowledgment with this generation;
@@ -253,7 +255,6 @@ local function apply_plans(tx, plans: { WakePlan }, dbtype: string, completion_j
     local now = clock.now(dbtype)
     local ts = timestamp_param(dbtype)
     local all_ids: { string } = {}
-    if completion_job_id then all_ids[1] = completion_job_id end
     local owner: { [string]: WakePlan } = {}
     local results: { [string]: WakeResult } = {}
     for _, plan in ipairs(plans) do
@@ -265,6 +266,8 @@ local function apply_plans(tx, plans: { WakePlan }, dbtype: string, completion_j
         end
         for _, id in ipairs(plan.extras) do all_ids[#all_ids + 1] = tostring(id) end
     end
+    -- With no fan-out job locks, completion takes its sole job lock itself.
+    if completion_job_id and #all_ids > 0 then all_ids[#all_ids + 1] = completion_job_id end
     local ordered = sorted_unique(all_ids)
     local retained, lock_err = prelock_sorted(tx, ordered, dbtype)
     if lock_err then return nil, lock_err end
@@ -324,6 +327,11 @@ end
 -- order. Returns each key's published demand. Multi-thread append collects its keys here instead of waking each
 -- thread inline, which would interleave wake and job locks per thread.
 function wake.wake_multi(tx, keys: { string }, dbtype: string?, completion_job_id: string?): ({ [string]: WakeResult }?, error?)
+    if #keys == 1 then
+        local result, err = wake.wake_tx(tx, keys[1], dbtype, completion_job_id)
+        if err then return nil, err end
+        return { [keys[1]] = result }, nil
+    end
     local dialect, dialect_err = resolve_dbtype(tx, dbtype)
     if dialect_err then return nil, dialect_err end
     if type(dialect) ~= "string" then return nil, response_error("dialect") end
