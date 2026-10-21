@@ -10380,7 +10380,8 @@
     "native_errors_projection_apply": {
       "features": [],
       "issues": [
-        "NE-130"
+        "NE-130",
+        "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER"
       ],
       "tier": "regression"
     },
