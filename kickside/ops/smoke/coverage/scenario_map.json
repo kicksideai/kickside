@@ -5133,6 +5133,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_prepared_output_settlement": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF"
+      ],
+      "tier": "regression"
+    },
     "automation_reconfigure_ui": {
       "features": [
         "kickside/sync|automation|kickside.sync:sync",

@@ -9707,6 +9707,17 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "automation/prepared-settlement-proof": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/ledger_orphan_retention_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10891,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF"
   ],
   "schema_version": 1
 }

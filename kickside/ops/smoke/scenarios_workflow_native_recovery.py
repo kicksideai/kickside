@@ -60,6 +60,11 @@ def workflow_native_recovery(ctx):
     inst.evidence.save('native-recovery', {'run_id': rid, 'decision_id': item['id'], 'hard_restarts': 2})
 
 
+def automation_prepared_output_settlement(ctx):
+    for entry in ('ledger_orphan_retention_test', 'recovery_dispatch_test'):
+        run_focused_module_test(ctx, 'kickside/automation', entry)
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -76,7 +81,10 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
-REGISTRY = [Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
+REGISTRY = [Scenario('automation_prepared_output_settlement', 'regression',
+                     automation_prepared_output_settlement,
+                     issues=('AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF',)),
+            Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
                      issues=('WORKFLOW-UNADMITTED-RUN-READ-PROJECTION', 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE')),
