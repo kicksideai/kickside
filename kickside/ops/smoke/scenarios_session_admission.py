@@ -181,7 +181,11 @@ def context_rejection(ctx, session_id, window):
         for row in rows:
             meta = json.loads(row['meta']) if isinstance(row.get('meta'), str) else row.get('meta')
             if meta and meta.get('outcome') == 'rejected' and meta.get('error_type') == 'context_window':
-                return row, meta
+                messages = database_rows(inst, "SELECT metadata FROM messages WHERE session_id='" + session_id + "'")
+                for message in messages:
+                    detail = json.loads(message['metadata']) if isinstance(message.get('metadata'), str) else message.get('metadata')
+                    if detail and detail.get('error_code') == 'context_window' and (detail.get('error_details') or {}).get('error_type') == 'context_window':
+                        return row, meta
         return None
 
     row, meta = inst.wait(rejected_usage, 'Oversized active task records a context rejection', seconds=60,
