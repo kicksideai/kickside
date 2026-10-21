@@ -140,15 +140,29 @@ function M.get(storage_id: string, db_id: string, staging_id: string, legacy_clo
         end
         return local_storage, path, nil
     end
+    -- A placement can commit and unlink local bytes after resolution but before
+    -- the filesystem operation. Re-resolve a local miss once so readers cross
+    -- that handoff without a transient NOT_FOUND. Other IO errors stay intact.
+    local function read(method: string, path: string, ...: any): (any?, any?)
+        local storage, key, err = resolve(path)
+        if err then return nil, err end
+        local value, io_err = storage[method](storage, key, ...)
+        local missing = (method == "exists" and value == false and io_err == nil)
+            or (io_err ~= nil and errors.is(io_err, errors.NOT_FOUND))
+        if storage ~= local_storage or not missing then return value, io_err end
+        local current, current_key, current_err = resolve(path)
+        if current_err then return nil, current_err end
+        if current == local_storage then return value, io_err end
+        return current[method](current, current_key, ...)
+    end
     function adapter:open(path: string, mode: string?): (any?, any?)
+        if mode == nil or mode == "r" then return read("open", path, "r") end
         local storage, key, err = resolve(path)
         if err then return nil, err end
         return storage:open(key, mode or "r")
     end
     function adapter:readfile(path: string): (any?, any?)
-        local storage, key, err = resolve(path)
-        if err then return nil, err end
-        return storage:readfile(key)
+        return read("readfile", path)
     end
     function adapter:writefile(path: string, content: any): (any?, any?)
         local location, err = locations.get(db_id, storage_id, path, query_db)
@@ -157,14 +171,11 @@ function M.get(storage_id: string, db_id: string, staging_id: string, legacy_clo
         return local_storage:writefile(path, content)
     end
     function adapter:stat(path: string): (any?, any?)
-        local storage, key, err = resolve(path)
-        if err then return nil, err end
-        return storage:stat(key)
+        return read("stat", path)
     end
     function adapter:exists(path: string): (any?, any?)
-        local storage, key, err = resolve(path)
-        if err then return false, err end
-        return storage:exists(key)
+        local present, err = read("exists", path)
+        return present == true, err
     end
     function adapter:remove(path: string): (any?, any?)
         local location, err = locations.get(db_id, storage_id, path, query_db)
