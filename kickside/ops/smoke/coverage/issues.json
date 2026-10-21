@@ -9707,6 +9707,50 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "jobs/output-completion": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-OUTPUT-COMPLETION-LOCK-ORDER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/projection_apply_native_test.lua"
+    },
+    "jobs/infrastructure-failure": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-INFRASTRUCTURE-CLASSIFICATION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/jobs/test/src/suites/persist/lifecycle_cases/terminal_failure_test.lua"
+    },
+    "jobs/slot-retry-floor": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-SLOT-RETRY-FLOOR"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/jobs/test/src/suites/persist/lifecycle_cases/backoff_test.lua"
+    },
+    "jobs/independent-parking": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-INDEPENDENT-PARKING"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/projections/persist/slot_failure_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10924,11 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "JOBS-OUTPUT-COMPLETION-LOCK-ORDER",
+    "JOBS-INFRASTRUCTURE-CLASSIFICATION",
+    "JOBS-SLOT-RETRY-FLOOR",
+    "JOBS-INDEPENDENT-PARKING"
   ],
   "schema_version": 1
 }

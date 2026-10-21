@@ -8344,10 +8344,38 @@
       ],
       "tier": "regression"
     },
+    "jobs_independent_parking": {
+      "features": [],
+      "issues": [
+        "JOBS-INDEPENDENT-PARKING"
+      ],
+      "tier": "regression"
+    },
+    "jobs_infrastructure_failure": {
+      "features": [],
+      "issues": [
+        "JOBS-INFRASTRUCTURE-CLASSIFICATION"
+      ],
+      "tier": "regression"
+    },
     "jobs_native_cancel_contract": {
       "features": [],
       "issues": [
         "JOBS-POOL-CANCEL-NOT-FOUND"
+      ],
+      "tier": "regression"
+    },
+    "jobs_output_completion": {
+      "features": [],
+      "issues": [
+        "JOBS-OUTPUT-COMPLETION-LOCK-ORDER"
+      ],
+      "tier": "regression"
+    },
+    "jobs_slot_retry_floor": {
+      "features": [],
+      "issues": [
+        "JOBS-SLOT-RETRY-FLOOR"
       ],
       "tier": "regression"
     },
