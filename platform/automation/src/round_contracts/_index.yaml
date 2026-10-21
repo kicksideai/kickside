@@ -209,6 +209,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
   - name: round_authority_write
     kind: function.lua
     meta:
@@ -229,6 +230,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
   - name: round_authority_compute
     kind: function.lua
     meta:
@@ -249,6 +251,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
 
   - name: round_sink_effect
     kind: function.lua
@@ -263,6 +266,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
 
   - name: round_provenance
     kind: library.lua
