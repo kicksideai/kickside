@@ -15,10 +15,26 @@ entries:
       resources: kickside.uploads.binding:uploads_resources
       offload: app.upload_storage:offload_fixture
       cloud: app.upload_storage:fake_cloud
+      backend: app.upload_storage:backend_fixture
+      racing_fs: app.upload_storage:racing_fs
 
   - name: fake_cloud
     kind: library.lua
     source: file://fake_cloud.lua
+
+  - name: racing_fs
+    kind: library.lua
+    source: file://racing_fs.lua
+    modules: [fs]
+
+  - name: backend_fixture
+    kind: library.lua
+    source: file://../fixtures/storage_backend.lua
+    modules: [uuid, registry]
+    imports:
+      fs: app.upload_storage:racing_fs
+      cloudstorage: app.upload_storage:fake_cloud
+      locations: kickside.uploads.storage:locations
 
   - name: settings_probe
     kind: function.lua

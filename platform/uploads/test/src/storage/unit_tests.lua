@@ -11,6 +11,8 @@ local records = require("records")
 local resources = require("resources")
 local offload = require("offload")
 local cloud = require("cloud")
+local backend = require("backend")
+local racing_fs = require("racing_fs")
 local DB = "app:db"
 local STORAGE = "app:uploads"
 local POLICY = { mode = "s3", resource_id = "app.upload_storage:fake", prefix = "storage-tests" }
@@ -53,6 +55,7 @@ return { run = test.run_cases(function()
             end
             files = {}
             cloud.reset("normal")
+            racing_fs.reset()
         end)
 
         test.it("rejects unsafe and undeclared storage settings", function()
@@ -201,5 +204,31 @@ return { run = test.run_cases(function()
             test.eq(cloud.upload_count(), 0)
             test.is_false(assert(fs.get(STORAGE)):exists(object.storage_path))
         end)
+
+        for _, operation in ipairs({ "open", "readfile", "stat", "exists" }) do
+            test.it("keeps " .. operation .. " available when placement commits between resolution and local IO", function()
+                local object, content = original()
+                local row = assert(locations.claim(DB, STORAGE, object.storage_path, POLICY.resource_id, POLICY.prefix))
+                local native = assert(fs.get(STORAGE))
+                local reader = assert(native:open(object.storage_path, "r"))
+                test.not_nil(assert(cloud.get(POLICY.resource_id):upload_object(row.object_key, reader, {})))
+                reader:close()
+                racing_fs.arm(object.storage_path, operation, function()
+                    test.is_true(assert(locations.ready(DB, row, #content, "verified", '"fake-etag"')))
+                    test.not_nil(native:remove(object.storage_path))
+                end)
+                local storage = assert(backend.get(STORAGE, DB, STORAGE, nil, nil))
+                local result, err = storage[operation](storage, object.storage_path)
+                test.is_nil(err, tostring(err))
+                if operation == "open" then
+                    test.not_nil(result)
+                    test.eq(result:read(#content), content)
+                    result:close()
+                elseif operation == "readfile" then test.eq(result, content)
+                elseif operation == "stat" then test.eq(result.size, #content)
+                else test.is_true(result) end
+                test.is_false(native:exists(object.storage_path))
+            end)
+        end
     end)
 end) }
