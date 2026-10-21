@@ -335,7 +335,10 @@ entries:
     modules: [sql, json, funcs, uuid]
     imports:
       test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
       version_read: kickside.workflows.repo:version_read
+      types: kickside.workflows:types
       legacy_fixture: app:iteration_input_routes_legacy_fixture
 
 

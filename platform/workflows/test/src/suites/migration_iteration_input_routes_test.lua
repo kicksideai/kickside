@@ -3,6 +3,9 @@ local sql = require("sql")
 local json = require("json")
 local funcs = require("funcs")
 local uuid = require("uuid")
+local workflow = require("workflow")
+local version_publish = require("version_publish")
+local types = require("types")
 local version_read = require("version_read")
 local legacy_fixture = require("legacy_fixture")
 
@@ -10,6 +13,12 @@ type Map = { [string]: any }
 
 local MIGRATION = "kickside.workflows.migrations:06_iteration_input_routes"
 local WORKFLOW_ID = "released-iteration-input-routes"
+local DEFAULT_WORKFLOW_ID = "unaffected-published-workflow"
+local C = types.COMMAND
+
+local function command(kind: string, body: Map): Map
+    return { type = kind, body = body }
+end
 
 local function route_config(commands: { Map }): Map?
     for _, command_row in ipairs(commands) do
@@ -42,6 +51,27 @@ local function insert_released_version()
     test.is_nil(insert_err)
 end
 
+local function publish_unaffected_version(): number
+    local _, apply_err = workflow.apply(DEFAULT_WORKFLOW_ID, {
+        command(C.NODE_ADD, { id = "step", kind = "block", ref = "app:block.engine_item" }),
+    }, "fixture")
+    test.is_nil(apply_err)
+    local published = select(1, version_publish.publish(DEFAULT_WORKFLOW_ID, "fixture")) :: Map
+    test.is_true(published.ok)
+    return tonumber(published.version) or 0
+end
+
+local function stored_commands(workflow_id: string, version: number): string
+    local db, db_err = sql.get("app:db")
+    test.is_nil(db_err)
+    local rows, read_err = (db :: any):query(
+        "SELECT compiled_commands FROM workflow_versions WHERE workflow_id = $1 AND version = $2",
+        { workflow_id, version })
+    ;(db :: any):release()
+    test.is_nil(read_err)
+    return tostring((rows :: { Map })[1].compiled_commands)
+end
+
 local function stored_document(): string
     local db, db_err = sql.get("app:db")
     test.is_nil(db_err)
@@ -57,10 +87,13 @@ local function define_tests()
     test.describe("Workflow iteration input route migration", function()
         test.it("recompiles a released published artifact without changing its definition", function()
             insert_released_version()
+            local default_version = publish_unaffected_version()
+            local default_commands = stored_commands(DEFAULT_WORKFLOW_ID, default_version)
             local source_document = stored_document()
             test.eq(source_document, legacy_fixture.document)
 
             migration_run()
+            test.eq(stored_commands(DEFAULT_WORKFLOW_ID, default_version), default_commands)
             local upgraded = select(1, version_read.get(WORKFLOW_ID, 1)) :: Map
             local routes = (route_config(upgraded.compiled_commands :: { Map }) :: Map).iteration_input_routes :: { Map }
             test.eq(#routes, 2)
@@ -79,6 +112,7 @@ local function define_tests()
             local once_json, once_err = json.encode(upgraded.compiled_commands)
             test.is_nil(once_err)
             migration_run()
+            test.eq(stored_commands(DEFAULT_WORKFLOW_ID, default_version), default_commands)
             local repeated = select(1, version_read.get(WORKFLOW_ID, 1)) :: Map
             local twice_json, twice_err = json.encode(repeated.compiled_commands)
             test.is_nil(twice_err)
