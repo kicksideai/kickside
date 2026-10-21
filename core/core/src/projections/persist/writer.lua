@@ -11,6 +11,7 @@ local job_lifecycle_cancel = require("job_lifecycle_cancel")
 local jobs_wake = require("jobs_wake")
 local cursor_waiters = require("cursor_waiters")
 local retention_notifier = require("retention_notifier")
+local retention_pin = require("retention_pin")
 
 local M = {
     register_projection = register.register_projection,
@@ -69,6 +70,16 @@ local function cursor(tx: sql.Transaction, dialect: string, thread_id: string, p
     return rows[1], nil
 end
 
+local function release_pin(tx: sql.Transaction, thread_id: string, cursor_id: string, operation: string): error?
+    local key = "projection:" .. cursor_id
+    local held, read_err = retention_pin.read(tx, thread_id, key)
+    if read_err then return read_err end
+    if not held then return nil end
+    local _, release_err = retention_pin.release_tx(tx, { thread_id = thread_id, consumer_key = key,
+        expected_pin_generation = held.generation, terminal_op_id = cursor_id .. ":" .. operation })
+    return release_err
+end
+
 function M.pause(db: sql.DB, thread_id: string, params: table): (table?, error?)
     local result, err = in_tx(db, function(tx: sql.Transaction, dialect: string): (table?, error?)
         local lock_err = lock_thread(tx, dialect, thread_id)
@@ -77,6 +88,10 @@ function M.pause(db: sql.DB, thread_id: string, params: table): (table?, error?)
         if find_err then return nil, find_err end
         if (c :: table).status == "paused" then
             return { cursor_id = c.id, projection_id = c.projection_id, status = "paused", already_paused = true }, nil
+        end
+        if c.status == "invalid" then
+            local pin_err = release_pin(tx, thread_id, tostring(c.id), "pause:" .. tostring(c.generation))
+            if pin_err then return nil, pin_err end
         end
         local _, err = tx:execute([[UPDATE kickside_projection_cursor
             SET status='paused',generation=generation+1,updated_at=$1 WHERE id=$2]],
@@ -150,6 +165,8 @@ function M.remove_projection(db: sql.DB, thread_id: string, params: table): (tab
         local cursor_ids: string[] = {}
         for _, c in ipairs(cursors or {}) do
             cursor_ids[#cursor_ids + 1] = tostring(c.id)
+            local pin_err = release_pin(tx, thread_id, tostring(c.id), "remove")
+            if pin_err then return nil, pin_err end
             if c.job_id then
                 local _, cancel_err, executions = cancellation.cancel_jobs_tx(tx, dialect,
                     { id = tostring(c.job_id), reason = "projection removed" })
