@@ -12,8 +12,8 @@ local legacy_fixture = require("legacy_fixture")
 type Map = { [string]: any }
 
 local MIGRATION = "kickside.workflows.migrations:06_iteration_input_routes"
-local WORKFLOW_ID = "released-iteration-input-routes"
-local DEFAULT_WORKFLOW_ID = "unaffected-published-workflow"
+local WORKFLOW_ID = "d3c4d70d-5cbe-4c95-9681-440f2da7ec3c"
+local DEFAULT_WORKFLOW_ID = "b6ae8128-4247-4af9-a157-dfb82b693932"
 local C = types.COMMAND
 
 local function command(kind: string, body: Map): Map
@@ -35,9 +35,9 @@ local function migration_run()
         id = MIGRATION .. ":" .. uuid.v4(),
         direction = "up",
     })
-    test.is_nil(err)
+    test.is_nil(err, tostring(err))
     test.not_nil(result)
-    test.eq(result.failed, 0, tostring(result.error))
+    test.eq((result :: Map).failed, 0, tostring((result :: Map).error))
 end
 
 local function insert_released_version()
