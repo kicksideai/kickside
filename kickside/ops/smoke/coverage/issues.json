@@ -9707,6 +9707,28 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "automation/receipt-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/receipt_retention_test.lua"
+    },
+    "automation/recovery-dispatch": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/recovery_dispatch_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10902,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
   ],
   "schema_version": 1
 }

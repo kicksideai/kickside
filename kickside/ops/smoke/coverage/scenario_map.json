@@ -5214,6 +5214,13 @@
       ],
       "tier": "full"
     },
+    "automation_settled_event_receipt_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "tier": "regression"
+    },
     "automation_slot_provision_failures": {
       "features": [],
       "issues": [
