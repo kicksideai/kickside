@@ -48,6 +48,27 @@ describe('drive status wording', () => {
     expect(drivePill(undefined)).toBeNull()
   })
 
+  it.each(['timer', 'collection'])('labels an armed %s drive as Scheduled before and after its first run', source_kind => {
+    for (const last_run_at of [undefined, '2026-01-01T00:00:00Z']) {
+      expect(drivePill({ drives: [drive({ source_kind, next_run_at: '2099-01-01T00:00:00Z', last_run_at })] }))
+        .toEqual({ kind: 'on', label: 'Scheduled' })
+    }
+  })
+
+  it('preserves initialization, event activity, pauses and failures over schedule wording', () => {
+    const scheduled = drive({ source_kind: 'timer', next_run_at: '2099-01-01T00:00:00Z' })
+    expect(drivePill({ drives: [{ ...scheduled, phase: 'pending' }] })?.label).toBe('Scheduled')
+    expect(drivePill({ drives: [{ ...scheduled, phase: 'pending', next_run_at: null }] })?.label).toBe('Starting')
+    expect(drivePill({ drives: [{ ...scheduled, source_kind: 'event' }] })?.label).toBe('Active')
+    expect(drivePill({ drives: [{ ...scheduled, next_run_at: '2000-01-01T00:00:00Z' }] })?.label).toBe('Active')
+    expect(drivePill({ drives: [{ ...scheduled, phase: 'paused', enabled: false }] })?.label).toBe('Paused')
+    expect(drivePill({ drives: [{ ...scheduled, phase: 'degraded' }] })?.label).toBe('Retrying')
+    expect(drivePill({ drives: [{ ...scheduled, phase: 'backpressure' }] })?.label).toBe('Catching up')
+    expect(drivePill({ drives: [scheduled], delivery_failures: { count: 1 } })?.label).toBe('Needs attention')
+    expect(drivePill({ drives: [scheduled, drive({ source_kind: 'event' })] })?.label).toBe('Active')
+    expect(drivePill({ drives: [scheduled, drive({ source_kind: 'reconcile' })] })?.label).toBe('Scheduled')
+  })
+
   it('explains a stuck drive without engine words', () => {
     expect(driveProblem({ drives: [drive({ phase: 'blocked_identity' })] }))
       .toBe('The account this automation runs as needs to be confirmed.')
@@ -73,6 +94,24 @@ describe('automation rows on drive status', () => {
     g.__props__ = { config: {} }
     ;(api.get as any).mockClear()
     ;(api.post as any).mockClear()
+  })
+
+  it.each(['timer', 'collection'])('shows Scheduled in the row and drawer for an armed %s drive', async source_kind => {
+    const scheduled = drive({ source_kind, next_run_at: '2099-01-01T00:00:00Z' })
+    g.__api__ = {
+      '/automations/s1/status': { success: true, drives: [scheduled] },
+      '/automations/types': { success: true, types: [SYNC_TYPE] },
+      '/api/v1/automations': { success: true, automations: [row([scheduled])] },
+    }
+    const w = mount(Automations)
+    await flushPromises()
+    expect(w.get('.kx-badge').text()).toBe('Scheduled')
+    await w.get('button[aria-label="Open Lead mirror details"]').trigger('click')
+    await flushPromises()
+    const drawer = w.get('[data-testid="detail-drawer"]')
+    expect(drawer.get('.kx-badge').text()).toBe('Scheduled')
+    expect(drawer.text()).toContain('Next run')
+    w.unmount()
   })
 
   it('shows a generically paused drive as Paused though its public state is unchanged', async () => {
