@@ -9707,6 +9707,17 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "crm/resolve-suggestion-confidence": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_resolve_lifetime_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10891,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
   ],
   "schema_version": 1
 }

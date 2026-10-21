@@ -76,7 +76,14 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
-REGISTRY = [Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
+def crm_resolve_suggestion_confidence(ctx):
+    run_focused_module_test(ctx, 'kickside/crm', 'crm_resolve_lifetime_test')
+
+
+REGISTRY = [Scenario('crm_resolve_suggestion_confidence', 'regression',
+                     crm_resolve_suggestion_confidence,
+                     issues=('CRM-RESOLVE-SUGGESTION-CONFIDENCE',)),
+            Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
                      issues=('WORKFLOW-UNADMITTED-RUN-READ-PROJECTION', 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE')),
