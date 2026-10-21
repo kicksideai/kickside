@@ -47,6 +47,13 @@ local function cases()
             result, err = reader:call("app.client_test:probe", {component_id = id, title = "denied write", write = true})
             test.is_nil(result); test.not_nil(err)
         end)
+        test.it("sends a custom request envelope through credential admission and real HTTP", function()
+            local result, err = owner:call("app.client_test:probe", {component_id = id, title = "Custom wire", write = true, custom = true})
+            test.is_nil(err); test.eq(result.success, true)
+            test.eq(result.data.title, "Custom wire"); test.eq(result.data.format, "envelope")
+            result, err = reader:call("app.client_test:probe", {component_id = id, title = "denied custom write", write = true, custom = true})
+            test.is_nil(result); test.not_nil(err)
+        end)
     end)
 end
 return {run = test.run_cases(cases)}

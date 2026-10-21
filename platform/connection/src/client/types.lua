@@ -25,6 +25,7 @@ type Token = { success: boolean, access_token: string?, error: string? }
 type TokenSource = { get_access_token: (({ rejected_access_token: string? }?) -> (Token?, error?)) }
 type Connection = { component_id: string, access_token: string?, oauth: TokenSource?, deadline: string?, api_key_scheme: string? }
 type Request = { method: string, url: string, headers: { [string]: string }, body: string?, raw: boolean? }
+type Prepare = (Config, Operation, Object) -> (Request?, error?)
 type Result = { success: boolean, data: unknown?, error: string?, status_code: number?,
     retry_after_ms: integer?, next_cursor: string?, has_more: boolean? }
 type Client = {connect: ((string, string?, boolean, string?, string?) -> (Connection?, error?)),
@@ -38,6 +39,7 @@ M.Token = Token
 M.TokenSource = TokenSource
 M.Connection = Connection
 M.Request = Request
+M.Prepare = Prepare
 M.Result = Result
 M.Client = Client
 M.Driver = Driver

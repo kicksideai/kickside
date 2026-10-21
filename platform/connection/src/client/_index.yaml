@@ -21,7 +21,7 @@ entries:
   - name: driver
     kind: library.lua
     source: file://driver.lua
-    modules: [json, base64, uuid, hash]
+    modules: [base64]
     imports:
       http: kickside.connection.client:http
       schema: kickside.connection.client:schema
