@@ -9718,6 +9718,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/core/test/src/suites/projections/persist/failure_removal_test.lua"
+    },
+    "jobs/reclaim-process-lookup": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/jobs/test/src/suites/persist/claim_cases/termination_recovery_test.lua"
     }
   },
   "issues": [
@@ -10892,7 +10903,8 @@
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
     "TEMPLATE-MOUNTED-PAGE-REFRESH",
-    "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER"
+    "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER",
+    "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
   ],
   "schema_version": 1
 }

@@ -10460,7 +10460,8 @@
     "native_errors_reclaim": {
       "features": [],
       "issues": [
-        "NE-166"
+        "NE-166",
+        "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
       ],
       "tier": "regression"
     },
