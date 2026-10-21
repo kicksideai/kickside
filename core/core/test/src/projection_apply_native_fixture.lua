@@ -4,6 +4,8 @@ function M.reset(stage: string, source: any, mode: string)
     M.stage, M.source, M.mode = stage, source, mode
     M.missing, M.proof, M.rollback_source, M.release_source = false, nil, nil, nil
     M.rollbacks, M.releases, M.commits, M.executions, M.encodes = 0, 0, 0, 0, 0
+    M.appends, M.deferred, M.wakes, M.completing = 0, 0, 0, nil
+    M.published_after, M.wake_keys = 0, {}
 end
 function M.outcome(stage: string, value: any): (any, error?)
     if M.stage == stage then
@@ -25,8 +27,22 @@ function M.from_row(...: any): (any, error?) return M.outcome("identity", {compo
 function M.run_as(...: any): (any, error?)
     return M.outcome("admission", {writes = {{thread_id = "other", events = {{type = "example", body_json = "{}"}}}}})
 end
-function M.lock_thread_rows_tx(...: any): (any, error?) return M.outcome("lock", {thread = {event_count = 1}}) end
-function M.append_system_tx(...: any): (any, error?) return M.outcome("append", {max_seq = 1}) end
+function M.lock_thread_rows_tx(...: any): (any, error?) return M.outcome("lock", {thread = {event_count = 1}, other = {event_count = 0}, another = {event_count = 0}}) end
+function M.append_system_tx(...: any): (any, error?)
+    M.appends = M.appends + 1
+    return M.outcome("append", {max_seq = 1, inserted = 1})
+end
+function M.append_events_tx(_tx: any, _thread: any, _events: any, opts: any): (any, error?)
+    M.appends = M.appends + 1
+    if opts.defer_wake == true then M.deferred = M.deferred + 1 end
+    return M.outcome("append", {max_seq = 1, inserted = 1, thread_id = _thread})
+end
+function M.wake_multi(_tx: any, keys: any, _dbtype: any, completing: any): (any, error?)
+    M.wakes = M.wakes + 1
+    M.published_after, M.wake_keys = M.appends, keys
+    M.completing = completing
+    return M.outcome("wake", {})
+end
 function M.complete_tx(...: any): (any, error?) return M.outcome("complete", {completed = true}) end
 function M.notify_cursor(...: any): (any, error?) return M.outcome("notify", false) end
 function M.notify(...: any): (any, error?) return M.outcome("retention", false) end

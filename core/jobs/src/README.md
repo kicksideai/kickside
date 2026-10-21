@@ -51,3 +51,8 @@ Completion options accept `park = true` independently of `record.status`. Parkin
 suppresses ordinary wake demand while preserving the requested history status;
 a pending control wake retains priority. Without `park`, completion keeps its
 existing record-based parking behavior.
+
+`wake_multi(tx, keys, dbtype?, completion_job_id?)` accepts an optional completing
+job ID. It includes that row in the globally ordered job prelock without waking
+it unless it independently qualifies for one of the supplied keys. Wake keys are
+published before any job row is locked.

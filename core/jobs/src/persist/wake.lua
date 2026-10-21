@@ -249,10 +249,11 @@ end
 -- with eligibility rechecked per row, then acknowledge each key or queue its
 -- continuation. Lock-only extras (a completing job, a continuation row) take
 -- no update. Returns each key's published demand.
-local function apply_plans(tx, plans: { WakePlan }, dbtype: string): ({ [string]: WakeResult }?, error?)
+local function apply_plans(tx, plans: { WakePlan }, dbtype: string, completion_job_id: string?): ({ [string]: WakeResult }?, error?)
     local now = clock.now(dbtype)
     local ts = timestamp_param(dbtype)
     local all_ids: { string } = {}
+    if completion_job_id then all_ids[1] = completion_job_id end
     local owner: { [string]: WakePlan } = {}
     local results: { [string]: WakeResult } = {}
     for _, plan in ipairs(plans) do
@@ -322,7 +323,7 @@ end
 -- rows in ascending key order, then all target job rows in ascending id
 -- order. Returns each key's published demand. Multi-thread append collects its keys here instead of waking each
 -- thread inline, which would interleave wake and job locks per thread.
-function wake.wake_multi(tx, keys: { string }, dbtype: string?): ({ [string]: WakeResult }?, error?)
+function wake.wake_multi(tx, keys: { string }, dbtype: string?, completion_job_id: string?): ({ [string]: WakeResult }?, error?)
     local dialect, dialect_err = resolve_dbtype(tx, dbtype)
     if dialect_err then return nil, dialect_err end
     if type(dialect) ~= "string" then return nil, response_error("dialect") end
@@ -340,7 +341,7 @@ function wake.wake_multi(tx, keys: { string }, dbtype: string?): ({ [string]: Wa
         if prepare_err then return nil, prepare_err end
         plans[#plans + 1] = plan :: WakePlan
     end
-    return apply_plans(tx, plans, dialect)
+    return apply_plans(tx, plans, dialect, completion_job_id)
 end
 
 function wake.continue_job(db: sql.DB, dbtype: string, job: table)

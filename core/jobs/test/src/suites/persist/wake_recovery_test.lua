@@ -36,6 +36,27 @@ end
 
 local function define_tests()
     test.describe("jobs wake continuation recovery", function()
+        test.it("prelocks a completing job across multiple wake keys without waking it", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local own = assert(job_fixture.enqueue_leased(db, dbtype, {job_type = "test.completing", slot = true,
+                job_identity = {namespace = "test", scope = uuid.v7(), key = "completion"}}))
+            local tx = assert(db:begin())
+            local prelocks = 0
+            local probe = job_fixture.observe_tx(tx, function(statement)
+                if string.find(statement, "SELECT * FROM kickside_job WHERE id IN", 1, true) then prelocks = prelocks + 1 end
+            end)
+            local result, err = wake.wake_multi(probe, {"a:" .. uuid.v7(), "b:" .. uuid.v7()}, dbtype, own.id)
+            local rows = assert(tx:query("SELECT status,wake_generation FROM kickside_job WHERE id=$1", {own.id}))
+            tx:rollback()
+            db:release()
+            test.is_nil(err)
+            test.not_nil(result)
+            test.eq(prelocks, 1)
+            test.eq(rows[1].status, "running")
+            test.eq(tonumber(rows[1].wake_generation), 0)
+        end)
+
         test.it("publishes and acknowledges an empty fanout without separate continuation and candidate reads", function()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())
