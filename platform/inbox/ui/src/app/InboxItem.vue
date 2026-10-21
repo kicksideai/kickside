@@ -5,6 +5,7 @@ import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import { loadByTagName } from '@wippy-fe/proxy'
@@ -61,6 +62,10 @@ const metaFields = computed<Array<{ label: string; value: unknown }>>(() => {
 // flow_decision: metadata.context is the upstream
 // step's real output, metadata.form an optional set of fields to collect on decision.
 const isDecision = computed(() => props.item.item_type === 'flow_decision')
+const decisionPrompt = computed(() => {
+  const prompt = props.item.metadata?.prompt
+  return typeof prompt === 'string' && prompt !== props.item.title ? prompt : ''
+})
 const decisionContextView = computed(() => (isDecision.value ? formatContext(props.item.metadata?.context) : { kind: 'empty' as const }))
 const decisionFieldsList = computed(() => (isDecision.value ? decisionFields(props.item.metadata?.form) : []))
 const submittedFormRows = computed(() => {
@@ -162,6 +167,7 @@ watch(() => [props.tag, props.item.id], () => { wcFailed.value = false; void mou
     <div class="kx-detail-body">
       <div v-if="tag && !wcFailed" ref="host" class="kx-wc-host" />
       <div v-else-if="isDecision" class="kx-native-body">
+        <wc-render-markdown v-if="decisionPrompt" class="kx-md" :source="decisionPrompt"></wc-render-markdown>
         <wc-render-markdown v-if="decisionContextView.kind === 'text'" class="kx-md" :source="decisionContextView.text"></wc-render-markdown>
         <dl v-else-if="decisionContextView.kind === 'rows'" class="kx-fields">
           <div v-for="row in decisionContextView.rows" :key="row.key" class="kx-field-row">
@@ -198,6 +204,15 @@ watch(() => [props.tag, props.item.id], () => { wcFailed.value = false; void mou
                 :id="`kx-df-${f.key}`"
                 :model-value="textValue(formValues[f.key])"
                 :data-testid="`decision-${f.key}`"
+                @update:model-value="value => formValues[f.key] = value"
+              />
+              <Textarea
+                v-else-if="f.type === 'textarea'"
+                :id="`kx-df-${f.key}`"
+                :model-value="textValue(formValues[f.key])"
+                :data-testid="`decision-${f.key}`"
+                rows="8"
+                auto-resize
                 @update:model-value="value => formValues[f.key] = value"
               />
               <InputNumber
