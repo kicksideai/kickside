@@ -27508,6 +27508,21 @@
       "reason": "The Workflow catalog preserves empty object schema fields through native execution. This is a source, API or native contract check without a rendered browser operation.",
       "user_visible": false
     },
+    "DATAFLOW-SCALAR-ITERATION-ITEM-TYPE": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "A numeric For each item keeps its scalar type through PostgreSQL persistence and an arithmetic body transform."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Iteration item persistence classifies scalar values so PostgreSQL rehydrates numeric items as numbers. This is a native execution contract without a rendered browser operation.",
+      "user_visible": false
+    },
     "WORKFLOW-DIRECT-ITERATION-JOIN": {
       "guards": {
         "workflow_iteration_join": {

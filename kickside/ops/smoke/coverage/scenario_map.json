@@ -15568,7 +15568,8 @@
     "workflow_iteration_join": {
       "features": [],
       "issues": [
-        "WORKFLOW-DIRECT-ITERATION-JOIN"
+        "WORKFLOW-DIRECT-ITERATION-JOIN",
+        "DATAFLOW-SCALAR-ITERATION-ITEM-TYPE"
       ],
       "tier": "regression"
     },

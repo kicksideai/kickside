@@ -1,4 +1,4 @@
-"""Direct iteration inputs participate in joins without intermediate steps."""
+"""Iteration inputs retain joins and scalar types without intermediate steps."""
 from harness import Scenario
 from module_harness import run_focused_module_test
 
@@ -11,4 +11,5 @@ def workflow_iteration_join(ctx):
 
 REGISTRY = [Scenario('workflow_iteration_join', 'regression', workflow_iteration_join,
                      ('boot',), instance_setup=True,
-                     issues=('WORKFLOW-DIRECT-ITERATION-JOIN',))]
+                     issues=('WORKFLOW-DIRECT-ITERATION-JOIN',
+                             'DATAFLOW-SCALAR-ITERATION-ITEM-TYPE'))]
