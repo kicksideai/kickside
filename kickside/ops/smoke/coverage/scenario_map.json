@@ -5133,6 +5133,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_reconfigure_reference_authority": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-RECONFIGURE-RETAINED-REFERENCE-AUTHORITY"
+      ],
+      "tier": "regression"
+    },
     "automation_reconfigure_ui": {
       "features": [
         "kickside/sync|automation|kickside.sync:sync",
