@@ -319,6 +319,25 @@ entries:
     imports:
       test: wippy.test:test
 
+  - name: iteration_input_routes_legacy_fixture
+    kind: library.lua
+    source: file://../../fixtures/iteration_input_routes_v0_1_120.lua
+
+  - name: migration_iteration_input_routes_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflows
+      group: KickSide Workflows
+      comment: Recompiles earlier published iteration artifacts without changing their stored definitions.
+    source: file://../../suites/migration_iteration_input_routes_test.lua
+    method: run
+    modules: [sql, json, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      version_read: kickside.workflows.repo:version_read
+      legacy_fixture: app:iteration_input_routes_legacy_fixture
+
 
   - name: tool_outcome
     kind: function.lua

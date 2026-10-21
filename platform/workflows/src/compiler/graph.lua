@@ -228,8 +228,8 @@ function M.build(document: any, opts: any): (Map?, { Err })
         end
     end
 
-    local template_parent, template_roots_by_parent
-    edges, template_parent, template_roots_by_parent = graph_step.templates(nodes, edges, errors, I)
+    local template_parent, template_roots_by_parent, iteration_input_routes
+    edges, template_parent, template_roots_by_parent, iteration_input_routes = graph_step.templates(nodes, edges, errors, I)
     graph_branch.check_exclusive(nodes, order, edges, errors, I)
     if #errors > 0 then
         return nil, errors
@@ -243,6 +243,15 @@ function M.build(document: any, opts: any): (Map?, { Err })
         adj[e.source][#adj[e.source] + 1] = e.target
         incoming[e.target] = incoming[e.target] or {}
         incoming[e.target][#incoming[e.target] + 1] = e
+    end
+    -- Body-port edges are structural at the outer graph level, but they are real
+    -- per-iteration inputs. Include them in convergence classification without
+    -- turning them into ordinary parent-to-child runtime routes.
+    for _, routes in pairs(iteration_input_routes) do
+        for _, e in ipairs(routes) do
+            incoming[e.target] = incoming[e.target] or {}
+            incoming[e.target][#incoming[e.target] + 1] = e
+        end
     end
 
     if has_boundary then
@@ -327,7 +336,7 @@ function M.build(document: any, opts: any): (Map?, { Err })
     end
 
     local assembled, end_errors = graph_end.assemble(nodes, order, edges, incoming, finishes, entry_id,
-        template_parent, doc, synthesized_start, errors, blocks, I)
+        template_parent, iteration_input_routes, doc, synthesized_start, errors, blocks, I)
     return assembled, end_errors
 end
 return M

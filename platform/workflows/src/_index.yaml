@@ -112,6 +112,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.workflows.migrations:05_undo_history
         path: .meta.target_db
+      - entry: kickside.workflows.migrations:06_iteration_input_routes
+        path: .meta.target_db
       - entry: kickside.workflows:db_config
         path: .meta.db_id
 
