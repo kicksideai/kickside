@@ -4920,6 +4920,13 @@
       ],
       "tier": "regression"
     },
+    "automation_dispatch_slot_lifecycle": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-UNSERVED-WAKE"
+      ],
+      "tier": "regression"
+    },
     "automation_event_contract_setup": {
       "features": [],
       "issues": [],
