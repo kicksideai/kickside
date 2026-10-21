@@ -37,6 +37,7 @@ entries:
     source: file://processor.lua
     modules: [fs, logger, funcs]
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       upload_type: kickside.uploads:upload_type
       consts: kickside.uploads.archive:consts
       zip_reader: kickside.uploads.archive:zip_reader

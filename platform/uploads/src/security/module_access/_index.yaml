@@ -11,6 +11,8 @@ entries:
     - kickside.uploads.security:module_runtime
     - kickside.uploads.security:uploads_endpoint_access
     - kickside.uploads.security:uploads_resource_access
+    - kickside.uploads.storage.security:cloud
+    - kickside.uploads.storage.security:filesystem
     - kickside.convert.doc2md.security:module_access
   groups: []
   policy:
@@ -24,6 +26,10 @@ entries:
     - kickside.uploads.api:presigned_handler.endpoint
     - kickside.uploads.api:raw_handler.endpoint
     - kickside.uploads.api:upload_handler.endpoint
+    - kickside.uploads.storage:inspect.endpoint
+    - kickside.uploads.storage:test.endpoint
+    - kickside.uploads.storage:configure.endpoint
+    - kickside.uploads.storage:reset.endpoint
     actions: access
     effect: allow
 - name: module_runtime
@@ -46,6 +52,11 @@ entries:
     - kickside.uploads.rasterize:*
     - kickside.uploads.security:*
     - kickside.uploads.service:*
+    - kickside.uploads.storage:*
+    - kickside.uploads.storage.runtime:*
+    - kickside.uploads.storage.service:*
+    - kickside.uploads.storage.security:*
+    - kickside.uploads.storage.migrations:*
     - kickside.uploads.text:*
     - kickside.uploads.traits:*
     actions:

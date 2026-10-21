@@ -1,0 +1,19 @@
+version: "1.0"
+namespace: kickside.uploads.storage.security
+entries:
+  - name: cloud
+    kind: security.policy
+    groups: []
+    policy:
+      # Native S3 resources materialized by the owning controller only.
+      resources: [kickside.uploads.storage.runtime:*]
+      actions: [cloudstorage.get]
+      effect: allow
+
+  - name: filesystem
+    kind: security.policy
+    groups: []
+    policy:
+      resources: ""
+      actions: [fs.get]
+      effect: allow

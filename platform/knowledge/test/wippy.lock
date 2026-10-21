@@ -10,6 +10,7 @@ modules:
       version: 0.0.0
     - name: kickside/doc2md
       version: 0.8.12
+      hash: 702194d44197d8f5a79ded8b71aa7035376d08c1376f5d42fa5829196bd1302f
     - name: kickside/execution
       version: 0.0.0
     - name: kickside/jobs

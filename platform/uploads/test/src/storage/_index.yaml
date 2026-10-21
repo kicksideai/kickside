@@ -1,0 +1,51 @@
+version: "1.0"
+namespace: app.upload_storage
+entries:
+  - name: unit_tests
+    kind: function.lua
+    meta: { type: test, suite: upload_storage }
+    source: file://unit_tests.lua
+    method: run
+    modules: [fs, sql, uuid, registry, funcs, security]
+    imports:
+      test: wippy.test:test
+      policy: kickside.uploads.storage:policy
+      locations: kickside.uploads.storage:locations
+      records: kickside.uploads.persist:upload_record_repo
+      resources: kickside.uploads.binding:uploads_resources
+      offload: app.upload_storage:offload_fixture
+      cloud: app.upload_storage:fake_cloud
+
+  - name: fake_cloud
+    kind: library.lua
+    source: file://fake_cloud.lua
+
+  - name: settings_probe
+    kind: function.lua
+    source: file://settings_probe.lua
+    method: run
+    modules: [ctx]
+    imports:
+      inspect: app.upload_storage:inspect_fixture
+      probe: app:upload_http_probe
+
+  - name: inspect_fixture
+    kind: library.lua
+    source: file://../fixtures/storage_inspect.lua
+    modules: [security, registry, cloudstorage, uuid, env, contract, funcs]
+    imports:
+      http: app:upload_http_probe
+      backend: kickside.uploads.storage:backend
+      policy: kickside.uploads.storage:policy
+      uploads_resources: kickside.uploads.binding:uploads_resources
+
+  - name: offload_fixture
+    kind: library.lua
+    source: file://../fixtures/storage_offload.lua
+    modules: [fs, hash, time]
+    imports:
+      storage_types: kickside.uploads.storage:types
+      cloudstorage: app.upload_storage:fake_cloud
+      backend: kickside.uploads.storage:backend
+      locations: kickside.uploads.storage:locations
+      uploads_resources: kickside.uploads.binding:uploads_resources

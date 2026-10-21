@@ -199,6 +199,7 @@ entries:
       comment: Serve original upload bytes for inline preview.
     source: file://get_raw.lua
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo

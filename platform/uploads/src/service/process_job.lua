@@ -10,6 +10,7 @@ local pipeline_lib = require("pipeline_lib")
 local upload_types = require("types")
 local jobs = require("jobs")
 local job_types = require("job_types")
+local storage_policy = require("storage_policy")
 
 local log = logger:named("upload_job")
 
@@ -85,6 +86,12 @@ end
 
 -- Uploads owns publication and settles the same lease before returning to Jobs.
 local function publish_output(job: any, event: table, output: table): (table?, any?)
+    local placement_policy
+    if output.success == true then
+        local policy_err
+        placement_policy, policy_err = storage_policy.current()
+        if policy_err then return nil, policy_err end
+    end
     local body_json, encode_err = json.encode(event.body)
     if encode_err then return nil, encode_err end
     event.body, event.body_json = nil, body_json
@@ -101,6 +108,18 @@ local function publish_output(job: any, event: table, output: table): (table?, a
         tx:rollback()
         db:release()
         return nil, append_err
+    end
+    if placement_policy and placement_policy.mode == "s3" then
+        local _, placement_err = jobs.enqueue_tx(tx, dbtype, {
+            namespace = "uploads.storage", scope = tostring(output.upload_id), key = "offload",
+            owner_locator = job.owner_locator or { kind = "user", id = tostring(output.owner_actor_id) },
+            thread_id = thread_id, job_type = "kickside.uploads.storage:offload_job",
+            queue_tier = "live", priority = 5, max_attempts = 8,
+            concurrency_key = "uploads:storage:" .. tostring(output.upload_id),
+            immutable_payload = { upload_id = output.upload_id, policy = placement_policy, max_execution_ms = 600000 },
+            trace_context = event.trace_context,
+        })
+        if placement_err then tx:rollback(); db:release(); return nil, placement_err end
     end
     local _, complete_err = jobs.complete_tx(tx, tostring(job.id), {
         token = job.lease_token, execution_seq = job.execution_seq,
@@ -142,17 +161,22 @@ local function run(input: any): (any, any?)
     end
 
 
-    local success, proc_err, processed_upload, retriable = pipeline_lib.process_upload(upload, {
-        should_continue = function(_phase)
-            return ensure_running(job)
-        end,
-        -- Carry the job lease so heavy stages (OCR) can observe cancellation
-        -- between their own internal batches, not only between pipeline stages.
-        cancel_ref = {
-            job_id = tostring(job.id or ""),
-            lease_token = tostring(job.lease_token or ""),
-        },
-    })
+    local success, proc_err, processed_upload, retriable = true, nil, upload, nil
+    -- Completion is the processing checkpoint. A publication/settings/callback
+    -- retry must never repeat conversion or OCR for an already processed upload.
+    if upload.storage_state ~= "completed" then
+        success, proc_err, processed_upload, retriable = pipeline_lib.process_upload(upload, {
+            should_continue = function(_phase)
+                return ensure_running(job)
+            end,
+            -- Carry the job lease so heavy stages (OCR) can observe cancellation
+            -- between their own internal batches, not only between pipeline stages.
+            cancel_ref = {
+                job_id = tostring(job.id or ""),
+                lease_token = tostring(job.lease_token or ""),
+            },
+        })
+    end
     if not success then
         if tostring(proc_err or "") == "job cancelled" then
             return { skipped = true, cancelled = true, upload_id = upload_id }, nil
@@ -191,7 +215,7 @@ local function run(input: any): (any, any?)
     local final_trace_context = type(final_upload) == "table" and final_upload.trace_context or nil
 
     return publish_output(job, completed_event(final_upload, final_trace_context), {
-        success = true, upload_id = upload_id,
+        success = true, upload_id = upload_id, owner_actor_id = final_upload.actor_id,
     })
 end
 

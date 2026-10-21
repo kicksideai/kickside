@@ -1350,6 +1350,15 @@ jobs:
             cd "$source_root"
             version=$(jq -er --arg path platform/uploads '.[$path]' .release-please-manifest.json)
             wippy publish --config platform/uploads --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.uploads:ui_fs
+        - module: platform/uploads
+          engine: s3
+          commands: |
+            set -euo pipefail
+            export TMPDIR="$PWD/.scratch"
+            mkdir -p "$TMPDIR"
+            make -C platform/uploads lockrefresh
+            make -C platform/knowledge lockrefresh
+            bash scripts/test-upload-storage-s3.sh
         - module: platform/users
           engine: sqlite
           commands: |

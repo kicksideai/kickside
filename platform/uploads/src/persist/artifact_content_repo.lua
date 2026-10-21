@@ -172,7 +172,7 @@ function artifact_content_repo.create_blob(mime_type, content, metadata, options
     end
     local storage_path = artifact_path(checksum, blob_id, requested_path)
 
-    local storage, storage_err = resources.get_storage(storage_id)
+    local storage, storage_err = resources.get_storage(storage_id, db)
     if storage_err or not storage then
         db:release()
         return nil, storage_err or "failed to get artifact storage"
@@ -180,8 +180,8 @@ function artifact_content_repo.create_blob(mime_type, content, metadata, options
 
     local write_ok, write_err = storage:writefile(storage_path, content)
     if write_ok == false or write_err then
-        db:release()
         local cleanup_err = remove_blob_bytes(storage, storage_path)
+        db:release()
         if cleanup_err then
             return nil, "failed to write artifact blob: " .. tostring(write_err) .. "; " .. cleanup_err
         end
@@ -205,8 +205,8 @@ function artifact_content_repo.create_blob(mime_type, content, metadata, options
     local _, insert_err = query:run_with(db):exec()
     if insert_err then
         local raced, raced_err = load_blob_by_checksum(db, storage_id, checksum)
-        db:release()
         local cleanup_err = remove_blob_bytes(storage, storage_path)
+        db:release()
         if cleanup_err then
             return nil, "failed to create artifact blob: " .. insert_err .. "; " .. cleanup_err
         end

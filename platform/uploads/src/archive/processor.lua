@@ -1,4 +1,4 @@
-local fs = require("fs")
+local uploads_resources = require("uploads_resources")
 local funcs = require("funcs")
 local upload_type = require("upload_type")
 local logger = require("logger")
@@ -97,7 +97,7 @@ local function process(params: any): any
         error("archive too large: " .. tostring(declared) .. " bytes (max " .. tostring(max_zip_bytes) .. ")")
     end
 
-    local storage = fs.get(params.storage_id :: string)
+    local storage = uploads_resources.get_storage(params.storage_id :: string)
     if not storage then error("failed to get storage") end
     if not storage:exists(params.storage_path :: string) then error("file does not exist in storage") end
 

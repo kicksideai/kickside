@@ -32,7 +32,17 @@ vars:
   pg_database: kickside_test_knowledge
   pg_username: kickside
   pg_password: kickside
+  s3_endpoint: http://127.0.0.1:18333
+  s3_bucket: ks-upload-storage
+  s3_prefix: kb-native-tests
 profiles:
+  s3:
+    override:
+      app.storage:ingest_test:meta.type: test
+      kickside.uploads.env:storage_s3:default: app.storage:s3
+      app.storage:s3:bucket: ${s3_bucket}
+      app.storage:s3:endpoint: ${s3_endpoint}
+      app.storage:prefix:default: ${s3_prefix}
   postgres:
     override:
       "app:db:kind": db.sql.postgres

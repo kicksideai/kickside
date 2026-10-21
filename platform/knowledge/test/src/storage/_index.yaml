@@ -1,0 +1,45 @@
+version: "1.0"
+namespace: app.storage
+entries:
+  - name: os_env
+    kind: env.storage.os
+  - name: access_key
+    kind: env.variable
+    variable: KICKSIDE_UPLOAD_STORAGE_TEST_ACCESS_KEY
+    storage: app.storage:os_env
+    default: storage-test
+  - name: secret_key
+    kind: env.variable
+    variable: KICKSIDE_UPLOAD_STORAGE_TEST_SECRET_KEY
+    storage: app.storage:os_env
+    default: storage-test
+  - name: prefix
+    kind: env.variable
+    variable: KICKSIDE_UPLOAD_STORAGE_TEST_PREFIX
+    storage: app.storage:os_env
+    default: kb-native-tests
+  - name: aws
+    kind: config.aws
+    region: us-east-1
+    access_key_id_env: app.storage:access_key
+    secret_access_key_env: app.storage:secret_key
+  - name: s3
+    kind: cloudstorage.s3
+    config: app.storage:aws
+    bucket: ks-upload-storage
+    endpoint: http://127.0.0.1:18333
+  - name: ingest_test
+    kind: function.lua
+    meta: { type: test_support, suite: knowledge_storage }
+    source: file://ingest_test.lua
+    method: run
+    modules: [sql, uuid, fs, funcs, security, contract, json, env]
+    imports:
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
+      artifacts: kickside.uploads.persist:artifact_content_repo
+      cleanup: kickside.uploads.persist:artifact_cleanup_repo
+      locations: kickside.uploads.storage:locations
+      offload: kickside.uploads.storage:offload
+      policy: kickside.uploads.storage:policy
+      fixture_cleanup: app:fixture_cleanup
