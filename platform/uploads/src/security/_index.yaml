@@ -84,10 +84,6 @@ entries:
         path: .groups +=
       - entry: kickside.uploads.security:module_runtime
         path: .groups +=
-      - entry: kickside.uploads.storage.security:cloud
-        path: .groups +=
-      - entry: kickside.uploads.storage.security:filesystem
-        path: .groups +=
 
   - name: projection_public_meta
     kind: security.policy
@@ -106,4 +102,13 @@ entries:
     policy:
       resources: kickside.realtime:notify
       actions: realtime.notify
+      effect: allow
+
+  - name: storage_runtime_default
+    kind: security.policy
+    meta: {private: true}
+    groups: []
+    policy:
+      resources: kickside.uploads.security:storage_runtime_default
+      actions: [registry.get]
       effect: allow

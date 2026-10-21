@@ -4,7 +4,7 @@ local contract = require("contract")
 local policy = require("uploads_retention_policy")
 local read_model_module = require("upload_read_model_retention")
 local artifact_cleanup = require("artifact_cleanup_repo")
-local storage_offload = require("storage_offload")
+local processing_hooks = require("processing_hooks")
 
 local M = {}
 
@@ -33,9 +33,8 @@ function M.run(): any
     local blob_cutoff = time.now():utc():add(-settings.orphan_blob_ms * time.MILLISECOND):format_rfc3339()
     local blobs, blob_err = artifact_cleanup.prune_orphan_blobs(blob_cutoff, settings.batch_orphan_blob)
     if blob_err or blobs == nil then return { success = false, error = blob_err or missing("blob prune") } end
-    local location_cutoff = time.now():utc():add(-24 * time.HOUR):format_rfc3339()
-    local placements, placement_err = storage_offload.prune(location_cutoff, settings.batch_orphan_blob)
-    if placement_err then return { success = false, error = placement_err } end
+    local placements, placement_err = processing_hooks.prune(blob_cutoff, settings.batch_orphan_blob)
+    if placement_err or placements == nil then return { success = false, error = placement_err or missing("extension prune") } end
     return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements }
 end
 

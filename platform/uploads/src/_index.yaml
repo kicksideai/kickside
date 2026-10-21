@@ -16,12 +16,12 @@ entries:
     modules: [time, contract]
     security:
       actor: { id: system:kickside.uploads.retention }
-      policies: [kickside.uploads.security:retention_db_access, kickside.uploads.security:retention_prune_boundary, kickside.uploads.storage.security:cloud, kickside.uploads.storage.security:filesystem, kickside.uploads.security:uploads_resource_access]
+      policies: [kickside.uploads.security:retention_db_access, kickside.uploads.security:retention_prune_boundary]
     imports:
       uploads_retention_policy: kickside.uploads:retention_policy
       upload_read_model_retention: kickside.uploads.persist:read_model_retention
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
-      storage_offload: kickside.uploads.storage:offload
+      processing_hooks: kickside.uploads.binding:processing_hooks_default
 
   - name: retention_policy
     kind: library.lua
@@ -99,8 +99,6 @@ entries:
         path: .meta.target_db
       - entry: kickside.uploads.migrations:05_scope_archive_deduplication
         path: .meta.target_db
-      - entry: kickside.uploads.storage.migrations:01_locations
-        path: .meta.target_db
 
   - name: storage_id
     kind: ns.requirement
@@ -111,8 +109,6 @@ entries:
     targets:
       - entry: kickside.uploads.env:storage_id
         path: .default
-      - entry: kickside.uploads.storage.security:filesystem
-        path: .policy.resources
 
   - name: storage_s3
     kind: ns.requirement
@@ -123,8 +119,6 @@ entries:
     targets:
       - entry: kickside.uploads.env:storage_s3
         path: .default
-      - entry: kickside.uploads.storage.security:cloud
-        path: .policy.resources +=
 
   - name: env_storage
     kind: ns.requirement
@@ -211,10 +205,11 @@ entries:
       type: view.component
       name: settings_storage_view
       title: Files & Uploads Settings
+      description: Admin editor for upload processing limits, document conversion, and rasterization settings. Mount the component without props; it reads and saves declared values through the Settings API.
       announced: true
       tag_name: kickside-settings-storage
-      base_path: kickside-settings
-      entry_point: storage.js
+      base_path: kickside-uploads
+      entry_point: settings.js
       auto_register: false
       secure: false
 
@@ -246,14 +241,6 @@ entries:
       comment: HTTP router the upload preview endpoints attach to.
       description: HTTP router the upload preview endpoints attach to.
     targets:
-      - entry: kickside.uploads.storage:inspect.endpoint
-        path: .meta.router
-      - entry: kickside.uploads.storage:test.endpoint
-        path: .meta.router
-      - entry: kickside.uploads.storage:configure.endpoint
-        path: .meta.router
-      - entry: kickside.uploads.storage:reset.endpoint
-        path: .meta.router
       - entry: kickside.uploads.api:complete_handler.endpoint
         path: .meta.router
       - entry: kickside.uploads.api:delete_handler.endpoint
@@ -338,13 +325,11 @@ entries:
     order: 60
     component_tag: kickside-settings-storage
     namespaces:
-      - kickside.uploads.storage
       - kickside.uploads
       - kickside.uploads.documents
       - kickside.uploads.rasterize
     config:
       namespaces:
-        - kickside.uploads.storage
         - kickside.uploads
         - kickside.uploads.documents
         - kickside.uploads.rasterize
@@ -440,3 +425,41 @@ entries:
   # component_id(user, "uploads")) with one-week event retention; the uploads lib projects
   # kickside.uploads.events:* onto that same thread. The kind binding doubles as the
   # provision declaration, so the kind and the runtime are one component.
+
+  - name: storage_adapter
+    kind: ns.requirement
+    default: kickside.uploads.binding:storage_adapter_default
+    meta:
+      value_kind: library.lua
+      description: Optional native file adapter library. get(storage_id, db_id, staging_id, legacy_cloud_id,
+        query_db) returns a filesystem-compatible adapter. The default uses the host filesystem.
+    targets:
+    - entry: kickside.uploads.binding:uploads_resources
+      path: .imports.storage_backend
+  - name: processing_hooks
+    kind: ns.requirement
+    default: kickside.uploads.binding:processing_hooks_default
+    meta:
+      value_kind: library.lua
+      description: 'Optional processing lifecycle library: prepare(output), completed(tx, dbtype, job, output,
+        trace, prepared), and prune(cutoff, limit). Default hooks have no effects. Native transactions remain
+        in the caller process.'
+    targets:
+    - entry: kickside.uploads.service:process_job_proc
+      path: .imports.processing_hooks
+    - entry: kickside.uploads:retention
+      path: .imports.processing_hooks
+  - name: storage_runtime_policy
+    kind: ns.requirement
+    default: kickside.uploads.security:storage_runtime_default
+    meta:
+      value_kind: security.policy
+      description: Optional storage implementation policies attached only when the host installs and binds
+        an extension.
+    targets:
+    - entry: kickside.uploads:retention
+      path: .security.policies +=
+    - entry: kickside.uploads.service:process_job_proc
+      path: .security.policies +=
+    - entry: kickside.uploads.security:module_access
+      path: .meta.includes +=

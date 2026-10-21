@@ -10,7 +10,7 @@ local pipeline_lib = require("pipeline_lib")
 local upload_types = require("types")
 local jobs = require("jobs")
 local job_types = require("job_types")
-local storage_policy = require("storage_policy")
+local processing_hooks = require("processing_hooks")
 
 local log = logger:named("upload_job")
 
@@ -86,11 +86,11 @@ end
 
 -- Uploads owns publication and settles the same lease before returning to Jobs.
 local function publish_output(job: any, event: table, output: table): (table?, any?)
-    local placement_policy
+    local prepared_hooks
     if output.success == true then
-        local policy_err
-        placement_policy, policy_err = storage_policy.current()
-        if policy_err then return nil, policy_err end
+        local prepare_err
+        prepared_hooks, prepare_err = processing_hooks.prepare(output)
+        if prepare_err then return nil, prepare_err end
     end
     local body_json, encode_err = json.encode(event.body)
     if encode_err then return nil, encode_err end
@@ -109,17 +109,12 @@ local function publish_output(job: any, event: table, output: table): (table?, a
         db:release()
         return nil, append_err
     end
-    if placement_policy and placement_policy.mode == "s3" then
-        local _, placement_err = jobs.enqueue_tx(tx, dbtype, {
-            namespace = "uploads.storage", scope = tostring(output.upload_id), key = "offload",
-            owner_locator = job.owner_locator or { kind = "user", id = tostring(output.owner_actor_id) },
-            thread_id = thread_id, job_type = "kickside.uploads.storage:offload_job",
-            queue_tier = "live", priority = 5, max_attempts = 8,
-            concurrency_key = "uploads:storage:" .. tostring(output.upload_id),
-            immutable_payload = { upload_id = output.upload_id, policy = placement_policy, max_execution_ms = 600000 },
-            trace_context = event.trace_context,
-        })
-        if placement_err then tx:rollback(); db:release(); return nil, placement_err end
+    if output.success == true then
+        local recorded, hook_err = processing_hooks.completed(tx, dbtype, job, output, event.trace_context, prepared_hooks)
+        if hook_err or recorded ~= true then
+            tx:rollback(); db:release()
+            return nil, hook_err or errors.new({message="Processing extension did not acknowledge completion",kind=errors.INTERNAL,retryable=true})
+        end
     end
     local _, complete_err = jobs.complete_tx(tx, tostring(job.id), {
         token = job.lease_token, execution_seq = job.execution_seq,

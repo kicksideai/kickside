@@ -31,14 +31,14 @@ export default defineConfig({
     outDir: resolve(__dirname, '../static'),
     emptyOutDir: true,
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: { index: resolve(__dirname, 'src/index.ts'), settings: resolve(__dirname, 'src/settings.ts') },
       name: 'KicksideUploads',
       fileName: 'index',
       formats: ['es'],
     },
     rollupOptions: {
       preserveEntrySignatures: false,
-      input: { index: resolve(__dirname, 'src/index.ts') },
+      input: { index: resolve(__dirname, 'src/index.ts'), settings: resolve(__dirname, 'src/settings.ts') },
       external: ['vue', '@iconify/vue', '@wippy-fe/proxy'],
       output: {
         entryFileNames: '[name].js',

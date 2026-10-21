@@ -9,7 +9,7 @@ entries:
     source: file://resources.lua
     modules: [sql, env, cloudstorage, registry]
     imports:
-      storage_backend: kickside.uploads.storage:backend
+      storage_backend: kickside.uploads.binding:storage_adapter_default
 
   - name: count_resources_func
     kind: function.lua
@@ -82,3 +82,18 @@ entries:
       upload_lib: kickside.uploads:uploads
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       upload_read_model: kickside.uploads.persist:upload_read_model
+
+  - name: storage_adapter_default
+    kind: library.lua
+    source: file://storage_adapter_default.lua
+    modules:
+    - fs
+  - name: processing_hooks_default
+    kind: library.lua
+    source: file://processing_hooks_default.lua
+  - name: storage_catalog
+    kind: library.lua
+    source: file://storage_catalog.lua
+    modules:
+    - sql
+    - env

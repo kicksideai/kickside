@@ -791,3 +791,13 @@ entries:
     scope: universal
     prepare_archive: app:archive_prepare_probe
     priority: 0
+
+  - name: optional_storage_test
+    kind: function.lua
+    meta: {type: test, suite: optional_storage}
+    source: file://optional_storage_test.lua
+    method: run
+    modules: [registry, fs, uuid]
+    imports:
+      test: wippy.test:test
+      resources: kickside.uploads.binding:uploads_resources

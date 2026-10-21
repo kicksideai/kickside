@@ -14,7 +14,6 @@ workspace:
     kickside/users: ../../users
     kickside/security: ../../security
     kickside/realtime: ../../realtime
-    kickside/settings: ../../settings
     kickside/pdf2image: ../../../../converters/pdf2image
 vars:
   sqlite_path: ':memory:'
@@ -23,20 +22,7 @@ vars:
   pg_database: kickside_test_uploads
   pg_username: kickside
   pg_password: kickside
-  s3_endpoint: http://127.0.0.1:18333
-  s3_bucket: ks-upload-storage
-  s3_prefix: native-tests
 profiles:
-  s3_restart:
-    override:
-      app.upload_storage:restart_test:meta.type: test
-  s3:
-    override:
-      app.upload_storage:live_tests:meta.type: test
-      kickside.uploads.env:storage_s3:default: app.upload_storage:s3
-      app.upload_storage:s3:bucket: ${s3_bucket}
-      app.upload_storage:s3:endpoint: ${s3_endpoint}
-      app.upload_storage:prefix:default: ${s3_prefix}
   postgres:
     override:
       app:dedup_migration_db:kind: db.sql.postgres
