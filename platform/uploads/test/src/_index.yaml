@@ -134,6 +134,7 @@ entries:
     source: file://fixtures/get_raw.lua
     modules: [security, fs]
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       http: app:upload_http_probe
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       component: kickside.component:component
