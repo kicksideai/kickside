@@ -8,6 +8,7 @@ def slot_provision_failures(ctx):
 
 
 def slot_lifetime(ctx):
+    run_focused_module_test(ctx, 'kickside/automation', 'slot_record_test')
     run_focused_module_test(ctx, 'kickside/automation', 'slot_lifetime_test')
 
 
