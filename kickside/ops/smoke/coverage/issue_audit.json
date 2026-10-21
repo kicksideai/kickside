@@ -27523,6 +27523,21 @@
       "reason": "Iteration item persistence classifies scalar values so PostgreSQL rehydrates numeric items as numbers. This is a native execution contract without a rendered browser operation.",
       "user_visible": false
     },
+    "DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "A Cycle body retains a plain object returned by a direct join while preserving its configured iteration limit."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Cycle result handling distinguishes plain object node results from iteration control envelopes.",
+      "user_visible": false
+    },
     "DATAFLOW-SOURCE-TEST-HARNESS-IMPORT": {
       "guards": {
         "workflow_iteration_join": {

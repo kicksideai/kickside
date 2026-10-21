@@ -13,4 +13,5 @@ REGISTRY = [Scenario('workflow_iteration_join', 'regression', workflow_iteration
                      ('boot',), instance_setup=True,
                      issues=('WORKFLOW-DIRECT-ITERATION-JOIN',
                              'DATAFLOW-SCALAR-ITERATION-ITEM-TYPE',
-                             'DATAFLOW-SOURCE-TEST-HARNESS-IMPORT'))]
+                             'DATAFLOW-SOURCE-TEST-HARNESS-IMPORT',
+                             'DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT'))]
