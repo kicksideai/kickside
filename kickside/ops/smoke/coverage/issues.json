@@ -9686,6 +9686,27 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/workflows/test/src/suites/block_catalog_test.lua"
+    },
+    "module/starter-page-refresh-ui": {
+      "repository": "kickside/module",
+      "test": "ui/src/app/starter.spec.ts",
+      "issues": [
+        "TEMPLATE-MOUNTED-PAGE-REFRESH"
+      ],
+      "engines": [
+        "independent"
+      ]
+    },
+    "module/starter-write-notification": {
+      "repository": "kickside/module",
+      "test": "test/src/log_test.lua",
+      "issues": [
+        "TEMPLATE-MOUNTED-PAGE-REFRESH"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
     }
   },
   "issues": [
@@ -10858,7 +10879,8 @@
     "AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE",
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
-    "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA"
+    "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
+    "TEMPLATE-MOUNTED-PAGE-REFRESH"
   ],
   "schema_version": 1
 }

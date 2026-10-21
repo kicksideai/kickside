@@ -15276,6 +15276,13 @@
       ],
       "tier": "regression"
     },
+    "starter_page_refresh": {
+      "features": [],
+      "issues": [
+        "TEMPLATE-MOUNTED-PAGE-REFRESH"
+      ],
+      "tier": "regression"
+    },
     "sync_document_provenance": {
       "features": [],
       "issues": [
