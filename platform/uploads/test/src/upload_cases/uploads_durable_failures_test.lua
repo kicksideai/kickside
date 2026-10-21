@@ -446,7 +446,9 @@ local function define_tests()
             ensure_uploads_component(user_id)
             local path, bytes = upload_id .. ".pdf", "scanned document bytes"
             local storage = assert(fs.get("app:uploads"))
-            test.is_true(storage:writefile(path, bytes))
+            local written, write_err = storage:writefile(path, bytes)
+            test.is_nil(write_err)
+            test.is_true(written)
             local metadata = metadata_with_identity(user_id, "scan.pdf", {
                 stage_metadata = { ocr_error = "transcription_failed" },
             })
@@ -487,6 +489,32 @@ local function define_tests()
             test.eq(assert(upload_query_repo.get(upload_id)).storage_state, "failed")
             test.eq(storage:readfile(path), bytes)
             test.eq(assert(artifact_content_repo.get_artifact(upload_id, primary.artifact_id)).artifact_id, primary.artifact_id)
+        end)
+
+        test.it("allows a completion token without an optional error callback to settle failure", function()
+            local upload_id, user_id = uuid_v4(), "optional-callback-" .. uuid_v4()
+            ensure_uploads_component(user_id)
+            local metadata = upload_metadata(user_id, "callback.txt")
+            local identity = metadata[IDENTITY_META_KEY]
+            local token, token_err = upload_tokens.pack({
+                upload_id = upload_id,
+                function_id = "app:callback_probe",
+                actor_id = identity.actor_id,
+                actor_context = identity.actor_context,
+            })
+            test.is_nil(token_err)
+            metadata.__upload_token = token
+            local upload = assert(upload_record_repo.create(upload_id, user_id, 1, "text/plain",
+                "app:uploads", upload_id .. ".txt", "text", metadata, "processing"))
+            local ok, err = pipeline_lib.invoke_upload_token(upload, false, "conversion rejected")
+            test.is_nil(err)
+            test.is_true(ok)
+            local db = assert(sql.get("app:db"))
+            local rows = assert(db:query([[SELECT id FROM kickside_job
+                WHERE thread_id=$1 AND job_type=$2]],
+                { uploads_events.component_id_for_owner(user_id), "kickside.uploads.service:callback_job" }))
+            db:release()
+            test.eq(#rows, 0)
         end)
 
         test.it("schedules upload completion callbacks as idempotent core jobs", function()

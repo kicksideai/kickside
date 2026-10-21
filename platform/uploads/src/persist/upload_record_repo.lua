@@ -523,10 +523,6 @@ function upload_record_repo.delete(uuid)
         return nil, "Failed to delete upload: " .. err
     end
 
-    if result.rows_affected == 0 then
-        return nil, "Upload not found"
-    end
-
     return { deleted = true }
 end
 

@@ -3,7 +3,6 @@ local component = require("component")
 local upload_lib = require("upload_lib")
 local upload_query_repo = require("upload_query_repo")
 local upload_read_model = require("upload_read_model")
-local logger = require("logger"):named("kickside.uploads.delete")
 
 -- kickside.contract:deletable.delete for the per-user uploads component. Tears down
 -- every upload the component actor holds -- rows, artifacts, chunks, refcounted
@@ -25,9 +24,7 @@ local function handle(request_dto)
         return { success = true, deleted = 0 }
     end
 
-    -- list_by_actor shrinks as uploads are deleted, so re-list from offset 0 each pass
-    -- (mirrors the reaper's idempotent drain). Stop on an empty page or a page that
-    -- makes no progress, so a persistent per-upload failure never loops forever.
+    -- Owner deletion is idempotent when another deletion removes a listed upload.
     local page = 200
     local deleted = 0
     while true do
@@ -36,17 +33,12 @@ local function handle(request_dto)
             return { success = false, error = "list uploads: " .. tostring(list_err), deleted = deleted }
         end
         if not rows or #rows == 0 then break end
-        local before = deleted
         for _, u in ipairs(rows) do
             local _, del_err = upload_lib.delete_upload(tostring((u :: any).uuid))
-            if del_err then
-                logger:warn("upload teardown failed", { upload_id = (u :: any).uuid, error = del_err })
-            else
-                deleted = deleted + 1
+            if del_err and not errors.is(del_err, errors.NOT_FOUND) then
+                return { success = false, error = del_err, deleted = deleted }
             end
-        end
-        if deleted == before then
-            return { success = false, error = "no progress tearing down uploads for actor " .. actor_id, deleted = deleted }
+            deleted = deleted + 1
         end
     end
 
