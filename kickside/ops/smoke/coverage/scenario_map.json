@@ -6883,6 +6883,13 @@
       ],
       "tier": "regression"
     },
+    "component_identity_declaration_lock_order": {
+      "features": [],
+      "issues": [
+        "COMPONENT-IDENTITY-DECLARATION-LOCK-ORDER"
+      ],
+      "tier": "regression"
+    },
     "component_notification_fanout": {
       "features": [],
       "issues": [
