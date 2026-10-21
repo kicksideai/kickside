@@ -21,6 +21,20 @@ local function pick(params: types.Object, names: { string }?): types.Object
     return result
 end
 
+-- Dropbox content APIs carry JSON in an HTTP header and require ASCII there.
+-- Escape UTF-8 code points, including surrogate pairs for non-BMP filenames.
+local function header_json(value: types.Object): string
+    local encoded = json.encode(value) :: string
+    return (encoded:gsub("[\194-\244][\128-\191]*", function(sequence: string): string
+        local first = string.byte(sequence, 1)
+        local code = first % (2 ^ (7 - #sequence))
+        for index = 2, #sequence do code = code * 64 + string.byte(sequence, index) - 128 end
+        if code < 65536 then return string.format("\\u%04x", code) end
+        code = code - 65536
+        return string.format("\\u%04x\\u%04x", 55296 + math.floor(code / 1024), 56320 + code % 1024)
+    end):gsub("\127", "\\u007f"))
+end
+
 local function query_parts(parts: { string }, name: string, value: unknown, array_format: string?)
     if type(value) == "table" then
         for key, child in pairs(value) do
@@ -100,7 +114,7 @@ function M.prepare(config: types.Config, operation: types.Operation, params: typ
             local digest, digest_err = hash.sha1(content, true)
             if digest_err or not digest then return nil, errors.new({kind = errors.INTERNAL, message = "Cannot calculate upload digest"}) end
             headers.Digest = "sha=" .. base64.encode(digest)
-        else headers["Dropbox-API-Arg"] = json.encode(pick(values, operation.argument)) :: string end
+        else headers["Dropbox-API-Arg"] = header_json(pick(values, operation.argument)) end
     elseif operation.mode == "multipart" or operation.mode == "notion_upload" then
         local content, decode_err = base64.decode(tostring(values.content_base64 or ""))
         if decode_err or not content then return nil, invalid("Invalid base64 file content") end
@@ -118,7 +132,7 @@ function M.prepare(config: types.Config, operation: types.Operation, params: typ
             .. content .. "\r\n--" .. boundary .. "--\r\n"
         headers["Content-Type"] = "multipart/form-data; boundary=" .. boundary
     elseif operation.mode == "download" and operation.argument then
-        headers["Dropbox-API-Arg"] = json.encode(pick(values, operation.argument)) :: string
+        headers["Dropbox-API-Arg"] = header_json(pick(values, operation.argument))
         request.body = ""
         headers["Content-Type"] = "application/octet-stream"
     elseif operation.mode == "null" then request.body = "null"

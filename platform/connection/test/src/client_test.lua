@@ -99,6 +99,17 @@ local function cases()
         end)
     end)
     test.describe("provider DTO boundaries", function()
+        test.it("encodes Unicode filenames as ASCII JSON in content API headers", function()
+            local operation = {method = "POST", path = "/files/upload", write = true, mode = "upload",
+                endpoint = "content", argument = {"path"}, schema = {type = "object", properties = {
+                    path = {type = "string"}, content_base64 = {type = "string"}}, additionalProperties = false}}
+            local config = {provider = "dropbox", title = "Dropbox", endpoints = {content = "https://content.dropboxapi.com/2"},
+                health_action = "health", discovery_action = "list", operations = {}}
+            local prepared, err = driver.prepare(config, operation, {path = "/报告🚀.txt", content_base64 = "aGk="})
+            test.is_nil(err)
+            local header = prepared.headers["Dropbox-API-Arg"]
+            test.is_nil(header:find("[\128-\255]")); test.eq(json.decode(header).path, "/报告🚀.txt")
+        end)
         test.it("retains empty arrays and objects according to the operation schema", function()
             local definition = {type = "object", properties = {labels = {type = "array", items = {type = "string"}}, fields = {type = "object"}}}
             test.eq(schema.encode({labels = {}, fields = {}}, definition), '{"fields":{},"labels":[]}')
