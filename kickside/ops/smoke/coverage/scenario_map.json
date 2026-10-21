@@ -8386,6 +8386,13 @@
       "issues": [],
       "tier": "quick"
     },
+    "kb_upload_notifications": {
+      "features": [],
+      "issues": [
+        "KB10-UPLOAD-NOTIFICATION-CONTRACT"
+      ],
+      "tier": "regression"
+    },
     "keeper_dashboard_logs_ui": {
       "features": [],
       "issues": [
