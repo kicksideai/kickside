@@ -42,13 +42,12 @@ local RECONCILE_DRIVE = "reconcile"
 local ROUND_QUEUED = "queued"
 
 -- The parked phases resume releases (design v5 §4.4): an explicit pause, and
--- a deterministic declaration or access failure the operator has corrected
--- (a fixed configuration, a restored grant). The round re-evaluates the drive
--- on its next stamp and parks it again if the cause remains. An identity block
--- waits for an authorized identity selection, and a deleted source never
--- resumes.
+-- a deterministic declaration, access or identity failure the operator has
+-- corrected. The round re-evaluates authority on its next stamp and parks
+-- again if the cause remains. A deleted source never resumes.
 local function resumable_phases(PHASE: Map): { [string]: boolean }
-    return { [PHASE.PAUSED] = true, [PHASE.BLOCKED_DECLARATION] = true, [PHASE.BLOCKED_ACCESS] = true }
+    return { [PHASE.PAUSED] = true, [PHASE.BLOCKED_DECLARATION] = true,
+        [PHASE.BLOCKED_ACCESS] = true, [PHASE.BLOCKED_IDENTITY] = true }
 end
 
 -- attach(M, dependencies, P) defines M.control and registers the event resync step.
