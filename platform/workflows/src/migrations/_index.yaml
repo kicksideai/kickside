@@ -68,5 +68,4 @@ entries:
     modules: [json]
     imports:
       migration: wippy.migration:migration
-      compiler: kickside.workflows.compiler:compiler
-      block_catalog: kickside.workflows.catalog:block_catalog
+      version_publish: kickside.workflows.repo:version_publish

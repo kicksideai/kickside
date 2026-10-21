@@ -1,6 +1,5 @@
 local json = require("json")
-local compiler = require("compiler")
-local block_catalog = require("block_catalog")
+local version_publish = require("version_publish")
 
 local function has_iteration_body_edge(document)
     local nodes_by_id = {}
@@ -27,8 +26,6 @@ local function encode(value, label)
 end
 
 local function recompile(db)
-    local catalog, catalog_err = block_catalog.catalog()
-    if catalog_err or not catalog then error("load Block catalog: " .. tostring(catalog_err)) end
     local rows, query_err = db:query(
         "SELECT workflow_id, version, document FROM workflow_versions ORDER BY workflow_id, version")
     if query_err then error("read workflow versions: " .. tostring(query_err)) end
@@ -40,11 +37,8 @@ local function recompile(db)
                 .. ": " .. tostring(decode_err))
         end
         if has_iteration_body_edge(document) then
-            local compiled, compile_err = compiler.compile(document, {
-                workflow_id = tostring(row.workflow_id),
-                version = tonumber(row.version) or 0,
-                blocks = catalog,
-            })
+            local compiled, compile_err = version_publish.compile_document(document, tostring(row.workflow_id),
+                tonumber(row.version) or 0)
             if compile_err or not compiled or compiled.ok ~= true then
                 local detail = compiled and compiled.errors and compiled.errors[1]
                 error("recompile workflow version " .. tostring(row.workflow_id) .. "/" .. tostring(row.version)
