@@ -1,0 +1,34 @@
+version: '1.0'
+namespace: app
+entries:
+- name: slot_record_subject
+  kind: library.lua
+  source: file://slot_record_subject.lua
+  imports:
+    jobs: kickside.core.jobs:jobs
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    types: kickside.automation:types
+    drive: kickside.automation:drive
+    sql: app:slot_record_sql
+- name: slot_record_sql
+  kind: library.lua
+  source: file://slot_record_sql.lua
+  modules:
+  - sql
+- name: slot_record_test
+  kind: function.lua
+  source: file://slot_record_test.lua
+  method: run
+  meta:
+    type: test
+    suite: kickside_automation
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    native_slot: kickside.automation:slot
+    subject: app:slot_record_subject
+    boundary: app:slot_record_sql
+    jobs: kickside.core.jobs:jobs
