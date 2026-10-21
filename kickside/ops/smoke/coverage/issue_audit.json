@@ -27523,6 +27523,21 @@
       "reason": "Iteration item persistence classifies scalar values so PostgreSQL rehydrates numeric items as numbers. This is a native execution contract without a rendered browser operation.",
       "user_visible": false
     },
+    "DATAFLOW-SOURCE-TEST-HARNESS-IMPORT": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "The workflows source harness loads the Dataflow source replacement through boot and focused native execution."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Dataflow source tests load only declared runtime dependencies when consumed through the workflows source harness.",
+      "user_visible": false
+    },
     "WORKFLOW-DIRECT-ITERATION-JOIN": {
       "guards": {
         "workflow_iteration_join": {

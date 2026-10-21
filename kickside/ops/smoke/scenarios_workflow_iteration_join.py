@@ -12,4 +12,5 @@ def workflow_iteration_join(ctx):
 REGISTRY = [Scenario('workflow_iteration_join', 'regression', workflow_iteration_join,
                      ('boot',), instance_setup=True,
                      issues=('WORKFLOW-DIRECT-ITERATION-JOIN',
-                             'DATAFLOW-SCALAR-ITERATION-ITEM-TYPE'))]
+                             'DATAFLOW-SCALAR-ITERATION-ITEM-TYPE',
+                             'DATAFLOW-SOURCE-TEST-HARNESS-IMPORT'))]
