@@ -15565,6 +15565,13 @@
       "issues": [],
       "tier": "full"
     },
+    "workflow_iteration_join": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-DIRECT-ITERATION-JOIN"
+      ],
+      "tier": "regression"
+    },
     "workflow_management_failures": {
       "features": [],
       "issues": [
