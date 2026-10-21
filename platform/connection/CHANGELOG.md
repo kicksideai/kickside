@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/kicksideai/kickside/compare/connection-v0.3.1...connection-v0.4.0) (2026-10-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **connection:** Update Box, Dropbox, and Notion alongside Connection. Provider-specific multipart, argument-header, and checksum formats are owned by their provider packages and passed through the native Prepare hook.
+
+### Bug Fixes
+
+* **connection:** move provider wire formats behind native preparers ([#57](https://github.com/kicksideai/kickside/issues/57)) ([463cd3c](https://github.com/kicksideai/kickside/commit/463cd3c8056c0fc64f320fe1e8e30d5a9e6666f3))
+
 ## [0.3.1](https://github.com/kicksideai/kickside/compare/connection-v0.3.0...connection-v0.3.1) (2026-10-21)
 
 
