@@ -43,6 +43,8 @@ def host_start_chat_browser(ctx):
     stored = ctx.inst.request('GET', '/api/v1/sessions/get?session_id=' + session_id,
                               label='keeper-host-chat-session')['session']
     require(stored['session_id'] == session_id, 'Keeper Ask chat has no durable session')
+    require(stored.get('config', {}).get('agent_id') == agents[0]['id'],
+            'Keeper Ask starts a session with a different agent')
     expect(browser.frame.get_by_role('button', name='Close chat', exact=True)).to_be_visible()
     browser.screenshot('keeper-host-start-chat')
     ctx.inst.evidence.save('keeper-host-start-chat', {
