@@ -172,6 +172,12 @@ def failed_install_preserves_catalog(ctx):
                 'Reboot after a rejected Hub install changes the module catalog')
 
 
+def hub_update_dependency_destination(ctx):
+    from scenarios_automation_task_forms import frontend_specs
+    frontend_specs(ctx, 'hub', ('src/app/modules_updates_and_planning.spec.ts',),
+                   'hub-update-dependency-destination')
+
+
 def keeper_bulk_plan_guard(ctx):
     run_focused_module_suite(ctx, 'keeper/keeper', 'keeper.hub:test')
 
@@ -185,7 +191,9 @@ def keeper_changelog_error_guard(ctx):
     run_focused_module_suite(ctx, 'keeper/keeper', 'keeper.knowledge.changelog:changelog_test')
 
 
-REGISTRY = [Scenario('regression_keeper_bulk_update_plan', 'regression', keeper_bulk_plan_guard,
+REGISTRY = [Scenario('hub_update_dependency_destination', 'regression', hub_update_dependency_destination,
+                     issues=('HUB-TRANSITIVE-UPDATE-DESTINATION',)),
+            Scenario('regression_keeper_bulk_update_plan', 'regression', keeper_bulk_plan_guard,
                      ('boot',), issues=('KEEPER-BATCH-UPDATE-PLAN', 'HUB-UPDATE-PACKAGE-DEFAULT',
                                       'KEEPER-PLANNED-LOGICAL-SCOPES',
                                       'KEEPER-BATCH-METADATA-READ-AMPLIFICATION',
