@@ -8930,6 +8930,13 @@
       ],
       "tier": "chat"
     },
+    "model_picker_capabilities_browser": {
+      "features": [],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "tier": "regression"
+    },
     "model_picker_class_capabilities": {
       "features": [],
       "issues": [

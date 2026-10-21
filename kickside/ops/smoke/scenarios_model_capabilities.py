@@ -31,3 +31,47 @@ REGISTRY = [
     Scenario('model_picker_class_capabilities', 'regression', picker_capabilities,
              issues=('WIDGETS-CLASS-CAPABILITY',)),
 ]
+
+
+def picker_capabilities_browser(ctx):
+    from playwright.sync_api import expect
+    from runtime_fixtures import complete_splashes
+    from scenarios import nav
+
+    provider = 'kickside.models:openai_compat_plain.provider'
+    for name, title, capability, classes in (
+        ('picker-generation-fixture', 'Picker generation fixture', 'generate', ['fast']),
+        ('picker-embedding-fixture', 'Picker embedding fixture', 'embed', ['embed']),
+    ):
+        ctx.inst.request('PUT', '/api/v1/models/cards', {
+            'name': name, 'title': title, 'provider_id': provider,
+            'provider_model': name, 'capabilities': [capability], 'class': classes,
+            'enabled': True, 'max_tokens': 8192, 'output_tokens': 1024,
+        }, label=name)
+        ctx.inst.cleanup.add(name, lambda name=name: ctx.inst.request(
+            'DELETE', '/api/v1/models/cards?name=' + name), scope='scenario')
+    classes = ctx.inst.request('GET', '/api/v1/models/classes', label='picker-class-fixture')['classes']
+    require(any(row['name'] == 'embed' and row['capability'] == 'embed' for row in classes),
+            'Fixture lacks the incompatible embedding class')
+    complete_splashes(ctx, 'welcome', 'first_agent')
+    browser = ctx.browser_check()
+    browser.login()
+    nav(ctx, 'Agents')
+    agents = browser.frame.locator('kickside-agents')
+    agents.get_by_role('button', name='New agent', exact=True).first.click()
+    dialog = agents.get_by_role('dialog', name='New agent', exact=True)
+    dialog.get_by_role('tab', name='Model', exact=True).click()
+    picker = dialog.locator('wc-model-picker')
+    with browser.page.expect_response(lambda response: response.url.endswith('/api/v1/models/classes')):
+        picker.get_by_role('combobox', name='Choose model', exact=True).click()
+    options = picker.get_by_role('option')
+    expect(options.filter(has=browser.frame.get_by_text('Fast', exact=True))).to_be_visible(timeout=30000)
+    ctx.inst.evidence.save('generation-picker-browser-options', options.all_text_contents())
+    expect(options.filter(has=browser.frame.get_by_text('Embed', exact=True))).to_have_count(0)
+    expect(options.filter(has_text='Picker embedding fixture')).to_have_count(0)
+    expect(options.filter(has=browser.frame.get_by_text('Picker generation fixture', exact=True))).to_be_visible()
+    browser.screenshot('generation-picker-browser-options')
+
+
+REGISTRY.append(Scenario('model_picker_capabilities_browser', 'regression', picker_capabilities_browser,
+                         ('boot',), instance_setup=True, issues=('WIDGETS-CLASS-CAPABILITY',)))
