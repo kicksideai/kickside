@@ -9707,6 +9707,26 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "settings/structured-schema": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/settings/ui/src/app/settings.schema.spec.ts"
+    },
+    "settings/stored-row-error": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "SETTINGS-STORED-ROW-ERROR"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/settings/ui/src/app/settings.row-errors.spec.ts"
     }
   },
   "issues": [
@@ -10880,7 +10900,9 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "SETTINGS-STRUCTURED-SCHEMA-VALIDATION",
+    "SETTINGS-STORED-ROW-ERROR"
   ],
   "schema_version": 1
 }

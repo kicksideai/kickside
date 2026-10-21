@@ -14954,6 +14954,14 @@
       "issues": [],
       "tier": "full"
     },
+    "settings_form_schema_and_row_errors": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION",
+        "SETTINGS-STORED-ROW-ERROR"
+      ],
+      "tier": "regression"
+    },
     "settings_override_load": {
       "features": [],
       "issues": [
