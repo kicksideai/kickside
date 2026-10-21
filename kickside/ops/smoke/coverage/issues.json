@@ -9751,6 +9751,28 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/core/test/src/suites/projections/persist/slot_failure_test.lua"
+    },
+    "core/output-append-snapshots": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-OUTPUT-COMPLETION-LOCK-ORDER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/writer_read_test.lua"
+    },
+    "core/output-append-sequence": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "JOBS-OUTPUT-COMPLETION-LOCK-ORDER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/threads/persist/writer_test.lua"
     }
   },
   "issues": [

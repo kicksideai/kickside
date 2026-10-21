@@ -5,15 +5,20 @@ from module_harness import run_focused_module_test
 
 def output_completion(ctx):
     run_focused_module_test(ctx, "kickside/core", "projection_apply_native_test_outcomes")
+    run_focused_module_test(ctx, "kickside/core", "writer_read_test")
+    run_focused_module_test(ctx, "kickside/core", "writer_test")
     run_focused_module_test(ctx, "kickside/jobs", "wake_recovery_test")
+
 
 def infrastructure_failure(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "terminal_failure_test")
+
 
 def slot_retry_floor(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "backoff_test")
     run_focused_module_test(ctx, "kickside/jobs", "worker_outcomes_native_test")
     run_focused_module_test(ctx, "kickside/jobs", "worker_completion_native_test")
+
 
 def independent_parking(ctx):
     run_focused_module_test(ctx, "kickside/core", "slot_failure_test")
