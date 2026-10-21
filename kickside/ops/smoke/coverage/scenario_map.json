@@ -14755,6 +14755,14 @@
       ],
       "tier": "full"
     },
+    "session_context_admission": {
+      "features": [],
+      "issues": [
+        "UPSTREAM-CONTEXT-ADMISSION",
+        "UPSTREAM-REJECTED-USAGE"
+      ],
+      "tier": "regression"
+    },
     "session_default_checkpoint_chat_131072": {
       "features": [],
       "issues": [
