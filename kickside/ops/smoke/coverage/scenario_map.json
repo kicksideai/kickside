@@ -8220,6 +8220,13 @@
       ],
       "tier": "full"
     },
+    "hub_transitive_module_update_browser": {
+      "features": [],
+      "issues": [
+        "HUB-TRANSITIVE-UPDATE-DESTINATION"
+      ],
+      "tier": "regression"
+    },
     "hub_update_dependency_destination": {
       "features": [],
       "issues": [
