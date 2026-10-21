@@ -7625,6 +7625,14 @@
       "issues": [],
       "tier": "quick"
     },
+    "crm_resolve_record_lifetime": {
+      "features": [],
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME",
+        "MIGRATION-LEDGER-ACTIVE-SCHEMA"
+      ],
+      "tier": "regression"
+    },
     "crm_schema_index_cause": {
       "features": [],
       "issues": [

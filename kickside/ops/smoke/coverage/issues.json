@@ -9707,6 +9707,29 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "crm/resolve-record-lifetime": {
+      "repository": "kickside/crm",
+      "test": "test/src/crm_resolve_lifetime_test.lua",
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
+    },
+    "crm/alias-claim-migration": {
+      "repository": "kickside/crm",
+      "test": "test/src/crm_alias_migration_test.lua",
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME",
+        "MIGRATION-LEDGER-ACTIVE-SCHEMA"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
     }
   },
   "issues": [
@@ -10880,7 +10903,9 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "CRM-RESOLVE-RECORD-LIFETIME",
+    "MIGRATION-LEDGER-ACTIVE-SCHEMA"
   ],
   "schema_version": 1
 }
