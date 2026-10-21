@@ -209,6 +209,9 @@ function part.attach(M: any, dependencies: any, P: any): ()
         end
 
         local pruned, prune_err = (dependencies.automation_db :: any).in_tx(function(tx: any): (any?, any)
+            local prepared_count, prepared_err = (dependencies.prepared_retention :: any).prune_orphans_tx(tx,
+                drive.utc_after(-(policy :: Map).prepared_ms), limit)
+            if prepared_err then return nil, prepared_err end
             local ledger_count, ledger_err = (dependencies.round_ledger :: any).prune_tx(tx, drive.utc_now(), limit)
             if ledger_err then return nil, ledger_err end
             local orphan_ledger_count, orphan_ledger_err = (dependencies.round_ledger :: any).prune_orphans_tx(tx,
@@ -216,9 +219,6 @@ function part.attach(M: any, dependencies: any, P: any): ()
             if orphan_ledger_err then return nil, orphan_ledger_err end
             local op_count, op_err = command.prune_ops_tx(tx, drive.utc_after(-(policy :: Map).ops_ms), limit)
             if op_err then return nil, op_err end
-            local prepared_count, prepared_err = (dependencies.prepared_retention :: any).prune_orphans_tx(tx,
-                drive.utc_after(-(policy :: Map).prepared_ms), limit)
-            if prepared_err then return nil, prepared_err end
             local receipt_count, receipt_err = (dependencies.receipt_retention :: any).prune_orphans_tx(tx,
                 drive.utc_after(-(policy :: Map).receipts_ms), limit)
             if receipt_err then return nil, receipt_err end

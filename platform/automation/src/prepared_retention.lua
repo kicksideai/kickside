@@ -1,4 +1,4 @@
--- The dispatcher retires prepared output only after its recovery owner is gone.
+-- The dispatcher retires orphaned prepared output only with settled delivery proof.
 -- A live drive may still need its sole replay-safe transform result, regardless
 -- of age; a pending command may install the drive that will consume it.
 local M = {}
@@ -17,6 +17,9 @@ function M.prune_orphans_tx(tx: any, cutoff: string, limit: integer): (integer?,
                           WHERE c.automation_id=p.automation_id AND c.pending_request_id IS NOT NULL)
           AND NOT EXISTS (SELECT 1 FROM kickside_trigger_item_ledger l
                           WHERE l.owner_id=p.automation_id AND l.state NOT IN ('resolved','dead'))
+          AND EXISTS (SELECT 1 FROM kickside_trigger_item_ledger settled
+                      WHERE settled.owner_id=p.automation_id AND settled.identity_key=p.idempotency_key
+                        AND settled.state='resolved')
         ORDER BY p.created_at,p.automation_id,p.idempotency_key LIMIT $2
     ) DELETE FROM kickside_automation_prepared
       WHERE (automation_id,idempotency_key) IN (SELECT automation_id,idempotency_key FROM expired)

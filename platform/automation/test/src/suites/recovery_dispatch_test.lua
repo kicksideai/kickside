@@ -323,6 +323,14 @@ local function define_tests()
                 test.is_nil(insert_err, tostring(insert_err))
             end
             db:release()
+            db = open_db()
+            local _, proof_err = db:execute([[INSERT INTO kickside_trigger_item_ledger
+                (owner_id,source_port,item_key,dedup_key,identity_key,envelope_json,state,
+                 first_failed_at,last_failed_at,created_at,updated_at,resolved_at,expires_at)
+                VALUES ($1,'source','output','output','output','{}','resolved',$2,$2,$2,$2,$2,$2)]],
+                {orphan, "2000-01-01T00:00:00Z"})
+            db:release()
+            test.is_nil(proof_err)
             local pass, err = engine(writer_ok({}), {}).dispatch({ limit = 1000 })
             test.is_nil(err, tostring(err))
             test.eq(pass.pruned_prepared, 1)
