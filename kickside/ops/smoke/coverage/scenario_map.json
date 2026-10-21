@@ -6500,6 +6500,13 @@
       ],
       "tier": "regression"
     },
+    "channel_direct_message_idempotency": {
+      "features": [],
+      "issues": [
+        "CHANNEL-DIRECT-MESSAGE-IDEMPOTENCY"
+      ],
+      "tier": "regression"
+    },
     "channel_execution_authority": {
       "features": [],
       "issues": [
@@ -7753,6 +7760,13 @@
         "DC-01"
       ],
       "tier": "full"
+    },
+    "discord_direct_message_idempotency": {
+      "features": [],
+      "issues": [
+        "DISCORD-DIRECT-MESSAGE-IDEMPOTENCY"
+      ],
+      "tier": "regression"
     },
     "execution_baseline_identity_resolution": {
       "features": [],
