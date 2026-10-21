@@ -8303,6 +8303,26 @@
       ],
       "tier": "regression"
     },
+    "inbox_review_edit": {
+      "features": [
+        "kickside/inbox|workflow_block|kickside.inbox:block.review",
+        "kickside/inbox|http|POST /api/v1/inbox/{id}/{action}"
+      ],
+      "issues": [
+        "INBOX-REVIEW-INPUT-TITLE",
+        "INBOX-REVIEW-EDITABLE-INPUT",
+        "INBOX-REVIEW-ENUM-VALUE-TYPES"
+      ],
+      "tier": "regression"
+    },
+    "inbox_review_input_arm": {
+      "features": [],
+      "issues": [
+        "INBOX-REVIEW-INPUT-TITLE",
+        "INBOX-REVIEW-EDITABLE-INPUT"
+      ],
+      "tier": "regression"
+    },
     "install_keeps_member_session": {
       "features": [],
       "issues": [

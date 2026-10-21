@@ -9707,6 +9707,28 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "inbox/review-input-arm": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "INBOX-REVIEW-INPUT-TITLE",
+        "INBOX-REVIEW-EDITABLE-INPUT"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/inbox/test/src/arm_decision_test.lua"
+    },
+    "inbox/review-enum-values": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "INBOX-REVIEW-ENUM-VALUE-TYPES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/inbox/ui/src/app/InboxItem.spec.ts"
     }
   },
   "issues": [
@@ -10880,7 +10902,10 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "INBOX-REVIEW-INPUT-TITLE",
+    "INBOX-REVIEW-EDITABLE-INPUT",
+    "INBOX-REVIEW-ENUM-VALUE-TYPES"
   ],
   "schema_version": 1
 }
