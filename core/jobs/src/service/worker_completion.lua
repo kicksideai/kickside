@@ -90,7 +90,7 @@ end
 worker_completion.complete_job = complete_job
 
 local function fail_job(db: sql.DB, dbtype: string, job: table, output: any,
-    error_text: string, failure_class: string?, run_ctx: table?): (error?, boolean)
+    error_text: string, failure_class: string?, run_ctx: table?, retry_floor: table?): (error?, boolean)
     local tx, begin_err = sql_boundary.begin(db, "failure begin failed", "transaction", response_error)
     if begin_err or not tx then return begin_err or response_error("transaction"), false end
     local settled, settled_err = completion.worker_settled_tx(tx, tostring(job.id),
@@ -100,7 +100,7 @@ local function fail_job(db: sql.DB, dbtype: string, job: table, output: any,
         local rollback_err = sql_boundary.rollback(tx, nil, "failure rollback failed")
         return rollback_err, rollback_err == nil
     end
-    local fail_err = lifecycle.fail_tx(tx, job, dbtype, error_text, failure_class)
+    local fail_err = lifecycle.fail_tx(tx, job, dbtype, error_text, failure_class, retry_floor)
     if fail_err then
         return sql_boundary.rollback(tx, fail_err, "failure rollback failed"), false
     end
