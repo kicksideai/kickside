@@ -9729,6 +9729,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/jobs/test/src/suites/persist/claim_cases/termination_recovery_test.lua"
+    },
+    "core/thread-event-type-request-filter": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "THREAD-EVENT-TYPE-REQUEST-FILTER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/threads/events_pullable_test.lua"
     }
   },
   "issues": [
@@ -10904,7 +10915,8 @@
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
     "TEMPLATE-MOUNTED-PAGE-REFRESH",
     "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER",
-    "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
+    "RECLAIM-PROCESS-LOOKUP-TRANSACTION",
+    "THREAD-EVENT-TYPE-REQUEST-FILTER"
   ],
   "schema_version": 1
 }

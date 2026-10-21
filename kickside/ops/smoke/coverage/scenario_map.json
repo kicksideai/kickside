@@ -9743,7 +9743,8 @@
     "native_errors_core_pullable": {
       "features": [],
       "issues": [
-        "NE-117"
+        "NE-117",
+        "THREAD-EVENT-TYPE-REQUEST-FILTER"
       ],
       "tier": "regression"
     },
