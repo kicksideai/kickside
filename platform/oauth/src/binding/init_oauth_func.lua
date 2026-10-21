@@ -115,7 +115,11 @@ local function handle(request_dto)
     end
 
     if request_dto.scopes and #request_dto.scopes > 0 then
-        table.insert(url_params, "scope=" .. url_encode(table.concat(request_dto.scopes, " ")))
+        local separator = ctx_or("oauth_scope_separator", " ")
+        if separator ~= " " and separator ~= "," then
+            return {success = false, error = "Unsupported OAuth scope separator"}
+        end
+        table.insert(url_params, "scope=" .. url_encode(table.concat(request_dto.scopes, separator)))
     end
 
     local extra_auth_params, extra_err = ctx.get("oauth_extra_auth_params")
