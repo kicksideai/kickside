@@ -16,7 +16,7 @@ entries:
   meta: {type: test, suite: workflows}
   source: file://original_identity_test.lua
   method: run
-  modules: [funcs, security, uuid]
+  modules: [funcs, security, uuid, json]
   imports: &original_identity_imports
     test: wippy.test:test
     run_identity: app:original_identity_loader
@@ -27,21 +27,21 @@ entries:
   kind: function.lua
   source: file://original_identity_test.lua
   method: probe
-  modules: [funcs, security, uuid]
+  modules: [funcs, security, uuid, json]
   imports: *original_identity_imports
 
 - name: original_delivery_identity_live_probe
   kind: function.lua
   source: file://original_identity_test.lua
   method: live_probe
-  modules: [funcs, security, uuid]
+  modules: [funcs, security, uuid, json]
   imports: *original_identity_imports
 
 - name: original_delivery_identity_live_loader
   kind: function.lua
   source: file://original_identity_test.lua
   method: probe
-  modules: [funcs, security, uuid]
+  modules: [funcs, security, uuid, json]
   imports:
     <<: *original_identity_imports
     run_identity: kickside.workflows.runs:run_identity
