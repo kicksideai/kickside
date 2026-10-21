@@ -277,6 +277,7 @@ def regression_EE2_2572_direct_result_chat(ctx):
     """Native Jira pages reach chat directly on both small and 262k model cards."""
     from browser import CHAT_STATE
     from runtime_fixtures import complete_splashes
+    from scenarios_hot_update_work import database_rows
     complete_splashes(ctx, 'welcome', 'first_agent')
     token = uuid.uuid4().hex
     ctx.inst.redactor.add(token)
@@ -333,6 +334,8 @@ def regression_EE2_2572_direct_result_chat(ctx):
                 'DELETE', '/api/v1/user-agents/' + agent), scope='scenario')
             before_uploads = ctx.inst.request('GET', '/api/v1/uploads/list?limit=100', label='direct-result-uploads-before')
             start = len(ctx.fixtures.requests('openai-tools'))
+            usage_query = "SELECT usage_id, context_id FROM token_usage WHERE model_id = '" + model.replace("'", "''") + "'"
+            previous_usage = {row['usage_id'] for row in database_rows(ctx.inst, usage_query)}
             if phase == 'long':
                 session_id = None
                 for turn in range(12):
@@ -381,6 +384,11 @@ def regression_EE2_2572_direct_result_chat(ctx):
             requests = [row for row in ctx.fixtures.requests('openai-tools')[start:]
                         if row['path'] == '/v1/chat/completions']
             require(requests, 'Chat sends no request to the deterministic model provider')
+            usage = [row for row in database_rows(ctx.inst, usage_query) if row['usage_id'] not in previous_usage]
+            require(len(usage) == len(requests), 'Chat usage does not account for every completed model request')
+            require(all(row['context_id'] == session_id for row in usage),
+                    'Chat usage does not retain the session context identifier')
+            ctx.inst.evidence.save('direct-result-' + label + '-' + phase + '-usage', usage)
             if phase == 'reporter':
                 require(len(requests) == 2, 'Reporter chat does not finish in one tool step and one answer step')
             sizes = [_model_request_fits(row, window, output) for row in requests]
@@ -728,7 +736,7 @@ REGISTRY = [
     Scenario('providers_atlassian_connect','full',atlassian_connect,('providers_boot',),features=(feature('atlassian','connection_provider','kickside.atlassian.connection:atlassian_connection'),feature('atlassian','workspace_kind','kickside.atlassian.connection:atlassian_connection')), instance_setup=True),
     Scenario('providers_jira_tools','full',jira_tools,('providers_atlassian_connect',),features=tuple(feature('atlassian','capability','kickside.atlassian.jira.traits:'+name) for name in ('jira_reader','jira_writer','jira_developer'))+tuple(feature('atlassian','mcp_tool','kickside.atlassian.jira.traits:'+name) for name in ('jira_get','jira_write'))),
     Scenario('regression_EE2_2572_direct_result_chat', 'full', regression_EE2_2572_direct_result_chat,
-             ('providers_atlassian_connect',), issues=('EE2-2572', 'SMOKE-CHAT-RELAY-WELCOME-HANDSHAKE', 'UPSTREAM-SESSION-PREDISPATCH-INVALIDATE', 'SMOKE-MODEL-STREAM-RESPONSE', 'SMOKE-NATIVE-TOOL-TRANSCRIPT', 'SMOKE-MODEL-TOKEN-ACCOUNTING'),
+             ('providers_atlassian_connect',), issues=('EE2-2572', 'SMOKE-CHAT-RELAY-WELCOME-HANDSHAKE', 'UPSTREAM-SESSION-PREDISPATCH-INVALIDATE', 'SMOKE-MODEL-STREAM-RESPONSE', 'SMOKE-NATIVE-TOOL-TRANSCRIPT', 'SMOKE-MODEL-TOKEN-ACCOUNTING', 'UPSTREAM-USAGE-CONTEXT-CORRELATION'),
              features=(feature('atlassian', 'capability', 'kickside.atlassian.jira.traits:jira_reader'),
                        feature('atlassian', 'mcp_tool', 'kickside.atlassian.jira.traits:jira_get'))),
     Scenario('regression_jira_native_search_page', 'full', regression_jira_native_search_page, ('providers_atlassian_connect',), issues=('EE2-2572',), features=(feature('atlassian', 'mcp_tool', 'kickside.atlassian.jira.traits:jira_get'),)),
