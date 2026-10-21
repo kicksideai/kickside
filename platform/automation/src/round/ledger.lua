@@ -137,14 +137,15 @@ function M.admit(executor: any, owner: string, port: string, items: { Map }, rou
     return { items = pending, fronts = fronts }, nil
 end
 
--- next_attempt(executor, owner_id, source_port) -> the earliest pending
--- redelivery time, or nil.
-function M.next_attempt(executor: any, owner_id: string, source_port: string): (string?, error?)
+-- next_attempt(executor, owner_id, source_port, decision_at?) -> the earliest
+-- pending redelivery time, or nil. Deadline-free work is due at the caller's
+-- captured decision time, even when the query crosses a clock boundary.
+function M.next_attempt(executor: any, owner_id: string, source_port: string, decision_at: string?): (string?, error?)
     local order, order_err = drive.time_sql(executor, "COALESCE(next_attempt_at,$1)")
     if order_err then return nil, order_err end
     local rows, err = executor:query("SELECT COALESCE(next_attempt_at,$1) AS next_at FROM " .. M.TABLE
         .. " l WHERE owner_id = $2 AND source_port = $3 AND state IN ('retrying', 'waiting', 'parked') AND identity_parked=false"
-        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { time.now():utc():format(time.RFC3339), owner_id, source_port })
+        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { decision_at or time.now():utc():format(time.RFC3339), owner_id, source_port })
     if err then return nil, internal("failed to read the next ledger attempt", err) end
     local row = (rows :: { Map })[1]
     if not row or row.next_at == nil then return nil, nil end
