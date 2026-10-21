@@ -9,7 +9,7 @@ for _, stage in ipairs({"append_encode", "identity", "admission", "get", "type",
     "cursor", "body_encode", "update", "cursor_update", "append", "complete", "commit", "notify", "retention", "release"}) do
     routes[#routes + 1] = {stage = stage, mode = "advance"}
 end
-for _, stage in ipairs({"get", "type", "begin", "fence", "invalidate", "complete", "commit", "notify", "release"}) do
+for _, stage in ipairs({"get", "type", "begin", "lock", "cursor", "pin", "fence", "invalidate", "complete", "commit", "notify", "release"}) do
     routes[#routes + 1] = {stage = stage, mode = "fail"}
 end
 for _, stage in ipairs({"complete", "commit", "notify"}) do routes[#routes + 1] = {stage = stage, mode = "stale"} end
@@ -109,7 +109,10 @@ local function outcomes()
         {stage = "body_encode", field = "body_json"}, {stage = "update", field = "projection.update"},
         {stage = "cursor_update", field = "cursor.update"}, {stage = "append", field = "append"},
         {stage = "complete", field = "completion"}, {stage = "fence", mode = "fail", field = "failure.fence"},
-        {stage = "invalidate", mode = "fail", field = "projection.invalidate"}}) do
+        {stage = "invalidate", mode = "fail", field = "projection.invalidate"},
+        {stage = "lock", mode = "fail", field = "locked_threads"},
+        {stage = "cursor", mode = "fail", field = "cursor.rows"},
+        {stage = "pin", mode = "fail", field = "retention.pin"}}) do
         for _, proof in ipairs({{label = "missing"}, {label = "false", value = false}, {label = "number", value = 7}}) do
             test.it("missing successful proof/" .. route.stage .. "/" .. proof.label, function()
                 fixture.reset(route.stage, nil, route.mode or "advance")

@@ -131,3 +131,18 @@ entries:
     imports:
       writer: kickside.core.projections.persist:writer
       test: wippy.test:test
+
+  - name: block_retention_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://block_retention_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      writer: kickside.core.projections.persist:writer
+      apply: kickside.core.projections:apply
+      claim: kickside.core.jobs.persist:claim
+      invoke: kickside.core.projections:invoke
+      pin: kickside.core.retention:pin
+      prune: kickside.core.retention:prune
