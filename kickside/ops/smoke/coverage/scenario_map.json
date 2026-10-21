@@ -7851,6 +7851,13 @@
       ],
       "tier": "regression"
     },
+    "health_initialization_failure": {
+      "features": [],
+      "issues": [
+        "APP-HEALTH-INITIALIZATION-FAILURE"
+      ],
+      "tier": "regression"
+    },
     "host_component_loading": {
       "features": [],
       "issues": [
@@ -14754,6 +14761,13 @@
         "SEC-MCP-OWNER-CEILING"
       ],
       "tier": "full"
+    },
+    "server_boot_failure": {
+      "features": [],
+      "issues": [
+        "RUNTIME-SERVER-BOOT-FAILURE"
+      ],
+      "tier": "regression"
     },
     "session_default_checkpoint_chat_131072": {
       "features": [],
