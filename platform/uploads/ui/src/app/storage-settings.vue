@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import ToggleSwitch from 'primevue/toggleswitch'
-import InputText from 'primevue/inputtext'
 import { api } from '@wippy-fe/proxy'
 
 // Files & Uploads — a small, purpose-built settings panel (a miniature of the
@@ -24,32 +23,10 @@ interface Row {
   is_default: boolean
 }
 
-const NS_STORAGE = 'kickside.uploads.storage'
-const NAMESPACES = [NS_STORAGE, 'kickside.uploads', 'kickside.uploads.documents', 'kickside.uploads.rasterize'] as const
+const NAMESPACES = ['kickside.uploads', 'kickside.uploads.documents', 'kickside.uploads.rasterize'] as const
 const NS_UPLOADS = 'kickside.uploads'
 const NS_DOCS = 'kickside.uploads.documents'
 const NS_RAST = 'kickside.uploads.rasterize'
-
-interface StoragePolicy {
-  mode: 'local' | 's3'
-  resource_id: string
-  prefix: string
-}
-interface StorageResource { id: string; title: string }
-interface SettingsRow { namespace: string; key: string; value: unknown; is_default: boolean }
-interface SettingsResponse { success: boolean; settings?: SettingsRow[]; error?: string }
-interface StorageResponse { success: boolean; resources?: StorageResource[]; error?: string }
-const storagePolicy = ref<StoragePolicy>({ mode: 'local', resource_id: '', prefix: 'uploads' })
-const storageResources = ref<StorageResource[]>([])
-const testingStorage = ref(false)
-const storageTest = ref('')
-const storageTestError = ref(false)
-const STORAGE_MODES = [{ label: 'Keep locally', value: 'local' }, { label: 'Move to S3 after processing', value: 's3' }]
-let storageBaseline = ''
-watch(storagePolicy, () => { storageTest.value = '' }, { deep: true })
-const storageValid = computed(() => storagePolicy.value.mode === 'local' ||
-  (!!storagePolicy.value.resource_id && !!storagePolicy.value.prefix &&
-   storageResources.value.some(resource => resource.id === storagePolicy.value.resource_id)))
 
 const loading = ref(true)
 const saving = ref(false)
@@ -73,24 +50,19 @@ function seedAll() {
   const d: Record<string, string | number | boolean> = {}
   for (const r of Object.values(rows.value)) {
     const k = id(r.ns, r.key)
-    if (k === id(NS_STORAGE, 'policy')) continue
     if (k === id(NS_DOCS, 'max_upload_bytes')) d[k] = bytesToMb(r.value)
     else if (k === id(NS_UPLOADS, 'process_max_execution_ms')) d[k] = msToSec(r.value)
     else if (typeof r.value === 'boolean') d[k] = r.value
     else d[k] = r.value as never
   }
-  const value = rows.value[id(NS_STORAGE, 'policy')]?.value as StoragePolicy | undefined
-  storagePolicy.value = value ? { ...value } : { mode: 'local', resource_id: '', prefix: 'uploads' }
-  storageBaseline = JSON.stringify(storagePolicy.value)
   draft.value = d
   baseline = JSON.stringify(d)
 }
 
-const dirty = computed(() => JSON.stringify(draft.value) !== baseline || JSON.stringify(storagePolicy.value) !== storageBaseline)
+const dirty = computed(() => JSON.stringify(draft.value) !== baseline)
 
 // The stored value a draft maps back to, applying the inverse unit conversion.
 function storedFor(k: string): unknown {
-  if (k === id(NS_STORAGE, 'policy')) return { ...storagePolicy.value }
   const v = draft.value[k]
   if (k === id(NS_DOCS, 'max_upload_bytes')) return mbToBytes(v)
   if (k === id(NS_UPLOADS, 'process_max_execution_ms')) return secToMs(v)
@@ -109,14 +81,10 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const results = await Promise.all(NAMESPACES.map(async ns => {
-      const { data } = await api.get<SettingsResponse>(`/api/v1/settings?namespace=${encodeURIComponent(ns)}`)
-      if (!data?.success) throw new Error(data?.error || 'Could not load file settings')
-      return data.settings || []
-    }))
-    const { data: discovered } = await api.get<StorageResponse>('/api/v1/uploads/storage')
-    if (!discovered?.success) throw new Error(discovered?.error || 'Could not load storage destinations')
-    storageResources.value = discovered.resources || []
+    const results = await Promise.all(
+      NAMESPACES.map(ns => api.get(`/api/v1/settings?namespace=${encodeURIComponent(ns)}`)
+        .then((r: any) => (r.data?.success ? (r.data.settings as any[]) : []))
+        .catch(() => [] as any[])))
     const map: Record<string, Row> = {}
     for (const s of results.flat()) {
       map[id(s.namespace, s.key)] = { ns: s.namespace, key: s.key, value: s.value, is_default: s.is_default !== false }
@@ -134,12 +102,10 @@ async function save() {
   saving.value = true
   error.value = ''
   try {
-    for (const k of Object.keys(rows.value)) {
+    for (const k of Object.keys(draft.value)) {
       if (!fieldDirty(k)) continue
       const r = rows.value[k]
-      const { data } = k === id(NS_STORAGE, 'policy')
-        ? await api.post('/api/v1/uploads/storage', storedFor(k))
-        : await api.put('/api/v1/settings', { namespace: r.ns, key: r.key, value: storedFor(k) })
+      const { data } = await api.put('/api/v1/settings', { namespace: r.ns, key: r.key, value: storedFor(k) })
       if (!data?.success) throw new Error(data?.error || `could not save ${r.key}`)
     }
     await load()
@@ -154,36 +120,12 @@ async function save() {
 async function resetField(ns: string, key: string) {
   saving.value = true
   try {
-    const { data } = ns === NS_STORAGE && key === 'policy'
-      ? await api.delete('/api/v1/uploads/storage')
-      : await api.put('/api/v1/settings', { namespace: ns, key, value: null })
-    if (!data?.success) throw new Error(data?.error || 'Could not reset setting')
+    await api.put('/api/v1/settings', { namespace: ns, key, value: null })
     await load()
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
     saving.value = false
-  }
-}
-
-async function testStorage() {
-  testingStorage.value = true
-  storageTest.value = ''
-  const tested = JSON.stringify(storagePolicy.value)
-  try {
-    const { data } = await api.post<StorageResponse>('/api/v1/uploads/storage/test', { ...storagePolicy.value })
-    if (!data?.success) throw new Error(data?.error || 'Storage check failed')
-    if (JSON.stringify(storagePolicy.value) === tested) {
-      storageTestError.value = false
-      storageTest.value = 'Upload, read, and cleanup succeeded.'
-    }
-  } catch (e) {
-    if (JSON.stringify(storagePolicy.value) === tested) {
-      storageTestError.value = true
-      storageTest.value = e instanceof Error ? e.message : String(e)
-    }
-  } finally {
-    testingStorage.value = false
   }
 }
 
@@ -209,7 +151,7 @@ onMounted(load)
           type="button"
           :label="saving ? 'Saving…' : 'Save'"
           :loading="saving"
-          :disabled="!dirty || saving || loading || testingStorage || !storageValid"
+          :disabled="!dirty || saving"
           @click="save">
           <template #icon>
             <Icon v-if="!saving" icon="tabler:device-floppy" aria-hidden="true" />
@@ -217,43 +159,10 @@ onMounted(load)
         </Button>
       </header>
 
-      <div v-if="error" class="ap-msg ap-err" role="alert">{{ error }}</div>
+      <div v-if="error" class="ap-msg ap-err">{{ error }}</div>
       <div v-if="loading" class="ap-loading"><Icon icon="tabler:loader-2" class="spin" /> Loading…</div>
 
       <div v-else class="ap-cards">
-        <section v-if="has(NS_STORAGE, 'policy')" class="ap-card" aria-labelledby="file-storage-heading">
-          <header id="file-storage-heading" class="ap-h"><Icon icon="tabler:cloud-upload" aria-hidden="true" /> Processed file storage</header>
-          <p class="ap-sub">Choose where newly processed files are kept. Originals, extracted text, images, and previews remain available to sessions and knowledge bases.</p>
-          <div class="ap-fg">
-            <label id="file-storage-mode-label" for="file-storage-mode" class="ap-blabel">After processing</label>
-            <Select input-id="file-storage-mode" v-model="storagePolicy.mode" :options="STORAGE_MODES"
-              option-label="label" option-value="value" :disabled="saving || testingStorage"
-              aria-labelledby="file-storage-mode-label" />
-          </div>
-          <template v-if="storagePolicy.mode === 's3'">
-            <div class="ap-fg">
-              <label id="file-storage-resource-label" for="file-storage-resource" class="ap-blabel">Private S3 destination</label>
-              <Select input-id="file-storage-resource" v-model="storagePolicy.resource_id" :options="storageResources"
-                option-label="title" option-value="id" placeholder="Select storage" :disabled="saving || testingStorage"
-                aria-labelledby="file-storage-resource-label" aria-describedby="file-storage-resource-help" />
-              <p id="file-storage-resource-help" class="ap-hint">{{ storageResources.length ? 'Uses the S3 storage configured for this application.' : 'An administrator must configure native S3 upload storage before enabling this option.' }}</p>
-            </div>
-            <div class="ap-fg">
-              <label for="file-storage-prefix" class="ap-blabel">Folder prefix</label>
-              <InputText id="file-storage-prefix" v-model="storagePolicy.prefix" :maxlength="256"
-                :disabled="saving || testingStorage" aria-describedby="file-storage-prefix-help" />
-              <p id="file-storage-prefix-help" class="ap-hint">For example, uploads or workspace/files. Content stays private; this does not publish files to a CDN.</p>
-            </div>
-            <Button type="button" label="Test storage" severity="secondary" outlined :loading="testingStorage"
-              :disabled="!storageValid || saving || testingStorage" @click="testStorage" />
-            <p v-if="storageTest" :class="['ap-hint', { 'ap-err': storageTestError }]" role="status">{{ storageTest }}</p>
-            <p class="ap-hint">Local bytes are reclaimed only after the S3 copy has been verified. Failed transfers retry in the background.</p>
-          </template>
-          <p class="ap-hint">Changes apply to future uploads. Files already in S3 continue to use that storage when this option is turned off.</p>
-          <Button v-if="!isDefault(NS_STORAGE, 'policy')" type="button" label="Reset storage policy"
-            severity="secondary" text :disabled="saving || testingStorage" @click="resetField(NS_STORAGE, 'policy')" />
-        </section>
-
         <!-- Limits -->
         <section class="ap-card">
           <header class="ap-h"><Icon icon="tabler:ruler-2" aria-hidden="true" /> Limits</header>

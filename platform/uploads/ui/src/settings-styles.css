@@ -1,0 +1,68 @@
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@import "@kickside/ui-kit/kx-tag.css";
+
+/* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
+   preflight; without it PrimeVue controls keep UA defaults the theme never
+   overrides. */
+@tailwind base;
+
+/* The host element and the WippyVueElement mount wrapper must carry a definite
+   height, or the inner height:100% chain collapses to content height and the
+   surface overflows its slot without scrolling. */
+:host { display: block; height: 100%; min-height: 0; }
+:host > div { height: 100%; min-height: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+
+:host { --system-surface-gutter: var(--kickside-system-surface-gutter, 24px); }
+
+/* ── Bespoke block-panel chrome (.ap-*) ───────────────────────────────────────
+   A small vocabulary a bespoke settings block (e.g. Files & Uploads) uses to
+   render a miniature card surface with a sticky Save/Discard toolbar — the same
+   look as the Appearance editor, self-contained here so a block panel bundled in
+   this component needs no external stylesheet. Token-driven for light + dark. */
+.ap { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--p-text-color); background: var(--p-content-background); }
+.ap-body { flex: 1; overflow-y: auto; padding: 0 0 28px; }
+.ap-bar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; width: 100%;
+  padding: 12px var(--system-surface-gutter); background: var(--p-content-background);
+  position: sticky; top: 0; z-index: 3; border-bottom: 1px solid var(--p-content-border-color);
+}
+.ap-dirty {
+  display: inline-flex; align-items: center; height: 34px; font-size: 12px; font-weight: 600;
+  color: var(--p-warn-600, var(--p-warn-500)); background: color-mix(in srgb, var(--p-warn-500) 16%, transparent);
+  padding: 0 11px; border-radius: 8px; margin-right: auto;
+}
+.ap-msg { margin: 12px var(--system-surface-gutter) 0; padding: 9px 12px; border-radius: 8px; font-size: 13px; }
+.ap-err { background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-600, var(--p-danger-500)); }
+.ap-loading { display: flex; align-items: center; gap: 8px; color: var(--p-text-muted-color); font-size: 13px; padding: 24px; }
+
+.ap-cards { display: flex; flex-direction: column; gap: 16px; padding: 16px var(--system-surface-gutter) 0; }
+.ap-card { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 14px; padding: 16px 18px; }
+.ap-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--p-text-color); letter-spacing: -.2px; }
+.ap-h svg { width: 17px; height: 17px; color: var(--p-text-muted-color); }
+.ap-sub { font-size: 12.5px; color: var(--p-text-muted-color); margin: 4px 0 12px; }
+.ap-blabel { display: block; font-size: 11.5px; font-weight: 700; color: var(--p-text-muted-color); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 6px; }
+.ap-binput {
+  width: 100%; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background); color: var(--p-text-color); font: inherit; font-size: 13px; box-sizing: border-box;
+}/* Enum/format PrimeVue Select in a bespoke card. Full-width like the native
+   input it replaces; PrimeVue's prestyled CSS supplies height/border/background. */
+.ap-select { width: 100%; }
+.ap-hint { font-size: 11.5px; color: var(--p-text-muted-color); margin: 8px 0 0; }
+
+/* An input trailed by a fixed unit suffix (MB, DPI, sec) and an optional reset. */
+.ap-unit { display: flex; align-items: center; gap: 8px; }
+.ap-unit .ap-binput { flex: 1; min-width: 0; }
+.ap-unit-suffix { font-size: 12px; font-weight: 600; color: var(--p-text-muted-color); flex: 0 0 auto; min-width: 34px; }
+
+/* A labeled toggle row: text on the left, switch on the right. */
+.ap-toggle-row { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.ap-toggle-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ap-toggle-name { font-size: 13px; font-weight: 600; color: var(--p-text-color); }
+.ap-toggle-desc { font-size: 12px; color: var(--p-text-muted-color); }
+
+/* A responsive grid of compact labeled fields. */
+.ap-field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 14px; margin-top: 14px; }
+.ap-fg { min-width: 0; }
+.ap-fg .ap-blabel { margin-top: 0; }

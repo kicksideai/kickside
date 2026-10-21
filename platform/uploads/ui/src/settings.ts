@@ -1,8 +1,8 @@
 import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import Storage from './app/storage.vue'
-import stylesText from './styles.css?inline'
+import Storage from './app/storage-settings.vue'
+import stylesText from './settings-styles.css?inline'
 
 // kickside-settings-storage — the consolidated Files & Uploads settings panel.
 // A bespoke block editor: it gathers the several upload/document/rasterization

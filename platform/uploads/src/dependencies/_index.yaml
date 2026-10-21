@@ -1,20 +1,6 @@
 version: "1.0"
 namespace: kickside.uploads
 entries:
-  - name: dep.wippy.bootloader
-    kind: ns.dependency
-    component: wippy/bootloader
-    version: '*'
-    meta:
-      comment: Storage owner starts after schema migrations complete.
-
-  - name: dep.kickside.settings
-    kind: ns.dependency
-    component: kickside/settings
-    version: '*'
-    meta:
-      comment: Validated processed-file placement policy and Files & Uploads settings.
-
   - name: dep.kickside.component
     version: '*'
     kind: ns.dependency
