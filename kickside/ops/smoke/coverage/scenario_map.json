@@ -6883,6 +6883,13 @@
       ],
       "tier": "regression"
     },
+    "component_creation_identity": {
+      "features": [],
+      "issues": [
+        "COMPONENT-CAPTURED-CREATION-IDENTITY"
+      ],
+      "tier": "regression"
+    },
     "component_notification_fanout": {
       "features": [],
       "issues": [
