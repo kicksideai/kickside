@@ -8417,6 +8417,13 @@
       ],
       "tier": "full"
     },
+    "knowledge_artifact_events": {
+      "features": [],
+      "issues": [
+        "KNOWLEDGE-BOUNDED-CONTENT-EVENT"
+      ],
+      "tier": "regression"
+    },
     "knowledge_ask_capability": {
       "features": [],
       "issues": [
@@ -8433,6 +8440,18 @@
       ],
       "issues": [
         "SMOKE-ONBOARDING-EXPLICIT-MODEL-LIMITS"
+      ],
+      "tier": "full"
+    },
+    "knowledge_large_upload": {
+      "features": [
+        "kickside/knowledge|http|POST /api/v1/knowledge/{id}/ingest-upload",
+        "kickside/knowledge|http|POST /api/v1/knowledge/{id}/search",
+        "kickside/uploads|http|POST /api/v1/uploads",
+        "kickside/core|http|GET /api/v1/threads/{id}/events"
+      ],
+      "issues": [
+        "KNOWLEDGE-BOUNDED-CONTENT-EVENT"
       ],
       "tier": "full"
     },
