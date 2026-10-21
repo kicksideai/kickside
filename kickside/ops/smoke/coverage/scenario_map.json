@@ -7625,6 +7625,13 @@
       "issues": [],
       "tier": "quick"
     },
+    "crm_resolve_suggestion_output": {
+      "features": [],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-OUTPUT"
+      ],
+      "tier": "regression"
+    },
     "crm_schema_index_cause": {
       "features": [],
       "issues": [
@@ -7636,6 +7643,13 @@
       "features": [],
       "issues": [
         "CRM-SCHEMA-SELECT-VOCABULARY"
+      ],
+      "tier": "regression"
+    },
+    "crm_sink_idempotency_classification": {
+      "features": [],
+      "issues": [
+        "CRM-SINK-IDEMPOTENCY-CLASSIFICATION"
       ],
       "tier": "regression"
     },
