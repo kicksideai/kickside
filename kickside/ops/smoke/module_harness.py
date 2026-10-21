@@ -135,10 +135,9 @@ def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repos
             if inst.engine == 'postgres':
                 command.extend(('--profile', 'postgres'))
             _command(inst, label + '-lint', command, root, environment, timeout)
-        if not repository_gate:
-            focused_config = yaml.safe_load(config_path.read_text())
-            _focus_tests(root, focused_config, entry)
-            config_path.write_text(yaml.safe_dump(focused_config, sort_keys=False))
+        focused_config = yaml.safe_load(config_path.read_text())
+        _focus_tests(root, focused_config, None if repository_gate else entry)
+        config_path.write_text(yaml.safe_dump(focused_config, sort_keys=False))
         test = [inst.config['binary'], '--config', config_path.name, 'test']
         if inst.engine == 'postgres':
             test.extend(('--profile', 'postgres', '--set', 'vars.pg_database=' + database))
@@ -232,13 +231,16 @@ def replacement_test_entries(root, config):
     return entries
 
 
-def _focus_tests(root, config, selection):
+def _focus_tests(root, config, selection=None):
     entries = test_entries(root)
-    selected = {identifier for identifier, entry in entries.items()
-                if selection in (identifier, entry['name'], entry.get('meta', {}).get('suite'))}
-    require(selected, 'Focused harness selection matches no test: ' + selection)
-    selected.update(identifier for identifier, entry in entries.items()
-                    if str(entry.get('meta', {}).get('suite', '')).startswith('00_'))
+    if selection is None:
+        selected = set(entries)
+    else:
+        selected = {identifier for identifier, entry in entries.items()
+                    if selection in (identifier, entry['name'], entry.get('meta', {}).get('suite'))}
+        require(selected, 'Focused harness selection matches no test: ' + selection)
+        selected.update(identifier for identifier, entry in entries.items()
+                        if str(entry.get('meta', {}).get('suite', '')).startswith('00_'))
     overrides = config.setdefault('override', {})
     for identifier in (entries.keys() - selected) | replacement_test_entries(root, config).keys():
         overrides[identifier + ':meta.type'] = 'test_focus_excluded'

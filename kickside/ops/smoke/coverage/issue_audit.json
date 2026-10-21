@@ -27423,6 +27423,21 @@
       "reason": "Dependency refresh resolves a local replacement at its declared source version. This is a source, API or native contract check without a rendered browser operation.",
       "user_visible": false
     },
+    "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "Focused and complete module harness runs retain root test entries while excluding test entries from declared replacement sources."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Module test selection scopes execution to the root harness so replacement source tests and their setup do not run as root tests.",
+      "user_visible": false
+    },
     "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS": {
       "guards": {
         "platform_onboarding": {
