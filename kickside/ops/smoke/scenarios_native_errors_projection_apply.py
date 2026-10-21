@@ -5,6 +5,7 @@ from module_harness import run_focused_module_test
 
 def apply_fields(ctx):
     run_focused_module_test(ctx, "kickside/core", "projection_apply_native_test")
+    run_focused_module_test(ctx, "kickside/core", "projection_apply_native_test_outcomes")
     run_focused_module_test(ctx, "kickside/core", "slot_test")
     run_focused_module_test(ctx, "kickside/core", "slot_failure_test")
     run_focused_module_test(ctx, "kickside/core", "failure_removal_test")
