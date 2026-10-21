@@ -9707,6 +9707,21 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "automation/slot-lifetime": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-SLOT-RECORD-PURGE",
+        "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
+        "AUTOMATION-SOURCE-SLOT-FINALIZATION",
+        "AUTOMATION-UNSERVED-WAKE",
+        "AUTOMATION-STALE-SLOT-REFERENCE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/slot_lifetime_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10895,12 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "AUTOMATION-SLOT-RECORD-PURGE",
+    "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
+    "AUTOMATION-SOURCE-SLOT-FINALIZATION",
+    "AUTOMATION-UNSERVED-WAKE",
+    "AUTOMATION-STALE-SLOT-REFERENCE"
   ],
   "schema_version": 1
 }
