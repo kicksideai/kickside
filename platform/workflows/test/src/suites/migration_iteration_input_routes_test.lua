@@ -56,9 +56,11 @@ local function publish_unaffected_version(): number
         command(C.NODE_ADD, { id = "step", kind = "block", ref = "app:block.engine_item" }),
     }, "fixture")
     test.is_nil(apply_err)
-    local published = select(1, version_publish.publish(DEFAULT_WORKFLOW_ID, "fixture")) :: Map
-    test.is_true(published.ok)
-    return tonumber(published.version) or 0
+    local published, publish_err = version_publish.publish(DEFAULT_WORKFLOW_ID, "fixture")
+    test.is_nil(publish_err, tostring(publish_err))
+    test.not_nil(published)
+    test.is_true((published :: Map).ok)
+    return tonumber((published :: Map).version) or 0
 end
 
 local function stored_commands(workflow_id: string, version: number): string
