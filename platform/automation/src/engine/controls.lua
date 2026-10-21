@@ -215,7 +215,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
             local details = type(pin_err) == "userdata" and (pin_err :: any):details() or nil
             local reason = type(details) == "table" and details.reason or nil
             local classified = (dependencies.failure_classification :: any).classify(pin_err)
-            if classified.retriable and reason ~= "below_prune_boundary" then
+            local _, parks = (dependencies.round_outcome :: any).failure_phase(classified)
+            if not parks and reason ~= "below_prune_boundary" then
                 return P.defer_command(pending, { kind = classified.kind, message = classified.message })
             end
             local failed, final_err = P.in_automation_tx(function(tx: any): (any?, any)

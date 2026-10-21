@@ -80,7 +80,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local terminal: any = nil
         if execute_err then
             local classified = (dependencies.failure_classification :: any).classify(execute_err)
-            if classified.retriable then return nil, execute_err end
+            local _, parks = (dependencies.round_outcome :: any).failure_phase(classified)
+            if not parks then return nil, execute_err end
             terminal = classified
         end
         local after, after_err = read()

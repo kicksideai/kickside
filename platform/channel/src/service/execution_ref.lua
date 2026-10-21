@@ -47,9 +47,10 @@ function M.load(ref: any, role: string, route: any?): (any?, error?)
             or type(inbound.channel_id) ~= "string" then
             return nil, invalid("channel route coordinates are required")
         end
-        local rows = component.list_system({ component_ids = { ref.record_id },
+        local rows, lookup_err = component.list_system({ component_ids = { ref.record_id },
             impl_ids = { RESPONDER_IMPL },
             meta = { connection_id = inbound.reply_component_id, channel_id = inbound.channel_id } })
+        if lookup_err then return nil, lookup_err end
         if type(rows) ~= "table" or #rows ~= 1 then
             return nil, denied("responder does not own this channel")
         end
