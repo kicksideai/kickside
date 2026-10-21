@@ -125,6 +125,38 @@ local function define_tests()
             db:release()
         end)
 
+        test.it("arms the event receipt expiry and drains aged mappings on the existing dispatcher", function()
+            local id = uuid.v7()
+            local age = 30 * 24 * 60 * 60 * 1000
+            local updated = drive.utc_after(-age + 60000)
+            local parsed = assert(time.parse(time.RFC3339, updated))
+            local expiry = parsed:utc():add(age * time.MILLISECOND):format(time.RFC3339)
+            local db = open_db()
+            test.is_nil(select(2, db:execute([[INSERT INTO kickside_automation_drive
+                (automation_id,drive_key,source_kind,action_json,job_id)
+                VALUES ($1,'main','event','{"source_ref":"events"}',$2)]], { id, uuid.v7() })))
+            for _, key in ipairs({ "old-a", "old-b", "recent" }) do
+                test.is_nil(select(2, db:execute([[INSERT INTO kickside_automation_receipt
+                    (owner_id,source_port,item_key,map_slot,identity_key,dest_ref_json,updated_at)
+                    VALUES ($1,'events',$2,'slot',$2,'{"id":"remote"}',$3)]],
+                    { id, key, key == "recent" and updated or "2000-01-01T00:00:00Z" })))
+            end
+            db:release()
+            local lib = engine(writer_ok({}), {})
+            local first, first_err = lib.dispatch({ limit = 1 })
+            test.is_nil(first_err, tostring(first_err))
+            test.eq(first.pruned_receipts, 1)
+            test.is_true(first.next_deadline <= drive.utc_now())
+            local second, second_err = lib.dispatch({ limit = 1 })
+            test.is_nil(second_err, tostring(second_err))
+            test.eq(second.pruned_receipts, 1)
+            test.eq(second.next_deadline, expiry)
+            local third, third_err = lib.dispatch({ limit = 1 })
+            test.is_nil(third_err, tostring(third_err))
+            test.eq(third.pruned_receipts, 0)
+            test.eq(third.next_deadline, expiry)
+        end)
+
         test.it("arms the exact earliest terminal ledger retention expiry", function()
             local id = uuid.v7()
             local expiry = drive.utc_after(5000)
