@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.120](https://github.com/kicksideai/kickside/compare/workflows-v0.1.119...workflows-v0.1.120) (2026-10-21)
+
+
+### Bug Fixes
+
+* **workflows:** preserve empty objects in block catalog schemas ([#40](https://github.com/kicksideai/kickside/issues/40)) ([1d0b93b](https://github.com/kicksideai/kickside/commit/1d0b93bd85c835fdb2926b0a19f18be9d563b4e6))
+
 ## [0.1.119](https://github.com/kicksideai/kickside/compare/workflows-v0.1.118...workflows-v0.1.119) (2026-10-20)
 
 
