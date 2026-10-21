@@ -7,7 +7,6 @@ local clock = require("clock")
 local registry = require("registry")
 local threads_writer = require("threads_writer")
 local jobs = require("jobs")
-local threads_append = require("threads_append")
 local jobs_wake = require("jobs_wake")
 local cursor_waiters = require("cursor_waiters")
 local retention_notifier = require("retention_notifier")
@@ -205,26 +204,28 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
         { last, output.last_error, now, snapshot.id, snapshot.generation, snapshot.last_seq })
     local head_write_err = write_error(headed, head_err, "projection cursor advance failed", "cursor.update")
     if head_write_err then return abort(head_write_err) end
-    local wake_keys: string[] = {}
-    local appended_threads: {[string]: boolean} = {}
-    for _, write in ipairs(writes :: table[]) do
-        local appended, append_err = threads_append.append_events_tx(tx, tostring(write.thread_id), write.events,
-            { defer_wake = true })
-        if append_err then return abort(append_err) end
-        if type(appended) ~= "table" or type(appended.max_seq) ~= "number"
-            or type(appended.inserted) ~= "number" or type(appended.thread_id) ~= "string" then
-            return abort(response_error("append"))
+    if #writes > 0 then
+        local wake_keys: string[] = {}
+        local appended_threads: {[string]: boolean} = {}
+        for _, write in ipairs(writes :: table[]) do
+            local appended, append_err = threads_writer.append_system_tx(tx, dbtype, tostring(write.thread_id), write.events, nil,
+                { defer_wake = true, locked_threads = locked_threads })
+            if append_err then return abort(append_err) end
+            if type(appended) ~= "table" or type(appended.max_seq) ~= "number"
+                or type(appended.inserted) ~= "number" or type(appended.thread_id) ~= "string" then
+                return abort(response_error("append"))
+            end
+            if appended.inserted > 0 and not appended_threads[appended.thread_id] then
+                appended_threads[appended.thread_id] = true
+                wake_keys[#wake_keys + 1] = "thread:" .. appended.thread_id
+            end
+            if write.thread_id == snapshot.thread_id then current_head = appended.max_seq end
         end
-        if appended.inserted > 0 and not appended_threads[appended.thread_id] then
-            appended_threads[appended.thread_id] = true
-            wake_keys[#wake_keys + 1] = "thread:" .. appended.thread_id
+        if #wake_keys > 0 then
+            local woken, wake_err = jobs_wake.wake_multi(tx, wake_keys, dbtype, tostring(job.id))
+            if wake_err then return abort(wake_err) end
+            if type(woken) ~= "table" then return abort(response_error("wake")) end
         end
-        if write.thread_id == snapshot.thread_id then current_head = appended.max_seq end
-    end
-    if #wake_keys > 0 then
-        local woken, wake_err = jobs_wake.wake_multi(tx, wake_keys, dbtype, tostring(job.id))
-        if wake_err then return abort(wake_err) end
-        if type(woken) ~= "table" then return abort(response_error("wake")) end
     end
     local options: table = {}
     if last < current_head then options.rearm = now else options.demand_satisfied = true end
