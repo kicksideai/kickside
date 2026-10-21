@@ -7859,6 +7859,13 @@
       ],
       "tier": "regression"
     },
+    "host_start_chat_browser": {
+      "features": [],
+      "issues": [
+        "APP-HOST-CHAT-INTENT-OWNERSHIP"
+      ],
+      "tier": "regression"
+    },
     "hot_update_active_automation": {
       "features": [],
       "issues": [
