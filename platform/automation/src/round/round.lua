@@ -249,7 +249,11 @@ local function run(deps: Map, input: any): (Map?, error?)
         return complete(ctx, after_ms(base, p.round_retry_after_ms))
     end
     if s.state == claim.STATE.PARKED then return complete(ctx, nil, true, s.reason or ("drive " .. tostring((s.drive :: Map).phase))) end
-    if s.state == claim.STATE.IDLE then return complete(ctx, s.rearm) end
+    if s.state == claim.STATE.IDLE then
+        local notify_err = notify_status(ctx, automation_id)
+        if notify_err then return nil, notify_err end
+        return complete(ctx, s.rearm)
+    end
 
     local d = s.drive :: Map
     local action = type(d.action) == "table" and d.action or {}

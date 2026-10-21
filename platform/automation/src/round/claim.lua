@@ -182,12 +182,14 @@ function M.stamp_tx(tx: any, automation_id: string, drive_key: string, lease: Ma
         local redelivery_at, ledger_err = ledger.next_attempt(tx, automation_id, ledger.source_port(d))
         if ledger_err then return nil, ledger_err end
         if redelivery_at == nil or drive.after(redelivery_at, now) then
+            local rearm = next_acquisition
+            if redelivery_at ~= nil and (rearm == nil or drive.after(rearm, redelivery_at)) then rearm = redelivery_at end
+            if rearm ~= nil and d.phase == drive.PHASE.PENDING then fields.phase = drive.PHASE.ACTIVE end
             if next(fields) ~= nil then
                 local arm_err = update(tx, automation_id, drive_key, fields)
                 if arm_err then return nil, arm_err end
+                for k, v in pairs(fields) do d[k] = v end
             end
-            local rearm = next_acquisition
-            if redelivery_at ~= nil and (rearm == nil or drive.after(rearm, redelivery_at)) then rearm = redelivery_at end
             if rearm == nil then return { state = M.STATE.PARKED, drive = d, reason = "the drive's schedule is exhausted" }, nil end
             return { state = M.STATE.IDLE, drive = d, rearm = rearm }, nil
         end
