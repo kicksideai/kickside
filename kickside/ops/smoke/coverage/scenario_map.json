@@ -4906,6 +4906,13 @@
       ],
       "tier": "regression"
     },
+    "automation_dead_ledger_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-DEAD-LEDGER-RETENTION"
+      ],
+      "tier": "regression"
+    },
     "automation_declared_cases": {
       "features": [],
       "issues": [
@@ -11765,6 +11772,13 @@
       "features": [],
       "issues": [
         "DESIGN-PROC-WORKER-NATIVE-ERRORS"
+      ],
+      "tier": "regression"
+    },
+    "projection_block_retention": {
+      "features": [],
+      "issues": [
+        "PROJECTION-BLOCK-INPUT-RETENTION"
       ],
       "tier": "regression"
     },

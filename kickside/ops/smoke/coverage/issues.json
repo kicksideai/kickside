@@ -9707,6 +9707,28 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "core/blocked-projection-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "PROJECTION-BLOCK-INPUT-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/projections/persist/block_retention_test.lua"
+    },
+    "automation/dead-ledger-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-DEAD-LEDGER-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/dead_retention_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10902,9 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "PROJECTION-BLOCK-INPUT-RETENTION",
+    "AUTOMATION-DEAD-LEDGER-RETENTION"
   ],
   "schema_version": 1
 }
