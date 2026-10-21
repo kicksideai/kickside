@@ -9707,6 +9707,17 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "workflows/stale-completion-admission": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/test/src/suites/admission_test_crash_recovery.lua"
     }
   },
   "issues": [
@@ -10880,7 +10891,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
   ],
   "schema_version": 1
 }

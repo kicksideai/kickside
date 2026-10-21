@@ -60,6 +60,10 @@ def workflow_native_recovery(ctx):
     inst.evidence.save('native-recovery', {'run_id': rid, 'decision_id': item['id'], 'hard_restarts': 2})
 
 
+def workflow_stale_completion_admission(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'tsplit_admission_test_crash_recovery')
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -76,7 +80,10 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
-REGISTRY = [Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
+REGISTRY = [Scenario('workflow_stale_completion_admission', 'regression',
+                     workflow_stale_completion_admission,
+                     issues=('WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE',)),
+            Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
                      issues=('WORKFLOW-UNADMITTED-RUN-READ-PROJECTION', 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE')),

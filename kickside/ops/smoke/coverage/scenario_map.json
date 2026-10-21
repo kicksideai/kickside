@@ -15599,6 +15599,13 @@
       ],
       "tier": "regression"
     },
+    "workflow_stale_completion_admission": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
+      ],
+      "tier": "regression"
+    },
     "workflow_unadmitted_run_reads": {
       "features": [],
       "issues": [
