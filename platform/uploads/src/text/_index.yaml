@@ -12,5 +12,6 @@ entries:
       - fs
       - hash
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
     method: process

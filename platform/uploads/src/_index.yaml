@@ -16,11 +16,12 @@ entries:
     modules: [time, contract]
     security:
       actor: { id: system:kickside.uploads.retention }
-      policies: [kickside.uploads.security:retention_db_access, kickside.uploads.security:retention_prune_boundary]
+      policies: [kickside.uploads.security:retention_db_access, kickside.uploads.security:retention_prune_boundary, kickside.uploads.storage.security:cloud, kickside.uploads.storage.security:filesystem, kickside.uploads.security:uploads_resource_access]
     imports:
       uploads_retention_policy: kickside.uploads:retention_policy
       upload_read_model_retention: kickside.uploads.persist:read_model_retention
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      storage_offload: kickside.uploads.storage:offload
 
   - name: retention_policy
     kind: library.lua
@@ -98,6 +99,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.uploads.migrations:05_scope_archive_deduplication
         path: .meta.target_db
+      - entry: kickside.uploads.storage.migrations:01_locations
+        path: .meta.target_db
 
   - name: storage_id
     kind: ns.requirement
@@ -108,6 +111,8 @@ entries:
     targets:
       - entry: kickside.uploads.env:storage_id
         path: .default
+      - entry: kickside.uploads.storage.security:filesystem
+        path: .policy.resources
 
   - name: storage_s3
     kind: ns.requirement
@@ -118,6 +123,8 @@ entries:
     targets:
       - entry: kickside.uploads.env:storage_s3
         path: .default
+      - entry: kickside.uploads.storage.security:cloud
+        path: .policy.resources +=
 
   - name: env_storage
     kind: ns.requirement
@@ -239,6 +246,14 @@ entries:
       comment: HTTP router the upload preview endpoints attach to.
       description: HTTP router the upload preview endpoints attach to.
     targets:
+      - entry: kickside.uploads.storage:inspect.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.storage:test.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.storage:configure.endpoint
+        path: .meta.router
+      - entry: kickside.uploads.storage:reset.endpoint
+        path: .meta.router
       - entry: kickside.uploads.api:complete_handler.endpoint
         path: .meta.router
       - entry: kickside.uploads.api:delete_handler.endpoint
@@ -323,11 +338,13 @@ entries:
     order: 60
     component_tag: kickside-settings-storage
     namespaces:
+      - kickside.uploads.storage
       - kickside.uploads
       - kickside.uploads.documents
       - kickside.uploads.rasterize
     config:
       namespaces:
+        - kickside.uploads.storage
         - kickside.uploads
         - kickside.uploads.documents
         - kickside.uploads.rasterize

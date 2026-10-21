@@ -41,6 +41,7 @@ entries:
       types: kickside.uploads:types
       jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
+      storage_policy: kickside.uploads.storage:policy
     method: main
 
   - name: callback_job

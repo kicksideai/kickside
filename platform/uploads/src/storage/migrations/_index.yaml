@@ -1,0 +1,13 @@
+version: "1.0"
+namespace: kickside.uploads.storage.migrations
+entries:
+  - name: 01_locations
+    kind: function.lua
+    meta:
+      type: migration
+      timestamp: "2026-10-20T14:00:00Z"
+      comment: Durable physical placements for stable upload content addresses.
+    source: file://01_locations.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

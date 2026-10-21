@@ -35,6 +35,10 @@ local function define_tests()
                 ["kickside.uploads.api:presigned_handler.endpoint"] = true,
                 ["kickside.uploads.api:raw_handler.endpoint"] = true,
                 ["kickside.uploads.api:upload_handler.endpoint"] = true,
+                ["kickside.uploads.storage:inspect.endpoint"] = true,
+                ["kickside.uploads.storage:test.endpoint"] = true,
+                ["kickside.uploads.storage:configure.endpoint"] = true,
+                ["kickside.uploads.storage:reset.endpoint"] = true,
             }
             local listed = {}
             for _, id in ipairs(declaration.data.policy.resources) do

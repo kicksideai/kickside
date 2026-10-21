@@ -1,7 +1,8 @@
 local sql = require("sql")
 local env = require("env")
-local fs = require("fs")
 local cloudstorage = require("cloudstorage")
+local backend = require("storage_backend")
+local registry = require("registry")
 
 local ENV = table.freeze({
     DATABASE = "kickside.uploads.env:database_resource",
@@ -11,8 +12,12 @@ local ENV = table.freeze({
 
 local resources = {}
 
+function resources.get_db_id(): string
+    return select(1, env.get(ENV.DATABASE)) :: string
+end
+
 function resources.get_db(): (sql.DB?, string?)
-    local id = select(1, env.get(ENV.DATABASE)) :: string
+    local id = resources.get_db_id()
     local db, err = sql.get(id)
     if err then
         return nil, "Failed to connect to database: " .. err
@@ -28,13 +33,17 @@ function resources.get_storage_id(storage_id)
     return select(1, env.get(ENV.STORAGE)) :: string
 end
 
-function resources.get_storage(storage_id)
+function resources.get_storage(storage_id: string?, query_db: any?)
     local resolved_id = resources.get_storage_id(storage_id)
-    local storage, err = fs.get(resolved_id)
-    if err then
-        return nil, "Failed to get storage: " .. err
+    return backend.get(resolved_id, resources.get_db_id(), resources.get_storage_id(),
+        select(1, env.get(ENV.STORAGE_S3)), query_db)
+end
+
+function resources.storage_entry(storage_id: string): (any?, any?)
+    if storage_id == "uploads.s3" then
+        storage_id = select(1, env.get(ENV.STORAGE_S3)) :: string
     end
-    return storage
+    return registry.get(storage_id)
 end
 
 function resources.get_s3()

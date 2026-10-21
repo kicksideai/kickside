@@ -1,4 +1,4 @@
-local fs = require("fs")
+local uploads_resources = require("uploads_resources")
 local env = require("env")
 local hash = require("hash")
 local contract = require("contract")
@@ -186,7 +186,7 @@ local function process(params: any): any
         error("file too large: " .. tostring(params.size) .. " bytes (max " .. tostring(max_size) .. ")")
     end
 
-    local storage = fs.get(storage_id)
+    local storage = uploads_resources.get_storage(storage_id)
     if not storage then
         error("failed to get storage")
     end
