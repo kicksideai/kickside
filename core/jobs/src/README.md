@@ -38,3 +38,8 @@ all resolve that config, so runtime SQL always follows the host's database mappi
 `jobs.enqueue` and `jobs.enqueue_tx` accept optional `demand = true` with `slot = true`. Enrollment and control demand commit together: parked work becomes due, and a running attempt retains a follow-up. Reusing an active one-shot identity with demand returns a conflict. The caller of `enqueue_tx` notifies the pool after commit. Omitting demand retains the existing enqueue behavior.
 
 `jobs.complete_tx` accepts optional `demand_satisfied = true` when the worker proves under its durable source lock that the completed run covers the source head. It consumes ordinary demand received during that run; independent control wakes still rearm the slot. Omission retains the existing demand behavior.
+
+Completion options accept `park = true` independently of `record.status`. Parking
+suppresses ordinary wake demand while preserving the requested history status;
+a pending control wake retains priority. Without `park`, completion keeps its
+existing record-based parking behavior.

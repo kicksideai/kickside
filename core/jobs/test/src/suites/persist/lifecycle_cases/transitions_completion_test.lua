@@ -92,6 +92,26 @@ local function job_row(db, id): table?
 end
 
 local function define_tests()
+    test.describe("independent completion parking", function()
+        test.it("disables wake while retaining failed history", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local job = assert(job_fixture.enqueue_leased(db, dbtype, {job_type = "test.park", slot = true,
+                job_identity = {namespace = "test", scope = uuid.v7(), key = "park"}}))
+            local done, err = jobs.complete(job.id, {token = job.lease_token, execution_seq = tonumber(job.execution_seq)},
+                {park = true, record = {status = "failed", error = "declaration refused"}})
+            local rows = assert(db:query("SELECT wake_enabled,scheduled_at FROM kickside_job WHERE id=$1", {job.id}))
+            local history = assert(db:query("SELECT status,error_text FROM kickside_job_run WHERE job_id=$1", {job.id}))
+            db:release()
+            test.is_nil(err)
+            test.not_nil(done)
+            test.is_nil(rows[1].scheduled_at)
+            test.is_false(rows[1].wake_enabled == true or tonumber(rows[1].wake_enabled) == 1)
+            test.eq(history[1].status, "failed")
+            test.eq(history[1].error_text, "declaration refused")
+        end)
+    end)
+
     test.describe("jobs.lifecycle transitions", function()
         test.it("accepts satisfied demand while preserving independent control wakes", function()
             with_db(function(db)
