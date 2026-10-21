@@ -71,9 +71,8 @@ entries:
     component: kickside/execution
 
   - name: dep.wippy.dataflow
-    # The application lock must pin Dataflow at 0.7.8 or newer: agent Blocks
-    # rely on engine semantics for the reserved-input split.
-    version: '*'
+    # Iteration body joins require native iteration input routes.
+    version: '>=v0.7.27'
     kind: ns.dependency
     meta:
       comment: Production Workflow compilation and runs directly create and execute Dataflow graphs.
