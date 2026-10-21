@@ -1,6 +1,23 @@
 version: "1.0"
 namespace: kickside.automation
 entries:
+- name: resync_authority_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../resync_authority_test.lua
+  method: run
+  modules: [uuid]
+  imports:
+    test: wippy.test:test
+    controls: kickside.automation.engine:controls
+    command: kickside.automation:command
+    drive: kickside.automation:drive
+    control_fixture: kickside.automation:control_fixture
+    canonical_json: kickside.contract:canonical_json
+    declaration_authority: kickside.automation:declaration_authority
+    execution_identity: kickside.execution:execution_identity
 - name: resync_lock_test
   kind: function.lua
   meta:
