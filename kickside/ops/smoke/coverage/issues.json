@@ -9707,6 +9707,18 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "automation/dispatch-slot-lifecycle": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-UNSERVED-WAKE",
+        "AUTOMATION-STALE-SLOT-REFERENCE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/recovery_dispatch_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10892,9 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "AUTOMATION-UNSERVED-WAKE",
+    "AUTOMATION-STALE-SLOT-REFERENCE"
   ],
   "schema_version": 1
 }
