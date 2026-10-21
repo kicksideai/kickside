@@ -41,6 +41,7 @@ entries:
       resources:
         - kickside.automation:round
         - kickside.automation:round_authority
+        - kickside.automation:command_dispatcher
       actions:
         - kickside.execution.defer
       effect: allow

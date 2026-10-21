@@ -1,6 +1,7 @@
 -- Interleave the pin-receipt writer and the real event-resync completion
 -- transaction. PostgreSQL's blocking graph is the barrier, not a timed race.
 local test = require("test")
+local execution_identity = require("execution_identity")
 local sql = require("sql")
 local uuid = require("uuid")
 local time = require("time")
@@ -27,7 +28,9 @@ local function define_tests()
                 fixture.seed_drive(id, "reconcile")
                 local reserved, reserve_err = fixture.in_tx(function(tx)
                     return command.reserve_tx(tx, { automation_id = id, request_id = "resync", digest = "digest",
-                        kind = "resync_event", input = { drive_key = key, target = 0 }, drive_keys = { key, "reconcile" } })
+                        kind = "resync_event", input = { drive_key = key, target = 0, operator_id = "operator",
+                            operator_identity = {version = 2, principal = {kind = "user", id = "operator"},
+                                authorized_by = {kind = "user", id = "operator"}, captured_at = "2026-10-01T00:00:00Z"} }, drive_keys = { key, "reconcile" } })
                 end)
                 test.is_nil(reserve_err, tostring(reserve_err))
                 local generation = math.floor(tonumber(reserved.generation) or 0) :: integer
@@ -76,7 +79,12 @@ local function define_tests()
                         return result, err
                     end,
                 }
-                controls.attach({}, { drive = drive, command = command, sql = sql }, shared)
+                local captured_identity = {}
+                for key, value in pairs(execution_identity) do captured_identity[key] = value end
+                captured_identity.capture = function() return pending.input.operator_identity, nil end
+                controls.attach({}, { drive = drive, command = command, sql = sql,
+                    component = fixture.component_stub({sets = {}, access = {}}, {[id] = 15}),
+                    security = fixture.actor_frame("operator"), execution_identity = captured_identity }, shared)
                 coroutine.spawn(function()
                     local result, err = shared.command_steps.resync_event(pending)
                     done:send({ result = result, err = err })

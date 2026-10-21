@@ -454,7 +454,6 @@ local function define_tests(group: integer)
                 cleanup_tombstone_tx = real_pin.cleanup_tombstone_tx,
             }
             local engine = require("automation_test_engine").new({
-                component = { ACCESS = { READ = 1, WRITE = 2, ADMIN = 8 }, validate_access = function(): (any, any) return true, nil end },
                 retention_pin = flaky_pin,
             })
             for _, drive_key in ipairs({ "deferred_a", "deferred_b" }) do
@@ -465,7 +464,8 @@ local function define_tests(group: integer)
             end
 
             -- recover_drive: the drive's own recovery runs the pending step.
-            local pending, err = engine.control(env.automation_id, { control = "resync", drive_key = "deferred_a", request_id = "resync-deferred-a" })
+            local pending, err = env.caller:call("kickside.automation:resync_control_probe", {id = env.automation_id,
+                control = { control = "resync", drive_key = "deferred_a", request_id = "resync-deferred-a" }})
             test.is_nil(err, tostring(err))
             test.eq(pending.state, "pending")
             local held = h.read_drive(env.automation_id, "deferred_a")
@@ -483,7 +483,8 @@ local function define_tests(group: integer)
 
             -- The dispatcher runs a due deferred step as well.
             failing = true
-            local second = engine.control(env.automation_id, { control = "resync", drive_key = "deferred_b", request_id = "resync-deferred-b" })
+            local second = env.caller:call("kickside.automation:resync_control_probe", {id = env.automation_id,
+                control = { control = "resync", drive_key = "deferred_b", request_id = "resync-deferred-b" }})
             test.eq(second.state, "pending")
             failing = false
             h.exec("UPDATE kickside_automation_command SET next_attempt_at = $1 WHERE automation_id = $2", { h.PAST, env.automation_id })
@@ -495,6 +496,41 @@ local function define_tests(group: integer)
             local op = h.query("SELECT state FROM kickside_automation_op WHERE automation_id = $1 AND request_id = 'resync-deferred-b'",
                 { env.automation_id })
             test.eq(op[1].state, "succeeded")
+        end)
+
+        test.it("recovers a WRITE sharee's resync through its live group grant without changing execution identity", function()
+            local installed, install_err = env.caller:call(MANAGE_TOOL, {action = "install",
+                type = "kickside.automation.round.fixture:event_kind", input = {thread_id = env.thread_id, start = "all"}})
+            test.is_nil(install_err, tostring(install_err))
+            local id = installed.id
+            h.set_drive(id, "main", "event_seq=$1", {17})
+            local before = h.query("SELECT private_context FROM kickside_components WHERE component_id=$1", {id})[1].private_context
+            local granted, grant_err = env.caller:call("kickside.component.binding:grant_subtree_func", {
+                root_component_id = id, subject = {subject_type = "group", subject_id = "automation_test"}, access_mask = 2})
+            test.is_nil(grant_err, tostring(grant_err))
+            test.is_true(granted.success)
+            local caller = require("funcs").new():with_actor(require("security").new_actor("sharee_" .. uuid.v7(),
+                {security_groups = {"automation_test"}})):with_scope(env.scope)
+            local pending, pending_err = caller:call("kickside.automation:resync_control_probe", {id = id,
+                control = {control = "resync", request_id = "shared-resync", from = 0}})
+            test.is_nil(pending_err, tostring(pending_err))
+            test.eq(pending.state, "pending")
+            h.exec("UPDATE kickside_component_access SET access_mask=0 WHERE component_id=$1 AND subject_type='group' AND subject_id=$2",
+                {id, "automation_test"})
+            local engine = require("automation_test_engine").new({})
+            local denied, denied_err = engine.recover_drive(id, "main")
+            test.is_nil(denied_err, tostring(denied_err))
+            test.eq(h.read_drive(id, "main").event_seq, 17)
+            test.not_nil(h.read_drive(id, "main").pending_command_id)
+            local receipts = h.query("SELECT target_receipts_json FROM kickside_automation_op WHERE automation_id=$1 AND request_id='shared-resync'", {id})
+            test.is_nil(json.decode(receipts[1].target_receipts_json)["pin:main"])
+            h.exec("UPDATE kickside_component_access SET access_mask=2 WHERE component_id=$1 AND subject_type='group' AND subject_id=$2",
+                {id, "automation_test"})
+            local recovered, recovery_err = engine.recover_drive(id, "main")
+            test.is_nil(recovery_err, tostring(recovery_err))
+            test.eq(h.read_drive(id, "main").event_seq, 0)
+            test.is_nil(h.read_drive(id, "main").pending_command_id)
+            test.eq(h.query("SELECT private_context FROM kickside_components WHERE component_id=$1", {id})[1].private_context, before)
         end)
 
         test.it("reconfigures an event automation onto a new thread: new pin, new position, re-keyed slot, old pin released", function()

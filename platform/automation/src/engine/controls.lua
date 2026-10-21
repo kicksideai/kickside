@@ -36,6 +36,7 @@ local part = {}
 local CONTROLS = support.DRIVE_CONTROLS
 local ALL_DRIVES: { [string]: boolean } = { pause = true, resume = true }
 local RESYNC_EVENT = "resync_event"
+local RESYNC_OWNER = "kickside.automation:command_dispatcher"
 local RECONCILE_DRIVE = "reconcile"
 -- run_now and resync make a round due; the command's success records that,
 -- and the round itself runs when a worker claims the drive's slot.
@@ -204,13 +205,63 @@ function part.attach(M: any, dependencies: any, P: any): ()
         }, nil
     end
 
+    local function resync_authority(pending: Map): error?
+        local input = type(pending.input) == "table" and pending.input or {}
+        if type(input.operator_identity) ~= "table" or type(input.operator_id) ~= "string" then
+            return automation_error("resync has no captured operator authority", errors.PERMISSION_DENIED)
+        end
+        local execution_identity = dependencies.execution_identity :: any
+        local valid, validation_err = execution_identity.validate(input.operator_identity)
+        if not valid then return validation_err end
+        if execution_identity.actor_key(input.operator_identity.principal) ~= input.operator_id then
+            return automation_error("resync operator does not match its captured principal", errors.PERMISSION_DENIED)
+        end
+        local component = dependencies.component :: any
+        local actor, actor_err = (dependencies.security :: any).actor()
+        if actor_err then return actor_err end
+        if actor and actor:id() == input.operator_id then
+            local current, capture_err = execution_identity.capture()
+            if capture_err then return capture_err end
+            local saved = input.operator_identity
+            if type(current) ~= "table" or not execution_identity.same_principal(current.principal, saved.principal)
+                or not execution_identity.same_principal(current.authorized_by, saved.authorized_by)
+                or current.component_id ~= saved.component_id or current.credential_id ~= saved.credential_id
+                or current.link_id ~= saved.link_id then
+                return automation_error("resync caller does not match its captured authority", errors.PERMISSION_DENIED)
+            end
+            local _, access_err = component.validate_access(pending.automation_id, component.ACCESS.WRITE)
+            return access_err
+        end
+        local resolved, resolve_err = execution_identity.authorize(input.operator_identity, {deferred_owner = RESYNC_OWNER})
+        if resolve_err then return resolve_err end
+        if type(resolved) ~= "table" or type(resolved.meta) ~= "table" then
+            return automation_error("resync operator authority is unavailable", errors.UNAVAILABLE)
+        end
+        local allowed, access_err = component.validate_principal_access(pending.automation_id, component.ACCESS.WRITE,
+            resolved.principal, resolved.meta.security_groups, resolved.meta.access_filter)
+        if access_err then return access_err end
+        if not allowed then return automation_error("resync operator lacks automation WRITE", errors.PERMISSION_DENIED) end
+        return nil
+    end
+
+    local function validate_resync(pending: Map): (Map?, any)
+        local err = resync_authority(pending)
+        if not err then return nil, nil end
+        local classified = (dependencies.failure_classification :: any).classify(err)
+        return P.defer_command(pending, classified)
+    end
+
     -- The event resync step (recoverable): lower the retention pin under the
     -- command's id and generation, then finalize with the position and receipt.
     local function resync_event_step(pending: Map): (Map?, any)
         local input = type(pending.input) == "table" and pending.input or {}
         local command = dependencies.command :: any
+        local denied, authority_err = validate_resync(pending)
+        if denied or authority_err then return denied, authority_err end
         local lowered, pin_err = P.lower_pins(pending)
         local drive_key = tostring(input.drive_key)
+        denied, authority_err = validate_resync(pending)
+        if denied or authority_err then return denied, authority_err end
         if pin_err then
             local details = type(pin_err) == "userdata" and (pin_err :: any):details() or nil
             local reason = type(details) == "table" and details.reason or nil
@@ -382,10 +433,13 @@ function part.attach(M: any, dependencies: any, P: any): ()
         end
 
         if control == "resync" and (d :: Map).source_kind == drive_mod.SOURCE_KIND.EVENT then
+            local captured, capture_err = (dependencies.execution_identity :: any).capture()
+            if capture_err or not captured then return nil, capture_err end
             local reserved, reserve_err = P.in_automation_tx(function(tx: any): (any?, any)
                 local result, err = command.reserve_tx(tx, {
                     automation_id = component_id, request_id = request_id, digest = digest, kind = RESYNC_EVENT,
                     input = { control = control, drive_key = drive_key, drive_keys = command_keys, target = from or 0,
+                        operator_id = actor_id, operator_identity = captured,
                         pins = { { drive_key = drive_key, thread_id = (d :: Map).source_thread_id, target = from or 0,
                             consumer_key = "drive:" .. component_id .. ":" .. drive_key } } },
                     drive_keys = command_keys,
