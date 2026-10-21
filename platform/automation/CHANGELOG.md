@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.133](https://github.com/kicksideai/kickside/compare/automation-v0.1.132...automation-v0.1.133) (2026-10-21)
+
+
+### Bug Fixes
+
+* **automation:** show scheduled drives while waiting for a run ([#44](https://github.com/kicksideai/kickside/issues/44)) ([82a65d5](https://github.com/kicksideai/kickside/commit/82a65d5ed415a1d649607c0c8cc0cfbad1dfa994))
+
 ## [0.1.132](https://github.com/kicksideai/kickside/compare/automation-v0.1.131...automation-v0.1.132) (2026-10-20)
 
 
