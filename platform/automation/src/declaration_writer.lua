@@ -178,6 +178,7 @@ local function verify(request: any): (any?, error?)
         public_meta = input.public_meta,
         operator_id = input.operator_id,
         execution_subject_id = subject_id,
+        captured_identity = subject_identity,
         affected_drive_keys = pending.drive_keys,
     }, nil
 end
