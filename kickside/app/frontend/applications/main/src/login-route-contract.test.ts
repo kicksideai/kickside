@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 
 const appRoot = new URL("../../../../", import.meta.url);
 
@@ -26,23 +27,31 @@ const seoHandler = readFileSync(
 
 describe("login route contract", () => {
 	it("serves the login page through a dedicated non-API router", () => {
-		const webRouter = appManifest.match(
-			/^ {2}- name:[ \t]+web[ \t]*$[\s\S]*?(?=^ {2}- name:)/m,
-		)?.[0];
+		const webRouter = parse(appManifest).entries.find(
+			(entry: { name: string }) => entry.name === "web",
+		);
+		const endpoint = parse(loginManifest).entries.find(
+			(entry: { name: string }) => entry.name === "endpoint",
+		);
 
-		expect(webRouter).toBeDefined();
-		expect(webRouter).toContain("kind: http.router");
-		expect(webRouter).toContain("server: gateway");
-		expect(webRouter).not.toContain("prefix:");
-		expect(loginManifest).toMatch(/^[ \t]+router:[ \t]+app:web[ \t]*$/m);
-		expect(loginManifest).toMatch(/^[ \t]+path:[ \t]+\/login[ \t]*$/m);
-		expect(loginManifest).not.toContain("router: app:api.public");
+		expect(webRouter).toMatchObject({ kind: "http.router", meta: { server: "gateway" } });
+		expect(webRouter).not.toHaveProperty("prefix");
+		expect(endpoint).toMatchObject({
+			kind: "http.endpoint",
+			meta: { router: "app:web" },
+			method: "GET",
+			path: "/login",
+		});
+		expect(parse(loginManifest).entries).not.toEqual(expect.arrayContaining([
+			expect.objectContaining({ meta: expect.objectContaining({ router: "app:api.public" }) }),
+		]));
 	});
 
 	it("uses the root login URL for redirects and links", () => {
-		expect(dependencies).toContain(`      - name: login_path
-        value: /login
-`);
+		const facade = parse(dependencies).entries.find(
+			(entry: { component?: string }) => entry.component === "wippy/facade",
+		);
+		expect(facade.parameters).toContainEqual({ name: "login_path", value: "/login" });
 		expect(loginPage).toContain('encodeURIComponent("/login")');
 		expect(seoHandler).toContain("[Sign in](/login)");
 

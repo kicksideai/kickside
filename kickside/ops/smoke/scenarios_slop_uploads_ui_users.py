@@ -78,7 +78,25 @@ def user_harness_storage(ctx):
     run_focused_module_test(ctx, 'kickside/users', 'session_invalidation_race_test')
 
 
+def app_ui_contracts(ctx):
+    root = Path(ctx.inst.config['source'])
+    command = ['make', 'test', 'MOD=app-main',
+               'TEST_ARGS=src/facade-preauth.test.ts src/login-route-contract.test.ts '
+               'src/theme-vocabulary.test.ts --maxWorkers=2']
+    environment = dict(ctx.inst.env, PATH=str(Path(ctx.inst.config['binary']).parent) + os.pathsep + os.environ['PATH'])
+    result = subprocess.run(command, cwd=root, env=environment,
+                            capture_output=True, text=True, timeout=900)
+    ctx.inst.evidence.save('app-ui-contracts', {
+        'command': command, 'code': result.returncode,
+        'output': result.stdout, 'error': result.stderr,
+    })
+    require(result.returncode == 0, 'App UI contracts fail: ' + result.stdout + result.stderr)
+
+
 REGISTRY = [
+    Scenario('app_ui_contracts', 'regression', app_ui_contracts,
+             issues=('APP-UI-PUBLISHED-FACADE-GUARD', 'APP-UI-LOGIN-ROUTE-GUARD',
+                     'SETTINGS-NOTICES-THEME-RADIUS')),
     Scenario("slop_login_theme_config", "regression", login_theme_config, issues=("DESIGN-LOGIN-THEME-CONFIG",)),
     Scenario('slop_ui_declaration_discovery', 'regression', declaration_discovery, issues=('DESIGN-UI-DECLARATION-DISCOVERY',)),
     Scenario('slop_template_database_owner', 'regression', template_database, issues=('DESIGN-TEMPLATE-DATABASE-OWNER', 'TEMPLATE-HARNESS-TEST-DEPENDENCY')),
