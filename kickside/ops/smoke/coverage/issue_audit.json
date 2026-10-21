@@ -27557,7 +27557,7 @@
       "guards": {
         "workflow_iteration_join": {
           "assertions": [
-            "For each and Cycle bodies route a transformed iteration item to a direct join exactly once."
+            "For each and Cycle bodies route a transformed iteration item to a direct join exactly once, and a forward migration repairs the compiled artifact while preserving its published definition."
           ],
           "types": [
             "API-smoke"

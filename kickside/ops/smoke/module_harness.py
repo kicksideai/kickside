@@ -218,6 +218,20 @@ def test_entries(root):
     return entries
 
 
+def replacement_test_entries(root, config):
+    entries = {}
+    replacements = config.get('workspace', {}).get('replacements', {})
+    for path in replacements.values():
+        if not isinstance(path, str) or not path:
+            continue
+        candidate = Path(path)
+        candidate = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
+        if not candidate.is_dir() or candidate == root or candidate.is_relative_to(root):
+            continue
+        entries.update(test_entries(candidate))
+    return entries
+
+
 def _focus_tests(root, config, selection):
     entries = test_entries(root)
     selected = {identifier for identifier, entry in entries.items()
@@ -226,7 +240,7 @@ def _focus_tests(root, config, selection):
     selected.update(identifier for identifier, entry in entries.items()
                     if str(entry.get('meta', {}).get('suite', '')).startswith('00_'))
     overrides = config.setdefault('override', {})
-    for identifier in entries.keys() - selected:
+    for identifier in (entries.keys() - selected) | replacement_test_entries(root, config).keys():
         overrides[identifier + ':meta.type'] = 'test_focus_excluded'
 
 
