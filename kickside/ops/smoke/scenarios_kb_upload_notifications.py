@@ -17,5 +17,4 @@ def kb_upload_notifications(ctx):
     require(result.returncode == 0, 'KB upload notification guard: ' + result.stdout + result.stderr)
 
 
-REGISTRY = [Scenario('kb_upload_notifications', 'regression', kb_upload_notifications,
-                     issues=('KB10-UPLOAD-NOTIFICATION-CONTRACT',))]
+REGISTRY = [Scenario('kb_upload_notifications', 'regression', kb_upload_notifications)]
