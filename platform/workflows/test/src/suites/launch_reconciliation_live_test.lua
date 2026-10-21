@@ -689,6 +689,33 @@ end
 
 local function define_publication_tests()
     test.describe("native publication recovery", function()
+        test.it("acknowledges terminal publication after the run owner is revoked", function()
+            local id, version = published()
+            local row, _ = reserve(id, version, {count = 29})
+            local merged, merge_err = admission.merge(row, {status = "completed", output = {done = true}})
+            test.is_nil(merge_err)
+            test.not_nil(merged)
+            local db = store.open_db()
+            local _, revoke_err = db:execute("UPDATE app_users SET status='suspended' WHERE user_id=$1",
+                {security.actor():id()})
+            db:release()
+            test.is_nil(revoke_err)
+            local tick, tick_err = funcs.call("kickside.workflows.runs:maintenance_tick_worker",
+                {limit = 1, run_id = row.run_id})
+            db = store.open_db()
+            local _, restore_err = db:execute("UPDATE app_users SET status='active' WHERE user_id=$1",
+                {security.actor():id()})
+            db:release()
+            test.is_nil(restore_err)
+            test.is_nil(tick_err)
+            test.eq(tick.failures, 0, tostring(tick.last_error))
+            test.eq(tick.checked, 0)
+            test.eq(tick.published, 1)
+            test.eq(terminal_events(row.run_id), 1)
+            test.eq(pending_event(read_row(row.run_id)), false)
+            test.eq(read_row(row.run_id).status, "completed")
+        end)
+
         test.it("retries a durable terminal append after publication acknowledgement loss", function()
             local id, version = published()
             local row, payload = reserve(id, version, {count = 23})
