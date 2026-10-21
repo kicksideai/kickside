@@ -1,12 +1,12 @@
-import { e as re, _ as ko, W as Me, u as wo, a as _o, c as $o, b as Co } from "./errMsg-CFwf-kA2.js";
-import { B as Le, l as St, s as zt, L as So, b as fe, v as ke, U as zo, I as ft, d as Po, r as Pt, a as Eo, c as Io, e as Do, C as Lo, h as Ao, S as Mo, _ as Ro, W as To, f as Bo, P as Oo } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
-import { openBlock as s, createElementBlock as d, mergeProps as H, renderSlot as Q, createTextVNode as le, toDisplayString as g, resolveComponent as Re, resolveDirective as Et, withDirectives as ue, createBlock as N, resolveDynamicComponent as Te, withCtx as F, createCommentVNode as h, normalizeClass as q, createElementVNode as l, computed as L, createVNode as E, Transition as jo, Fragment as Y, defineComponent as ge, unref as r, isRef as Fo, vModelText as Ge, renderList as ee, vModelCheckbox as It, vModelDynamic as No, ref as O, watch as Xe, onBeforeUnmount as Dt, nextTick as We } from "vue";
+import { e as re, _ as wo, W as Re, u as _o, a as $o, c as Co, b as So } from "./errMsg-CFwf-kA2.js";
+import { B as Le, l as Pt, s as Et, L as zo, b as fe, v as ke, U as Po, I as mt, d as Eo, r as It, a as Io, c as Do, e as Lo, C as Ao, h as Mo, S as Ro, _ as To, W as Bo, f as Oo, P as jo } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
+import { openBlock as s, createElementBlock as d, mergeProps as H, renderSlot as Q, createTextVNode as le, toDisplayString as g, resolveComponent as Te, resolveDirective as Dt, withDirectives as ue, createBlock as N, resolveDynamicComponent as Be, withCtx as F, createCommentVNode as h, normalizeClass as q, createElementVNode as l, computed as L, createVNode as E, Transition as Fo, Fragment as Y, defineComponent as ge, unref as r, isRef as No, vModelText as Xe, renderList as ee, vModelCheckbox as Lt, vModelDynamic as Uo, ref as O, watch as Je, onBeforeUnmount as At, nextTick as Ye } from "vue";
 import { Icon as B } from "@iconify/vue";
-import { s as Oe, f as me, R as Lt, a as Uo, b as At, B as Ho, c as Vo, x as Ye, d as Ko } from "./index-DVv1zr-X.js";
-import { api as pe, host as Je, loadByTagName as qo, on as Wo, define as Yo } from "@wippy-fe/proxy";
-import { i as Zo, e as Go, a as Xo, f as Jo, d as mt, v as Qo, b as en, u as tn, c as on } from "./install-form-Ce0pU51G.js";
-import { r as nn } from "./principals-Bury5BH3.js";
-var rn = `
+import { s as je, f as me, R as Mt, a as Ho, b as Rt, B as Vo, c as Ko, x as Ze, d as qo } from "./index-DVv1zr-X.js";
+import { api as pe, host as Qe, loadByTagName as Wo, on as Yo, define as Zo } from "@wippy-fe/proxy";
+import { i as Go, e as Xo, a as Jo, f as Qo, d as gt, v as en, b as tn, u as on, c as nn } from "./install-form-Ce0pU51G.js";
+import { r as rn } from "./principals-Bury5BH3.js";
+var an = `
     .p-badge {
         display: inline-flex;
         border-radius: dt('badge.border.radius');
@@ -81,12 +81,12 @@ var rn = `
         min-width: dt('badge.xl.min.width');
         height: dt('badge.xl.height');
     }
-`, an = {
+`, sn = {
   root: function(t) {
     var o = t.props, n = t.instance;
     return ["p-badge p-component", {
-      "p-badge-circle": zt(o.value) && String(o.value).length === 1,
-      "p-badge-dot": St(o.value) && !n.$slots.default,
+      "p-badge-circle": Et(o.value) && String(o.value).length === 1,
+      "p-badge-dot": Pt(o.value) && !n.$slots.default,
       "p-badge-sm": o.size === "small",
       "p-badge-lg": o.size === "large",
       "p-badge-xl": o.size === "xlarge",
@@ -98,13 +98,13 @@ var rn = `
       "p-badge-contrast": o.severity === "contrast"
     }];
   }
-}, sn = Le.extend({
+}, ln = Le.extend({
   name: "badge",
-  style: rn,
-  classes: an
-}), ln = {
+  style: an,
+  classes: sn
+}), cn = {
   name: "BaseBadge",
-  extends: Oe,
+  extends: je,
   props: {
     value: {
       type: [String, Number],
@@ -119,7 +119,7 @@ var rn = `
       default: null
     }
   },
-  style: sn,
+  style: ln,
   provide: function() {
     return {
       $pcBadge: this,
@@ -135,14 +135,14 @@ function Ce(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Ce(e);
 }
-function gt(e, t, o) {
-  return (t = cn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
+function vt(e, t, o) {
+  return (t = dn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function cn(e) {
-  var t = dn(e, "string");
+function dn(e) {
+  var t = un(e, "string");
   return Ce(t) == "symbol" ? t : t + "";
 }
-function dn(e, t) {
+function un(e, t) {
   if (Ce(e) != "object" || !e) return e;
   var o = e[Symbol.toPrimitive];
   if (o !== void 0) {
@@ -152,29 +152,29 @@ function dn(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var Mt = {
+var Tt = {
   name: "Badge",
-  extends: ln,
+  extends: cn,
   inheritAttrs: !1,
   computed: {
     dataP: function() {
-      return me(gt(gt({
+      return me(vt(vt({
         circle: this.value != null && String(this.value).length === 1,
         empty: this.value == null && !this.$slots.default
       }, this.severity, this.severity), this.size, this.size));
     }
   }
-}, un = ["data-p"];
-function pn(e, t, o, n, i, a) {
+}, pn = ["data-p"];
+function bn(e, t, o, n, i, a) {
   return s(), d("span", H({
     class: e.cx("root"),
     "data-p": a.dataP
   }, e.ptmi("root")), [Q(e.$slots, "default", {}, function() {
     return [le(g(e.value), 1)];
-  })], 16, un);
+  })], 16, pn);
 }
-Mt.render = pn;
-var bn = `
+Tt.render = bn;
+var fn = `
     .p-button {
         display: inline-flex;
         cursor: pointer;
@@ -834,13 +834,13 @@ function Se(e) {
   }, Se(e);
 }
 function se(e, t, o) {
-  return (t = fn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
+  return (t = mn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function fn(e) {
-  var t = mn(e, "string");
+function mn(e) {
+  var t = gn(e, "string");
   return Se(t) == "symbol" ? t : t + "";
 }
-function mn(e, t) {
+function gn(e, t) {
   if (Se(e) != "object" || !e) return e;
   var o = e[Symbol.toPrimitive];
   if (o !== void 0) {
@@ -850,7 +850,7 @@ function mn(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var gn = {
+var vn = {
   root: function(t) {
     var o = t.instance, n = t.props;
     return ["p-button p-component", se(se(se(se(se(se(se(se(se({
@@ -866,13 +866,13 @@ var gn = {
     return ["p-button-icon", se({}, "p-button-icon-".concat(o.iconPos), o.label)];
   },
   label: "p-button-label"
-}, vn = Le.extend({
+}, hn = Le.extend({
   name: "button",
-  style: bn,
-  classes: gn
-}), hn = {
+  style: fn,
+  classes: vn
+}), xn = {
   name: "BaseButton",
-  extends: Oe,
+  extends: je,
   props: {
     label: {
       type: String,
@@ -959,7 +959,7 @@ var gn = {
       default: null
     }
   },
-  style: vn,
+  style: hn,
   provide: function() {
     return {
       $pcButton: this,
@@ -976,13 +976,13 @@ function ze(e) {
   }, ze(e);
 }
 function J(e, t, o) {
-  return (t = xn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
+  return (t = yn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function xn(e) {
-  var t = yn(e, "string");
+function yn(e) {
+  var t = kn(e, "string");
   return ze(t) == "symbol" ? t : t + "";
 }
-function yn(e, t) {
+function kn(e, t) {
   if (ze(e) != "object" || !e) return e;
   var o = e[Symbol.toPrimitive];
   if (o !== void 0) {
@@ -994,7 +994,7 @@ function yn(e, t) {
 }
 var X = {
   name: "Button",
-  extends: hn,
+  extends: xn,
   inheritAttrs: !1,
   inject: {
     $pcFluid: {
@@ -1039,7 +1039,7 @@ var X = {
       };
     },
     hasFluid: function() {
-      return St(this.fluid) ? !!this.$pcFluid : this.fluid;
+      return Pt(this.fluid) ? !!this.$pcFluid : this.fluid;
     },
     dataP: function() {
       return me(J(J(J(J(J(J(J(J(J(J({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge), "loading", this.loading), "fluid", this.hasFluid), "rounded", this.rounded), "raised", this.raised), "outlined", this.outlined || this.variant === "outlined"), "text", this.text || this.variant === "text"), "link", this.link || this.variant === "link"), "vertical", (this.iconPos === "top" || this.iconPos === "bottom") && this.label));
@@ -1052,20 +1052,20 @@ var X = {
     }
   },
   components: {
-    SpinnerIcon: Uo,
-    Badge: Mt
+    SpinnerIcon: Ho,
+    Badge: Tt
   },
   directives: {
-    ripple: Lt
+    ripple: Mt
   }
-}, kn = ["data-p"], wn = ["data-p"];
-function _n(e, t, o, n, i, a) {
-  var f = Re("SpinnerIcon"), m = Re("Badge"), w = Et("ripple");
+}, wn = ["data-p"], _n = ["data-p"];
+function $n(e, t, o, n, i, a) {
+  var f = Te("SpinnerIcon"), m = Te("Badge"), w = Dt("ripple");
   return e.asChild ? Q(e.$slots, "default", {
     key: 1,
     class: q(e.cx("root")),
     a11yAttrs: a.a11yAttrs
-  }) : ue((s(), N(Te(e.as), H({
+  }) : ue((s(), N(Be(e.as), H({
     key: 0,
     class: e.cx("root"),
     "data-p": a.dataP
@@ -1092,13 +1092,13 @@ function _n(e, t, o, n, i, a) {
             key: 0,
             class: [e.cx("icon"), e.icon, e.iconClass],
             "data-p": a.dataIconP
-          }, e.ptm("icon")), null, 16, kn)) : h("", !0)];
+          }, e.ptm("icon")), null, 16, wn)) : h("", !0)];
         }), e.label ? (s(), d("span", H({
           key: 2,
           class: e.cx("label")
         }, e.ptm("label"), {
           "data-p": a.dataLabelP
-        }), g(e.label), 17, wn)) : h("", !0), e.badge ? (s(), N(m, {
+        }), g(e.label), 17, _n)) : h("", !0), e.badge ? (s(), N(m, {
           key: 3,
           value: e.badge,
           class: q(e.badgeClass),
@@ -1111,73 +1111,29 @@ function _n(e, t, o, n, i, a) {
     _: 3
   }, 16, ["class", "data-p"])), [[w]]);
 }
-X.render = _n;
-var Rt = {
+X.render = $n;
+var Bt = {
   name: "WindowMaximizeIcon",
-  extends: At
+  extends: Rt
 };
-function $n(e) {
-  return Pn(e) || zn(e) || Sn(e) || Cn();
+function Cn(e) {
+  return En(e) || Pn(e) || zn(e) || Sn();
 }
-function Cn() {
+function Sn() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function Sn(e, t) {
-  if (e) {
-    if (typeof e == "string") return Qe(e, t);
-    var o = {}.toString.call(e).slice(8, -1);
-    return o === "Object" && e.constructor && (o = e.constructor.name), o === "Map" || o === "Set" ? Array.from(e) : o === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? Qe(e, t) : void 0;
-  }
-}
-function zn(e) {
-  if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
-}
-function Pn(e) {
-  if (Array.isArray(e)) return Qe(e);
-}
-function Qe(e, t) {
-  (t == null || t > e.length) && (t = e.length);
-  for (var o = 0, n = Array(t); o < t; o++) n[o] = e[o];
-  return n;
-}
-function En(e, t, o, n, i, a) {
-  return s(), d("svg", H({
-    width: "14",
-    height: "14",
-    viewBox: "0 0 14 14",
-    fill: "none",
-    xmlns: "http://www.w3.org/2000/svg"
-  }, e.pti()), $n(t[0] || (t[0] = [l("path", {
-    "fill-rule": "evenodd",
-    "clip-rule": "evenodd",
-    d: "M7 14H11.8C12.3835 14 12.9431 13.7682 13.3556 13.3556C13.7682 12.9431 14 12.3835 14 11.8V2.2C14 1.61652 13.7682 1.05694 13.3556 0.644365C12.9431 0.231785 12.3835 0 11.8 0H2.2C1.61652 0 1.05694 0.231785 0.644365 0.644365C0.231785 1.05694 0 1.61652 0 2.2V7C0 7.15913 0.063214 7.31174 0.175736 7.42426C0.288258 7.53679 0.44087 7.6 0.6 7.6C0.75913 7.6 0.911742 7.53679 1.02426 7.42426C1.13679 7.31174 1.2 7.15913 1.2 7V2.2C1.2 1.93478 1.30536 1.68043 1.49289 1.49289C1.68043 1.30536 1.93478 1.2 2.2 1.2H11.8C12.0652 1.2 12.3196 1.30536 12.5071 1.49289C12.6946 1.68043 12.8 1.93478 12.8 2.2V11.8C12.8 12.0652 12.6946 12.3196 12.5071 12.5071C12.3196 12.6946 12.0652 12.8 11.8 12.8H7C6.84087 12.8 6.68826 12.8632 6.57574 12.9757C6.46321 13.0883 6.4 13.2409 6.4 13.4C6.4 13.5591 6.46321 13.7117 6.57574 13.8243C6.68826 13.9368 6.84087 14 7 14ZM9.77805 7.42192C9.89013 7.534 10.0415 7.59788 10.2 7.59995C10.3585 7.59788 10.5099 7.534 10.622 7.42192C10.7341 7.30985 10.798 7.15844 10.8 6.99995V3.94242C10.8066 3.90505 10.8096 3.86689 10.8089 3.82843C10.8079 3.77159 10.7988 3.7157 10.7824 3.6623C10.756 3.55552 10.701 3.45698 10.622 3.37798C10.5099 3.2659 10.3585 3.20202 10.2 3.19995H7.00002C6.84089 3.19995 6.68828 3.26317 6.57576 3.37569C6.46324 3.48821 6.40002 3.64082 6.40002 3.79995C6.40002 3.95908 6.46324 4.11169 6.57576 4.22422C6.68828 4.33674 6.84089 4.39995 7.00002 4.39995H8.80006L6.19997 7.00005C6.10158 7.11005 6.04718 7.25246 6.04718 7.40005C6.04718 7.54763 6.10158 7.69004 6.19997 7.80005C6.30202 7.91645 6.44561 7.98824 6.59997 8.00005C6.75432 7.98824 6.89791 7.91645 6.99997 7.80005L9.60002 5.26841V6.99995C9.6021 7.15844 9.66598 7.30985 9.77805 7.42192ZM1.4 14H3.8C4.17066 13.9979 4.52553 13.8498 4.78763 13.5877C5.04973 13.3256 5.1979 12.9707 5.2 12.6V10.2C5.1979 9.82939 5.04973 9.47452 4.78763 9.21242C4.52553 8.95032 4.17066 8.80215 3.8 8.80005H1.4C1.02934 8.80215 0.674468 8.95032 0.412371 9.21242C0.150274 9.47452 0.00210008 9.82939 0 10.2V12.6C0.00210008 12.9707 0.150274 13.3256 0.412371 13.5877C0.674468 13.8498 1.02934 13.9979 1.4 14ZM1.25858 10.0586C1.29609 10.0211 1.34696 10 1.4 10H3.8C3.85304 10 3.90391 10.0211 3.94142 10.0586C3.97893 10.0961 4 10.147 4 10.2V12.6C4 12.6531 3.97893 12.704 3.94142 12.7415C3.90391 12.779 3.85304 12.8 3.8 12.8H1.4C1.34696 12.8 1.29609 12.779 1.25858 12.7415C1.22107 12.704 1.2 12.6531 1.2 12.6V10.2C1.2 10.147 1.22107 10.0961 1.25858 10.0586Z",
-    fill: "currentColor"
-  }, null, -1)])), 16);
-}
-Rt.render = En;
-var Tt = {
-  name: "WindowMinimizeIcon",
-  extends: At
-};
-function In(e) {
-  return Mn(e) || An(e) || Ln(e) || Dn();
-}
-function Dn() {
-  throw new TypeError(`Invalid attempt to spread non-iterable instance.
-In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
-}
-function Ln(e, t) {
+function zn(e, t) {
   if (e) {
     if (typeof e == "string") return et(e, t);
     var o = {}.toString.call(e).slice(8, -1);
     return o === "Object" && e.constructor && (o = e.constructor.name), o === "Map" || o === "Set" ? Array.from(e) : o === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? et(e, t) : void 0;
   }
 }
-function An(e) {
+function Pn(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
-function Mn(e) {
+function En(e) {
   if (Array.isArray(e)) return et(e);
 }
 function et(e, t) {
@@ -1185,25 +1141,69 @@ function et(e, t) {
   for (var o = 0, n = Array(t); o < t; o++) n[o] = e[o];
   return n;
 }
-function Rn(e, t, o, n, i, a) {
+function In(e, t, o, n, i, a) {
   return s(), d("svg", H({
     width: "14",
     height: "14",
     viewBox: "0 0 14 14",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg"
-  }, e.pti()), In(t[0] || (t[0] = [l("path", {
+  }, e.pti()), Cn(t[0] || (t[0] = [l("path", {
+    "fill-rule": "evenodd",
+    "clip-rule": "evenodd",
+    d: "M7 14H11.8C12.3835 14 12.9431 13.7682 13.3556 13.3556C13.7682 12.9431 14 12.3835 14 11.8V2.2C14 1.61652 13.7682 1.05694 13.3556 0.644365C12.9431 0.231785 12.3835 0 11.8 0H2.2C1.61652 0 1.05694 0.231785 0.644365 0.644365C0.231785 1.05694 0 1.61652 0 2.2V7C0 7.15913 0.063214 7.31174 0.175736 7.42426C0.288258 7.53679 0.44087 7.6 0.6 7.6C0.75913 7.6 0.911742 7.53679 1.02426 7.42426C1.13679 7.31174 1.2 7.15913 1.2 7V2.2C1.2 1.93478 1.30536 1.68043 1.49289 1.49289C1.68043 1.30536 1.93478 1.2 2.2 1.2H11.8C12.0652 1.2 12.3196 1.30536 12.5071 1.49289C12.6946 1.68043 12.8 1.93478 12.8 2.2V11.8C12.8 12.0652 12.6946 12.3196 12.5071 12.5071C12.3196 12.6946 12.0652 12.8 11.8 12.8H7C6.84087 12.8 6.68826 12.8632 6.57574 12.9757C6.46321 13.0883 6.4 13.2409 6.4 13.4C6.4 13.5591 6.46321 13.7117 6.57574 13.8243C6.68826 13.9368 6.84087 14 7 14ZM9.77805 7.42192C9.89013 7.534 10.0415 7.59788 10.2 7.59995C10.3585 7.59788 10.5099 7.534 10.622 7.42192C10.7341 7.30985 10.798 7.15844 10.8 6.99995V3.94242C10.8066 3.90505 10.8096 3.86689 10.8089 3.82843C10.8079 3.77159 10.7988 3.7157 10.7824 3.6623C10.756 3.55552 10.701 3.45698 10.622 3.37798C10.5099 3.2659 10.3585 3.20202 10.2 3.19995H7.00002C6.84089 3.19995 6.68828 3.26317 6.57576 3.37569C6.46324 3.48821 6.40002 3.64082 6.40002 3.79995C6.40002 3.95908 6.46324 4.11169 6.57576 4.22422C6.68828 4.33674 6.84089 4.39995 7.00002 4.39995H8.80006L6.19997 7.00005C6.10158 7.11005 6.04718 7.25246 6.04718 7.40005C6.04718 7.54763 6.10158 7.69004 6.19997 7.80005C6.30202 7.91645 6.44561 7.98824 6.59997 8.00005C6.75432 7.98824 6.89791 7.91645 6.99997 7.80005L9.60002 5.26841V6.99995C9.6021 7.15844 9.66598 7.30985 9.77805 7.42192ZM1.4 14H3.8C4.17066 13.9979 4.52553 13.8498 4.78763 13.5877C5.04973 13.3256 5.1979 12.9707 5.2 12.6V10.2C5.1979 9.82939 5.04973 9.47452 4.78763 9.21242C4.52553 8.95032 4.17066 8.80215 3.8 8.80005H1.4C1.02934 8.80215 0.674468 8.95032 0.412371 9.21242C0.150274 9.47452 0.00210008 9.82939 0 10.2V12.6C0.00210008 12.9707 0.150274 13.3256 0.412371 13.5877C0.674468 13.8498 1.02934 13.9979 1.4 14ZM1.25858 10.0586C1.29609 10.0211 1.34696 10 1.4 10H3.8C3.85304 10 3.90391 10.0211 3.94142 10.0586C3.97893 10.0961 4 10.147 4 10.2V12.6C4 12.6531 3.97893 12.704 3.94142 12.7415C3.90391 12.779 3.85304 12.8 3.8 12.8H1.4C1.34696 12.8 1.29609 12.779 1.25858 12.7415C1.22107 12.704 1.2 12.6531 1.2 12.6V10.2C1.2 10.147 1.22107 10.0961 1.25858 10.0586Z",
+    fill: "currentColor"
+  }, null, -1)])), 16);
+}
+Bt.render = In;
+var Ot = {
+  name: "WindowMinimizeIcon",
+  extends: Rt
+};
+function Dn(e) {
+  return Rn(e) || Mn(e) || An(e) || Ln();
+}
+function Ln() {
+  throw new TypeError(`Invalid attempt to spread non-iterable instance.
+In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
+}
+function An(e, t) {
+  if (e) {
+    if (typeof e == "string") return tt(e, t);
+    var o = {}.toString.call(e).slice(8, -1);
+    return o === "Object" && e.constructor && (o = e.constructor.name), o === "Map" || o === "Set" ? Array.from(e) : o === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? tt(e, t) : void 0;
+  }
+}
+function Mn(e) {
+  if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
+}
+function Rn(e) {
+  if (Array.isArray(e)) return tt(e);
+}
+function tt(e, t) {
+  (t == null || t > e.length) && (t = e.length);
+  for (var o = 0, n = Array(t); o < t; o++) n[o] = e[o];
+  return n;
+}
+function Tn(e, t, o, n, i, a) {
+  return s(), d("svg", H({
+    width: "14",
+    height: "14",
+    viewBox: "0 0 14 14",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg"
+  }, e.pti()), Dn(t[0] || (t[0] = [l("path", {
     "fill-rule": "evenodd",
     "clip-rule": "evenodd",
     d: "M11.8 0H2.2C1.61652 0 1.05694 0.231785 0.644365 0.644365C0.231785 1.05694 0 1.61652 0 2.2V7C0 7.15913 0.063214 7.31174 0.175736 7.42426C0.288258 7.53679 0.44087 7.6 0.6 7.6C0.75913 7.6 0.911742 7.53679 1.02426 7.42426C1.13679 7.31174 1.2 7.15913 1.2 7V2.2C1.2 1.93478 1.30536 1.68043 1.49289 1.49289C1.68043 1.30536 1.93478 1.2 2.2 1.2H11.8C12.0652 1.2 12.3196 1.30536 12.5071 1.49289C12.6946 1.68043 12.8 1.93478 12.8 2.2V11.8C12.8 12.0652 12.6946 12.3196 12.5071 12.5071C12.3196 12.6946 12.0652 12.8 11.8 12.8H7C6.84087 12.8 6.68826 12.8632 6.57574 12.9757C6.46321 13.0883 6.4 13.2409 6.4 13.4C6.4 13.5591 6.46321 13.7117 6.57574 13.8243C6.68826 13.9368 6.84087 14 7 14H11.8C12.3835 14 12.9431 13.7682 13.3556 13.3556C13.7682 12.9431 14 12.3835 14 11.8V2.2C14 1.61652 13.7682 1.05694 13.3556 0.644365C12.9431 0.231785 12.3835 0 11.8 0ZM6.368 7.952C6.44137 7.98326 6.52025 7.99958 6.6 8H9.8C9.95913 8 10.1117 7.93678 10.2243 7.82426C10.3368 7.71174 10.4 7.55913 10.4 7.4C10.4 7.24087 10.3368 7.08826 10.2243 6.97574C10.1117 6.86321 9.95913 6.8 9.8 6.8H8.048L10.624 4.224C10.73 4.11026 10.7877 3.95982 10.7849 3.80438C10.7822 3.64894 10.7192 3.50063 10.6093 3.3907C10.4994 3.28077 10.3511 3.2178 10.1956 3.21506C10.0402 3.21232 9.88974 3.27002 9.776 3.376L7.2 5.952V4.2C7.2 4.04087 7.13679 3.88826 7.02426 3.77574C6.91174 3.66321 6.75913 3.6 6.6 3.6C6.44087 3.6 6.28826 3.66321 6.17574 3.77574C6.06321 3.88826 6 4.04087 6 4.2V7.4C6.00042 7.47975 6.01674 7.55862 6.048 7.632C6.07656 7.70442 6.11971 7.7702 6.17475 7.82524C6.2298 7.88029 6.29558 7.92344 6.368 7.952ZM1.4 8.80005H3.8C4.17066 8.80215 4.52553 8.95032 4.78763 9.21242C5.04973 9.47452 5.1979 9.82939 5.2 10.2V12.6C5.1979 12.9707 5.04973 13.3256 4.78763 13.5877C4.52553 13.8498 4.17066 13.9979 3.8 14H1.4C1.02934 13.9979 0.674468 13.8498 0.412371 13.5877C0.150274 13.3256 0.00210008 12.9707 0 12.6V10.2C0.00210008 9.82939 0.150274 9.47452 0.412371 9.21242C0.674468 8.95032 1.02934 8.80215 1.4 8.80005ZM3.94142 12.7415C3.97893 12.704 4 12.6531 4 12.6V10.2C4 10.147 3.97893 10.0961 3.94142 10.0586C3.90391 10.0211 3.85304 10 3.8 10H1.4C1.34696 10 1.29609 10.0211 1.25858 10.0586C1.22107 10.0961 1.2 10.147 1.2 10.2V12.6C1.2 12.6531 1.22107 12.704 1.25858 12.7415C1.29609 12.779 1.34696 12.8 1.4 12.8H3.8C3.85304 12.8 3.90391 12.779 3.94142 12.7415Z",
     fill: "currentColor"
   }, null, -1)])), 16);
 }
-Tt.render = Rn;
-var Tn = Le.extend({
+Ot.render = Tn;
+var Bn = Le.extend({
   name: "focustrap-directive"
-}), Bn = Ho.extend({
-  style: Tn
+}), On = Vo.extend({
+  style: Bn
 });
 function Pe(e) {
   "@babel/helpers - typeof";
@@ -1213,7 +1213,7 @@ function Pe(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Pe(e);
 }
-function vt(e, t) {
+function ht(e, t) {
   var o = Object.keys(e);
   if (Object.getOwnPropertySymbols) {
     var n = Object.getOwnPropertySymbols(e);
@@ -1223,25 +1223,25 @@ function vt(e, t) {
   }
   return o;
 }
-function ht(e) {
+function xt(e) {
   for (var t = 1; t < arguments.length; t++) {
     var o = arguments[t] != null ? arguments[t] : {};
-    t % 2 ? vt(Object(o), !0).forEach(function(n) {
-      On(e, n, o[n]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(o)) : vt(Object(o)).forEach(function(n) {
+    t % 2 ? ht(Object(o), !0).forEach(function(n) {
+      jn(e, n, o[n]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(o)) : ht(Object(o)).forEach(function(n) {
       Object.defineProperty(e, n, Object.getOwnPropertyDescriptor(o, n));
     });
   }
   return e;
 }
-function On(e, t, o) {
-  return (t = jn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
+function jn(e, t, o) {
+  return (t = Fn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function jn(e) {
-  var t = Fn(e, "string");
+function Fn(e) {
+  var t = Nn(e, "string");
   return Pe(t) == "symbol" ? t : t + "";
 }
-function Fn(e, t) {
+function Nn(e, t) {
   if (Pe(e) != "object" || !e) return e;
   var o = e[Symbol.toPrimitive];
   if (o !== void 0) {
@@ -1251,7 +1251,7 @@ function Fn(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var Nn = Bn.extend("focustrap", {
+var Un = On.extend("focustrap", {
   mounted: function(t, o) {
     var n = o.value || {}, i = n.disabled;
     i || (this.createHiddenFocusableElements(t, o), this.bind(t, o), this.autoElementFocus(t, o)), t.setAttribute("data-pd-focustrap", !0), this.$el = t;
@@ -1273,8 +1273,8 @@ var Nn = Bn.extend("focustrap", {
         m.forEach(function(w) {
           if (w.type === "childList" && !t.contains(document.activeElement)) {
             var u = function(x) {
-              var _ = ft(x) ? ft(x, n.getComputedSelector(t.$_pfocustrap_focusableselector)) ? x : ke(t, n.getComputedSelector(t.$_pfocustrap_focusableselector)) : ke(x);
-              return zt(_) ? _ : x.nextSibling && u(x.nextSibling);
+              var _ = mt(x) ? mt(x, n.getComputedSelector(t.$_pfocustrap_focusableselector)) ? x : ke(t, n.getComputedSelector(t.$_pfocustrap_focusableselector)) : ke(x);
+              return Et(_) ? _ : x.nextSibling && u(x.nextSibling);
             };
             fe(u(w.nextSibling));
           }
@@ -1292,7 +1292,7 @@ var Nn = Bn.extend("focustrap", {
     },
     autoFocus: function(t) {
       this.autoElementFocus(this.$el, {
-        value: ht(ht({}, t), {}, {
+        value: xt(xt({}, t), {}, {
           autoFocus: !0
         })
       });
@@ -1306,12 +1306,12 @@ var Nn = Bn.extend("focustrap", {
       fe(a);
     },
     onLastHiddenElementFocus: function(t) {
-      var o, n = t.currentTarget, i = t.relatedTarget, a = i === n.$_pfocustrap_firsthiddenfocusableelement || !((o = this.$el) !== null && o !== void 0 && o.contains(i)) ? So(n.parentElement, this.getComputedSelector(n.$_pfocustrap_focusableselector)) : n.$_pfocustrap_firsthiddenfocusableelement;
+      var o, n = t.currentTarget, i = t.relatedTarget, a = i === n.$_pfocustrap_firsthiddenfocusableelement || !((o = this.$el) !== null && o !== void 0 && o.contains(i)) ? zo(n.parentElement, this.getComputedSelector(n.$_pfocustrap_focusableselector)) : n.$_pfocustrap_firsthiddenfocusableelement;
       fe(a);
     },
     createHiddenFocusableElements: function(t, o) {
       var n = this, i = o.value || {}, a = i.tabIndex, f = a === void 0 ? 0 : a, m = i.firstFocusableSelector, w = m === void 0 ? "" : m, u = i.lastFocusableSelector, z = u === void 0 ? "" : u, x = function(M) {
-        return zo("span", {
+        return Po("span", {
           class: "p-hidden-accessible p-hidden-focusable",
           tabIndex: f,
           role: "presentation",
@@ -1325,17 +1325,17 @@ var Nn = Bn.extend("focustrap", {
     }
   }
 });
-function xt() {
-  Eo({
-    variableName: Pt("scrollbar.width").name
-  });
-}
 function yt() {
-  Po({
-    variableName: Pt("scrollbar.width").name
+  Io({
+    variableName: It("scrollbar.width").name
   });
 }
-var Un = `
+function kt() {
+  Eo({
+    variableName: It("scrollbar.width").name
+  });
+}
+var Hn = `
     .p-dialog {
         max-height: 90%;
         transform: scale(1);
@@ -1433,7 +1433,7 @@ var Un = `
             transform: scale(0.93);
         }
     }
-`, Hn = {
+`, Vn = {
   mask: function(t) {
     var o = t.position, n = t.modal;
     return {
@@ -1453,7 +1453,7 @@ var Un = `
     flexDirection: "column",
     pointerEvents: "auto"
   }
-}, Vn = {
+}, Kn = {
   mask: function(t) {
     var o = t.props, n = ["left", "right", "top", "topleft", "topright", "bottom", "bottomleft", "bottomright"], i = n.find(function(a) {
       return a === o.position;
@@ -1475,14 +1475,14 @@ var Un = `
   pcCloseButton: "p-dialog-close-button",
   content: "p-dialog-content",
   footer: "p-dialog-footer"
-}, Kn = Le.extend({
+}, qn = Le.extend({
   name: "dialog",
-  style: Un,
-  classes: Vn,
-  inlineStyles: Hn
-}), qn = {
+  style: Hn,
+  classes: Kn,
+  inlineStyles: Vn
+}), Wn = {
   name: "BaseDialog",
-  extends: Oe,
+  extends: je,
   props: {
     header: {
       type: null,
@@ -1606,7 +1606,7 @@ var Un = `
     },
     _instance: null
   },
-  style: Kn,
+  style: qn,
   provide: function() {
     return {
       $pcDialog: this,
@@ -1615,7 +1615,7 @@ var Un = `
   }
 }, $e = {
   name: "Dialog",
-  extends: qn,
+  extends: Wn,
   inheritAttrs: !1,
   emits: ["update:visible", "show", "hide", "after-hide", "maximize", "unmaximize", "dragstart", "dragend"],
   provide: function() {
@@ -1654,7 +1654,7 @@ var Un = `
     this.visible && (this.containerVisible = this.visible);
   },
   beforeUnmount: function() {
-    this.unbindDocumentState(), this.unbindGlobalListeners(), this.destroyStyle(), this.mask && this.autoZIndex && Ye.clear(this.mask), this.container = null, this.mask = null;
+    this.unbindDocumentState(), this.unbindGlobalListeners(), this.destroyStyle(), this.mask && this.autoZIndex && Ze.clear(this.mask), this.container = null, this.mask = null;
   },
   mounted: function() {
     this.breakpoints && this.createStyle();
@@ -1664,19 +1664,19 @@ var Un = `
       this.$emit("update:visible", !1);
     },
     onEnter: function() {
-      this.$emit("show"), this.target = document.activeElement, this.enableDocumentSettings(), this.bindGlobalListeners(), this.autoZIndex && Ye.set("modal", this.mask, this.baseZIndex || this.$primevue.config.zIndex.modal);
+      this.$emit("show"), this.target = document.activeElement, this.enableDocumentSettings(), this.bindGlobalListeners(), this.autoZIndex && Ze.set("modal", this.mask, this.baseZIndex || this.$primevue.config.zIndex.modal);
     },
     onAfterEnter: function() {
       this.focus();
     },
     onBeforeLeave: function() {
-      this.modal && !this.isUnstyled && To(this.mask, "p-overlay-mask-leave-active"), this.dragging && this.documentDragEndListener && this.documentDragEndListener();
+      this.modal && !this.isUnstyled && Bo(this.mask, "p-overlay-mask-leave-active"), this.dragging && this.documentDragEndListener && this.documentDragEndListener();
     },
     onLeave: function() {
       this.$emit("hide"), fe(this.target), this.target = null, this.focusableClose = null, this.focusableMax = null;
     },
     onAfterLeave: function() {
-      this.autoZIndex && Ye.clear(this.mask), this.containerVisible = !1, this.unbindDocumentState(), this.unbindGlobalListeners(), this.$emit("after-hide");
+      this.autoZIndex && Ze.clear(this.mask), this.containerVisible = !1, this.unbindDocumentState(), this.unbindGlobalListeners(), this.$emit("after-hide");
     },
     onMaskMouseDown: function(t) {
       this.maskMouseDownTarget = t.target;
@@ -1693,13 +1693,13 @@ var Un = `
       });
     },
     maximize: function(t) {
-      this.maximized ? (this.maximized = !1, this.$emit("unmaximize", t)) : (this.maximized = !0, this.$emit("maximize", t)), this.modal || (this.maximized ? xt() : yt());
+      this.maximized ? (this.maximized = !1, this.$emit("unmaximize", t)) : (this.maximized = !0, this.$emit("maximize", t)), this.modal || (this.maximized ? yt() : kt());
     },
     enableDocumentSettings: function() {
-      (this.modal || !this.modal && this.blockScroll || this.maximizable && this.maximized) && xt();
+      (this.modal || !this.modal && this.blockScroll || this.maximizable && this.maximized) && yt();
     },
     unbindDocumentState: function() {
-      (this.modal || !this.modal && this.blockScroll || this.maximizable && this.maximized) && yt();
+      (this.modal || !this.modal && this.blockScroll || this.maximizable && this.maximized) && kt();
     },
     onKeyDown: function(t) {
       t.code === "Escape" && this.closeOnEscape && !t.isComposing && this.close();
@@ -1734,7 +1734,7 @@ var Un = `
     createStyle: function() {
       if (!this.styleElement && !this.isUnstyled) {
         var t;
-        this.styleElement = document.createElement("style"), this.styleElement.type = "text/css", Ro(this.styleElement, "nonce", (t = this.$primevue) === null || t === void 0 || (t = t.config) === null || t === void 0 || (t = t.csp) === null || t === void 0 ? void 0 : t.nonce), document.head.appendChild(this.styleElement);
+        this.styleElement = document.createElement("style"), this.styleElement.type = "text/css", To(this.styleElement, "nonce", (t = this.$primevue) === null || t === void 0 || (t = t.config) === null || t === void 0 || (t = t.csp) === null || t === void 0 ? void 0 : t.nonce), document.head.appendChild(this.styleElement);
         var o = "";
         for (var n in this.breakpoints)
           o += `
@@ -1751,7 +1751,7 @@ var Un = `
       this.styleElement && (document.head.removeChild(this.styleElement), this.styleElement = null);
     },
     initDrag: function(t) {
-      t.target.closest("div").getAttribute("data-pc-section") !== "headeractions" && this.draggable && (this.dragging = !0, this.lastPageX = t.pageX, this.lastPageY = t.pageY, this.container.style.margin = "0", document.body.setAttribute("data-p-unselectable-text", "true"), !this.isUnstyled && Mo(document.body, {
+      t.target.closest("div").getAttribute("data-pc-section") !== "headeractions" && this.draggable && (this.dragging = !0, this.lastPageX = t.pageX, this.lastPageY = t.pageY, this.container.style.margin = "0", document.body.setAttribute("data-p-unselectable-text", "true"), !this.isUnstyled && Ro(document.body, {
         "user-select": "none"
       }), this.$emit("dragstart", t));
     },
@@ -1765,7 +1765,7 @@ var Un = `
       var t = this;
       this.documentDragListener = function(o) {
         if (t.dragging) {
-          var n = Do(t.container), i = Lo(t.container), a = o.pageX - t.lastPageX, f = o.pageY - t.lastPageY, m = t.container.getBoundingClientRect(), w = m.left + a, u = m.top + f, z = Ao(), x = getComputedStyle(t.container), _ = parseFloat(x.marginLeft), p = parseFloat(x.marginTop);
+          var n = Lo(t.container), i = Ao(t.container), a = o.pageX - t.lastPageX, f = o.pageY - t.lastPageY, m = t.container.getBoundingClientRect(), w = m.left + a, u = m.top + f, z = Mo(), x = getComputedStyle(t.container), _ = parseFloat(x.marginLeft), p = parseFloat(x.marginTop);
           t.container.style.position = "fixed", t.keepInViewport ? (w >= t.minX && w + n < z.width && (t.lastPageX = o.pageX, t.container.style.left = w - _ + "px"), u >= t.minY && u + i < z.height && (t.lastPageY = o.pageY, t.container.style.top = u - p + "px")) : (t.lastPageX = o.pageX, t.container.style.left = w - _ + "px", t.lastPageY = o.pageY, t.container.style.top = u - p + "px");
         }
       }, window.document.addEventListener("mousemove", this.documentDragListener);
@@ -1801,15 +1801,15 @@ var Un = `
     }
   },
   directives: {
-    ripple: Lt,
-    focustrap: Nn
+    ripple: Mt,
+    focustrap: Un
   },
   components: {
     Button: X,
-    Portal: Io,
-    WindowMinimizeIcon: Tt,
-    WindowMaximizeIcon: Rt,
-    TimesIcon: Vo
+    Portal: Do,
+    WindowMinimizeIcon: Ot,
+    WindowMaximizeIcon: Bt,
+    TimesIcon: Ko
   }
 };
 function Ee(e) {
@@ -1820,7 +1820,7 @@ function Ee(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Ee(e);
 }
-function kt(e, t) {
+function wt(e, t) {
   var o = Object.keys(e);
   if (Object.getOwnPropertySymbols) {
     var n = Object.getOwnPropertySymbols(e);
@@ -1830,25 +1830,25 @@ function kt(e, t) {
   }
   return o;
 }
-function wt(e) {
+function _t(e) {
   for (var t = 1; t < arguments.length; t++) {
     var o = arguments[t] != null ? arguments[t] : {};
-    t % 2 ? kt(Object(o), !0).forEach(function(n) {
-      Wn(e, n, o[n]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(o)) : kt(Object(o)).forEach(function(n) {
+    t % 2 ? wt(Object(o), !0).forEach(function(n) {
+      Yn(e, n, o[n]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(o)) : wt(Object(o)).forEach(function(n) {
       Object.defineProperty(e, n, Object.getOwnPropertyDescriptor(o, n));
     });
   }
   return e;
 }
-function Wn(e, t, o) {
-  return (t = Yn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
+function Yn(e, t, o) {
+  return (t = Zn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function Yn(e) {
-  var t = Zn(e, "string");
+function Zn(e) {
+  var t = Gn(e, "string");
   return Ee(t) == "symbol" ? t : t + "";
 }
-function Zn(e, t) {
+function Gn(e, t) {
   if (Ee(e) != "object" || !e) return e;
   var o = e[Symbol.toPrimitive];
   if (o !== void 0) {
@@ -1858,9 +1858,9 @@ function Zn(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var Gn = ["data-p"], Xn = ["aria-labelledby", "aria-modal", "data-p"], Jn = ["id"], Qn = ["data-p"];
-function er(e, t, o, n, i, a) {
-  var f = Re("Button"), m = Re("Portal"), w = Et("focustrap");
+var Xn = ["data-p"], Jn = ["aria-labelledby", "aria-modal", "data-p"], Qn = ["id"], er = ["data-p"];
+function tr(e, t, o, n, i, a) {
+  var f = Te("Button"), m = Te("Portal"), w = Dt("focustrap");
   return s(), N(m, {
     appendTo: e.appendTo
   }, {
@@ -1880,7 +1880,7 @@ function er(e, t, o, n, i, a) {
           return a.onMaskMouseUp && a.onMaskMouseUp.apply(a, arguments);
         }),
         "data-p": a.dataP
-      }, e.ptm("mask")), [E(jo, H({
+      }, e.ptm("mask")), [E(Fo, H({
         name: "p-dialog",
         onEnter: a.onEnter,
         onAfterEnter: a.onAfterEnter,
@@ -1922,7 +1922,7 @@ function er(e, t, o, n, i, a) {
               key: 0,
               id: a.ariaLabelledById,
               class: e.cx("title")
-            }, e.ptm("title")), g(e.header), 17, Jn)) : h("", !0)];
+            }, e.ptm("title")), g(e.header), 17, Qn)) : h("", !0)];
           }), l("div", H({
             class: e.cx("headerActions")
           }, e.ptm("headerActions")), [e.maximizable ? Q(e.$slots, "maximizebutton", {
@@ -1947,7 +1947,7 @@ function er(e, t, o, n, i, a) {
                 return [Q(e.$slots, "maximizeicon", {
                   maximized: i.maximized
                 }, function() {
-                  return [(s(), N(Te(a.maximizeIconComponent), H({
+                  return [(s(), N(Be(a.maximizeIconComponent), H({
                     class: [u.class, i.maximized ? e.minimizeIcon : e.maximizeIcon]
                   }, e.ptm("pcMaximizeButton").icon), null, 16, ["class"]))];
                 })];
@@ -1971,7 +1971,7 @@ function er(e, t, o, n, i, a) {
             }), {
               icon: F(function(u) {
                 return [Q(e.$slots, "closeicon", {}, function() {
-                  return [(s(), N(Te(e.closeIcon ? "span" : "TimesIcon"), H({
+                  return [(s(), N(Be(e.closeIcon ? "span" : "TimesIcon"), H({
                     class: [e.closeIcon, u.class]
                   }, e.ptm("pcCloseButton").icon), null, 16, ["class"]))];
                 })];
@@ -1983,24 +1983,24 @@ function er(e, t, o, n, i, a) {
             class: [e.cx("content"), e.contentClass],
             style: e.contentStyle,
             "data-p": a.dataP
-          }, wt(wt({}, e.contentProps), e.ptm("content"))), [Q(e.$slots, "default")], 16, Qn), e.footer || e.$slots.footer ? (s(), d("div", H({
+          }, _t(_t({}, e.contentProps), e.ptm("content"))), [Q(e.$slots, "default")], 16, er), e.footer || e.$slots.footer ? (s(), d("div", H({
             key: 1,
             ref: a.footerContainerRef,
             class: e.cx("footer")
           }, e.ptm("footer")), [Q(e.$slots, "footer", {}, function() {
             return [le(g(e.footer), 1)];
-          })], 16)) : h("", !0)], 64))], 16, Xn)), [[w, {
+          })], 16)) : h("", !0)], 64))], 16, Jn)), [[w, {
             disabled: !e.modal
           }]]) : h("", !0)];
         }),
         _: 3
-      }, 16, ["onEnter", "onAfterEnter", "onBeforeLeave", "onLeave", "onAfterLeave"])], 16, Gn)) : h("", !0)];
+      }, 16, ["onEnter", "onAfterEnter", "onBeforeLeave", "onLeave", "onAfterLeave"])], 16, Xn)) : h("", !0)];
     }),
     _: 3
   }, 8, ["appendTo"]);
 }
-$e.render = er;
-var tr = `
+$e.render = tr;
+var or = `
     .p-tag {
         display: inline-flex;
         align-items: center;
@@ -2053,7 +2053,7 @@ var tr = `
         background: dt('tag.contrast.background');
         color: dt('tag.contrast.color');
     }
-`, or = {
+`, nr = {
   root: function(t) {
     var o = t.props;
     return ["p-tag p-component", {
@@ -2068,20 +2068,20 @@ var tr = `
   },
   icon: "p-tag-icon",
   label: "p-tag-label"
-}, nr = Le.extend({
+}, rr = Le.extend({
   name: "tag",
-  style: tr,
-  classes: or
-}), rr = {
+  style: or,
+  classes: nr
+}), ar = {
   name: "BaseTag",
-  extends: Oe,
+  extends: je,
   props: {
     value: null,
     severity: null,
     rounded: Boolean,
     icon: String
   },
-  style: nr,
+  style: rr,
   provide: function() {
     return {
       $pcTag: this,
@@ -2097,14 +2097,14 @@ function Ie(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Ie(e);
 }
-function ar(e, t, o) {
-  return (t = ir(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
+function ir(e, t, o) {
+  return (t = sr(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function ir(e) {
-  var t = sr(e, "string");
+function sr(e) {
+  var t = lr(e, "string");
   return Ie(t) == "symbol" ? t : t + "";
 }
-function sr(e, t) {
+function lr(e, t) {
   if (Ie(e) != "object" || !e) return e;
   var o = e[Symbol.toPrimitive];
   if (o !== void 0) {
@@ -2114,23 +2114,23 @@ function sr(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var nt = {
+var rt = {
   name: "Tag",
-  extends: rr,
+  extends: ar,
   inheritAttrs: !1,
   computed: {
     dataP: function() {
-      return me(ar({
+      return me(ir({
         rounded: this.rounded
       }, this.severity, this.severity));
     }
   }
-}, lr = ["data-p"];
-function cr(e, t, o, n, i, a) {
+}, cr = ["data-p"];
+function dr(e, t, o, n, i, a) {
   return s(), d("span", H({
     class: e.cx("root"),
     "data-p": a.dataP
-  }, e.ptmi("root")), [e.$slots.icon ? (s(), N(Te(e.$slots.icon), H({
+  }, e.ptmi("root")), [e.$slots.icon ? (s(), N(Be(e.$slots.icon), H({
     key: 0,
     class: e.cx("icon")
   }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (s(), d("span", H({
@@ -2142,10 +2142,10 @@ function cr(e, t, o, n, i, a) {
     return [l("span", H({
       class: e.cx("label")
     }, e.ptm("label")), g(e.value), 17)];
-  }) : h("", !0)], 16, lr);
+  }) : h("", !0)], 16, cr);
 }
-nt.render = cr;
-function dr(e) {
+rt.render = dr;
+function ur(e) {
   if (!e) return null;
   let t;
   if (typeof e == "number")
@@ -2162,7 +2162,7 @@ function dr(e) {
   return Number.isFinite(t) ? t < 1e12 ? t * 1e3 : t : null;
 }
 function ce(e, t) {
-  const o = dr(e);
+  const o = ur(e);
   if (o === null) return "";
   const n = t?.now ?? Date.now(), i = t?.suffix ?? !0, a = t?.maxUnit ?? "day", f = t?.future ?? !1, m = 6e4, w = 60 * m, u = 24 * w, z = 30 * u, x = 365 * u, _ = n - o;
   if (f && _ < 0) {
@@ -2174,74 +2174,74 @@ function ce(e, t) {
   const y = i ? " ago" : "";
   return p < w ? `${Math.floor(p / m)}m${y}` : p < u ? `${Math.floor(p / w)}h${y}` : a === "year" ? p < z ? `${Math.floor(p / u)}d${y}` : p < x ? `${Math.floor(p / z)}mo${y}` : `${Math.floor(p / x)}y${y}` : `${Math.floor(p / u)}d${y}`;
 }
-function tt(e) {
+function ot(e) {
   return String(e.description || "").trim();
 }
-function Bt(e) {
+function jt(e) {
   const t = e?.tag_name;
   return typeof t == "string" ? t.trim() : "";
 }
-function Ot(e) {
+function Ft(e) {
   const t = typeof e?.base_path == "string" ? e.base_path.trim() : "", o = typeof e?.entry_point == "string" ? e.entry_point.trim() : "";
   return t && o ? `/${t}/${o}` : typeof e?.url == "string" ? e.url.trim() : "";
 }
-function ot(e) {
-  return Bt(e?.component?.create_ui);
+function nt(e) {
+  return jt(e?.component?.create_ui);
 }
-function ur(e) {
-  return Ot(e?.component?.create_ui);
+function pr(e) {
+  return Ft(e?.component?.create_ui);
 }
-function rt(e) {
-  return Bt(e?.component?.manage_ui);
+function at(e) {
+  return jt(e?.component?.manage_ui);
 }
-function jt(e) {
-  return Ot(e?.component?.manage_ui);
+function Nt(e) {
+  return Ft(e?.component?.manage_ui);
 }
-function Ft(e, t) {
+function Ut(e, t) {
   return { id: e.id, automation: e, public_state: e.public_state || {}, type: t };
 }
-let _t = 0;
-function pr(e) {
-  e && (_t += 1, e.setAttribute("submit-nonce", String(_t)));
+let $t = 0;
+function br(e) {
+  e && ($t += 1, e.setAttribute("submit-nonce", String($t)));
 }
-const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }, mr = { class: "kx-modal-head-title" }, gr = {
+const fr = { class: "kx-modal-head-icon" }, mr = { class: "kx-modal-head-text" }, gr = { class: "kx-modal-head-title" }, vr = {
   key: 0,
   class: "kx-2p-l"
-}, vr = { class: "kx-cat-search" }, hr = {
+}, hr = { class: "kx-cat-search" }, xr = {
   key: 0,
   class: "kx-cat-empty"
-}, xr = {
+}, yr = {
   key: 1,
   class: "kx-cat"
-}, yr = ["onClick"], kr = { class: "kx-cat-ico" }, wr = { class: "kx-cat-text" }, _r = { class: "kx-cat-name" }, $r = {
+}, kr = ["onClick"], wr = { class: "kx-cat-ico" }, _r = { class: "kx-cat-text" }, $r = { class: "kx-cat-name" }, Cr = {
   key: 0,
   class: "kx-cat-desc"
-}, Cr = { class: "kx-2p-r" }, Sr = {
+}, Sr = { class: "kx-2p-r" }, zr = {
   key: 0,
   class: "kx-2p-r-head"
-}, zr = { class: "kx-2p-r-body" }, Pr = {
+}, Pr = { class: "kx-2p-r-body" }, Er = {
   key: 0,
   class: "kx-2p-r-note"
-}, Er = {
+}, Ir = {
   key: 1,
   class: "kx-2p-r-note"
-}, Ir = {
+}, Dr = {
   key: 2,
   class: "kx-form"
-}, Dr = { class: "kx-field-lbl" }, Lr = {
+}, Lr = { class: "kx-field-lbl" }, Ar = {
   key: 0,
   class: "kx-req",
   "aria-hidden": "true"
-}, Ar = ["onUpdate:modelValue"], Mr = ["onUpdate:modelValue"], Rr = ["onUpdate:modelValue", "type", "placeholder"], Tr = {
+}, Mr = ["onUpdate:modelValue"], Rr = ["onUpdate:modelValue"], Tr = ["onUpdate:modelValue", "type", "placeholder"], Br = {
   key: 4,
   class: "kx-field-hint"
-}, Br = {
+}, Or = {
   key: 5,
   class: "kx-field-hint"
-}, Or = {
+}, jr = {
   key: 0,
   class: "kx-err inline kx-foot-err"
-}, jr = /* @__PURE__ */ ge({
+}, Fr = /* @__PURE__ */ ge({
   __name: "InstallDialog",
   props: {
     flow: {},
@@ -2281,19 +2281,19 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
       onShow: r(W)
     }, {
       header: F(() => [
-        l("span", br, [
+        l("span", fr, [
           E(r(B), {
             icon: r(a) && r(a).icon || "tabler:bolt",
             "aria-hidden": "true"
           }, null, 8, ["icon"])
         ]),
-        l("span", fr, [
-          l("span", mr, g(r(a) ? r(a).title || r(a).name : "Add an automation"), 1),
+        l("span", mr, [
+          l("span", gr, g(r(a) ? r(a).title || r(a).name : "Add an automation"), 1),
           G[2] || (G[2] = l("span", { class: "kx-modal-head-sub" }, "Configure an automation.", -1))
         ])
       ]),
       footer: F(() => [
-        r(u) ? (s(), d("div", Or, g(r(u)), 1)) : h("", !0),
+        r(u) ? (s(), d("div", jr, g(r(u)), 1)) : h("", !0),
         E(r(X), {
           type: "button",
           label: "Cancel",
@@ -2325,8 +2325,8 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
         l("div", {
           class: q(["kx-2p", { "kx-2p-solo": !r(o) }])
         }, [
-          r(o) ? (s(), d("div", gr, [
-            l("div", vr, [
+          r(o) ? (s(), d("div", vr, [
+            l("div", hr, [
               E(r(B), {
                 icon: "tabler:search",
                 "aria-hidden": "true"
@@ -2334,62 +2334,62 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
               ue(l("input", {
                 ref_key: "installSearchInput",
                 ref: x,
-                "onUpdate:modelValue": G[0] || (G[0] = (D) => Fo(_) ? _.value = D : null),
+                "onUpdate:modelValue": G[0] || (G[0] = (D) => No(_) ? _.value = D : null),
                 "data-modal-initial": "",
                 type: "text",
                 placeholder: "Search types…",
                 "aria-label": "Search automation types"
               }, null, 512), [
-                [Ge, r(_)]
+                [Xe, r(_)]
               ])
             ]),
-            r(p).length ? (s(), d("div", xr, [
+            r(p).length ? (s(), d("div", yr, [
               (s(!0), d(Y, null, ee(r(p), (D) => (s(), d("button", {
                 key: D.id,
                 class: q(["kx-cat-card", r(a)?.id === D.id && "sel"]),
                 onClick: (U) => r(y)(D)
               }, [
-                l("span", kr, [
+                l("span", wr, [
                   E(r(B), {
                     icon: D.icon || "tabler:sparkles",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
                 ]),
-                l("span", wr, [
-                  l("span", _r, g(D.title || D.name), 1),
-                  r(tt)(D) ? (s(), d("span", $r, g(r(tt)(D)), 1)) : h("", !0)
+                l("span", _r, [
+                  l("span", $r, g(D.title || D.name), 1),
+                  r(ot)(D) ? (s(), d("span", Cr, g(r(ot)(D)), 1)) : h("", !0)
                 ]),
                 E(r(B), {
                   icon: "tabler:check",
                   class: "kx-cat-check",
                   "aria-hidden": "true"
                 })
-              ], 10, yr))), 128))
-            ])) : (s(), d("div", hr, "No setups match “" + g(r(_)) + "”.", 1))
+              ], 10, kr))), 128))
+            ])) : (s(), d("div", xr, "No setups match “" + g(r(_)) + "”.", 1))
           ])) : h("", !0),
-          l("div", Cr, [
-            r(o) ? (s(), d("div", Sr, "Setup")) : h("", !0),
-            l("div", zr, [
+          l("div", Sr, [
+            r(o) ? (s(), d("div", zr, "Setup")) : h("", !0),
+            l("div", Pr, [
               r(a) ? (s(), d(Y, { key: 1 }, [
-                r(ot)(r(a)) ? (s(), d("div", {
+                r(nt)(r(a)) ? (s(), d("div", {
                   key: 0,
                   ref_key: "customInstallHost",
                   ref: z,
                   class: "kx-custom-host"
-                }, null, 512)) : r(n).length ? (s(), d("div", Ir, [
+                }, null, 512)) : r(n).length ? (s(), d("div", Dr, [
                   (s(!0), d(Y, null, ee(r(n), ([D, U]) => (s(), d("label", {
                     key: D,
                     class: "kx-field"
                   }, [
-                    l("span", Dr, [
+                    l("span", Lr, [
                       le(g(U.title || D) + " ", 1),
-                      r(Zo)(r(a), D) ? (s(), d("span", Lr, "*")) : h("", !0)
+                      r(Go)(r(a), D) ? (s(), d("span", Ar, "*")) : h("", !0)
                     ]),
-                    U.enum ? (s(), N(r(Ko), {
+                    U.enum ? (s(), N(r(qo), {
                       key: 0,
                       class: "kx-select",
                       "model-value": r(f)[D],
-                      options: r(Go)(r(a), D, U),
+                      options: r(Xo)(r(a), D, U),
                       "option-label": "label",
                       "option-value": "value",
                       placeholder: "—",
@@ -2400,16 +2400,16 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
                       "onUpdate:modelValue": ($) => r(f)[D] = $,
                       class: "kx-check",
                       type: "checkbox"
-                    }, null, 8, Ar)), [
-                      [It, r(f)[D]]
+                    }, null, 8, Mr)), [
+                      [Lt, r(f)[D]]
                     ]) : U.type === "number" || U.type === "integer" ? ue((s(), d("input", {
                       key: 2,
                       "onUpdate:modelValue": ($) => r(f)[D] = $,
                       class: "kx-input",
                       type: "number"
-                    }, null, 8, Mr)), [
+                    }, null, 8, Rr)), [
                       [
-                        Ge,
+                        Xe,
                         r(f)[D],
                         void 0,
                         { number: !0 }
@@ -2418,15 +2418,15 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
                       key: 3,
                       "onUpdate:modelValue": ($) => r(f)[D] = $,
                       class: "kx-input",
-                      type: r(Xo)(U),
+                      type: r(Jo)(U),
                       placeholder: U.description || ""
-                    }, null, 8, Rr)), [
-                      [No, r(f)[D]]
+                    }, null, 8, Tr)), [
+                      [Uo, r(f)[D]]
                     ]),
-                    U.description && !(U.type !== "boolean" && !U.enum) ? (s(), d("span", Tr, g(U.description), 1)) : U.description && U.enum ? (s(), d("span", Br, g(U.description), 1)) : h("", !0)
+                    U.description && !(U.type !== "boolean" && !U.enum) ? (s(), d("span", Br, g(U.description), 1)) : U.description && U.enum ? (s(), d("span", Or, g(U.description), 1)) : h("", !0)
                   ]))), 128))
-                ])) : (s(), d("div", Er, "This automation needs no configuration."))
-              ], 64)) : (s(), d("p", Pr, "Select an automation type to configure it."))
+                ])) : (s(), d("div", Ir, "This automation needs no configuration."))
+              ], 64)) : (s(), d("p", Er, "Select an automation type to configure it."))
             ])
           ])
         ], 2)
@@ -2434,13 +2434,13 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
       _: 1
     }, 8, ["visible", "pt", "class", "onShow"]));
   }
-}), Fr = {
+}), Nr = {
   key: 0,
   class: "kx-metrics"
-}, Nr = { class: "kx-metric-k" }, Ur = ["title"], Hr = {
+}, Ur = { class: "kx-metric-k" }, Hr = ["title"], Vr = {
   key: 1,
   class: "kx-metric-details"
-}, Vr = { class: "kx-metrics kx-metrics-detail" }, Kr = { class: "kx-metric-k" }, qr = ["title"], Wr = /* @__PURE__ */ ge({
+}, Kr = { class: "kx-metrics kx-metrics-detail" }, qr = { class: "kx-metric-k" }, Wr = ["title"], Yr = /* @__PURE__ */ ge({
   __name: "RowMetrics",
   props: {
     face: { default: () => [] },
@@ -2448,7 +2448,7 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
   },
   setup(e) {
     return (t, o) => (s(), d(Y, null, [
-      e.face.length ? (s(), d("div", Fr, [
+      e.face.length ? (s(), d("div", Nr, [
         (s(!0), d(Y, null, ee(e.face, (n) => (s(), d("span", {
           key: n.label,
           class: "kx-metric"
@@ -2459,16 +2459,16 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
             class: "kx-metric-i",
             "aria-hidden": "true"
           }, null, 8, ["icon"])) : h("", !0),
-          l("span", Nr, g(n.label), 1),
+          l("span", Ur, g(n.label), 1),
           l("span", {
             class: "kx-metric-v",
             title: n.title
-          }, g(n.value), 9, Ur)
+          }, g(n.value), 9, Hr)
         ]))), 128))
       ])) : h("", !0),
-      e.detail.length ? (s(), d("details", Hr, [
+      e.detail.length ? (s(), d("details", Vr, [
         o[0] || (o[0] = l("summary", { class: "kx-metric-more" }, "Details", -1)),
-        l("div", Vr, [
+        l("div", Kr, [
           (s(!0), d(Y, null, ee(e.detail, (n) => (s(), d("span", {
             key: n.label,
             class: "kx-metric"
@@ -2479,17 +2479,17 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
               class: "kx-metric-i",
               "aria-hidden": "true"
             }, null, 8, ["icon"])) : h("", !0),
-            l("span", Kr, g(n.label), 1),
+            l("span", qr, g(n.label), 1),
             l("span", {
               class: "kx-metric-v",
               title: n.title
-            }, g(n.value), 9, qr)
+            }, g(n.value), 9, Wr)
           ]))), 128))
         ])
       ])) : h("", !0)
     ], 64));
   }
-}), Yr = /* @__PURE__ */ new Set(["pause", "resume"]), Zr = /* @__PURE__ */ new Set(["reconfigure"]), $t = /* @__PURE__ */ new Set(["run_now", "trigger", "execute", "run"]), Ze = {
+}), Zr = /* @__PURE__ */ new Set(["pause", "resume"]), Gr = /* @__PURE__ */ new Set(["reconfigure"]), Ct = /* @__PURE__ */ new Set(["run_now", "trigger", "execute", "run"]), Ge = {
   run_now: { label: "Run now", description: "Wake the drive to process available work. Paused drives stay paused.", group: "run", icon: "tabler:player-play" },
   discard: { label: "Discard", description: "Select uncertain item keys to discard them.", group: "recovery", icon: "tabler:trash" },
   trigger: { label: "Run now", description: "Run this automation immediately.", group: "run", icon: "tabler:player-play" },
@@ -2501,24 +2501,24 @@ const br = { class: "kx-modal-head-icon" }, fr = { class: "kx-modal-head-text" }
   reconcile: { label: "Reconcile", description: "Recompute state against the source of truth.", group: "recovery", icon: "tabler:adjustments-check" },
   status: { label: "Refresh status", description: "Fetch the latest run status now.", group: "recovery", icon: "tabler:activity-heartbeat" }
 };
-function Nt(e) {
+function Ht(e) {
   return e.has("run_now") ? "run_now" : e.has("trigger") ? "trigger" : e.has("execute") ? "execute" : "";
 }
-function Gr(e) {
+function Xr(e) {
   return e.replace(/[._-]+/g, " ").replace(/\b\w/g, (t) => t.toUpperCase());
 }
-function Ct(e) {
-  return { label: Gr(e), description: "Run this action.", group: "recovery", icon: "tabler:bolt" };
+function St(e) {
+  return { label: Xr(e), description: "Run this action.", group: "recovery", icon: "tabler:bolt" };
 }
-function Ut(e) {
+function Vt(e) {
   return new Set([...e?.controls || [], ...e?.actions || []].map((t) => t.name).filter(Boolean));
 }
-function Ht(e) {
-  const t = [...Ut(e)], o = !!rt(e);
+function Kt(e) {
+  const t = [...Vt(e)], o = !!at(e);
   return {
     declared: t,
     requiresKeys: e?.controls?.filter((n) => n.keys_required).map((n) => n.name),
-    runNow: Nt(new Set(t)),
+    runNow: Ht(new Set(t)),
     canReconfigure: o,
     // An automation is a component, so it shares through the generic component
     // access endpoints; the server is the authority on who may grant.
@@ -2527,42 +2527,42 @@ function Ht(e) {
     canDelete: !0
   };
 }
-function Vt(e) {
+function qt(e) {
   const t = e instanceof Set ? e : new Set(e);
   return t.has("rewind") ? "rewind" : t.has("resync") ? "resync" : "";
 }
-function Kt(e) {
+function Wt(e) {
   const t = [];
   if (e.runNow) {
-    const n = Ze[e.runNow] || Ze.trigger;
+    const n = Ge[e.runNow] || Ge.trigger;
     t.push({ method: e.runNow, ...n, kind: "call" });
   }
   const o = /* @__PURE__ */ new Set();
   for (const n of e.declared) {
-    if (Yr.has(n) || n === e.runNow || e.runNow !== "run_now" && $t.has(n) || Zr.has(n) || o.has(n)) continue;
+    if (Zr.has(n) || n === e.runNow || e.runNow !== "run_now" && Ct.has(n) || Gr.has(n) || o.has(n)) continue;
     o.add(n);
-    const i = e.runNow === "run_now" && $t.has(n) ? { ...Ct(n), group: "run" } : Ze[n] || Ct(n);
+    const i = e.runNow === "run_now" && Ct.has(n) ? { ...St(n), group: "run" } : Ge[n] || St(n);
     t.push({ method: n, ...i, kind: "call", disabled: e.requiresKeys?.includes(n) });
   }
   return e.canReconfigure && t.push({ method: "reconfigure", label: "Reconfigure", description: "Change how this automation is set up.", group: "edit", icon: "tabler:settings", kind: "reconfigure" }), e.canShare && t.push({ method: "share", label: "Share", description: "Give other people access to this automation.", group: "edit", icon: "tabler:users", kind: "share" }), e.canExport && t.push({ method: "export", label: "Export", description: "Download a portable copy to import elsewhere.", group: "edit", icon: "tabler:download", kind: "export" }), e.canDelete && t.push({ method: "delete", label: "Delete", description: "Stop it and remove its setup. This cannot be undone.", group: "delete", icon: "tabler:trash", kind: "delete", danger: !0 }), t;
 }
-const Xr = ["run", "recovery", "edit", "delete"], Jr = {
+const Jr = ["run", "recovery", "edit", "delete"], Qr = {
   run: "Run",
   recovery: "Recovery",
   edit: "Edit",
   delete: ""
 };
-function Qr(e) {
-  return Xr.map((t) => ({ group: t, label: Jr[t], items: e.filter((o) => o.group === t) })).filter((t) => t.items.length > 0);
+function ea(e) {
+  return Jr.map((t) => ({ group: t, label: Qr[t], items: e.filter((o) => o.group === t) })).filter((t) => t.items.length > 0);
 }
-function ea(e, t) {
+function ta(e, t) {
   return e.group === "run" ? `Run ${t} now` : e.method === "reconfigure" ? `Edit ${t}` : `${e.label} ${t}`;
 }
-const ta = ["aria-label"], oa = {
+const oa = ["aria-label"], na = {
   key: 1,
   class: "kx-menu-sep",
   role: "separator"
-}, na = ["data-testid", "aria-label", "disabled", "onClick"], ra = { class: "kx-menu-item-body" }, aa = { class: "kx-menu-item-label" }, ia = { class: "kx-menu-item-desc" }, qt = /* @__PURE__ */ ge({
+}, ra = ["data-testid", "aria-label", "disabled", "onClick"], aa = { class: "kx-menu-item-body" }, ia = { class: "kx-menu-item-label" }, sa = { class: "kx-menu-item-desc" }, Yt = /* @__PURE__ */ ge({
   __name: "ActionMenu",
   props: {
     items: {},
@@ -2573,7 +2573,7 @@ const ta = ["aria-label"], oa = {
   },
   emits: ["select"],
   setup(e, { emit: t }) {
-    const o = e, n = t, i = O(!1), a = O(null), f = L(() => Qr(o.items));
+    const o = e, n = t, i = O(!1), a = O(null), f = L(() => ea(o.items));
     function m() {
       i.value = !i.value;
     }
@@ -2609,7 +2609,7 @@ const ta = ["aria-label"], oa = {
         ]),
         _: 1
       }, 8, ["size", "class", "aria-expanded", "aria-label"]),
-      E(Bo, {
+      E(Oo, {
         open: i.value,
         "onUpdate:open": x[0] || (x[0] = (_) => i.value = _),
         anchor: a.value,
@@ -2630,14 +2630,14 @@ const ta = ["aria-label"], oa = {
               _.label ? (s(), d("div", {
                 key: 0,
                 class: q(["kx-menu-group", p === 0 && "is-first"])
-              }, g(_.label), 3)) : p > 0 ? (s(), d("div", oa)) : h("", !0),
+              }, g(_.label), 3)) : p > 0 ? (s(), d("div", na)) : h("", !0),
               (s(!0), d(Y, null, ee(_.items, (y) => (s(), d("button", {
                 key: y.method,
                 type: "button",
                 role: "menuitem",
                 class: q(["kx-menu-item", [y.danger && "is-danger", y.warn && "is-warn"]]),
                 "data-testid": `action-${y.method}`,
-                "aria-label": r(ea)(y, e.name),
+                "aria-label": r(ta)(y, e.name),
                 disabled: y.disabled || e.busy && y.kind === "call",
                 onClick: (M) => u(y)
               }, [
@@ -2646,8 +2646,8 @@ const ta = ["aria-label"], oa = {
                   class: "kx-menu-item-ico",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"]),
-                l("span", ra, [
-                  l("span", aa, [
+                l("span", aa, [
+                  l("span", ia, [
                     le(g(y.label) + " ", 1),
                     y.warn ? (s(), N(r(B), {
                       key: 0,
@@ -2656,26 +2656,26 @@ const ta = ["aria-label"], oa = {
                       "aria-hidden": "true"
                     })) : h("", !0)
                   ]),
-                  l("span", ia, g(y.description), 1)
+                  l("span", sa, g(y.description), 1)
                 ])
-              ], 10, na))), 128))
+              ], 10, ra))), 128))
             ], 64))), 128))
-          ], 8, ta)
+          ], 8, oa)
         ]),
         _: 1
       }, 8, ["open", "anchor"])
     ], 512));
   }
-}), sa = {
+}), la = {
   "aria-label": "Execution history",
   class: "kx-history"
-}, la = {
+}, ca = {
   key: 0,
   role: "status"
-}, ca = {
+}, da = {
   key: 1,
   role: "alert"
-}, da = { key: 0 }, ua = { key: 0 }, pa = ["title"], ba = ["title"], fa = { key: 1 }, ma = { key: 0 }, ga = { key: 0 }, va = ["title"], ha = { key: 1 }, xa = /* @__PURE__ */ ge({
+}, ua = { key: 0 }, pa = { key: 0 }, ba = ["title"], fa = ["title"], ma = { key: 1 }, ga = { key: 0 }, va = { key: 0 }, ha = ["title"], xa = { key: 1 }, ya = /* @__PURE__ */ ge({
   __name: "ExecutionHistory",
   props: {
     root: {}
@@ -2722,7 +2722,7 @@ const ta = ["aria-label"], oa = {
         R(T.evidence?.identity?.principal), R(T.evidence?.identity?.authorized_by);
       for (const T of I)
         T.initiation && R({ kind: "user", id: T.initiation.actor_id });
-      return nn([...S.values()]);
+      return rn([...S.values()]);
     }
     function G($) {
       _(), z.value = re($, "Could not read execution history"), n("error", { message: z.value, error: $ });
@@ -2758,16 +2758,16 @@ const ta = ["aria-label"], oa = {
         }
       }
     }
-    return Xe(() => o.root, () => {
+    return Je(() => o.root, () => {
       D();
-    }, { immediate: !0 }), Dt(() => {
+    }, { immediate: !0 }), At(() => {
       x += 1;
-    }), ($, I) => (s(), d("section", sa, [
-      u.value ? (s(), d("p", la, "Loading execution history…")) : h("", !0),
-      z.value ? (s(), d("p", ca, g(z.value), 1)) : (s(), d(Y, { key: 2 }, [
+    }), ($, I) => (s(), d("section", la, [
+      u.value ? (s(), d("p", ca, "Loading execution history…")) : h("", !0),
+      z.value ? (s(), d("p", da, g(z.value), 1)) : (s(), d(Y, { key: 2 }, [
         l("div", null, [
           I[4] || (I[4] = l("h3", null, "Committed deliveries", -1)),
-          !u.value && !i.value.length ? (s(), d("p", da, "No retained deliveries.")) : h("", !0),
+          !u.value && !i.value.length ? (s(), d("p", ua, "No retained deliveries.")) : h("", !0),
           (s(!0), d(Y, null, ee(i.value, (S) => (s(), d("article", {
             key: M(S),
             class: "kx-history-entry"
@@ -2775,21 +2775,21 @@ const ta = ["aria-label"], oa = {
             l("strong", null, g(S.item_key) + " · " + g(S.state), 1),
             l("p", null, "Round starts " + g(r(ce)(S.round_at, { future: !0 })), 1),
             l("p", null, g(y(S)), 1),
-            S.evidence?.identity ? (s(), d("dl", ua, [
+            S.evidence?.identity ? (s(), d("dl", pa, [
               I[3] || (I[3] = l("dt", null, "Executor", -1)),
               l("dd", {
                 title: S.evidence.identity.principal.id,
                 "aria-label": "Historical executor"
-              }, g(p(S.evidence.identity.principal)), 9, pa),
+              }, g(p(S.evidence.identity.principal)), 9, ba),
               S.evidence.identity.authorized_by ? (s(), d(Y, { key: 0 }, [
                 I[2] || (I[2] = l("dt", null, "Authorized by", -1)),
                 l("dd", {
                   title: S.evidence.identity.authorized_by.id,
                   "aria-label": "Historical authorizer"
-                }, g(p(S.evidence.identity.authorized_by)), 9, ba)
+                }, g(p(S.evidence.identity.authorized_by)), 9, fa)
               ], 64)) : h("", !0)
             ])) : h("", !0),
-            W(S.error) ? (s(), d("p", fa, g(W(S.error)), 1)) : h("", !0)
+            W(S.error) ? (s(), d("p", ma, g(W(S.error)), 1)) : h("", !0)
           ]))), 128)),
           m.value ? (s(), N(r(X), {
             key: 1,
@@ -2802,20 +2802,20 @@ const ta = ["aria-label"], oa = {
         l("div", null, [
           I[6] || (I[6] = l("h3", null, "Control requests", -1)),
           I[7] || (I[7] = l("p", null, "Control requests and delivery admission are independent records.", -1)),
-          !u.value && !a.value.length ? (s(), d("p", ma, "No retained control requests.")) : h("", !0),
+          !u.value && !a.value.length ? (s(), d("p", ga, "No retained control requests.")) : h("", !0),
           (s(!0), d(Y, null, ee(a.value, (S) => (s(), d("article", {
             key: `${S.generation}:${S.request_id}`,
             class: "kx-history-entry"
           }, [
             l("strong", null, g(S.state), 1),
             l("p", null, "Requested " + g(r(ce)(S.created_at, { future: !0 })), 1),
-            S.initiation ? (s(), d("dl", ga, [
+            S.initiation ? (s(), d("dl", va, [
               I[5] || (I[5] = l("dt", null, "Initiated by", -1)),
               l("dd", {
                 title: S.initiation.actor_id,
                 "aria-label": "Control initiator"
-              }, g(p({ kind: "user", id: S.initiation.actor_id })), 9, va)
-            ])) : (s(), d("p", ha, "Initiator not recorded."))
+              }, g(p({ kind: "user", id: S.initiation.actor_id })), 9, ha)
+            ])) : (s(), d("p", xa, "Initiator not recorded."))
           ]))), 128)),
           w.value ? (s(), N(r(X), {
             key: 1,
@@ -2828,14 +2828,14 @@ const ta = ["aria-label"], oa = {
       ], 64))
     ]));
   }
-}), ya = /* @__PURE__ */ ko(xa, [["__scopeId", "data-v-3d5e957f"]]);
+}), ka = /* @__PURE__ */ wo(ya, [["__scopeId", "data-v-3d5e957f"]]);
 function De(e) {
   return typeof e == "object" && e !== null && !Array.isArray(e);
 }
-function ka(e) {
+function wa(e) {
   return De(e) && typeof e.code == "string" && typeof e.message == "string" && typeof e.at == "string" && (e.item_key === void 0 || typeof e.item_key == "string");
 }
-function wa(e) {
+function _a(e) {
   if (!De(e) || typeof e.drive_key != "string") return !1;
   for (const t of ["source_kind", "phase"])
     if (e[t] !== void 0 && typeof e[t] != "string") return !1;
@@ -2846,32 +2846,43 @@ function wa(e) {
     if (e[t] !== void 0 && (typeof e[t] != "number" || !Number.isInteger(e[t]) || e[t] < 0)) return !1;
   return !(e.last_error !== void 0 && e.last_error !== null && (!De(e.last_error) || e.last_error.message !== void 0 && typeof e.last_error.message != "string"));
 }
-function _a(e) {
-  if (!De(e) || e.success !== !0 || !Array.isArray(e.drives) || !e.drives.every(wa) || e.next_page_token !== void 0 && e.next_page_token !== null && (typeof e.next_page_token != "string" || !e.next_page_token)) return !1;
+function $a(e) {
+  if (!De(e) || e.success !== !0 || !Array.isArray(e.drives) || !e.drives.every(_a) || e.next_page_token !== void 0 && e.next_page_token !== null && (typeof e.next_page_token != "string" || !e.next_page_token)) return !1;
   const t = e.delivery_failures;
-  return t === void 0 || De(t) && typeof t.count == "number" && Number.isInteger(t.count) && t.count >= 0 && (t.last_error === void 0 || ka(t.last_error));
+  return t === void 0 || De(t) && typeof t.count == "number" && Number.isInteger(t.count) && t.count >= 0 && (t.last_error === void 0 || wa(t.last_error));
 }
-const Wt = {
+const Zt = {
   blocked_identity: "The account this automation runs as needs to be confirmed.",
   blocked_access: "This automation lost access to something it uses.",
   blocked_declaration: "This automation's settings need to be fixed."
 };
-function je(e) {
+function Fe(e) {
   return (e?.drives || []).filter((t) => t.source_kind !== "none");
 }
-function Yt(e) {
+function Me(e) {
   return e.enabled === !1 || e.phase === "paused";
 }
-function $a(e) {
-  const t = je(e), o = (e?.delivery_failures?.count || 0) > 0;
-  return t.length ? t.some((n) => (n.phase || "") in Wt) ? { kind: "warn", label: "Needs attention" } : t.every(Yt) ? { kind: "off", label: "Paused" } : o ? { kind: "warn", label: "Needs attention" } : t.some((n) => n.phase === "degraded") ? { kind: "warn", label: "Retrying" } : t.some((n) => n.phase === "backpressure") ? { kind: "live", label: "Catching up" } : t.some((n) => n.phase === "pending") ? { kind: "neutral", label: "Starting" } : { kind: "on", label: "Active" } : o ? { kind: "warn", label: "Needs attention" } : null;
+function zt(e) {
+  return (e.source_kind === "timer" || e.source_kind === "collection") && (e.phase === "pending" || e.phase === "active") && typeof e.next_run_at == "string" && Date.parse(e.next_run_at) > Date.now();
 }
 function Ca(e) {
+  const t = Fe(e), o = (e?.delivery_failures?.count || 0) > 0;
+  if (!t.length) return o ? { kind: "warn", label: "Needs attention" } : null;
+  if (t.some((i) => (i.phase || "") in Zt)) return { kind: "warn", label: "Needs attention" };
+  if (t.every(Me)) return { kind: "off", label: "Paused" };
+  if (o) return { kind: "warn", label: "Needs attention" };
+  if (t.some((i) => i.phase === "degraded")) return { kind: "warn", label: "Retrying" };
+  if (t.some((i) => i.phase === "backpressure")) return { kind: "live", label: "Catching up" };
+  if (t.some((i) => !Me(i) && i.phase === "pending" && !zt(i))) return { kind: "neutral", label: "Starting" };
+  const n = t.filter((i) => !Me(i) && i.source_kind !== "reconcile");
+  return n.length && n.every(zt) ? { kind: "on", label: "Scheduled" } : { kind: "on", label: "Active" };
+}
+function Sa(e) {
   const t = e?.delivery_failures?.last_error;
   if (t) return `${t.code}: ${t.message}`;
-  const o = je(e);
+  const o = Fe(e);
   for (const n of o) {
-    const i = Wt[n.phase || ""];
+    const i = Zt[n.phase || ""];
     if (i) return i;
   }
   for (const n of o) {
@@ -2880,38 +2891,38 @@ function Ca(e) {
   }
   return "";
 }
-function Sa(e) {
-  const t = je(e), o = [], n = _e(e).next;
+function za(e) {
+  const t = Fe(e), o = [], n = _e(e).next;
   n && o.push({ label: "Next run", value: n, time: !0 });
   const i = t.reduce((a, f) => a + (f.unresolved_count || 0), 0);
   return i > 0 && o.push({ label: "Waiting to retry", value: `${i} ${i === 1 ? "item" : "items"}` }), o;
 }
 function _e(e) {
-  const t = je(e), o = t.map((i) => i.last_run_at).filter((i) => typeof i == "string" && !!i).sort().at(-1), n = t.filter((i) => !Yt(i)).map((i) => i.next_run_at).filter((i) => typeof i == "string" && !!i).sort()[0];
+  const t = Fe(e), o = t.map((i) => i.last_run_at).filter((i) => typeof i == "string" && !!i).sort().at(-1), n = t.filter((i) => !Me(i)).map((i) => i.next_run_at).filter((i) => typeof i == "string" && !!i).sort()[0];
   return { last: o, next: n };
 }
-const za = /* @__PURE__ */ new Set(["status", "enabled", "last_error", "last_run_at", "next_run_at"]);
-function Pa(e) {
+const Pa = /* @__PURE__ */ new Set(["status", "enabled", "last_error", "last_run_at", "next_run_at"]);
+function Ea(e) {
   return e.replace(/_/g, " ").replace(/\b\w/g, (t) => t.toUpperCase());
 }
-function Ea(e) {
+function Ia(e) {
   return e.replace(/\b\w/g, (t) => t.toUpperCase());
 }
-function Ia(e) {
+function Da(e) {
   return e && e.charAt(0).toUpperCase() + e.slice(1);
 }
-function Da(e, t) {
+function La(e, t) {
   if (e.type === "boolean") return t === !0 ? "Yes" : "No";
   const o = String(t);
-  return e.key.endsWith("_at") || /^\d{4}-\d{2}-\d{2}T/.test(o) ? ce(o, { future: !0 }) || o : e.type === "text" ? Ia(o) : o;
+  return e.key.endsWith("_at") || /^\d{4}-\d{2}-\d{2}T/.test(o) ? ce(o, { future: !0 }) || o : e.type === "text" ? Da(o) : o;
 }
-function Zt(e) {
+function Gt(e) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(e) || /^[0-9A-HJKMNP-TV-Z]{26}$/i.test(e) ? !0 : /^[a-z][a-z0-9_-]*:[a-z0-9][a-z0-9:_-]*$/i.test(e) && /:[0-9a-f-]{6,}/i.test(e);
 }
-function La(e) {
-  return Zt(e) ? { text: e.length > 12 ? `${e.slice(0, 8)}…` : e, title: e } : { text: e };
+function Aa(e) {
+  return Gt(e) ? { text: e.length > 12 ? `${e.slice(0, 8)}…` : e, title: e } : { text: e };
 }
-const Aa = [
+const Ma = [
   { match: /component_id not in scope|not in scope/i, text: "Not part of this workspace" },
   { match: /transform output must be an object/i, text: "Item format not recognized" },
   { match: /trigger events dropped/i, text: "Incoming events were dropped" },
@@ -2920,68 +2931,68 @@ const Aa = [
   { match: /sink write (returned a non-object|did not acknowledge)/i, text: "Destination did not confirm the save" },
   { match: /(sink|source) resolve/i, text: "Source or destination unavailable" }
 ];
-function Ma(e) {
+function Ra(e) {
   const t = e.trim();
   if (!t) return { text: "" };
-  for (const o of Aa)
+  for (const o of Ma)
     if (o.match.test(t)) return { text: o.text, title: t };
   return { text: "Skipped", title: t };
 }
-function Gt(e) {
+function Xt(e) {
   return /reason/i.test(e);
 }
-function Ra(e, t) {
-  return Gt(e.key) || /(^|_)item(_key)?$/i.test(e.key) ? !0 : typeof t == "string" && Zt(t);
-}
 function Ta(e, t) {
-  const o = Ea(e.label || Pa(e.key));
-  if (Gt(e.key)) {
-    const { text: a, title: f } = Ma(String(t));
+  return Xt(e.key) || /(^|_)item(_key)?$/i.test(e.key) ? !0 : typeof t == "string" && Gt(t);
+}
+function Ba(e, t) {
+  const o = Ia(e.label || Ea(e.key));
+  if (Xt(e.key)) {
+    const { text: a, title: f } = Ra(String(t));
     return { label: o, value: a, title: f, icon: e.icon };
   }
-  const { text: n, title: i } = La(Da(e, t));
+  const { text: n, title: i } = Aa(La(e, t));
   return { label: o, value: n, title: i, icon: e.icon };
 }
-function Be(e, t, o) {
+function Oe(e, t, o) {
   const n = t;
   if (!e || !n) return [];
   const i = [];
   for (const a of e) {
-    if (!a?.key || za.has(a.key) || a.role === "subtitle") continue;
+    if (!a?.key || Pa.has(a.key) || a.role === "subtitle") continue;
     const f = n[a.key];
-    f == null || f === "" || a.hidden || a.hide_zero && f === 0 || Ra(a, f) === o && i.push(Ta(a, f));
+    f == null || f === "" || a.hidden || a.hide_zero && f === 0 || Ta(a, f) === o && i.push(Ba(a, f));
   }
   return i;
 }
-function at(e) {
+function it(e) {
   return String(e?.status || "").toLowerCase();
 }
-function Ba(e) {
+function Oa(e) {
   return typeof e == "string" && /\b(completed|succeeded|successfully)\b/i.test(e);
 }
-function Xt(e) {
-  const t = at(e);
+function Jt(e) {
+  const t = it(e);
   return t === "completed" || t === "failed";
 }
-function it(e) {
-  const t = at(e);
-  return t === "failed" || t === "failing" ? !0 : !!e?.last_error && !Ba(e.last_error);
+function st(e) {
+  const t = it(e);
+  return t === "failed" || t === "failing" ? !0 : !!e?.last_error && !Oa(e.last_error);
 }
-function Jt(e, t) {
+function Qt(e, t) {
   if (t?.code === "unavailable") return { tone: "error", text: "Its module is unavailable. Reinstall its module to use this automation." };
   const o = typeof e?.last_error == "string" ? e.last_error.trim() : "";
-  return o ? it(e) ? { tone: "error", text: o } : { tone: "success", text: o } : null;
+  return o ? st(e) ? { tone: "error", text: o } : { tone: "success", text: o } : null;
 }
-function Qt(e, t, o, n) {
+function eo(e, t, o, n) {
   if (n?.code === "unavailable") return { kind: "warn", label: "Unavailable" };
-  const i = $a(o);
+  const i = Ca(o);
   if (i) return i;
   if (!e)
     return t ? { kind: "neutral", label: "…" } : { kind: "neutral", label: "Installed" };
-  const a = at(e);
-  return it(e) ? { kind: "warn", label: a === "failed" ? "Failed" : "Failing" } : a === "completed" ? { kind: "done", label: "Completed" } : a === "paused" || e.enabled === !1 ? { kind: "off", label: "Paused" } : a === "running" ? { kind: "live", label: "Running" } : { kind: "on", label: "Active" };
+  const a = it(e);
+  return st(e) ? { kind: "warn", label: a === "failed" ? "Failed" : "Failing" } : a === "completed" ? { kind: "done", label: "Completed" } : a === "paused" || e.enabled === !1 ? { kind: "off", label: "Paused" } : a === "running" ? { kind: "live", label: "Running" } : { kind: "on", label: "Active" };
 }
-function eo(e) {
+function to(e) {
   switch (e) {
     case "on":
     case "live":
@@ -2995,57 +3006,57 @@ function eo(e) {
       return "secondary";
   }
 }
-function to(e, t) {
+function oo(e, t) {
   const o = (e || []).find((i) => i?.role === "subtitle"), n = o ? t?.[o.key] : void 0;
   return typeof n == "string" ? n.trim() : "";
 }
-async function oo(e) {
+async function no(e) {
   const t = [], o = /* @__PURE__ */ new Set();
   let n, i;
   do {
     const a = n ? `?page_token=${encodeURIComponent(n)}` : "", { data: f } = await pe.get(`/api/v1/automations/${encodeURIComponent(e)}/status${a}`);
-    if (!_a(f)) throw new Error("Invalid automation status response");
+    if (!$a(f)) throw new Error("Invalid automation status response");
     if (t.push(...f.drives), i = f.delivery_failures, n = f.next_page_token || void 0, n && o.has(n)) throw new Error("Automation status repeated a page token");
     n && o.add(n);
   } while (n);
   return { drives: t, delivery_failures: i };
 }
-const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-ficon" }, Na = { class: "kx-drawer-id" }, Ua = ["title"], Ha = { class: "kx-drawer-sub" }, Va = { class: "kx-drawer-controls" }, Ka = {
+const ja = ["aria-label"], Fa = { class: "kx-drawer-head" }, Na = { class: "kx-ficon" }, Ua = { class: "kx-drawer-id" }, Ha = ["title"], Va = { class: "kx-drawer-sub" }, Ka = { class: "kx-drawer-controls" }, qa = {
   class: "kx-tabs",
   role: "tablist"
-}, qa = ["aria-selected", "data-testid", "onClick"], Wa = { class: "kx-drawer-body" }, Ya = {
+}, Wa = ["aria-selected", "data-testid", "onClick"], Ya = { class: "kx-drawer-body" }, Za = {
   key: 0,
   class: "kx-dsec"
-}, Za = {
+}, Ga = {
   key: 0,
   class: "kx-errcard",
   "data-testid": "drawer-error-card"
-}, Ga = { class: "kx-errcard-head" }, Xa = { class: "kx-errcard-cause" }, Ja = { class: "kx-dgrid" }, Qa = { class: "kx-dfact-k" }, ei = { class: "kx-dfact-v" }, ti = {
+}, Xa = { class: "kx-errcard-head" }, Ja = { class: "kx-errcard-cause" }, Qa = { class: "kx-dgrid" }, ei = { class: "kx-dfact-k" }, ti = { class: "kx-dfact-v" }, oi = {
   key: 1,
   class: "kx-dsub"
-}, oi = { class: "kx-metrics" }, ni = { class: "kx-metric-k" }, ri = ["title"], ai = {
+}, ni = { class: "kx-metrics" }, ri = { class: "kx-metric-k" }, ai = ["title"], ii = {
   key: 1,
   class: "kx-dsec"
-}, ii = {
+}, si = {
   key: 0,
   class: "kx-dnote"
-}, si = {
+}, li = {
   key: 1,
   class: "kx-dgrid"
-}, li = { class: "kx-dfact-k" }, ci = ["title"], di = {
+}, ci = { class: "kx-dfact-k" }, di = ["title"], ui = {
   key: 2,
   class: "kx-dsec",
   "data-testid": "drawer-config"
-}, ui = {
+}, pi = {
   key: 2,
   class: "kx-dnote"
-}, pi = {
+}, bi = {
   key: 3,
   class: "kx-dsec"
-}, bi = { class: "kx-dgrid" }, fi = { class: "kx-dfact" }, mi = { class: "kx-dfact-v" }, gi = { class: "kx-dfact" }, vi = { class: "kx-dfact-v" }, hi = { class: "kx-dfact" }, xi = { class: "kx-dfact-v" }, yi = {
+}, fi = { class: "kx-dgrid" }, mi = { class: "kx-dfact" }, gi = { class: "kx-dfact-v" }, vi = { class: "kx-dfact" }, hi = { class: "kx-dfact-v" }, xi = { class: "kx-dfact" }, yi = { class: "kx-dfact-v" }, ki = {
   key: 0,
   class: "kx-dsub"
-}, ki = /* @__PURE__ */ ge({
+}, wi = /* @__PURE__ */ ge({
   __name: "DetailDrawer",
   props: {
     automation: { default: () => ({ id: "" }) },
@@ -3058,7 +3069,7 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
       { id: "state", label: "State", icon: "tabler:chart-dots" },
       { id: "config", label: "Config", icon: "tabler:settings" },
       { id: "activity", label: "Activity", icon: "tabler:history" }
-    ], f = L(() => o.automation.title || o.automation.id), m = L(() => o.automation.icon || o.type?.icon || "tabler:bolt"), w = L(() => o.type?.title || "Automation"), u = L(() => o.automation.public_state), z = L(() => Ht(o.type)), x = L(() => Kt(z.value)), _ = L(() => z.value.declared.includes("status")), p = O(null);
+    ], f = L(() => o.automation.title || o.automation.id), m = L(() => o.automation.icon || o.type?.icon || "tabler:bolt"), w = L(() => o.type?.title || "Automation"), u = L(() => o.automation.public_state), z = L(() => Kt(o.type)), x = L(() => Wt(z.value)), _ = L(() => z.value.declared.includes("status")), p = O(null);
     let y = 0;
     async function M(V) {
       const P = ++y;
@@ -3067,25 +3078,25 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
         return;
       }
       p.value = o.automation.drive_status;
-      const C = await oo(V);
+      const C = await no(V);
       P === y && o.automation.id === V && (p.value = C);
     }
-    Xe(() => [o.automation.id, o.automation.drive_status, o.automation.availability], ([V]) => {
-      M(V).catch((P) => Je.handleError("other", { message: String(P) }));
+    Je(() => [o.automation.id, o.automation.drive_status, o.automation.availability], ([V]) => {
+      M(V).catch((P) => Qe.handleError("other", { message: String(P) }));
     }, { immediate: !0 });
-    const W = L(() => Qt(u.value, _.value, p.value, o.automation.availability)), K = L(() => W.value.kind === "off"), ne = L(() => Xt(u.value)), G = L(() => (z.value.declared.includes("pause") || z.value.declared.includes("resume")) && !ne.value), D = L(() => it(u.value)), U = L(() => Vt(z.value.declared)), $ = L(() => {
-      if (o.automation.availability) return Jt(u.value, o.automation.availability)?.text || "";
-      const V = Ca(p.value);
+    const W = L(() => eo(u.value, _.value, p.value, o.automation.availability)), K = L(() => W.value.kind === "off"), ne = L(() => Jt(u.value)), G = L(() => (z.value.declared.includes("pause") || z.value.declared.includes("resume")) && !ne.value), D = L(() => st(u.value)), U = L(() => qt(z.value.declared)), $ = L(() => {
+      if (o.automation.availability) return Qt(u.value, o.automation.availability)?.text || "";
+      const V = Sa(p.value);
       if (V) return V;
       const P = typeof u.value?.last_error == "string" ? u.value.last_error.trim() : "";
       return D.value ? P : "";
-    }), I = L(() => to(o.type?.public_state_schema?.fields, u.value)), S = L(() => {
+    }), I = L(() => oo(o.type?.public_state_schema?.fields, u.value)), S = L(() => {
       const V = o.type?.public_state_schema?.fields;
-      return [...Be(V, u.value, !1), ...Be(V, u.value, !0)];
+      return [...Oe(V, u.value, !1), ...Oe(V, u.value, !0)];
     }), R = L(() => {
       const V = u.value, P = [];
       P.push({ label: "Status", value: W.value.label }), o.automation.availability || P.push({ label: "Enabled", value: K.value ? "Paused" : "Yes" }), I.value && P.push({ label: "When", value: I.value }), V?.last_run_at && P.push({ label: "Last run", value: ce(V.last_run_at, { future: !0 }) }), V?.next_run_at && P.push({ label: "Next run", value: ce(V.next_run_at, { future: !0 }) });
-      for (const C of Sa(p.value))
+      for (const C of za(p.value))
         P.push({ label: C.label, value: C.time ? ce(C.value, { future: !0 }) : C.value });
       return P;
     }), T = L(() => {
@@ -3094,8 +3105,8 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
     }), c = L(() => p.value?.delivery_failures), A = L(() => {
       const V = c.value?.last_error;
       return V ? `${V.code}: ${V.message}` : u.value?.last_error;
-    }), j = L(() => rt(o.type)), ae = L(() => Ft(o.automation, o.type)), Fe = L(() => ({ location: jt(o.type) }));
-    return Xe(() => o.automation.id, () => {
+    }), j = L(() => at(o.type)), ae = L(() => Ut(o.automation, o.type)), Ne = L(() => ({ location: Nt(o.type) }));
+    return Je(() => o.automation.id, () => {
       i.value = "overview";
     }), (V, P) => (s(), d(Y, null, [
       l("div", {
@@ -3109,22 +3120,22 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
         "aria-label": f.value,
         "data-testid": "detail-drawer"
       }, [
-        l("header", ja, [
-          l("span", Fa, [
+        l("header", Fa, [
+          l("span", Na, [
             E(r(B), {
               icon: m.value,
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
-          l("div", Na, [
+          l("div", Ua, [
             l("div", {
               class: "kx-drawer-name",
               title: f.value
-            }, g(f.value), 9, Ua),
-            l("div", Ha, g(w.value), 1)
+            }, g(f.value), 9, Ha),
+            l("div", Va, g(w.value), 1)
           ]),
-          E(r(nt), {
-            severity: r(eo)(W.value.kind),
+          E(r(rt), {
+            severity: r(to)(W.value.kind),
             class: "kx-badge kx-tag-sm"
           }, {
             default: F(() => [
@@ -3138,7 +3149,7 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
             ]),
             _: 1
           }, 8, ["severity"]),
-          l("div", Va, [
+          l("div", Ka, [
             G.value ? (s(), N(r(X), {
               key: 0,
               type: "button",
@@ -3158,7 +3169,7 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
               ]),
               _: 1
             }, 8, ["aria-label", "title"])) : h("", !0),
-            E(qt, {
+            E(Yt, {
               items: x.value,
               name: f.value,
               onSelect: P[2] || (P[2] = (C) => n("action", C))
@@ -3184,7 +3195,7 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
             })
           ])
         ]),
-        l("nav", Ka, [
+        l("nav", qa, [
           (s(), d(Y, null, ee(a, (C) => l("button", {
             key: C.id,
             type: "button",
@@ -3192,26 +3203,26 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
             class: q(["kx-tab", i.value === C.id && "is-active"]),
             "aria-selected": i.value === C.id,
             "data-testid": `drawer-tab-${C.id}`,
-            onClick: (st) => i.value = C.id
+            onClick: (lt) => i.value = C.id
           }, [
             E(r(B), {
               icon: C.icon,
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
             le(" " + g(C.label), 1)
-          ], 10, qa)), 64))
+          ], 10, Wa)), 64))
         ]),
-        l("div", Wa, [
-          i.value === "overview" ? (s(), d("section", Ya, [
-            $.value ? (s(), d("div", Za, [
-              l("div", Ga, [
+        l("div", Ya, [
+          i.value === "overview" ? (s(), d("section", Za, [
+            $.value ? (s(), d("div", Ga, [
+              l("div", Xa, [
                 E(r(B), {
                   icon: "tabler:alert-circle",
                   "aria-hidden": "true"
                 }),
                 l("span", null, g(o.automation.availability ? "This automation is unavailable" : "This automation is failing"), 1)
               ]),
-              l("p", Xa, g($.value), 1),
+              l("p", Ja, g($.value), 1),
               U.value ? (s(), N(r(X), {
                 key: 0,
                 type: "button",
@@ -3232,18 +3243,18 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
                 _: 1
               }, 8, ["aria-label"])) : h("", !0)
             ])) : h("", !0),
-            l("div", Ja, [
+            l("div", Qa, [
               (s(!0), d(Y, null, ee(R.value, (C) => (s(), d("div", {
                 key: C.label,
                 class: "kx-dfact"
               }, [
-                l("span", Qa, g(C.label), 1),
-                l("strong", ei, g(C.value), 1)
+                l("span", ei, g(C.label), 1),
+                l("strong", ti, g(C.value), 1)
               ]))), 128))
             ]),
-            S.value.length ? (s(), d("div", ti, [
+            S.value.length ? (s(), d("div", oi, [
               P[9] || (P[9] = l("div", { class: "kx-dsub-lbl" }, "Progress", -1)),
-              l("div", oi, [
+              l("div", ni, [
                 (s(!0), d(Y, null, ee(S.value, (C) => (s(), d("span", {
                   key: C.label,
                   class: "kx-metric"
@@ -3254,76 +3265,76 @@ const Oa = ["aria-label"], ja = { class: "kx-drawer-head" }, Fa = { class: "kx-f
                     class: "kx-metric-i",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])) : h("", !0),
-                  l("span", ni, g(C.label), 1),
+                  l("span", ri, g(C.label), 1),
                   l("span", {
                     class: "kx-metric-v",
                     title: C.title
-                  }, g(C.value), 9, ri)
+                  }, g(C.value), 9, ai)
                 ]))), 128))
               ])
             ])) : h("", !0)
-          ])) : i.value === "state" ? (s(), d("section", ai, [
-            S.value.length ? (s(), d("div", si, [
+          ])) : i.value === "state" ? (s(), d("section", ii, [
+            S.value.length ? (s(), d("div", li, [
               (s(!0), d(Y, null, ee(S.value, (C) => (s(), d("div", {
                 key: C.label,
                 class: "kx-dfact"
               }, [
-                l("span", li, g(C.label), 1),
+                l("span", ci, g(C.label), 1),
                 l("strong", {
                   class: "kx-dfact-v",
                   title: C.title
-                }, g(C.value), 9, ci)
+                }, g(C.value), 9, di)
               ]))), 128))
-            ])) : (s(), d("div", ii, "This automation reports no additional state."))
-          ])) : i.value === "config" ? (s(), d("section", di, [
-            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), N(Me, {
+            ])) : (s(), d("div", si, "This automation reports no additional state."))
+          ])) : i.value === "config" ? (s(), d("section", ui, [
+            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), N(Re, {
               key: 0,
               tag: "wc-execution-identity-editor",
               attrs: { root: e.automation.id },
               onChange: P[5] || (P[5] = (C) => n("changed"))
             }, null, 8, ["attrs"])) : h("", !0),
-            j.value ? (s(), N(Me, {
+            j.value ? (s(), N(Re, {
               key: 1,
               class: "kx-manage-host",
               tag: j.value,
               config: ae.value,
-              meta: Fe.value,
+              meta: Ne.value,
               onChange: P[6] || (P[6] = (C) => n("changed")),
               onClose: P[7] || (P[7] = (C) => i.value = "overview")
-            }, null, 8, ["tag", "config", "meta"])) : (s(), d("div", ui, "This automation type declares no settings view."))
-          ])) : (s(), d("section", pi, [
-            l("div", bi, [
-              l("div", fi, [
+            }, null, 8, ["tag", "config", "meta"])) : (s(), d("div", pi, "This automation type declares no settings view."))
+          ])) : (s(), d("section", bi, [
+            l("div", fi, [
+              l("div", mi, [
                 P[10] || (P[10] = l("span", { class: "kx-dfact-k" }, "Last run", -1)),
-                l("strong", mi, g(T.value ? r(ce)(T.value, { future: !0 }) : "Never"), 1)
+                l("strong", gi, g(T.value ? r(ce)(T.value, { future: !0 }) : "Never"), 1)
               ]),
-              l("div", gi, [
+              l("div", vi, [
                 P[11] || (P[11] = l("span", { class: "kx-dfact-k" }, "Last outcome", -1)),
-                l("strong", vi, g(c.value?.count ? "Failed delivery" : u.value?.status || "—"), 1)
+                l("strong", hi, g(c.value?.count ? "Failed delivery" : u.value?.status || "—"), 1)
               ]),
-              l("div", hi, [
+              l("div", xi, [
                 P[12] || (P[12] = l("span", { class: "kx-dfact-k" }, "Failed deliveries", -1)),
-                l("strong", xi, g(c.value?.count ?? 0), 1)
+                l("strong", yi, g(c.value?.count ?? 0), 1)
               ])
             ]),
-            typeof A.value == "string" && A.value.trim() ? (s(), d("div", yi, [
+            typeof A.value == "string" && A.value.trim() ? (s(), d("div", ki, [
               P[13] || (P[13] = l("div", { class: "kx-dsub-lbl" }, "Last message", -1)),
               l("p", {
                 class: q(["kx-dmsg", D.value || c.value?.count ? "is-err" : "is-ok"])
               }, g(A.value), 3)
             ])) : h("", !0),
-            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), N(ya, {
+            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), N(ka, {
               key: 1,
               root: e.automation.id,
-              onError: P[8] || (P[8] = (C) => r(Je).handleError("other", { message: C.message }))
+              onError: P[8] || (P[8] = (C) => r(Qe).handleError("other", { message: C.message }))
             }, null, 8, ["root"])) : h("", !0)
           ]))
         ])
-      ], 8, Oa)
+      ], 8, ja)
     ], 64));
   }
 });
-function wi(e) {
+function _i(e) {
   const t = O(!1), o = O(null), n = O({}), i = O(!1), a = O(!1), f = O(""), m = O(null), w = O(null);
   let u = null;
   const z = O(""), x = L(() => e.types.value.filter(
@@ -3331,33 +3342,33 @@ function wi(e) {
       const ae = c.inputs?.properties?.[A];
       return !!ae && (!ae.enum || typeof j == "string" && ae.enum.includes(j));
     })
-  )), _ = L(() => !e.componentMode.value || !e.preferredTypeId.value || o.value?.id !== e.preferredTypeId.value), p = L(() => o.value ? Jo(o.value).filter(([c]) => !(c in e.inputPreset.value)) : []), y = L(() => {
+  )), _ = L(() => !e.componentMode.value || !e.preferredTypeId.value || o.value?.id !== e.preferredTypeId.value), p = L(() => o.value ? Qo(o.value).filter(([c]) => !(c in e.inputPreset.value)) : []), y = L(() => {
     const c = z.value.trim().toLowerCase();
     return c ? x.value.filter(
-      (A) => (A.title || "").toLowerCase().includes(c) || (A.name || "").toLowerCase().includes(c) || tt(A).toLowerCase().includes(c)
+      (A) => (A.title || "").toLowerCase().includes(c) || (A.name || "").toLowerCase().includes(c) || ot(A).toLowerCase().includes(c)
     ) : x.value;
   });
   function M(c) {
-    I(), z.value = "", o.value = c || null, n.value = c ? { ...mt(c), ...e.inputPreset.value } : {}, f.value = "", t.value = !0, We(G);
+    I(), z.value = "", o.value = c || null, n.value = c ? { ...gt(c), ...e.inputPreset.value } : {}, f.value = "", t.value = !0, Ye(G);
   }
   function W(c) {
-    I(), o.value = c, n.value = { ...mt(c), ...e.inputPreset.value }, f.value = "", We(G);
+    I(), o.value = c, n.value = { ...gt(c), ...e.inputPreset.value }, f.value = "", Ye(G);
   }
   function K() {
     I(), t.value = !1, o.value = null, n.value = {}, f.value = "", a.value = !1, e.createMode.value && e.emitHost("close", {});
   }
   function ne() {
-    !_.value || o.value || We(() => w.value?.focus({ preventScroll: !0 }));
+    !_.value || o.value || Ye(() => w.value?.focus({ preventScroll: !0 }));
   }
   async function G() {
-    const c = o.value, A = ot(c);
+    const c = o.value, A = nt(c);
     if (!(!A || !c || !m.value))
       try {
-        if (await qo(A, { timeoutMs: 8e3 }), o.value?.id !== c.id || !m.value) return;
+        if (await Wo(A, { timeoutMs: 8e3 }), o.value?.id !== c.id || !m.value) return;
         const j = document.createElement(A);
         j.setAttribute("type-id", c.id), j.setAttribute("input", JSON.stringify(e.inputPreset.value)), e.effectiveParentId.value && j.setAttribute("parent-id", e.effectiveParentId.value), j.setAttribute("embedded", "true"), j.addEventListener("automation-installed", $), j.addEventListener("submit-state", D), m.value.innerHTML = "", m.value.appendChild(j), u = j;
       } catch (j) {
-        const ae = ur(c);
+        const ae = pr(c);
         f.value = `Failed to load setup UI (${A}${ae ? ` at ${ae}` : ""}): ` + (j instanceof Error ? j.message : String(j));
       }
   }
@@ -3365,7 +3376,7 @@ function wi(e) {
     a.value = !!c.detail?.saving;
   }
   function U() {
-    ot(o.value) ? pr(u) : T();
+    nt(o.value) ? br(u) : T();
   }
   async function $(c) {
     const A = c.detail;
@@ -3392,7 +3403,7 @@ function wi(e) {
   async function T() {
     const c = o.value;
     if (!c) return;
-    const A = Qo(c, n.value);
+    const A = en(c, n.value);
     if (A) {
       f.value = A;
       return;
@@ -3401,7 +3412,7 @@ function wi(e) {
     try {
       const { data: j } = await pe.post("/api/v1/automations", {
         type: c.id,
-        input: en(c, n.value),
+        input: tn(c, n.value),
         parent_id: e.effectiveParentId.value || void 0
       });
       if (j?.success) {
@@ -3440,7 +3451,7 @@ function wi(e) {
     unmountCustomInstallUi: I
   };
 }
-function _i({ automations: e, types: t, query: o, drawerId: n }) {
+function $i({ automations: e, types: t, query: o, drawerId: n }) {
   const i = L(() => {
     const c = {};
     for (const A of t.value) c[A.id] = A;
@@ -3461,52 +3472,52 @@ function _i({ automations: e, types: t, query: o, drawerId: n }) {
     return c.icon ? c.icon : m(c)?.icon || "tabler:bolt";
   }
   function u(c) {
-    return Ut(m(c));
+    return Vt(m(c));
   }
   function z(c, A) {
     return u(c).has(A);
   }
   function x(c) {
-    return Nt(u(c));
+    return Ht(u(c));
   }
   function _(c) {
-    return Kt(Ht(m(c)));
+    return Wt(Kt(m(c)));
   }
   function p(c) {
-    return Vt(u(c));
+    return qt(u(c));
   }
   function y(c) {
-    return rt(m(c));
+    return at(m(c));
   }
   function M(c) {
-    return jt(m(c));
+    return Nt(m(c));
   }
   function W(c) {
-    return c ? Ft(c, m(c)) : {};
+    return c ? Ut(c, m(c)) : {};
   }
   function K(c) {
     return c.public_state;
   }
   function ne(c) {
-    return Be(m(c)?.public_state_schema?.fields, K(c), !1);
+    return Oe(m(c)?.public_state_schema?.fields, K(c), !1);
   }
   function G(c) {
-    return Be(m(c)?.public_state_schema?.fields, K(c), !0);
+    return Oe(m(c)?.public_state_schema?.fields, K(c), !0);
   }
   function D(c) {
-    return Xt(K(c));
+    return Jt(K(c));
   }
   function U(c) {
-    return Jt(K(c), c.availability);
+    return Qt(K(c), c.availability);
   }
   function $(c) {
-    return Qt(K(c), z(c, "status"), c.drive_status, c.availability);
+    return eo(K(c), z(c, "status"), c.drive_status, c.availability);
   }
   function I(c) {
     return $(c).kind === "off";
   }
   function S(c) {
-    return to(m(c)?.public_state_schema?.fields, K(c));
+    return oo(m(c)?.public_state_schema?.fields, K(c));
   }
   const R = L(() => e.value.find((c) => c.id === n.value) || null), T = L(() => R.value ? m(R.value) : void 0);
   return {
@@ -3538,7 +3549,7 @@ function _i({ automations: e, types: t, query: o, drawerId: n }) {
 function we(e) {
   return !!e && typeof e == "object" && !Array.isArray(e);
 }
-function $i(e, t) {
+function Ci(e, t) {
   if (t == null) return t;
   switch (e) {
     case "boolean":
@@ -3566,14 +3577,14 @@ function $i(e, t) {
       return t;
   }
 }
-function Ci(e, t) {
+function Si(e, t) {
   if (!t) return e;
   const o = {};
   for (const [n, i] of Object.entries(e))
-    o[n] = $i(t[n], i);
+    o[n] = Ci(t[n], i);
   return o;
 }
-function Si(e, t, o) {
+function zi(e, t, o) {
   if (!t) return null;
   const n = we(e) ? e : {}, i = [
     n,
@@ -3588,21 +3599,21 @@ function Si(e, t, o) {
       return {
         event: "component.meta.changed",
         component_id: f || t,
-        meta: Ci(we(a.meta) ? a.meta : {}, o),
+        meta: Si(we(a.meta) ? a.meta : {}, o),
         deleted: Array.isArray(a.deleted) ? a.deleted.map(String) : []
       };
   }
   return null;
 }
-function zi(e, t, o) {
+function Pi(e, t, o) {
   if (!e) return null;
-  const n = Wo(`component.${e}`, (i) => {
-    const a = Si(i, e, o);
+  const n = Yo(`component.${e}`, (i) => {
+    const a = zi(i, e, o);
     a && t(a);
   });
   return typeof n == "function" ? n : null;
 }
-function Pi(e, t) {
+function Ei(e, t) {
   const o = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Set();
   let i = 0;
   const a = /* @__PURE__ */ new Map();
@@ -3615,13 +3626,13 @@ function Pi(e, t) {
         public_state: { ...y.public_state || {}, ...p }
       };
       return typeof p.title == "string" && (M.title = p.title), typeof p.comment == "string" && (M.description = p.comment), M;
-    }), m(x).catch((y) => Je.handleError("other", { message: String(y) }));
+    }), m(x).catch((y) => Qe.handleError("other", { message: String(y) }));
   }
   async function m(x) {
     if (!e.value.some((y) => y.id === x && y.drive_status)) return;
     const _ = Symbol(x);
     a.set(x, _);
-    const p = await oo(x);
+    const p = await no(x);
     a.get(x) === _ && (a.delete(x), e.value = e.value.map((y) => y.id === x ? { ...y, drive_status: p } : y));
   }
   function w(x) {
@@ -3643,7 +3654,7 @@ function Pi(e, t) {
     for (const p of x) {
       if (o.has(p) || n.has(p)) continue;
       n.add(p);
-      const y = e.value.find((W) => W.id === p), M = zi(p, (W) => f(p, W), y ? w(y) : void 0);
+      const y = e.value.find((W) => W.id === p), M = Pi(p, (W) => f(p, W), y ? w(y) : void 0);
       if (n.delete(p), !!M) {
         if (_ !== i || !e.value.some((W) => W.id === p)) {
           M();
@@ -3655,7 +3666,7 @@ function Pi(e, t) {
   }
   return { syncRealtimeSubscriptions: z, clearRealtimeSubscriptions: u, refreshDriveStatus: m };
 }
-function Ei({ automations: e, types: t, loading: o, error: n, parentId: i, syncRealtimeSubscriptions: a }) {
+function Ii({ automations: e, types: t, loading: o, error: n, parentId: i, syncRealtimeSubscriptions: a }) {
   async function f() {
     try {
       const { data: u } = await pe.get("/api/v1/automations/types");
@@ -3680,7 +3691,7 @@ function Ei({ automations: e, types: t, loading: o, error: n, parentId: i, syncR
   }
   return { fetchTypes: f, fetchAutomations: m, reload: w };
 }
-function Ii(e, t, o) {
+function Di(e, t, o) {
   async function n(i) {
     e.value = i.id, t.value = "";
     try {
@@ -3698,44 +3709,44 @@ function Ii(e, t, o) {
   }
   return { exportAutomation: n };
 }
-const Di = { class: "kx" }, Li = {
+const Li = { class: "kx" }, Ai = {
   key: 0,
   class: "kx-head"
-}, Ai = { class: "kx-head-icon" }, Mi = { class: "kx-head-actions" }, Ri = { class: "kx-count" }, Ti = { class: "kx-search" }, Bi = {
+}, Mi = { class: "kx-head-icon" }, Ri = { class: "kx-head-actions" }, Ti = { class: "kx-count" }, Bi = { class: "kx-search" }, Oi = {
   key: 1,
   class: "kx-err"
-}, Oi = {
+}, ji = {
   key: 2,
   class: "kx-body"
-}, ji = {
+}, Fi = {
   key: 0,
   class: "kx-loading"
-}, Fi = {
+}, Ni = {
   key: 1,
   class: "kx-empty"
-}, Ni = { class: "kx-empty-ico" }, Ui = {
+}, Ui = { class: "kx-empty-ico" }, Hi = {
   key: 2,
   class: "kx-empty"
-}, Hi = {
+}, Vi = {
   key: 3,
   class: "kx-list"
-}, Vi = ["aria-label", "onClick"], Ki = { class: "kx-ficon" }, qi = { class: "kx-id" }, Wi = ["title"], Yi = { class: "kx-sub" }, Zi = { key: 0 }, Gi = { key: 1 }, Xi = { key: 2 }, Ji = { class: "kx-actions" }, Qi = {
+}, Ki = ["aria-label", "onClick"], qi = { class: "kx-ficon" }, Wi = { class: "kx-id" }, Yi = ["title"], Zi = { class: "kx-sub" }, Gi = { key: 0 }, Xi = { key: 1 }, Ji = { key: 2 }, Qi = { class: "kx-actions" }, es = {
   key: 0,
   class: "kx-rowfoot"
-}, es = ["title"], ts = { class: "kx-modal-head-icon" }, os = { class: "kx-modal-head-text" }, ns = { class: "kx-modal-head-title" }, rs = { class: "kx-modal-head-sub" }, as = { class: "kx-modal-body" }, is = { class: "kx-modal-head-icon" }, ss = { class: "kx-modal-head-text" }, ls = { class: "kx-modal-head-title" }, cs = { class: "kx-modal-head-sub" }, ds = { class: "kx-modal-body" }, us = { class: "kx-modal-body" }, ps = {
+}, ts = ["title"], os = { class: "kx-modal-head-icon" }, ns = { class: "kx-modal-head-text" }, rs = { class: "kx-modal-head-title" }, as = { class: "kx-modal-head-sub" }, is = { class: "kx-modal-body" }, ss = { class: "kx-modal-head-icon" }, ls = { class: "kx-modal-head-text" }, cs = { class: "kx-modal-head-title" }, ds = { class: "kx-modal-head-sub" }, us = { class: "kx-modal-body" }, ps = { class: "kx-modal-body" }, bs = {
   key: 0,
   class: "kx-delopts"
-}, bs = ["onUpdate:modelValue"], fs = { class: "kx-delopt-copy" }, ms = { class: "kx-delopt-t" }, gs = {
+}, fs = ["onUpdate:modelValue"], ms = { class: "kx-delopt-copy" }, gs = { class: "kx-delopt-t" }, vs = {
   key: 0,
   class: "kx-delopt-d"
-}, vs = /* @__PURE__ */ ge({
+}, hs = /* @__PURE__ */ ge({
   __name: "automations",
   setup(e) {
     const t = {
       header: { class: "kx-dialog-header" },
       content: { class: "kx-dialog-content" },
       footer: { class: "kx-dialog-footer" }
-    }, o = O([]), n = O([]), i = O(!1), a = O(""), f = O(""), m = O(""), w = /* @__PURE__ */ new Map(), u = O(""), z = O(""), x = _i({ automations: o, types: n, query: f, drawerId: z }), {
+    }, o = O([]), n = O([]), i = O(!1), a = O(""), f = O(""), m = O(""), w = /* @__PURE__ */ new Map(), u = O(""), z = O(""), x = $i({ automations: o, types: n, query: f, drawerId: z }), {
       filtered: _,
       pretty: p,
       typeFor: y,
@@ -3755,30 +3766,30 @@ const Di = { class: "kx" }, Li = {
       subtitleLine: A,
       drawerAutomation: j,
       drawerType: ae
-    } = x, Fe = Pi(o, y), { syncRealtimeSubscriptions: V, clearRealtimeSubscriptions: P, refreshDriveStatus: C } = Fe, st = Ii(u, a, p), { exportAutomation: no } = st, be = wo(), ro = _o(), ve = L(() => be.value?.mode === "create"), Ne = L(() => be.value?.mode === "component"), ao = tn(be), lt = L(() => String(be.value?.componentId || "").trim()), io = L(() => String(be.value?.typeId || "").trim()), so = L(() => lt.value || ao.value), lo = Ei({
+    } = x, Ne = Ei(o, y), { syncRealtimeSubscriptions: V, clearRealtimeSubscriptions: P, refreshDriveStatus: C } = Ne, lt = Di(u, a, p), { exportAutomation: ro } = lt, be = _o(), ao = $o(), ve = L(() => be.value?.mode === "create"), Ue = L(() => be.value?.mode === "component"), io = on(be), ct = L(() => String(be.value?.componentId || "").trim()), so = L(() => String(be.value?.typeId || "").trim()), lo = L(() => ct.value || io.value), co = Ii({
       automations: o,
       types: n,
       loading: i,
       error: a,
-      parentId: () => lt.value || void 0,
+      parentId: () => ct.value || void 0,
       syncRealtimeSubscriptions: V
-    }), { fetchAutomations: he, reload: Ue } = lo, xe = wi({
+    }), { fetchAutomations: he, reload: He } = co, xe = _i({
       types: n,
       createMode: ve,
-      componentMode: Ne,
-      effectiveParentId: so,
-      preferredTypeId: io,
-      inputPreset: L(() => on(be.value?.input)),
-      emitHost: (k, v) => ro(k, v),
-      reload: () => Ue()
+      componentMode: Ue,
+      effectiveParentId: lo,
+      preferredTypeId: so,
+      inputPreset: L(() => nn(be.value?.input)),
+      emitHost: (k, v) => ao(k, v),
+      reload: () => He()
     }), ie = O(null), Ae = O({}), ye = O(!1), te = O(null), de = O(null);
-    function co(k) {
+    function uo(k) {
       de.value = k;
     }
-    function ct() {
+    function dt() {
       de.value = null;
     }
-    function uo(k) {
+    function po(k) {
       const v = k?.id || "";
       return {
         resource_id: v,
@@ -3787,68 +3798,68 @@ const Di = { class: "kx" }, Li = {
         title: k ? p(k) : ""
       };
     }
-    function dt(k, v) {
+    function ut(k, v) {
       switch (v) {
         case "reconfigure":
-          xo(k);
+          yo(k);
           break;
         case "share":
-          co(k);
+          uo(k);
           break;
         case "export":
-          no(k);
+          ro(k);
           break;
         case "delete":
-          pt(k);
+          bt(k);
           break;
         default:
-          He(k, v);
+          Ve(k, v);
       }
     }
-    function ut(k) {
+    function pt(k) {
       const v = ne(k);
-      v && He(k, v);
+      v && Ve(k, v);
     }
-    function po(k) {
+    function bo(k) {
       z.value = k.id, he();
     }
-    function bo() {
+    function fo() {
       z.value = "";
     }
-    function fo(k) {
+    function mo(k) {
       const v = j.value;
-      v && dt(v, k);
+      v && ut(v, k);
     }
-    function mo() {
+    function go() {
       const k = j.value;
-      k && ut(k);
+      k && pt(k);
     }
-    async function He(k, v) {
+    async function Ve(k, v) {
       if (m.value) return;
       m.value = k.id, a.value = "";
-      const b = y(k)?.controls?.some((oe) => oe.name === v) === !0, Z = `${k.id}:${v}`, bt = b ? w.get(Z) || crypto.randomUUID() : "";
-      b && w.set(Z, bt);
+      const b = y(k)?.controls?.some((oe) => oe.name === v) === !0, Z = `${k.id}:${v}`, ft = b ? w.get(Z) || crypto.randomUUID() : "";
+      b && w.set(Z, ft);
       try {
         const { data: oe } = await pe.post(
           `/api/v1/automations/${k.id}/actions/${v}`,
-          b ? { request_id: bt } : {}
+          b ? { request_id: ft } : {}
         );
         if (!oe?.success) {
           a.value = re({ response: { data: oe } }, `${v} failed`);
           return;
         }
         if (b && oe.result?.state === "succeeded" && w.delete(Z), oe.result && typeof oe.result == "object") {
-          const { success: qe, ...yo } = oe.result;
-          k.public_state = { ...k.public_state || {}, ...yo };
+          const { success: We, ...ko } = oe.result;
+          k.public_state = { ...k.public_state || {}, ...ko };
         }
         if (k.drive_status?.drives?.length)
           await C(k.id);
         else if (v === "pause" || v === "resume") {
-          const qe = typeof oe.result?.paused == "boolean" ? oe.result.paused : v === "pause";
+          const We = typeof oe.result?.paused == "boolean" ? oe.result.paused : v === "pause";
           k.public_state = {
             ...k.public_state || {},
-            enabled: !qe,
-            status: oe.result?.status || (qe ? "paused" : "active")
+            enabled: !We,
+            status: oe.result?.status || (We ? "paused" : "active")
           };
         }
       } catch (oe) {
@@ -3857,27 +3868,27 @@ const Di = { class: "kx" }, Li = {
         m.value = "";
       }
     }
-    async function go(k) {
-      await He(k, c(k) ? "resume" : "pause");
+    async function vo(k) {
+      await Ve(k, c(k) ? "resume" : "pause");
     }
-    function pt(k) {
+    function bt(k) {
       ie.value = k;
       const v = y(k), b = {};
       for (const Z of v?.delete_options || []) b[Z.key] = !!Z.default;
       Ae.value = b;
     }
-    function Ve(k) {
+    function Ke(k) {
       return k ? y(k)?.delete_options || [] : [];
     }
-    function vo(k) {
-      te.value = null, pt(k);
+    function ho(k) {
+      te.value = null, bt(k);
     }
-    async function ho() {
+    async function xo() {
       const k = ie.value;
       if (k) {
         ye.value = !0, a.value = "";
         try {
-          const b = Ve(k).length ? { options: { ...Ae.value } } : {}, { data: Z } = await pe.delete(`/api/v1/automations/${k.id}`, { data: b });
+          const b = Ke(k).length ? { options: { ...Ae.value } } : {}, { data: Z } = await pe.delete(`/api/v1/automations/${k.id}`, { data: b });
           Z?.success ? (ie.value = null, await he()) : a.value = re({ response: { data: Z } }, "failed to delete automation");
         } catch (v) {
           a.value = re(v, "failed to delete automation");
@@ -3886,24 +3897,24 @@ const Di = { class: "kx" }, Li = {
         }
       }
     }
-    function xo(k) {
+    function yo(k) {
       G(k) && (te.value = k);
     }
-    async function Ke(k = !0) {
-      te.value = null, k && await Ue();
+    async function qe(k = !0) {
+      te.value = null, k && await He();
     }
-    return $o(async () => {
+    return Co(async () => {
       try {
-        await Ue(), ve.value && xe.openPreferredInstall();
+        await He(), ve.value && xe.openPreferredInstall();
       } catch (k) {
         a.value = re(k, "host API unavailable");
       }
-    }), Dt(() => {
+    }), At(() => {
       xe.unmountCustomInstallUi(), P();
-    }), (k, v) => (s(), d("div", Di, [
-      ve.value ? h("", !0) : (s(), d("header", Li, [
-        Ne.value ? h("", !0) : (s(), d(Y, { key: 0 }, [
-          l("div", Ai, [
+    }), (k, v) => (s(), d("div", Li, [
+      ve.value ? h("", !0) : (s(), d("header", Ai, [
+        Ue.value ? h("", !0) : (s(), d(Y, { key: 0 }, [
+          l("div", Mi, [
             E(r(B), {
               icon: "tabler:bolt",
               "aria-hidden": "true"
@@ -3914,9 +3925,9 @@ const Di = { class: "kx" }, Li = {
             l("p", { class: "kx-head-sub" }, "Scheduled and event-driven jobs that run on their own.")
           ], -1))
         ], 64)),
-        l("div", Mi, [
-          l("span", Ri, g(o.value.length) + " automation" + g(o.value.length !== 1 ? "s" : ""), 1),
-          l("div", Ti, [
+        l("div", Ri, [
+          l("span", Ti, g(o.value.length) + " automation" + g(o.value.length !== 1 ? "s" : ""), 1),
+          l("div", Bi, [
             E(r(B), {
               icon: "tabler:search",
               class: "kx-search-ico",
@@ -3928,7 +3939,7 @@ const Di = { class: "kx" }, Li = {
               type: "text",
               placeholder: "Search automations…"
             }, null, 512), [
-              [Ge, f.value]
+              [Xe, f.value]
             ])
           ]),
           E(r(X), {
@@ -3948,16 +3959,16 @@ const Di = { class: "kx" }, Li = {
           })
         ])
       ])),
-      !ve.value && a.value ? (s(), d("div", Bi, g(a.value), 1)) : h("", !0),
-      ve.value ? h("", !0) : (s(), d("div", Oi, [
-        i.value && !o.value.length ? (s(), d("div", ji, [
+      !ve.value && a.value ? (s(), d("div", Oi, g(a.value), 1)) : h("", !0),
+      ve.value ? h("", !0) : (s(), d("div", ji, [
+        i.value && !o.value.length ? (s(), d("div", Fi, [
           E(r(B), {
             icon: "tabler:loader-2",
             class: "spin",
             "aria-hidden": "true"
           }),
           v[11] || (v[11] = le(" Loading… ", -1))
-        ])) : o.value.length ? r(_).length ? (s(), d("div", Hi, [
+        ])) : o.value.length ? r(_).length ? (s(), d("div", Vi, [
           (s(!0), d(Y, null, ee(r(_), (b) => (s(), d("div", {
             key: b.id,
             class: q(["kx-row", z.value === b.id && "is-open"])
@@ -3966,29 +3977,29 @@ const Di = { class: "kx" }, Li = {
               type: "button",
               class: "kx-open",
               "aria-label": `Open ${r(p)(b)} details`,
-              onClick: (Z) => po(b)
+              onClick: (Z) => bo(b)
             }, [
-              l("span", Ki, [
+              l("span", qi, [
                 E(r(B), {
                   icon: r(M)(b),
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
               ]),
-              l("span", qi, [
+              l("span", Wi, [
                 l("span", {
                   class: "kx-name",
                   title: r(p)(b)
-                }, g(r(p)(b)), 9, Wi),
-                l("span", Yi, [
+                }, g(r(p)(b)), 9, Yi),
+                l("span", Zi, [
                   l("span", null, g(r(y)(b)?.title || "Automation"), 1),
-                  r(A)(b) ? (s(), d("span", Zi, " · " + g(r(A)(b)), 1)) : h("", !0),
-                  r(_e)(b.drive_status).last ? (s(), d("span", Gi, " · last ran " + g(r(ce)(r(_e)(b.drive_status).last, { future: !0 })), 1)) : h("", !0),
-                  r(_e)(b.drive_status).next ? (s(), d("span", Xi, " · next " + g(r(ce)(r(_e)(b.drive_status).next, { future: !0 })), 1)) : h("", !0)
+                  r(A)(b) ? (s(), d("span", Gi, " · " + g(r(A)(b)), 1)) : h("", !0),
+                  r(_e)(b.drive_status).last ? (s(), d("span", Xi, " · last ran " + g(r(ce)(r(_e)(b.drive_status).last, { future: !0 })), 1)) : h("", !0),
+                  r(_e)(b.drive_status).next ? (s(), d("span", Ji, " · next " + g(r(ce)(r(_e)(b.drive_status).next, { future: !0 })), 1)) : h("", !0)
                 ])
               ])
-            ], 8, Vi),
-            E(r(nt), {
-              severity: r(eo)(r(T)(b).kind),
+            ], 8, Ki),
+            E(r(rt), {
+              severity: r(to)(r(T)(b).kind),
               class: "kx-badge kx-tag-sm"
             }, {
               default: F(() => [
@@ -4002,7 +4013,7 @@ const Di = { class: "kx" }, Li = {
               ]),
               _: 2
             }, 1032, ["severity"]),
-            l("div", Ji, [
+            l("div", Qi, [
               (r(W)(b, "pause") || r(W)(b, "resume")) && !r(S)(b) ? (s(), N(r(X), {
                 key: 0,
                 type: "button",
@@ -4012,7 +4023,7 @@ const Di = { class: "kx" }, Li = {
                 disabled: m.value === b.id,
                 "aria-label": `${r(c)(b) ? "Resume" : "Pause"} ${r(p)(b)}`,
                 title: r(c)(b) ? "Resume" : "Pause",
-                onClick: (Z) => go(b)
+                onClick: (Z) => vo(b)
               }, {
                 icon: F(({ class: Z }) => [
                   E(r(B), {
@@ -4023,14 +4034,14 @@ const Di = { class: "kx" }, Li = {
                 ]),
                 _: 2
               }, 1032, ["disabled", "aria-label", "title", "onClick"])) : h("", !0),
-              E(qt, {
+              E(Yt, {
                 items: r(K)(b),
                 name: r(p)(b),
                 busy: m.value === b.id,
-                onSelect: (Z) => dt(b, Z)
+                onSelect: (Z) => ut(b, Z)
               }, null, 8, ["items", "name", "busy", "onSelect"])
             ]),
-            r(R)(b) || r(I)(b).length || r($)(b).length ? (s(), d("div", Qi, [
+            r(R)(b) || r(I)(b).length || r($)(b).length ? (s(), d("div", es, [
               r(R)(b) ? (s(), d("div", {
                 key: 0,
                 class: q(["kx-rowmsg", `kx-rowmsg-${r(R)(b)?.tone}`])
@@ -4042,7 +4053,7 @@ const Di = { class: "kx" }, Li = {
                 l("span", {
                   class: "kx-rowmsg-txt",
                   title: r(R)(b)?.text
-                }, g(r(R)(b)?.text), 9, es),
+                }, g(r(R)(b)?.text), 9, ts),
                 r(R)(b)?.tone === "error" && r(ne)(b) ? (s(), N(r(X), {
                   key: 0,
                   type: "button",
@@ -4054,7 +4065,7 @@ const Di = { class: "kx" }, Li = {
                   "aria-label": `Recover ${r(p)(b)}`,
                   disabled: m.value === b.id,
                   label: "Recover",
-                  onClick: (Z) => ut(b)
+                  onClick: (Z) => pt(b)
                 }, {
                   icon: F(({ class: Z }) => [
                     E(r(B), {
@@ -4066,17 +4077,17 @@ const Di = { class: "kx" }, Li = {
                   _: 1
                 }, 8, ["aria-label", "disabled", "onClick"])) : h("", !0)
               ], 2)) : h("", !0),
-              E(Wr, {
+              E(Yr, {
                 face: r($)(b),
                 detail: r(I)(b)
               }, null, 8, ["face", "detail"])
             ])) : h("", !0)
           ], 2))), 128))
-        ])) : (s(), d("div", Ui, [...v[14] || (v[14] = [
+        ])) : (s(), d("div", Hi, [...v[14] || (v[14] = [
           l("div", { class: "kx-empty-title" }, "No matches", -1),
           l("div", { class: "kx-empty-sub" }, "No automations match the current search.", -1)
-        ])])) : (s(), d("div", Fi, [
-          l("div", Ni, [
+        ])])) : (s(), d("div", Ni, [
+          l("div", Ui, [
             E(r(B), {
               icon: "tabler:bolt",
               "aria-hidden": "true"
@@ -4101,18 +4112,18 @@ const Di = { class: "kx" }, Li = {
           })
         ]))
       ])),
-      r(j) ? (s(), N(ki, {
+      r(j) ? (s(), N(wi, {
         key: 3,
         automation: r(j),
         type: r(ae),
-        onClose: bo,
-        onAction: fo,
-        onRecover: mo,
+        onClose: fo,
+        onAction: mo,
+        onRecover: go,
         onChanged: r(he)
       }, null, 8, ["automation", "type", "onChanged"])) : h("", !0),
-      E(jr, {
+      E(Fr, {
         flow: r(xe),
-        "component-mode": Ne.value,
+        "component-mode": Ue.value,
         "dialog-pt": t
       }, null, 8, ["flow", "component-mode"]),
       te.value ? (s(), N(r($e), {
@@ -4124,19 +4135,19 @@ const Di = { class: "kx" }, Li = {
         class: "kx-modal kx-modal-manage",
         "aria-label": r(p)(te.value),
         "onUpdate:visible": v[6] || (v[6] = (b) => {
-          b || Ke(!1);
+          b || qe(!1);
         })
       }, {
         header: F(() => [
-          l("span", ts, [
+          l("span", os, [
             E(r(B), {
               icon: r(M)(te.value),
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
-          l("span", os, [
-            l("span", ns, g(r(p)(te.value)), 1),
-            l("span", rs, g(r(y)(te.value)?.title || "Automation"), 1)
+          l("span", ns, [
+            l("span", rs, g(r(p)(te.value)), 1),
+            l("span", as, g(r(y)(te.value)?.title || "Automation"), 1)
           ])
         ]),
         footer: F(() => [
@@ -4146,7 +4157,7 @@ const Di = { class: "kx" }, Li = {
             severity: "danger",
             outlined: "",
             label: "Delete",
-            onClick: v[5] || (v[5] = (b) => vo(te.value))
+            onClick: v[5] || (v[5] = (b) => ho(te.value))
           }, {
             icon: F(({ class: b }) => [
               E(r(B), {
@@ -4159,14 +4170,14 @@ const Di = { class: "kx" }, Li = {
           })
         ]),
         default: F(() => [
-          l("div", as, [
-            E(Me, {
+          l("div", is, [
+            E(Re, {
               class: "kx-manage-host",
               tag: r(G)(te.value),
               config: r(U)(te.value),
               meta: { location: r(D)(te.value) },
-              onCreated: v[3] || (v[3] = (b) => Ke(!0)),
-              onClose: v[4] || (v[4] = (b) => Ke(!0)),
+              onCreated: v[3] || (v[3] = (b) => qe(!0)),
+              onClose: v[4] || (v[4] = (b) => qe(!0)),
               onChange: r(he)
             }, null, 8, ["tag", "config", "meta", "onChange"])
           ])
@@ -4181,28 +4192,28 @@ const Di = { class: "kx" }, Li = {
         class: "kx-modal",
         "aria-label": `Share ${r(p)(de.value)}`,
         "onUpdate:visible": v[7] || (v[7] = (b) => {
-          b || ct();
+          b || dt();
         })
       }, {
         header: F(() => [
-          l("span", is, [
+          l("span", ss, [
             E(r(B), {
               icon: "tabler:users",
               "aria-hidden": "true"
             })
           ]),
-          l("span", ss, [
-            l("span", ls, "Share " + g(r(p)(de.value)), 1),
-            l("span", cs, g(r(y)(de.value)?.title || "Automation"), 1)
+          l("span", ls, [
+            l("span", cs, "Share " + g(r(p)(de.value)), 1),
+            l("span", ds, g(r(y)(de.value)?.title || "Automation"), 1)
           ])
         ]),
         default: F(() => [
-          l("div", ds, [
-            E(Me, {
+          l("div", us, [
+            E(Re, {
               class: "kx-manage-host",
               tag: "kickside-share",
-              config: uo(de.value),
-              onClose: ct,
+              config: po(de.value),
+              onClose: dt,
               onChange: r(he)
             }, null, 8, ["config", "onChange"])
           ])
@@ -4238,7 +4249,7 @@ const Di = { class: "kx" }, Li = {
             label: "Delete",
             loading: ye.value,
             disabled: ye.value,
-            onClick: ho
+            onClick: xo
           }, {
             icon: F(({ class: b }) => [
               E(r(B), {
@@ -4251,26 +4262,26 @@ const Di = { class: "kx" }, Li = {
           }, 8, ["loading", "disabled"])
         ]),
         default: F(() => [
-          l("div", us, [
+          l("div", ps, [
             l("p", null, [
               v[15] || (v[15] = le(" Delete ", -1)),
               l("strong", null, g(r(p)(ie.value)), 1),
               v[16] || (v[16] = le("? It will stop running and its setup will be removed. This can't be undone. ", -1))
             ]),
-            Ve(ie.value).length ? (s(), d("div", ps, [
-              (s(!0), d(Y, null, ee(Ve(ie.value), (b) => (s(), d("label", {
+            Ke(ie.value).length ? (s(), d("div", bs, [
+              (s(!0), d(Y, null, ee(Ke(ie.value), (b) => (s(), d("label", {
                 key: b.key,
                 class: "kx-delopt"
               }, [
                 ue(l("input", {
                   "onUpdate:modelValue": (Z) => Ae.value[b.key] = Z,
                   type: "checkbox"
-                }, null, 8, bs), [
-                  [It, Ae.value[b.key]]
+                }, null, 8, fs), [
+                  [Lt, Ae.value[b.key]]
                 ]),
-                l("span", fs, [
-                  l("span", ms, g(b.title || b.key), 1),
-                  b.description ? (s(), d("span", gs, g(b.description), 1)) : h("", !0)
+                l("span", ms, [
+                  l("span", gs, g(b.title || b.key), 1),
+                  b.description ? (s(), d("span", vs, g(b.description), 1)) : h("", !0)
                 ])
               ]))), 128))
             ])) : h("", !0)
@@ -4280,20 +4291,20 @@ const Di = { class: "kx" }, Li = {
       }, 8, ["visible"])) : h("", !0)
     ]));
   }
-}), hs = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}.kx-ps{width:100%;text-align:start;font:inherit}.anchored-panel>.p-select-overlay.kx-ps-panel{position:static;width:100%;display:flex;flex-direction:column;max-height:var(--anchored-panel-available-height);overflow:hidden}.kx-ps-panel>.p-select-header{flex:none}.kx-ps-options{min-height:0;overflow-y:auto}.kx-ps-options>li{flex:none}.kx-ps-val{display:flex;align-items:center;gap:8px;min-width:0}.kx-ps-val-ico{width:16px;height:16px;color:var(--p-primary-color);flex:none}.kx-ps-val-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-ps-ph{color:var(--p-text-muted-color)}.kx-ps-option{gap:var(--kx-picker-option-icon-gap)}.kx-ps-opt-ico{width:var(--kx-picker-option-icon-size);height:var(--kx-picker-option-icon-size);flex:none}.kx-ps-opt-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--kx-picker-option-stack-gap)}.kx-ps-opt-title{font-size:var(--kx-picker-option-title-size);font-weight:var(--kx-picker-option-title-weight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.kx-ps-opt-sub{font-size:var(--kx-picker-option-subtitle-size);line-height:var(--kx-picker-option-subtitle-line-height);color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-head{display:flex;align-items:center;gap:12px;padding:20px 24px 14px;flex-wrap:wrap}.kx-head-icon{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-head-icon svg{width:22px;height:22px}.kx-head-text{min-width:0}.kx-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-head-sub{font-size:13px;color:var(--p-text-muted-color);margin:2px 0 0}.kx-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}.kx-modal-head-icon{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-modal-head-icon svg{width:20px;height:20px}.kx-modal-head-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-modal-head-title{font-size:15.5px;font-weight:700;color:var(--p-text-color);line-height:1.2}.kx-modal-head-sub{font-size:12.5px;font-weight:400;color:var(--p-text-muted-color);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-empty{text-align:center;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px}.kx-empty-ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color);margin-bottom:4px}.kx-empty-ico svg{width:28px;height:28px}.kx-empty-title{font-size:15px;font-weight:700;color:var(--p-text-color);margin:0}.kx-empty-sub{font-size:13px;color:var(--p-text-muted-color);max-width:380px;margin:0}.kx-empty>.p-button{margin-top:6px}.kx-empty-actions{display:flex;gap:8px;margin-top:6px}.kx-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.kx-err{margin:0 20px 8px;padding:9px 12px;border-radius:10px;font-size:13px;background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.kx-err.inline{margin:12px 0 0}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{--kx-modal-shadow: var(--kx-shadow-lg);display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.kx{font-family:inherit;color:var(--p-text-color);background:var(--p-content-background);height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}.kx-head-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-count{font-size:12.5px;color:var(--p-text-muted-color);display:inline-flex;align-items:center;gap:5px}.kx-search{position:relative;display:flex;align-items:center}.kx-search-ico{position:absolute;left:10px;width:15px;height:15px;color:var(--p-text-muted-color);pointer-events:none}.kx-search-input{height:34px;width:220px;max-width:40vw;padding:0 10px 0 30px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s}.kx-body{flex:1 0 auto;padding:6px 20px 20px;display:flex;flex-direction:column;gap:14px}.kx-list{display:flex;flex-direction:column;border:1px solid var(--p-content-border-color);border-radius:14px;overflow:hidden;background:var(--p-content-background);max-width:1100px}.kx-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"main status actions" "foot foot   foot";align-items:center;column-gap:14px;row-gap:6px;padding:10px 14px;border-bottom:1px solid var(--p-content-border-color)}.kx-row:last-child{border-bottom:none}.kx-row.is-open{background:var(--kx-wash-primary)}.kx-row:hover{background:var(--kx-overlay-subtle)}.kx-row.is-open:hover{background:var(--kx-wash-primary)}.kx-open{grid-area:main;display:flex;align-items:center;gap:12px;min-width:0;padding:0;margin:0;border:none;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}.kx-ficon{width:38px;height:38px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kx-wash-primary);color:var(--p-primary-color)}.kx-ficon svg{width:20px;height:20px}.kx-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-name{display:block;font-size:14px;font-weight:600;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-sub{display:block;font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-open:focus-visible{outline:none}.kx-open:focus-visible .kx-name{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--p-primary-color)}.kx-rowfoot{grid-area:foot;padding-left:50px;display:flex;flex-direction:column;gap:4px;min-width:0}.kx-rowfoot:empty{display:none}.kx-rowmsg{font-size:11.5px;display:flex;align-items:center;gap:5px;min-width:0}.kx-rowmsg-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-rowmsg svg{width:13px;height:13px;flex:none}.kx-rowmsg-error{color:var(--p-danger-600, var(--p-danger-500))}.kx-rowmsg-success{color:var(--p-success-600, var(--p-success-500))}.kx-recover{flex:none;margin-left:2px}.kx-badge{grid-area:status;border:1px solid color-mix(in srgb,currentColor 28%,transparent)}.kx-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.kx-badge:has(svg):before{display:none}.kx-actions{grid-area:actions;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;min-width:0}.kx-actions .is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:color-mix(in srgb,var(--p-primary-color) 10%,transparent)}.kx-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.kx-admin-item{min-width:0;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:10px;background:var(--p-content-background)}.kx-admin-item>span{display:block;margin-bottom:4px;color:var(--p-text-muted-color);font-size:10.5px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}.kx-admin-item strong{display:block;overflow:hidden;color:var(--p-text-color);font-size:12.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item strong em{color:var(--p-text-muted-color);font-size:11px;font-style:normal;font-weight:600}.kx-admin-item code{display:block;margin-top:4px;overflow:hidden;color:var(--p-text-muted-color);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item a{display:inline-block;margin-top:4px;color:var(--p-primary-color);font-size:11px;font-weight:650;text-decoration:none}.kx-admin-item a:hover{text-decoration:underline}@media(max-width:560px){.kx-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main   actions" "status status" "foot   foot";align-items:center;row-gap:8px}.kx-badge{justify-self:start}.kx-rowfoot{padding-left:0}}@media(max-width:640px){.kx-admin-grid{grid-template-columns:1fr}}.kx-modal{--p-dialog-content-padding: 0;max-width:calc(100vw - 32px);max-height:90vh}.kx-modal>.kx-dialog-header{padding:16px 18px;border-bottom:1px solid var(--p-content-border-color);gap:10px}.kx-modal>.kx-dialog-content{padding:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}.kx-modal>.kx-dialog-footer{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--p-content-border-color)}.kx-2p-r-body>*{animation:kx-pane-fade .28s ease both}@keyframes kx-pane-fade{0%{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){.kx-2p-r-body>*{animation:none}}.kx-modal-body{padding:18px;font-size:13.5px;line-height:1.5;color:var(--p-text-color);overflow-y:auto}.kx-modal-body p{margin:0 0 10px}.kx-modal-body p:last-child{margin-bottom:0}.kx-form{display:flex;flex-direction:column;gap:14px}.kx-field{display:flex;flex-direction:column;gap:5px}.kx-field-lbl{font-size:12.5px;font-weight:600;color:var(--p-text-color)}.kx-req{color:var(--p-danger-500)}.kx-input{height:36px;padding:0 10px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s;width:100%}.kx-select{width:100%;min-width:0}.kx-check,.kx-delopt input{appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;flex:none;display:grid;place-content:center;border:1px solid var(--p-content-border-color);border-radius:8px;background:var(--p-content-background);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,opacity .15s}.kx-check:before,.kx-delopt input:before{content:"";width:5px;height:9px;border:solid var(--p-button-primary-color);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .12s ease-out}.kx-check:checked,.kx-delopt input:checked{border-color:var(--p-primary-color);background:var(--p-primary-color)}.kx-check:focus-visible{outline:var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);outline-offset:var(--p-focus-ring-offset)}.kx-check:checked:before,.kx-delopt input:checked:before{transform:rotate(45deg) scale(1)}.kx-check:disabled,.kx-delopt input:disabled{opacity:.55;cursor:not-allowed}.kx-field-hint{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-custom-host{min-height:180px;width:100%}.kx-custom-host>*{display:block;width:100%}.kx-delopts{display:flex;flex-direction:column;gap:10px;margin-top:14px}.kx-delopt{display:flex;align-items:flex-start;gap:10px;cursor:pointer}.kx-delopt input{margin-top:2px}.kx-delopt-copy{min-width:0;display:flex;flex-direction:column;gap:2px}.kx-delopt-t{display:block;font-size:13px;font-weight:600;color:var(--p-text-color)}.kx-delopt-d{display:block;font-size:11.5px;line-height:1.35;color:var(--p-text-muted-color)}.kx-modal-2p{width:min(880px,calc(100vw - 40px));max-width:100%}.kx-modal-solo{width:min(620px,calc(100vw - 40px));max-width:100%}.kx-modal-manage{width:min(760px,calc(100vw - 40px));max-width:100%}.kx-manage-host{display:block;min-height:180px}.kx-2p{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);min-height:0;flex:1;overflow:hidden}.kx-2p-solo{grid-template-columns:minmax(0,1fr)}.kx-2p-solo .kx-2p-r-body{padding-top:16px}.kx-2p-l{padding:16px;overflow-y:auto;border-right:1px solid var(--p-content-border-color);display:flex;flex-direction:column;gap:10px}.kx-2p-r{display:flex;flex-direction:column;min-width:0;min-height:0;background:color-mix(in srgb,var(--p-text-color) 2.5%,var(--p-content-background))}.kx-2p-r-head{padding:14px 18px 10px;font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-2p-r-body{padding:0 18px 18px;overflow-y:auto;flex:1;min-height:0}.kx-2p-r-note{margin:0;font-size:12.5px;color:var(--p-text-muted-color)}.kx-foot-err{order:-1;flex:1 0 100%;margin:0;max-width:none}.kx-foot-err+.p-button{margin-left:auto}.kx-foot-delete{margin-right:auto}.kx-cat-search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;flex:none;border:1px solid var(--p-content-border-color);border-radius:8px;color:var(--p-text-muted-color)}.kx-cat-search svg{width:15px;height:15px;flex:none}.kx-cat-search input{flex:1;border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--p-text-color)}.kx-cat{display:flex;flex-direction:column;gap:6px}.kx-cat-card{display:flex;align-items:center;gap:11px;text-align:left;width:100%;padding:10px 12px;border:1px solid var(--p-content-border-color);border-radius:14px;background:transparent;color:var(--p-text-color);cursor:pointer;transition:border-color .14s,background .14s}.kx-cat-card:hover{background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.kx-cat-card.sel{border-color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 9%,transparent)}.kx-cat-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:11px;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color)}.kx-cat-ico svg{width:18px;height:18px}.kx-cat-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-cat-name{font-size:13px;font-weight:600}.kx-cat-desc{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-cat-check{width:17px;height:17px;flex:none;color:var(--p-primary-color);visibility:hidden}.kx-cat-card.sel .kx-cat-check{visibility:visible}.kx-cat-empty{font-size:12.5px;color:var(--p-text-muted-color);padding:4px 2px}@media(max-width:760px){.kx-modal-2p{width:560px}.kx-2p{grid-template-columns:1fr}.kx-2p-l{border-right:none;border-bottom:1px solid var(--p-content-border-color)}}.kx-flow{display:flex;flex-direction:column;gap:14px;padding:6px 0 0}.kx-pipe,.kx-stage{display:flex;flex-direction:column;gap:8px}.kx-stage-mid{background:transparent}.kx-stage-head{display:flex;align-items:center;gap:8px}.kx-stage-ico{width:26px;height:26px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-stage-ico svg{width:15px;height:15px}.kx-stage-lbl{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-stage-cfg{margin-top:2px}.kx-stage-badges{display:flex;flex-wrap:wrap;gap:6px}.kx-stage-desc{margin:0;font-size:12px;line-height:1.4;color:var(--p-text-muted-color)}.kx-stage-opts{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--p-content-border-color)}.kx-opts-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-pipe-conn{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 0;color:var(--p-text-muted-color);font-size:11px}.kx-pipe-conn svg{width:16px;height:16px}.kx-runopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.kx-detect{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.35;padding:7px 9px;border-radius:8px;color:var(--p-success-600, var(--p-success-500));background:color-mix(in srgb,var(--p-success-500) 10%,transparent)}.kx-detect svg{width:14px;height:14px;flex:none}.kx-detect-warn{color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 12%,transparent)}.kx-flow-enable{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--p-text-muted-color);cursor:pointer}.kx-flow-enable input{width:16px;height:16px;accent-color:var(--p-primary-color)}.kx-textarea{height:auto;min-height:72px;padding:8px 10px;line-height:1.4;resize:vertical}.kx-wcmount{width:100%}.kx-wcmount>div{display:block;width:100%}.kx-metrics{display:flex;flex-wrap:wrap;gap:5px 6px;margin-top:5px;min-width:0}.kx-metric{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11.5px;line-height:1.6;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--p-text-color) 6%,transparent);color:var(--p-text-color)}.kx-metric-i{width:13px;height:13px;color:var(--p-text-muted-color);flex:none}.kx-metric-k{color:var(--p-text-muted-color);font-weight:600;flex:none}.kx-metric-v{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-metric-details{margin-top:5px}.kx-metric-more{display:inline-flex;align-items:center;gap:4px;cursor:pointer;list-style:none;font-size:11.5px;font-weight:600;color:var(--p-text-muted-color);user-select:none}.kx-metric-more::-webkit-details-marker{display:none}.kx-metric-more:before{content:"";width:0;height:0;border-left:4px solid currentColor;border-top:3px solid transparent;border-bottom:3px solid transparent;transition:transform .15s;flex:none}.kx-metric-details[open] .kx-metric-more:before{transform:rotate(90deg)}.kx-metric-more:hover{color:var(--p-text-color)}.kx-metrics-detail{margin-top:4px}@media(prefers-reduced-motion:reduce){.kx-modal{transition:none}}.kx-cat-search:focus-within{border-color:var(--p-focus-ring-color);box-shadow:var(--p-focus-ring-shadow)}.kx-cat-search input:focus{box-shadow:none}.kx-cat-card:focus-visible{border-color:var(--p-focus-ring-color);outline:none;box-shadow:var(--p-focus-ring-shadow)}.kx-menu{position:relative;display:inline-flex}.kx-menu-trigger.is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:var(--kx-wash-primary)}.kx-menu-panel{display:flex;flex-direction:column;gap:1px;padding:6px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-14);background:var(--p-content-background);box-shadow:var(--kx-shadow-lg);max-height:min(70vh,460px);overflow-y:auto}.kx-menu-group{padding:8px 10px 4px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-menu-group.is-first{padding-top:4px}.kx-menu-sep{height:1px;margin:5px 6px;background:var(--p-content-border-color)}.kx-menu-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;text-align:left;border:none;border-radius:var(--kx-radius-10);background:transparent;color:var(--p-text-color);cursor:pointer;transition:background .12s}.kx-menu-item:hover,.kx-menu-item:focus-visible{background:var(--kx-overlay-hover);outline:none}.kx-menu-item:disabled{opacity:.5;cursor:not-allowed}.kx-menu-item-ico{width:17px;height:17px;flex:none;margin-top:1px;color:var(--p-text-muted-color)}.kx-menu-item-body{display:flex;flex-direction:column;gap:1px;min-width:0}.kx-menu-item-label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600}.kx-menu-item-desc{font-size:11px;line-height:1.35;color:var(--p-text-muted-color)}.kx-menu-item-warn{width:12px;height:12px;color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-warn .kx-menu-item-ico{color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-danger .kx-menu-item-ico{color:var(--p-danger-600, var(--p-danger-500))}.kx-menu-item.is-danger:hover,.kx-menu-item.is-danger:focus-visible{background:var(--kx-wash-danger)}.kx-menu-item.is-danger .kx-menu-item-label{color:var(--p-danger-600, var(--p-danger-500))}.kx-drawer-scrim{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--p-text-color) 40%,transparent);animation:kx-fade .18s ease both}.kx-drawer{position:fixed;top:0;right:0;height:100%;width:min(468px,100vw);z-index:61;display:flex;flex-direction:column;min-height:0;background:var(--p-content-background);border-left:1px solid var(--p-content-border-color);box-shadow:var(--kx-shadow-lg);animation:kx-slide-in .22s cubic-bezier(.22,.61,.36,1) both}@keyframes kx-fade{0%{opacity:0}to{opacity:1}}@keyframes kx-slide-in{0%{transform:translate(24px);opacity:0}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.kx-drawer,.kx-drawer-scrim{animation:none}}.kx-drawer-head{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-drawer-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-drawer-name{font-size:15px;font-weight:700;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-sub{font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-controls{display:flex;align-items:center;gap:6px;flex:none}.kx-drawer .kx-badge{flex:none}.kx-tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 12px 10px;margin-bottom:-1px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;color:var(--p-text-muted-color);transition:color .12s}.kx-tab svg{width:15px;height:15px}.kx-tab:hover{color:var(--p-text-color)}.kx-tab.is-active{color:var(--p-primary-color);border-bottom-color:var(--p-primary-color)}.kx-tab:focus-visible{outline:none;color:var(--p-primary-color)}.kx-drawer-body{flex:1;min-height:0;overflow-y:auto;padding:16px}.kx-dsec{display:flex;flex-direction:column;gap:16px}.kx-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.kx-dfact{padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-dfact-k{display:block;margin-bottom:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dfact-v{display:block;font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-dsub{display:flex;flex-direction:column;gap:8px}.kx-dsub-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dnote{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--p-text-muted-color);padding:4px 0}.kx-dnote-err{color:var(--p-danger-600, var(--p-danger-500))}.kx-dsec-foot{padding-top:4px}.kx-dmsg{margin:0;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-surface-1);color:var(--p-text-color);word-break:break-word}.kx-dmsg.is-err{background:var(--kx-wash-danger);color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-dmsg.is-ok{background:var(--kx-wash-success);color:var(--p-success-700, var(--p-success-600, var(--p-success-500)))}.kx-errcard{display:flex;flex-direction:column;gap:9px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--p-danger-500) 40%,var(--p-content-border-color));border-radius:var(--kx-radius-14);background:var(--kx-wash-danger)}.kx-errcard-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-errcard-head svg{width:17px;height:17px;flex:none}.kx-errcard-cause{margin:0;font-size:12.5px;line-height:1.5;color:var(--p-text-color);word-break:break-word}.kx-errcard .p-button{align-self:flex-start}.kx-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-wash-info);font-size:12px;line-height:1.45;color:var(--p-text-color)}.kx-hint svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--p-info-600, var(--p-info-500))}', xs = { props: { type: "object", properties: { mode: { type: "string", default: "", description: '"create" when mounted as the workspace "+" -> Automation create view: opens straight into the install popup and emits created/close. Unset renders the full Automations page.' }, "parent-id": { type: "string", default: "", description: "Workspace folder to place the new automation under (create mode; empty = root)." }, "component-id": { type: "string", default: "", description: "Optional owning component; scopes rows and places newly created Automations under that component." }, input: { type: "string", default: "", description: "Initial declared install inputs as a JSON object, supplied by the owning component." }, "type-id": { type: "string", default: "", description: "Optional registry automation type id to preselect in create or component mode. The manager treats the id opaquely and mounts that type's declared create view." } } } }, ys = {
-  wippy: xs
+}), xs = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}.kx-ps{width:100%;text-align:start;font:inherit}.anchored-panel>.p-select-overlay.kx-ps-panel{position:static;width:100%;display:flex;flex-direction:column;max-height:var(--anchored-panel-available-height);overflow:hidden}.kx-ps-panel>.p-select-header{flex:none}.kx-ps-options{min-height:0;overflow-y:auto}.kx-ps-options>li{flex:none}.kx-ps-val{display:flex;align-items:center;gap:8px;min-width:0}.kx-ps-val-ico{width:16px;height:16px;color:var(--p-primary-color);flex:none}.kx-ps-val-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-ps-ph{color:var(--p-text-muted-color)}.kx-ps-option{gap:var(--kx-picker-option-icon-gap)}.kx-ps-opt-ico{width:var(--kx-picker-option-icon-size);height:var(--kx-picker-option-icon-size);flex:none}.kx-ps-opt-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--kx-picker-option-stack-gap)}.kx-ps-opt-title{font-size:var(--kx-picker-option-title-size);font-weight:var(--kx-picker-option-title-weight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.kx-ps-opt-sub{font-size:var(--kx-picker-option-subtitle-size);line-height:var(--kx-picker-option-subtitle-line-height);color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-head{display:flex;align-items:center;gap:12px;padding:20px 24px 14px;flex-wrap:wrap}.kx-head-icon{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-head-icon svg{width:22px;height:22px}.kx-head-text{min-width:0}.kx-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-head-sub{font-size:13px;color:var(--p-text-muted-color);margin:2px 0 0}.kx-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}.kx-modal-head-icon{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-modal-head-icon svg{width:20px;height:20px}.kx-modal-head-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-modal-head-title{font-size:15.5px;font-weight:700;color:var(--p-text-color);line-height:1.2}.kx-modal-head-sub{font-size:12.5px;font-weight:400;color:var(--p-text-muted-color);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-empty{text-align:center;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px}.kx-empty-ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color);margin-bottom:4px}.kx-empty-ico svg{width:28px;height:28px}.kx-empty-title{font-size:15px;font-weight:700;color:var(--p-text-color);margin:0}.kx-empty-sub{font-size:13px;color:var(--p-text-muted-color);max-width:380px;margin:0}.kx-empty>.p-button{margin-top:6px}.kx-empty-actions{display:flex;gap:8px;margin-top:6px}.kx-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.kx-err{margin:0 20px 8px;padding:9px 12px;border-radius:10px;font-size:13px;background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.kx-err.inline{margin:12px 0 0}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{--kx-modal-shadow: var(--kx-shadow-lg);display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.kx{font-family:inherit;color:var(--p-text-color);background:var(--p-content-background);height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}.kx-head-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-count{font-size:12.5px;color:var(--p-text-muted-color);display:inline-flex;align-items:center;gap:5px}.kx-search{position:relative;display:flex;align-items:center}.kx-search-ico{position:absolute;left:10px;width:15px;height:15px;color:var(--p-text-muted-color);pointer-events:none}.kx-search-input{height:34px;width:220px;max-width:40vw;padding:0 10px 0 30px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s}.kx-body{flex:1 0 auto;padding:6px 20px 20px;display:flex;flex-direction:column;gap:14px}.kx-list{display:flex;flex-direction:column;border:1px solid var(--p-content-border-color);border-radius:14px;overflow:hidden;background:var(--p-content-background);max-width:1100px}.kx-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"main status actions" "foot foot   foot";align-items:center;column-gap:14px;row-gap:6px;padding:10px 14px;border-bottom:1px solid var(--p-content-border-color)}.kx-row:last-child{border-bottom:none}.kx-row.is-open{background:var(--kx-wash-primary)}.kx-row:hover{background:var(--kx-overlay-subtle)}.kx-row.is-open:hover{background:var(--kx-wash-primary)}.kx-open{grid-area:main;display:flex;align-items:center;gap:12px;min-width:0;padding:0;margin:0;border:none;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}.kx-ficon{width:38px;height:38px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kx-wash-primary);color:var(--p-primary-color)}.kx-ficon svg{width:20px;height:20px}.kx-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-name{display:block;font-size:14px;font-weight:600;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-sub{display:block;font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-open:focus-visible{outline:none}.kx-open:focus-visible .kx-name{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--p-primary-color)}.kx-rowfoot{grid-area:foot;padding-left:50px;display:flex;flex-direction:column;gap:4px;min-width:0}.kx-rowfoot:empty{display:none}.kx-rowmsg{font-size:11.5px;display:flex;align-items:center;gap:5px;min-width:0}.kx-rowmsg-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-rowmsg svg{width:13px;height:13px;flex:none}.kx-rowmsg-error{color:var(--p-danger-600, var(--p-danger-500))}.kx-rowmsg-success{color:var(--p-success-600, var(--p-success-500))}.kx-recover{flex:none;margin-left:2px}.kx-badge{grid-area:status;border:1px solid color-mix(in srgb,currentColor 28%,transparent)}.kx-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.kx-badge:has(svg):before{display:none}.kx-actions{grid-area:actions;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;min-width:0}.kx-actions .is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:color-mix(in srgb,var(--p-primary-color) 10%,transparent)}.kx-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.kx-admin-item{min-width:0;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:10px;background:var(--p-content-background)}.kx-admin-item>span{display:block;margin-bottom:4px;color:var(--p-text-muted-color);font-size:10.5px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}.kx-admin-item strong{display:block;overflow:hidden;color:var(--p-text-color);font-size:12.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item strong em{color:var(--p-text-muted-color);font-size:11px;font-style:normal;font-weight:600}.kx-admin-item code{display:block;margin-top:4px;overflow:hidden;color:var(--p-text-muted-color);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item a{display:inline-block;margin-top:4px;color:var(--p-primary-color);font-size:11px;font-weight:650;text-decoration:none}.kx-admin-item a:hover{text-decoration:underline}@media(max-width:560px){.kx-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main   actions" "status status" "foot   foot";align-items:center;row-gap:8px}.kx-badge{justify-self:start}.kx-rowfoot{padding-left:0}}@media(max-width:640px){.kx-admin-grid{grid-template-columns:1fr}}.kx-modal{--p-dialog-content-padding: 0;max-width:calc(100vw - 32px);max-height:90vh}.kx-modal>.kx-dialog-header{padding:16px 18px;border-bottom:1px solid var(--p-content-border-color);gap:10px}.kx-modal>.kx-dialog-content{padding:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}.kx-modal>.kx-dialog-footer{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--p-content-border-color)}.kx-2p-r-body>*{animation:kx-pane-fade .28s ease both}@keyframes kx-pane-fade{0%{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){.kx-2p-r-body>*{animation:none}}.kx-modal-body{padding:18px;font-size:13.5px;line-height:1.5;color:var(--p-text-color);overflow-y:auto}.kx-modal-body p{margin:0 0 10px}.kx-modal-body p:last-child{margin-bottom:0}.kx-form{display:flex;flex-direction:column;gap:14px}.kx-field{display:flex;flex-direction:column;gap:5px}.kx-field-lbl{font-size:12.5px;font-weight:600;color:var(--p-text-color)}.kx-req{color:var(--p-danger-500)}.kx-input{height:36px;padding:0 10px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s;width:100%}.kx-select{width:100%;min-width:0}.kx-check,.kx-delopt input{appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;flex:none;display:grid;place-content:center;border:1px solid var(--p-content-border-color);border-radius:8px;background:var(--p-content-background);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,opacity .15s}.kx-check:before,.kx-delopt input:before{content:"";width:5px;height:9px;border:solid var(--p-button-primary-color);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .12s ease-out}.kx-check:checked,.kx-delopt input:checked{border-color:var(--p-primary-color);background:var(--p-primary-color)}.kx-check:focus-visible{outline:var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);outline-offset:var(--p-focus-ring-offset)}.kx-check:checked:before,.kx-delopt input:checked:before{transform:rotate(45deg) scale(1)}.kx-check:disabled,.kx-delopt input:disabled{opacity:.55;cursor:not-allowed}.kx-field-hint{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-custom-host{min-height:180px;width:100%}.kx-custom-host>*{display:block;width:100%}.kx-delopts{display:flex;flex-direction:column;gap:10px;margin-top:14px}.kx-delopt{display:flex;align-items:flex-start;gap:10px;cursor:pointer}.kx-delopt input{margin-top:2px}.kx-delopt-copy{min-width:0;display:flex;flex-direction:column;gap:2px}.kx-delopt-t{display:block;font-size:13px;font-weight:600;color:var(--p-text-color)}.kx-delopt-d{display:block;font-size:11.5px;line-height:1.35;color:var(--p-text-muted-color)}.kx-modal-2p{width:min(880px,calc(100vw - 40px));max-width:100%}.kx-modal-solo{width:min(620px,calc(100vw - 40px));max-width:100%}.kx-modal-manage{width:min(760px,calc(100vw - 40px));max-width:100%}.kx-manage-host{display:block;min-height:180px}.kx-2p{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);min-height:0;flex:1;overflow:hidden}.kx-2p-solo{grid-template-columns:minmax(0,1fr)}.kx-2p-solo .kx-2p-r-body{padding-top:16px}.kx-2p-l{padding:16px;overflow-y:auto;border-right:1px solid var(--p-content-border-color);display:flex;flex-direction:column;gap:10px}.kx-2p-r{display:flex;flex-direction:column;min-width:0;min-height:0;background:color-mix(in srgb,var(--p-text-color) 2.5%,var(--p-content-background))}.kx-2p-r-head{padding:14px 18px 10px;font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-2p-r-body{padding:0 18px 18px;overflow-y:auto;flex:1;min-height:0}.kx-2p-r-note{margin:0;font-size:12.5px;color:var(--p-text-muted-color)}.kx-foot-err{order:-1;flex:1 0 100%;margin:0;max-width:none}.kx-foot-err+.p-button{margin-left:auto}.kx-foot-delete{margin-right:auto}.kx-cat-search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;flex:none;border:1px solid var(--p-content-border-color);border-radius:8px;color:var(--p-text-muted-color)}.kx-cat-search svg{width:15px;height:15px;flex:none}.kx-cat-search input{flex:1;border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--p-text-color)}.kx-cat{display:flex;flex-direction:column;gap:6px}.kx-cat-card{display:flex;align-items:center;gap:11px;text-align:left;width:100%;padding:10px 12px;border:1px solid var(--p-content-border-color);border-radius:14px;background:transparent;color:var(--p-text-color);cursor:pointer;transition:border-color .14s,background .14s}.kx-cat-card:hover{background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.kx-cat-card.sel{border-color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 9%,transparent)}.kx-cat-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:11px;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color)}.kx-cat-ico svg{width:18px;height:18px}.kx-cat-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-cat-name{font-size:13px;font-weight:600}.kx-cat-desc{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-cat-check{width:17px;height:17px;flex:none;color:var(--p-primary-color);visibility:hidden}.kx-cat-card.sel .kx-cat-check{visibility:visible}.kx-cat-empty{font-size:12.5px;color:var(--p-text-muted-color);padding:4px 2px}@media(max-width:760px){.kx-modal-2p{width:560px}.kx-2p{grid-template-columns:1fr}.kx-2p-l{border-right:none;border-bottom:1px solid var(--p-content-border-color)}}.kx-flow{display:flex;flex-direction:column;gap:14px;padding:6px 0 0}.kx-pipe,.kx-stage{display:flex;flex-direction:column;gap:8px}.kx-stage-mid{background:transparent}.kx-stage-head{display:flex;align-items:center;gap:8px}.kx-stage-ico{width:26px;height:26px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-stage-ico svg{width:15px;height:15px}.kx-stage-lbl{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-stage-cfg{margin-top:2px}.kx-stage-badges{display:flex;flex-wrap:wrap;gap:6px}.kx-stage-desc{margin:0;font-size:12px;line-height:1.4;color:var(--p-text-muted-color)}.kx-stage-opts{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--p-content-border-color)}.kx-opts-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-pipe-conn{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 0;color:var(--p-text-muted-color);font-size:11px}.kx-pipe-conn svg{width:16px;height:16px}.kx-runopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.kx-detect{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.35;padding:7px 9px;border-radius:8px;color:var(--p-success-600, var(--p-success-500));background:color-mix(in srgb,var(--p-success-500) 10%,transparent)}.kx-detect svg{width:14px;height:14px;flex:none}.kx-detect-warn{color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 12%,transparent)}.kx-flow-enable{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--p-text-muted-color);cursor:pointer}.kx-flow-enable input{width:16px;height:16px;accent-color:var(--p-primary-color)}.kx-textarea{height:auto;min-height:72px;padding:8px 10px;line-height:1.4;resize:vertical}.kx-wcmount{width:100%}.kx-wcmount>div{display:block;width:100%}.kx-metrics{display:flex;flex-wrap:wrap;gap:5px 6px;margin-top:5px;min-width:0}.kx-metric{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11.5px;line-height:1.6;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--p-text-color) 6%,transparent);color:var(--p-text-color)}.kx-metric-i{width:13px;height:13px;color:var(--p-text-muted-color);flex:none}.kx-metric-k{color:var(--p-text-muted-color);font-weight:600;flex:none}.kx-metric-v{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-metric-details{margin-top:5px}.kx-metric-more{display:inline-flex;align-items:center;gap:4px;cursor:pointer;list-style:none;font-size:11.5px;font-weight:600;color:var(--p-text-muted-color);user-select:none}.kx-metric-more::-webkit-details-marker{display:none}.kx-metric-more:before{content:"";width:0;height:0;border-left:4px solid currentColor;border-top:3px solid transparent;border-bottom:3px solid transparent;transition:transform .15s;flex:none}.kx-metric-details[open] .kx-metric-more:before{transform:rotate(90deg)}.kx-metric-more:hover{color:var(--p-text-color)}.kx-metrics-detail{margin-top:4px}@media(prefers-reduced-motion:reduce){.kx-modal{transition:none}}.kx-cat-search:focus-within{border-color:var(--p-focus-ring-color);box-shadow:var(--p-focus-ring-shadow)}.kx-cat-search input:focus{box-shadow:none}.kx-cat-card:focus-visible{border-color:var(--p-focus-ring-color);outline:none;box-shadow:var(--p-focus-ring-shadow)}.kx-menu{position:relative;display:inline-flex}.kx-menu-trigger.is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:var(--kx-wash-primary)}.kx-menu-panel{display:flex;flex-direction:column;gap:1px;padding:6px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-14);background:var(--p-content-background);box-shadow:var(--kx-shadow-lg);max-height:min(70vh,460px);overflow-y:auto}.kx-menu-group{padding:8px 10px 4px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-menu-group.is-first{padding-top:4px}.kx-menu-sep{height:1px;margin:5px 6px;background:var(--p-content-border-color)}.kx-menu-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;text-align:left;border:none;border-radius:var(--kx-radius-10);background:transparent;color:var(--p-text-color);cursor:pointer;transition:background .12s}.kx-menu-item:hover,.kx-menu-item:focus-visible{background:var(--kx-overlay-hover);outline:none}.kx-menu-item:disabled{opacity:.5;cursor:not-allowed}.kx-menu-item-ico{width:17px;height:17px;flex:none;margin-top:1px;color:var(--p-text-muted-color)}.kx-menu-item-body{display:flex;flex-direction:column;gap:1px;min-width:0}.kx-menu-item-label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600}.kx-menu-item-desc{font-size:11px;line-height:1.35;color:var(--p-text-muted-color)}.kx-menu-item-warn{width:12px;height:12px;color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-warn .kx-menu-item-ico{color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-danger .kx-menu-item-ico{color:var(--p-danger-600, var(--p-danger-500))}.kx-menu-item.is-danger:hover,.kx-menu-item.is-danger:focus-visible{background:var(--kx-wash-danger)}.kx-menu-item.is-danger .kx-menu-item-label{color:var(--p-danger-600, var(--p-danger-500))}.kx-drawer-scrim{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--p-text-color) 40%,transparent);animation:kx-fade .18s ease both}.kx-drawer{position:fixed;top:0;right:0;height:100%;width:min(468px,100vw);z-index:61;display:flex;flex-direction:column;min-height:0;background:var(--p-content-background);border-left:1px solid var(--p-content-border-color);box-shadow:var(--kx-shadow-lg);animation:kx-slide-in .22s cubic-bezier(.22,.61,.36,1) both}@keyframes kx-fade{0%{opacity:0}to{opacity:1}}@keyframes kx-slide-in{0%{transform:translate(24px);opacity:0}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.kx-drawer,.kx-drawer-scrim{animation:none}}.kx-drawer-head{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-drawer-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-drawer-name{font-size:15px;font-weight:700;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-sub{font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-controls{display:flex;align-items:center;gap:6px;flex:none}.kx-drawer .kx-badge{flex:none}.kx-tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 12px 10px;margin-bottom:-1px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;color:var(--p-text-muted-color);transition:color .12s}.kx-tab svg{width:15px;height:15px}.kx-tab:hover{color:var(--p-text-color)}.kx-tab.is-active{color:var(--p-primary-color);border-bottom-color:var(--p-primary-color)}.kx-tab:focus-visible{outline:none;color:var(--p-primary-color)}.kx-drawer-body{flex:1;min-height:0;overflow-y:auto;padding:16px}.kx-dsec{display:flex;flex-direction:column;gap:16px}.kx-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.kx-dfact{padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-dfact-k{display:block;margin-bottom:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dfact-v{display:block;font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-dsub{display:flex;flex-direction:column;gap:8px}.kx-dsub-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dnote{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--p-text-muted-color);padding:4px 0}.kx-dnote-err{color:var(--p-danger-600, var(--p-danger-500))}.kx-dsec-foot{padding-top:4px}.kx-dmsg{margin:0;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-surface-1);color:var(--p-text-color);word-break:break-word}.kx-dmsg.is-err{background:var(--kx-wash-danger);color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-dmsg.is-ok{background:var(--kx-wash-success);color:var(--p-success-700, var(--p-success-600, var(--p-success-500)))}.kx-errcard{display:flex;flex-direction:column;gap:9px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--p-danger-500) 40%,var(--p-content-border-color));border-radius:var(--kx-radius-14);background:var(--kx-wash-danger)}.kx-errcard-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-errcard-head svg{width:17px;height:17px;flex:none}.kx-errcard-cause{margin:0;font-size:12.5px;line-height:1.5;color:var(--p-text-color);word-break:break-word}.kx-errcard .p-button{align-self:flex-start}.kx-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-wash-info);font-size:12px;line-height:1.45;color:var(--p-text-color)}.kx-hint svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--p-info-600, var(--p-info-500))}', ys = { props: { type: "object", properties: { mode: { type: "string", default: "", description: '"create" when mounted as the workspace "+" -> Automation create view: opens straight into the install popup and emits created/close. Unset renders the full Automations page.' }, "parent-id": { type: "string", default: "", description: "Workspace folder to place the new automation under (create mode; empty = root)." }, "component-id": { type: "string", default: "", description: "Optional owning component; scopes rows and places newly created Automations under that component." }, input: { type: "string", default: "", description: "Initial declared install inputs as a JSON object, supplied by the owning component." }, "type-id": { type: "string", default: "", description: "Optional registry automation type id to preselect in create or component mode. The manager treats the id opaquely and mounts that type's declared create view." } } } }, ks = {
+  wippy: ys
 };
-class ks extends Co {
+class ws extends So {
   static get wippyConfig() {
     return {
-      propsSchema: ys.wippy.props,
+      propsSchema: ks.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: hs
+      inlineCss: xs
     };
   }
   static get vueConfig() {
-    return { rootComponent: vs, plugins: [Oo] };
+    return { rootComponent: hs, plugins: [jo] };
   }
 }
-Yo(import.meta.url, ks);
+Zo(import.meta.url, ws);
 //# sourceMappingURL=index.js.map
