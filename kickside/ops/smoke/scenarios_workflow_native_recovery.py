@@ -61,7 +61,7 @@ def workflow_native_recovery(ctx):
 
 
 def automation_prepared_output_settlement(ctx):
-    for entry in ('ledger_orphan_retention_test', 'recovery_dispatch_test'):
+    for entry in ('ledger_orphan_retention_test', 'recovery_dispatch_test', 'prepared_proof_upgrade_test'):
         run_focused_module_test(ctx, 'kickside/automation', entry)
 
 
