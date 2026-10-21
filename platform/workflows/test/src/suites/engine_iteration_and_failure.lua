@@ -86,6 +86,88 @@ local function define_tests()
             test.eq(#(iteration_rows :: { any }), 3)
         end)
 
+        test.it("joins each loop item directly with its derived output", function()
+            local id = wid()
+            apply_and_publish(id, {
+                n("p", "for_each", { config = { source_array_key = "items", batch_size = 2 } }),
+                fn("item", { ref = "app:engine_item" }),
+                n("join", "combine", { config = { mode = "wait_all" } }),
+            }, {
+                e("body-item", "p", "item", { source_port = "body" }),
+                e("body-join", "p", "join", { source_port = "body",
+                    transform = { v = 1, mode = "expr", expr = "{ item: output }" } }),
+                e("item-join", "item", "join", {
+                    transform = { v = 1, mode = "expr", expr = "{ derived: output }" } }),
+            })
+
+            local launched, c = launch(id, { items = {
+                { name = "one", value = 1 },
+                { name = "two", value = 2 },
+            } })
+            local dataflow_id = tostring((launched :: Map).dataflow_id)
+            test.eq(wait_terminal(c, dataflow_id), consts.STATUS.COMPLETED_SUCCESS)
+            local result = output_for(c, dataflow_id).result :: { Map }
+            test.eq(#result, 2)
+            for i, name in ipairs({ "one", "two" }) do
+                local joined = result[i]
+                test.is_table(joined.in1)
+                test.eq(((joined.in1 :: Map).derived :: Map).doubled, i * 2)
+                test.eq(((joined.in2 :: Map).item :: Map).name, name)
+            end
+        end)
+
+        test.it("preserves scalar loop items through transformed direct joins", function()
+            local id = wid()
+            apply_and_publish(id, {
+                n("p", "for_each", { config = { source_array_key = "items", batch_size = 2 } }),
+                fn("item", { ref = "app:engine_item" }),
+                n("join", "combine", { config = { mode = "wait_all" } }),
+            }, {
+                e("body-item", "p", "item", { source_port = "body" }),
+                e("body-join", "p", "join", { source_port = "body",
+                    transform = { v = 1, mode = "expr", expr = "{ item: output * 3 }" } }),
+                e("item-join", "item", "join", {
+                    transform = { v = 1, mode = "expr", expr = "{ derived: output.doubled }" } }),
+            })
+
+            local launched, c = launch(id, { items = { 1, 2 } })
+            local dataflow_id = tostring((launched :: Map).dataflow_id)
+            test.eq(wait_terminal(c, dataflow_id), consts.STATUS.COMPLETED_SUCCESS)
+            local result = output_for(c, dataflow_id).result :: { Map }
+            test.eq(#result, 2)
+            for index, item in ipairs(result) do
+                test.eq(tonumber(((item.in1 :: Map).derived)), index * 2)
+                test.eq(tonumber(((item.in2 :: Map).item)), index * 3)
+            end
+        end)
+
+        test.it("joins cycle context directly with its body result", function()
+            local id = wid()
+            apply_and_publish(id, {
+                n("c", "cycle", { config = {
+                    continue_condition = "false",
+                    max_iterations = 2,
+                    initial_state = { seed = 5 },
+                } }),
+                fn("step", { ref = "app:coverage_cycle_step" }),
+                n("join", "combine", { config = { mode = "wait_all" } }),
+            }, {
+                e("body-step", "c", "step", { source_port = "body" }),
+                e("body-join", "c", "join", { source_port = "body",
+                    transform = { v = 1, mode = "expr", expr = "{ context_iteration: output.iteration, context_seed: output.state.seed }" } }),
+                e("step-join", "step", "join", {
+                    transform = { v = 1, mode = "expr", expr = "{ derived_iteration: output.result.iteration }" } }),
+            })
+
+            local launched, c = launch(id, { input = { name = "one" } })
+            local dataflow_id = tostring((launched :: Map).dataflow_id)
+            test.eq(wait_terminal(c, dataflow_id), consts.STATUS.COMPLETED_SUCCESS)
+            local result = output_for(c, dataflow_id).result :: Map
+            test.eq(tonumber(((result.in1 :: Map).derived_iteration)), 1)
+            test.eq(tonumber(((result.in2 :: Map).context_iteration)), 1)
+            test.eq(tonumber(((result.in2 :: Map).context_seed)), 5)
+        end)
+
         test.it("surfaces an item failure reason in continue_on_error output", function()
             local id = wid()
             apply_and_publish(id, {
@@ -112,6 +194,32 @@ local function define_tests()
             test.is_table(failed.error)
             test.eq(tostring((failed.error :: Map).code), "FUNCTION_EXECUTION_FAILED")
             test.contains(tostring((failed.error :: Map).message), "intentional item failure: bluebird")
+        end)
+
+        test.it("completes with every item error when continue_on_error is explicit", function()
+            local id = wid()
+            apply_and_publish(id, {
+                n("p", "for_each", { config = { continue_on_error = true } }),
+                fn("item", { ref = "app:engine_item_or_fail" }),
+            }, {
+                e("body", "p", "item", { source_port = "body" }),
+            })
+            local launched, c = launch(id, { items = {
+                { name = "one", fail = true },
+                { name = "two", fail = true },
+            } })
+            local dataflow_id = tostring((launched :: Map).dataflow_id)
+            test.eq(wait_terminal(c, dataflow_id), consts.STATUS.COMPLETED_SUCCESS)
+            local run = sc.wait_run_terminal(id, tostring((launched :: Map).run_id))
+            test.eq(run.status, types.RUN_STATUS.COMPLETED)
+            local result = output_for(c, dataflow_id).result :: { Map }
+            test.eq(#result, 2)
+            for i, name in ipairs({ "one", "two" }) do
+                test.is_nil(result[i].result)
+                test.is_table(result[i].error)
+                test.eq((result[i].error :: Map).code, "FUNCTION_EXECUTION_FAILED")
+                test.contains(tostring((result[i].error :: Map).message), "intentional item failure: " .. name)
+            end
         end)
 
         test.it("fails fast by default with the structured item failure reason", function()

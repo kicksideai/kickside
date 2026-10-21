@@ -3,7 +3,7 @@ local M = {}
 type Map = { [string]: any }
 type Err = { code: string, message: string, node_id: string?, edge_id: string? }
 type Edge = { id: string, source: string, target: string, source_port: string, transform: any, is_failure: boolean, discriminator: string?, condition: string?, via_branch: string?, via_branch_arm: string? }
-function M.templates(nodes: { [string]: Map }, original_edges: { Edge }, errors: { Err }, I: any): ({ Edge }, { [string]: string }, { [string]: { string } })
+function M.templates(nodes: { [string]: Map }, original_edges: { Edge }, errors: { Err }, I: any): ({ Edge }, { [string]: string }, { [string]: { string } }, { [string]: { Edge } })
 local edges = original_edges
 local str, err = I.str, I.err
     -- ── explicit for-each bodies: child template nodes ────────────────────
@@ -51,13 +51,17 @@ local str, err = I.str, I.err
         end
 
         local runtime_edges: { Edge } = {}
+        local iteration_input_routes: { [string]: { Edge } } = {}
         for _, e in ipairs(original_edges) do
-            if not is_body_edge(e) then
+            if is_body_edge(e) then
+                iteration_input_routes[e.source] = iteration_input_routes[e.source] or {}
+                iteration_input_routes[e.source][#iteration_input_routes[e.source] + 1] = e
+            else
                 runtime_edges[#runtime_edges + 1] = e
             end
         end
         edges = runtime_edges
+        return edges, template_parent, template_roots_by_parent, iteration_input_routes
     end
-return edges, template_parent, template_roots_by_parent
 end
 return M
