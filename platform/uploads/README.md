@@ -156,6 +156,11 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | [`kickside.uploads:api_router`](src/_index.yaml) | Host supplies the value |
 | [`kickside.uploads.security:user_security_scope`](src/security/_index.yaml) | `kickside.security.groups:members` |
 
+The Settings dependency also needs its host bindings: `kickside.settings:target_db`,
+`kickside.settings:api_router`, and `kickside.settings:ui_server`. Hosts that already
+install Settings keep their existing explicit bindings. A standalone host or
+harness must supply these when installing Uploads.
+
 ## Links
 
 - [KickSide](https://kickside.ai)

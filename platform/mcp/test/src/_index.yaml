@@ -208,6 +208,18 @@ entries:
     version: '*'
     component: kickside/uploads
     parameters:
+      - name: kickside.uploads:database_resource
+        value: app:db
+      - name: kickside.uploads:storage_id
+        value: app:uploads
+      - name: kickside.uploads:env_storage
+        value: app:env_storage
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
       - name: kickside.uploads:api_router
         value: app:api
       - name: kickside.uploads:ui_server
