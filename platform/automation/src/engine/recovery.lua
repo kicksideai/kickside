@@ -241,7 +241,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 UNION ALL SELECT MIN(COALESCE(repair_next_at,$2)), 0 FROM kickside_automation_drive
                 WHERE (job_id IS NOT NULL AND wake_generation > wake_applied_generation)
                    OR (job_id IS NULL AND pending_command_id IS NULL AND source_kind <> 'none')
-                UNION ALL SELECT MIN(expires_at), 0 FROM kickside_trigger_item_ledger WHERE state IN ('resolved','dead')
+                UNION ALL SELECT MIN(expires_at), 0 FROM kickside_trigger_item_ledger WHERE state='resolved'
                 UNION ALL SELECT MIN(expires_at), 0 FROM kickside_automation_delivery_history
                 UNION ALL SELECT MIN(updated_at), CAST($3 AS BIGINT) FROM kickside_trigger_item_ledger l WHERE state IN ('resolved','dead')
                   AND NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=l.owner_id)
