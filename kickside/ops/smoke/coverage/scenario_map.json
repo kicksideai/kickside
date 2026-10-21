@@ -5221,6 +5221,13 @@
       ],
       "tier": "regression"
     },
+    "automation_source_pull_fence": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SOURCE-PULL-FENCE"
+      ],
+      "tier": "regression"
+    },
     "automation_source_schema_mapping": {
       "features": [
         "kickside/automation|http|POST /api/v1/automations",
