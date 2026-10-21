@@ -4930,6 +4930,14 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_execution_error_boundaries": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-ERROR-PRECEDENCE",
+        "AUTOMATION-INFRASTRUCTURE-RETRY"
+      ],
+      "tier": "regression"
+    },
     "automation_group_principal": {
       "features": [],
       "issues": [
@@ -5183,6 +5191,13 @@
         "AUTOMATION-RECURRING-PARTIAL-INPUT-PRESERVATION",
         "SMOKE-RECURRING-VALIDATION-BOUNDARY",
         "AUTOMATION-ACTION-REQUESTED-FIELDS"
+      ],
+      "tier": "regression"
+    },
+    "automation_restored_identity_resume": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-RESTORED-IDENTITY-RESUME"
       ],
       "tier": "regression"
     },
@@ -6508,6 +6523,14 @@
       ],
       "tier": "regression"
     },
+    "channel_execution_lookup_error": {
+      "features": [],
+      "issues": [
+        "CHANNEL-EXECUTION-LOOKUP-ERROR",
+        "CHANNEL-CONCURRENT-ACTIVITY-FENCE"
+      ],
+      "tier": "regression"
+    },
     "chat_agents_redirect_admin": {
       "features": [],
       "issues": [
@@ -7754,6 +7777,13 @@
       ],
       "tier": "full"
     },
+    "execution_authorizer_constructor_grant": {
+      "features": [],
+      "issues": [
+        "EXECUTION-AUTHORIZER-CONSTRUCTOR-GRANT"
+      ],
+      "tier": "regression"
+    },
     "execution_baseline_identity_resolution": {
       "features": [],
       "issues": [
@@ -7765,6 +7795,13 @@
       "features": [],
       "issues": [
         "EXECUTION-BASELINE-IDENTITY-RESOLUTION"
+      ],
+      "tier": "regression"
+    },
+    "execution_root_admin_classification": {
+      "features": [],
+      "issues": [
+        "EXECUTION-ROOT-ADMIN-CLASSIFICATION"
       ],
       "tier": "regression"
     },
@@ -9193,7 +9230,8 @@
     "native_errors_component_identity_replay": {
       "features": [],
       "issues": [
-        "NE-217"
+        "NE-217",
+        "COMPONENT-IDENTITY-REPLAY-GENERATION"
       ],
       "tier": "regression"
     },
@@ -15485,6 +15523,13 @@
         "USERS-SECURITY-TRANSITIVE-DB"
       ],
       "tier": "full"
+    },
+    "users_subject_builder_result": {
+      "features": [],
+      "issues": [
+        "USERS-SUBJECT-BUILDER-RESULT"
+      ],
+      "tier": "regression"
     },
     "users_whole_membership": {
       "features": [
