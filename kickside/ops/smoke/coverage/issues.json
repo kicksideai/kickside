@@ -9707,6 +9707,40 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "models/discovery-capabilities": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/models/test/openai_capabilities_test.lua"
+    },
+    "models/discovery-metadata-upgrade": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/models/test/discovery_metadata_migration_test.lua"
+    },
+    "widgets/model-picker-capabilities": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/widgets/ui/src/model-picker/app/model-picker-capabilities.spec.ts"
     }
   },
   "issues": [
@@ -10880,7 +10914,10 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "MODELS-REASONING-GENERATIONS",
+    "MODELS-GENERATION-CAPABILITIES",
+    "WIDGETS-CLASS-CAPABILITY"
   ],
   "schema_version": 1
 }
