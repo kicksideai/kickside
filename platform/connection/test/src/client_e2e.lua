@@ -13,7 +13,9 @@ function M.receive()
     local raw, err = req:body()
     if err then return nil, err end
     local body = json.decode(raw)
-    return res:write_json({id = "native-receipt", title = body.title})
+    local envelope = req:header("X-Request-Format") == "provider-owned"
+    return res:write_json({id = "native-receipt", title = envelope and body.envelope.title or body.title,
+        format = envelope and "envelope" or "json"})
 end
 function M.probe(args)
     local registry = require("registry")
@@ -25,6 +27,17 @@ function M.probe(args)
             body = {"title"}, schema = {type = "object", properties = {title = {type = "string"}},
                 required = {"title"}, additionalProperties = false}}
     end
-    return driver.new(config).run(args.write and "write" or "read", {title = args.title}, args.component_id, args.write == true)
+    local prepare
+    if args.custom then
+        prepare = function(definition, operation, params)
+            local request, err = driver.prepare(definition, operation, params)
+            if request then
+                request.headers["X-Request-Format"] = "provider-owned"
+                request.body = require("json").encode({envelope = {title = params.title}})
+            end
+            return request, err
+        end
+    end
+    return driver.new(config, nil, prepare).run(args.write and "write" or "read", {title = args.title}, args.component_id, args.write == true)
 end
 return M

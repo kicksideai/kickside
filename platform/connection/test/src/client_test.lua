@@ -99,16 +99,55 @@ local function cases()
         end)
     end)
     test.describe("provider DTO boundaries", function()
-        test.it("encodes Unicode filenames as ASCII JSON in content API headers", function()
+        test.it("prepares bounded binary content without provider-specific headers", function()
             local operation = {method = "POST", path = "/files/upload", write = true, mode = "upload",
-                endpoint = "content", argument = {"path"}, schema = {type = "object", properties = {
+                endpoint = "content", schema = {type = "object", properties = {
                     path = {type = "string"}, content_base64 = {type = "string"}}, additionalProperties = false}}
-            local config = {provider = "dropbox", title = "Dropbox", endpoints = {content = "https://content.dropboxapi.com/2"},
+            local config = {provider = "example", title = "Example", endpoints = {content = "https://content.example.test/v1"},
                 health_action = "health", discovery_action = "list", operations = {}}
             local prepared, err = driver.prepare(config, operation, {path = "/报告🚀.txt", content_base64 = "aGk="})
             test.is_nil(err)
-            local header = prepared.headers["Dropbox-API-Arg"]
-            test.is_nil(header:find("[\128-\255]")); test.eq(json.decode(header).path, "/报告🚀.txt")
+            test.eq(prepared.body, "hi")
+            test.eq(prepared.headers["Content-Type"], "application/octet-stream")
+            local count = 0
+            for _ in pairs(prepared.headers) do count = count + 1 end
+            test.eq(count, 2)
+        end)
+        test.it("uses a provider-owned preparer without bypassing validation or credential admission", function()
+            local operation = {method = "POST", path = "/items", write = true, body = {"name"},
+                schema = {type = "object", required = {"name"}, properties = {name = {type = "string"}}, additionalProperties = false}}
+            local config = {provider = "example", title = "Example", endpoints = {api = "https://api.example.test/v1"},
+                health_action = "create", discovery_action = "create", operations = {create = operation}}
+            local admissions = 0
+            local client = {connect = function(provider, selected, write)
+                test.eq(provider, "example"); test.eq(selected, "selected"); test.is_true(write)
+                admissions = admissions + 1
+                return {component_id = "selected"}
+            end, request = function(connection, prepared)
+                test.eq(connection.component_id, "selected")
+                test.eq(prepared.headers["X-Provider-Format"], "custom")
+                test.eq(json.decode(prepared.body).name, "name")
+                return {success = true, data = {id = "created"}}
+            end}
+            local function prepare(definition, action, params)
+                local prepared, err = driver.prepare(definition, action, params)
+                if prepared then prepared.headers["X-Provider-Format"] = "custom" end
+                return prepared, err
+            end
+            local run = driver.new(config, {client = client}, prepare).run
+            local rejected, rejection = run("create", {unknown = true}, "selected", true)
+            test.is_nil(rejected); test.is_true(errors.is(rejection, errors.INVALID)); test.eq(admissions, 0)
+            local result, err = run("create", {name = "name"}, "selected", true)
+            test.is_nil(err); test.eq(result.data.id, "created"); test.eq(admissions, 1)
+        end)
+        test.it("rejects an unhandled custom wire mode before resolving credentials", function()
+            local operation = {method = "POST", path = "/items", write = true, mode = "provider_format",
+                schema = {type = "object", additionalProperties = false}}
+            local config = {provider = "example", title = "Example", endpoints = {api = "https://api.example.test/v1"},
+                health_action = "create", discovery_action = "create", operations = {create = operation}}
+            local run = driver.new(config, {client = {connect = function() error("must not resolve credentials") end}}).run
+            local result, err = run("create", {}, nil, true)
+            test.is_nil(result); test.is_true(errors.is(err, errors.INVALID))
         end)
         test.it("retains empty arrays and objects according to the operation schema", function()
             local definition = {type = "object", properties = {labels = {type = "array", items = {type = "string"}}, fields = {type = "object"}}}

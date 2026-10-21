@@ -57,7 +57,7 @@ entries:
       driver: kickside.connection.client:driver
     meta:
       endpoint: http://127.0.0.1:19185/provider
-    modules: [registry]
+    modules: [registry, json]
   - name: test
     kind: function.lua
     source: file://client_e2e_test.lua
