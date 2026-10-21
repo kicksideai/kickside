@@ -60,6 +60,11 @@ def workflow_native_recovery(ctx):
     inst.evidence.save('native-recovery', {'run_id': rid, 'decision_id': item['id'], 'hard_restarts': 2})
 
 
+def crm_idempotency_conflict_code(ctx):
+    for entry in ('crm_sink_receipt_test', 'crm_sink_crm_sink_test', 'crm_sink_contract_test'):
+        run_focused_module_test(ctx, 'kickside/crm', entry)
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -76,7 +81,10 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
-REGISTRY = [Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
+REGISTRY = [Scenario('crm_idempotency_conflict_code', 'regression',
+                     crm_idempotency_conflict_code,
+                     issues=('CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE',)),
+            Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
                      issues=('WORKFLOW-UNADMITTED-RUN-READ-PROJECTION', 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE')),

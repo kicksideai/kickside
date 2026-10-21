@@ -7612,6 +7612,13 @@
       ],
       "tier": "regression"
     },
+    "crm_idempotency_conflict_code": {
+      "features": [],
+      "issues": [
+        "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE"
+      ],
+      "tier": "regression"
+    },
     "crm_record": {
       "features": [
         "kickside/crm|http|GET /api/v1/workspace/crm/{id}/schema",

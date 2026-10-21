@@ -9707,6 +9707,17 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "crm/idempotency-conflict-code": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_sink_receipt_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10891,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE"
   ],
   "schema_version": 1
 }
