@@ -303,6 +303,21 @@ function M.emit(ir: any, opts: any): ({ Map }?, string?)
             config.inputs = { required = node.required_inputs }
         end
 
+        local iteration_routes = type(node.iteration_input_routes) == "table"
+            and (node.iteration_input_routes :: { Map }) or {}
+        if #iteration_routes > 0 then
+            config.iteration_input_routes = {}
+            for _, route in ipairs(iteration_routes) do
+                local target: Map = {
+                    node_id = str(route.target),
+                    discriminator = str(route.discriminator) ~= "" and route.discriminator or "default",
+                }
+                local transform = edge_transform(route.transform, false)
+                if transform then target.transform = transform end
+                config.iteration_input_routes[#config.iteration_input_routes + 1] = target
+            end
+        end
+
         local payload: Map = {
             node_id = str(node.def_id),
             node_type = native_type or node_type_of(node :: Map),
