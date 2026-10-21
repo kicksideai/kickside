@@ -142,6 +142,17 @@ records the version. Launch remints native node and data ids for an independent
 Dataflow run. The UI is one consumer of the same Block catalog; it does not own
 Block execution.
 
+Workflows owns admission capacity through
+`kickside.workflows:policy.meta.limits.max_inflight_runs` (default `25`).
+Admission counts in-flight runs for the invoking trigger; Automation round
+policy does not supply this limit. A terminal run frees capacity independently
+of callback delivery.
+
+The run writable currently uses the delivery `idempotency_key` as its dedup key,
+with `automation_ref.id` as the trigger. Changing this to stable `identity_key`
+requires a decision on [changed input](11-design-gaps.md#workflow-identity-on-changed-input)
+and existing run collisions before stored keys can change.
+
 ## Ports
 
 Port is one word with two precise declaration locations:

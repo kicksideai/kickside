@@ -22,9 +22,12 @@ allow the authorizer to `security.actor.delegate` for `may_act_as` delegation.
 The persisted v2 object has `version`, `principal`, `authorized_by`, optional
 `component_id`, `credential_id`, `link_id`, and `captured_at`. `to_row` and
 `from_row` own the SQL representation (`actor_id`, `actor_context`). Do not
-construct those columns or actor keys by hand. Jobs, projection cursors,
-workflow runs, channel turns, and automation drives use the same model. A
-trusted deferred worker needs `kickside.execution.defer` on its owner entry;
+construct those columns or actor keys by hand. Projection cursors, workflow
+runs, channel turns, and automation drives use the same model. Jobs carries no
+execution identity: its worker resolves the identity in the owning record.
+Retained job actor columns confer no execution authority, and enqueue refuses
+caller-supplied `actor_id` and `actor_context`. A trusted deferred worker needs
+`kickside.execution.defer` on its owner entry;
 the Users scope resolver still checks the recorded principal and authorizer.
 
 `_execution_identity` is a reserved component private-context key. An owner
@@ -90,14 +93,42 @@ will be refused. `enqueue` rejects `worker_ref`, `payload`, `job_identity`, and
 existing job was reused. `wake_tx(tx, wake_key)` participates in a transaction;
 `wake_job(id, opts)` targets one job. `complete`, `complete_tx`, and `cancel`
 close the lease lifecycle. A parked slot wakes from a transaction signal;
-a sleeping slot wakes at its exact `scheduled_at`. No polling loop, periodic
-schema wait, or test boot waiter belongs in a module.
+a sleeping slot uses its exact `scheduled_at` as a dispatch deadline. Durable
+demand survives a producer crash, but commit-before-notify has an
+[idle-system liveness qualification](11-design-gaps.md#idle-system-liveness).
+No polling loop, periodic schema wait, or test boot waiter belongs in a module.
 
 A producer can include `thread_event` with `thread_id` on enqueue when job
 creation and its durable fact must commit together. Thread event declarations
 and output authorization still apply. Automations, projections, and workflows
 already own their job slots: application code calls their public contracts
 instead of creating a competing scheduler.
+
+Failure transitions `fail_tx` and `fail_job` accept an optional final
+`{ retry_after_ms = milliseconds }` argument. Slots use `slot_retry`; one-shot
+jobs use `retry`. Jitter retains the configured base as its lower bound, and a
+provider's retry floor can exceed the policy cap. Omission keeps the existing
+call shape without a provider floor. Completion options accept optional
+`park = true` independently of `record.status`: ordinary wake demand is
+suppressed while the requested history status remains intact. A pending
+control wake takes priority; omission keeps record-based parking behavior.
+
+## Claim and storage behavior
+
+Wake coalescing drains at most `worker.claim_batch` queued notices before a
+claim. A larger burst can cause more than two empty claim cycles; the bound is
+per drain, not per burst. Every successful claim, including an idle execution,
+records run history. Settlement uses `(job_id, execution_seq, lease_token)`
+history as proof. Keyless candidates are prelocked as a batch and leased with
+per-row guarded updates; a single set-based lease update is not required.
+
+The SQLite default is two general workers plus one reserved awaited slot;
+PostgreSQL defaults to four general workers plus one awaited slot. These are
+worker counts, distinct from SQLite's pooled SQL connection count.
+The schema retains job actor columns. PostgreSQL job storage does not require
+`fillfactor = 70`, and the Automation receipt schema has no dedicated
+identity-key lookup index. These accepted storage choices do not certify
+throughput or query plans for a particular workload.
 
 ## Awaited jobs and termination
 

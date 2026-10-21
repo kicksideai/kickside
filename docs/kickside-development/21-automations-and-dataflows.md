@@ -37,6 +37,14 @@ A recurring Data Sync schedule uses `trigger.schedule = { type = "interval" |
 "ticker" | "cron", expression = "..." }`. Other Automation kinds may use
 `once`; the Data Sync input schema deliberately requires a recurring cadence.
 
+An input schema can mark a value with optional `x-authority: subject` when
+changing it exercises the execution subject's authority. Adding, changing, or
+removing that value requires the operator to be the execution subject. The
+shared validator compares canonical values with protected stored input at
+admission and at the trusted write boundary; creation compares with empty
+input. Unmarked fields retain their existing access rules. Opaque transform
+configuration uses this annotation; expression text remains unmarked.
+
 An event source is a `registry.entry` with `meta.type:
 kickside.automation.port`, `binding` set to its component kind, `event` set to
 an exact declared event entry, and `config_schema` choosing its thread ID.
@@ -80,6 +88,10 @@ The remaining size limits are `max_row_bytes`, `prepared_bytes_per_item`, and
 the kind declares them. A disabled or unhealthy drive is visible through its
 owner; it is never repaired by an app-side polling loop.
 
+Resync requires WRITE on the Automation. This is the current operator-authority
+rule; resync does not require the declaration editor's reference-grant checks.
+Execution still uses the stored identity and live authority checks.
+
 ## Answer a round
 
 A `kickside.trigger:round_consumer` returns `delivered_items`, `skipped_items`,
@@ -117,13 +129,22 @@ one that differs from `automation_ref.id`. Round writes name the automation
 ID. Non-round producers pass a stable explicit origin such as
 `acme.meetings.link`; they never derive it from an individual source item. The
 stable key names the destination record; the idempotency key names one
-delivery. A sink that keeps receipts keys them by `(origin, sink_op,
+delivery. The shared request schema keeps `identity_key` optional for existing
+callers and rejects an explicitly empty value. New writable producers must
+supply both keys, and new sink implementations must require the stable key.
+A sink that keeps receipts keys them by `(origin, sink_op,
 idempotency_key)` and scopes any key listing to the asking origin. Store the stable key under a unique
 constraint and return `{ success = true, result = "created" | "updated",
 dest_ref = { id = ... } }`, or a classified `{ success = false, error = {
 code, message, retriable, scope } }`. `scope` is `item`, `flow`, `connection`,
 or `provider` as constrained by the writable contract. Do not silently
 acknowledge an uncommitted side effect.
+
+The canonical uncertain-write hash covers `config`, `input`, `dest_ref`, and
+`dest_version`. It omits `sink_op` because the ledger independently compares
+the reserved operation alongside the delivery key and hash. Operation and hash
+together bind the request; changing the hash formula would invalidate existing
+unversioned pending reservations.
 
 The Automation round
 commits a receipt in `kickside_automation_receipt` when a confirmed write maps
@@ -145,9 +166,12 @@ install Data Sync with that port as `trigger.source`. Select
 `{ flow_ref = { kind = "flow", id = "<workflow component ID>",
 version = <published version number> } }` as `sink_config`.
 The Run Workflow port maps to the `kickside.workflows:run` writable binding,
-whose `write` implement admission (`platform/workflows/src/runs/run_writable.lua`).
-The source item's stable identity becomes the run's deduplication identity;
-the current automation revision travels in `automation_ref`. Publish the Flow
-version first, use its exact reference, and inspect the run's admitted and
+whose `write` implements admission (`platform/workflows/src/runs/run_writable.lua`).
+The delivery `idempotency_key` becomes the run's deduplication key;
+the current automation revision travels in `automation_ref`. Workflows policy
+owns `max_inflight_runs`; Automation round policy does not override it. The
+[workflow identity decision](11-design-gaps.md#workflow-identity-on-changed-input)
+remains open for changed input under the same stable source identity. Publish
+the Flow version first, use its exact reference, and inspect the run's admitted and
 terminal states through the Workflows owner. A successful event append proves
 the trigger fact, not that a run finished.
