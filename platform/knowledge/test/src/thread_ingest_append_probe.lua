@@ -9,6 +9,7 @@ local function handle(args)
         metadata = {
             source = "thread_ingest_identity_test",
         },
+        source_ref = args.source_ref,
         external_id = args.external_id,
         external_version = args.external_version,
     })

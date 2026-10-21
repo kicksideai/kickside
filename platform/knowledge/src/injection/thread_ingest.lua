@@ -48,6 +48,8 @@ local projection_cursor = status.projection_cursor
 local status_result = status.status_result
 local load_status = status.load_status
 local emit_event = status.emit_event
+-- Leave room below Core's 4 MiB row bound for metadata and row identities.
+local INLINE_CONTENT_BUDGET = 3 * 1024 * 1024
 
 function M.request_digest(kb_id: string): (any?, any?)
     local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
@@ -335,18 +337,35 @@ function M.append_content(kb_id, params)
     if source_ref_err or not source_ref then return nil, source_ref_err end
     metadata.source_ref = source_ref
 
+    local body = {
+        kb_id = kb_id,
+        content = content,
+        content_type = content_type,
+        title = title ~= "" and title or nil,
+        metadata = metadata,
+        source_ref = source_ref,
+        actor_id = actor_id,
+    }
+    -- JSON can expand one input byte to six bytes. Small inputs need no
+    -- additional serialization or artifact checks to establish that they fit.
+    if #content * 6 + 2 > INLINE_CONTENT_BUDGET
+        and trim(source_ref.upload_id) ~= "" and trim(source_ref.artifact_id) ~= "" then
+        local omitted = #content > INLINE_CONTENT_BUDGET
+        if not omitted then
+            local encoded, encode_err = json.encode(content)
+            if encode_err then return nil, encode_err end
+            omitted = #encoded > INLINE_CONTENT_BUDGET
+        end
+        if omitted then
+            body.content = nil
+            body.content_omitted = true
+            body.content_bytes = #content
+        end
+    end
     local appended, append_err = emit_event(exec, kb_id, {
         type = M.EVENT_CONTENT_UPSERTED,
         role = "system",
-        body = {
-            kb_id = kb_id,
-            content = content,
-            content_type = content_type,
-            title = title ~= "" and title or nil,
-            metadata = metadata,
-            source_ref = source_ref,
-            actor_id = actor_id,
-        },
+        body = body,
         external = {
             external_source = EXTERNAL_SOURCE,
             external_id = external_id,
