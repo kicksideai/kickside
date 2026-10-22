@@ -24,7 +24,12 @@ class PublicHarnessTests(unittest.TestCase):
                 self.assertIn('trap cleanup_databases EXIT', job)
                 for command in job.splitlines():
                     if 'wippy lint' in command or 'wippy test' in command:
-                        self.assertIn('--set "vars.pg_database=${databases[0]}"', command)
+                        # A worker suite may need its own clean queue. Every
+                        # command must still use a tracked disposable database,
+                        # including those after the primary harness database.
+                        selected = re.search(r'--set "vars\.pg_database=\$\{databases\[(\d+)\]\}"', command)
+                        self.assertIsNotNone(selected, command)
+                        self.assertLess(int(selected[1]), job.count('databases+=("$database")'), command)
             checked.append(module)
         self.assertTrue(checked, 'CI must exercise stateful PostgreSQL harnesses')
 
