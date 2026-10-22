@@ -9890,7 +9890,8 @@
     "native_errors_core_pullable": {
       "features": [],
       "issues": [
-        "NE-117"
+        "NE-117",
+        "THREAD-EVENT-TYPE-REQUEST-FILTER"
       ],
       "tier": "regression"
     },
@@ -10527,7 +10528,8 @@
     "native_errors_projection_apply": {
       "features": [],
       "issues": [
-        "NE-130"
+        "NE-130",
+        "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER"
       ],
       "tier": "regression"
     },
@@ -10606,7 +10608,8 @@
     "native_errors_reclaim": {
       "features": [],
       "issues": [
-        "NE-166"
+        "NE-166",
+        "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
       ],
       "tier": "regression"
     },

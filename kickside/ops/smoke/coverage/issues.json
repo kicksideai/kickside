@@ -3637,6 +3637,17 @@
       "repository": "kickside/kickside",
       "test": "core/core/test/src/projection_register_enqueue_test.lua"
     },
+    "core/projection-failure-removal": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/projections/persist/failure_removal_test.lua"
+    },
     "core/projection-invoke-native": {
       "engines": [
         "sqlite",
@@ -3989,6 +4000,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/core/test/src/drop_notify_native_test.lua"
+    },
+    "core/thread-event-type-request-filter": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "THREAD-EVENT-TYPE-REQUEST-FILTER"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/threads/events_pullable_test.lua"
     },
     "core/thread-lifecycle-native": {
       "engines": [
@@ -5055,6 +5077,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/jobs/test/src/reclaim_native_test.lua"
+    },
+    "jobs/reclaim-process-lookup": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/jobs/test/src/suites/persist/claim_cases/termination_recovery_test.lua"
     },
     "jobs/registry-version-native": {
       "engines": [
@@ -11117,7 +11150,10 @@
     "APP-HOST-CHAT-INTENT-OWNERSHIP",
     "AUTOMATION-SLOT-RECORD-PURGE",
     "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
-    "AUTOMATION-SOURCE-SLOT-FINALIZATION"
+    "AUTOMATION-SOURCE-SLOT-FINALIZATION",
+    "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER",
+    "RECLAIM-PROCESS-LOOKUP-TRANSACTION",
+    "THREAD-EVENT-TYPE-REQUEST-FILTER"
   ],
   "schema_version": 1
 }
