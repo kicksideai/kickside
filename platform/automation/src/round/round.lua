@@ -218,7 +218,8 @@ local function run(deps: Map, input: any): (Map?, error?)
         end)
         if stamp_err then
             local failure = classify(stamp_err)
-            if failure.retriable ~= false then return nil, stamp_err end
+            local _, parks = outcome.failure_phase(failure)
+            if not parks then return nil, stamp_err end
             return complete(ctx, nil, true, tostring(failure.message))
         end
         s = stamped :: Map

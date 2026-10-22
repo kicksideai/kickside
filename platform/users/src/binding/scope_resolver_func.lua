@@ -305,7 +305,7 @@ local function resolve_deferred(principal: Principal, authorized_by: any, root: 
                 errors.UNAVAILABLE, "infrastructure", true)
         end
         if allowed ~= true then
-            return nil, failure("recorded authorizer no longer has root ADMIN", errors.PERMISSION_DENIED, "subject", false)
+            return nil, failure("recorded authorizer no longer has root ADMIN", errors.PERMISSION_DENIED, "access", false)
         end
     end
     if not execution_identity.same_principal(principal, authorizer) then
