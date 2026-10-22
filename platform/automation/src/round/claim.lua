@@ -179,7 +179,7 @@ function M.stamp_tx(tx: any, automation_id: string, drive_key: string, lease: Ma
         end
     end
     if not acquire then
-        local redelivery_at, ledger_err = ledger.next_attempt(tx, automation_id, ledger.source_port(d))
+        local redelivery_at, ledger_err = ledger.next_attempt(tx, automation_id, ledger.source_port(d), now)
         if ledger_err then return nil, ledger_err end
         if redelivery_at == nil or drive.after(redelivery_at, now) then
             local rearm = next_acquisition

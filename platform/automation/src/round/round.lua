@@ -182,7 +182,7 @@ local function rearm_after(round: Map, continues: boolean, next_due: string?, un
     -- With no unresolved item, no retrying/waiting row can schedule a wake.
     if unresolved_count == 0 then return next_due, nil end
     local ledger_next, ledger_err = with_db(function(db: any): (any?, error?)
-        return ledger.next_attempt(db, round.automation_id, round.source_port)
+        return ledger.next_attempt(db, round.automation_id, round.source_port, round.now)
     end)
     if ledger_err then return nil, ledger_err end
     return earliest(next_due, ledger_next :: string?), nil

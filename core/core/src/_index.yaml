@@ -34,6 +34,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.migrations:11_bind_legacy_natural_keys
         path: .meta.target_db
+      - entry: kickside.core.migrations:12_blocked_projection_pins
+        path: .meta.target_db
       - entry: kickside.core:db_config
         path: .meta.db_id
 

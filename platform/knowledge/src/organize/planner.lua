@@ -17,7 +17,7 @@ local function nonempty_text(value: any): boolean
 end
 
 -- plan(files) -> ({ kb_name, kb_description, assignments = { [upload_id]={title,category} } }, err)
-function M.plan(files: { any }): (any, string?)
+function M.plan(files: { any }): (any, any?)
     if type(files) ~= "table" or #files == 0 then return nil, "no files to plan" end
 
     local lines: { string } = {}

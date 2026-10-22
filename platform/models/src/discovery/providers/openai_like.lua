@@ -11,28 +11,46 @@ M.provider_ids = {
     common.PROVIDERS.OPENAI_COMPAT_PLAIN,
 }
 
--- OpenAI's /v1/models reports bare ids with no capability metadata, so the
--- first-party reasoning families are recognized by id: the o-series and the
--- gpt-5 series take reasoning effort and reject classic sampling parameters
--- (temperature/top_p), while chat-tuned variants keep sampling semantics. A
--- card missing the reasoning capability sends temperature and every call
--- fails with a permanent 400. Applies to the first-party provider only: a
--- compatible endpoint may serve any model under any name, so there the ids
--- carry no meaning and explicit metadata alone decides.
+-- First-party ids describe endpoint families; compatible endpoints can assign
+-- these names to arbitrary models and use their own metadata instead.
 local function is_reasoning_family(model_id: string): boolean
     local id = model_id:lower()
     if id:find("chat", 1, true) then return false end
     if id:match("^o%d") then return true end
-    if id:match("^gpt%-5") then return true end
-    return false
+    local generation = tonumber(id:match("^gpt%-(%d+)") or "")
+    return generation ~= nil and generation >= 5
+end
+
+local function supports_generation(model_id: string): boolean
+    local id = model_id:lower()
+    for _, operation in ipairs({ "image", "tts", "transcribe", "transcription", "whisper", "audio", "realtime", "moderation", "instruct" }) do
+        for segment in id:gmatch("[^%-]+") do
+            if segment == operation then return false end
+        end
+    end
+    if id:match("^dall%-e") or id == "sora" or id:match("^sora%-") then return false end
+    for _, family in ipairs({ "ada", "babbage", "curie", "davinci", "cushman" }) do
+        if id == family or id:find(family .. "-", 1, true) == 1
+            or id:find("text-" .. family, 1, true) == 1
+            or id:find("code-" .. family, 1, true) == 1 then
+            return false
+        end
+    end
+    return true
 end
 
 function M.capabilities(model_id: string, item: any, profile: any): { string }
-    local out = mapper.infer_capabilities(model_id, item)
     local provider_id = type(profile) == "table" and tostring(profile.provider_id or "") or ""
-    if provider_id == common.PROVIDERS.OPENAI
-        and common.table_has(out, "generate")
-        and is_reasoning_family(model_id) then
+    if provider_id ~= common.PROVIDERS.OPENAI then
+        return mapper.infer_capabilities(model_id, item)
+    end
+    local out = mapper.declared_capabilities(item)
+    local declared = item.capabilities ~= nil or item.capability ~= nil
+        or item.outputModalities ~= nil or item.output_modalities ~= nil
+    if not declared and supports_generation(model_id) then
+        out = mapper.infer_capabilities(model_id, item)
+    end
+    if common.table_has(out, "generate") and is_reasoning_family(model_id) then
         common.add_unique(out, "reasoning")
     end
     return out

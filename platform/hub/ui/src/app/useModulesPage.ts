@@ -295,7 +295,7 @@ export function useModulesPage() {
       // this with the resolved version re-submits the current package while
       // presenting the operation as an update.
       version: '',
-      currentId: dep.id,
+      currentId: dep.dependencyId || null,
       catalogItem: catalogItemFor(dep.component) || null,
       installedDep: dep,
     }

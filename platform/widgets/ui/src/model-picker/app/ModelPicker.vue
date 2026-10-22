@@ -16,7 +16,7 @@ const props = useComponentProps()
 const emit = useComponentEvents()
 
 interface ModelRow { name: string; title: string; provider?: string }
-interface ClassRow { name: string; models: { name: string; title: string }[] }
+interface ClassRow { capability: string; name: string; models: { name: string; title: string }[] }
 interface OptionRow { value: string; title: string; subtitle: string; icon: string }
 
 const loading = ref(false)
@@ -48,10 +48,11 @@ const currentIcon = computed(() => isClass(current.value) ? 'tabler:category' : 
 // model name). Only non-empty groups are emitted so no bare header shows.
 const options = computed<{ group: string; items: OptionRow[] }[]>(() => {
   const out: { group: string; items: OptionRow[] }[] = []
-  if (classes.value.length) {
+  const matchingClasses = classes.value.filter(c => c.capability === capability.value)
+  if (matchingClasses.length) {
     out.push({
       group: 'Classes',
-      items: classes.value.map(c => ({
+      items: matchingClasses.map(c => ({
         value: `class:${c.name}`,
         title: titleCase(c.name),
         subtitle: `${c.models.length} model${c.models.length === 1 ? '' : 's'}${c.models[0] ? ` · ${c.models[0].title}` : ''}`,

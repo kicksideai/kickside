@@ -8,6 +8,6 @@ entries:
       type: tool
       title: Administrator-only Keeper probe
       public: true
-      input_schema: '{}'
+      input_schema: '{"type":"object"}'
     source: file://tool_probe.lua
     method: run
