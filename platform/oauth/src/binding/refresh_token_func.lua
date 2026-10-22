@@ -1,7 +1,7 @@
+local token_request = require("token_request")
 local ctx = require("ctx")
 local http_client = require("http_client")
 local json = require("json")
-local form = require("form")
 local logger = require("logger"):named("kickside.oauth.refresh")
 local creds = require("creds")
 local provider_errors = require("provider_errors")
@@ -89,18 +89,10 @@ local function handle(request_dto)
         token_request_body.client_secret = client_secret
     end
 
-    -- Percent-encoded form body (reserved chars in a secret/refresh token would
-    -- otherwise corrupt the request).
-    local request_body = form.encode(token_request_body)
-
-    -- Make token refresh request
-    local token_response, err = http_client.post(token_endpoint :: string, {
-        headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded",
-            ["Accept"] = "application/json"
-        },
-        body = request_body
-    })
+    local options, options_err = token_request.build(token_request_body,
+        ctx.get("oauth_token_auth_method"), ctx.get("oauth_token_body_encoding"))
+    if not options then return {success = false, error = tostring(options_err)} end
+    local token_response, err = http_client.post(token_endpoint :: string, options)
 
     if err then
         logger:debug("Token refresh HTTP request failed", { error = err })

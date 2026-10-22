@@ -84,6 +84,7 @@ entries:
       receive: app:receive
       test_state: app:test_state
       execution_ref: app:execution_ref
+      session_acquire: app:session_acquire
       real_dm: app:real_dm
       reply_sender_stub: app:reply_sender_stub
       reply_admission: app:reply_admission

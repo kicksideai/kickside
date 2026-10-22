@@ -157,7 +157,11 @@ export function useSyncForm(options: { managed: boolean }) {
   const sinkHasOptions = computed(() => !!sinkPrimary.value && schemaHasProps(sinkOptionsSchema.value))
   const sinkConfigured = computed(() => {
     if (!selectedSink.value) return false
-    if (sinkPrimary.value) return Object.keys(sinkConfig.value).length > 0
+    const primary = sinkPrimary.value
+    if (primary && selectedSink.value.config_schema?.[primary.key]?.required) {
+      const value = sinkConfig.value[primary.key]
+      return value != null && value !== '' && (!Array.isArray(value) || value.length > 0)
+    }
     return true
   })
 

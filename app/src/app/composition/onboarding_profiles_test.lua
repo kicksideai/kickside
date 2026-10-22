@@ -66,10 +66,11 @@ local function define_tests()
             local research = get("app.composition:onboarding_profile.research")
             local gtm = get("app.composition:onboarding_profile.gtm")
             local google_workspace = get("app.composition:onboarding_profile.google_workspace")
+            local connected_apps = get("app.composition:onboarding_profile.connected_apps")
             local channels = get("app.composition:onboarding_profile.channels")
             local developer = get("app.composition:onboarding_profile.developer")
 
-            local profiles = { knowledge, workspace, automation, workflows, research, gtm, google_workspace, channels, developer }
+            local profiles = { knowledge, workspace, automation, workflows, research, gtm, google_workspace, connected_apps, channels, developer }
             for _, entry in ipairs(profiles) do
                 test.eq(entry.kind, "registry.entry")
                 test.eq(entry.meta.type, PROFILE_TYPE)
@@ -188,6 +189,15 @@ local function define_tests()
             assert_packages(value(google_workspace, "packages"), {
                 "kickside/google",
             })
+
+            test.eq(value(connected_apps, "profile"), "connected_apps")
+            assert_packages(value(connected_apps, "packages"), {
+                "kickside/notion", "kickside/linear", "kickside/airtable", "kickside/dropbox", "kickside/box",
+            })
+            for _, package in ipairs(value(connected_apps, "packages")) do
+                local provider = package.component:match("/([^/]+)$")
+                assert_parameters(package, {{"kickside." .. provider .. ":env_storage", "app:env_storage"}})
+            end
 
             test.eq(value(channels, "profile"), "channels")
             assert_packages(value(channels, "packages"), {

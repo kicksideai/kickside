@@ -1,5 +1,7 @@
 version: "1.0"
 override:
+  "app.client_test:server:addr": ":${provider_http_port}"
+  "app.client_test:probe:meta.endpoint": "http://127.0.0.1:${provider_http_port}/provider"
   "app:db:file": "${sqlite_path}"
 workspace:
   replacements:
@@ -19,6 +21,7 @@ workspace:
     kickside/execution: ../../../core/execution
     kickside/settings: ../../settings
 vars:
+  provider_http_port: 19185
   sqlite_path: ":memory:"
   pg_host: localhost
   pg_port: 5433

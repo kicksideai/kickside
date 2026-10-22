@@ -31,7 +31,7 @@ export function hasOptions(source: GroupedSource | null, primary: PrimaryField):
 
 // The component picker needs the thread class it selects within; other picker
 // tags carry their own contract and take no meta.
-export function pickerMetaOf(source: GroupedSource | null, primary: PrimaryField) {
+export function pickerMetaOf(source: { class?: string; component?: unknown } | null, primary: PrimaryField) {
   if (primary?.tag !== COMPONENT_PICKER_TAG) return undefined
   const cls = source?.class || ''
   if (!cls) return undefined

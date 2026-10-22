@@ -71,9 +71,8 @@ entries:
     component: kickside/execution
 
   - name: dep.wippy.dataflow
-    # The application lock must pin Dataflow at 0.7.8 or newer: agent Blocks
-    # rely on engine semantics for the reserved-input split.
-    version: '*'
+    # Iteration body joins require native iteration input routes.
+    version: '>=v0.7.27'
     kind: ns.dependency
     meta:
       comment: Production Workflow compilation and runs directly create and execute Dataflow graphs.
@@ -111,6 +110,8 @@ entries:
       - entry: kickside.workflows.migrations:04_admission_recovery
         path: .meta.target_db
       - entry: kickside.workflows.migrations:05_undo_history
+        path: .meta.target_db
+      - entry: kickside.workflows.migrations:06_iteration_input_routes
         path: .meta.target_db
       - entry: kickside.workflows:db_config
         path: .meta.db_id
@@ -259,6 +260,30 @@ entries:
           type: string
           default: ""
           description: Monotonic host command; each new non-empty value submits the embedded form once.
+
+  - name: workflow_picker_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: workflow_picker_view
+      title: Published Workflow Picker
+      announced: true
+      auto_register: true
+      tag_name: wc-workflow-picker
+      base_path: kickside-workflows
+      entry_point: workflow_picker.js
+      icon: tabler:route
+    props:
+      type: object
+      properties:
+        config:
+          type: string
+          default: "{}"
+          description: Current configuration as JSON containing the pinned published workflow reference.
+        schema:
+          type: string
+          default: ""
+          description: Primary picker field schema as JSON; its property key names the reference (flow_ref by default).
 
   # The embed lets any module run a published Flow in place (picker or pinned flow-id,
   # Start-schema form, live status + Finish

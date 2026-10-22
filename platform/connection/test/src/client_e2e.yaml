@@ -1,0 +1,68 @@
+version: "1.0"
+namespace: app.client_test
+entries:
+  - name: server
+    kind: http.service
+    addr: :19185
+    lifecycle: {auto_start: true}
+  - name: router
+    kind: http.router
+    meta: {server: server}
+    prefix: /provider
+  - name: endpoint
+    kind: http.endpoint
+    meta: {router: router}
+    method: POST
+    path: /items
+    func: app.client_test:receive
+  - name: receive
+    kind: function.lua
+    source: file://client_e2e.lua
+    method: receive
+    modules: [http, json]
+    imports:
+      driver: kickside.connection.client:driver
+  - name: health
+    kind: function.lua
+    source: file://client_e2e.lua
+    method: health
+    imports:
+      driver: kickside.connection.client:driver
+  - name: binding
+    kind: contract.binding
+    meta:
+      provider: provider_http_fixture
+      class: [connection]
+      credential_schema:
+        version: "1.0"
+        fields: [{key: api_key, label: Token, type: password, required: true}]
+    contracts:
+      - contract: kickside.contract:component
+        context_required: [component_id]
+        methods: {get_status: "app.client_test:health"}
+      - contract: kickside.connection:connection
+        context_required: [component_id]
+        methods:
+          get_status: app.client_test:health
+          test_connection: app.client_test:health
+          discover_resources: app.client_test:health
+      - contract: kickside.contract:deletable
+        context_required: [component_id]
+        methods: {delete: "app.client_test:health"}
+  - name: probe
+    kind: function.lua
+    source: file://client_e2e.lua
+    method: probe
+    imports:
+      driver: kickside.connection.client:driver
+    meta:
+      endpoint: http://127.0.0.1:19185/provider
+    modules: [registry, json]
+  - name: test
+    kind: function.lua
+    source: file://client_e2e_test.lua
+    method: run
+    meta: {type: test, suite: provider_client_e2e}
+    modules: [sql, uuid, security, funcs, time]
+    imports:
+      test: wippy.test:test

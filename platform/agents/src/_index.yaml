@@ -115,10 +115,14 @@ entries:
         placeholder:
           type: string
           description: Placeholder for the search box.
-        value:
+        config:
           type: string
           default: ""
-          description: "Config-host convention (WcMount): the current config as a JSON object string whose agent_id names the selection, or a bare agent ref. Presence switches the picker to single-select and adds agent_id to the change detail."
+          description: "Current config as JSON. A non-empty config attribute selects one agent and emits only the keyed reference."
+        schema:
+          type: string
+          default: ""
+          description: "Primary picker field schema as JSON; its property key names the stored reference (agent_id by default)."
 
   - name: agent_block_config_view
     kind: registry.entry

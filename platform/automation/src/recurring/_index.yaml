@@ -50,6 +50,9 @@ entries:
       class: automation
       reconfigurable: true
       exportable: true
+      component:
+        create: { view: kickside.automation.recurring:create_view }
+        manage: { view: kickside.automation.recurring:create_view }
       actions: [{ name: reconfigure }]
       inputs:
         type: object
@@ -101,3 +104,22 @@ entries:
         methods: { deliver: kickside.automation.recurring:deliver }
       - contract: kickside.contract:deletable
         methods: { delete: kickside.automation:noop_delete }
+
+  - name: create_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      title: Recurring task setup
+      announced: true
+      auto_register: false
+      tag_name: kickside-recurring-task-create
+      base_path: kickside-automation-manager
+      entry_point: recurring_task_create.js
+    props:
+      type: object
+      properties:
+        type-id: { type: string, default: "kickside.automation.recurring:task" }
+        parent-id: { type: string }
+        input: { type: string }
+        config: { type: string }
+        submit-nonce: { type: string }

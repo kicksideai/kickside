@@ -23,6 +23,7 @@ return test.run_cases(function()
             test.is_nil(err)
             local db, db_err = sql.get("app:db")
             test.is_nil(db_err)
+            if not db then error("migration test requires a database: " .. tostring(db_err)) end
             local function exec(statement,params)
                 local _,e=db:execute(statement,params or {})
                 test.is_nil(e)

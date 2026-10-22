@@ -37,6 +37,17 @@ local completion_opts = worker_completion.completion_opts
 local failure_class_for = worker_completion.failure_class_for
 local complete_job = worker_completion.complete_job
 local fail_job = worker_completion.fail_job
+local function retry_floor_for(err: error?): table?
+    if not err then return nil end
+    local details = err:details()
+    local floor = type(details) == "table" and details.retry_after_ms or nil
+    -- Provider metadata is advisory. An invalid hint must not prevent the
+    -- original failure from settling under the configured retry policy.
+    if type(floor) ~= "number" or floor < 0 or floor ~= math.floor(floor) or floor == math.huge then
+        return nil
+    end
+    return {retry_after_ms = floor}
+end
 worker.completion_opts = completion_opts
 worker.failure_class_for = failure_class_for
 
@@ -80,7 +91,7 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
         })
         return settle_err
     elseif child_err then
-        local fail_err = fail_job(db, dbtype, job, {}, tostring(child_err), failure_class_for(child_err), run_ctx)
+        local fail_err = fail_job(db, dbtype, job, {}, tostring(child_err), failure_class_for(child_err), run_ctx, retry_floor_for(child_err))
         if fail_err and job_types.is_lease_lost_error(fail_err) then
             local finalize_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,
                 job_types.RUN_STATE.LEASE_LOST, {}, {}, tostring(child_err))
@@ -130,7 +141,7 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
     local heartbeat_pid, hb_err = lease.start(job, lease_deadline)
     if hb_err or type(heartbeat_pid) ~= "string" or heartbeat_pid == "" then
         local primary = hb_err or worker_response_error("heartbeat.id")
-        local park_err = lifecycle.fail_job(db, job, dbtype, "lease heartbeat spawn failed: " .. tostring(primary), failure_class_for(primary))
+        local park_err = lifecycle.fail_job(db, job, dbtype, "lease heartbeat spawn failed: " .. tostring(primary), failure_class_for(primary), retry_floor_for(primary))
         if park_err then primary = error_envelope.wrap_secondary(park_err, primary, "heartbeat failure persistence failed") end
         return nil, finalize(job_types.RUN_STATE.FAILED, {}, tostring(primary), primary)
     end
@@ -172,7 +183,7 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
     if error_text then
         logger:error("job_worker " .. pid .. " execute error job=" .. tostring(job.id) .. ": " .. error_text)
         local fail_err, recorded = fail_job(db, dbtype, job, output, error_text,
-            failure_class, run_ctx)
+            failure_class, run_ctx, retry_floor_for(execution_err))
         if not fail_err and recorded ~= true then fail_err = worker_response_error("failure.recorded") end
         if fail_err and execution_err then
             fail_err = error_envelope.wrap_secondary(fail_err, execution_err, "job failure persistence failed")

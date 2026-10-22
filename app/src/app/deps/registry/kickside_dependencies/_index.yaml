@@ -76,6 +76,8 @@ entries:
     meta: {}
     component: kickside/mcp-client
     parameters:
+      - name: kickside.mcp_client:public_router
+        value: app:api.public
       - name: kickside.mcp_client:api_router
         value: app:api
       - name: kickside.mcp_client:process_host

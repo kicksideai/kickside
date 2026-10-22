@@ -1,9 +1,10 @@
 import { resolveDirective as ye, withDirectives as we, openBlock as b, createElementBlock as h, mergeProps as T, createElementVNode as m, renderSlot as q, normalizeClass as xe, createCommentVNode as P, toDisplayString as C, resolveComponent as Se, Fragment as W, renderList as ke, createBlock as G, createSlots as Ae, withCtx as M, defineComponent as se, ref as x, onMounted as Oe, watch as Y, onBeforeUnmount as ue, nextTick as Ee, computed as F, unref as $, createVNode as B, withKeys as Le, withModifiers as $e, createTextVNode as te } from "vue";
 import { b as de, a as Te, s as ze } from "./index-I_-ROi8M.js";
 import { B as X, R as ce, l as Z, f as ne, t as H, y as j } from "./index-B9KLaL2S.js";
-import { ac as Ve, ar as Ie, s as J } from "./pickerselect-w9U6RgbR.js";
+import { Y as Ve, s as J } from "./pickerselect-Bt8Nl0Ia.js";
 import { Icon as oe } from "@iconify/vue";
-import { loadByTagName as Be, api as Pe } from "@wippy-fe/proxy";
+import { loadByTagName as Ie, api as Be } from "@wippy-fe/proxy";
+import { A as Pe } from "./http-error-DV_DxI6h.js";
 var Ce = `
     .p-togglebutton {
         display: inline-flex;
@@ -840,7 +841,7 @@ const ct = { class: "kx-wcmount" }, ft = {
     async function L(r) {
       if (!customElements.get(r))
         try {
-          await Be(r, { timeoutMs: 8e3 });
+          await Ie(r, { timeoutMs: 8e3 });
         } catch {
         }
     }
@@ -917,7 +918,7 @@ async function wt(e, n, t = {}, o) {
   t.surface && (a.surface = t.surface), t.sample !== void 0 && (a.sample = t.sample), Object.keys(a).length && (c.context = a);
   let l;
   try {
-    l = (await Pe.post("/api/v1/workflows/assist/schema", c, {
+    l = (await Be.post("/api/v1/workflows/assist/schema", c, {
       timeout: mt,
       signal: o
     })).data;
@@ -925,7 +926,7 @@ async function wt(e, n, t = {}, o) {
     const k = String(u?.code || ""), z = String(u?.name || "");
     if (k === "ERR_CANCELED" || z === "CanceledError" || z === "AbortError")
       return { error: "Draft cancelled." };
-    if (Ve(u) === 404) return { error: ie, unavailable: !0 };
+    if (Pe(u) === 404) return { error: ie, unavailable: !0 };
     const V = u?.response?.data;
     return V ? { error: le(V, u instanceof Error && u.message ? u.message : U) } : { error: u instanceof Error && u.message ? u.message : U };
   }
@@ -952,7 +953,7 @@ const xt = { class: "wf-sed" }, St = { class: "wf-sed-bar" }, kt = {
 }, zt = {
   key: 2,
   class: "wf-field-err wf-sed-msg"
-}, Vt = "wc-schema-form", Dt = /* @__PURE__ */ se({
+}, Vt = "wc-schema-form", Rt = /* @__PURE__ */ se({
   __name: "SchemaEditor",
   props: {
     modelValue: {},
@@ -968,7 +969,7 @@ const xt = { class: "wf-sed" }, St = { class: "wf-sed-bar" }, kt = {
   },
   emits: ["update:modelValue", "change", "clear", "valid"],
   setup(e, { emit: n }) {
-    const t = e, o = n, c = F(() => t.mode !== "value"), a = F(() => t.mode === "value" && Ie(t.schema)), l = x("code"), s = [
+    const t = e, o = n, c = F(() => t.mode !== "value"), a = F(() => t.mode === "value" && Ve(t.schema)), l = x("code"), s = [
       { label: "Form", value: "form" },
       { label: "JSON", value: "code" }
     ], i = x(""), u = x("");
@@ -1128,7 +1129,7 @@ const xt = { class: "wf-sed" }, St = { class: "wf-sed-bar" }, kt = {
 export {
   vt as A,
   gt as W,
-  Dt as _,
+  Rt as _,
   ge as a,
   bt as b,
   le as h,

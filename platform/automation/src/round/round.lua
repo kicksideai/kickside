@@ -218,7 +218,8 @@ local function run(deps: Map, input: any): (Map?, error?)
         end)
         if stamp_err then
             local failure = classify(stamp_err)
-            if failure.retriable ~= false then return nil, stamp_err end
+            local _, parks = outcome.failure_phase(failure)
+            if not parks then return nil, stamp_err end
             return complete(ctx, nil, true, tostring(failure.message))
         end
         s = stamped :: Map
@@ -249,7 +250,11 @@ local function run(deps: Map, input: any): (Map?, error?)
         return complete(ctx, after_ms(base, p.round_retry_after_ms))
     end
     if s.state == claim.STATE.PARKED then return complete(ctx, nil, true, s.reason or ("drive " .. tostring((s.drive :: Map).phase))) end
-    if s.state == claim.STATE.IDLE then return complete(ctx, s.rearm) end
+    if s.state == claim.STATE.IDLE then
+        local notify_err = notify_status(ctx, automation_id)
+        if notify_err then return nil, notify_err end
+        return complete(ctx, s.rearm)
+    end
 
     local d = s.drive :: Map
     local action = type(d.action) == "table" and d.action or {}
@@ -328,6 +333,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         end
         local acquired, pull_failure, pull_kind = run_as(ctx.deps, identity, ACQUIRE, {
             automation_id = automation_id, drive_key = drive_key, source_kind = d.source_kind,
+            fence = round.captured,
             source_ref = action.source_ref, source_thread_id = d.source_thread_id, event_type = action.event_type,
             config = action.config, cursor = cursor, event_seq = d.event_seq, occurrence = occurrence, pull_keys = action.pull_keys,
             limit = limit, deadline = work_deadline,

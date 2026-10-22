@@ -55,7 +55,8 @@ local TRANSCRIPTION_CODES = {
 }
 
 function metadata_sanitizer.transcription_code(value)
-    if type(value) ~= "string" or value == "" or TRANSCRIPTION_CODES[value] then return value end
+    if value == nil or value == false or value == "" then return value end
+    if type(value) == "string" and TRANSCRIPTION_CODES[value] then return value end
     return "transcription_failed"
 end
 

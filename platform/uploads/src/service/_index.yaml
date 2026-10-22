@@ -41,6 +41,7 @@ entries:
       types: kickside.uploads:types
       jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
+      processing_hooks: kickside.uploads.binding:processing_hooks_default
     method: main
 
   - name: callback_job

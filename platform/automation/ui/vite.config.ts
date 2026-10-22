@@ -4,6 +4,8 @@ import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
 
 const entries = {
+  recurring_task_create: resolve(__dirname, 'src/recurring_task_create.ts'),
+  manual_task_create: resolve(__dirname, 'src/manual_task_create.ts'),
   index: resolve(__dirname, 'src/index.ts'),
   trigger_config: resolve(__dirname, 'src/trigger-config/index.ts'),
   manual_task_launcher: resolve(__dirname, 'src/manual-task-launcher.ts'),

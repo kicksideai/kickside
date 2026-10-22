@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { listWorkflows } from '../api/api'
 import { analyzeFlowCandidate, type FlowCandidate } from '../nodes/flow-candidate'
@@ -8,11 +8,13 @@ import WorkflowSearchList from '../nodes/WorkflowSearchList.vue'
 // The embed's workflow picker: every PUBLISHED workflow, no schema-compat filtering (unlike
 // the Call node's picker, which narrows callable workflows against an upstream schema).
 
+const props = defineProps<{ selected?: { id: string; version: number } }>()
 const emit = defineEmits<{ (e: 'select', candidate: FlowCandidate): void }>()
 
 const loading = ref(false)
 const error = ref('')
 const rows = ref<FlowCandidate[]>([])
+const selectedTitle = computed(() => rows.value.find(row => row.id === props.selected?.id)?.title || 'Selected workflow')
 
 async function load() {
   loading.value = true
@@ -37,6 +39,7 @@ function matches(item: FlowCandidate, q: string): boolean {
 </script>
 
 <template>
+  <p v-if="selected" class="wf-embed-note">{{ selectedTitle }} · Published v{{ selected.version }}</p>
   <WorkflowSearchList
     :rows="rows"
     :loading="loading"

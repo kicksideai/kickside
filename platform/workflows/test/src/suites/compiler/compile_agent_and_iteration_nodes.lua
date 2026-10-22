@@ -427,6 +427,42 @@ local function define_tests()
             test.is_nil(leaf_target.node_id)
         end)
 
+        test.it("leaves ordinary graph node configs free of iteration routes", function()
+            local res = select(1, compiler.compile(doc(
+                { fn("t"), fn("done", { ref = "m:done" }) },
+                { e("e0", "t", "done") }), {}))
+            test.is_true((res :: Map).ok)
+            local config = ((node_cmd((res :: Map).commands, "t") :: Map).payload :: Map).config
+            test.is_nil(config.iteration_input_routes)
+        end)
+
+        for _, kind in ipairs({ "for_each", "cycle" }) do
+            test.it("counts " .. kind .. " body inputs when classifying repeated joins", function()
+                local res = select(1, compiler.compile(doc({
+                    n("p", kind, { config = kind == "cycle"
+                        and { continue_condition = "false", max_iterations = 1 } or {} }),
+                    fn("item"),
+                    n("join", "combine", { config = { mode = "wait_all" } }),
+                }, {
+                    e("body-item", "p", "item", { source_port = "body" }),
+                    e("body-join", "p", "join", { source_port = "body" }),
+                    e("item-join", "item", "join"),
+                }), {}))
+                test.is_true((res :: Map).ok)
+                local config = ((node_cmd((res :: Map).commands, "join") :: Map).payload :: Map).config
+                test.is_table(config.inputs)
+                test.eq(table.concat(config.inputs.required, ","), "in1,in2")
+
+                local loop_config = ((node_cmd((res :: Map).commands, "p") :: Map).payload :: Map).config
+                local routes = loop_config.iteration_input_routes :: { Map }
+                test.eq(#routes, 2)
+                test.eq(tostring(routes[1].node_id), "item")
+                test.eq(tostring(routes[1].discriminator), "default")
+                test.eq(tostring(routes[2].node_id), "join")
+                test.eq(tostring(routes[2].discriminator), "in2")
+            end)
+        end
+
         test.it("lowers continue_on_error for_each output as ordered result/error entries", function()
             local res = select(1, compiler.compile(doc(
                 {

@@ -354,8 +354,9 @@ function provider_registry.get_component_contract(provider_id: any, oauth_provid
 
     -- Check if provider has custom component_contract specified
     local component_contract_id = DEFAULT_COMPONENT_CONTRACT
-    if entry.data and entry.data.component_contract and entry.data.component_contract ~= "" then
-        component_contract_id = entry.data.component_contract
+    local declared = entry.data and (entry.data.component_contract_id or entry.data.component_contract)
+    if type(declared) == "string" and declared ~= "" then
+        component_contract_id = declared
     end
 
     return {

@@ -14,12 +14,14 @@ entries:
   policy:
     resources:
     - kickside.oauth:*
+    - kickside.oauth.client:*
     - kickside.oauth.api:*
     - kickside.oauth.api.public:*
     - kickside.oauth.binding:*
     - kickside.oauth.discovery:*
     - kickside.oauth.migrations:*
     - kickside.oauth.persist:*
+    - kickside.oauth.runtime:*
     - kickside.oauth.security:*
     - kickside.oauth.service:*
     - kickside.oauth.views:*
@@ -49,12 +51,14 @@ entries:
   policy:
     resources:
     - kickside.oauth:*
+    - kickside.oauth.client:*
     - kickside.oauth.api:*
     - kickside.oauth.api.public:*
     - kickside.oauth.binding:*
     - kickside.oauth.discovery:*
     - kickside.oauth.migrations:*
     - kickside.oauth.persist:*
+    - kickside.oauth.runtime:*
     - kickside.oauth.security:*
     - kickside.oauth.service:*
     - kickside.oauth.views:*

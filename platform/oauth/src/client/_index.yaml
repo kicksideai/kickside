@@ -1,0 +1,9 @@
+version: "1.0"
+namespace: kickside.oauth.client
+entries:
+  - name: token_request
+    kind: library.lua
+    source: file://token_request.lua
+    modules: [json, base64]
+    imports:
+      form: kickside.oauth:form

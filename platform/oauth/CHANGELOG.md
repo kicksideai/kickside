@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.39](https://github.com/kicksideai/kickside/compare/oauth-v0.1.38...oauth-v0.1.39) (2026-10-21)
+
+
+### Features
+
+* **connection:** support native productivity provider adapters ([#43](https://github.com/kicksideai/kickside/issues/43)) ([1efcf58](https://github.com/kicksideai/kickside/commit/1efcf58af4a637bde446dcf2902ece5eb866c90c))
+
+## [0.1.38](https://github.com/kicksideai/kickside/compare/oauth-v0.1.37...oauth-v0.1.38) (2026-10-20)
+
+
+### Features
+
+* **oauth:** support resource-specific provider options and issuer validation ([#37](https://github.com/kicksideai/kickside/issues/37)) ([fb172f1](https://github.com/kicksideai/kickside/commit/fb172f15dcc32688a520f2b90476a7374efc0121))
+
 ## 0.1.33 (2026-10-08)
 
 - Deliver scope reconcile, OAuth, upload and profile signals under service identities (90ce38da7)

@@ -29,6 +29,10 @@ entries:
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "OAuth scopes to request"
+                  },
+                  "provider_options": {
+                    "type": "object",
+                    "description": "Provider-specific initialization input, validated by the connector. Does not override connector runtime context."
                   }
                 },
                 "required": ["redirect_uri"]

@@ -1,0 +1,11 @@
+version: "1.0"
+namespace: app.oauth_wiring
+entries:
+  - name: test
+    kind: function.lua
+    source: file://test.lua
+    method: run
+    meta: {type: test, suite: app_oauth_wiring}
+    modules: [registry]
+    imports:
+      test: wippy.test:test

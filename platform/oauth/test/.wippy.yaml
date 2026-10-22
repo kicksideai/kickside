@@ -3,6 +3,7 @@ version: "1.0"
 # slots. Ambient services would change the same generations and leases between
 # assertions; migration/key boot remains enabled through wippy/bootloader.
 override:
+  "app:protocol_e2e_test:meta.token_endpoint": "http://127.0.0.1:${http_port}/public/protocol-token"
   "app:refresh_endpoint_provider:connector_contract.context_values.oauth_token_endpoint": "http://127.0.0.1:${http_port}/public/test-token"
   "app:refresh_network_provider:connector_contract.context_values.oauth_token_endpoint": "https://127.0.0.1:${http_port}/public/test-token"
   "kickside.oauth.service:refresh_bootstrap.service:lifecycle.auto_start": false

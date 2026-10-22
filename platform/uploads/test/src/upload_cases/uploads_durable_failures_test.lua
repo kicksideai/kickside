@@ -505,6 +505,15 @@ local function define_tests()
             test.is_nil(row.meta.filename)
         end)
 
+        test.it("redacts structured provider diagnostics from every public transcription field", function()
+            for _, key in ipairs(metadata_sanitizer.TRANSCRIPTION_ERROR_KEYS) do
+                local stored = {[key] = {message = "private provider diagnostic"}}
+                test.eq(metadata_sanitizer.public(stored)[key], "transcription_failed")
+                test.eq(upload_response.format_get_upload({uuid = "legacy", metadata = stored}).meta[key], "transcription_failed")
+                test.eq(upload_response.format_list_upload({uuid = "legacy", metadata = stored}).meta[key], "transcription_failed")
+            end
+        end)
+
         test.it("retries a failed upload on its stored bytes", function()
             local upload = create_transcription_upload("transcription-retry", {
                 transcription_error_test = "ocr_error",

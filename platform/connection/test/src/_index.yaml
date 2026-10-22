@@ -213,6 +213,7 @@ entries:
     kind: library.lua
     source: file://channel_src_link/sink/channel_sink.lua
     imports:
+      canonical_json: kickside.contract:canonical_json
       writable_sink: kickside.data:writable_sink
       reply_sender: app:channel_sink_reply_fixture
 
@@ -549,3 +550,16 @@ entries:
     imports:
       test: wippy.test:test
       base: kickside.connection:base_connection
+
+  - name: provider_client_test
+    kind: function.lua
+    meta: {type: test, suite: provider_client}
+    source: file://client_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      transport: kickside.connection.client:http
+      driver: kickside.connection.client:driver
+      schema: kickside.connection.client:schema
+      types: kickside.connection.client:types

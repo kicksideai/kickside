@@ -97,12 +97,14 @@ local function kind_of(value: any): (string?, { kind: string, deterministic: boo
     if type(value) == "userdata" then details = (value :: any):details() end
     local code = type(details) == "table" and details.code or field(value, "code")
     local mapping = type(code) == "string" and DATA_ERROR_KINDS[trim(code)] or nil
-    for _, kind in ipairs(WIPPY_KINDS) do
-        if errors.is(value, kind) then return kind :: string, mapping, true end
+    if type(value) == "userdata" then
+        for _, kind in ipairs(WIPPY_KINDS) do
+            if errors.is(value, kind) then return kind :: string, mapping, true end
+        end
     end
+    if mapping then return mapping.kind, mapping, false end
     local kind = field(value, "kind")
     if type(kind) == "string" and KNOWN_KIND[trim(kind)] == true then return trim(kind), mapping, false end
-    if mapping then return mapping.kind, mapping, false end
     return nil, nil, false
 end
 
@@ -127,14 +129,14 @@ function M.classify(value: any, prefix: string?): ClassifiedFailure
     kind = kind or KIND_INTERNAL
 
     local explicit: any = nil
-    if outer ~= nil then explicit = outer.retryable end
-    if type(explicit) ~= "boolean" and outer ~= nil then explicit = outer.retriable end
-    if type(explicit) ~= "boolean" then explicit = field(detail, "retryable") end
+    if outer ~= nil then explicit = outer.retriable end
     if type(explicit) ~= "boolean" then explicit = field(detail, "retriable") end
     if type(explicit) ~= "boolean" and typed and type(detail) == "userdata" then
         local retryable = (detail :: any):retryable()
         if type(retryable) == "boolean" then explicit = retryable end
     end
+    if type(explicit) ~= "boolean" and outer ~= nil then explicit = outer.retryable end
+    if type(explicit) ~= "boolean" then explicit = field(detail, "retryable") end
     local terminal = field(detail, "terminal")
     if outer ~= nil and outer.terminal == true then terminal = true
     elseif type(terminal) ~= "boolean" and outer ~= nil then terminal = outer.terminal end

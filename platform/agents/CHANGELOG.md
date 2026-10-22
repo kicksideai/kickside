@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/kicksideai/kickside/compare/agents-v0.2.2...agents-v0.2.3) (2026-10-20)
+
+
+### Bug Fixes
+
+* honor agent picker configuration in data syncs ([#29](https://github.com/kicksideai/kickside/issues/29)) ([8764097](https://github.com/kicksideai/kickside/commit/87640977328f797c127bb54c40c6c6194a7fd188))
+
 ## 0.2.2 (2026-10-19)
 
 - The Agent step documents its model field: a model class or exact model id, required with inline instructions unless the step input carries model.

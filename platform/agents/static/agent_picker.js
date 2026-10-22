@@ -1,91 +1,98 @@
-import { u as d, g as y, W as h, P as v } from "./primevue-plugin-Dn0ACs8V.js";
-import { defineComponent as _, computed as i, openBlock as k, createBlock as C } from "vue";
-import { M as A } from "./MultiSelectField-CJKHhAnf.js";
-import { s as S } from "./styles-CiCzyjUM.js";
+import { u as f, g as m, W as g, P as y } from "./primevue-plugin-Dn0ACs8V.js";
+import { defineComponent as d, computed as i, openBlock as h, createBlock as S } from "vue";
+import { M as v } from "./MultiSelectField-CJKHhAnf.js";
+import { s as k } from "./styles-CiCzyjUM.js";
 import "@iconify/vue";
-import { define as P } from "@wippy-fe/proxy";
-const B = /* @__PURE__ */ _({
-  __name: "AgentPicker",
-  setup(l) {
-    const n = d(), s = y();
-    function c(e) {
-      if (Array.isArray(e)) return e.map(String).filter(Boolean);
-      if (typeof e == "string") {
-        const t = e.trim();
-        if (!t) return [];
-        if (t.startsWith("["))
-          try {
-            const r = JSON.parse(t);
-            if (Array.isArray(r)) return r.map(String).filter(Boolean);
-          } catch {
-          }
-        return t.split(",").map((r) => r.trim()).filter(Boolean);
+import { define as C } from "@wippy-fe/proxy";
+function _(e, t) {
+  if (typeof e != "string" || !e.trim()) return "";
+  const r = e.trim();
+  if (r.startsWith("{"))
+    try {
+      const s = JSON.parse(r)[t];
+      return typeof s == "string" ? s : s == null ? "" : String(s);
+    } catch {
+      return "";
+    }
+  return r;
+}
+function P(e) {
+  if (Array.isArray(e)) return e.map(String).filter(Boolean);
+  if (typeof e == "string") {
+    const t = e.trim();
+    if (!t) return [];
+    if (t.startsWith("["))
+      try {
+        const r = JSON.parse(t);
+        if (Array.isArray(r)) return r.map(String).filter(Boolean);
+      } catch {
       }
-      return [];
+    return t.split(",").map((r) => r.trim()).filter(Boolean);
+  }
+  return [];
+}
+function A(e) {
+  if (!e) return null;
+  if (typeof e == "string")
+    try {
+      return JSON.parse(e);
+    } catch {
+      return null;
     }
-    function u(e) {
-      if (typeof e != "string") return "";
-      const t = e.trim();
-      if (!t) return "";
-      if (t.startsWith("{"))
-        try {
-          const r = JSON.parse(t);
-          return r && typeof r == "object" && typeof r.agent_id == "string" ? r.agent_id : "";
-        } catch {
-          return "";
-        }
-      return t.startsWith("[") ? "" : t;
-    }
-    const o = i(() => {
-      const e = n.value?.value;
-      return typeof e == "string" && e.trim() !== "";
-    }), a = i(() => u(n.value?.value)), p = i(() => {
-      const e = c(n.value?.selected);
-      return e.length ? e : a.value ? [a.value] : [];
-    }), f = i(() => o.value ? !1 : n.value?.multi !== !1), m = i(() => n.value?.placeholder || "Search agents…");
-    function g(e, t) {
+  return e;
+}
+const B = /* @__PURE__ */ d({
+  __name: "AgentPicker",
+  setup(e) {
+    const t = f(), r = m(), o = i(() => {
+      const n = t.value?.config;
+      return typeof n == "string" && n.trim() !== "";
+    }), s = i(() => Object.keys(A(t.value?.schema)?.properties || {})[0] || "agent_id"), l = i(() => {
+      if (!o.value) return P(t.value?.selected);
+      const n = _(t.value?.config, s.value);
+      return n ? [n] : [];
+    }), c = i(() => o.value ? !1 : t.value?.multi !== !1), u = i(() => t.value?.placeholder || "Search agents…");
+    function p(n, a) {
       if (o.value) {
-        s("change", { selected: e, labels: t, agent_id: e[0] || "" });
+        r("change", { [s.value]: n[0] || "" });
         return;
       }
-      s("change", { selected: e, labels: t });
+      r("change", { selected: n, labels: a });
     }
-    return (e, t) => (k(), C(A, {
+    return (n, a) => (h(), S(v, {
       source: "/api/v1/agents/list",
       "response-key": "agents",
       "id-key": "name",
       "label-key": "title",
       "desc-key": "comment",
       "icon-key": "icon",
-      multi: f.value,
-      placeholder: m.value,
-      selected: p.value,
-      onChange: g
+      multi: c.value,
+      placeholder: u.value,
+      selected: l.value,
+      onChange: p
     }, null, 8, ["multi", "placeholder", "selected"]));
   }
-}), W = {
+}), O = {
   type: "object",
   properties: {
     selected: { type: "array", items: { type: "string" }, default: [] },
     multi: { type: "boolean", default: !0 },
     placeholder: { type: "string" },
-    // Config-host convention (WcMount): the current config as a JSON object string
-    // whose agent_id names the selection, or a bare agent ref. Presence switches the
-    // picker to single-select and adds agent_id to the change detail.
-    value: { type: "string", default: "" }
+    config: { type: "string", default: "" },
+    schema: { type: "string", default: "" }
   }
 };
-class x extends h {
+class b extends g {
   static get wippyConfig() {
     return {
-      propsSchema: W,
+      propsSchema: O,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: S
+      inlineCss: k
     };
   }
   static get vueConfig() {
-    return { rootComponent: B, plugins: [v] };
+    return { rootComponent: B, plugins: [y] };
   }
 }
-P(import.meta.url, x);
+C(import.meta.url, b);
 //# sourceMappingURL=agent_picker.js.map

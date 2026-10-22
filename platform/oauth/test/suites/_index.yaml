@@ -458,6 +458,7 @@ entries:
     kind: registry.entry
     meta: { oauth_provider: native-refresh-test }
     data:
+      component_contract_id: app:refresh_fixture_connector
       connector_contract:
         implementation_id: app:refresh_fixture_connector
         context_values: {}
@@ -498,6 +499,7 @@ entries:
     source: file://../src_link/binding/refresh_token_func.lua
     modules: [json, logger]
     imports:
+      token_request: kickside.oauth.client:token_request
       ctx: app:refresh_context_fixture
       http_client: app:refresh_http_fixture
       creds: app:refresh_creds_fixture
@@ -575,3 +577,71 @@ entries:
       oauth_read_repo: kickside.oauth.persist:oauth_read_repo
       refresh_schedule: kickside.oauth:refresh_schedule
       component: kickside.component:component
+
+  - name: token_request_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_oauth}
+    source: file://token_request_test.lua
+    method: run
+    modules: [json, base64]
+    imports:
+      test: wippy.test:test
+      request: kickside.oauth.client:token_request
+
+  - name: protocol_creds
+    kind: library.lua
+    source: file://protocol_fixture.lua
+    modules: [http, json]
+    imports:
+      form: kickside.oauth:form
+  - name: protocol_token
+    kind: function.lua
+    source: file://protocol_fixture.lua
+    method: token
+    modules: [http, json]
+    imports:
+      form: kickside.oauth:form
+  - name: protocol_token.endpoint
+    kind: http.endpoint
+    meta: {router: "app:public_api"}
+    method: POST
+    path: /protocol-token
+    func: app:protocol_token
+  - name: protocol_callback
+    kind: function.lua
+    source: file://../src_link/binding/handle_callback_func.lua
+    method: handle
+    modules: [ctx, time, http_client, json, logger]
+    imports:
+      creds: app:protocol_creds
+      form: kickside.oauth:form
+      provider_errors: kickside.oauth:provider_errors
+      token_request: kickside.oauth.client:token_request
+  - name: protocol_refresh
+    kind: function.lua
+    source: file://../src_link/binding/refresh_token_func.lua
+    method: handle
+    modules: [ctx, http_client, json, logger]
+    imports:
+      creds: app:protocol_creds
+      form: kickside.oauth:form
+      provider_errors: kickside.oauth:provider_errors
+      token_request: kickside.oauth.client:token_request
+  - name: protocol_init
+    kind: function.lua
+    source: file://../src_link/binding/init_oauth_func.lua
+    method: handle
+    modules: [ctx, time, hash, crypto, base64, logger]
+    imports:
+      creds: app:protocol_creds
+  - name: protocol_e2e_test
+    kind: function.lua
+    source: file://protocol_e2e_test.lua
+    method: run
+    meta:
+      type: test
+      suite: kickside_oauth
+      token_endpoint: http://127.0.0.1:19145/public/protocol-token
+    modules: [funcs, registry]
+    imports:
+      test: wippy.test:test
