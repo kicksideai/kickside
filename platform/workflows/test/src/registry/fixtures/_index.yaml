@@ -175,7 +175,7 @@ entries:
       block:
         api_version: kickside.block/v1
         input: *object_schema
-        config: *object_schema
+        config: { type: object, additionalProperties: false, properties: {} }
         output: *object_schema
         ports: *result_port
         presentation: { category: Testing, blurb: A public Block the agent catalog may offer. }
@@ -185,6 +185,17 @@ entries:
     kind: registry.entry
     meta: *test_block_meta
     data: { block: { api_version: kickside.block/v1, input: *object_schema, config: *object_schema, output: *object_schema, ports: *result_port, execution: { kind: function, function_id: app:engine_lane_guard } } }
+
+  - name: empty_schema_tool
+    kind: function.lua
+    meta:
+      type: tool
+      public: true
+      input_schema: &empty_tool_schema { type: object, additionalProperties: false, properties: {}, default: {}, examples: [] }
+      output_schema: *empty_tool_schema
+    source: file://../../suites/engine_execution_helper.lua
+    method: linear
+    modules: [ctx]
 
   - name: block.engine_lane_guard_or_fail
     kind: registry.entry
@@ -305,6 +316,22 @@ entries:
       block_catalog: kickside.workflows.catalog:block_catalog
       json: json
       test: wippy.test:test
+
+  - name: block_schema_publish_test
+    kind: function.lua
+    meta: { type: test, suite: workflows, group: KickSide Workflows }
+    source: file://../../suites/block_schema_publish_test.lua
+    method: run
+    modules: [json, funcs, security, uuid]
+    imports:
+      test: wippy.test:test
+      block_catalog: kickside.workflows.catalog:block_catalog
+      version_read: kickside.workflows.repo:version_read
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      compiler: kickside.workflows.compiler:compiler
+      flow_contract: kickside.blocks:flow_contract
+      blocks: kickside.blocks:blocks
 
   - name: migration_schema_test
     kind: function.lua
