@@ -1,0 +1,15 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: projection_output_completion_test
+    kind: function.lua
+    meta: {type: test, suite: projection-output-completion}
+    source: file://projection_output_completion_test.lua
+    method: run
+    modules: [sql, uuid, json, channel, time]
+    imports:
+      test: wippy.test:test
+      writer: kickside.core.projections.persist:writer
+      apply: kickside.core.projections:apply
+      claim: kickside.core.jobs.persist:claim
+      jobs: kickside.core.jobs:jobs
