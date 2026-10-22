@@ -15811,6 +15811,13 @@
       ],
       "tier": "regression"
     },
+    "workflow_terminal_publication_revoked_owner": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER"
+      ],
+      "tier": "regression"
+    },
     "workflow_unadmitted_run_reads": {
       "features": [],
       "issues": [

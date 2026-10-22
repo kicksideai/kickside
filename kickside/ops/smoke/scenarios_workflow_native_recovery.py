@@ -60,6 +60,10 @@ def workflow_native_recovery(ctx):
     inst.evidence.save('native-recovery', {'run_id': rid, 'decision_id': item['id'], 'hard_restarts': 2})
 
 
+def workflow_terminal_publication_revoked_owner(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'native_publication_recovery_test')
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -76,7 +80,10 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
-REGISTRY = [Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
+REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression',
+                     workflow_terminal_publication_revoked_owner,
+                     issues=('WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER',)),
+            Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
                      issues=('WORKFLOW-UNADMITTED-RUN-READ-PROJECTION', 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE')),
