@@ -183,6 +183,10 @@ function onLayoutEvent(event: LayoutEvent) {
   }
   if (event.channel === '@HOST/intent') {
     const payload = event.payload as ArtifactIntent | undefined
+    if (payload?.intent === 'startChat' || payload?.intent === 'openSession') {
+      bus?.send('main', 'kickside:chat-open', payload)
+      return
+    }
     const id = artifactIdFrom(payload)
     if (payload?.intent === 'openArtifact' && id)
       showArtifact(id, payload, event.sourcePanelId)

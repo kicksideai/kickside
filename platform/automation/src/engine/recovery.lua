@@ -258,12 +258,12 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 UNION ALL SELECT MIN(created_at), CAST($5 AS BIGINT) FROM kickside_automation_prepared p
                   WHERE NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=p.automation_id)
                   AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=p.automation_id AND c.pending_request_id IS NOT NULL)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_trigger_item_ledger l WHERE l.owner_id=p.automation_id AND l.state NOT IN ('resolved','dead'))
-                UNION ALL SELECT MIN(updated_at), CAST($6 AS BIGINT) FROM kickside_automation_receipt r WHERE dest_ref_json IS NULL
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=r.owner_id)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=r.owner_id AND c.pending_request_id IS NOT NULL)]],
-                { command.OWNER_DELETE_KIND, now, (policy :: Map).ledger_resolved_ms, (policy :: Map).ops_ms, (policy :: Map).prepared_ms, (policy :: Map).receipts_ms })
+                  AND NOT EXISTS (SELECT 1 FROM kickside_trigger_item_ledger l WHERE l.owner_id=p.automation_id AND l.state NOT IN ('resolved','dead'))]],
+                { command.OWNER_DELETE_KIND, now, (policy :: Map).ledger_resolved_ms, (policy :: Map).ops_ms, (policy :: Map).prepared_ms })
             if err then return nil, err end
+            local receipt_at, receipt_err = (dependencies.receipt_retention :: any).oldest_eligible(db)
+            if receipt_err then return nil, receipt_err end
+            rows[#rows + 1] = { at = receipt_at, delay = (policy :: Map).receipts_ms }
             local earliest: string? = nil
             for _, row in ipairs(rows :: { Map }) do
                 if row.at ~= nil then

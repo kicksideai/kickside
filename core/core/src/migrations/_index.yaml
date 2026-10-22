@@ -152,3 +152,18 @@ entries:
       migration: wippy.migration:migration
       natural_key: kickside.core.threads.persist:natural_key
     method: migrate
+
+  - name: 12_blocked_projection_pins
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-22T00:00:12Z"
+    source: file://12_blocked_projection_pins.lua
+    modules: [sql]
+    imports:
+      migration: wippy.migration:migration
+      threads_writer: kickside.core.threads.persist:writer
+      retention_pin: kickside.core.retention:pin
+    method: migrate
