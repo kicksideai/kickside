@@ -372,6 +372,47 @@ entries:
       delete_principal: kickside.users.persist:delete_principal
       profile_writer: kickside.users.persist:profile_writer
 
+  - name: source_scope_test_tokens
+    kind: security.token_store
+    default_expiration: 1h
+    store: kickside.users.security:token_storage
+    subject_lookup: kickside.users:source_scope_live_lookup
+    token_key: ""
+    token_key_env: ""
+    token_length: 32
+
+  - name: source_scope_live_lookup
+    kind: function.lua
+    source: file://source_scope_live_lookup.lua
+    method: lookup
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    imports:
+      scope_store: kickside.security.persist:scope_store
+
+  - name: source_scope_epoch_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: users
+    source: file://source_scope_epoch_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [registry, security]
+    imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_store: kickside.security.persist:scope_store
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
   - name: login_scope_test
     kind: function.lua
     meta:
