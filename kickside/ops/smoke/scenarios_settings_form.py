@@ -19,24 +19,25 @@ REGISTRY = [Scenario('settings_form_schema_and_row_errors', 'regression', settin
 
 def settings_fixture(fixture):
     import yaml
-    directory = fixture.inst.app / 'src' / 'settings-browser-fixture'
-    directory.mkdir()
-    entries = []
-    for key, schema, default in (
-        ('array_value', {'type': 'array', 'items': {'type': 'string'}}, ['valid']),
-        ('object_value', {'type': 'object', 'required': ['enabled'],
-                          'properties': {'enabled': {'type': 'boolean'}}}, {'enabled': True}),
-    ):
-        entries.append({'name': key, 'kind': 'registry.entry',
+    with fixture.paused():
+        directory = fixture.inst.app / 'src' / 'settings-browser-fixture'
+        directory.mkdir()
+        entries = []
+        for key, schema, default in (
+            ('array_value', {'type': 'array', 'items': {'type': 'string'}}, ['valid']),
+            ('object_value', {'type': 'object', 'required': ['enabled'],
+                              'properties': {'enabled': {'type': 'boolean'}}}, {'enabled': True}),
+        ):
+            entries.append({'name': key, 'kind': 'registry.entry',
+                            'meta': {'type': 'kickside.settings:definition'},
+                            'namespace': 'settings.browser.fixture', 'key': key,
+                            'value_type': 'json', 'default': default, 'schema': schema})
+        entries.append({'name': 'stored_value', 'kind': 'registry.entry',
                         'meta': {'type': 'kickside.settings:definition'},
-                        'namespace': 'settings.browser.fixture', 'key': key,
-                        'value_type': 'json', 'default': default, 'schema': schema})
-    entries.append({'name': 'stored_value', 'kind': 'registry.entry',
-                    'meta': {'type': 'kickside.settings:definition'},
-                    'namespace': 'settings.browser.fixture', 'key': 'stored_value',
-                    'value_type': 'string', 'default': 'valid'})
-    (directory / '_index.yaml').write_text(yaml.safe_dump({
-        'version': '1.0', 'namespace': 'settings.browser.fixture', 'entries': entries}, sort_keys=False))
+                        'namespace': 'settings.browser.fixture', 'key': 'stored_value',
+                        'value_type': 'string', 'default': 'valid'})
+        (directory / '_index.yaml').write_text(yaml.safe_dump({
+            'version': '1.0', 'namespace': 'settings.browser.fixture', 'entries': entries}, sort_keys=False))
 
 
 def settings_browser(ctx):
@@ -55,7 +56,8 @@ def settings_browser(ctx):
 def structured_settings_browser(ctx, key, invalid, error, valid):
     from playwright.sync_api import expect
     from runtime_fixtures import isolated_fixture
-    with isolated_fixture(ctx, prepare=settings_fixture) as fixture:
+    with isolated_fixture(ctx) as fixture:
+        settings_fixture(fixture)
         browser, view = settings_browser(fixture)
         writes = []
         browser.page.on('request', lambda request: writes.append(request.post_data_json)
@@ -92,7 +94,8 @@ def stored_settings_error_browser(ctx):
     import yaml
     from playwright.sync_api import expect
     from runtime_fixtures import isolated_fixture
-    with isolated_fixture(ctx, prepare=settings_fixture) as fixture:
+    with isolated_fixture(ctx) as fixture:
+        settings_fixture(fixture)
         inst = fixture.inst
         inst.request('PUT', '/api/v1/settings', {'namespace': 'settings.browser.fixture',
                      'key': 'stored_value', 'value': 'previous-format'}, label='stored-settings-override')
@@ -120,7 +123,7 @@ def stored_settings_error_browser(ctx):
 
 REGISTRY.extend([
     Scenario('settings_array_json_browser', 'regression', array_settings_browser,
-             ('boot',), instance_setup=True, issues=('SETTINGS-STRUCTURED-SCHEMA-VALIDATION',)),
+             ('boot',), instance_setup=True, issues=('SETTINGS-STRUCTURED-SCHEMA-VALIDATION', 'SMOKE-SETTINGS-FIXTURE-BOOT-ORDER')),
     Scenario('settings_object_json_browser', 'regression', object_settings_browser,
              ('boot',), instance_setup=True, issues=('SETTINGS-STRUCTURED-SCHEMA-VALIDATION',)),
     Scenario('settings_stored_error_browser', 'regression', stored_settings_error_browser,

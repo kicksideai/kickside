@@ -10,10 +10,13 @@ class OpenAITools(Fixture):
     name = 'openai-tools'
 
     def __init__(self, base, base_path='', *, tool_names, token, before_tool_response=None,
-                 tool_calls=None, tool_call_plans=None, final_content='Completed tool turn'):
+                 tool_calls=None, tool_call_plans=None, final_content='Completed tool turn',
+                 models=None, response=None):
         super().__init__(base, base_path)
         self.tool_names = list(tool_names)
         self.token = token
+        self.models = models if models is not None else [{'id': 'tool-fixture', 'object': 'model'}]
+        self.response = response
         self.before_tool_response = before_tool_response
         self.tool_calls = [
             {'name': call['name'], 'arguments': dict(call.get('arguments') or {})}
@@ -32,12 +35,14 @@ class OpenAITools(Fixture):
         if headers.get('Authorization') != 'Bearer ' + self.token:
             return 401, {}, {'error': {'message': 'Fixture bearer is required'}}
         if method == 'GET' and path == '/v1/models':
-            return 200, {}, {'object': 'list', 'data': [{'id': 'tool-fixture', 'object': 'model'}]}
-        if method != 'POST' or path != '/v1/chat/completions':
+            return 200, {}, {'object': 'list', 'data': self.models}
+        if method != 'POST' or path not in ('/v1/chat/completions', '/v1/responses'):
             return 404, {}, {'error': {'message': 'Unknown model fixture route'}}
-        messages = body.get('messages')
+        messages = body.get('messages') if path == '/v1/chat/completions' else body.get('input')
         if not isinstance(messages, list) or not messages:
             return 400, {}, {'error': {'message': 'Messages are required'}}
+        if self.response is not None:
+            return self.response(body)
         message = {'role': 'assistant', 'content': self.final_content}
         finish = 'stop'
         last_user = max((index for index, row in enumerate(messages) if row.get('role') == 'user'), default=-1)

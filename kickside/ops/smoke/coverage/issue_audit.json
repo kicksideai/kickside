@@ -27616,6 +27616,300 @@
       ],
       "reason": "The projector deduplicates indexed events but applies a newly indexed older event to derived state without comparing its sequence with the event that produces the current value. This is a source, API or native contract check without a rendered browser operation.",
       "user_visible": false
+    },
+    "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION": {
+      "guards": {
+        "automation_settled_mapping_delivery": {
+          "assertions": [
+            "An aged real event mapping retires through the existing dispatcher while a recent mapping and its remote destination survive."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Automation settled event receipt retention.",
+      "user_visible": true
+    },
+    "AUTOMATION-STALE-SLOT-REFERENCE": {
+      "guards": {
+        "automation_missing_slot_event_delivery": {
+          "assertions": [
+            "After an actual initial event delivery, a missing slot fixture retains the stored cursor; run_now drains the next event exactly once."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Automation stale slot reference.",
+      "user_visible": true
+    },
+    "AUTOMATION-UNSERVED-WAKE": {
+      "guards": {
+        "automation_missing_slot_event_delivery": {
+          "assertions": [
+            "An accepted run_now after slot loss produces an actual destination effect rather than consuming an unserved wake."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Automation unserved wake.",
+      "user_visible": true
+    },
+    "CRM-RESOLVE-RECORD-LIFETIME": {
+      "guards": {
+        "crm_resolve_record_lifetime_workflow": {
+          "assertions": [
+            "Real Resolve Block workflows create, delete and recreate an email with new and reused record IDs; authoritative records, distinct create identities, committed claims and retries remain correct."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Crm resolve record lifetime.",
+      "user_visible": true
+    },
+    "CRM-RESOLVE-SUGGESTION-CONFIDENCE": {
+      "guards": {
+        "crm_resolve_suggestion_workflow": {
+          "assertions": [
+            "The workflow suggestion projects the existing scorer confidence without changing its value."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Crm resolve suggestion confidence.",
+      "user_visible": true
+    },
+    "CRM-RESOLVE-SUGGESTION-OUTPUT": {
+      "guards": {
+        "crm_resolve_suggestion_workflow": {
+          "assertions": [
+            "An existing-record Resolve Block workflow returns configured duplicate suggestions with its advertised score fields and a readable merge review."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Crm resolve suggestion output.",
+      "user_visible": true
+    },
+    "KEEPER-CHANGELOG-UTC": {
+      "guards": {
+        "keeper_changelog_publication_utc": {
+          "assertions": [
+            "An actual registry publication under a non-UTC host clock records both timestamps inside its UTC request interval."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Registry changelog serialization labels local wall-clock time as UTC.",
+      "user_visible": true
+    },
+    "KEEPER-MCP-TRANSPORT-CONTEXT": {
+      "guards": {
+        "keeper_mcp_session_edit_isolation": {
+          "assertions": [
+            "Two initialized sessions sharing a credential alternate create and replace operations; their actual changeset journals and branch clearing remain independent."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "MCP dispatch shares the implicit editing target across transport sessions using one bearer.",
+      "user_visible": true
+    },
+    "MODELS-GENERATION-CAPABILITIES": {
+      "guards": {
+        "model_discovery_generation_operations": {
+          "assertions": [
+            "First-party discovery retains every provider model identity while only generation-compatible operations enter the generation API list."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Models generation capabilities.",
+      "user_visible": true
+    },
+    "MODELS-REASONING-GENERATIONS": {
+      "guards": {
+        "model_discovery_reasoning_request": {
+          "assertions": [
+            "First-party discovery feeds a saved temperature-bearing agent into a real workflow; captured provider requests omit unsupported sampling and the workflow completes."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Models reasoning generations.",
+      "user_visible": true
+    },
+    "RUNTIME-LIBRARY-LOGGER-CONTEXT": {
+      "guards": {
+        "runtime_library_logger_request": {
+          "assertions": [
+            "An authenticated app request executes named and field-bearing library loggers and a call-time control; each marker appears once in the runtime log."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Library-load logger derivation retains a logger without the active execution context.",
+      "user_visible": false
+    },
+    "RUNTIME-NUMERIC-KEY-EQUALITY": {
+      "guards": {
+        "runtime_numeric_key_request": {
+          "assertions": [
+            "JSON request values address Lua tables bidirectionally across negative, zero, positive and hash-range keys; integer negation preserves its subtype."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Equal integer and float table keys diverge outside the positive array fast path.",
+      "user_visible": false
+    },
+    "SESSION-CANCELLED-TOOL-SETTLEMENT": {
+      "guards": {
+        "session_stop_tool_settlement_browser": {
+          "assertions": [
+            "A real Stop click settles an active tool with a cancelled live event and badge, and reload preserves that terminal badge without a spinner."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Cancelled calls require terminal live and history projections understood by the chat.",
+      "user_visible": true
+    },
+    "SESSION-DISCONNECT-ACTIVE-TURN": {
+      "guards": {
+        "session_disconnect_active_tool_browser": {
+          "assertions": [
+            "The browser starts a held real tool and closes; after disconnect grace the tool completes once without a browser and reconnect restores its answer without resubmitting the turn."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Browser retirement can enter the explicit Stop path while a tool is active.",
+      "user_visible": true
+    },
+    "SMOKE-KNOWLEDGE-SETUP-OWNERSHIP": {
+      "guards": {
+        "knowledge_large_upload": {
+          "assertions": [
+            "The large document journey consumes its actual AI setup, ingests content above the event row bound, indexes the marker and opens the served document view."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The large knowledge scenario registers outside the isolated area that owns its required model setup.",
+      "user_visible": false
+    },
+    "UPSTREAM-PROVIDER-ERROR-CAUSE": {
+      "guards": {
+        "workflow_provider_payment_cause": {
+          "assertions": [
+            "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "workflow_provider_quota_cause": {
+          "assertions": [
+            "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "workflow_provider_rate_limit_cause": {
+          "assertions": [
+            "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "workflow_unconfigured_model_cause": {
+          "assertions": [
+            "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Provider and missing-model causes are lost across agent and workflow error boundaries.",
+      "user_visible": true
+    },
+    "UPSTREAM-TOOL-ARGUMENT-DIAGNOSTIC": {
+      "guards": {
+        "workflow_malformed_tool_arguments": {
+          "assertions": [
+            "A malformed finish response passes through the real agent workflow; the stored action retains raw arguments and its decoder error and the next provider request carries the parse diagnostic."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Malformed provider tool arguments lose their original text and decoding cause before agent observations.",
+      "user_visible": true
+    },
+    "SMOKE-SETTINGS-FIXTURE-BOOT-ORDER": {
+      "guards": {
+        "settings_array_json_browser": {
+          "assertions": [
+            "The application boots before fixture declarations enter the existing paused mutation lifecycle, then the browser exercises the served structured Settings field."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The Settings browser fixture writes declarations before published application initialization, which omits or replaces them during bootstrap.",
+      "user_visible": false
     }
   },
   "schema_version": 1

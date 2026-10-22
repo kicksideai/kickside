@@ -5171,6 +5171,17 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_missing_slot_event_delivery": {
+      "features": [
+        "kickside/automation|http|POST /api/v1/automations/{id}/control",
+        "kickside/automation|http|GET /api/v1/automations/{id}/status"
+      ],
+      "issues": [
+        "AUTOMATION-UNSERVED-WAKE",
+        "AUTOMATION-STALE-SLOT-REFERENCE"
+      ],
+      "tier": "regression"
+    },
     "automation_oauth_boundaries": {
       "features": [
         "kickside/oauth|http|GET /api/v1/oauth/providers/discover",
@@ -5303,6 +5314,16 @@
     },
     "automation_settled_event_receipt_retention": {
       "features": [],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "tier": "regression"
+    },
+    "automation_settled_mapping_delivery": {
+      "features": [
+        "kickside/automation|http|POST /api/v1/automations/{id}/control",
+        "kickside/inbox|http|GET /api/v1/inbox"
+      ],
       "issues": [
         "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
       ],
@@ -7803,6 +7824,17 @@
       ],
       "tier": "regression"
     },
+    "crm_resolve_record_lifetime_workflow": {
+      "features": [
+        "kickside/crm|workflow_block|kickside.crm.blocks:resolve",
+        "kickside/crm|http|POST /api/v1/workspace/crm/{id}/query",
+        "kickside/workflows|http|POST /api/v1/workflows/{id}/run"
+      ],
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME"
+      ],
+      "tier": "regression"
+    },
     "crm_resolve_suggestion_confidence": {
       "features": [],
       "issues": [
@@ -7814,6 +7846,18 @@
       "features": [],
       "issues": [
         "CRM-RESOLVE-SUGGESTION-OUTPUT"
+      ],
+      "tier": "regression"
+    },
+    "crm_resolve_suggestion_workflow": {
+      "features": [
+        "kickside/crm|workflow_block|kickside.crm.blocks:resolve",
+        "kickside/crm|http|POST /api/v1/workspace/crm/{id}/query",
+        "kickside/workflows|http|POST /api/v1/workflows/{id}/run"
+      ],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-OUTPUT",
+        "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
       ],
       "tier": "regression"
     },
@@ -8738,12 +8782,26 @@
       "issues": [],
       "tier": "regression"
     },
+    "keeper_changelog_publication_utc": {
+      "features": [],
+      "issues": [
+        "KEEPER-CHANGELOG-UTC"
+      ],
+      "tier": "regression"
+    },
     "keeper_dashboard_logs_ui": {
       "features": [],
       "issues": [
         "KEEPER-LOGGER-UI-ERROR"
       ],
       "tier": "full"
+    },
+    "keeper_mcp_session_edit_isolation": {
+      "features": [],
+      "issues": [
+        "KEEPER-MCP-TRANSPORT-CONTEXT"
+      ],
+      "tier": "regression"
     },
     "keeper_module_readme_ui": {
       "features": [],
@@ -8803,7 +8861,8 @@
         "kickside/core|http|GET /api/v1/threads/{id}/events"
       ],
       "issues": [
-        "KNOWLEDGE-BOUNDED-CONTENT-EVENT"
+        "KNOWLEDGE-BOUNDED-CONTENT-EVENT",
+        "SMOKE-KNOWLEDGE-SETUP-OWNERSHIP"
       ],
       "tier": "full"
     },
@@ -9307,6 +9366,26 @@
         "SESSION-EXPLICIT-CHECKPOINT-BINDING-FAILURE"
       ],
       "tier": "chat"
+    },
+    "model_discovery_generation_operations": {
+      "features": [
+        "kickside/models|http|POST /api/v1/models/provider-profiles/{id}/discover",
+        "kickside/models|http|GET /api/v1/models/list"
+      ],
+      "issues": [
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "tier": "regression"
+    },
+    "model_discovery_reasoning_request": {
+      "features": [
+        "kickside/models|http|POST /api/v1/models/provider-profiles/{id}/discover",
+        "kickside/agents|workflow_block|kickside.agents:block.agent"
+      ],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS"
+      ],
+      "tier": "regression"
     },
     "model_picker_capabilities_browser": {
       "features": [],
@@ -14926,6 +15005,20 @@
       ],
       "tier": "regression"
     },
+    "runtime_library_logger_request": {
+      "features": [],
+      "issues": [
+        "RUNTIME-LIBRARY-LOGGER-CONTEXT"
+      ],
+      "tier": "regression"
+    },
+    "runtime_numeric_key_request": {
+      "features": [],
+      "issues": [
+        "RUNTIME-NUMERIC-KEY-EQUALITY"
+      ],
+      "tier": "regression"
+    },
     "runtime_tokenstore_boot_env_signing": {
       "features": [],
       "issues": [
@@ -15217,6 +15310,24 @@
       ],
       "tier": "chat"
     },
+    "session_disconnect_active_tool_browser": {
+      "features": [
+        "kickside/sessions|http|POST /api/v1/sessions/start-token"
+      ],
+      "issues": [
+        "SESSION-DISCONNECT-ACTIVE-TURN"
+      ],
+      "tier": "regression"
+    },
+    "session_stop_tool_settlement_browser": {
+      "features": [
+        "kickside/sessions|http|POST /api/v1/sessions/start-token"
+      ],
+      "issues": [
+        "SESSION-CANCELLED-TOOL-SETTLEMENT"
+      ],
+      "tier": "regression"
+    },
     "sessions_drawer_admin_new": {
       "features": [
         "kickside/sessions|navigation|kickside.sessions:nav_item"
@@ -15384,7 +15495,8 @@
     "settings_array_json_browser": {
       "features": [],
       "issues": [
-        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION",
+        "SMOKE-SETTINGS-FIXTURE-BOOT-ORDER"
       ],
       "tier": "regression"
     },
@@ -16077,6 +16189,16 @@
       ],
       "tier": "regression"
     },
+    "workflow_malformed_tool_arguments": {
+      "features": [
+        "kickside/agents|workflow_block|kickside.agents:block.agent",
+        "kickside/workflows|http|POST /api/v1/workflows/{id}/run"
+      ],
+      "issues": [
+        "UPSTREAM-TOOL-ARGUMENT-DIAGNOSTIC"
+      ],
+      "tier": "regression"
+    },
     "workflow_management_failures": {
       "features": [],
       "issues": [
@@ -16104,6 +16226,36 @@
       "features": [],
       "issues": [
         "WORKFLOW-ORIGINAL-DELIVERY-IDENTITY"
+      ],
+      "tier": "regression"
+    },
+    "workflow_provider_payment_cause": {
+      "features": [
+        "kickside/agents|workflow_block|kickside.agents:block.agent",
+        "kickside/workflows|http|GET /api/v1/workflows/{id}/runs/{run_id}"
+      ],
+      "issues": [
+        "UPSTREAM-PROVIDER-ERROR-CAUSE"
+      ],
+      "tier": "regression"
+    },
+    "workflow_provider_quota_cause": {
+      "features": [
+        "kickside/agents|workflow_block|kickside.agents:block.agent",
+        "kickside/workflows|http|GET /api/v1/workflows/{id}/runs/{run_id}"
+      ],
+      "issues": [
+        "UPSTREAM-PROVIDER-ERROR-CAUSE"
+      ],
+      "tier": "regression"
+    },
+    "workflow_provider_rate_limit_cause": {
+      "features": [
+        "kickside/agents|workflow_block|kickside.agents:block.agent",
+        "kickside/workflows|http|GET /api/v1/workflows/{id}/runs/{run_id}"
+      ],
+      "issues": [
+        "UPSTREAM-PROVIDER-ERROR-CAUSE"
       ],
       "tier": "regression"
     },
@@ -16140,11 +16292,27 @@
       ],
       "tier": "regression"
     },
+    "workflow_unconfigured_model_cause": {
+      "features": [
+        "kickside/agents|workflow_block|kickside.agents:block.agent"
+      ],
+      "issues": [
+        "UPSTREAM-PROVIDER-ERROR-CAUSE"
+      ],
+      "tier": "regression"
+    },
     "workflow_undo_handoff_import_closure": {
       "features": [],
       "issues": [
         "WORKFLOW-SUPERVISOR-HARNESS-IMPORT-CLOSURE"
       ],
+      "tier": "regression"
+    },
+    "workflow_valid_empty_tool_arguments": {
+      "features": [
+        "kickside/agents|workflow_block|kickside.agents:block.agent"
+      ],
+      "issues": [],
       "tier": "regression"
     },
     "workflows_complete_listing": {

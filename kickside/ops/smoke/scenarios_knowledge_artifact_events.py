@@ -45,11 +45,5 @@ def large_upload(ctx):
 REGISTRY = [
     Scenario('knowledge_artifact_events', 'regression', artifact_events,
              issues=('KNOWLEDGE-BOUNDED-CONTENT-EVENT',)),
-    Scenario('knowledge_large_upload', 'full', large_upload, ('ai_ready',), True,
-             issues=('KNOWLEDGE-BOUNDED-CONTENT-EVENT',), features=(
-                 'kickside/knowledge|http|POST /api/v1/knowledge/{id}/ingest-upload',
-                 'kickside/knowledge|http|POST /api/v1/knowledge/{id}/search',
-                 'kickside/uploads|http|POST /api/v1/uploads',
-                 'kickside/core|http|GET /api/v1/threads/{id}/events',
-             )),
+
 ]

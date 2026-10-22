@@ -14,6 +14,26 @@ class IsolatedRuntimeTests(unittest.TestCase):
         parent.evidence.root, parent.evidence.label = Path('evidence'), 'scenario'
         return SimpleNamespace(inst=parent, browser_session=None)
 
+    def test_settings_declares_its_fixture_after_the_application_boots(self):
+        from scenarios_settings_form import structured_settings_browser
+        inst = Mock(cleanup=Cleanup())
+        events = []
+        inst.boot.side_effect = lambda: events.append('boot')
+
+        def configure(fixture):
+            self.assertEqual(events, ['boot'])
+            events.append('fixture')
+
+        class BrowserReached(Exception):
+            pass
+
+        with patch('runtime.Instance', return_value=inst), \
+                patch('scenarios_settings_form.settings_fixture', side_effect=configure), \
+                patch('scenarios_settings_form.settings_browser', side_effect=BrowserReached):
+            with self.assertRaises(BrowserReached):
+                structured_settings_browser(self.context(), 'key', 'invalid', 'error', '"valid"')
+        self.assertEqual(events, ['boot', 'fixture'])
+
     def test_cleanup_runs_after_scenario_failure_and_saves_child_evidence(self):
         ctx = self.context()
         inst = Mock(cleanup=Cleanup())
