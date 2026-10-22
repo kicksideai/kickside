@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 version: '1.0'
 namespace: app
 entries:
@@ -6,7 +7,6 @@ entries:
   source: file://slot_record_subject.lua
   imports:
     jobs: kickside.core.jobs:jobs
-    jobs_config: kickside.core.jobs:config
     slot_purge: kickside.core.jobs.persist:slot_purge
     types: kickside.automation:types
     drive: kickside.automation:drive
