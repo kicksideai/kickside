@@ -9632,6 +9632,28 @@
       "repository": "kickside/kickside",
       "test": "platform/webhooks/test/suites/webhooks_test_webhook_ingress.lua"
     },
+    "webscout-brave/core-minimum": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WEBSCOUT-PROVIDER-CORE-MINIMUM"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout-brave/test/suites/provider_test.lua"
+    },
+    "webscout-tavily/core-minimum": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WEBSCOUT-PROVIDER-CORE-MINIMUM"
+      ],
+      "repository": "kickside/providers",
+      "test": "webscout-tavily/test/suites/provider_test.lua"
+    },
     "webscout/http-results": {
       "engines": [
         "sqlite",
@@ -10922,7 +10944,8 @@
     "DATAFLOW-SOURCE-TEST-HARNESS-IMPORT",
     "DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT",
     "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE",
-    "HUB-TRANSITIVE-UPDATE-DESTINATION"
+    "HUB-TRANSITIVE-UPDATE-DESTINATION",
+    "WEBSCOUT-PROVIDER-CORE-MINIMUM"
   ],
   "schema_version": 1
 }

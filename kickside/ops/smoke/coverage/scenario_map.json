@@ -15567,6 +15567,13 @@
       ],
       "tier": "regression"
     },
+    "webscout_provider_dependency": {
+      "features": [],
+      "issues": [
+        "WEBSCOUT-PROVIDER-CORE-MINIMUM"
+      ],
+      "tier": "regression"
+    },
     "workflow_discovery_failures": {
       "features": [],
       "issues": [
