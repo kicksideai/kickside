@@ -2,7 +2,7 @@ version: "1.0"
 namespace: kickside.automation
 entries:
   - name: dep.wippy.migration
-    version: '*'
+    version: '>=0.3.25'
     kind: ns.dependency
     meta:
       comment: Migration framework for the module read-model tables.
