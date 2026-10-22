@@ -40,8 +40,13 @@ local fail_job = worker_completion.fail_job
 local function retry_floor_for(err: error?): table?
     if not err then return nil end
     local details = err:details()
-    if details and details.retry_after_ms ~= nil then return {retry_after_ms = details.retry_after_ms} end
-    return nil
+    local floor = type(details) == "table" and details.retry_after_ms or nil
+    -- Provider metadata is advisory. An invalid hint must not prevent the
+    -- original failure from settling under the configured retry policy.
+    if type(floor) ~= "number" or floor < 0 or floor ~= math.floor(floor) or floor == math.huge then
+        return nil
+    end
+    return {retry_after_ms = floor}
 end
 worker.completion_opts = completion_opts
 worker.failure_class_for = failure_class_for

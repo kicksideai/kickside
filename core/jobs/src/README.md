@@ -43,4 +43,6 @@ Failure transitions accept an optional final `{ retry_after_ms = milliseconds }`
 argument on `fail_tx` and `fail_job`. The structured floor can exceed the policy
 cap. Slots use `slot_retry`; one-shot jobs use `retry`. Both retain their configured
 base as the lower bound of jitter. Worker failures carry native error details to
-this argument before rendering the history error text.
+this argument before rendering the history error text. Malformed provider retry
+hints are ignored so they cannot prevent failure settlement; explicit failure
+transition arguments remain validated.

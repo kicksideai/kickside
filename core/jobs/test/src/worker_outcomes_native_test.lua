@@ -68,6 +68,18 @@ return {run = test.run_cases(function()
             test.not_nil(fixture.retry_floor)
             test.eq(fixture.retry_floor.retry_after_ms, 901500)
         end)
+        for _, value in ipairs({"90000", -1, 1.5, false, {}}) do
+            test.it("settles failures despite malformed retry metadata/" .. tostring(value), function()
+                setup("", nil, nil)
+                fixture.execute_error = errors.new({kind = errors.UNAVAILABLE, message = "provider unavailable",
+                    details = {retry_after_ms = value}})
+                local control, err = worker.process_job(fixture.database(), "sqlite", "worker", {id = "job"}, "run")
+                test.is_nil(control)
+                test.is_nil(err)
+                test.eq(fixture.calls.settle, 1)
+                test.is_nil(fixture.retry_floor)
+            end)
+        end
         for _, stage in ipairs(stages) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED, errors.UNAVAILABLE,
                 errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
