@@ -1,6 +1,7 @@
 local test = require("test")
 local funcs = require("funcs")
 local registry = require("registry")
+local json = require("json")
 local security = require("security")
 
 local TRAIT_ID = "kickside.agents.traits:artifacts"
@@ -85,6 +86,49 @@ local function define_tests()
             local artifact = result._control.artifacts[1]
             test.eq(artifact.display_type, "inline")
             test.is_true(artifact.instructions)
+        end)
+
+        test.it("declares a plain object input root and keeps mode rules in the handler", function()
+            local tool = registry.get(TOOL_ID)
+            local schema = json.decode(tool.meta.input_schema)
+            test.eq(schema.type, "object")
+            for _, keyword in ipairs({ "oneOf", "anyOf", "allOf", "not", "enum", "const" }) do
+                test.is_nil(schema[keyword], keyword)
+            end
+            test.eq(schema.required[1], "title")
+            test.is_false(schema.additionalProperties)
+        end)
+
+        test.it("rejects every call that does not choose exactly one content mode", function()
+            local cases = {
+                { title = "None" },
+                { title = "Text and tag", content = "# Notes", tag_name = "kickside-status-card" },
+                { title = "Text and package", content = "# Notes", resource_kind = "page", resource_id = "app:page" },
+                { title = "Tag and package", tag_name = "kickside-status-card", resource_kind = "component", resource_id = "app:card" },
+                { title = "Content type with tag", content_type = "text/markdown", tag_name = "kickside-status-card" },
+                { title = "Content type with package", content_type = "text/html", resource_kind = "page", resource_id = "app:page" },
+            }
+            for _, args in ipairs(cases) do
+                local result, err = call_tool(args)
+                test.is_nil(result, args.title)
+                test.is_true(errors.is(err, errors.INVALID), args.title .. ": " .. tostring(err))
+                test.contains(tostring(err), "choose exactly one mode", args.title)
+            end
+        end)
+
+        test.it("rejects incomplete modes with a typed error naming the missing field", function()
+            local cases = {
+                { args = { title = "Type only", content_type = "text/markdown" }, message = "content must be a non-empty string" },
+                { args = { title = "Kind only", resource_kind = "page" }, message = "resource_id must be a non-empty string" },
+                { args = { title = "Id only", resource_id = "app:page" }, message = "resource_kind must be component or page" },
+                { args = { title = "Props in text", content = "# Notes", props = { a = 1 } }, message = "props are only valid in component modes" },
+            }
+            for _, case in ipairs(cases) do
+                local result, err = call_tool(case.args)
+                test.is_nil(result, case.args.title)
+                test.is_true(errors.is(err, errors.INVALID), case.args.title .. ": " .. tostring(err))
+                test.contains(tostring(err), case.message, case.args.title)
+            end
         end)
 
         test.it("rejects component tags outside the approved live catalog", function()

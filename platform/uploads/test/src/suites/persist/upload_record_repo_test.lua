@@ -11,6 +11,13 @@ local resources = require("uploads_resources")
 
 local function define_tests()
     test.describe("upload_record_repo.create", function()
+        test.it("deletes an already removed record idempotently", function()
+            local removed, err = upload_record_repo.delete(uuid.v4())
+            test.is_nil(err)
+            test.not_nil(removed)
+            test.is_true(removed.deleted)
+        end)
+
         test.it("rejects corrupt artifact and chunk JSON without replacing persisted values", function()
             local id = uuid.v4()
             test.not_nil((upload_record_repo.create(id, "json-owner", 1, "text/plain",

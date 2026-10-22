@@ -1258,6 +1258,7 @@ entries:
       job_lifecycle: kickside.core.jobs.persist:lifecycle
       jobs_wake: kickside.core.jobs.persist:wake
       retention_notifier: kickside.core.retention:notifier
+      retention_pin: kickside.core.retention:pin
       persisted_json: kickside.contract:persisted_json
       error_envelope: kickside.contract:error_envelope
 
@@ -2783,6 +2784,7 @@ entries:
       job_lifecycle: app:projection_register_native_job_adapter
       jobs_wake: app:projection_register_native_wake_adapter
       retention_notifier: app:register_completion_retention
+      retention_pin: app:projection_register_native_fixture
       persisted_json: kickside.contract:persisted_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
@@ -3377,6 +3379,7 @@ entries:
       jobs: app:projection_apply_native_jobs_adapter
       cursor_waiters: app:projection_apply_native_cursor_waiters_adapter
       retention_notifier: app:projection_apply_native_retention_notifier_adapter
+      retention_pin: app:projection_apply_native_fixture
       execution_identity: app:projection_apply_native_execution_identity_adapter
 
   - name: projection_apply_native_test
@@ -4128,6 +4131,7 @@ entries:
       jobs_wake: kickside.core.jobs.persist:wake
       cursor_waiters: app:projection_transaction_fixture
       retention_notifier: kickside.core.retention:notifier
+      retention_pin: kickside.core.retention:pin
       error_envelope: kickside.contract:error_envelope
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
@@ -4205,6 +4209,7 @@ entries:
       jobs_wake: app:projection_postcommit_jobs_wake
       cursor_waiters: app:projection_postcommit_cursor_waiters
       retention_notifier: app:projection_postcommit_retention_notifier
+      retention_pin: app:projection_postcommit_fixture
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error

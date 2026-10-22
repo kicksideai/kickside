@@ -144,6 +144,10 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
               </div>
             </div>
             <p v-if="item.description" class="km-ov-desc">{{ item.description }}</p>
+            <p v-if="props.mode === 'update' && !props.currentId" class="km-hint">
+              Updating this module creates an application root dependency for the selected version.
+              This version also applies to modules that depend on it; the plan shows any conflicts.
+            </p>
 
             <div class="km-field">
               <label class="km-label">Version</label>

@@ -96,6 +96,67 @@ local function define_tests()
             test.eq((((params :: Map).metadata :: Map).form :: Map).type, "object")
         end)
 
+        test.it("derives a distinct title and editable defaults from each reviewed input", function()
+            local reviewed = args("reviewer")
+            reviewed.input = { deal = { name = "Example renewal" }, draft = "Hello\nDraft", seats = 0, notify = false }
+            reviewed.config.title_expr = "'Review: ' + input.deal.name"
+            reviewed.config.form = { type = "object", properties = {
+                body = { type = "string", format = "textarea", default_expr = "input.draft" },
+                seats = { type = "integer", default_expr = "input.seats" },
+                notify = { type = "boolean", default_expr = "input.notify" },
+                reason = { type = "string", default = "Declared default" },
+            } }
+            local params, err = arm.preview_decision(reviewed)
+            test.is_nil(err)
+            test.eq(params.title, "Review: Example renewal")
+            test.eq(params.metadata.form.properties.body.default, "Hello\nDraft")
+            test.eq(params.metadata.form.properties.seats.default, 0)
+            test.eq(params.metadata.form.properties.notify.default, false)
+            test.eq(params.metadata.form.properties.reason.default, "Declared default")
+            test.is_nil(reviewed.config.form.properties.body.default)
+            reviewed.input.deal.name = "Another renewal"
+            reviewed.input.draft = "Another draft"
+            local other, other_err = arm.preview_decision(reviewed)
+            test.is_nil(other_err)
+            test.eq(other.title, "Review: Another renewal")
+            test.eq(other.metadata.form.properties.body.default, "Another draft")
+            test.eq(params.metadata.form.properties.body.default, "Hello\nDraft")
+        end)
+
+        test.it("rejects invalid title and default expressions without creating misleading values", function()
+            for _, expression in ipairs({ "input.", "input.missing", "42", "''" }) do
+                local reviewed = args("reviewer")
+                reviewed.input = {}
+                reviewed.config.title_expr = expression
+                local params, err = arm.preview_decision(reviewed)
+                test.is_nil(params)
+                test.contains(tostring(err), "title_expr")
+            end
+            for _, expression in ipairs({ "input.", "input.missing", "42" }) do
+                local reviewed = args("reviewer")
+                reviewed.input = {}
+                reviewed.config.form = { type = "object", properties = {
+                    body = { type = "string", default = "Static", default_expr = expression },
+                } }
+                local params, err = arm.preview_decision(reviewed)
+                test.is_nil(params)
+                test.contains(tostring(err), "form.properties.body.default_expr")
+            end
+        end)
+
+        test.it("keeps the prompt and static form unchanged when expressions are absent", function()
+            local reviewed = args("reviewer")
+            reviewed.config.form.properties.reason.default = "Static reason"
+            local params, err = arm.preview_decision(reviewed)
+            test.is_nil(err)
+            test.eq(params.title, reviewed.config.prompt)
+            test.eq(params.metadata.form, reviewed.config.form)
+            reviewed.config.prompt = nil
+            local untitled, untitled_err = arm.preview_decision(reviewed)
+            test.is_nil(untitled_err)
+            test.eq(untitled.title, "Workflow decision")
+        end)
+
         test.it("shows the reviewer the data the Block received", function()
             -- kickside.blocks:await hands the node input to the arm as `input`;
             -- the reviewer decides about that data, so the card must carry it.

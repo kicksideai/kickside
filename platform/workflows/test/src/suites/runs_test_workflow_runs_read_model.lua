@@ -355,6 +355,25 @@ local function define_tests()
             end)
         end
 
+        test.it("exposes persisted engine failure details in the run detail", function()
+            local id = wid()
+            local run_id, dataflow_id = uuid_v4(), uuid_v4()
+            insert_run_row({ run_id = run_id, workflow_id = id, dataflow_id = dataflow_id, status = "failed" })
+            local details = { { node_id = "test_node", error = { code = "EXEC_FAILED",
+                cause = { kind = "NotFound", retryable = false,
+                    details = { error_type = "model_error", model = "test_model", api_key = "synthetic-secret" } } } } }
+            stub_flows[dataflow_id] = { status = "failed", metadata = { error_details = details } }
+            local detail, err = runs.debug_detail(id, run_id)
+            test.is_nil(err)
+            local returned = detail.run.error_details
+            test.not_nil(returned)
+            test.eq(returned[1].error.cause.kind, "NotFound")
+            test.is_false(returned[1].error.cause.retryable)
+            test.eq(returned[1].error.cause.details.error_type, "model_error")
+            test.eq(returned[1].error.cause.details.model, "test_model")
+            test.eq(returned[1].error.cause.details.api_key, "[redacted]")
+        end)
+
         test.it("lists an unadmitted reservation without reading its allocated engine id", function()
             local id = wid()
             local run_id, dataflow_id = "run-reserved-" .. id, "df-reserved-" .. id

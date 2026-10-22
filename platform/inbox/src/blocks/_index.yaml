@@ -25,11 +25,17 @@ entries:
           required: [prompt]
           properties:
             prompt: { type: string, minLength: 1, title: Prompt, format: textarea }
+            title_expr:
+              type: string
+              minLength: 1
+              title: Item title expression
+              description: >-
+                Optional Wippy expression over input, for example "'Review: ' + input.name". Must return a non-empty string. The prompt remains the title when absent.
             form:
               type: object
               title: Form schema
               format: json-schema
-              description: Optional fields collected from the reviewer and returned with the decision.
+              description: Optional JSON Schema fields returned in output.form. A property default_expr evaluates a Wippy expression over input to prefill its default; string format textarea renders a multiline editor.
             assignee:
               type: string
               title: Assignee
@@ -81,7 +87,7 @@ entries:
     kind: library.lua
     meta: { comment: "Inbox-owned review arm with assignment policy and idempotent item creation." }
     source: file://arm_decision.lua
-    modules: [security, contract]
+    modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
       inbox_writer: kickside.inbox.persist:inbox_writer
@@ -96,7 +102,7 @@ entries:
       - kickside.inbox.security:submit_output_publish
     source: file://arm_decision.lua
     method: arm_decision
-    modules: [security, contract]
+    modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
       inbox_writer: kickside.inbox.persist:inbox_writer
@@ -111,7 +117,7 @@ entries:
       - kickside.inbox.security:submit_output_publish
     source: file://arm_decision.lua
     method: create_decision
-    modules: [security, contract]
+    modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
       inbox_writer: kickside.inbox.persist:inbox_writer
@@ -123,7 +129,7 @@ entries:
     meta: { private: true, comment: "Testable Inbox decision item builder; does not write." }
     source: file://arm_decision.lua
     method: preview_decision
-    modules: [security, contract]
+    modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
       inbox_writer: kickside.inbox.persist:inbox_writer

@@ -34,6 +34,7 @@ local function define_tests()
                 ["kickside.uploads.api:list_handler.endpoint"] = true,
                 ["kickside.uploads.api:presigned_handler.endpoint"] = true,
                 ["kickside.uploads.api:raw_handler.endpoint"] = true,
+                ["kickside.uploads.api:retry_handler.endpoint"] = true,
                 ["kickside.uploads.api:upload_handler.endpoint"] = true,
             }
             local listed = {}
@@ -82,6 +83,7 @@ local function define_tests()
                 "kickside.uploads.api:presigned_handler.endpoint",
                 "kickside.uploads.api:upload_handler.endpoint",
                 "kickside.uploads.api:raw_handler.endpoint",
+                "kickside.uploads.api:retry_handler.endpoint",
                 "kickside.uploads.api:artifacts_handler.endpoint",
                 "kickside.uploads.api:artifact_raw_handler.endpoint",
             }) do
