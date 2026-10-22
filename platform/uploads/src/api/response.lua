@@ -24,6 +24,18 @@ local function public_error(value: any): string?
     return "Upload processing failed. Check the file and try again."
 end
 
+-- The list carries only the transcription codes, so the preview can name a failure.
+local function transcription_meta(metadata: any): any?
+    local out = nil
+    for _, key in ipairs(metadata_sanitizer.TRANSCRIPTION_ERROR_KEYS) do
+        if metadata[key] ~= nil then
+            out = out or {}
+            out[key] = metadata[key]
+        end
+    end
+    return out
+end
+
 local function format_list_upload(upload: any): any
     local metadata = metadata_sanitizer.public(upload.metadata)
     return {
@@ -35,6 +47,7 @@ local function format_list_upload(upload: any): any
         created_at = upload.created_at,
         updated_at = upload.updated_at,
         filename = metadata.filename,
+        meta = transcription_meta(metadata),
     }
 end
 

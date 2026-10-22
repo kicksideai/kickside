@@ -93,6 +93,26 @@ end
 
 local function define_tests()
     test.describe("jobs.lifecycle backoff", function()
+        for _, slot in ipairs({false, true}) do
+            for _, floor in ipairs({0, 901500}) do
+                test.it("respects policy and provider floors/" .. tostring(slot) .. "/" .. tostring(floor), function()
+                    with_db(function(db)
+                        local dbtype = tostring(db:type())
+                        local policy = assert(config.policy())
+                        local job = assert(job_fixture.enqueue_leased(db, dbtype, {job_type = "test.retry.floor", slot = slot,
+                            job_identity = {namespace = "test", scope = uuid.v7(), key = "floor"}}))
+                        local base = slot and policy.slot_retry_after_ms or policy.retry_after_ms
+                        local lower = lifecycle.future_string(dbtype, math.max(base, floor) / 1000)
+                        local err = lifecycle.fail_job(db, job, dbtype, "provider unavailable", "infrastructure",
+                            floor > 0 and {retry_after_ms = floor} or nil)
+                        test.is_nil(err)
+                        local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_job WHERE id=$1 AND scheduled_at >= $2", {job.id, lower}))
+                        test.eq(tonumber(rows[1].n), 1)
+                    end)
+                end)
+            end
+        end
+
         test.it("doubles the configured retry floor and caps at the policy ceiling", function()
             test.eq(lifecycle.retry_delay_seconds(1, 2, 900), 2)
             test.eq(lifecycle.retry_delay_seconds(2, 2, 900), 4)

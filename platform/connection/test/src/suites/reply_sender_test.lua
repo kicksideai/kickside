@@ -132,6 +132,35 @@ local function define_tests()
             test.is_nil(result, "an incomplete message has no success result")
         end)
 
+        test.it("hands each chunk its own key derived from the delivery key", function()
+            local sent = {}
+            local svc = {}
+            function svc:send_reply(args)
+                sent[#sent + 1] = args
+                return { success = true, message_ref = "m" .. #sent }, nil
+            end
+            local sender = reply_sender.new({
+                component = {
+                    ACCESS = { WRITE = 2 },
+                    validate_access = function() return 15, nil end,
+                    open_private = function() return svc, nil end,
+                    list_system = function() return {}, nil end,
+                },
+                authorization = {},
+            })
+            local _, err = sender.send_reply({ component_id = "conn-1", resource_id = "room-1", outbound = true,
+                idempotency_key = "delivery-1" }, string.rep("a", 2500))
+            test.is_nil(err)
+            test.eq(#sent, 2)
+            test.eq(sent[1].idempotency_key, "delivery-1#1")
+            test.eq(sent[2].idempotency_key, "delivery-1#2")
+            local _, plain_err = sender.send_reply({ component_id = "conn-1", resource_id = "room-1",
+                outbound = true }, "plain")
+            test.is_nil(plain_err)
+            test.eq(#sent, 3)
+            test.is_nil(sent[3].idempotency_key)
+        end)
+
         test.it("surfaces a provider refusal before any chunk is delivered", function()
             local result, err = reply_sender.send_chunks({ "one" }, function()
                 return { success = false, error = "sealed reply proof is required" }, nil

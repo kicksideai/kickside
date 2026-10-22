@@ -338,7 +338,7 @@ entries:
   meta:
     type: test
     suite: kickside_automation_round
-    comment: The round cursor advances past undelivered items; the ledger holds only undelivered items and tombstones with expiries; receipts change only with their destination; writes name their origin.
+    comment: The round cursor advances past undelivered items; the ledger retains undelivered items and dead evidence, and expires resolved tombstones; receipts change only with their destination; writes name their origin.
   source: file://round/advance_test.lua
   method: run
   modules: [json]
@@ -661,3 +661,13 @@ entries:
   imports:
     test: wippy.test:test
     engine_harness: kickside.automation:automation_test_engine
+
+- name: dead_retention_test
+  kind: function.lua
+  meta: {type: test, suite: kickside_automation}
+  source: file://dead_retention_test.lua
+  method: run
+  modules: [sql, uuid]
+  imports:
+    test: wippy.test:test
+    ledger: kickside.automation:round_ledger

@@ -72,6 +72,41 @@ end
 
 local function define_tests()
     test.describe("jobs termination fence recovery", function()
+        test.it("rechecks a renewed lease after reading child liveness", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            fence(db, dbtype, job)
+            local count, err = reclaim.reclaim_terminated(db, dbtype, nil, function(): (boolean, error?)
+                local _, renew_err = db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2",
+                    {lifecycle.future_string(dbtype, 300), job.id})
+                return false, renew_err
+            end)
+            test.is_nil(err)
+            test.eq(count, 0)
+            test.eq(read(db, job.id).status, job_types.JOB_STATE.RUNNING)
+            assert(db:release())
+        end)
+
+        test.it("does not apply stale liveness evidence to a replaced execution", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            fence(db, dbtype, job)
+            local replacement = uuid.v7()
+            local count, err = reclaim.reclaim_terminated(db, dbtype, nil, function(): (boolean, error?)
+                local _, replace_err = db:execute([[UPDATE kickside_job
+                    SET lease_token=$1,execution_seq=execution_seq+1,last_error=$2 WHERE id=$3]],
+                    {replacement, job_types.TERMINATION_PENDING_PREFIX .. replacement, job.id})
+                return false, replace_err
+            end)
+            test.is_nil(err)
+            test.eq(count, 0)
+            test.eq(read(db, job.id).lease_token, replacement)
+            test.eq(read(db, job.id).status, job_types.JOB_STATE.RUNNING)
+            assert(db:release())
+        end)
+
         test.it("settles a fence only once its execution child has ended", function()
             local db, _, queue_err = job_fixture.private_queue("app:private_queue_termination_recovery_test")
             if not db or not _ then error("test queue unavailable: " .. tostring(queue_err)) end

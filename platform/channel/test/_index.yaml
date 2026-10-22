@@ -609,6 +609,7 @@ entries:
     kind: library.lua
     source: file://src_link/sink/channel_sink.lua
     imports:
+      canonical_json: kickside.contract:canonical_json
       writable_sink: kickside.data:writable_sink
       reply_sender: app:reply_sender_stub
 

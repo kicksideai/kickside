@@ -76,6 +76,30 @@ end
 
 local function define_tests()
     test.describe("execution_identity v2", function()
+        test.it("checks actor creation before evaluating live authorizer scope", function()
+            local builds = 0
+            local frame = resolve_frame()
+            frame.can = function(action, resource)
+                test.eq(action, "security.actor.create")
+                test.eq(resource, "caller-1")
+                return false
+            end
+            frame.new_actor = function()
+                builds = builds + 1
+                error("actor construction is denied")
+            end
+            with_security(frame, function()
+                local decision, err = execution_identity.evaluate_live_scope({
+                    principal = {kind = "user", id = "caller-1"}, actor_id = "caller-1",
+                    scope_name = "user-scope", meta = {},
+                }, "security.actor.delegate", {"resource"})
+                test.is_nil(decision)
+                test.not_nil(err)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED))
+                test.eq(err:details().error_kind, "access")
+                test.eq(builds, 0)
+            end)
+        end)
         test.it("binds inherited credential admission to live groups while preserving credential limits and epoch revocation", function()
             local identity = v2_identity({kind = "user", id = "u1"}, {kind = "user", id = "u1"})
             identity.credential_id = "cred-authority"

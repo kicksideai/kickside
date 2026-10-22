@@ -20,6 +20,18 @@ type Map = { [string]: any }
 
 local require_id = flows_support.require_id
 local tool_result = require("tool_result")
+local tool_action = require("tool_action")
+
+-- Per-action fields; the input schema root stays a flat object.
+local ACTIONS = {
+    create = { required = { "title" }, optional = { "parent_id" } },
+    import = { required = { "flow" }, optional = { "bindings" } },
+    apply = { required = { "id", "commands" } },
+    publish = { required = { "id" } },
+    restore = { required = { "id", "version" } },
+    delete = { required = { "id" } },
+    run = { required = { "id", "version" }, optional = { "input" } },
+}
 
 local function actor_id(): string?
     local actor = security.actor()
@@ -133,7 +145,8 @@ local function handler(args: any): (any, error?)
     local actor = actor_id()
     if not actor then return tool_result.fail(errors.PERMISSION_DENIED, "authentication required") end
 
-    local action = tostring(a.action or "")
+    local action, action_err = tool_action.check(a, ACTIONS)
+    if not action then return nil, action_err end
     if action == "create" then return do_create(a) end
     if action == "import" then return do_import(a, actor :: string) end
     if action == "apply" then return do_apply(a, actor :: string) end

@@ -19,6 +19,19 @@ entries:
       error_envelope: kickside.contract:error_envelope
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_projection: kickside.security.service:scope_projection
+  - name: registry_observer
+    kind: function.lua
+    meta:
+      type: registry.observer
+      priority: 10
+      private: true
+      comment: Waits for the scope projection after Keeper applies a registry changeset, so a module install returns with its permissions in force.
+    source: file://registry_observer.lua
+    method: run
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
+    imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
   - name: list_scopes_func
     kind: function.lua
     meta: { comment: "kickside.contract:security_scopes — list." }

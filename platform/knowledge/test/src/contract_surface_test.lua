@@ -1,5 +1,6 @@
 local test = require("test")
 local registry = require("registry")
+local json = require("json")
 
 -- Locks the model-agnostic contract split: the knowledge control plane exposes ONLY
 -- the store lifecycle to a KB engine. Node/edge/embedding/summary/graph operations
@@ -47,6 +48,32 @@ local function define_tests()
             for name in pairs(names) do
                 test.is_true(ALLOWED[name] == true, "unexpected non-lifecycle method on the contract: " .. name)
             end
+        end)
+
+        test.it("describes the store row returned to knowledge callers", function()
+            local entry, err = registry.get(LIFECYCLE_CONTRACT)
+            test.is_nil(err)
+            local output = nil
+            for _, method in ipairs(entry.data.methods) do
+                if method.name == "get_store" then output = method.output_schemas[1] end
+            end
+            test.not_nil(output)
+            test.eq(output.format, "application/schema+json")
+            local schema, decode_err = json.decode(output.definition)
+            test.is_nil(decode_err)
+            for field, kind in pairs({ id = "string", component_id = "string",
+                embedding_model = "string", config = "object", kb_type = "string" }) do
+                test.not_nil(schema.properties[field], "get_store omits " .. field)
+                test.eq(schema.properties[field].type, kind)
+            end
+            for _, field in ipairs({ "enrichment_agent_id", "auto_summary", "auto_description" }) do
+                test.not_nil(schema.properties[field], "get_store omits " .. field)
+                test.eq(schema.properties[field].type[1], "string")
+                test.eq(schema.properties[field].type[2], "null")
+            end
+            test.not_nil(schema.properties.config_snapshot)
+            test.is_nil(schema.required, "existing engines may omit store fields")
+            test.is_true(schema.additionalProperties ~= false, "engine-specific row fields remain valid")
         end)
 
         test.it("carries no node/edge/embedding/graph method", function()
