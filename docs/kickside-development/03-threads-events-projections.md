@@ -49,6 +49,14 @@ identity contains `external_source`, `external_id`, and optional
 `external_version` for deduplication. The writer owns sequence allocation,
 deduplication, access checks, and post-commit wakeup.
 
+The `kickside.core.threads:events_pullable` source returns each decoded body as
+`item.payload`. Its envelope carries `item_key` and `dedup_key` equal to the
+event ID, `op = "upsert"`, `event_type`, `role`, optional `external_identity`,
+`occurred_at`, and `seq`. The cursor is the last consumed sequence. An optional
+non-empty `event_type` selector is accepted at request level or in `config`;
+an explicit request selector takes precedence. Config-only callers keep their
+filter behavior.
+
 ## Declare a projection worker
 
 The normal author path is the kind's `meta.projections`:
@@ -83,6 +91,12 @@ child process; SQLite's single pooled connection otherwise deadlocks.
 `cursor_only` workers read their own page. The worker can return a `patch`,
 but a returned `meta` field does not update component public metadata.
 
+Prefetch reads use the projection reader's `query_event_rows` in
+`core/core/src/projections/persist/worker.lua`, with a sequence range and optional
+multiple event types. This owner path is distinct from the actor-gated public
+thread `list_events` reader; substituting that public reader changes authority,
+filtering, and page limits.
+
 For UI badges and status, call `component.set_meta(thread_id, fields)` from
 the projection. `platform/inbox/src/persist/projection.lua` is the working
 fold and public-meta example; `crm-port/src/projection.lua` shows a larger
@@ -109,3 +123,5 @@ and event Automation drive to drain; `drain_aware: true` preserves that
 boundary. See [Automations And Dataflows](21-automations-and-dataflows.md),
 [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md), and
 the [Deals CRM](22-deals-crm.md) walkthrough.
+Existing invalid cursors have a separate
+[pin-backfill limitation](11-design-gaps.md#projection-pin-backfill).
