@@ -4775,6 +4775,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_at_most_once_lost_write_answer": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-AT-MOST-ONCE-LOST-WRITE-ANSWER"
+      ],
+      "tier": "regression"
+    },
     "automation_blocks_tool": {
       "features": [
         "kickside/blocks|mcp_tool|kickside.blocks:list"
@@ -6592,6 +6599,13 @@
       ],
       "tier": "regression"
     },
+    "channel_direct_message_idempotency": {
+      "features": [],
+      "issues": [
+        "CHANNEL-DIRECT-MESSAGE-IDEMPOTENCY"
+      ],
+      "tier": "regression"
+    },
     "channel_execution_authority": {
       "features": [],
       "issues": [
@@ -7903,6 +7917,13 @@
         "DC-01"
       ],
       "tier": "full"
+    },
+    "discord_direct_message_idempotency": {
+      "features": [],
+      "issues": [
+        "DISCORD-DIRECT-MESSAGE-IDEMPOTENCY"
+      ],
+      "tier": "regression"
     },
     "execution_authorizer_constructor_grant": {
       "features": [],
