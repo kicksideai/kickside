@@ -150,7 +150,7 @@ entries:
                   "success": { "type": "boolean" },
                   "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$" },
                   "title": { "type": "string", "minLength": 1 },
-                  "description": { "type": "string" },
+                  "description": { "type": "string", "description": "What the target holds, in terms an agent choosing a target can act on; the description definable.define wrote." },
                   "loadable": { "type": "boolean" },
                   "columns": {
                     "type": "array",
@@ -185,10 +185,10 @@ entries:
                           "type": "object",
                           "description": "The column's options as the receiver holds them, keyed as its types().options_schema names them, every default filled in: a string type's max_length, an enum's values. A caller that read options_schema knows the names; absent for a column whose type takes none."
                         },
-                        "label": { "type": "string", "description": "What a person calls the column." },
+                        "label": { "type": "string", "description": "What a person calls the column; the label definable.define wrote." },
                         "description": {
                           "type": "string",
-                          "description": "What the column means, in terms an agent choosing a measure can act on."
+                          "description": "What the column means, its unit included, in terms an agent choosing a measure can act on; the description definable.define wrote."
                         }
                       }
                     }
@@ -206,7 +206,7 @@ entries:
                   "columns_version": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Opaque; changes whenever these columns change, and for a loadable target whenever loadable.describe's columns change. Not required to equal loadable's value."
+                    "description": "Opaque; changes whenever these columns change, and for a loadable target whenever loadable.describe's columns change. Not required to equal loadable's value. A label or a description is not a change of the columns: a query that fitted them still does."
                   },
                   "period": {
                     "type": "object",

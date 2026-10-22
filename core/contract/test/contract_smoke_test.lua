@@ -220,6 +220,62 @@ local function define_tests()
             test.is_nil(column_type.enum,
                 "definable enumerates column types; the receiver publishes them through types()")
         end)
+
+        test.it("lets define describe a target and label and describe its columns", function()
+            local entry, entry_err = registry.get("kickside.data:definable")
+            test.is_nil(entry_err)
+            local define: any = nil
+            for _, raw in ipairs((value(entry, "methods") or {}) :: { any }) do
+                if (raw :: any).name == "define" then define = raw end
+            end
+            test.not_nil(define)
+
+            local input = schema_json((define.input_schemas :: { any })[1], "definable define input")
+            test.eq(input.properties.description.type, "string")
+            local column = input.properties.columns.items.properties
+            test.eq(column.label.type, "string")
+            test.eq(column.description.type, "string")
+
+            for _, name in ipairs((input.required or {}) :: { any }) do
+                test.is_true(name ~= "columns", "define demands columns even of a change to a target's description alone")
+            end
+            local creating = false
+            for _, branch in ipairs((input.oneOf or {}) :: { any }) do
+                for _, name in ipairs(((branch :: any).required or {}) :: { any }) do
+                    if name == "code" then
+                        local wanted = {}
+                        for _, field in ipairs(((branch :: any).required or {}) :: { any }) do wanted[field] = true end
+                        test.is_true(wanted.columns == true, "a target created without columns")
+                        creating = true
+                    end
+                end
+            end
+            test.is_true(creating, "define names no branch that creates a target")
+
+            local output = schema_json((define.output_schemas :: { any })[1], "definable define output")
+            local action = tostring(output.properties.changes.items.properties.action.description)
+            test.not_nil(action:find("label_changed", 1, true), "define names no change for a label")
+            test.not_nil(action:find("description_changed", 1, true), "define names no change for a description")
+        end)
+
+        test.it("answers in readable.describe what define wrote about a target and its columns", function()
+            local entry, entry_err = registry.get("kickside.data:readable")
+            test.is_nil(entry_err)
+            local describe: any = nil
+            for _, raw in ipairs((value(entry, "methods") or {}) :: { any }) do
+                if (raw :: any).name == "describe" then describe = raw end
+            end
+            test.not_nil(describe)
+
+            local output = schema_json((describe.output_schemas :: { any })[1], "readable describe output")
+            local answer = output.properties
+            test.eq(answer.description.type, "string")
+            local column = answer.columns.items.properties
+            test.eq(column.label.type, "string")
+            test.eq(column.description.type, "string")
+            test.not_nil(tostring(column.description.description):find("definable.define", 1, true),
+                "readable does not say where a column's description comes from")
+        end)
     end)
 end
 
