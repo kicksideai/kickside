@@ -76,7 +76,7 @@ entries:
       - kickside.uploads:thread_deleted_publish
     source: file://delete_uploads_func.lua
     method: handle
-    modules: [ctx, logger]
+    modules: [ctx]
     imports:
       component: kickside.component:component
       upload_lib: kickside.uploads:uploads

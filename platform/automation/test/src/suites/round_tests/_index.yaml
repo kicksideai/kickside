@@ -49,6 +49,7 @@ entries:
   source: file://../round/write_test.lua
   method: run
   modules:
+  - funcs
   - sql
   - json
   - uuid

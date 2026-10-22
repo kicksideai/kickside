@@ -133,13 +133,25 @@ M.TRUSTED_APP_LOGOS = {
     ["/app/wippy-logo.svg"] = true,
 }
 
-M.BRANDING_IMAGE_EXT = {
-    png = true,
-    jpg = true,
-    jpeg = true,
-    webp = true,
-    gif = true,
+-- Uploaded logos are public on the application origin. SVG is active content;
+-- only trusted, bundled SVGs belong in TRUSTED_APP_LOGOS.
+M.BRANDING_UPLOAD = {
+    max_bytes = 2 * 1024 * 1024,
+    formats = {
+        { label = "PNG", mime = "image/png", extensions = { "png" } },
+        { label = "JPG", mime = "image/jpeg", extensions = { "jpg", "jpeg" } },
+        { label = "WebP", mime = "image/webp", extensions = { "webp" } },
+        { label = "GIF", mime = "image/gif", extensions = { "gif" } },
+    },
 }
+M.BRANDING_IMAGE_EXT = {}
+M.BRANDING_IMAGE_MIME = {}
+for _, format in ipairs(M.BRANDING_UPLOAD.formats) do
+    for _, ext in ipairs(format.extensions) do
+        M.BRANDING_IMAGE_EXT[ext] = true
+        M.BRANDING_IMAGE_MIME[ext] = format.mime
+    end
+end
 
 local function path_without_suffix(value: string): string
     return (value:gsub("[?#].*$", ""))

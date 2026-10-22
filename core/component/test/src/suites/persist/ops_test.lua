@@ -479,6 +479,45 @@ local run_cases = test.run_cases(function()
             d:release()
         end)
 
+        test.it("initializes declared creation from its frozen verified captured identity", function()
+            local d = db()
+            local id = uuid.v7()
+            local captured = {version = 2, principal = {kind = "user", id = "operator"},
+                authorized_by = {kind = "user", id = "original-authorizer"},
+                component_id = uuid.v7(), credential_id = uuid.v7(), link_id = uuid.v7(),
+                captured_at = "2026-01-01T00:00:00Z"}
+            local input = {component_id = id, automation_id = id, impl_id = "kickside.test:security",
+                command_id = "install:" .. id, generation = 1, declaration_hash = "captured", rollback = {}}
+            local function verify(request)
+                return {valid = true, operator_valid = true, subject_valid = true, pins_lowered = true,
+                    component_id = id, automation_id = id, command_id = request.command_id,
+                    generation = 1, declaration_hash = "captured", declaration = {},
+                    operator_id = "operator", execution_subject_id = "operator", affected_drive_keys = {"main"},
+                    captured_identity = captured}
+            end
+            local token, prepare_err = ops.prepare_creation(input, verify)
+            test.is_nil(prepare_err)
+            captured.credential_id = "mutated-after-verification"
+            local tx = d:begin()
+            local created, err = ops.create_declared_tx(tx, d, token)
+            if err then tx:rollback() else tx:commit() end
+            test.is_nil(err, tostring(err)); test.not_nil(created)
+            local stored = context(d, id)._execution_identity
+            test.eq(stored.authorized_by.id, "original-authorizer")
+            test.eq(stored.component_id, captured.component_id)
+            test.is_true(stored.credential_id ~= captured.credential_id)
+            test.not_nil(stored.credential_id)
+            test.eq(stored.link_id, captured.link_id)
+            test.eq(stored.captured_at, captured.captured_at)
+            local again, replay_err = component_command.create_declared(input, verify)
+            test.is_nil(replay_err); test.eq(again.changes_made, false)
+            test.eq(context(d, id)._execution_identity.credential_id, stored.credential_id)
+            captured.version = 1
+            local invalid, invalid_err = ops.prepare_creation(input, verify)
+            test.is_nil(invalid); test.not_nil(invalid_err)
+            d:release()
+        end)
+
         test.it("refuses a nested authority change when validation rejects it", function()
             local d = db()
             local id = seed(d, { _portable_input = { transform = { type = "func",

@@ -51,6 +51,68 @@ local function define_tests()
             test.is_true(tostring(err):find("type is required", 1, true) ~= nil)
         end)
 
+        test.it("rejects an action call that misses one of its required fields", function()
+            local cases = {
+                { args = { action = "install", type = FIXTURE_TYPE }, message = "input is required for action=install" },
+                { args = { action = "reconfigure", id = "a1" }, message = "input is required for action=reconfigure" },
+                { args = { action = "pause" }, message = "id is required for action=pause" },
+                { args = { action = "call", id = "a1" }, message = "method is required for action=call" },
+                { args = { action = "import" }, message = "artifact is required for action=import" },
+                { args = { action = "set_execution_identity", id = "a1", principal = { kind = "user", id = owner },
+                    expected_identity_generation = 0 }, message = "request_id is required for action=set_execution_identity" },
+                { args = { action = "control", id = "a1" }, message = "control is required for action=control" },
+            }
+            for _, case in ipairs(cases) do
+                local result, err = executor(owner):call(MANAGE_TOOL, case.args)
+                test.is_nil(result, case.message)
+                test.is_true(errors.is(err, errors.INVALID), case.message .. ": " .. tostring(err))
+                test.contains(tostring(err), case.message)
+            end
+        end)
+
+        test.it("rejects fields that belong to another action", function()
+            local cases = {
+                { args = { action = "pause", id = "a1", input = {} }, message = "action=pause does not accept input" },
+                { args = { action = "install", type = FIXTURE_TYPE, input = {}, id = "a1" }, message = "action=install does not accept id" },
+                { args = { action = "uninstall", id = "a1", control = "replay" }, message = "action=uninstall does not accept control" },
+                { args = { action = "control", id = "a1", control = "pause", principal = { kind = "user", id = owner } },
+                    message = "action=control does not accept principal" },
+            }
+            for _, case in ipairs(cases) do
+                local result, err = executor(owner):call(MANAGE_TOOL, case.args)
+                test.is_nil(result, case.message)
+                test.is_true(errors.is(err, errors.INVALID), case.message .. ": " .. tostring(err))
+                test.contains(tostring(err), case.message)
+            end
+        end)
+
+        test.it("requires request_id for replay, resync and discard, and keys for discard", function()
+            local exec = executor(owner)
+            for _, control in ipairs({ "replay", "resync", "discard" }) do
+                local result, err = exec:call(MANAGE_TOOL, { action = "control", id = "a1", control = control })
+                test.is_nil(result, control)
+                test.is_true(errors.is(err, errors.INVALID), control .. ": " .. tostring(err))
+                test.contains(tostring(err), control .. " requires a request_id")
+            end
+
+            local installed = exec:call(MANAGE_TOOL, {
+                action = "install",
+                type = FIXTURE_TYPE_NO_RUN,
+                input = { title = "Discard Keys Fixture" },
+            }) :: Map
+            test.is_true(installed.success, "install failed: " .. tostring(installed.error))
+            local id = installed.id :: string
+            for _, keys in ipairs({ {}, false }) do
+                local args: Map = { action = "control", id = id, control = "discard", drive_key = "main", request_id = uuid.v7() }
+                if keys then args.keys = keys end
+                local result, err = exec:call(MANAGE_TOOL, args)
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                test.contains(tostring(err), "discard names the uncertain item keys")
+            end
+            exec:call(MANAGE_TOOL, { action = "uninstall", id = id })
+        end)
+
         test.it("installs, reads config back, pauses, resumes, runs, reconfigures, and uninstalls a fixture automation", function()
             local exec = executor(owner)
 

@@ -206,11 +206,11 @@ local function resolve(input)
     local trait_contexts = curator_specs.copy_trait_contexts(private_ctx.trait_contexts)
     local context_validation = capability_context.validate_trait_contexts(private_ctx.traits, trait_contexts, registry.get)
     if context_validation.ok ~= true then
-        logger:warn("agent resolver: invalid trait context", {
-            component_id = component_id,
-            err = capability_context.error_message(context_validation),
+        return nil, errors.new({
+            kind = errors.INVALID,
+            message = "Agent capability context is invalid: " .. capability_context.error_message(context_validation),
+            details = { code = "agent_trait_context_invalid", component_id = component_id },
         })
-        return nil
     end
     local trait_agent_options = type(private_ctx.trait_agent_options) == "table" and private_ctx.trait_agent_options or {}
     local traits = {}

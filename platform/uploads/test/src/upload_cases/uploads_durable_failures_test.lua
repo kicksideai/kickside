@@ -367,6 +367,339 @@ local function define_tests()
             test.eq(bytes, (storage:readfile(path)))
         end)
 
+        test.it("fails an upload when a transcription stage reports a soft error code", function()
+            local storage = fs.get("app:uploads")
+            test.not_nil(storage)
+
+            for _, key in ipairs({ "ocr_error", "asr_error", "conversion_error" }) do
+                local upload_id = "transcription-error-" .. uuid_v4()
+                local user_id = "transcription-error-user-" .. uuid_v4()
+                ensure_uploads_component(user_id)
+                local path = upload_id .. ".bin"
+                local bytes = "transcription error bytes " .. upload_id
+                local write_ok, write_err = storage:writefile(path, bytes)
+                test.is_nil(write_err)
+                test.is_true(write_ok ~= false)
+
+                local metadata = metadata_with_identity(user_id, "scan.png", { transcription_error_test = key })
+                local upload, upload_err = upload_record_repo.create(
+                    upload_id, user_id, #bytes, "application/x-kickside-failing-stage-test",
+                    "app:uploads", path, "app:types.failing", metadata, "uploaded"
+                )
+                test.is_nil(upload_err)
+                test.not_nil(upload)
+
+                local success, err = pipeline_lib.process_upload(upload)
+                test.is_false(success)
+                test.contains(tostring(err), key .. ": transcription_failed")
+
+                local row, row_err = upload_query_repo.get(upload_id)
+                test.is_nil(row_err)
+                test.eq("transcription_failed", row.metadata[key])
+            end
+        end)
+
+        local function create_transcription_upload(prefix: string, extra: any): any
+            local storage = fs.get("app:uploads")
+            test.not_nil(storage)
+            local upload_id = prefix .. "-" .. uuid_v4()
+            local user_id = prefix .. "-user-" .. uuid_v4()
+            ensure_uploads_component(user_id)
+            local path = upload_id .. ".bin"
+            local bytes = prefix .. " bytes " .. upload_id
+            local write_ok, write_err = storage:writefile(path, bytes)
+            test.is_nil(write_err)
+            test.is_true(write_ok ~= false)
+            local metadata = metadata_with_identity(user_id, "scan.png", extra)
+            local upload, upload_err = upload_record_repo.create(
+                upload_id, user_id, #bytes, "application/x-kickside-failing-stage-test",
+                "app:uploads", path, "app:types.failing", metadata, "uploaded"
+            )
+            test.is_nil(upload_err)
+            test.not_nil(upload)
+            return upload
+        end
+
+        local function add_primary_text(upload: any, content: string)
+            local _, create_err = artifact_content_repo.create_artifact({
+                upload_id = upload.uuid,
+                kind = "markdown",
+                role = "primary",
+                mime_type = "text/markdown",
+                label = "converted.md",
+                ordinal = 1,
+                content = content,
+                storage_id = "app:uploads",
+            })
+            test.is_nil(create_err)
+        end
+
+        test.it("keeps an upload completed when transcription reports a content outcome", function()
+            for _, code in ipairs({ "no_text_detected", "too_large", "transcript_too_large" }) do
+                local upload = create_transcription_upload("transcription-outcome", {
+                    transcription_error_test = "ocr_error", transcription_error_code = code,
+                })
+                local success, err = pipeline_lib.process_upload(upload)
+                test.is_nil(err)
+                test.is_true(success)
+                local row, row_err = upload_query_repo.get(upload.uuid)
+                test.is_nil(row_err)
+                test.eq(code, row.metadata.ocr_error)
+            end
+        end)
+
+        test.it("classifies transient and permanent transcription codes", function()
+            for _, case in ipairs({
+                { code = "transcription_failed", retriable = true },
+                { code = "persist_failed", retriable = true },
+                { code = "storage_unavailable", retriable = true },
+                { code = "storage_read_failed", retriable = true },
+                { code = "storage_pointer_missing", retriable = false },
+            }) do
+                local upload = create_transcription_upload("transcription-class", {
+                    transcription_error_test = "asr_error", transcription_error_code = case.code,
+                })
+                local success, err, _, retriable = pipeline_lib.process_upload(upload)
+                test.is_false(success)
+                test.contains(tostring(err), "asr_error: " .. case.code)
+                test.eq(case.retriable, retriable)
+            end
+        end)
+
+        test.it("stores provider text as a stable retriable transcription code", function()
+            local upload = create_transcription_upload("transcription-raw", {
+                transcription_error_test = "ocr_error",
+                transcription_error_code = "Page 1: ocr: generate failed: provider failure",
+            })
+            local success, err, _, retriable = pipeline_lib.process_upload(upload)
+            test.is_false(success)
+            test.is_true(retriable)
+            test.contains(tostring(err), "ocr_error: transcription_failed")
+            local row, row_err = upload_query_repo.get(upload.uuid)
+            test.is_nil(row_err)
+            test.eq("transcription_failed", row.metadata.ocr_error)
+        end)
+
+        test.it("never exposes provider text in public transcription codes", function()
+            local public = metadata_sanitizer.public({
+                ocr_error = "Page 1: ocr: generate failed: provider failure",
+                asr_error = "too_large",
+                conversion_error = false,
+            })
+            test.eq("transcription_failed", public.ocr_error)
+            test.eq("too_large", public.asr_error)
+            test.eq(false, public.conversion_error)
+
+            local preview = upload_response.format_get_upload({
+                uuid = "legacy-upload", status = "error", error = "failed",
+                metadata = { ocr_error = "Page 1: ocr: generate failed: provider failure" },
+            })
+            test.eq("transcription_failed", preview.meta.ocr_error)
+
+            local row = upload_response.format_list_upload({
+                uuid = "legacy-upload", status = "error", error = "failed",
+                metadata = { filename = "scan.png", ocr_error = "Page 1: ocr: generate failed: provider failure", storage_path = "private" },
+            })
+            test.eq("transcription_failed", row.meta.ocr_error)
+            test.is_nil(row.meta.storage_path)
+            test.is_nil(row.meta.filename)
+        end)
+
+        test.it("redacts structured provider diagnostics from every public transcription field", function()
+            for _, key in ipairs(metadata_sanitizer.TRANSCRIPTION_ERROR_KEYS) do
+                local stored = {[key] = {message = "private provider diagnostic"}}
+                test.eq(metadata_sanitizer.public(stored)[key], "transcription_failed")
+                test.eq(upload_response.format_get_upload({uuid = "legacy", metadata = stored}).meta[key], "transcription_failed")
+                test.eq(upload_response.format_list_upload({uuid = "legacy", metadata = stored}).meta[key], "transcription_failed")
+            end
+        end)
+
+        test.it("retries a failed upload on its stored bytes", function()
+            local upload = create_transcription_upload("transcription-retry", {
+                transcription_error_test = "ocr_error",
+            })
+            local live = create_transcription_upload("transcription-retry-live", {})
+
+            local _, live_err = upload_lib.retry_upload(live.uuid)
+            test.not_nil(live_err)
+            test.is_true(errors.is(live_err, errors.CONFLICT))
+
+            local _, mark_err = upload_record_repo.mark_storage_failed(upload.uuid)
+            test.is_nil(mark_err)
+            local metadata = metadata_with_identity(upload.actor_id, "scan.png", { transcription_success_test = true })
+            local _, meta_err = upload_record_repo.update_metadata(upload.uuid, metadata)
+            test.is_nil(meta_err)
+
+            local retried, retry_err = upload_lib.retry_upload(upload.uuid)
+            test.is_nil(retry_err)
+            test.eq(upload.uuid, retried.uuid)
+
+            local again, again_err = upload_lib.retry_upload(upload.uuid)
+            test.is_nil(again)
+            test.is_true(errors.is(again_err, errors.CONFLICT))
+
+            local db = assert(sql.get("app:db"))
+            local jobs_rows = assert(db:query([[SELECT * FROM kickside_job
+                WHERE job_type = 'kickside.uploads.service:process_job_proc' AND CAST(payload AS TEXT) LIKE $1 AND status = 'pending']],
+                { "%" .. upload.uuid .. "%" }))
+            test.eq(#jobs_rows, 1)
+            local token = uuid_v4()
+            local _, lease_err = db:execute([[UPDATE kickside_job SET status='running',lease_token=$1,
+                execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
+                { token, jobs_lifecycle.future_string(tostring(db:type()), 60), jobs_rows[1].id })
+            test.is_nil(lease_err)
+            local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { jobs_rows[1].id }))[1]
+            db:release()
+            local input, _, input_err = worker_dispatch.build_worker_input(job)
+            test.is_nil(input_err)
+            local result, run_err = process_job.run(input)
+            test.is_nil(run_err)
+            test.is_true(result.success)
+
+            local stored, stored_err = upload_query_repo.get(upload.uuid)
+            test.is_nil(stored_err)
+            test.eq("completed", stored.storage_state)
+        end)
+
+        test.it("keeps existing primary text when enrichment transcription fails", function()
+            local transient = create_transcription_upload("transcription-enrich", {
+                transcription_error_test = "ocr_error",
+            })
+            add_primary_text(transient, "Converted body text")
+            local success, err, _, retriable = pipeline_lib.process_upload(transient)
+            test.is_false(success)
+            test.is_true(retriable)
+            test.contains(tostring(err), "ocr_error: transcription_failed")
+
+            success, err = pipeline_lib.process_upload(transient, { final_attempt = true })
+            test.is_nil(err)
+            test.is_true(success)
+            local row, row_err = upload_query_repo.get(transient.uuid)
+            test.is_nil(row_err)
+            test.eq("transcription_failed", row.metadata.ocr_error)
+
+            local permanent = create_transcription_upload("transcription-enrich-permanent", {
+                transcription_error_test = "ocr_error", transcription_error_code = "storage_pointer_missing",
+            })
+            add_primary_text(permanent, "Converted body text")
+            success, err = pipeline_lib.process_upload(permanent)
+            test.is_nil(err)
+            test.is_true(success)
+
+            local blank = create_transcription_upload("transcription-enrich-blank", {
+                transcription_error_test = "ocr_error",
+            })
+            add_primary_text(blank, "  \n ")
+            success, err = pipeline_lib.process_upload(blank, { final_attempt = true })
+            test.is_false(success)
+            test.contains(tostring(err), "ocr_error: transcription_failed")
+        end)
+
+        test.it("keeps an upload completed when transcription reports no error", function()
+            local storage = fs.get("app:uploads")
+            test.not_nil(storage)
+
+            local upload_id = "transcription-ok-" .. uuid_v4()
+            local user_id = "transcription-ok-user-" .. uuid_v4()
+            ensure_uploads_component(user_id)
+            local path = upload_id .. ".bin"
+            local bytes = "transcription ok bytes " .. upload_id
+            local write_ok, write_err = storage:writefile(path, bytes)
+            test.is_nil(write_err)
+            test.is_true(write_ok ~= false)
+
+            local metadata = metadata_with_identity(user_id, "scan.png", { transcription_success_test = true })
+            local upload, upload_err = upload_record_repo.create(
+                upload_id, user_id, #bytes, "application/x-kickside-failing-stage-test",
+                "app:uploads", path, "app:types.failing", metadata, "uploaded"
+            )
+            test.is_nil(upload_err)
+            test.not_nil(upload)
+
+            local success, err = pipeline_lib.process_upload(upload)
+            test.is_nil(err)
+            test.is_true(success)
+        end)
+
+        test.it("settles a transcription failure as a failed upload that can be retried", function()
+            local storage = fs.get("app:uploads")
+            test.not_nil(storage)
+
+            local upload_id = "transcription-job-" .. uuid_v4()
+            local user_id = "transcription-job-user-" .. uuid_v4()
+            ensure_uploads_component(user_id)
+            local path = upload_id .. ".bin"
+            local bytes = "transcription job bytes " .. upload_id
+            local write_ok, write_err = storage:writefile(path, bytes)
+            test.is_nil(write_err)
+            test.is_true(write_ok ~= false)
+
+            local metadata = metadata_with_identity(user_id, "scan.png", { transcription_error_test = "ocr_error" })
+            local upload, upload_err = upload_record_repo.create(
+                upload_id, user_id, #bytes, "application/x-kickside-failing-stage-test",
+                "app:uploads", path, "app:types.failing", metadata, "uploaded"
+            )
+            test.is_nil(upload_err)
+            test.not_nil(upload)
+
+            local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
+            test.is_nil(queue_err)
+            local db = assert(sql.get("app:db"))
+            local token = uuid_v4()
+            local leased, lease_err = db:execute([[UPDATE kickside_job SET status='running',lease_token=$1,
+                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
+                { token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id })
+            test.is_nil(lease_err)
+            test.eq(tonumber(leased.rows_affected), 1)
+            local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+            local input, _, input_err = worker_dispatch.build_worker_input(job)
+            test.is_nil(input_err)
+            local result, run_err = process_job.run(input)
+            test.is_nil(run_err)
+            test.not_nil(result)
+            test.not_nil(result.job_error)
+            test.contains(tostring(result.job_error), "ocr_error: transcription_failed")
+
+            local events = assert(db:query([[SELECT id,seq,type,body FROM kickside_event
+                WHERE thread_id=$1 AND external_id=$2 AND type=$3]],
+                { queued.thread_id, upload_id, uploads_events.TYPE.FAILED }))
+            test.eq(#events, 1)
+            db:release()
+
+            local component_id = upload_types.component_id_for_owner(user_id)
+            test.not_nil(component_id)
+            local _, apply_err = upload_read_model.apply_events(component_id, {
+                {
+                    id = events[1].id,
+                    seq = events[1].seq,
+                    type = events[1].type,
+                    created_at = "2026-01-01T00:00:00Z",
+                    body = json.decode(events[1].body),
+                },
+            })
+            test.is_nil(apply_err)
+
+            local row, get_err = upload_read_model.get_for_actor(user_id, upload_id)
+            test.is_nil(get_err)
+            test.not_nil(row)
+            test.eq("error", row.status)
+
+            -- The preview reads the projected status and the public failure text,
+            -- and keeps the stable transcription code for the drawer.
+            local preview = upload_response.format_get_upload(row)
+            test.eq("error", preview.status)
+            test.not_nil(preview.error)
+            test.eq("transcription_failed", preview.meta.ocr_error)
+
+            -- The original bytes stay stored, so the failed upload can be retried.
+            local stored, stored_err = upload_query_repo.get(upload_id)
+            test.is_nil(stored_err)
+            test.eq("failed", stored.storage_state)
+            local retained_bytes, retained_err = storage:readfile(path)
+            test.is_nil(retained_err)
+            test.eq(bytes, retained_bytes)
+        end)
+
         test.it("adds stage title and function id to processor errors", function()
             local upload_id = "stage-error-" .. uuid_v4()
             local user_id = "stage-error-user-" .. uuid_v4()
@@ -413,9 +746,10 @@ local function define_tests()
             test.contains(tostring(err), "metadata")
             local retry_ok, retry_err = pipeline_lib.process_upload(upload)
             test.is_false(retry_ok)
-            test.contains(tostring(retry_err), "vision request rejected")
+            test.contains(tostring(retry_err), "ocr_error: transcription_failed")
+            test.is_false(tostring(retry_err):find("vision request rejected", 1, true) ~= nil)
             local stored = assert(upload_query_repo.get(upload_id))
-            test.eq(stored.metadata.ocr_error, "vision request rejected")
+            test.eq(stored.metadata.ocr_error, "transcription_failed")
         end)
 
         test.it("conversion error metadata fails processing and remains available for reprocessing", function()
@@ -446,7 +780,9 @@ local function define_tests()
             ensure_uploads_component(user_id)
             local path, bytes = upload_id .. ".pdf", "scanned document bytes"
             local storage = assert(fs.get("app:uploads"))
-            test.is_true(storage:writefile(path, bytes))
+            local written, write_err = storage:writefile(path, bytes)
+            test.is_nil(write_err)
+            test.is_true(written)
             local metadata = metadata_with_identity(user_id, "scan.pdf", {
                 stage_metadata = { ocr_error = "transcription_failed" },
             })
@@ -487,6 +823,32 @@ local function define_tests()
             test.eq(assert(upload_query_repo.get(upload_id)).storage_state, "failed")
             test.eq(storage:readfile(path), bytes)
             test.eq(assert(artifact_content_repo.get_artifact(upload_id, primary.artifact_id)).artifact_id, primary.artifact_id)
+        end)
+
+        test.it("allows a completion token without an optional error callback to settle failure", function()
+            local upload_id, user_id = uuid_v4(), "optional-callback-" .. uuid_v4()
+            ensure_uploads_component(user_id)
+            local metadata = upload_metadata(user_id, "callback.txt")
+            local identity = metadata[IDENTITY_META_KEY]
+            local token, token_err = upload_tokens.pack({
+                upload_id = upload_id,
+                function_id = "app:callback_probe",
+                actor_id = identity.actor_id,
+                actor_context = identity.actor_context,
+            })
+            test.is_nil(token_err)
+            metadata.__upload_token = token
+            local upload = assert(upload_record_repo.create(upload_id, user_id, 1, "text/plain",
+                "app:uploads", upload_id .. ".txt", "text", metadata, "processing"))
+            local ok, err = pipeline_lib.invoke_upload_token(upload, false, "conversion rejected")
+            test.is_nil(err)
+            test.is_true(ok)
+            local db = assert(sql.get("app:db"))
+            local rows = assert(db:query([[SELECT id FROM kickside_job
+                WHERE thread_id=$1 AND job_type=$2]],
+                { uploads_events.component_id_for_owner(user_id), "kickside.uploads.service:callback_job" }))
+            db:release()
+            test.eq(#rows, 0)
         end)
 
         test.it("schedules upload completion callbacks as idempotent core jobs", function()

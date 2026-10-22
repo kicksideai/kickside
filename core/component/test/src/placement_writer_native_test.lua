@@ -13,7 +13,7 @@ local function invoke(stage: string)
 end
 return {run = test.run_cases(function()
     test.describe("native Component placement writer failures", function()
-        for _, stage in ipairs({"permission", "encode", "component", "access", "audit", "owner", "metadata", "placement", "descendant"}) do
+        for _, stage in ipairs({"actor", "permission", "encode", "component", "access", "audit", "owner", "metadata", "placement", "descendant"}) do
             for _, kind in ipairs(kinds) do
                 for _, policy in ipairs({{}, {retryable = false}, {retryable = true}}) do
                     test.it(stage .. "/" .. kind .. "/" .. tostring(policy.retryable), function()
@@ -24,7 +24,7 @@ return {run = test.run_cases(function()
                         if not err then error(errors.new({kind = errors.INTERNAL, retryable = false, message = "placement writer guard requires failure"})) end
                         test.eq(err:kind(), source:kind()); test.eq(err:retryable(), source:retryable())
                         test.eq(err:details().code, "placement_writer_dependency"); test.eq(err:details().nested.marker, "kept")
-                        if stage == "permission" or stage == "encode" then test.eq(fixture.inserts, 0) end
+                        if stage == "actor" or stage == "permission" or stage == "encode" then test.eq(fixture.inserts, 0) end
                         if stage == "placement" then test.eq(fixture.updates, 1) end
                         if stage == "descendant" then test.eq(fixture.updates, 2) end
                     end)

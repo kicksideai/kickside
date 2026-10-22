@@ -122,11 +122,40 @@ local function define_tests()
                 { type = "app:threads_skip", role = "user", body = {} },
                 { type = "app:threads_keep", role = "user", body = {} },
             })
-            local page = pull_as(owner, request(thread_id, 0, 10, "app:threads_keep"))
-            test.eq(#page.items, 2)
+            for _, placement in ipairs({"config", "request", "both"}) do
+                local req = request(thread_id, 0, 10, placement ~= "request" and "app:threads_keep" or nil)
+                if placement ~= "config" then req.event_type = "app:threads_keep" end
+                local page = pull_as(owner, req)
+                test.eq(#page.items, 2)
+                test.eq(page.items[1].seq, 1)
+                test.eq(page.items[2].seq, 3)
+                test.eq(page.next_cursor, 3)
+            end
+        end)
+
+        test.it("uses an explicit request type before the configured type", function()
+            local thread_id = thread_with({
+                {type = "app:threads_keep", role = "user", body = {}},
+                {type = "app:threads_skip", role = "user", body = {}},
+            })
+            local req = request(thread_id, 0, 10, "app:threads_skip")
+            req.event_type = "app:threads_keep"
+            local page = pull_as(owner, req)
+            test.is_true(page.success)
+            test.eq(#page.items, 1)
+            test.eq(page.items[1].event_type, "app:threads_keep")
             test.eq(page.items[1].seq, 1)
-            test.eq(page.items[2].seq, 3)
-            test.eq(page.next_cursor, 3)
+        end)
+
+        test.it("rejects malformed request types without ignoring them", function()
+            local thread_id = thread_with({{type = "app:threads_note", body = {}}})
+            for _, value in ipairs({false, 0, {}, ""}) do
+                local req = request(thread_id, 0, 10)
+                req.event_type = value
+                local page = pull_as(owner, req)
+                test.is_false(page.success)
+                test.eq(page.error.code, "invalid_request")
+            end
         end)
 
         test.it("reports source_gap exactly when the cursor is below the prune boundary", function()

@@ -281,6 +281,7 @@ local function run_row_action(row: any, phase: string, local_client: any?): (any
             return nil, errors.new({ kind = errors.INTERNAL,
                 message = "workflow terminal publisher returned no success result", retryable = true })
         end
+        return publish(row)
     end
     local encoded, decode_err = json.decode(tostring(row.execution_identity_json or ""))
     if decode_err or type(encoded) ~= "table" or type(encoded.principal) ~= "table" then

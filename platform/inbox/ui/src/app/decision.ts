@@ -1,9 +1,3 @@
-// Pure rendering/parsing helpers for a flow_decision inbox item.
-// metadata.context is the upstream
-// step's real output — a free string or a plain object — and metadata.form is an
-// unvalidated field list the workflow author configured (see
-// kickside.workflows/ui/src/app/form-builder.ts for the field shape this reads).
-
 const LONG_VALUE_THRESHOLD = 80
 
 export function humanizeKey(key: string): string {
@@ -50,25 +44,31 @@ export function formatContext(context: unknown): ContextView {
   return { kind: 'text', text: stringifyValue(context) }
 }
 
-export type DecisionFieldType = 'text' | 'number' | 'select' | 'checkbox'
+export type DecisionFieldType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
+
+type DecisionValue = string | number | boolean
+
+function isDecisionValue(value: unknown): value is DecisionValue {
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+}
 
 export interface DecisionField {
   key: string
   label: string
   type: DecisionFieldType
   required: boolean
-  options: string[]
-  default?: string | number | boolean
+  options: DecisionValue[]
+  default?: DecisionValue
 }
 
-function fieldDefault(type: DecisionFieldType, schema: Record<string, unknown>, options: string[]): string | number | boolean | undefined {
+function fieldDefault(type: DecisionFieldType, schema: Record<string, unknown>, options: DecisionValue[]): DecisionValue | undefined {
   const value = schema.default
   if (type === 'checkbox') return typeof value === 'boolean' ? value : undefined
   if (type === 'number') {
     if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
     return schema.type === 'integer' && !Number.isInteger(value) ? undefined : value
   }
-  if (type === 'select') return typeof value === 'string' && options.includes(value) ? value : undefined
+  if (type === 'select') return isDecisionValue(value) && options.includes(value) ? value : undefined
   return typeof value === 'string' ? value : undefined
 }
 
@@ -76,12 +76,12 @@ function fieldType(schema: Record<string, unknown>): DecisionFieldType | null {
   if (Array.isArray(schema.enum)) return 'select'
   if (schema.type === 'number' || schema.type === 'integer') return 'number'
   if (schema.type === 'boolean') return 'checkbox'
-  if (schema.type === 'string') return 'text'
+  if (schema.type === 'string') return schema.format === 'textarea' ? 'textarea' : 'text'
   return null
 }
 
 // Decision forms are bounded JSON Schema objects. Inbox owns this projection into its
-// four native controls; Block execution only transports the schema and submitted object.
+// native controls; Block execution only transports the schema and submitted object.
 export function decisionFields(form: unknown): DecisionField[] {
   if (form && typeof form === 'object' && !Array.isArray(form)) {
     const schema = form as Record<string, unknown>
@@ -93,7 +93,7 @@ export function decisionFields(form: unknown): DecisionField[] {
       const field = raw as Record<string, unknown>
       const type = fieldType(field)
       if (!type) return []
-      const options = type === 'select' && Array.isArray(field.enum) ? field.enum.map(String) : []
+      const options = type === 'select' && Array.isArray(field.enum) ? field.enum.filter(isDecisionValue) : []
       const declared = fieldDefault(type, field, options)
       return [{
         key,

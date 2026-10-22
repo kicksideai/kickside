@@ -11,6 +11,7 @@ export interface PluginDetail {
 
 export interface RegistryEntry { id: string; kind: string; meta?: Record<string, unknown> }
 export interface InstalledRow extends HubDependency {
+  dependencyId?: string
   entries?: unknown[]
   migrations?: HubMigrationsEntry[]
   is_root?: boolean

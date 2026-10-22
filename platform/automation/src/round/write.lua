@@ -363,7 +363,14 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
     if type(request.map_slot) == "string" and request.map_slot ~= "" then body.map_slot = request.map_slot end
     local packet,send_err=funcs.call("kickside.automation:round_authority_write",{
         drive=d,key=request.idempotency_key,delivery_key=admission_key,binding=sink.binding,config=type(request.config) == "table" and request.config or {},body=body})
-    if send_err or not packet then return {state="failed",error=failure_classification.classify(send_err)} end
+    if packet and packet.refused ~= nil then return {state="failed",error=failure_classification.classify(packet.refused)} end
+    if send_err or not packet then
+        local failure = failure_classification.classify(send_err)
+        -- The call may fail after the destination received the request, so an
+        -- at-most-once reservation stays uncertain instead of becoming a retry.
+        if sink.delivery == M.DELIVERY.AT_MOST_ONCE then return { state = "uncertain", error = failure } end
+        return { state = "failed", error = failure }
+    end
     local result,message,envelope=packet.result,packet.message,packet.envelope
     if result ~= nil then
         local receipts, violation = slot_receipts(request, result :: Map, math.floor(max_slots))

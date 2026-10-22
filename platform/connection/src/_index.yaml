@@ -208,7 +208,7 @@ entries:
         description: Send content to a provider resource
         input_schemas:
           - definition: |
-              { "type": "object", "properties": { "resource_id": { "type": "string" }, "content": { "description": "Reply payload (text or provider-specific structure)" }, "content_type": { "type": "string" }, "reply_proof": { "type": "object" } }, "required": ["resource_id", "content"] }
+              { "type": "object", "properties": { "resource_id": { "type": "string" }, "content": { "description": "Reply payload (text or provider-specific structure)" }, "content_type": { "type": "string" }, "reply_proof": { "type": "object" }, "idempotency_key": { "type": "string", "minLength": 1, "description": "Optional delivery key. Every attempt of one delivery carries the same key; a provider with native send idempotency uses it so a retried send returns the message an earlier attempt created." } }, "required": ["resource_id", "content"] }
             format: application/schema+json
         output_schemas:
           - definition: |

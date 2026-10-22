@@ -47,6 +47,7 @@ local function validate(id: any, lease: any, options: any): error?
     if options.rearm ~= nil and (type(options.rearm) ~= "string" or options.rearm == "") then
         return invalid("rearm must be a timestamp or null")
     end
+    if options.park ~= nil and options.park ~= true then return invalid("park must be true or absent") end
     if options.demand_satisfied ~= nil and options.demand_satisfied ~= true then
         return invalid("demand_satisfied must be true or absent")
     end
@@ -201,7 +202,7 @@ local function complete_tx_impl(tx: sql.Transaction, id: string, lease: table, o
     if size_err then return nil, size_err end
     local slot = flag(row.slot)
     local control = flag(row.wake_control_pending)
-    local parked_record = options.record ~= nil and options.record.status == "parked"
+    local parked_record = options.park == true or (options.record ~= nil and options.record.status == "parked")
     local scheduled: string? = nil
     if control then
         scheduled = now

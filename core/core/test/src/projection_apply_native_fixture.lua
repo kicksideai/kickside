@@ -4,6 +4,7 @@ function M.reset(stage: string, source: any, mode: string)
     M.stage, M.source, M.mode = stage, source, mode
     M.missing, M.proof, M.rollback_source, M.release_source = false, nil, nil, nil
     M.rollbacks, M.releases, M.commits, M.executions, M.encodes = 0, 0, 0, 0, 0
+    M.thread_locked, M.cursor_before_thread = false, false
 end
 function M.outcome(stage: string, value: any): (any, error?)
     if M.stage == stage then
@@ -25,8 +26,12 @@ function M.from_row(...: any): (any, error?) return M.outcome("identity", {compo
 function M.run_as(...: any): (any, error?)
     return M.outcome("admission", {writes = {{thread_id = "other", events = {{type = "example", body_json = "{}"}}}}})
 end
-function M.lock_thread_rows_tx(...: any): (any, error?) return M.outcome("lock", {thread = {event_count = 1}}) end
+function M.lock_thread_rows_tx(...: any): (any, error?)
+    M.thread_locked = true
+    return M.outcome("lock", {thread = {event_count = 1}})
+end
 function M.append_system_tx(...: any): (any, error?) return M.outcome("append", {max_seq = 1}) end
+function M.lower_tx(...: any): (any, error?) return M.outcome("pin", {pin_generation = 1}) end
 function M.complete_tx(...: any): (any, error?) return M.outcome("complete", {completed = true}) end
 function M.notify_cursor(...: any): (any, error?) return M.outcome("notify", false) end
 function M.notify(...: any): (any, error?) return M.outcome("retention", false) end
@@ -48,6 +53,7 @@ function M.transaction(): any
                 last_seq = 0, status = "active", job_id = "job"}})
         end,
         execute = function(_self: any, _statement: any, _args: any): (any, error?)
+            if M.mode == "fail" and not M.thread_locked then M.cursor_before_thread = true end
             M.executions = M.executions + 1
             local stage = M.mode == "fail" and (M.executions == 1 and "fence" or "invalidate")
                 or (M.executions == 1 and "update" or "cursor_update")

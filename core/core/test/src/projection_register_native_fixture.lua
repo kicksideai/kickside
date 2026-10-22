@@ -95,4 +95,8 @@ function M.notify(...: any): (any, error?)
     M.retention_notifications = M.retention_notifications + 1
     return completion("retention", false)
 end
+function M.read(...: any): (any, error?)
+    return completion("pin_read", M.stage == "pin_release" and {generation = 1} or nil)
+end
+function M.release_tx(...: any): (any, error?) return completion("pin_release", {released = true}) end
 return M

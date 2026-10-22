@@ -110,6 +110,31 @@ function listing.list_job_runs(db: Executor, thread_ids: string[], filters: tabl
     return read(db, "runs", thread_ids, filters, limit, after)
 end
 
+function listing.get_job_statuses(db: Executor, ids: string[]): (table?, error?)
+    if type(ids) ~= "table" then
+        return nil, errors.new({ message = "job ids must be an array", kind = errors.INVALID })
+    end
+    local marks, values, seen = {}, {}, {}
+    for _, id in ipairs(ids) do
+        if type(id) ~= "string" or id == "" then
+            return nil, errors.new({ message = "job id is required", kind = errors.INVALID })
+        end
+        if uuid.validate(id) and not seen[id] then
+            seen[id] = true
+            marks[#marks + 1], values[#values + 1] = "?", id
+        end
+    end
+    if #values == 0 then return {}, nil end
+    local rows, err = sql.builder.select("id", "status"):from("kickside_job")
+        :where(sql.builder.expr("id IN (" .. table.concat(marks, ",") .. ")", table.unpack(values)))
+        :run_with(db):query()
+    local read_err = rows_error(rows, err, "failed to read job statuses", "statuses.rows")
+    if read_err then return nil, read_err end
+    local statuses = {}
+    for _, row in ipairs(rows) do statuses[row.id] = row.status end
+    return statuses, nil
+end
+
 function listing.get_job(db: Executor, id: string): (table?, error?)
     if type(id) ~= "string" or id == "" then
         return nil, (errors.new({ message = "job id is required", kind = errors.INVALID }) :: error)

@@ -162,25 +162,59 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             kind = errors.INVALID }) :: error)
     end
     local now = lifecycle.now_string(dbtype)
-    local tx, begin_err = sql_boundary.begin(db, "reclaim begin failed", "transaction", response_error)
-    if begin_err then return 0, begin_err end
-    if not tx then return 0, response_error("transaction") end
     local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id")
         :from("kickside_job")
         :where(sql.builder.eq({ status = job_types.JOB_STATE.RUNNING })), scope, now, plan.execution, dbtype)
         :order_by("id ASC")
         :limit(reclaim_limit)
+    local observations: { [string]: table } = {}
+    if scope == TERMINATED then
+        local statement, args, build_err = query:placeholder_format(sql.builder.dollar):to_sql()
+        if build_err then return 0, errors.wrap(build_err, "reclaim select build failed") end
+        local candidates, read_err = db:query(statement, args)
+        if read_err then return 0, errors.wrap(read_err, "reclaim select failed") end
+        if type(candidates) ~= "table" then return 0, response_error("reclaim.rows") end
+        if #candidates == 0 then return 0, nil end
+        local ids: string[] = {}
+        local marks: string[] = {}
+        for _, row in ipairs(candidates) do
+            local live, live_err = (plan.alive :: (string, string) -> (boolean, error?))(
+                tostring(row.id), fenced_token(row.last_error))
+            if live_err then return 0, live_err end
+            if type(live) ~= "boolean" then return 0, response_error("termination.alive") end
+            observations[tostring(row.id)] = { lease_token = row.lease_token, execution_seq = row.execution_seq,
+                last_error = row.last_error, alive = live }
+            ids[#ids + 1] = tostring(row.id)
+            marks[#marks + 1] = "?"
+        end
+        query = query:where("id IN (" .. table.concat(marks, ",") .. ")", table.unpack(ids))
+    end
+    local tx, begin_err = sql_boundary.begin(db, "reclaim begin failed", "transaction", response_error)
+    if begin_err then return 0, begin_err end
+    if not tx then return 0, response_error("transaction") end
     -- Unlike competing claimers, the recovery owner must not skip an expired
     -- row locked by renewal. PostgreSQL waits, then rechecks lease_until against
     -- the committed value; a renewed lease is therefore omitted authoritatively.
-    -- The lock also orders a fenced row against its child's start fence, which
-    -- registers the child's name before it locks the row.
+    -- A child cannot cross its start fence while the termination marker holds.
+    -- Recheck the observed execution under this lock before using its liveness.
     if dbtype == sql.type.POSTGRES then query = query:suffix("FOR UPDATE") end
     local rows, select_err = query:run_with(tx):query()
     if select_err then return 0, sql_boundary.rollback(tx,
         errors.wrap(select_err, "reclaim select failed"), "reclaim rollback failed") end
     if type(rows) ~= "table" then return 0, sql_boundary.rollback(tx,
         response_error("reclaim.rows"), "reclaim rollback failed") end
+    if scope == TERMINATED then
+        local retained: table[] = {}
+        for _, row in ipairs(rows) do
+            local observed = observations[tostring(row.id)]
+            if observed and observed.lease_token == row.lease_token
+                and tonumber(observed.execution_seq) == tonumber(row.execution_seq)
+                and observed.last_error == row.last_error then
+                retained[#retained + 1] = row
+            end
+        end
+        rows = retained
+    end
     local n = 0
     local revoked: table[] = {}
     local released: table[] = {}
@@ -189,12 +223,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     for _, row in ipairs(rows) do
         local alive = false
         if scope == TERMINATED then
-            local live, live_err = (plan.alive :: (string, string) -> (boolean, error?))(
-                tostring(row.id), fenced_token(row.last_error))
-            if live_err then return 0, sql_boundary.rollback(tx, live_err, "reclaim rollback failed") end
-            if type(live) ~= "boolean" then return 0, sql_boundary.rollback(tx,
-                response_error("termination.alive"), "reclaim rollback failed") end
-            alive = live
+            alive = observations[tostring(row.id)].alive
         end
         if alive then
             local recheck = lifecycle.future_string(dbtype, (policy :: any).lease_timeout_seconds)

@@ -12,10 +12,37 @@ local LAST_KEY_IN_50_ROW_BATCH = 3 + 49 * 19
 
 local function define_tests()
     test.describe("round ledger lock order", function()
+        test.it("keeps deadline-free redelivery due at the caller's captured decision time", function()
+            local owner = uuid.v7()
+            local captured = "2020-01-01T00:00:00Z"
+            local db, db_err = sql.get(DB)
+            test.is_nil(db_err)
+            local tx, tx_err = db:begin()
+            test.is_nil(tx_err)
+            local _, record_err = round_ledger.record_tx(tx, owner, "fixture:ready", {
+                { item = { item_key = "ready", dedup_key = "ready" }, state = "parked" },
+                { item = { item_key = "future", dedup_key = "future" }, state = "waiting",
+                    next_attempt_at = "2030-01-01T00:00:00Z" },
+                { item = { item_key = "blocked", dedup_key = "blocked" }, state = "parked", identity_parked = true },
+            }, captured, "2099-01-01T00:00:00Z")
+            test.is_nil(record_err)
+            local earliest, earliest_err = round_ledger.next_attempt(tx, owner, "fixture:ready", captured)
+            local due, due_err = round_ledger.due_tx(tx, owner, "fixture:ready", captured, 10)
+            local _, rollback_err = tx:rollback()
+            db:release()
+            test.is_nil(rollback_err)
+            test.is_nil(earliest_err)
+            test.eq(earliest, captured)
+            test.is_nil(due_err)
+            test.eq(#due, 1)
+            test.eq(due[1].item_key, "ready")
+        end)
+
         test.it("orders and admits mixed-precision stored retry times at their exact instants", function()
             local owner = uuid.v7()
             local db, db_err = sql.get(DB)
             test.is_nil(db_err)
+            if not db then error("ledger order test requires a database: " .. tostring(db_err)) end
             local tx, tx_err = db:begin()
             test.is_nil(tx_err)
             local _, record_err = round_ledger.record_tx(tx, owner, "fixture:precision", {

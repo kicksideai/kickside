@@ -204,3 +204,24 @@ entries:
     component: kickside.component:component
     delete_automation: kickside.automation.api:delete
   method: run
+
+- name: drive_repair
+  kind: library.lua
+  source: file://test_src/drive_repair_source.lua
+  modules: [json, sql, time]
+  imports:
+    migration_repository: wippy.migration:repository
+    jobs: kickside.core.jobs:jobs
+    slot: kickside.automation:slot
+
+- name: drive_repair_live_test
+  kind: function.lua
+  meta: {type: test, suite: drive_repair_live}
+  source: file://test_src/drive_repair_live_test.lua
+  method: run
+  modules: [uuid, time, channel]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_harness: kickside.automation:round_harness
+    repair: app:drive_repair

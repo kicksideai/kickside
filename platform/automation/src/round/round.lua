@@ -182,7 +182,7 @@ local function rearm_after(round: Map, continues: boolean, next_due: string?, un
     -- With no unresolved item, no retrying/waiting row can schedule a wake.
     if unresolved_count == 0 then return next_due, nil end
     local ledger_next, ledger_err = with_db(function(db: any): (any?, error?)
-        return ledger.next_attempt(db, round.automation_id, round.source_port)
+        return ledger.next_attempt(db, round.automation_id, round.source_port, round.now)
     end)
     if ledger_err then return nil, ledger_err end
     return earliest(next_due, ledger_next :: string?), nil
@@ -218,7 +218,8 @@ local function run(deps: Map, input: any): (Map?, error?)
         end)
         if stamp_err then
             local failure = classify(stamp_err)
-            if failure.retriable ~= false then return nil, stamp_err end
+            local _, parks = outcome.failure_phase(failure)
+            if not parks then return nil, stamp_err end
             return complete(ctx, nil, true, tostring(failure.message))
         end
         s = stamped :: Map
@@ -332,6 +333,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         end
         local acquired, pull_failure, pull_kind = run_as(ctx.deps, identity, ACQUIRE, {
             automation_id = automation_id, drive_key = drive_key, source_kind = d.source_kind,
+            fence = round.captured,
             source_ref = action.source_ref, source_thread_id = d.source_thread_id, event_type = action.event_type,
             config = action.config, cursor = cursor, event_seq = d.event_seq, occurrence = occurrence, pull_keys = action.pull_keys,
             limit = limit, deadline = work_deadline,

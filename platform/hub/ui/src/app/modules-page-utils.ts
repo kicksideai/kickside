@@ -46,6 +46,7 @@ export function normalizeDependencyRows(res: HubListDependenciesResponse): Insta
     if (!component) continue
     byComponent.set(component, {
       ...dep,
+      dependencyId: dep.id,
       component,
       is_root: dep.is_root ?? true,
       used_by: dep.used_by || [],

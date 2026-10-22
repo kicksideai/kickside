@@ -311,14 +311,29 @@ entries:
               { "type": "object", "properties": { "success": { "type": "boolean" }, "store_id": {}, "error": { "type": "string" } } }
             format: application/schema+json
       - name: get_store
-        description: Fetch the store row for a component. Input { component_id }.
+        description: Fetch the engine store row for a component, including its embedding model, config and KB type. Input { component_id }.
         input_schemas:
           - definition: |
               { "type": "object", "properties": { "component_id": { "type": "string" } }, "required": ["component_id"] }
             format: application/schema+json
         output_schemas:
           - definition: |
-              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } } }
+              {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "component_id": { "type": "string" },
+                  "embedding_model": { "type": "string" },
+                  "config": { "type": "object" },
+                  "kb_type": { "type": "string" },
+                  "enrichment_agent_id": { "type": ["string", "null"] },
+                  "auto_summary": { "type": ["string", "null"] },
+                  "auto_description": { "type": ["string", "null"] },
+                  "config_snapshot": {},
+                  "success": { "type": "boolean" },
+                  "error": { "type": "string" }
+                }
+              }
             format: application/schema+json
       - name: update_config
         description: Replace the store config blob for a component. Input { component_id, config }.

@@ -137,14 +137,15 @@ function M.admit(executor: any, owner: string, port: string, items: { Map }, rou
     return { items = pending, fronts = fronts }, nil
 end
 
--- next_attempt(executor, owner_id, source_port) -> the earliest pending
--- redelivery time, or nil.
-function M.next_attempt(executor: any, owner_id: string, source_port: string): (string?, error?)
+-- next_attempt(executor, owner_id, source_port, decision_at?) -> the earliest
+-- pending redelivery time, or nil. Deadline-free work is due at the caller's
+-- captured decision time, even when the query crosses a clock boundary.
+function M.next_attempt(executor: any, owner_id: string, source_port: string, decision_at: string?): (string?, error?)
     local order, order_err = drive.time_sql(executor, "COALESCE(next_attempt_at,$1)")
     if order_err then return nil, order_err end
     local rows, err = executor:query("SELECT COALESCE(next_attempt_at,$1) AS next_at FROM " .. M.TABLE
         .. " l WHERE owner_id = $2 AND source_port = $3 AND state IN ('retrying', 'waiting', 'parked') AND identity_parked=false"
-        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { time.now():utc():format(time.RFC3339), owner_id, source_port })
+        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { decision_at or time.now():utc():format(time.RFC3339), owner_id, source_port })
     if err then return nil, internal("failed to read the next ledger attempt", err) end
     local row = (rows :: { Map })[1]
     if not row or row.next_at == nil then return nil, nil end
@@ -306,7 +307,7 @@ function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: {
                 o.next_attempt_at == nil and sql.NULL or o.next_attempt_at,
                 tostring(e.code or e.kind or "unknown"), e.message and tostring(e.message) or sql.NULL,
                 e.retriable ~= false, o.state == M.STATE.DEAD, now, now,
-                o.state == M.STATE.DEAD and resolved_expires_at or sql.NULL,
+                sql.NULL,
                 item.delivery_order or 0, o.execution_identity_json or sql.NULL, o.identity_parked == true }
             if o.state == M.STATE.DEAD then terminal_work = true end
             local is_unresolved = UNRESOLVED[tostring(o.state)] == true
@@ -393,14 +394,14 @@ function M.reserve_uncertain_tx(tx: any, owner: string, port: string, item: Map,
     return { send = true }, prior and UNRESOLVED[tostring(prior.state)] and 0 or 1, nil
 end
 
--- Bounded maintenance of terminal tombstones. Only resolved and dead rows are
--- pruned; an unresolved delivery state is kept whatever its expiry timestamp.
+-- Bounded maintenance expires resolved tombstones. Dead evidence remains
+-- until its owner is removed, regardless of a stored expiry timestamp.
 local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boolean): (integer?, error?)
     local predicate = orphan and [[updated_at <= $1 AND state IN ('resolved','dead')
         AND NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=l.owner_id)
         AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c
                         WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL)]]
-        or "expires_at <= $1 AND state IN ('resolved','dead')"
+        or "expires_at <= $1 AND state='resolved'"
     local rows, read_err = tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
         .. " l WHERE " .. predicate .. " ORDER BY owner_id,source_port,item_key,identity_key LIMIT $2",
         { cutoff, limit })
@@ -411,10 +412,11 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
         AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c
                         WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL)]] or ""
     local cutoff_field = orphan and "updated_at" or "expires_at"
+    local states = orphan and "state IN ('resolved','dead')" or "state='resolved'"
     for _, row in ipairs(rows) do
         local deleted, delete_err = tx:execute("DELETE FROM " .. M.TABLE .. " AS l"
             .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
-            .. " AND state IN ('resolved','dead') AND " .. cutoff_field .. "<=$5" .. orphan_guard,
+            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard,
             { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
         if delete_err or not deleted or tonumber(deleted.rows_affected) == nil then
             return nil, internal("ledger prune delete failed", delete_err or "missing affected-row count")

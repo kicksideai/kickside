@@ -213,6 +213,7 @@ entries:
     kind: library.lua
     source: file://channel_src_link/sink/channel_sink.lua
     imports:
+      canonical_json: kickside.contract:canonical_json
       writable_sink: kickside.data:writable_sink
       reply_sender: app:channel_sink_reply_fixture
 
