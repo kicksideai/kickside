@@ -344,9 +344,12 @@ body { font-family: 'Inter', system-ui, sans-serif; }
 }
 
 /* A surface that already draws its own separator sets this, so the tab list does
-   not add a second one directly above it. */
+   not add a second one directly above it. Keep the list transparent at the same
+   specificity as the theme's dark selectors, or its background covers the
+   surface separator where the row overlaps it. */
 .p-tabs[data-kx-separator='surface'] .p-tablist-tab-list {
   border-bottom-width: 0;
+  background: transparent;
 }
 
 /* The accent IS the tab's own bottom border, as on System. An idle tab shows
