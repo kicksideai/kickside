@@ -127,8 +127,7 @@ local function copy_modality_capabilities(out: { string }, item: any)
     end
 end
 
-function M.infer_capabilities(model_id: string, item: any): { string }
-    local id = model_id:lower()
+function M.declared_capabilities(item: any): { string }
     local out: { string } = {}
 
     copy_explicit_capabilities(out, item)
@@ -144,6 +143,12 @@ function M.infer_capabilities(model_id: string, item: any): { string }
         common.add_unique(out, "extended_thinking")
     end
 
+    return out
+end
+
+function M.infer_capabilities(model_id: string, item: any): { string }
+    local id = model_id:lower()
+    local out = M.declared_capabilities(item)
     if #out == 0 and (id:find("embed", 1, true) or id:find("embedding", 1, true)) then
         common.add_unique(out, "embed")
     elseif not common.table_has(out, "embed") then
