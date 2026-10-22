@@ -33,6 +33,8 @@ local M = {}
 --   maintenance_binding  the binding exposing the whole-KB maintenance verbs;
 --                  absent on an engine that offers no maintenance.
 --   store_contract the control-plane store contract for this engine's rows.
+--   store_binding  the binding of store_contract that serves this engine's rows;
+--                  empty opens the contract's default binding.
 --   is_default     default engine used when create callers omit kb_type.
 -- Badge tones map to the semantic palette in CSS; an engine that declares an
 -- unknown tone falls back to neutral so registry data can never inject a raw color.
@@ -105,6 +107,7 @@ local function shape(entry: any): (any, string?)
         maintenance_binding = m.maintenance_binding,
         config_maintenance = m.config_maintenance,
         store_contract = m.store_contract,
+        store_binding = m.store_binding,
         is_default = m.default == true,
         is_graph = m.is_graph == true,
         create_ui_id = create_tag,
