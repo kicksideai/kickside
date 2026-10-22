@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.2](https://github.com/kicksideai/kickside/compare/component-v0.3.1...component-v0.3.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* **component:** return recorded identity replay generation ([#74](https://github.com/kicksideai/kickside/issues/74)) ([9b21079](https://github.com/kicksideai/kickside/commit/9b210798934249f7eae25bb53e832dd95db13a57))
+* **component:** start new components with the creator's captured identity ([1a9b12e](https://github.com/kicksideai/kickside/commit/1a9b12ea4204a37235a5101fe25f25129eb2cfd1))
+* **component:** take the declaration fence before access rows ([71646b2](https://github.com/kicksideai/kickside/commit/71646b22d4331de71ac4ef62e8166939b70c9f7f))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## 0.3.1 (2026-10-17)
 
 - Remove retired retention metadata from component autoinitialization.

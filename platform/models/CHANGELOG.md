@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.69](https://github.com/kicksideai/kickside/compare/models-v0.1.68...models-v0.1.69) (2026-10-22)
+
+
+### Bug Fixes
+
+* **models:** correct model discovery capabilities and picker classes ([3f96cc2](https://github.com/kicksideai/kickside/commit/3f96cc24c6c4977bf36d215b7f90b1731bb9548e))
+
 ## 0.1.68 (2026-10-20)
 
 - Model discovery reads OpenRouter's embeddings catalog as well, so provider embedding models (OpenAI text-embedding-3) get their context window and can be enabled for knowledge bases.
