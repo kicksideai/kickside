@@ -70,6 +70,15 @@ import ColorPicker from 'primevue/colorpicker'
 
 const navPayload = {
   success: true,
+  logo_upload: {
+    max_bytes: 2097152,
+    formats: [
+      { label: 'PNG', mime: 'image/png', extensions: ['png'] },
+      { label: 'JPG', mime: 'image/jpeg', extensions: ['jpg', 'jpeg'] },
+      { label: 'WebP', mime: 'image/webp', extensions: ['webp'] },
+      { label: 'GIF', mime: 'image/gif', extensions: ['gif'] },
+    ],
+  },
   layout: 'vertical',
   items: [
     { id: 'home', label: 'Home', icon: 'tabler:home', path: '/', route_name: 'home', category: '', order: 0 },
@@ -96,7 +105,7 @@ describe('appearance.vue (mounted)', () => {
     ;(globalThis as any).__getError__ = false
     ;(globalThis as any).__api__ = {
       '/nav/list': navPayload,
-      '/nav/logo': { success: true, url: '/kickside-branding/logo-x.svg' },
+      '/nav/logo': { success: true, url: '/api/public/branding/logo' },
     }
     void visibilityHarness.setVisible?.(true)
   })
@@ -257,13 +266,30 @@ describe('appearance.vue (mounted)', () => {
   it('uploads a logo as multipart and adopts the returned url', async () => {
     const w = mount(Appearance, { global })
     await flushPromises()
-    const file = new File(['<svg/>'], 'logo.svg', { type: 'image/svg+xml' })
+    const file = new File(['png'], 'logo.png', { type: 'image/png' })
     const input = w.find('input.ap-file')
     Object.defineProperty(input.element, 'files', { value: [file] })
     await input.trigger('change')
     await flushPromises()
     expect(api.post).toHaveBeenCalledWith('/api/v1/nav/logo', expect.any(FormData), expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }))
     expect(w.find('.ap-logo-prev img').exists()).toBe(true)
+    w.unmount()
+  })
+
+  it.each([
+    navPayload.logo_upload,
+    { max_bytes: 1048576, formats: [{ label: 'WebP', mime: 'image/webp', extensions: ['webp'] }] },
+  ])('derives the file picker and hint from the server upload contract', async contract => {
+    ;(globalThis as any).__api__['/nav/list'] = { ...navPayload, logo_upload: contract }
+    const w = mount(Appearance, { global })
+    await flushPromises()
+    const accept = contract.formats.flatMap(f => [f.mime, ...f.extensions.map(ext => `.${ext}`)])
+    expect(w.get('input.ap-file').attributes('accept')?.split(',')).toEqual(accept)
+    const hint = w.get('.ap-logo + .ap-hint').text()
+    for (const format of contract.formats) expect(hint).toContain(format.label)
+    expect(hint).toContain(`up to ${contract.max_bytes / 1048576} MB`)
+    expect(hint).not.toContain('SVG')
+    if (contract.formats.length === 1) expect(hint).not.toContain('PNG')
     w.unmount()
   })
 

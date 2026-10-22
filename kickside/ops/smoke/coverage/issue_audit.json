@@ -22455,6 +22455,30 @@
       "reason": "Model profile operation failures remain local to the request and do not contaminate later profiles.",
       "user_visible": false
     },
+    "APPEARANCE-LOGO-TYPES": {
+      "guards": {
+        "branding_logo_types": {
+          "assertions": [
+            "The live Appearance picker and hint match the server raster upload contract and do not advertise SVG."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        },
+        "branding_storage": {
+          "assertions": [
+            "The native branding storage test accepts supported raster extension/MIME pairs and rejects SVG and mismatches."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The editor advertised SVG even though the server accepts raster uploads only.",
+      "user_visible": true
+    },
     "PRODUCT-BRAND-CASING": {
       "guards": {
         "branding_shell": {

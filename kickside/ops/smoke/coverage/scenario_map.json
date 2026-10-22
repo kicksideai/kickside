@@ -6090,6 +6090,16 @@
       ],
       "tier": "regression"
     },
+    "branding_logo_types": {
+      "features": [
+        "kickside/ui|http|GET /api/v1/nav/list",
+        "kickside/ui|navigation|kickside.ui:tab.appearance"
+      ],
+      "issues": [
+        "APPEARANCE-LOGO-TYPES"
+      ],
+      "tier": "regression"
+    },
     "branding_shell": {
       "features": [
         "kickside/kickside|http|GET /login",
@@ -6103,10 +6113,12 @@
     "branding_storage": {
       "features": [
         "kickside/ui|http|GET /api/public/branding",
+        "kickside/ui|http|POST /api/v1/nav/logo",
         "kickside/ui|http|PUT /api/v1/nav/config"
       ],
       "issues": [
-        "PRODUCT-BRAND-CASING"
+        "PRODUCT-BRAND-CASING",
+        "APPEARANCE-LOGO-TYPES"
       ],
       "tier": "regression"
     },
