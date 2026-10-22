@@ -4167,6 +4167,17 @@
       "repository": "kickside/crm",
       "test": "test/src/user_endpoint_policy_test.lua"
     },
+    "crm/idempotency-conflict-code": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_sink_receipt_test.lua"
+    },
     "crm/isolated-registry-plan": {
       "engines": [
         "sqlite",
@@ -11178,7 +11189,8 @@
     "THREAD-EVENT-TYPE-REQUEST-FILTER",
     "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER",
     "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE",
-    "AUTOMATION-RECONFIGURE-RETAINED-REFERENCE-AUTHORITY"
+    "AUTOMATION-RECONFIGURE-RETAINED-REFERENCE-AUTHORITY",
+    "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE"
   ],
   "schema_version": 1
 }

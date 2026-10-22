@@ -67,6 +67,11 @@ def workflow_stale_completion_admission(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'tsplit_admission_test_crash_recovery')
 
 
+def crm_idempotency_conflict_code(ctx):
+    for entry in ('crm_sink_receipt_test', 'crm_sink_crm_sink_test', 'crm_sink_contract_test'):
+        run_focused_module_test(ctx, 'kickside/crm', entry)
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -90,6 +95,10 @@ REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression'
             Scenario('workflow_stale_completion_admission', 'regression',
                      workflow_stale_completion_admission,
                      issues=('WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE',)),
+
+            Scenario('crm_idempotency_conflict_code', 'regression',
+                     crm_idempotency_conflict_code,
+                     issues=('CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE',)),
             Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
