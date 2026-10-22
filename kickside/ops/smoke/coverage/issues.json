@@ -268,6 +268,18 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/round/delivery_identity_test.lua"
     },
+    "automation/dispatch-slot-lifecycle": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-UNSERVED-WAKE",
+        "AUTOMATION-STALE-SLOT-REFERENCE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/recovery_dispatch_test.lua"
+    },
     "automation/drawer-action-menu-placement": {
       "engines": [
         "independent"
@@ -11082,7 +11094,9 @@
     "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE",
     "CRM-RESOLVE-RECORD-LIFETIME",
     "MIGRATION-LEDGER-ACTIVE-SCHEMA",
-    "UPSTREAM-USAGE-CONTEXT-CORRELATION"
+    "UPSTREAM-USAGE-CONTEXT-CORRELATION",
+    "AUTOMATION-UNSERVED-WAKE",
+    "AUTOMATION-STALE-SLOT-REFERENCE"
   ],
   "schema_version": 1
 }
