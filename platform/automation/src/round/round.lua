@@ -332,6 +332,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         end
         local acquired, pull_failure, pull_kind = run_as(ctx.deps, identity, ACQUIRE, {
             automation_id = automation_id, drive_key = drive_key, source_kind = d.source_kind,
+            fence = round.captured,
             source_ref = action.source_ref, source_thread_id = d.source_thread_id, event_type = action.event_type,
             config = action.config, cursor = cursor, event_seq = d.event_seq, occurrence = occurrence, pull_keys = action.pull_keys,
             limit = limit, deadline = work_deadline,
