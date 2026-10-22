@@ -5307,6 +5307,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_transform_authority": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-OPAQUE-DECLARATION-AUTHORITY"
+      ],
+      "tier": "regression"
+    },
     "automation_transform_code": {
       "features": [
         "kickside/transform|http|POST /api/v1/transform/validate",
