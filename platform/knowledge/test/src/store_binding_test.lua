@@ -30,6 +30,17 @@ local function define_tests()
             test.not_nil(err)
         end)
 
+        test.it("rejects malformed binding metadata instead of using the default", function()
+            for _, binding in ipairs({false, 42, {}}) do
+                local result, err = funcs.new()
+                    :with_actor(security.new_actor("store-binding-test", {}))
+                    :with_scope(security.named_scope("wippy.security:process"))
+                    :call("app.store_binding:exercise_probe", {binding = binding, method = "create_store"})
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            end
+        end)
+
         test.it("preserves a caller scope that denies contract calls", function()
             local scope = assert(security.new_scope({
                 assert(security.policy("app.store_binding:allow_probe")),

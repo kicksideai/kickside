@@ -38,6 +38,12 @@ end
 
 -- Open an engine's store lifecycle through the binding its descriptor names.
 function M.open_engine_store(engine: any): (any, error?)
+    if type(engine) ~= "table" then
+        return nil, errors.new({ kind = errors.INVALID, message = "knowledge engine descriptor is required" })
+    end
+    if engine.store_binding ~= nil and type(engine.store_binding) ~= "string" then
+        return nil, errors.new({ kind = errors.INVALID, message = "store binding must be a string" })
+    end
     local binding = trim(engine.store_binding)
     return M.open_kb_store_contract(trim(engine.store_contract), binding ~= "" and binding or nil)
 end
