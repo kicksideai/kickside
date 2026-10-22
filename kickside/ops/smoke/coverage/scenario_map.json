@@ -5057,6 +5057,13 @@
       ],
       "tier": "full"
     },
+    "automation_infrastructure_command_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-INFRASTRUCTURE-PARKING"
+      ],
+      "tier": "regression"
+    },
     "automation_management_tools": {
       "features": [
         "kickside/workflows|capability|kickside.workflows.traits:reader",
@@ -6571,6 +6578,13 @@
       ],
       "tier": "regression"
     },
+    "channel_owner_lookup_failure": {
+      "features": [],
+      "issues": [
+        "CHANNEL-OWNER-LOOKUP-ERROR"
+      ],
+      "tier": "regression"
+    },
     "chat_agents_redirect_admin": {
       "features": [],
       "issues": [
@@ -7860,10 +7874,25 @@
       ],
       "tier": "regression"
     },
+    "execution_classifier_precedence": {
+      "features": [],
+      "issues": [
+        "EXECUTION-CLASSIFIER-PRECEDENCE",
+        "AUTOMATION-INFRASTRUCTURE-PARKING"
+      ],
+      "tier": "regression"
+    },
     "execution_resolver_private_read": {
       "features": [],
       "issues": [
         "EXECUTION-BASELINE-IDENTITY-RESOLUTION"
+      ],
+      "tier": "regression"
+    },
+    "execution_root_admin_failure_class": {
+      "features": [],
+      "issues": [
+        "IDENTITY-ROOT-ADMIN-CLASS"
       ],
       "tier": "regression"
     },
