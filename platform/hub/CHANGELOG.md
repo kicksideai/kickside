@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.64](https://github.com/kicksideai/kickside/compare/hub-v0.1.63...hub-v0.1.64) (2026-10-22)
+
+
+### Bug Fixes
+
+* **hub:** resolve destinations for transitive module updates ([65ad359](https://github.com/kicksideai/kickside/commit/65ad359b52a1f1b0c0d79cdeb696e22394e99274))
+
 ## 0.1.63 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

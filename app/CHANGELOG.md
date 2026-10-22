@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/kickside-v0.2.18...kickside-v0.2.19) (2026-10-22)
+
+
+### Bug Fixes
+
+* **app:** restore dark tab highlights and separators ([48794e1](https://github.com/kicksideai/kickside/commit/48794e1dfc238126f3fb7ebf019587df51bbac6f))
+* **app:** route host chat intents to the application chat ([11a4921](https://github.com/kicksideai/kickside/commit/11a4921f6ca31095e37d37e2222aeca9728737a6))
+* **inbox:** derive review titles and prefill editable drafts ([674ac87](https://github.com/kicksideai/kickside/commit/674ac877dd57bb38d97cb67a5a0a9fd7ddc6de73))
+* **settings:** use the published content radius token ([1560a1a](https://github.com/kicksideai/kickside/commit/1560a1a2e259d821d72c85fac8ed877050783637))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/kickside-v0.2.17...kickside-v0.2.18) (2026-10-21)
 
 
