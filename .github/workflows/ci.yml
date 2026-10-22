@@ -307,6 +307,12 @@ jobs:
             wippy test --set "vars.sqlite_path=$PWD/.wippy/ci.sqlite" 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
+            cd ../live-test
+            mkdir -p .wippy
+            wippy install
+            wippy test --set "vars.sqlite_path=$PWD/.wippy/repair-live.sqlite" test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
+            sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
+            awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
             cd "$source_root"
             version=$(jq -er --arg path platform/automation '.[$path]' .release-please-manifest.json)
             wippy publish --config platform/automation --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.automation:ui_fs
@@ -332,6 +338,15 @@ jobs:
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
+            cd ../live-test
+            mkdir -p .wippy
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_repair_live"
+            createdb "$database"
+            databases+=("$database")
+            wippy install
+            wippy test --profile postgres --set "vars.pg_database=$database" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
+            sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
+            awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
             cd "$source_root"
             version=$(jq -er --arg path platform/automation '.[$path]' .release-please-manifest.json)
             wippy publish --config platform/automation --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.automation:ui_fs

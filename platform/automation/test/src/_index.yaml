@@ -309,7 +309,6 @@ entries:
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
-      job_listing: kickside.core.jobs.persist:listing
       jobs_config: kickside.core.jobs:config
       types: kickside.automation:types
 
@@ -318,7 +317,7 @@ entries:
     meta: {type: test, suite: drive_repair}
     source: file://drive_repair_test.lua
     method: run
-    modules: [sql, uuid, json]
+    modules: [sql, uuid, json, process, channel, time]
     imports:
       test: wippy.test:test
       drive: kickside.automation:drive
