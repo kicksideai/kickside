@@ -5260,6 +5260,13 @@
       ],
       "tier": "regression"
     },
+    "automation_resync_operator_authority": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-RESYNC-OPERATOR-AUTHORITY"
+      ],
+      "tier": "regression"
+    },
     "automation_round_authority_reads": {
       "features": [],
       "issues": [
