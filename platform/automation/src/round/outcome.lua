@@ -40,9 +40,17 @@ end
 function M.failure_phase(failure: Map, error_kind: string?): (string, boolean)
     if failure_classification.capacity_floor(failure) ~= nil then return drive.PHASE.DEGRADED, false end
     if failure.retriable ~= false then return drive.PHASE.DEGRADED, false end
+    error_kind = error_kind or failure.error_kind
+        or (type(failure.details) == "table" and failure.details.error_kind or nil)
+    if error_kind == "infrastructure" then return drive.PHASE.DEGRADED, false end
     if error_kind == "subject" then return drive.PHASE.BLOCKED_IDENTITY, true end
     if error_kind == "access" or failure.kind == errors.PERMISSION_DENIED then return drive.PHASE.BLOCKED_ACCESS, true end
-    return drive.PHASE.BLOCKED_DECLARATION, true
+    if error_kind == "declaration" or failure.kind == errors.INVALID or failure.kind == errors.NOT_FOUND
+        or failure.kind == errors.ALREADY_EXISTS or failure.kind == errors.CONFLICT
+        or failure.code == "idempotency_conflict" then
+        return drive.PHASE.BLOCKED_DECLARATION, true
+    end
+    return drive.PHASE.DEGRADED, false
 end
 
 function M.retry_at(failure: Map, attempts: integer, policy: Map): string
@@ -117,12 +125,13 @@ function M.ledger_outcomes(items: { Map }, outcomes: Map, delivery: Map): ({ Map
             receipts[#receipts+1]={item=item,receipts=o.receipts}
         end
         local failure = type(o.error) == "table" and failure_classification.classify(o.error) or M.classify(o.error)
+        local _, parks = M.failure_phase(failure)
         if failure_classification.capacity_floor(failure) ~= nil then
             recorded[#recorded + 1] = { item = item, state = ledger.STATE.WAITING,
                 next_attempt_at = M.retry_at(failure, item.attempts + 1, delivery), error = failure }
-        elseif (failure :: Map).kind == errors.PERMISSION_DENIED then
+        elseif (failure :: Map).kind == errors.PERMISSION_DENIED and parks then
             recorded[#recorded + 1] = {item=item,state=ledger.STATE.PARKED,error=failure,identity_parked=o.identity_parked == true}
-        elseif (failure :: Map).retriable ~= false then
+        elseif not parks then
             recorded[#recorded + 1] = { item = item, state = ledger.STATE.RETRYING,
                 next_attempt_at = M.retry_at(failure, item.attempts + 1, delivery),
                 error = failure }

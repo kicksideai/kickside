@@ -6,6 +6,7 @@
 -- events after the cursor are gone: the pull returns no items, keeps the cursor
 -- and reports source_gap with the boundary and the earliest available sequence,
 -- so the engine never skips pruned history silently.
+-- Request event_type overrides config.event_type.
 
 local sql = require("sql")
 local json = require("json")
@@ -58,6 +59,13 @@ function M.pull(request: any): (table?, error?)
     if config.event_type ~= nil and (type(config.event_type) ~= "string" or config.event_type == "") then
         return data_error("invalid_config", "config.event_type must be a non-empty string"), nil
     end
+    local event_type = config.event_type
+    if req.event_type ~= nil then
+        if type(req.event_type) ~= "string" or req.event_type == "" then
+            return data_error("invalid_request", "event_type must be a non-empty string"), nil
+        end
+        event_type = req.event_type
+    end
     if not is_count(req.cursor, 0) then
         return data_error("invalid_request", "cursor must be an integer >= 0"), nil
     end
@@ -80,7 +88,7 @@ function M.pull(request: any): (table?, error?)
         from_seq = cursor + 1,
         limit = limit + 1,
         ascending = true,
-        event_type = config.event_type,
+        event_type = event_type,
     })
     db:release()
     if read_err then

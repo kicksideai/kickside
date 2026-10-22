@@ -262,7 +262,7 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
             { now, snapshot.projection_id })
         local state_write_err = write_error(state, state_err, "projection invalidation failed", "projection.invalidate")
         if state_write_err then return abort(state_write_err) end
-        local done, done_err = completion(tx, job, { record = { status = "failed", error = message }, demand_satisfied = true })
+        local done, done_err = completion(tx, job, { park = true, record = { status = "failed", error = message }, demand_satisfied = true })
         if done_err then return abort(done_err) end
         result = { self_completed = true, completion = done, invalid = true }
     end

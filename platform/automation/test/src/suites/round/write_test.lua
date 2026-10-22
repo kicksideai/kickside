@@ -11,6 +11,7 @@ local uuid = require("uuid")
 local channel = require("channel")
 local process = require("process")
 local time = require("time")
+local funcs = require("funcs")
 local errors = require("errors")
 local round_write = require("round_write")
 local drive = require("drive")
@@ -441,6 +442,25 @@ local function define_tests()
             test.is_true(sent.error.retriable)
             test.eq(sent.error.kind, errors.CONFLICT)
             test.eq(#query("SELECT id FROM round_fixture_log WHERE drive_key = 'sink' AND item_key = $1", { key }), 0)
+        end)
+
+        test.it("answers an authority write refused before its send as a refusal, not a call failure", function()
+            local id = uuid.v7()
+            local held = stamped(id, "2000-01-01T00:00:00Z")
+            id = tostring(held.automation_id)
+            local notify, sink_err = round_write.describe_sink(NOTIFY)
+            if sink_err or not notify then error("sink unavailable: " .. tostring(sink_err)) end
+            local key = "refused-" .. id
+            local packet, call_err = funcs.call("kickside.automation:round_authority_write", { drive = held, key = key .. "@1",
+                delivery_key = key .. "@1", binding = notify.binding, config = {},
+                body = { config = {}, sink_op = "upsert", input = { directive = "" }, identity_key = key,
+                    idempotency_key = key .. "@1", origin = id } })
+            test.is_nil(call_err, tostring(call_err))
+            test.not_nil(packet.refused)
+            test.eq(packet.refused.kind, errors.CONFLICT)
+            test.is_true(packet.refused.retriable)
+            test.is_nil(packet.result)
+            test.eq(#query("SELECT id FROM round_fixture_log WHERE item_key = $1", { key }), 0)
         end)
 
         test.it("sends nothing once the round's job lease is gone, at-most-once after its reservation", function()

@@ -192,6 +192,33 @@ local function define_tests(group: integer)
             test.eq(read_drive(automation_id, "notify").unresolved_count, 1)
         end)
 
+        test.it("keeps an at-most-once delivery uncertain when its write call loses the answer after the send", function()
+            new_drive({ automation_id = automation_id, drive_key = "lost", source_kind = "collection",
+                applied = { sink_port = "kickside.automation.round.fixture:notify" },
+                action = { source_ref = "kickside.automation.round.fixture:records",
+                    config = { items = { { key = "lost-1", directive = "lost_answer" } } },
+                    schedule = { type = "interval", expression = "30m" } } })
+            set_drive(automation_id, "lost", "next_run_at = $1", { PAST })
+            local _, err = run(automation_id, "lost")
+            test.is_nil(err, tostring(err))
+            local identity = round_write.keys({ automation_id = automation_id,
+                source_port = "kickside.automation.round.fixture:records" }, { item_key = "lost-1" }).identity_key
+            local function posts(): integer
+                return #query("SELECT id FROM round_fixture_log WHERE drive_key = 'sink' AND item_key = $1", { identity })
+            end
+            test.eq(posts(), 1)
+            test.eq((ledger_row(automation_id, "lost-1") :: Map).state, "uncertain")
+            -- The next round redelivers every due ledger row; an uncertain one stays held.
+            h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at = $1 WHERE owner_id = $2 AND item_key = 'lost-1'",
+                { PAST, automation_id })
+            set_drive(automation_id, "lost", "next_run_at = $1", { PAST })
+            local _, again_err = run(automation_id, "lost")
+            test.is_nil(again_err, tostring(again_err))
+            test.eq(posts(), 1, "a send whose answer was lost is never repeated by itself")
+            test.eq((ledger_row(automation_id, "lost-1") :: Map).state, "uncertain")
+            test.eq(read_drive(automation_id, "lost").unresolved_count, 1)
+        end)
+
         test.it("retains uncertain evidence when a successful sink response exceeds the declared slot bound", function()
             new_drive({ automation_id = automation_id, drive_key = "overflow", source_kind = "collection",
                 applied = { sink_port = "kickside.automation.round.fixture:store" },

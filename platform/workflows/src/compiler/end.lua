@@ -4,7 +4,7 @@ type Map = { [string]: any }
 type Err = { code: string, message: string, node_id: string?, edge_id: string? }
 type Edge = { id: string, source: string, target: string, source_port: string, transform: any, is_failure: boolean, discriminator: string?, condition: string?, via_branch: string?, via_branch_arm: string? }
 function M.assemble(nodes: { [string]: Map }, order: { string }, edges: { Edge }, incoming: { [string]: { Edge } },
-    finishes: { string }, entry_id: string, template_parent: { [string]: string },
+    finishes: { string }, entry_id: string, template_parent: { [string]: string }, iteration_input_routes: { [string]: { Edge } },
     doc: Map, synthesized_start: boolean, errors: { Err }, blocks: Map, I: any): (Map?, { Err })
 local str, is_str, err = I.str, I.is_str, I.err
 local JOIN_KINDS, BOUNDARY_KINDS = I.JOIN_KINDS, I.BOUNDARY_KINDS
@@ -100,6 +100,7 @@ local exact_flow_ref, copy_tree, generic_object_schema = I.exact_flow_ref, I.cop
             error_edges = error_outs,
             required_inputs = required,
             template_parent_id = template_parent[id],
+            iteration_input_routes = iteration_input_routes[id],
         }
     end
 

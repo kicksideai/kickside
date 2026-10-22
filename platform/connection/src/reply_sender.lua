@@ -22,6 +22,8 @@ type ReplyConfig = {
     resource_id: string?,
     reply_proof: any?,
     outbound: boolean?,
+    -- Optional delivery key; each chunk carries its own key derived from it.
+    idempotency_key: string?,
 }
 
 M.ReplyConfig = ReplyConfig
@@ -69,7 +71,7 @@ end
 
 M.chunk_content = chunk_content
 
--- Send each chunk via send_fn(chunk) -> (result, err). Partial-failure rule:
+-- Send each chunk via send_fn(chunk, index) -> (result, err). Partial-failure rule:
 -- a failure before anything is delivered is retriable. A later failure is an
 -- incomplete, ambiguous delivery: return an error plus partial=true so callers
 -- keep it visible without automatically resending already delivered chunks.
@@ -77,7 +79,7 @@ local function send_chunks(chunks: {string}, send_fn: any): (any?, any?, boolean
     local last_result = nil
     local sent = 0
     for i, chunk in ipairs(chunks) do
-        local result, send_err = send_fn(chunk)
+        local result, send_err = send_fn(chunk, i)
         if not send_err and type(result) == "table" and result.success == false then
             send_err = result.error or "reply provider refused the send"
         end
@@ -172,13 +174,15 @@ function M.send_reply(worker_config: ReplyConfig, content: string): (any?, any?,
         return nil, "sealed reply exceeds one provider message"
     end
     local chunks = chunk_content(content, max_length)
-    return send_chunks(chunks, function(chunk: string): (any?, string?)
+    local idempotency_key = worker_config.idempotency_key
+    return send_chunks(chunks, function(chunk: string, index: integer): (any?, string?)
         return svc:send_reply({
             resource_id = worker_config.resource_id,
             content_type = "markdown",
             content = chunk,
             reply_proof = worker_config.reply_proof,
             outbound = worker_config.outbound,
+            idempotency_key = idempotency_key and (idempotency_key .. "#" .. tostring(index)) or nil,
         })
     end)
 end
