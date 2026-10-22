@@ -285,6 +285,15 @@ local function persist_file(actor_id: string, file_data: string | stream.Stream,
             if remove_err then lookup_err = tostring(lookup_err) .. "; " .. tostring(remove_err) end
             return nil, typed(lookup_err, errors.UNAVAILABLE, "infrastructure", "Failed to find existing upload: ")
         end
+        if existing and existing.storage_state == "failed" then
+            local _, release_err = upload_record_repo.release_content_hash(existing.uuid)
+            if release_err then
+                local remove_err = remove_storage_path(storage, storage_path, upload_uuid)
+                if remove_err then release_err = tostring(release_err) .. "; " .. tostring(remove_err) end
+                return nil, typed(release_err, errors.UNAVAILABLE, "infrastructure", "Failed to release failed upload: ")
+            end
+            existing = nil
+        end
         if existing then
             local remove_err = remove_storage_path(storage, storage_path, existing.uuid)
             if remove_err then return nil, remove_err end
@@ -354,6 +363,34 @@ end
 
 function upload_lib.upload_file(actor_id: string, file_data: string | stream.Stream, filename: string, size: number, mime_type: string?, storage_id: string?, metadata: any, parent_upload_id: string?)
     return persist_file(actor_id, file_data, filename, size, mime_type, storage_id, metadata, parent_upload_id, true)
+end
+
+-- Run the processing of a failed upload again on its stored bytes.
+function upload_lib.retry_upload(uuid)
+    local upload, err = upload_query_repo.get(uuid)
+    if err then
+        if err == "Upload not found" then
+            return nil, failure("upload not found", errors.NOT_FOUND, "subject")
+        end
+        return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")
+    end
+
+    local max_ms = math.floor(tonumber(upload.processing_max_execution_ms) or process_worker.max_execution_ms())
+    local marked, mark_err = upload_record_repo.mark_failed_for_retry(upload.uuid, max_ms)
+    if mark_err then return nil, typed(mark_err, errors.UNAVAILABLE, "infrastructure", "") end
+    if not marked then
+        return nil, failure("only a failed upload can be retried", errors.CONFLICT, "subject")
+    end
+    upload.storage_state = "uploaded"
+    upload.processing_intent_state = "pending"
+    upload.processing_max_execution_ms = max_ms
+
+    local _, submit_err = process_worker.enqueue_upload_job(upload, true)
+    if submit_err then
+        return nil, typed(submit_err, errors.UNAVAILABLE, "infrastructure", "Failed to submit upload processing job: ")
+    end
+
+    return upload
 end
 
 function upload_lib.delete_upload(uuid)

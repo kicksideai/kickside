@@ -65,6 +65,33 @@ entries:
     func: delete_handler
     path: /uploads/{uuid}
 
+  # kickside.uploads.api:retry_handler
+  - name: retry_handler
+    kind: function.lua
+    meta:
+      comment: Retry failed upload API handler
+    source: file://retry_upload.lua
+    modules:
+      - http
+      - security
+    imports:
+      http_errors: kickside.contract:http_errors
+      upload_lib: kickside.uploads:uploads
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+    method: retry_handler
+    pool:
+      size: 2
+
+  # kickside.uploads.api:retry_handler.endpoint
+  - name: retry_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Retry failed upload endpoint
+      router: router
+    method: POST
+    func: retry_handler
+    path: /uploads/{uuid}/retry
+
   # kickside.uploads.api:get_handler
   - name: get_handler
     kind: function.lua

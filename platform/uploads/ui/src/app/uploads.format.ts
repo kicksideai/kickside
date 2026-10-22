@@ -90,8 +90,47 @@ export function isRawRenderable(mime: string): boolean {
   return RAW_MIME_PREFIXES.some((prefix) => normalized.startsWith(prefix)) || RAW_MIME_EXACT.has(normalized)
 }
 
+const TRANSCRIPTION_KEYS = ['ocr_error', 'asr_error', 'conversion_error']
+const TRANSCRIPTION_MESSAGES: Record<string, string> = {
+  transcription_failed: 'Text recognition failed.',
+  persist_failed: 'The recognized text could not be saved.',
+  storage_unavailable: 'The stored file could not be read.',
+  storage_stat_failed: 'The stored file could not be read.',
+  storage_read_failed: 'The stored file could not be read.',
+  storage_pointer_missing: 'The stored file is missing.',
+  no_text_detected: 'No text was found in this file.',
+  too_large: 'The file is too large for transcription.',
+  transcript_too_large: 'The transcript is too large to keep.',
+}
+const TRANSCRIPTION_OUTCOMES = new Set(['no_text_detected', 'too_large', 'transcript_too_large'])
+
+export interface UploadNotice {
+  tone: 'error' | 'info'
+  text: string
+}
+
+export function transcriptionCode(upload: Upload): string {
+  for (const key of TRANSCRIPTION_KEYS) {
+    const code = upload.meta?.[key]
+    if (typeof code === 'string' && code) return code
+  }
+  return ''
+}
+
+export function uploadNotice(upload: Upload): UploadNotice | null {
+  const code = transcriptionCode(upload)
+  if (isFailed(upload)) {
+    const reason = TRANSCRIPTION_MESSAGES[code] || (code ? 'Text recognition failed.' : upload.error ? formatError(upload.error) : 'Upload processing failed.')
+    return { tone: 'error', text: reason }
+  }
+  if (!code || normStatus(upload.status) !== 'completed') return null
+  if (TRANSCRIPTION_OUTCOMES.has(code)) return { tone: 'info', text: TRANSCRIPTION_MESSAGES[code] }
+  return { tone: 'info', text: `${TRANSCRIPTION_MESSAGES[code] || 'Text recognition did not complete.'} The extracted text is shown.` }
+}
+
 export function canPreview(upload: Upload): boolean {
-  return normStatus(upload.status) === 'completed'
+  const status = normStatus(upload.status)
+  return status === 'completed' || status === 'error'
 }
 
 const TERMINAL = new Set(['completed', 'error'])
