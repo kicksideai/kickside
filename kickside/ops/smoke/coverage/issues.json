@@ -158,6 +158,17 @@
       "repository": "kickside/providers",
       "test": "atlassian/test/suites/jira_traits_test.lua"
     },
+    "automation/authority-resume": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/round/authority_test.lua"
+    },
     "automation/command-authority-recovery": {
       "engines": [
         "sqlite",
@@ -313,6 +324,17 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/ui/src/app/ExecutionIdentityEditor.spec.ts"
     },
+    "automation/immediate-redelivery": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/round/ledger_order_test.lua"
+    },
     "automation/manual-source": {
       "engines": [
         "sqlite",
@@ -410,6 +432,17 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/owner_gc_test.lua"
     },
+    "automation/receipt-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/receipt_retention_test.lua"
+    },
     "automation/record-delete-migration": {
       "engines": [
         "sqlite",
@@ -420,6 +453,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/round/control_test.lua"
+    },
+    "automation/recovery-dispatch": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/recovery_dispatch_test.lua"
     },
     "automation/selected-root-delegation": {
       "engines": [
@@ -11007,7 +11051,9 @@
     "SETTINGS-STORED-ROW-ERROR",
     "APP-UI-PUBLISHED-FACADE-GUARD",
     "APP-UI-LOGIN-ROUTE-GUARD",
-    "SETTINGS-NOTICES-THEME-RADIUS"
+    "SETTINGS-NOTICES-THEME-RADIUS",
+    "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION",
+    "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
   ],
   "schema_version": 1
 }

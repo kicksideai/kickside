@@ -4980,6 +4980,13 @@
       ],
       "tier": "regression"
     },
+    "automation_immediate_redelivery_deadline": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+      ],
+      "tier": "regression"
+    },
     "automation_inbox_api": {
       "features": [
         "kickside/inbox|http|POST /api/v1/inbox",
@@ -5229,6 +5236,13 @@
         "R5-T07"
       ],
       "tier": "full"
+    },
+    "automation_settled_event_receipt_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "tier": "regression"
     },
     "automation_slot_provision_failures": {
       "features": [],
