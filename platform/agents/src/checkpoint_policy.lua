@@ -48,7 +48,7 @@ end
 -- Apply limits only when the selected card declares a usable context window.
 -- Existing checkpoint settings retain lower values when the selected model
 -- declares a usable context window.
-function M.apply(spec: any): (any, string?)
+function M.apply(spec: any): (any, any?)
     if type(spec) ~= "table" then return spec end
 
     local options = copy_map(spec.agent_options)
