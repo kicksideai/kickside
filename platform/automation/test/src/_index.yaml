@@ -304,13 +304,12 @@ entries:
   - name: drive_repair
     kind: library.lua
     source: file://drive_repair_source.lua
-    modules: [json, sql]
+    modules: [json, sql, time]
     imports:
-      migration: wippy.migration:migration
+      migration_repository: wippy.migration:repository
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
-      jobs_config: kickside.core.jobs:config
-      types: kickside.automation:types
+
 
   - name: drive_repair_test
     kind: function.lua
@@ -319,10 +318,84 @@ entries:
     method: run
     modules: [sql, uuid, json, process, channel, time]
     imports:
+      cleanup: app:drive_repair_cleanup
       test: wippy.test:test
       drive: kickside.automation:drive
       slot: kickside.automation:slot
       jobs: kickside.core.jobs:jobs
       repair: app:drive_repair
+      types: kickside.automation:types
+      jobs_config: kickside.core.jobs:config
+
+  - name: drive_repair_deep_test
+    kind: function.lua
+    meta: {type: test, suite: drive_repair_deep}
+    source: file://drive_repair_deep_test.lua
+    method: run
+    modules: [sql, uuid, json]
+    imports:
+      cleanup: app:drive_repair_cleanup
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      slot: kickside.automation:slot
+      jobs: kickside.core.jobs:jobs
+      repair: app:drive_repair
+      types: kickside.automation:types
+      jobs_config: kickside.core.jobs:config
+      claim: kickside.automation:round_claim
+
+  - name: drive_repair_alias_test
+    kind: function.lua
+    meta: {type: test, suite: drive_repair_alias}
+    source: file://drive_repair_alias_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      cleanup: app:drive_repair_cleanup
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      slot: kickside.automation:slot
+      jobs: kickside.core.jobs:jobs
+      repair: app:drive_repair
+      types: kickside.automation:types
+      jobs_config: kickside.core.jobs:config
+
+  - name: drive_repair_slot_boundary
+    kind: library.lua
+    source: file://drive_repair_slot_boundary.lua
+    imports:
+      slot: kickside.automation:slot
+
+  - name: drive_repair_race_subject
+    kind: library.lua
+    source: file://drive_repair_source.lua
+    modules: [sql, json, time]
+    imports:
+      migration_repository: wippy.migration:repository
+      jobs: kickside.core.jobs:jobs
+      slot: app:drive_repair_slot_boundary
+
+
+  - name: drive_repair_races_test
+    kind: function.lua
+    meta: {type: test, suite: drive_repair_races}
+    source: file://drive_repair_races_test.lua
+    method: run
+    modules: [sql, uuid, channel, time]
+    imports:
+      cleanup: app:drive_repair_cleanup
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      jobs: kickside.core.jobs:jobs
+      repair: app:drive_repair_race_subject
+      boundary: app:drive_repair_slot_boundary
+      types: kickside.automation:types
+      jobs_config: kickside.core.jobs:config
+
+  - name: drive_repair_cleanup
+    kind: library.lua
+    source: file://drive_repair_cleanup.lua
+    modules: [sql]
+    imports:
       types: kickside.automation:types
       jobs_config: kickside.core.jobs:config

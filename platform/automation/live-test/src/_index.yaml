@@ -208,13 +208,11 @@ entries:
 - name: drive_repair
   kind: library.lua
   source: file://test_src/drive_repair_source.lua
-  modules: [json, sql]
+  modules: [json, sql, time]
   imports:
-    migration: wippy.migration:migration
+    migration_repository: wippy.migration:repository
     jobs: kickside.core.jobs:jobs
     slot: kickside.automation:slot
-    jobs_config: kickside.core.jobs:config
-    types: kickside.automation:types
 
 - name: drive_repair_live_test
   kind: function.lua

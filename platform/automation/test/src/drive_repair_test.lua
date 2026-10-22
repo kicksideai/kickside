@@ -1,5 +1,7 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
+local cleanup=require("cleanup")
+local owners={}
 local sql = require("sql")
 local uuid = require("uuid")
 local json = require("json")
@@ -24,6 +26,7 @@ local function query(db,statement,params)
 end
 local function fixture(db,kind,job)
     local owner=uuid.v7()
+    owners[#owners+1]=owner
     local tx=assert(db:begin())
     local _,err=drive.insert_tx(tx,{automation_id=owner,drive_key="main",source_kind=kind or "timer"})
     if err then error(err) end
@@ -47,7 +50,7 @@ local function run(db,id) return repair({db=db,id=id}) end
 local function unchanged(before,after)
     for key,value in pairs(before) do if key~="job_id" then test.eq(after[key],value,key) end end
 end
-return test.run_cases(function()
+local cases=test.run_cases(function()
     test.describe("stranded drive migration",function()
         test.it("notifies an already registered pool after repaired rows are committed",function()
             local db=assert(sql.get(types.db_id()))
@@ -68,6 +71,13 @@ return test.run_cases(function()
                 fresh:release()
                 test.not_nil(repaired.job_id)
                 test.eq(assert(jobs.get_job(repaired.job_id)).status,"pending")
+                -- Canonical provisioning can emit more than one committed hint
+                -- (dispatcher creation plus its explicit wake). Drain those
+                -- before checking that an applied migration emits no new hint.
+                while true do
+                    local pending=channel.select({wake:case_receive(),time.after("20ms"):case_receive()})
+                    if pending.channel~=wake then break end
+                end
                 test.eq(run(db,migration_id).status,"complete")
                 local quiet=channel.select({wake:case_receive(),time.after("20ms"):case_receive()})
                 test.is_true(quiet.channel~=wake,"an already-applied repair must not request another dispatcher round")
@@ -158,7 +168,7 @@ return test.run_cases(function()
                 execute=function(_,statement,params) return db:execute(statement,params) end,
                 begin=function(_,options)
                     begins=begins+1
-                    if begins==2 then return nil,errors.new({kind=errors.UNAVAILABLE,message="simulated interruption"}) end
+                    if begins==3 then return nil,errors.new({kind=errors.UNAVAILABLE,message="simulated interruption"}) end
                     return db:begin(options)
                 end,
             }
@@ -180,3 +190,10 @@ return test.run_cases(function()
         end)
     end)
 end)
+
+return function(options)
+    local ok,result=pcall(cases,options)
+    cleanup(owners)
+    if not ok then error(result) end
+    return result
+end
