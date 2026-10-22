@@ -9707,6 +9707,17 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "knowledge/store-output-schema": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/knowledge/test/src/contract_surface_test.lua"
     }
   },
   "issues": [
@@ -10880,7 +10891,8 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
   ],
   "schema_version": 1
 }
