@@ -229,6 +229,59 @@ describe('modules.vue (mounted)', () => {
     w.unmount()
   })
 
+  it.each([
+    { label: 'transitive package', root: false, dependencyId: null },
+    { label: 'graph root without a dependency entry', root: true, dependencyId: null },
+    { label: 'existing dependency entry', root: true, dependencyId: 'custom.dependencies:search-alias' },
+  ])('uses the dependency destination for a $label update', async ({ root, dependencyId }) => {
+    const component = 'example/search'
+    const api = makeApi({
+      '/api/v1/keeper/hub/dependencies': {
+        success: true,
+        dependencies: dependencyId ? [{ id: dependencyId, namespace: 'custom.dependencies',
+          name: 'search-alias', component, version: '1.0.0', source: 'registry' }] : [],
+        modules: [{ name: component, version: '1.0.0', is_root: root, transitive: !root,
+          source: 'registry', used_by: ['example/application'], used_by_count: 1 }],
+      },
+      '/api/v1/keeper/hub/versions': { success: true, items: [{ version: '1.1.0' }, { version: '1.0.0' }] },
+      '/api/v1/keeper/hub/dependencies/plan': {
+        success: true, module_count: 1, requirements: [], missing_requirements: [],
+        graph: [{ module: component, version: '1.1.0', direct: true }],
+      },
+    })
+    installHost(api)
+    const w = mount(Modules, { global: { stubs } })
+    await flushPromises()
+    const row = w.findAll('.inst-row').find(r => r.text().includes(component))!
+    expect(row.exists()).toBe(true)
+    await row.findAll('button').find(b => b.attributes('aria-label')?.includes('update planner'))!.trigger('click')
+    await flushPromises()
+    const dialog = w.findComponent({ name: 'InstallDialog' })
+    const planCalls = () => api.post.mock.calls.filter(call => call[0] === '/api/v1/keeper/hub/dependencies/plan')
+    expect(planCalls().length).toBeGreaterThan(0)
+    expect(JSON.parse(JSON.stringify(planCalls().at(-1)![1]))).toEqual({
+      component, version: '>=1.1.0', run_migrations: true, ...(dependencyId ? { id: dependencyId } : {}),
+    })
+    expect(dialog.props('currentId')).toBe(dependencyId)
+    expect(dialog.props('installedDep').id).toBe(dependencyId || component)
+    expect(dialog.findAll('p').some(p => p.text().includes('application root dependency'))).toBe(!dependencyId)
+    await dialog.findAll('button').find(b => b.text().includes('Preview changes'))!.trigger('click')
+    await flushPromises()
+    await dialog.findAll('button').find(b => b.text().includes('Skip scan'))!.trigger('click')
+    await flushPromises()
+    await dialog.find('.km-modal-foot .km-btn:last-child').trigger('click')
+    await flushPromises()
+    const installs = api.post.mock.calls.filter(call => call[0] === '/api/v1/keeper/hub/dependencies/install')
+    expect(installs).toHaveLength(2)
+    for (const [index, call] of installs.entries()) {
+      expect(JSON.parse(JSON.stringify(call[1]))).toEqual({
+        component, version: '>=1.1.0', migration_policy: 'up',
+        ...(dependencyId ? { id: dependencyId } : {}), ...(index === 0 ? { dry_run: true } : {}),
+      })
+    }
+    w.unmount()
+  })
+
   it('opens a manual update at latest instead of re-submitting the installed version', async () => {
     const api = makeApi({
       __get: (url: string, config?: any) => {

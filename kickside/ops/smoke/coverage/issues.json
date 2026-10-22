@@ -4454,6 +4454,16 @@
       "repository": "kickside/kickside",
       "test": "platform/hub/ui/src/app/onboardingPlanConflict.spec.ts"
     },
+    "hub/update-dependency-destination": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "HUB-TRANSITIVE-UPDATE-DESTINATION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/hub/ui/src/app/modules_updates_and_planning.spec.ts"
+    },
     "hubspot/compact-list-detail": {
       "engines": [
         "sqlite",
@@ -10911,7 +10921,8 @@
     "DATAFLOW-SCALAR-ITERATION-ITEM-TYPE",
     "DATAFLOW-SOURCE-TEST-HARNESS-IMPORT",
     "DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT",
-    "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE"
+    "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE",
+    "HUB-TRANSITIVE-UPDATE-DESTINATION"
   ],
   "schema_version": 1
 }

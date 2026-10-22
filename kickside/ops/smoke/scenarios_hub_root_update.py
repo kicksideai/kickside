@@ -172,6 +172,12 @@ def failed_install_preserves_catalog(ctx):
                 'Reboot after a rejected Hub install changes the module catalog')
 
 
+def hub_update_dependency_destination(ctx):
+    from scenarios_automation_task_forms import frontend_specs
+    frontend_specs(ctx, 'hub', ('src/app/modules_updates_and_planning.spec.ts',),
+                   'hub-update-dependency-destination')
+
+
 def keeper_bulk_plan_guard(ctx):
     run_focused_module_suite(ctx, 'keeper/keeper', 'keeper.hub:test')
 
@@ -185,7 +191,9 @@ def keeper_changelog_error_guard(ctx):
     run_focused_module_suite(ctx, 'keeper/keeper', 'keeper.knowledge.changelog:changelog_test')
 
 
-REGISTRY = [Scenario('regression_keeper_bulk_update_plan', 'regression', keeper_bulk_plan_guard,
+REGISTRY = [Scenario('hub_update_dependency_destination', 'regression', hub_update_dependency_destination,
+                     issues=('HUB-TRANSITIVE-UPDATE-DESTINATION',)),
+            Scenario('regression_keeper_bulk_update_plan', 'regression', keeper_bulk_plan_guard,
                      ('boot',), issues=('KEEPER-BATCH-UPDATE-PLAN', 'HUB-UPDATE-PACKAGE-DEFAULT',
                                       'KEEPER-PLANNED-LOGICAL-SCOPES',
                                       'KEEPER-BATCH-METADATA-READ-AMPLIFICATION',
@@ -211,3 +219,49 @@ REGISTRY = [Scenario('regression_keeper_bulk_update_plan', 'regression', keeper_
                      ('boot',), issues=('KB10-RETRIEVAL-MIGRATION-PRESERVATION',)),
             Scenario('regression_hub_failed_install_preserves_catalog', 'regression', failed_install_preserves_catalog,
                      ('boot',), instance_setup=True, issues=('HUB-INSTALL-ROLLBACK-CATALOG', 'HUB-REBOOT-AFTER-FAILED-INSTALL'))]
+
+
+def transitive_module_update_browser(ctx):
+    from playwright.sync_api import expect
+    from runtime_fixtures import complete_splashes
+    from scenarios_core import system
+
+    inventory = ctx.inst.request('GET', '/api/v1/keeper/hub/dependencies?entries=0&migrations=0',
+                                 label='transitive-update-inventory')
+    declared = {row['component'] for row in inventory['dependencies']}
+    candidates = sorted(row['name'] for row in inventory['modules']
+                        if row['name'] not in declared and row.get('transitive')
+                        and row.get('source') == 'hub' and row.get('used_by'))
+    require(candidates, 'Fixture has no graph-only Hub dependency')
+    component = candidates[0]
+    complete_splashes(ctx, 'welcome', 'first_agent')
+    browser = ctx.browser_check()
+    browser.login()
+    system(ctx, 'Modules')
+    view = browser.frame.locator('kickside-hub')
+    view.get_by_role('textbox', name='Search installed modules', exact=True).fill(component)
+    update = view.get_by_role('button', name='Open update planner for ' + component, exact=True)
+    with browser.page.expect_response(lambda response: response.request.method == 'POST'
+                                      and response.url.endswith('/keeper/hub/dependencies/plan'),
+                                      timeout=120000) as response:
+        update.click()
+    result = response.value
+    body = result.json()
+    ctx.inst.evidence.save('transitive-update-browser-plan', {
+        'component': component, 'request': result.request.post_data_json,
+        'status': result.status, 'body': body,
+    })
+    require(result.status == 200 and body.get('code') != 'BAD_REQUEST',
+            'Modules Update rejects a graph-only dependency: ' + json.dumps(body))
+    require(not result.request.post_data_json.get('id'),
+            'Graph-only update supplies a dependency destination')
+    dialog = view.get_by_role('dialog', name='Update module', exact=True)
+    expect(dialog).to_be_visible(timeout=30000)
+    expect(dialog).to_contain_text(component)
+    expect(dialog).not_to_contain_text('BAD_REQUEST')
+    browser.screenshot('transitive-update-browser-plan')
+
+
+REGISTRY.append(Scenario('hub_transitive_module_update_browser', 'regression',
+                         transitive_module_update_browser, ('boot',), instance_setup=True,
+                         issues=('HUB-TRANSITIVE-UPDATE-DESTINATION',)))
