@@ -63,6 +63,9 @@ def workflow_native_recovery(ctx):
 def workflow_terminal_publication_revoked_owner(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'native_publication_recovery_test')
 
+def workflow_stale_completion_admission(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'tsplit_admission_test_crash_recovery')
+
 
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
@@ -83,6 +86,10 @@ def workflow_durable_undo_history(ctx):
 REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression',
                      workflow_terminal_publication_revoked_owner,
                      issues=('WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER',)),
+
+            Scenario('workflow_stale_completion_admission', 'regression',
+                     workflow_stale_completion_admission,
+                     issues=('WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE',)),
             Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,

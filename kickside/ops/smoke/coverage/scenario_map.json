@@ -15811,6 +15811,13 @@
       ],
       "tier": "regression"
     },
+    "workflow_stale_completion_admission": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
+      ],
+      "tier": "regression"
+    },
     "workflow_terminal_publication_revoked_owner": {
       "features": [],
       "issues": [

@@ -9932,6 +9932,17 @@
       "repository": "kickside/kickside",
       "test": "platform/workflows/test/src/suites/launch_reconciliation_live_test.lua"
     },
+    "workflows/stale-completion-admission": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/test/src/suites/admission_test_crash_recovery.lua"
+    },
     "workspace/archive-folder-placement": {
       "engines": [
         "sqlite",
@@ -11165,7 +11176,8 @@
     "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER",
     "RECLAIM-PROCESS-LOOKUP-TRANSACTION",
     "THREAD-EVENT-TYPE-REQUEST-FILTER",
-    "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER"
+    "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER",
+    "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
   ],
   "schema_version": 1
 }
