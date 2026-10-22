@@ -6583,6 +6583,30 @@
       "repository": "kickside/providers",
       "test": "memory/test/runtime_test.lua"
     },
+    "models/discovery-capabilities": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/models/test/openai_capabilities_test.lua"
+    },
+    "models/discovery-metadata-upgrade": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/models/test/discovery_metadata_migration_test.lua"
+    },
     "models/discovery-persistence": {
       "engines": [
         "sqlite",
@@ -9676,6 +9700,16 @@
       "repository": "kickside/providers",
       "test": "webscout/test/suites/google_provider_test.lua"
     },
+    "widgets/model-picker-capabilities": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/widgets/ui/src/model-picker/app/model-picker-capabilities.spec.ts"
+    },
     "widgets/remote-picker": {
       "engines": [
         "independent"
@@ -10945,7 +10979,10 @@
     "DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT",
     "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE",
     "HUB-TRANSITIVE-UPDATE-DESTINATION",
-    "WEBSCOUT-PROVIDER-CORE-MINIMUM"
+    "WEBSCOUT-PROVIDER-CORE-MINIMUM",
+    "MODELS-REASONING-GENERATIONS",
+    "MODELS-GENERATION-CAPABILITIES",
+    "WIDGETS-CLASS-CAPABILITY"
   ],
   "schema_version": 1
 }

@@ -8971,6 +8971,28 @@
       ],
       "tier": "chat"
     },
+    "model_picker_capabilities_browser": {
+      "features": [],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "tier": "regression"
+    },
+    "model_picker_class_capabilities": {
+      "features": [],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "tier": "regression"
+    },
+    "models_discovery_capabilities": {
+      "features": [],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "tier": "regression"
+    },
     "models_reference_vendor": {
       "features": [],
       "issues": [
