@@ -4282,3 +4282,24 @@ entries:
       test: wippy.test:test
       writer: app:projection_register_native_source
       fixture: app:projection_register_native_fixture
+
+  - name: projection_pin_repair
+    kind: library.lua
+    source: file://projection_pin_repair.lua
+    modules: [sql]
+    imports:
+      migration: wippy.migration:migration
+      threads_writer: kickside.core.threads.persist:writer
+      retention_pin: kickside.core.retention:pin
+
+  - name: projection_pin_migration_test
+    kind: function.lua
+    meta: {type: test, suite: projection_pin_migration}
+    source: file://projection_pin_migration_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      repair: app:projection_pin_repair
+      pin: kickside.core.retention:pin
+      prune: kickside.core.retention:prune
