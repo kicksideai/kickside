@@ -4,6 +4,7 @@ function M.reset(operation, stage, source)
     M.primary, M.missing = nil, false
     M.trace, M.rollbacks, M.commits, M.notifications = {}, 0, 0, 0
     M.already, M.settled = false, false
+    M.retry_floor = nil
 end
 function M.result(stage, value)
     M.trace[#M.trace + 1] = stage
