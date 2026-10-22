@@ -96,7 +96,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_delegation_effects_test
     kind: function.lua
@@ -115,7 +114,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_execution_capabilities_test
     kind: function.lua
@@ -134,7 +132,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_execution_process_test
     kind: function.lua
@@ -153,7 +150,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_delegation_host_test
     kind: function.lua
@@ -172,7 +168,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_selection_test
     kind: function.lua
@@ -191,7 +186,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_lifecycle_test
     kind: function.lua
@@ -203,6 +197,7 @@ entries:
       policies: [app:test_runtime]
     modules: [sql, crypto, json, funcs, security]
     imports:
+      execution_identity: kickside.execution:execution_identity
       test: wippy.test:test
       user_repo: kickside.users.persist:user_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
@@ -222,6 +217,7 @@ entries:
       policies: [app:test_runtime]
     modules: [registry, funcs, sql, crypto, security]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
       test: wippy.test:test
       user_repo: kickside.users.persist:user_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
@@ -559,7 +555,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_identity_command_test
     kind: function.lua
@@ -578,7 +573,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_run_as_candidates_test
     kind: function.lua
@@ -597,7 +591,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_admin_creation_test
     kind: function.lua
@@ -634,7 +627,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: delegation_fencing_failure
     kind: library.lua
@@ -711,6 +703,7 @@ entries:
     source: file://session_subject.lua
     modules: [security, contract, logger]
     imports:
+      execution_identity: kickside.execution:execution_identity
       time: kickside.users:expiry_time
       credential_eligibility: kickside.users.persist:credential_eligibility
       user_consts: kickside.users:consts

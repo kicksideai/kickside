@@ -76,7 +76,7 @@ entries:
         - kickside.users.security:login_env_read
         - kickside.users.security:login_actor_create
         - kickside.users.security:session_group_policy_read
-        - kickside.users.security:session_group_set_projection
+        - kickside.security.service:group_set_db
         - kickside.users.security:login_role_resolve
         - kickside.users.security:login_scope_compose
         - kickside.users.security:login_token_mint

@@ -76,6 +76,23 @@ end
 
 local function define_tests()
     test.describe("execution_identity v2", function()
+        test.it("keeps live source policy IDs alongside native groups", function()
+            local principal = {kind = "user", id = "u1"}
+            local answer = live_answer(principal)
+            answer.scope_policy_ids = {"app:selected_source"}
+            local frame = resolve_frame()
+            frame.policy = function(id) return {id = function() return id end} end
+            frame.new_scope = function(policies) return {policies = policies} end
+            with_security(frame, function()
+                with_contract({get = function() return resolver_double(answer, nil) end}, function()
+                    local resolved, err = execution_identity.resolve(v2_identity(principal))
+                    test.is_nil(err)
+                    test.not_nil(resolved.scope.policies, "policy-only authority builds a native scope")
+                    test.eq(#resolved.scope.policies, 1)
+                    test.eq(resolved.scope.policies[1]:id(), "app:selected_source")
+                end)
+            end)
+        end)
         test.it("checks actor creation before evaluating live authorizer scope", function()
             local builds = 0
             local frame = resolve_frame()

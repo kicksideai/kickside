@@ -1,6 +1,7 @@
 local test = require("test")
 local registry = require("registry")
 local security = require("security")
+local source_scope = require("source_scope")
 local projection = require("projection")
 local fixture = require("registry_fixture")
 local time = require("time")
@@ -10,12 +11,12 @@ local function define_tests()
         test.it("binds opted module policies to the supplied scope without broadening Contract", function()
             test.not_nil((projection.reconcile()))
             local actor = assert(security.new_actor("shared-member", {}))
-            local scope = assert(security.named_scope("app:unassigned_endpoints"))
+            local scope = assert(source_scope.resolve("app:unassigned_endpoints"))
             test.eq(scope:evaluate(actor, "access", "shared.module:list.endpoint"), "allow")
             test.eq(scope:evaluate(actor, "funcs.call", "shared.module:view"), "allow")
             test.eq(scope:evaluate(actor, "access", "shared.module:list.admin.endpoint"), "undefined")
             test.eq(scope:evaluate(actor, "access", "independent.module:list.endpoint"), "undefined")
-            local unrelated = assert(security.named_scope("app:declared_members"))
+            local unrelated = assert(source_scope.resolve("app:declared_members"))
             test.eq(unrelated:evaluate(actor, "access", "shared.module:list.endpoint"), "undefined")
             local baseline = assert(security.policy("kickside.contract.http:user_endpoint_access"))
             test.eq(baseline:evaluate(actor, "access", "shared.module:list.endpoint"), "undefined")
@@ -41,7 +42,7 @@ local function define_tests()
             if result then
                 local actor = assert(security.new_actor("shared-member", {}))
                 for _, group in ipairs({"app:shared_scope_left", "app:shared_scope_right"}) do
-                    decisions[#decisions + 1] = assert(security.named_scope(group)):evaluate(actor,
+                    decisions[#decisions + 1] = assert(source_scope.resolve(group)):evaluate(actor,
                         "access", "shared.module:list.endpoint")
                 end
             end

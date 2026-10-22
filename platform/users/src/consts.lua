@@ -1,5 +1,5 @@
 local env = require("env")
-local funcs = require("funcs")
+local scope_store = require("scope_store")
 local errors = require("errors")
 
 local consts = {
@@ -202,27 +202,9 @@ end
 
 function consts.resolve_scope(config, groups, authority_only)
     local primary, is_admin, effective = consts.derive_scope(config, groups)
-    local distinct, seen, custom = {}, {}, false
-    for _, group in ipairs(effective) do
-        if not seen[group] then distinct[#distinct + 1] = group; seen[group] = true end
-        if group ~= config.admin_group_id and group ~= config.default_group_id
-            and group ~= config.baseline_group_id then custom = true end
-    end
-    if authority_only == true then return primary, is_admin, effective, nil end
-    local result, err = funcs.call("kickside.security.binding:materialize_group_set", {groups = distinct})
-    if err then
-        local cause = err:details() and err:details().cause
-        local native = type(cause) == "table" and errors.new(cause) or err
-        return nil, is_admin, effective, (errors.wrap(native, "group set projection failed") :: error)
-    end
-    if type(result) ~= "table" or type(result.scope_name) ~= "string" then
-        return nil, is_admin, effective, errors.new({kind = errors.INTERNAL, retryable = false,
-            message = "group set projection returns an invalid result"})
-    end
-    if #distinct == 1 then return distinct[1], is_admin, effective, nil end
-    if not custom and is_admin then return config.admin_group_id, true, effective, nil end
-    if not custom and seen[config.default_group_id] then return config.default_group_id, false, effective, nil end
-    return result.scope_name, is_admin, effective, nil
+    local resolved, err = scope_store.resolve_groups(effective)
+    if not resolved then return nil, is_admin, effective, err end
+    return primary, is_admin, effective, nil, resolved
 end
 
 -- Validate email format

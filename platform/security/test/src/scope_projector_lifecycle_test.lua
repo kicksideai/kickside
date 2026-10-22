@@ -1,3 +1,4 @@
+local source_scope = require("source_scope")
 -- The scope projector is a long-lived service: a caller that leaves before its
 -- reply never stops it, requests queued behind a projection pass share the next
 -- pass instead of one pass each, and a failed pass returns its error while the
@@ -18,7 +19,7 @@ local consts = require("security_consts")
 
 local PROJECTOR = "kickside.security.service:scope_projection_proc"
 local PRODUCT_SERVICE = "kickside.security.service:scope_projection.service"
-local MATERIALIZE = "kickside.security.binding:materialize_group_set"
+local execution_identity = require("execution_identity")
 local GROUPS = { "app:lifecycle_alpha", "app:lifecycle_beta" }
 local QUEUED_GROUPS = { "app:lifecycle_g1", "app:lifecycle_g2", "app:lifecycle_g3",
     "app:lifecycle_g4", "app:lifecycle_g5", "app:lifecycle_g6" }
@@ -89,13 +90,13 @@ local function projected_replacement(group: string, old_resource: string, new_re
     local deadline = time.now():add(5 * time.SECOND)
     local scope, calls
     while time.now():before(deadline) do
-        scope = assert(security.named_scope(group))
+        scope = assert(source_scope.resolve(group))
         local records = assert(storage.get("app:invalidation_records"))
         calls = records:get("calls") or {}
         records:release()
         if scope:evaluate(security.new_actor("member"), "access", old_resource) == "undefined"
             and scope:evaluate(security.new_actor("member"), "access", new_resource) == "allow"
-            and #calls > 0 then break end
+            then break end
         time.sleep("25ms")
     end
     return scope, calls
@@ -199,21 +200,22 @@ local function define_tests()
 
             test.eq(answered, sent, "queued requests passed their deadline unanswered")
             test.eq(#failures, 0, table.concat(failures, "; "))
-            test.eq(distinct, sent)
-            test.is_true(passes <= 1, "queued requests took " .. tostring(passes) .. " projection passes")
+            test.eq(distinct, #QUEUED_GROUPS - 1)
+            test.eq(passes, 0, "source scope unions do not write registry versions")
         end)
 
-        test.it("reuses a group set current with the registry without the projector", function()
+        test.it("composes source policy scopes without the projector", function()
             local projector = spawn_projector()
             local ready, ready_err = request(projector)
             test.is_nil(ready_err)
             test.is_true(ready.success)
-            local first, first_err = funcs.call(MATERIALIZE, { groups = GROUPS })
-            test.is_nil(first_err)
+            local first = assert(execution_identity.scope_from_groups(GROUPS))
             stop_spawned()
-            local again, again_err = funcs.call(MATERIALIZE, { groups = GROUPS })
-            test.is_nil(again_err, "a login with a current group set waits for the projector")
-            test.eq(again.scope_name, first.scope_name)
+            local again = assert(execution_identity.scope_from_groups(GROUPS))
+            test.eq(#again:policies(), #first:policies())
+            local actor = assert(security.new_actor("member"))
+            test.eq(again:evaluate(actor, "access", "app:alpha"), "allow")
+            test.eq(again:evaluate(actor, "access", "app:beta"), "allow")
         end)
 
         test.it("reconciles a renamed module policy into the live members group after its registry commit", function()
@@ -235,7 +237,7 @@ local function define_tests()
             local deadline = time.now():add(5 * time.SECOND)
             local old_scope
             while time.now():before(deadline) do
-                old_scope = assert(security.named_scope("kickside.security.groups:members"))
+                old_scope = assert(source_scope.resolve("kickside.security.groups:members"))
                 if old_scope:evaluate(security.new_actor("member"), "access", old_resource) == "allow" then break end
                 time.sleep("25ms")
             end
@@ -258,15 +260,7 @@ local function define_tests()
                 "the members group retains a removed policy")
             test.eq(updated_scope:evaluate(security.new_actor("member"), "access", new_resource), "allow",
                 "the members group never receives a replacement policy")
-            test.eq(#calls, 1, "a member-policy reduction fences sessions once after projection")
-            for _, call in ipairs(calls) do
-                local member_group = false
-                for _, group in ipairs(call.groups) do
-                    if group == "kickside.security.groups:members" then member_group = true end
-                end
-                test.is_true(member_group, "the member group is fenced during its policy reduction")
-                test.eq(call.allow_only, true)
-            end
+            test.eq(#calls, 0, "native policy replacement needs no coverage proof")
         end)
 
         test.it("removes a missing composition source from a live direct member group after its registry commit", function()
@@ -291,22 +285,15 @@ local function define_tests()
             local deadline = time.now():add(5 * time.SECOND)
             local old_scope
             while time.now():before(deadline) do
-                old_scope = assert(security.named_scope(group))
+                old_scope = assert(source_scope.resolve(group))
                 if old_scope:evaluate(security.new_actor("member"), "access", old_resource) == "allow" then break end
                 time.sleep("25ms")
             end
             test.eq(old_scope:evaluate(security.new_actor("member"), "access", old_resource), "allow",
                 "the direct member group never projects its initial policy")
 
-            local generated
-            deadline = time.now():add(5 * time.SECOND)
-            while time.now():before(deadline) do
-                generated = assert(registry.find({ [".kind"] = "security.policy",
-                    ["meta.scope_projection_policy"] = old_id }))
-                if #generated == 1 then break end
-                time.sleep("25ms")
-            end
-            test.eq(#generated, 1, "the original policy was never materialized for the composed group")
+            local generated = assert(registry.find({[".kind"] = "security.policy", ["meta.scope_projection_policy"] = old_id}))
+            test.eq(#generated, 0, "scope composition creates no copied policies")
 
             local records = assert(storage.get("app:invalidation_records"))
             records:set("calls", {})
@@ -323,11 +310,7 @@ local function define_tests()
                 "the direct member group retains a removed composition policy")
             test.eq(updated_scope:evaluate(security.new_actor("member"), "access", new_resource), "allow",
                 "the direct member group never receives a replacement policy")
-            test.eq(#calls, 1, "a missing composition source fences the direct group once after projection")
-            for _, call in ipairs(calls) do
-                test.eq(call.groups[1], group)
-                test.eq(call.allow_only, true)
-            end
+            test.eq(#calls, 0, "native policies resolve directly after source replacement")
         end)
 
         -- A scope saved during a pass references a policy the pass's snapshot
@@ -366,7 +349,7 @@ local function define_tests()
             test.is_true((scope_store.delete(slug)))
         end)
 
-        test.it("answers a request queued behind a commit pass whose delegation fence fails", function()
+        test.it("keeps answering requests after a source selection fence fails", function()
             local projector = spawn_projector()
             local slug, policy = "lifecycle_fence_failure", "app:lifecycle_fence_failure_policy"
             local _, policy_err = registry_fixture.apply(function(changes)
@@ -383,20 +366,10 @@ local function define_tests()
             records:set("delay", "1s")
             records:set("fail_at", 1)
             records:release()
-            local entry = assert(registry.get(policy))
-            local _, reduce_err = registry_fixture.apply(function(changes)
-                changes:update({ id = policy, kind = entry.kind, meta = entry.meta, data = { policy = {
-                    actions = "access", resources = "app:fence_failure_after", effect = "allow" } } })
-            end, time.now():add(5 * time.SECOND))
-            test.is_nil(reduce_err)
-            local deadline, entered = time.now():add(5 * time.SECOND), false
-            while not entered and time.now():before(deadline) do
-                local probe = assert(storage.get("app:invalidation_records"))
-                entered = #(probe:get("calls") or {}) > 0
-                probe:release()
-                if not entered then time.sleep("10ms") end
-            end
-            test.is_true(entered, "the commit pass never reaches its delegation fence")
+            local row, write_err = scope_store.upsert({slug = slug, policies = {}}, "test-actor")
+            test.is_nil(row)
+            test.is_true(errors.is(write_err, errors.INTERNAL))
+            test.eq(assert(scope_store.get(slug)).policies[1], policy, "a failed authority fence prevents the source selection write")
             local reply, reply_err = request(projector)
             records = assert(storage.get("app:invalidation_records"))
             records:delete("fail_at")
@@ -435,10 +408,8 @@ local function define_tests()
             test.is_false(failed.success)
             test.contains(tostring(failed.error), "target")
 
-            local materialized, materialize_err = funcs.call(MATERIALIZE, { groups = GROUPS })
-            test.is_nil(materialize_err)
             test.eq(tostring(process.registry.lookup(consts.SCOPE_PROJECTION_TOPIC)), first)
-            local scope, scope_err = security.named_scope(materialized.scope_name)
+            local scope, scope_err = execution_identity.scope_from_groups(GROUPS)
             test.is_nil(scope_err)
             test.eq(scope:evaluate(security.new_actor("lifecycle_member"), "access", "app:alpha"), "allow")
             test.eq(scope:evaluate(security.new_actor("lifecycle_member"), "access", "app:beta"), "allow")

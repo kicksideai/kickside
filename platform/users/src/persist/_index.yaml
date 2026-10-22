@@ -139,8 +139,8 @@ entries:
     modules:
       - sql
     imports:
-      credential_eligibility: kickside.users.persist:credential_eligibility
       policy_coverage: kickside.security:policy_coverage
+      credential_eligibility: kickside.users.persist:credential_eligibility
       user_consts: kickside.users:consts
 
   - name: session_revoker

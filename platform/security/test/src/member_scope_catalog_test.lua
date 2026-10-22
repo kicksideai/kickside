@@ -1,3 +1,5 @@
+local scope_writer = require("scope_writer")
+local trigger_reconcile = require("trigger_reconcile")
 local test = require("test")
 local funcs = require("funcs")
 local security = require("security")
@@ -16,6 +18,10 @@ end
 
 local function define_tests()
     test.describe("member scope catalog", function()
+        local projector
+        test.before_all(function() projector = scope_writer.start_projector() end)
+        test.after_all(function() scope_writer.stop_projector(projector) end)
+
         test.it("lists the same assignable scopes for a member who cannot read the selected policies", function()
             local slug = "member_catalog_selection"
             test.not_nil((store.upsert({slug = slug, policies = {"app:module_access"}}, "tester")))

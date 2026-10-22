@@ -17,31 +17,34 @@ local function define_tests()
         local slug = "source_epoch_scope"
         local group = "kickside.security.scopes:" .. slug
         local source = "app:source_epoch_grant"
-        local account, tokens
+        local account, tokens, parent_declaration
 
         test.before_each(function()
+            parent_declaration = nil
+            assert(trigger_reconcile.trigger())
             local changes = assert(registry.snapshot()):changes()
             changes:create({id = source, kind = "security.policy", data = {
                 policy = {actions = "source.scope", resources = "app:selected", effect = "allow"}}})
             test.is_nil(select(2, changes:apply()))
-            test.not_nil((scope_store.upsert({slug = slug, policies = {source}}, "tester")))
-            test.not_nil((trigger_reconcile.trigger()))
-            test.not_nil((user_repo.create({user_id = uid, email = uid .. "@test.local",
-                password = "scope-password", status = "active"})))
-            test.not_nil((user_group_sources_repo.set_user_groups(uid, {group})))
+            assert(scope_store.upsert({slug = slug, policies = {source}}, "tester"))
+            assert(trigger_reconcile.trigger())
+            assert(user_repo.create({user_id = uid, email = uid .. "@test.local",
+                password = "scope-password", status = "active"}))
+            assert(user_group_sources_repo.set_user_groups(uid, {group}))
             account = assert(user_groups_repo.get_user_with_groups(uid))
             tokens = assert(security.token_store("kickside.users.security:tokens"))
         end)
 
         test.after_each(function()
-            tokens:close()
-            test.not_nil((user_lifecycle_repo.delete(uid)))
-            test.is_true((scope_store.delete(slug)))
-            test.not_nil((trigger_reconcile.trigger()))
+            if tokens then tokens:close() end
+            assert(user_lifecycle_repo.delete(uid))
+            assert(scope_store.delete(slug))
+            assert(trigger_reconcile.trigger())
             local changes = assert(registry.snapshot()):changes()
             changes:delete(source)
+            if parent_declaration then changes:delete(parent_declaration) end
             test.is_nil(select(2, changes:apply()))
-            test.not_nil((trigger_reconcile.trigger()))
+            assert(trigger_reconcile.trigger())
         end)
 
         test.it("mints custom sessions with source policy references", function()
@@ -67,7 +70,7 @@ local function define_tests()
             test.eq(before_scope:evaluate(before_actor, "source.scope", "app:selected"), "allow")
 
             test.not_nil((scope_store.upsert({slug = slug, policies = {}}, "tester")))
-            test.not_nil((trigger_reconcile.trigger()))
+            assert(trigger_reconcile.trigger())
             local changed = assert(user_groups_repo.get_user_with_groups(uid))
             test.is_true(changed.delegation_generation > account.delegation_generation,
                 "selection removal advances the user authority epoch")
@@ -99,6 +102,54 @@ local function define_tests()
             test.eq(current_actor:id(), uid)
             test.eq(current_scope:evaluate(current_actor, "source.scope", "app:selected"), "allow",
                 "native subject lookup preserves the DB-selected source policy without a group binding")
+        end)
+
+        test.it("advances authority epochs for members of a composed custom scope", function()
+            parent_declaration = "app:source_epoch_parent_declaration"
+            local parent = "app:source_epoch_parent"
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = parent_declaration, kind = "registry.entry", meta = {
+                type = "kickside.security.group_composition"}, data = {group_id = parent, groups = {group}}})
+            test.not_nil(assert(changes:apply()))
+            assert(trigger_reconcile.trigger())
+            assert(user_group_sources_repo.set_user_groups(uid, {parent}))
+            local member = assert(user_groups_repo.get_user_with_groups(uid))
+            local minted = assert(session.mint(member))
+            local before_actor, before_scope = tokens:validate(minted.token)
+            test.eq(before_scope:evaluate(before_actor, "source.scope", "app:selected"), "allow")
+            assert(scope_store.upsert({slug = slug, policies = {}}, "tester"))
+            local current = assert(user_groups_repo.get_user_with_groups(uid))
+            test.is_true(current.delegation_generation > member.delegation_generation,
+                "custom scope changes advance the epochs of composed memberships")
+            local actor, scope, err = tokens:validate(minted.token)
+            test.is_nil(err)
+            test.eq(scope:evaluate(actor, "source.scope", "app:selected"), "undefined")
+        end)
+
+        test.it("removes an overlay grant from its previous target before catalog reconciliation", function()
+            local minted = assert(session.mint(account))
+            local before_actor, before_scope = tokens:validate(minted.token)
+            test.eq(before_scope:evaluate(before_actor, "source.scope", "app:selected"), "allow")
+            assert(scope_store.upsert({slug = slug, target = "app.security:scope_support", policies = {source}}, "tester"))
+            local actor, current, err = tokens:validate(minted.token)
+            test.is_nil(err)
+            test.eq(current:evaluate(actor, "source.scope", "app:selected"), "undefined",
+                "a DB selection cannot keep granting through its previous target descriptor")
+            assert(trigger_reconcile.trigger())
+        end)
+
+        test.it("advances only the authority epoch when a custom membership is added", function()
+            assert(user_group_sources_repo.set_user_groups(uid, {"app.security:scope_support"}))
+            local before = assert(user_groups_repo.get_user_with_groups(uid))
+            local minted = assert(session.mint(before))
+            assert(user_group_sources_repo.set_user_groups(uid, {"app.security:scope_support", group}))
+            local current = assert(user_groups_repo.get_user_with_groups(uid))
+            test.eq(current.auth_generation, before.auth_generation)
+            test.is_true(current.delegation_generation > before.delegation_generation)
+            local actor, scope, err = tokens:validate(minted.token)
+            test.is_nil(err)
+            test.eq(actor:meta().authority_epochs["kickside.users:" .. uid], current.delegation_generation)
+            test.eq(scope:evaluate(actor, "source.scope", "app:selected"), "allow")
         end)
 
         test.it("creates no generated binding or metadata policies", function()

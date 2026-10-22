@@ -3,6 +3,18 @@ namespace: kickside.security.migrations
 
 # target_db is injected by the root kickside.security:target_db requirement.
 entries:
+  - name: 06_source_scopes
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [kickside.security.migrations:05_group_set_revisions]
+      timestamp: '2026-10-21T00:00:00Z'
+    source: file://06_source_scopes.lua
+    method: migrate
+    modules: [registry]
+    imports:
+      migration: wippy.migration:migration
+      security_consts: kickside.security:security_consts
   - name: 05_group_set_revisions
     kind: function.lua
     meta:

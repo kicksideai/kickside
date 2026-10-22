@@ -160,8 +160,15 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     -- 2. Host-declared roles referenced by policies. Role descriptors are the
     -- ownership boundary; package code never assumes the host's namespace.
     local group_policies: { [string]: { string } } = {}
+    local declared_scopes, declared_err = registry.find({[".kind"] = consts.SCOPE_KIND})
+    if declared_err then return nil, declared_err end
+    for _, entry in ipairs(declared_scopes or {}) do
+        local id = tostring(entry.id)
+        if descriptors[id] then group_policies[id] = entry.data.policies or {} end
+    end
     local group_internal: { [string]: boolean } = {}
     local group_order: { string } = {}
+    for group in pairs(group_policies) do group_order[#group_order + 1] = group end
     local policy_entries = index.entries
     for _, entry in ipairs(policy_entries :: { any }) do
         local groups = entry.data.groups
@@ -173,7 +180,9 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
                     -- A group is internal when any policy carrying it is marked
                     -- meta.internal in the registry (the canonical signal).
                     if entry_internal then group_internal[g] = true end
-                    group_policies[g][#group_policies[g] + 1] = tostring(entry.id)
+                    local exists = false
+                    for _, id in ipairs(group_policies[g]) do if id == tostring(entry.id) then exists = true; break end end
+                    if not exists then group_policies[g][#group_policies[g] + 1] = tostring(entry.id) end
                 end
             end
         end

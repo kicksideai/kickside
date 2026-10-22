@@ -162,6 +162,7 @@ local function live_delegation(principal: Principal, authorizer: Principal, auth
         actor_id = execution_identity.actor_key(authorizer),
         scope_name = (authorizer_row :: any).scope_name,
         scope_groups = (authorizer_row :: any).scope_groups,
+        scope_policy_ids = (authorizer_row :: any).scope_policy_ids,
         meta = (authorizer_row :: any).meta,
     }, execution_identity.DELEGATE_ACTION, resources)
     if evaluate_err then return evaluate_err end
@@ -190,7 +191,7 @@ local function resolve_user(principal: Principal, looked_up: any?, authority_onl
     end
     local scope_groups: { string } = {scope_id}
     if row.scope_groups ~= nil then
-        if type(row.scope_groups) ~= "table" or #row.scope_groups == 0 then
+        if type(row.scope_groups) ~= "table" or (#row.scope_groups == 0 and row.scope_policy_ids == nil) then
             return nil, failure("subject lookup returns invalid scope groups", errors.UNAVAILABLE, "infrastructure", false)
         end
         local count = #row.scope_groups
@@ -214,7 +215,8 @@ local function resolve_user(principal: Principal, looked_up: any?, authority_onl
         actor_id = execution_identity.actor_key(principal),
         groups = groups,
         scope_name = scope_id,
-        scope_groups = scope_groups,
+        scope_groups = #scope_groups > 0 and scope_groups or nil,
+        scope_policy_ids = row.scope_policy_ids,
         meta = {
             user_id = principal.id,
             email = (meta :: any).email,

@@ -1,3 +1,6 @@
+local scope_writer = require("scope_writer")
+local trigger_reconcile = require("trigger_reconcile")
+local source_scope = require("source_scope")
 local test = require("test")
 local registry = require("registry")
 local security = require("security")
@@ -27,7 +30,12 @@ end
 
 return {run = test.run_cases(function()
     test.describe("managed delegation policy composition admission", function()
+        local projector
+        test.before_all(function() projector = scope_writer.start_projector() end)
+        test.after_all(function() scope_writer.stop_projector(projector) end)
+
         test.before_each(function()
+            test.not_nil((trigger_reconcile.trigger()))
             original = assert(registry.current_version())
             local changes = assert(registry.snapshot()):changes()
             changes:create({id = policy, kind = "security.policy", meta = {
@@ -41,7 +49,9 @@ return {run = test.run_cases(function()
         test.after_each(function()
             for _, value in ipairs(owned) do test.is_true((scopes.delete(value))) end
             owned = {}
+            test.not_nil((trigger_reconcile.trigger()))
             test.is_true((registry.apply_version(original)))
+            test.not_nil((trigger_reconcile.trigger()))
         end)
         for _, selected in ipairs({policy, wrapper}) do
             for _, grants in ipairs({{"app:delegation_composition_admin"},
@@ -62,8 +72,8 @@ return {run = test.run_cases(function()
                 {"app:delegation_composition_admin", "app:delegation_composition_writer"})
             test.is_nil(err)
             test.not_nil(row)
-            test.not_nil((projection.reconcile()))
-            local group = assert(security.named_scope("kickside.security.scopes:" .. value))
+            test.not_nil((trigger_reconcile.trigger()))
+            local group = assert(source_scope.resolve("kickside.security.scopes:" .. value))
             test.eq(group:evaluate(security.new_actor("operator"), "security.actor.delegate",
                 "canonical-delegation-resource"), "allow")
             test.eq(group:evaluate(security.new_actor("operator"), "security.actor.delegate",
@@ -123,6 +133,7 @@ return {run = test.run_cases(function()
         end)
         for _, operation in ipairs({"replace", "delete"}) do
             test.it("RA-C12 " .. operation .. " retains cleanup after a policy source disappears", function()
+                test.not_nil((trigger_reconcile.trigger()))
                 local changes = assert(registry.snapshot()):changes()
                 local source = {id = "app:withdrawn_composition_source", kind = "security.policy",
                     data = {policy = {actions = "access", resources = "app:module.endpoint", effect = "allow"}}}
@@ -130,10 +141,12 @@ return {run = test.run_cases(function()
                 test.is_nil(select(2, changes:apply()))
                 local value = slug()
                 test.not_nil((scopes.upsert({slug = value, policies = {"app:withdrawn_composition_source"}}, "test-admin")))
+                test.not_nil((trigger_reconcile.trigger()))
                 changes = assert(registry.snapshot()):changes()
                 changes:delete("app:withdrawn_composition_source")
                 test.is_nil(select(2, changes:apply()))
                 local result, err = invoke({slug = value, policies = {}, operation = operation})
+                test.not_nil((trigger_reconcile.trigger()))
                 changes = assert(registry.snapshot()):changes()
                 changes:create(source)
                 test.is_nil(select(2, changes:apply()))
@@ -144,6 +157,7 @@ return {run = test.run_cases(function()
             end)
         end
         test.it("RA-C12 existing unmanaged delegation policy composition stays unchanged", function()
+            test.not_nil((trigger_reconcile.trigger()))
             local changes = assert(registry.snapshot()):changes()
             changes:create({id = "app:legacy_delegation", kind = "security.policy",
                 data = {policy = {actions = "security.actor.delegate", resources = "legacy", effect = "allow"}}})

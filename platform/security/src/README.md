@@ -5,11 +5,11 @@ The admin surface for app-owned **roles**, **scopes**, and **policy composition*
 - A **policy** (`security.policy`) is a grant declared by its owning package. A
   policy tagged `meta.private = true` is internal and is never offered when
   composing a scope; only **public** policies are selectable.
-- A **scope** (`security.scope`) is a named set of policy ids, resolved at runtime
-  by `security.named_scope`. Built-in scopes are implicit groups
-  (`app.security:*`); **custom scopes** are admin-authored, DB-backed, and
-  projected into `security.scope` registry entries by the projection service.
-- A **role** is a policy group; the roles surface composes groups from policies.
+- A **scope** is a set of source policy IDs. Built-in groups resolve through
+  `security.named_scope`; custom scopes are admin-authored rows in
+  `kickside_security_scopes`. Their `security.scope` registry entries are catalog
+  descriptors, not native runtime scope handlers.
+- A **role** is a named membership used by the scope catalog and Users.
 
 Internal/system scopes (e.g. `app.security:ingress`) and private policies are
 hidden from the admin UI.
@@ -27,7 +27,7 @@ never the reverse:
 - `kickside.security.service` — `scope_projection.service`: the supervised process that
   **owns** the DB → `security.scope` projection. Boot-reconciles and listens for
   admin write notifications,
-  idempotently. The only layer that spawns and writes the registry; it runs under
+  idempotently. It writes descriptors only, and runs under
   a dedicated trust group because `wippy.security:process` denies registry writes.
 - `kickside.security.api` — `scope_catalog` (read model) plus the admin endpoints
   for scopes, policies, and roles.
@@ -41,20 +41,40 @@ never the reverse:
 | POST | `/security/scopes` | create/update a custom scope |
 | DELETE | `/security/scopes?slug=` | remove a custom scope |
 | GET | `/security/policies` | public policy catalog (`?include_private` to include private) |
-| GET | `/security/roles` | roles + policy assignments + user counts |
-| POST | `/security/roles` | create a role by assigning a group to policies |
+| GET | `/security/projection` | current scope resolution status |
 
-Custom-scope writes hit the DB only; the projection service projects them into
-`security.scope` registry entries on its next reconcile.
+Custom-scope writes fence affected users and persist the DB selection. The
+projection service updates their `security.scope` catalog entries on reconcile.
 
-Group projection compares effective native policy coverage before fencing sessions
-and delegated authority. Adding actions or resources to an existing allow, moving
-an equivalent rule to another binding, or dividing a rule into fully covering
-bindings preserves authority when the other policy constraints stay identical.
-The registry entry ids and stored fingerprint shape remain unchanged. Lost
-allow coverage, narrowed conditions, added denies and group deletion retain the
-existing reduction protocol. A change with no provable covering rule remains
-restrictive; previously revoked delegated authority is not restored.
+Session minting unions native policies from every built-in membership with the
+source IDs selected by the user's custom scopes, then creates one native scope.
+It creates no policy copies, metadata grants, or union-group entries. The scope
+catalog continues to merge DB selections, role descriptors, and built-in groups.
+
+The projector resolves group declarations into native group references and source
+IDs. Descriptor `data.policies` retains the complete catalog selection;
+`data.groups` contains its native group references, `data.direct_policies` its
+other declaration selections, and `data.scope_sources` its DB selection keys
+and owning groups. These fields contain identifiers only. Native policies remain owned and evaluated by
+the runtime. Group composition does not inspect their rule bodies.
+
+The Users subject lookup reads live DB selections in one primary-key query for
+all held custom scopes, checking the current target and enabled state before
+using each row. Memberships without DB selections require no additional query. Native token
+validation unions these source IDs with current native group policies and applies the credential ceiling. Existing stored sessions use the
+same live lookup and keep their bearer tokens.
+
+Changes to a custom scope's policy set, target, or enabled state fence affected
+users through the existing authority epochs before the write. Membership changes
+also advance those epochs. Policy-body coverage proofs are not part of this
+protocol. Native policy edits take effect through native policy resolution.
+The separate explicit session-invalidation API retains its existing `allow_only`
+coverage contract for native groups; custom-scope writes do not call it.
+
+The forward migration removes managed binding and metadata policies in registry
+commits of at most 200 deletions. It is idempotent and resumes from the remaining
+entries after interruption. The retired group-set table and its data remain in
+place; session minting and validation no longer read or write it.
 
 ## Requirements
 
@@ -75,20 +95,8 @@ request returns its error and the same request can be sent again. Revocation ret
 native authority. Revocation remains available when a target/root disappears or
 host validation is unavailable. Existing scopes and unmanaged declarations keep their behavior.
 
-Group-policy invalidation supplies optional previous changed-group rules from the
-same projection plan before and after apply. Users reuses its unchanged-group
-coverage proof to preserve delegation epochs when the original authority remains
-covered. Prior effective fingerprints resolve only against available native and
-previous generated binding bodies; incomplete evidence and pending-fence recovery
-remain conservative. This evidence is ephemeral; stored fingerprint metadata,
-credential payloads and registry identities remain unchanged.
-
-Policy coverage lives in `kickside.security:policy_coverage`. The projector
-compares group policy fingerprints there; Users supplies before/after membership
-sets and optional historical group bodies to the same comparison. Native policy
-evaluation remains authoritative for access.
-
-The projector uses the separate `delegation_fencer` requirement, which defaults
+The projector uses the existing `delegation_fencer` requirement, which defaults
 to `kickside.users.persist:delegation_fencer`. Hosts can bind another fencing
-operation. Existing `sessions_invalidator` bindings retain session/account
-revocation and require no changes or pairing metadata.
+operation. Existing `sessions_invalidator` bindings retain session and account
+revocation. Execution identity resolves current source IDs and captures those
+IDs in new authority snapshots; existing snapshots remain issuance audit data.

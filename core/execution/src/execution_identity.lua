@@ -89,6 +89,7 @@ function M.scope_from_groups(groups: any, extra_policy_ids: any?): (any?, error?
             return nil, failure("scope group must be a non-empty string", errors.PERMISSION_DENIED, "subject", false)
         end
         local scope, err = security.named_scope(name)
+        if err and errors.is(err, errors.NOT_FOUND) then return nil, err end
         if err or not scope then
             return nil, failure("could not recover scope " .. name .. ": " .. tostring(err),
                 errors.PERMISSION_DENIED, "subject", false, err)
@@ -158,8 +159,8 @@ function M.evaluate_live_scope(authorized: any, action: any, resources: any): (s
             errors.PERMISSION_DENIED, "subject", false, actor_err)
     end
     local scope, scope_err
-    if descriptor.scope_groups ~= nil then
-        scope, scope_err = M.scope_from_groups(descriptor.scope_groups, descriptor.scope_policy_ids)
+    if descriptor.scope_groups ~= nil or descriptor.scope_policy_ids ~= nil then
+        scope, scope_err = M.scope_from_groups(descriptor.scope_groups or {}, descriptor.scope_policy_ids)
     else
         scope, scope_err = security.named_scope(scope_name)
     end
@@ -535,11 +536,19 @@ function M.authorize(identity: any, opts: any?): (any?, error?)
     }
     local scope_groups = nil
     if restrictions.scope_policy_ids ~= nil then
-        scope_groups = (params :: Map).scope_groups or { (params :: Map).scope_name }
+        scope_groups = (params :: Map).scope_groups
+        if scope_groups == nil and (params :: Map).scope_policy_ids == nil then
+            scope_groups = {(params :: Map).scope_name}
+        end
     elseif restrictions.scope_name == nil then
         scope_groups = (params :: Map).scope_groups
     end
-    local policy_ids = restrictions.scope_policy_ids
+    local policy_ids = restrictions.scope_name == nil and (params :: Map).scope_policy_ids or nil
+    if restrictions.scope_policy_ids ~= nil then
+        policy_ids = {}
+        for _, id in ipairs((params :: Map).scope_policy_ids or {}) do policy_ids[#policy_ids + 1] = id end
+        for _, id in ipairs(restrictions.scope_policy_ids) do policy_ids[#policy_ids + 1] = id end
+    end
     return { principal = { kind = id.principal.kind, id = id.principal.id },
         actor_id = actor_id, scope_name = scope_name, scope_groups = scope_groups,
         scope_policy_ids = policy_ids, authority_epochs = params.authority_epochs,
@@ -591,8 +600,8 @@ function M.resolve(identity: any, opts: any?): (any?, error?)
         return nil, failure("could not build actor " .. actor_id .. ": " .. tostring(actor_err), errors.PERMISSION_DENIED, "subject", false, actor_err)
     end
     local scope, scope_err
-    if authorized.scope_groups ~= nil then
-        scope, scope_err = M.scope_from_groups(authorized.scope_groups, authorized.scope_policy_ids)
+    if authorized.scope_groups ~= nil or authorized.scope_policy_ids ~= nil then
+        scope, scope_err = M.scope_from_groups(authorized.scope_groups or {}, authorized.scope_policy_ids)
     else
         scope, scope_err = security.named_scope(scope_name)
     end

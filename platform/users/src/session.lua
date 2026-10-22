@@ -6,6 +6,7 @@ local eligibility = require("credential_eligibility")
 -- and token_auth.
 
 local security = require("security")
+local execution_identity = require("execution_identity")
 local time = require("time")
 local contract = require("contract")
 local logger = require("logger")
@@ -57,14 +58,14 @@ local function mint_current(user, actor_meta_extra, token_meta)
 
     local authority_epochs, authority_err = user_authority.epochs(user)
     if authority_err then return nil, authority_err end
-    local scope_id, is_admin, scope_groups, resolve_err = consts.resolve_scope(config, groups)
+    local scope_id, is_admin, scope_groups, resolve_err, resolved = consts.resolve_scope(config, groups)
     if resolve_err then return nil, resolve_err end
     local actor_meta = session_metadata.actor(user, authority_epochs, scope_id, scope_groups,
         time.now():format_rfc3339(), actor_meta_extra)
 
     local actor = security.new_actor(tostring(user.user_id), actor_meta)
 
-    local scope, serr = security.named_scope(scope_id)
+    local scope, serr = execution_identity.scope_from_groups(resolved.groups, resolved.policy_ids)
     if not scope then
         return nil, serr
     end

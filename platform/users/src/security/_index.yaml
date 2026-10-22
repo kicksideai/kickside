@@ -31,7 +31,7 @@ entries:
     kind: security.policy
     meta: {private: true, service_only: true}
     policy:
-      actions: [security.policy_group.get, registry.get]
+      actions: [security.policy_group.get, security.policy.get, registry.get]
       resources: '*'
       effect: allow
   - name: session_group_set_projection
@@ -39,7 +39,7 @@ entries:
     meta: {private: true, service_only: true}
     policy:
       actions: [funcs.call, security.groups.compose]
-      resources: [kickside.security.binding:materialize_group_set, kickside.security.binding:classify_membership_effect]
+      resources: [kickside.security.binding:classify_membership_effect]
       effect: allow
   - name: users_runtime_read
     kind: security.policy

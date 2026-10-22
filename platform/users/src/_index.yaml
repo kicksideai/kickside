@@ -255,6 +255,8 @@ entries:
     modules:
       - env
       - funcs
+    imports:
+      scope_store: kickside.security.persist:scope_store
     method: consts
 
   - name: session_metadata
