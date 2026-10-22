@@ -4501,6 +4501,28 @@
       "repository": "kickside/kickside",
       "test": "platform/inbox/test/src/resume_decision_test.lua"
     },
+    "inbox/review-enum-values": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "INBOX-REVIEW-ENUM-VALUE-TYPES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/inbox/ui/src/app/InboxItem.spec.ts"
+    },
+    "inbox/review-input-arm": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "INBOX-REVIEW-INPUT-TITLE",
+        "INBOX-REVIEW-EDITABLE-INPUT"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/inbox/test/src/arm_decision_test.lua"
+    },
     "jobs/addressed-dispatch-claim": {
       "engines": [
         "sqlite",
@@ -10881,7 +10903,10 @@
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
     "TEMPLATE-MOUNTED-PAGE-REFRESH",
-    "AUTOMATION-SCHEDULED-DRIVE-STATUS"
+    "AUTOMATION-SCHEDULED-DRIVE-STATUS",
+    "INBOX-REVIEW-INPUT-TITLE",
+    "INBOX-REVIEW-EDITABLE-INPUT",
+    "INBOX-REVIEW-ENUM-VALUE-TYPES"
   ],
   "schema_version": 1
 }
