@@ -57,8 +57,27 @@ entries:
       depends_on: [ns:wippy.migration, kickside.core.jobs.migrations:21_retire_upload_intent_slot]
     source: file://13_stranded_drives.lua
     method: migration
-    modules: [sql, json, time]
     imports:
-      migration_repository: wippy.migration:repository
+      repair: kickside.automation.migrations:stranded_drives
+
+  - name: 14_stranded_drive_wake_recovery
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [kickside.automation.migrations:13_stranded_drives]
+    source: file://14_stranded_drive_wake_recovery.lua
+    method: migration
+    imports:
+      repair: kickside.automation.migrations:stranded_drives
+
+  - name: stranded_drives
+    kind: library.lua
+    meta:
+      private: true
+      comment: Automation-owned idempotent repair; ledger orchestration belongs to wippy/migration.
+    source: file://stranded_drives.lua
+    modules: [sql, json]
+    imports:
+      migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
