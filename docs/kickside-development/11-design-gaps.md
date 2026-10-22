@@ -21,9 +21,27 @@ mechanisms.
 | Worker capacity | SQLite has two general workers plus one awaited slot by default; PostgreSQL has four plus one. | [Jobs](20-execution-identity-and-jobs.md#claim-and-storage-behavior) |
 | Storage | Job actor columns remain without authority; fillfactor 70 and a dedicated Automation receipt identity index are not requirements. | [Jobs](20-execution-identity-and-jobs.md#claim-and-storage-behavior) |
 | Projection reads | Prefetch uses the projection reader with its existing range and filter semantics. | [Projections](03-threads-events-projections.md#declare-a-projection-worker) |
-| Resync authority | The current operator rule is WRITE on the Automation. | [Controls](21-automations-and-dataflows.md#drives-rounds-and-timing) |
+| Creation identity | New components start with the creator's captured identity, including credential and link restrictions. | [Components](01-component-development.md#creation-and-import-identity) |
+| Import identity | The authenticated importer is the subject; imported components start with initialized identity. | [Components](01-component-development.md#creation-and-import-identity) |
+| Webhook identity | Ingress retains its actor construction, refuses missing/inactive user owners and lost thread WRITE, and supports group and service owners. | [Webhooks](04-connections-and-integrations.md#webhook-identity) |
+| Resync authority | The captured operator holds Automation WRITE, directly or through a group, at admission and before finalization; execution-authorizer equality is not required. | [Controls](21-automations-and-dataflows.md#drives-rounds-and-timing) |
+| At-most-once delivery | A failed write call after reservation stays uncertain without automatic resend; replay mints a new key. | [Destination writes](21-automations-and-dataflows.md#write-a-destination) |
+| Reply delivery keys | `send_reply` accepts optional `idempotency_key`; Discord uses a deterministic nonce with `enforce_nonce`. Channel and Discord keep no write receipts. | [Reply providers](04-connections-and-integrations.md#reply-providers) |
+| Large knowledge content | Over-budget content events carry `content_omitted`, `content_bytes`, and an upload/artifact reference; consumers read the artifact. | [Knowledge](05-knowledge-uploads-automation-inbox.md#source-materialization) |
 | Opaque configuration | Optional `x-authority: subject` marks schema values whose edits require the execution subject. | [Automation kinds](21-automations-and-dataflows.md#declare-an-automation-kind) |
 | Jobs options | Structured retry floors and independent completion parking are optional additions; omitted options preserve their caller shape. | [Jobs](20-execution-identity-and-jobs.md#schedule-a-durable-job) |
+| Jobs failures | Infrastructure failures retry with backoff; only declaration, access, and subject failures park. | [Jobs](20-execution-identity-and-jobs.md#schedule-a-durable-job) |
+
+## Capabilities In Review
+
+Native scopes compose access from database lists of policy IDs returned by live
+subject lookup as `scope_policy_ids`, without generated policies. They require
+a runtime release with that optional lookup support. See
+[native scopes](20-execution-identity-and-jobs.md#native-scopes-in-review).
+
+Large-table data repairs use the framework's opt-in batched migrations. The
+capability remains in review; existing atomic migrations keep their behavior.
+See [batched repairs](13-testing.md#batched-data-repairs-in-review).
 
 ## Open Design Decisions
 
@@ -32,7 +50,8 @@ mechanisms.
 Canonical slot uniqueness prevents duplicate active jobs; it does not guarantee
 that a surviving owner references a live slot across independently configured
 stores. A delayed cancellation, enqueue, or wake-key change can undo a newer
-owner generation. A lease token fences an execution, not owner generation.
+owner generation during a source change. A lease token fences an execution,
+not owner generation.
 
 The options are a Jobs-enforced owner-generation fence with durable replay
 evidence, using the owner's existing operation, or retaining the known race.
@@ -41,7 +60,9 @@ design covering provision, rekey, cancellation, and deletion. Its fence must
 survive job deletion, and finalization must require the matching target receipt.
 An Automation-only check or a cancel-only fence is insufficient. Same-store
 atomic projection paths retain their current ownership. A population scan does
-not establish cross-store ordering.
+not establish cross-store ordering. Historical stranded-drive repair waits
+for the batched migration capability; repairing old rows does not close the
+source-change race.
 
 ### Receipt And Replay Horizon
 
@@ -65,11 +86,30 @@ semantics meanwhile.
 
 Existing invalid cursors need protection for unread history even when new
 blocks receive pins. The options are retaining this historical limitation or
-adding a bounded, resumable, idempotent pin backfill through an approved
-migration capability. The current migration runner owns one transaction across
-`up`, `after`, and its tracking record. Paging within that transaction does not
-bound lock duration; independently committed batches need upstream support.
-Already-pruned history cannot be reconstructed.
+adding a bounded, resumable, idempotent pin backfill through the
+[batched migration capability](13-testing.md#batched-data-repairs-in-review)
+in review. Pin backfill and stranded-drive repair wait for that capability.
+The existing atomic runner owns one transaction across `up`, `after`, and its
+tracking record; paging within it does not bound lock duration. Already-pruned
+history cannot be reconstructed.
+
+### Webhook Live Resolution
+
+The shared live resolver supports user selections only, while webhook ingress
+also supports stored group and service owners. Existing owner rows do not
+contain the authorizer provenance needed to construct their captured identity.
+The options are retaining ingress actor construction or defining compatible
+shared resolution with trustworthy provenance for those owners. Refusing
+working non-user ingress or guessing its authorizer is not a compatible
+cutover.
+
+### Custom-Scope Lookup Cost
+
+The native scope design resolves database policy-ID lists on each live subject
+lookup. The options are accepting the per-request cost or approving a cache
+with explicit revocation semantics. Users and Security have independently
+configurable database resources; a shared-query optimization cannot assume
+their tables share a database. No cache or colocation requirement is approved.
 
 ### MCP Credential Group Inheritance
 

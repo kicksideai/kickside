@@ -184,6 +184,18 @@ compare-and-set write-back through `component.update`),
 Every client function returns `(value, error?)` and never raises; the service
 wraps results in a `{success, error}` envelope.
 
+## Creation And Import Identity
+
+New components start with the creator's captured execution identity, preserving
+credential and link restrictions. The trusted creation path records that
+identity; public request fields cannot choose its provenance. Existing rows
+and creation receipts without the optional captured identity retain their
+behavior. See [Execution Identity](20-execution-identity-and-jobs.md#select-a-principal).
+
+The authenticated importer is the subject of an imported component. Import
+initializes that identity through registration; an imported component does not
+start identity-uninitialized.
+
 ## Public Meta Fields
 
 Public meta is the current render snapshot, not a stats endpoint. If a list

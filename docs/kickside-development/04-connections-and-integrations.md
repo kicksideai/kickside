@@ -182,6 +182,13 @@ plus the contract binding:
     send_status: kickside.discord.connection:send_status
 ```
 
+`send_reply` accepts an optional `idempotency_key`. Channel delivery forwards
+it; Discord maps it to a deterministic nonce and sets `enforce_nonce`. Omitting
+the key preserves existing sends. Channel and Discord sinks keep no write
+receipts, so this key does not establish durable receipt replay or permanent
+deduplication. Ambiguous round writes follow the
+[at-most-once reservation rule](21-automations-and-dataflows.md#write-a-destination).
+
 ## OAuth
 
 OAuth is a separate layer (`kickside.oauth`). A connection may reference
@@ -254,6 +261,14 @@ Inbound providers normalize external events and route them into KickSide:
 The transport process stays thin. It normalizes the event, resolves the
 configured route, and writes to the canonical thread/port/contract. Business
 logic belongs in automations, agents, projections, or the owning module.
+
+### Webhook Identity
+
+Webhooks retain their ingress actor construction. Missing or inactive user
+owners and loss of thread WRITE already refuse ingress. Group- and
+service-owned webhooks remain supported. Moving ingress to the shared live
+resolver remains an [open compatibility decision](11-design-gaps.md#webhook-live-resolution):
+the current resolver supports user selections only.
 
 ## Discord / Channel / DM Shape
 

@@ -83,14 +83,29 @@ appropriate to each engine: PostgreSQL `UUID`, `BOOLEAN`, or `TIMESTAMPTZ`
 syntax does not run inside SQLite's branch. Parameterize data writes and
 release database handles on every path.
 
-A migration creates its table group in its final shape: columns, constraints
-and indexes are declared at creation, never added by later conversion steps.
-Run both SQL engines for every schema or repository change. Product defaults such as
-CRM stages and settings definitions belong in registry declarations and
-normal domain events, not seed migrations.
+Fresh installs create their table groups in the current shape. Updates preserve
+existing data through forward-only, idempotent, resumable migrations; they do
+not rewrite tables or require per-installation steps. Run both SQL engines for
+every schema or repository change, including upgrade cases seeded from the
+previous published version's data. Product defaults such as CRM stages and
+settings definitions belong in registry declarations and normal domain
+events, not seed migrations.
 
-Fresh KickSide, CRM, and provider installs create their final schemas
-directly without legacy conversion paths. Converters consume current response
-shapes directly. Users retains `pbk1` password verification; CRM retains its
-live sink writer lease. Verify those current behaviors on both engines rather
-than constructing historical schemas.
+### Batched Data Repairs In Review
+
+Large-table repairs use the framework's opt-in batched migration capability,
+which remains in review. The optional
+`up(function(tx, cursor) ... end, "batch")` commits each bounded page with its
+checkpoint; a later invocation resumes from the last committed checkpoint.
+A non-empty string checkpoint continues; `nil` completes. The final page,
+`after` hook, and applied record commit together. Existing `up(fn)` migrations
+keep their atomic behavior.
+
+Use a stable indexed paging key, about 200 rows per transaction, and idempotent
+forward writes. Paging inside one long transaction does not bound lock duration.
+[Stranded-drive repair and projection pin backfill](11-design-gaps.md#projection-pin-backfill)
+wait for this capability; these repairs do not ship as unbounded boot updates.
+
+Converters consume current response shapes directly. Users retains `pbk1`
+password verification; CRM retains its live sink writer lease. Verify those
+current behaviors on both engines.

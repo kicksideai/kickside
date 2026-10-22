@@ -70,6 +70,11 @@ KB thread event -> declared source projection (engine worker_ref) -> kb10_*
 Document, summary, chunk, and image source nodes are materialized from thread
 events.
 
+When content exceeds the event row budget, the content event carries
+`content_omitted`, `content_bytes`, and the upload/artifact reference instead
+of inline content. Consumers read the referenced artifact through the upload
+content/provider contract; omitted content does not mean an empty document.
+
 ## KB Public Meta
 
 KB public meta should represent the component-level render snapshot:

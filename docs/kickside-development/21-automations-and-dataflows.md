@@ -88,9 +88,11 @@ The remaining size limits are `max_row_bytes`, `prepared_bytes_per_item`, and
 the kind declares them. A disabled or unhealthy drive is visible through its
 owner; it is never repaired by an app-side polling loop.
 
-Resync requires WRITE on the Automation. This is the current operator-authority
-rule; resync does not require the declaration editor's reference-grant checks.
-Execution still uses the stored identity and live authority checks.
+Resync captures the operator's identity and requires that operator to hold
+WRITE on the Automation, directly or through a group, at admission and before
+finalization. The operator need not equal the execution authorizer. Resync
+does not require the declaration editor's reference-grant checks; execution
+still uses the stored identity and live authority checks.
 
 ## Answer a round
 
@@ -144,6 +146,14 @@ dest_ref = { id = ... } }`, or a classified `{ success = false, error = {
 code, message, retriable, scope } }`. `scope` is `item`, `flow`, `connection`,
 or `provider` as constrained by the writable contract. Do not silently
 acknowledge an uncommitted side effect.
+
+For `at_most_once` delivery, the engine reserves before calling `write`. A call
+that fails after reservation leaves the item uncertain and never triggers an
+automatic resend. Explicit replay mints a new delivery key. This round-level
+rule does not imply that a sink stores receipts or that every direct call with
+the same key is effect-idempotent. Channel and Discord use
+[optional delivery keys](04-connections-and-integrations.md#reply-providers)
+without write receipts.
 
 The canonical uncertain-write hash covers `config`, `input`, `dest_ref`, and
 `dest_version`. It omits `sink_op` because the ledger independently compares

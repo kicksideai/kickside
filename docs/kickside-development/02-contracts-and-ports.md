@@ -148,6 +148,12 @@ declared delivery guarantee. The
 [receipt and replay horizon](11-design-gaps.md#receipt-and-replay-horizon)
 remains an open design decision.
 
+For `at_most_once` round delivery, a failed write call after reservation stays
+uncertain and is never automatically resent; explicit replay uses a new key.
+Channel and Discord accept optional delivery keys without write receipts.
+See [destination writes](21-automations-and-dataflows.md#write-a-destination)
+and [reply providers](04-connections-and-integrations.md#reply-providers).
+
 `contracts` is a list: one binding can implement several contracts, and
 `default: true` on a contract entry marks the default implementation. From
 `platform/oauth/src/binding/_index.yaml`:

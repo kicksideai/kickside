@@ -9,7 +9,7 @@ KickSide release source.
 
 ## Select a principal
 
-`kickside.execution:execution_identity` is the sole constructor and resolver.
+`kickside.execution:execution_identity` constructs and resolves captured identities.
 A principal is `{ kind = "user" | "group" | "service", id = "..." }`. Its `id`
 is a canonical ID without a colon or whitespace. `capture()` selects the
 ambient caller; `capture({ principal = { kind = "service", id = "..." },
@@ -34,14 +34,27 @@ the Users scope resolver still checks the recorded principal and authorizer.
 changes it through the ADMIN-gated `SET_EXECUTION_IDENTITY` path: the component
 service prepares a one-use identity token; its command carries that token.
 Automation's `set_execution_identity` control coordinates this path. A regular
-`SET_CONTEXT` or `PATCH_CONTEXT` cannot change it. Choose a service principal
-when durable work must outlive an individual user, and grant delegation
-explicitly. The component owner cannot grant itself `may_act_as`.
+`SET_CONTEXT` or `PATCH_CONTEXT` cannot change it. Group or service selection
+requires live resolver support and explicit delegation; the current Users
+resolver supports user selections only. Existing
+[webhook ingress](04-connections-and-integrations.md#webhook-identity) retains
+its group and service support. The component owner cannot grant itself
+`may_act_as`.
 
 A synchronous tool or Block executes in its calling frame. It should check
 component access in that frame and pass the selected identity to durable
 work through the owner contract. Do not manufacture a scope or user actor in
 application code.
+
+## Native Scopes In Review
+
+Access composes through scopes. The reviewed native design stores custom
+scopes as database lists of source policy IDs. Live subject lookup returns
+`scope_policy_ids` for composition into the session scope, without generated
+policies. This capability remains in review and requires a runtime release
+that supports the optional lookup field.
+Its [per-request lookup cost](11-design-gaps.md#custom-scope-lookup-cost)
+remains an open decision.
 
 ## Schedule a durable job
 
@@ -112,6 +125,10 @@ call shape without a provider floor. Completion options accept optional
 `park = true` independently of `record.status`: ordinary wake demand is
 suppressed while the requested history status remains intact. A pending
 control wake takes priority; omission keeps record-based parking behavior.
+
+Infrastructure failures retry with backoff; a `retryable = false` verdict
+alone does not make them deterministic. Only declaration, access, and subject
+failures park.
 
 ## Claim and storage behavior
 
