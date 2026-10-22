@@ -299,6 +299,19 @@ entries:
   imports:
     test: wippy.test:test
     tool_schema: kickside.agents.registry:tool_schema
+- name: kickside_agents_registry__tool_input_schema_root_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: tool_schema
+    comment: Every registered tool declares a provider-portable object root in its input schema.
+  source: file://registry/tool_input_schema_root_test.lua
+  method: run
+  modules:
+  - json
+  - registry
+  imports:
+    test: wippy.test:test
 - name: kickside_agents_registry__tool_visibility_test
   kind: function.lua
   meta:
@@ -406,6 +419,7 @@ entries:
   - funcs
   - registry
   - security
+  - json
   imports:
     test: wippy.test:test
 - name: agents_title_contract_authority_test

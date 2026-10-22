@@ -6,6 +6,8 @@ function M.reset(route, stage, source)
     M.route, M.stage, M.source = route, stage, source
     M.missing, M.value, M.primary = false, nil, nil
     M.queries, M.updates, M.rollbacks, M.commits, M.notifications = 0, 0, 0, 0, 0
+    M.in_transaction, M.lookup_in_transaction = false, false
+    M.selections = 0
 end
 function M.result(stage, value)
     if stage == M.stage then
@@ -22,7 +24,10 @@ function M.rows_affected(value) return transition.rows_affected(value) end
 function M.check_update(...): error? local _, err = M.result("size", true); return err end
 function M.clear(...): error? local _, err = M.result("marker", true); return err end
 function M.finalize_job_run(...): error? local _, err = M.result("finalize", true); return err end
-function M.child_alive(...) return M.result("alive", M.route == "live") end
+function M.child_alive(...)
+    M.lookup_in_transaction = M.in_transaction
+    return M.result("alive", M.route == "live")
+end
 function M.notify(...)
     M.notifications = M.notifications + 1
     return M.result("notify", true)
@@ -33,12 +38,14 @@ local function row()
 end
 function M.database(): any
     local db: any = {}
-    function db:begin() return M.result("begin", self) end
+    function db:begin() M.in_transaction = true; return M.result("begin", self) end
     function db:rollback() M.rollbacks = M.rollbacks + 1; return M.result("rollback", true) end
     function db:commit() M.commits = M.commits + 1; return M.result("commit", true) end
     function db:query(...)
         M.queries = M.queries + 1
-        if M.route == "many" and M.queries == 1 then return M.result("lookup", {row()}) end
+        if (M.route == "many" or M.route == "terminated" or M.route == "live") and M.queries == 1 then
+            return M.result("lookup", {row()})
+        end
         return M.result("history", {{id = "run", status = "running", lease_token = "token", started_at_unix = 1}})
     end
     return db
@@ -52,7 +59,17 @@ function M.builder(): any
     function q:suffix(...) return self end
     function q:set(...) return self end
     function q:run_with(...) return self end
-    function q:query() return M.result("lookup", {row()}) end
+    function q:placeholder_format(...) return self end
+    function q:to_sql()
+        M.selections = M.selections + 1
+        local statement, err = M.result("build", "candidate")
+        return statement, {}, err
+    end
+    function q:query()
+        M.selections = M.selections + 1
+        local locked = (M.route == "terminated" or M.route == "live") and M.selections == 2
+        return M.result(locked and "locked" or "lookup", {row()})
+    end
     function q:exec()
         M.updates = M.updates + 1
         local stage = (M.route == "one" or M.route == "many" or M.updates == 2) and "history_update" or "update"

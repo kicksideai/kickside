@@ -81,7 +81,7 @@ local function handler()
     local config = nil
     local store_contract = engine and type(engine.store_contract) == "string" and engine.store_contract or ""
     if store_contract ~= "" then
-        local kb_store = stores.open_kb_store_contract(store_contract)
+        local kb_store = stores.open_engine_store(engine)
         local store_row = nil
         local store_err = nil
         if kb_store then

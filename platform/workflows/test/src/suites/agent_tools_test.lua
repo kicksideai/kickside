@@ -88,6 +88,39 @@ local function define_tests()
             call_tool(owner, MANAGE_TOOL, { action = "delete", id = created.workflow.id })
         end)
 
+        test.it("rejects an action call that misses one of its required fields", function()
+            local owner = "action-fields-" .. uuid_v4()
+            local cases = {
+                { args = { action = "create" }, message = "title is required for action=create" },
+                { args = { action = "import" }, message = "flow is required for action=import" },
+                { args = { action = "apply", id = "w1" }, message = "commands is required for action=apply" },
+                { args = { action = "publish" }, message = "id is required for action=publish" },
+                { args = { action = "restore", id = "w1" }, message = "version is required for action=restore" },
+                { args = { action = "delete" }, message = "id is required for action=delete" },
+                { args = { action = "run", id = "w1", input = {} }, message = "version is required for action=run" },
+            }
+            for _, case in ipairs(cases) do
+                local err = call_error(owner, MANAGE_TOOL, case.args)
+                test.is_true(errors.is(err, errors.INVALID), case.message .. ": " .. tostring(err))
+                test.contains(tostring(err), case.message)
+            end
+        end)
+
+        test.it("rejects fields that belong to another action", function()
+            local owner = "action-fields-" .. uuid_v4()
+            local cases = {
+                { args = { action = "create", title = "T", id = "w1" }, message = "action=create does not accept id" },
+                { args = { action = "publish", id = "w1", version = 1 }, message = "action=publish does not accept version" },
+                { args = { action = "delete", id = "w1", commands = {} }, message = "action=delete does not accept commands" },
+                { args = { action = "import", flow = {}, title = "T" }, message = "action=import does not accept title" },
+            }
+            for _, case in ipairs(cases) do
+                local err = call_error(owner, MANAGE_TOOL, case.args)
+                test.is_true(errors.is(err, errors.INVALID), case.message .. ": " .. tostring(err))
+                test.contains(tostring(err), case.message)
+            end
+        end)
+
         test.it("preserves delete refusal errors", function()
             local owner = "delete-errors-" .. uuid_v4()
             local created = call_tool(owner, MANAGE_TOOL, { action = "create", title = "Delete validation" })

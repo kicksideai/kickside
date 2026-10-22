@@ -96,6 +96,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.automation.migrations:12_delivery_history
         path: .meta.target_db
+      - entry: kickside.automation.migrations:13_stranded_drives
+        path: .meta.target_db
       - entry: kickside.automation:db_config
         path: .meta.db_id
 

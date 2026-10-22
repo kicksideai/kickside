@@ -23,7 +23,7 @@ entries:
       id: writer_operator
     policies:
       - app:user
-  modules: [sql, funcs, uuid]
+  modules: [sql, funcs, uuid, json]
   imports:
     test: wippy.test:test
     command: kickside.automation:command

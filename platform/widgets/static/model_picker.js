@@ -9,9 +9,9 @@ const H = () => $(), J = () => B(), Q = { class: "mp-val" }, X = { class: "mp-op
 }, ar = { class: "mp-empty" }, or = /* @__PURE__ */ q({
   __name: "ModelPicker",
   setup(N) {
-    const g = H(), U = J(), t = h(!1), p = h([]), s = h([]);
+    const g = H(), U = J(), t = h(!1), p = h([]), l = h([]);
     let i = 0, u = !1;
-    const l = c(() => g.value?.capability || "generate"), k = c(() => g.value?.mode === "classes"), v = c(() => {
+    const s = c(() => g.value?.capability || "generate"), k = c(() => g.value?.mode === "classes"), v = c(() => {
       const r = g.value?.value;
       return typeof r == "string" ? r : "";
     });
@@ -23,12 +23,12 @@ const H = () => $(), J = () => B(), Q = { class: "mp-val" }, X = { class: "mp-op
     }
     const V = c(() => {
       const r = v.value;
-      return r ? z(r) ? C(r.slice(6)) : p.value.find((a) => a.name === r)?.title || r : "Default model";
+      return r ? z(r) ? C(r.slice(6)) : p.value.find((o) => o.name === r)?.title || r : "Default model";
     }), j = c(() => z(v.value) ? "tabler:category" : "tabler:cpu"), D = c(() => {
-      const r = [];
-      return s.value.length && r.push({
+      const r = [], o = l.value.filter((a) => a.capability === s.value);
+      return o.length && r.push({
         group: "Classes",
-        items: s.value.map((a) => ({
+        items: o.map((a) => ({
           value: `class:${a.name}`,
           title: C(a.name),
           subtitle: `${a.models.length} model${a.models.length === 1 ? "" : "s"}${a.models[0] ? ` · ${a.models[0].title}` : ""}`,
@@ -40,27 +40,27 @@ const H = () => $(), J = () => B(), Q = { class: "mp-val" }, X = { class: "mp-op
       }), r;
     });
     async function f() {
-      const r = ++i, a = l.value;
+      const r = ++i, o = s.value;
       t.value = !0;
       try {
-        const o = [M.get(`/api/v1/models/list?capability=${encodeURIComponent(a)}`)];
-        a === "generate" && o.push(M.get("/api/v1/models/classes"));
-        const [_, S] = await Promise.all(o);
-        if (r !== i || a !== l.value) return;
-        p.value = _?.data?.success ? _.data.models || [] : [], s.value = S?.data?.success ? S.data.classes || [] : [];
+        const a = [M.get(`/api/v1/models/list?capability=${encodeURIComponent(o)}`)];
+        o === "generate" && a.push(M.get("/api/v1/models/classes"));
+        const [_, S] = await Promise.all(a);
+        if (r !== i || o !== s.value) return;
+        p.value = _?.data?.success ? _.data.models || [] : [], l.value = S?.data?.success ? S.data.classes || [] : [];
       } catch {
-        r === i && a === l.value && (p.value = [], s.value = []);
+        r === i && o === s.value && (p.value = [], l.value = []);
       } finally {
         r === i && (t.value = !1);
       }
     }
-    return L(l, () => {
-      i += 1, p.value = [], s.value = [], t.value = !1, u && f();
+    return L(s, () => {
+      i += 1, p.value = [], l.value = [], t.value = !1, u && f();
     }), R(() => {
       u = !0, f();
     }), F(() => {
       u = !1, i += 1;
-    }), (r, a) => (m(), K(n(A), {
+    }), (r, o) => (m(), K(n(A), {
       class: "mp-select",
       "model-value": v.value,
       options: D.value,
@@ -76,7 +76,7 @@ const H = () => $(), J = () => B(), Q = { class: "mp-val" }, X = { class: "mp-op
       loading: t.value,
       "aria-label": "Choose model",
       onBeforeShow: f,
-      "onUpdate:modelValue": a[0] || (a[0] = (o) => n(U)("select", o ?? ""))
+      "onUpdate:modelValue": o[0] || (o[0] = (a) => n(U)("select", a ?? ""))
     }, {
       value: d(() => [
         e("span", Q, [
@@ -90,16 +90,16 @@ const H = () => $(), J = () => B(), Q = { class: "mp-val" }, X = { class: "mp-op
           }, y(V.value), 3)
         ])
       ]),
-      option: d(({ option: o }) => [
+      option: d(({ option: a }) => [
         e("span", X, [
           w(n(x), {
-            icon: o.icon,
+            icon: a.icon,
             class: "mp-opt-ico",
             "aria-hidden": "true"
           }, null, 8, ["icon"]),
           e("span", Y, [
-            e("span", Z, y(o.title), 1),
-            o.subtitle ? (m(), b("span", rr, y(o.subtitle), 1)) : O("", !0)
+            e("span", Z, y(a.title), 1),
+            a.subtitle ? (m(), b("span", rr, y(a.subtitle), 1)) : O("", !0)
           ])
         ])
       ]),
@@ -111,13 +111,13 @@ const H = () => $(), J = () => B(), Q = { class: "mp-val" }, X = { class: "mp-op
               class: "spin",
               "aria-hidden": "true"
             }),
-            a[1] || (a[1] = P(" Loading…", -1))
+            o[1] || (o[1] = P(" Loading…", -1))
           ], 64)) : (m(), b(E, { key: 1 }, [
             P("No models…")
           ], 64))
         ])
       ]),
-      emptyfilter: d(() => [...a[2] || (a[2] = [
+      emptyfilter: d(() => [...o[2] || (o[2] = [
         e("span", { class: "mp-empty" }, "No models…", -1)
       ])]),
       _: 1

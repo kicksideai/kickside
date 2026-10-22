@@ -3,6 +3,9 @@ import { computed, nextTick, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
+import Tab from 'primevue/tab'
+import TabList from 'primevue/tablist'
+import Tabs from 'primevue/tabs'
 import type { Policy, Scope, ScopeDraft } from '../types.ts'
 import { Button, EmptyState, FormField, IconButton, Notice, Pill, RailHeader, SearchField, Shell, Spinner, TextInput } from './shared'
 import Delegations from './Delegations.vue'
@@ -25,8 +28,9 @@ const draft = ref<ScopeDraft | null>(null)
 const activeTab = ref('scopes')
 const delegationPanel = ref<InstanceType<typeof Delegations> | null>(null)
 const delegationsOpened = ref(false)
-async function openDelegations() {
-  activeTab.value = 'delegations'
+async function selectTab(value: string | number) {
+  activeTab.value = String(value)
+  if (value !== 'delegations') return
   delegationsOpened.value = true
   await nextTick()
   await delegationPanel.value?.load()
@@ -206,10 +210,12 @@ function shortId(id: string): string {
 
 <template>
   <div class="ks">
-    <div class="ks-tabs" role="tablist" aria-label="Security administration">
-      <Button role="tab" :aria-selected="activeTab === 'scopes'" @click="activeTab = 'scopes'">Scopes</Button>
-      <Button role="tab" data-tab="delegations" :aria-selected="activeTab === 'delegations'" @click="openDelegations">Act-as grants</Button>
-    </div>
+    <Tabs :value="activeTab" @update:value="selectTab">
+      <TabList :pt="{ tabList: { 'aria-label': 'Security administration' } }">
+        <Tab value="scopes">Scopes</Tab>
+        <Tab value="delegations" data-tab="delegations">Act-as grants</Tab>
+      </TabList>
+    </Tabs>
     <Delegations v-if="delegationsOpened" v-show="activeTab === 'delegations'" ref="delegationPanel" />
     <Notice v-if="error" severity="danger" class="ks-top-notice" @dismiss="error = ''">{{ error }}</Notice>
     <Notice v-else-if="savedMsg" severity="success" class="ks-top-notice" @dismiss="savedMsg = ''">{{ savedMsg }}</Notice>

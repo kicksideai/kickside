@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: tool_input_schema_root_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: workflow_integrity
+      comment: Every registered tool declares a provider-portable object root in its input schema.
+    source: file://tool_input_schema_root_test.lua
+    method: run
+    modules: [json, registry]
+    imports:
+      test: wippy.test:test

@@ -28,5 +28,6 @@ entries:
     test: wippy.test:test
     drive: kickside.automation:drive
     command: kickside.automation:command
+    slot: kickside.automation:slot
     automation_test_engine: kickside.automation:automation_test_engine
     recovery_shared: kickside.automation:recovery_shared

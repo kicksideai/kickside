@@ -45,6 +45,7 @@ const query = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
 const deleting = ref(false)
+const retrying = ref(false)
 
 const {
   preview, artifactView, partsExpanded, busyAction,
@@ -201,6 +202,23 @@ async function doRemove(u: Upload) {
     error.value = e instanceof Error ? e.message : 'failed to delete upload'
   } finally {
     deleting.value = false
+  }
+}
+
+async function retryUpload(u: Upload) {
+  if (retrying.value) return
+  retrying.value = true
+  error.value = ''
+  try {
+    const { data } = await api.post(`/api/v1/uploads/${u.uuid}/retry`)
+    if (data.success) {
+      if (preview.value?.uuid === u.uuid) closePreview()
+      await fetchUploads()
+    } else error.value = data.error || 'failed to retry upload'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'failed to retry upload'
+  } finally {
+    retrying.value = false
   }
 }
 
@@ -432,6 +450,8 @@ onBeforeUnmount(() => {
       :view-primary="viewPrimary"
       :view-artifact="viewArtifact"
       :goto-parts-page="gotoPartsPage"
+      :retrying="retrying"
+      :retry-upload="retryUpload"
     />
 
   </div>

@@ -1,0 +1,47 @@
+version: '1.0'
+namespace: app
+entries:
+- name: original_identity_automation
+  kind: library.lua
+  source: file://automation.lua
+- name: original_identity_loader
+  kind: library.lua
+  source: file://run_identity.lua
+  modules: [security]
+  imports:
+    automation: app:original_identity_automation
+    execution_identity: kickside.execution:execution_identity
+- name: original_delivery_identity_test
+  kind: function.lua
+  meta: {type: test, suite: workflows}
+  source: file://original_identity_test.lua
+  method: run
+  modules: [funcs, security, uuid, json]
+  imports: &original_identity_imports
+    test: wippy.test:test
+    run_identity: app:original_identity_loader
+    automation: kickside.automation:automation
+    execution_identity: kickside.execution:execution_identity
+    store: kickside.workflows.store:store
+- name: original_delivery_identity_probe
+  kind: function.lua
+  source: file://original_identity_test.lua
+  method: probe
+  modules: [funcs, security, uuid, json]
+  imports: *original_identity_imports
+
+- name: original_delivery_identity_live_probe
+  kind: function.lua
+  source: file://original_identity_test.lua
+  method: live_probe
+  modules: [funcs, security, uuid, json]
+  imports: *original_identity_imports
+
+- name: original_delivery_identity_live_loader
+  kind: function.lua
+  source: file://original_identity_test.lua
+  method: probe
+  modules: [funcs, security, uuid, json]
+  imports:
+    <<: *original_identity_imports
+    run_identity: kickside.workflows.runs:run_identity
