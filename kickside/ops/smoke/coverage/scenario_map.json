@@ -6042,6 +6042,17 @@
       ],
       "tier": "regression"
     },
+    "bots_modal_editor": {
+      "features": [
+        "kickside/users|navigation|kickside.users:tab.users",
+        "kickside/users|http|PUT /api/v1/users/{id}"
+      ],
+      "issues": [
+        "USERS-ACCOUNT-EDITOR-MODAL",
+        "USERS-ACCOUNT-PAGE-LAYOUT"
+      ],
+      "tier": "regression"
+    },
     "branding_shell": {
       "features": [
         "kickside/kickside|http|GET /login",
@@ -15945,6 +15956,18 @@
       ],
       "issues": [],
       "tier": "full"
+    },
+    "users_modal_editor": {
+      "features": [
+        "kickside/users|navigation|kickside.users:tab.users",
+        "kickside/users|http|POST /api/v1/users",
+        "kickside/users|http|PUT /api/v1/users/{id}"
+      ],
+      "issues": [
+        "USERS-ACCOUNT-EDITOR-MODAL",
+        "USERS-ACCOUNT-PAGE-LAYOUT"
+      ],
+      "tier": "regression"
     },
     "users_security_update_bindings": {
       "features": [],
