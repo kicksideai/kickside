@@ -1,6 +1,7 @@
 local test = require("test")
 local sql = require("sql")
 local funcs = require("funcs")
+local registry = require("registry")
 
 local DATABASE = "app:prepared_upgrade_db"
 local ROWS = 200
@@ -30,6 +31,9 @@ end
 return test.run_cases(function()
     test.describe("prepared settlement index upgrade",function()
         test.it("installs the lookup on the configured Automation database",function()
+            local entry = registry.get("kickside.automation.migrations:" .. INDEX_MIGRATION)
+            test.not_nil(entry)
+            test.eq(entry.meta.target_db,"app:db","the migration must follow Automation's configured database")
             local db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             test.not_nil(db)

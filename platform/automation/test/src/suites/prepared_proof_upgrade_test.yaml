@@ -10,6 +10,6 @@ entries:
   source: file://prepared_proof_upgrade_test.lua
   method: run
   meta: {type: test, suite: prepared_proof_upgrade}
-  modules: [sql, funcs]
+  modules: [sql, funcs, registry]
   imports:
     test: wippy.test:test
