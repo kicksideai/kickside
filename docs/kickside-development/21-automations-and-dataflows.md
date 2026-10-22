@@ -110,6 +110,11 @@ pattern:
         write: acme.deals.sink:write
 ```
 
+New writable producers must send `identity_key`, and new sink implementations must
+require it. It names the same destination record across deliveries; a new delivery
+revision changes `idempotency_key`, not `identity_key`. The shared request schema
+keeps `identity_key` optional so existing writers continue to work.
+
 A `write` receives `config`, `sink_op`, `input`, stable `identity_key`,
 per-delivery `idempotency_key`, and REQUIRED `origin`. The shared
 `kickside.data:writable_sink.origin(request)` check rejects a missing origin or

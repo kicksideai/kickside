@@ -110,6 +110,11 @@ Every binding implementing `kickside.data:writable` must declare both
 invalid values in `platform/automation/src/round/write.lua` (`describe_sink`).
 The CRM binding `kickside.crm.sink:crm_sink` declares `at_least_once` and `record`.
 
+For new writable producers and sink implementations, `identity_key` is required.
+The shared writable request schema keeps it optional for existing writers.
+Use a stable destination identity across deliveries and a separate per-delivery
+`idempotency_key` that stays unchanged on retry.
+
 The `write` method is a `function.lua` entry. It has
 stable `identity_key` for the destination record and per-delivery
 `idempotency_key`. See [Automations And Dataflows](21-automations-and-dataflows.md)
