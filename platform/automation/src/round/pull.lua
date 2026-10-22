@@ -25,6 +25,7 @@ local security = require("security")
 local failure_classification = require("failure_classification")
 local automations_lib = require("automations_lib")
 local capacity = require("connection_capacity").new()
+local round_write = require("round_write")
 
 local M = {}
 
@@ -36,6 +37,11 @@ local PULLABLE_CONTRACT = "kickside.data:pullable"
 
 local function invalid(message: string): any
     return failure_classification.classify({ kind = errors.INVALID, message = message, retriable = false })
+end
+
+local function check_fence(r: Map): error?
+    if r.fence ~= nil then return round_write.check_fence(r) end
+    return nil
 end
 
 -- The page a pullable answered, or its classified failure.
@@ -72,6 +78,8 @@ local function pull_collection(r: Map): (Map?, any)
         :with_context({ component_id = connection_id, deadline = r.deadline }):open(binding)
     if open_err or not source then return nil, failure_classification.classify(open_err or "source open failed", "source open: ") end
     local page, call_err = capacity.invoke(connection_id, function()
+        local fence_err = check_fence(r)
+        if fence_err then return nil, fence_err end
         return failure_classification.native_result((source :: any):pull({
             cursor = r.cursor, config = config, limit = r.limit, idempotency_key = r.idempotency_key }))
     end)
@@ -86,6 +94,8 @@ local function pull_keys(r: Map): (Map?, any)
     local config = type(r.config) == "table" and (r.config :: Map) or {}
     local connection_id = type(config.connection_id) == "string" and config.connection_id ~= "" and config.connection_id or nil
     local page, call_err = capacity.invoke(connection_id, function()
+        local fence_err = check_fence(r)
+        if fence_err then return nil, fence_err end
         local invoker, invoker_err = funcs.new():with_options({retry = {max_attempts = 1}})
         if invoker_err then return nil, invoker_err end
         return failure_classification.native_result(invoker:call(target, { cursor = r.cursor, config = config, limit = r.limit,
@@ -109,6 +119,10 @@ local function pull_keys(r: Map): (Map?, any)
 end
 
 local function pull(r: Map): (Map?, any)
+    if r.source_kind == "collection" then return pull_collection(r) end
+    if r.source_kind == "reconcile" then return pull_keys(r) end
+    local fence_err = check_fence(r)
+    if fence_err then return nil, failure_classification.classify(fence_err) end
     if r.source_kind == "event" then
         local page, call_err = funcs.new():call(EVENTS_PULLABLE, {
             config = { thread_id = r.source_thread_id, event_type = r.event_type },
@@ -126,8 +140,6 @@ local function pull(r: Map): (Map?, any)
         })
         return page_of(page, call_err, "timer pull: ")
     end
-    if r.source_kind == "collection" then return pull_collection(r) end
-    if r.source_kind == "reconcile" then return pull_keys(r) end
     return nil, invalid("drive source kind " .. tostring(r.source_kind) .. " acquires nothing")
 end
 

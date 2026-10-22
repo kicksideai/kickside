@@ -136,9 +136,10 @@ function M.touch_existing(db_id: string, table_name: string, provider: string, e
     session_id: string, observed_at: string): (boolean?, string?)
     local db, db_err = open_db(db_id)
     if not db then return nil, db_err end
-    local result, update_err = db:execute("UPDATE " .. table_name .. " SET updated_at=$1"
-        .. " WHERE provider=$2 AND external_id=$3 AND session_id=$4 AND updated_at=$5",
-        { now(), provider, external_id, session_id, observed_at })
+    local result, update_err = db:execute("UPDATE " .. table_name
+        .. " SET updated_at=CASE WHEN updated_at < $1 THEN $1 ELSE updated_at END"
+        .. " WHERE provider=$2 AND external_id=$3 AND session_id=$4",
+        { now(), provider, external_id, session_id })
     db:release()
     if update_err then return nil, "session touch failed: " .. tostring(update_err) end
     local count = result and tonumber(result.rows_affected)

@@ -83,6 +83,37 @@ end
 
 local function define_tests()
     test.describe("shared failure classification", function()
+        test.it("prioritizes mapped codes over contradictory explicit kinds", function()
+            local value = failure_classification.classify({code = "provider_unavailable", kind = errors.INVALID})
+            test.eq(value.kind, errors.UNAVAILABLE)
+            test.is_true(value.retriable)
+        end)
+        test.it("prioritizes normative retry sources over alternate spellings", function()
+            for _, value in ipairs({
+                {success = false, retriable = false, retryable = true, error = {kind = errors.UNAVAILABLE}},
+                {success = false, retryable = true, error = {kind = errors.UNAVAILABLE, retriable = false}},
+                {kind = errors.UNAVAILABLE, retriable = false, retryable = true},
+                {success = false, retryable = true, error = errors.new({kind = errors.UNAVAILABLE, retryable = false, message = "typed retry refusal"})},
+            }) do
+                test.is_false(failure_classification.classify(value).retriable)
+            end
+        end)
+        test.it("keeps nonretryable infrastructure degraded and its delivery unsettled", function()
+            for _, kind in ipairs({errors.UNAVAILABLE, errors.INTERNAL, errors.TIMEOUT, errors.CANCELED, errors.CONFLICT}) do
+                local failure = failure_classification.classify({kind = kind, retriable = false,
+                    error_kind = "infrastructure", message = "store unavailable"})
+                local phase, parked = outcome.failure_phase(failure, "infrastructure")
+                test.eq(phase, drive.PHASE.DEGRADED)
+                test.is_false(parked)
+                local recorded, receipts = outcome.ledger_outcomes({{item_key = "item", delivery_key = "delivery", attempts = 1000}},
+                    {delivered = {}, skipped = {}, waiting = {}, uncertain = {}, failed = {
+                        {key = "delivery", error = failure, prepared_key = "prepared"}}},
+                    {max_attempts = 1, retry_after_ms = 1, max_delay_ms = 10})
+                test.eq(recorded[1].state, "retrying")
+                test.not_nil(recorded[1].next_attempt_at)
+                test.eq(#receipts, 0)
+            end
+        end)
         test.it("retains outer retry authority over serialized native metadata", function()
             for _, retry in ipairs({true, false}) do
                 local classified = failure_classification.classify({success = false, retriable = retry,
@@ -112,7 +143,7 @@ local function define_tests()
                 details = {code = "provider_capacity", scope = "capacity", retry_at_ms = 1893456000123}}}
             local native = failure_classification.native(value)
             test.is_true(errors.is(native, errors.RATE_LIMITED))
-            test.eq(native:retryable(), false)
+            test.eq(native:retryable(), true)
             test.eq(native:details().code, "provider_capacity")
             test.eq(native:details().scope, "capacity")
             test.eq(native:details().retry_after_ms, 700)

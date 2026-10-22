@@ -86,7 +86,7 @@ Every writable call supplies `origin`; `kickside.data:writable_sink` checks it
 and its agreement with `automation_ref.id`. Rounds use the automation ID;
 non-round producers use a stable explicit origin such as
 `example.meetings.link`. Held or failed items create ledger rows; resolved
-and dead tombstones carry an expiry, and unresolved work remains until it
-settles. Engine receipts change only when their destination mapping changes
+tombstones carry an expiry. Dead evidence remains while its recovery owner
+exists, and unresolved work remains until it settles. Engine receipts change only when their destination mapping changes
 or reconciliation updates their pass marker. Deleting a sync retires its
 receipts and keeps destination records.

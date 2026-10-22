@@ -28,6 +28,22 @@ local engine, writer_ok = shared.engine, shared.writer_ok
 
 local function define_tests()
     test.describe("pending command recovery", function()
+        test.it("retains nonretryable infrastructure failures until the writer recovers", function()
+            local id = uuid.v7()
+            reserve_install(id)
+            local calls: Map = {}
+            local result, err = engine(function()
+                return nil, errors.new({kind = errors.UNAVAILABLE, retryable = false,
+                    message = "writer unavailable", details = {error_kind = "infrastructure"}})
+            end, calls).recover_command(id)
+            test.is_nil(err)
+            test.eq(result.state, "pending")
+            test.not_nil(command_state(id).pending)
+            test.eq(op_of(id, "install:" .. id).state, "pending")
+            test.not_nil(read_drive(id, "main"))
+            test.eq(#calls.replayed, 0)
+            test.eq(engine(writer_ok({}), {}).recover_command(id).state, "succeeded")
+        end)
         test.it("runs a pending install's writer step from the command alone and gives its drives slots", function()
             local id = uuid.v7()
             local reserved = reserve_install(id)

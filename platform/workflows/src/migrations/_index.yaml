@@ -54,3 +54,18 @@ entries:
     method: migration
     imports:
       migration: wippy.migration:migration
+
+  - name: 06_iteration_input_routes
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Recompile published iteration artifacts with explicit iteration input routes.
+      depends_on:
+        - ns:wippy.migration
+      timestamp: "2026-10-20T00:00:00Z"
+    source: file://06_iteration_input_routes.lua
+    method: migration
+    modules: [json]
+    imports:
+      migration: wippy.migration:migration
+      version_publish: kickside.workflows.repo:version_publish

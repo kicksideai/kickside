@@ -141,6 +141,13 @@ function M.remint(commands: any, gen_id: any, input: any, opts: any?): ({ Map }?
                     end
                 end
             end
+            local iteration_routes = type(p.config) == "table" and (p.config :: Map).iteration_input_routes or nil
+            if type(iteration_routes) == "table" then
+                for _, route in ipairs(iteration_routes :: { Map }) do
+                    local target = tostring(route.node_id or "")
+                    if target ~= "" and id_map[target] then route.node_id = id_map[target] end
+                end
+            end
         elseif c.type == "CREATE_DATA" then
             local marker = tostring(p.data_id or "")
             p.data_id = gen_id()

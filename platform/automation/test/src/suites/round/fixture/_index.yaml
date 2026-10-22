@@ -108,7 +108,7 @@ entries:
     method: deliver
     modules: [sql, json, ctx, process, channel, time, uuid, security]
     imports:
-      round_write: kickside.automation:round_write
+      round_write: kickside.automation.round.fixture:round_write
       automations_lib: kickside.automation:automation
 
   - name: write
@@ -309,3 +309,29 @@ entries:
       - contract: kickside.trigger:round_consumer
         methods:
           deliver: kickside.automation.round.fixture:deliver
+
+  # The production round write library over a funcs seam that loses the answer
+  # of a lost_answer item's authority write after its send.
+  - name: lost_answer_funcs
+    kind: library.lua
+    source: file://lost_answer_funcs.lua
+    modules: [funcs]
+
+  - name: round_write
+    kind: library.lua
+    source: file://../../../src_link/round/write.lua
+    modules: [sql, json, registry]
+    imports:
+      funcs: kickside.automation.round.fixture:lost_answer_funcs
+      connection_capacity: kickside.automation:connection_capacity
+      delivery_identity: kickside.automation:delivery_identity
+      jobs: kickside.core.jobs:jobs
+      automation_db: kickside.automation:automation_db
+      drive: kickside.automation:drive
+      failure_classification: kickside.automation:failure_classification
+      automations_lib: kickside.automation:automation
+      round_ledger: kickside.automation:round_ledger
+      round_commit: kickside.automation:round_commit
+      round_prepared: kickside.automation:round_prepared
+      runtime_policy: kickside.automation:runtime_policy
+      canonical_json: kickside.contract:canonical_json

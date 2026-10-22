@@ -21,6 +21,7 @@ entries:
     - kickside.oauth.discovery:*
     - kickside.oauth.migrations:*
     - kickside.oauth.persist:*
+    - kickside.oauth.runtime:*
     - kickside.oauth.security:*
     - kickside.oauth.service:*
     - kickside.oauth.views:*
@@ -57,6 +58,7 @@ entries:
     - kickside.oauth.discovery:*
     - kickside.oauth.migrations:*
     - kickside.oauth.persist:*
+    - kickside.oauth.runtime:*
     - kickside.oauth.security:*
     - kickside.oauth.service:*
     - kickside.oauth.views:*
