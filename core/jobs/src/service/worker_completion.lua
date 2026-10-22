@@ -20,6 +20,9 @@ local function completion_opts(output: any): (table?, error?)
     if value.rearm ~= nil and (type(value.rearm) ~= "string" or value.rearm == "") then
         return nil, (errors.new({ message = "worker rearm must be a timestamp", kind = errors.INVALID }) :: error)
     end
+    if value.park ~= nil and value.park ~= true then
+        return nil, errors.new({kind = errors.INVALID, message = "worker park must be true or absent"})
+    end
     if value.tier ~= nil and value.tier ~= "live" and value.tier ~= "backfill"
         and value.tier ~= "maintenance" then
         return nil, (errors.new({ message = "worker tier is invalid", kind = errors.INVALID }) :: error)
@@ -29,7 +32,7 @@ local function completion_opts(output: any): (table?, error?)
             and value.record.status ~= "parked")) then
         return nil, (errors.new({ message = "worker record status is invalid", kind = errors.INVALID }) :: error)
     end
-    return { rearm = value.rearm, tier = value.tier, record = value.record }, nil
+    return { rearm = value.rearm, tier = value.tier, record = value.record, park = value.park }, nil
 end
 worker_completion.completion_opts = completion_opts
 

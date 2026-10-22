@@ -46,3 +46,8 @@ base as the lower bound of jitter. Worker failures carry native error details to
 this argument before rendering the history error text. Malformed provider retry
 hints are ignored so they cannot prevent failure settlement; explicit failure
 transition arguments remain validated.
+
+Completion options accept `park = true` independently of `record.status`. Parking
+suppresses ordinary wake demand while preserving the requested history status;
+a pending control wake retains priority. Without `park`, completion keeps its
+existing record-based parking behavior.
