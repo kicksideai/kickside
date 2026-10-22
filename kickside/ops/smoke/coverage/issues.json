@@ -4266,6 +4266,17 @@
       "repository": "kickside/crm",
       "test": "test/src/crm_resolve_lifetime_test.lua"
     },
+    "crm/resolve-suggestion-confidence": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_resolve_lifetime_test.lua"
+    },
     "crm/schema-index-cause": {
       "engines": [
         "sqlite",
@@ -11268,7 +11279,8 @@
     "EXECUTION-CLASSIFIER-PRECEDENCE",
     "AUTOMATION-INFRASTRUCTURE-PARKING",
     "CHANNEL-OWNER-LOOKUP-ERROR",
-    "IDENTITY-ROOT-ADMIN-CLASS"
+    "IDENTITY-ROOT-ADMIN-CLASS",
+    "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
   ],
   "schema_version": 1
 }

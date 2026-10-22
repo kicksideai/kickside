@@ -88,6 +88,10 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
+def crm_resolve_suggestion_confidence(ctx):
+    run_focused_module_test(ctx, 'kickside/crm', 'crm_resolve_lifetime_test')
+
+
 REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression',
                      workflow_terminal_publication_revoked_owner,
                      issues=('WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER',)),
@@ -99,6 +103,10 @@ REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression'
             Scenario('crm_idempotency_conflict_code', 'regression',
                      crm_idempotency_conflict_code,
                      issues=('CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE',)),
+
+            Scenario('crm_resolve_suggestion_confidence', 'regression',
+                     crm_resolve_suggestion_confidence,
+                     issues=('CRM-RESOLVE-SUGGESTION-CONFIDENCE',)),
             Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,

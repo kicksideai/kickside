@@ -7724,6 +7724,13 @@
       ],
       "tier": "regression"
     },
+    "crm_resolve_suggestion_confidence": {
+      "features": [],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
+      ],
+      "tier": "regression"
+    },
     "crm_resolve_suggestion_output": {
       "features": [],
       "issues": [
