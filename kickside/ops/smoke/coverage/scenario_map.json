@@ -15017,12 +15017,41 @@
       "issues": [],
       "tier": "full"
     },
+    "settings_array_json_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+      ],
+      "tier": "regression"
+    },
+    "settings_form_schema_and_row_errors": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION",
+        "SETTINGS-STORED-ROW-ERROR"
+      ],
+      "tier": "regression"
+    },
+    "settings_object_json_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+      ],
+      "tier": "regression"
+    },
     "settings_override_load": {
       "features": [],
       "issues": [
         "SETTINGS-OVERRIDE-LOAD-FAILURE",
         "SETTINGS-FALSE-PREDECESSOR",
         "SETTINGS-OVERRIDE-ERROR-ISOLATION"
+      ],
+      "tier": "regression"
+    },
+    "settings_stored_error_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STORED-ROW-ERROR"
       ],
       "tier": "regression"
     },

@@ -8697,6 +8697,26 @@
       "repository": "kickside/kickside",
       "test": "platform/settings/test/src/settings_test.lua"
     },
+    "settings/stored-row-error": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "SETTINGS-STORED-ROW-ERROR"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/settings/ui/src/app/settings.row-errors.spec.ts"
+    },
+    "settings/structured-schema": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/settings/ui/src/app/settings.schema.spec.ts"
+    },
     "simplefin/compact-list-detail": {
       "engines": [
         "sqlite",
@@ -10982,7 +11002,9 @@
     "WEBSCOUT-PROVIDER-CORE-MINIMUM",
     "MODELS-REASONING-GENERATIONS",
     "MODELS-GENERATION-CAPABILITIES",
-    "WIDGETS-CLASS-CAPABILITY"
+    "WIDGETS-CLASS-CAPABILITY",
+    "SETTINGS-STRUCTURED-SCHEMA-VALIDATION",
+    "SETTINGS-STORED-ROW-ERROR"
   ],
   "schema_version": 1
 }
