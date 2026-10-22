@@ -4711,6 +4711,15 @@
       ],
       "tier": "regression"
     },
+    "app_ui_contracts": {
+      "features": [],
+      "issues": [
+        "APP-UI-PUBLISHED-FACADE-GUARD",
+        "APP-UI-LOGIN-ROUTE-GUARD",
+        "SETTINGS-NOTICES-THEME-RADIUS"
+      ],
+      "tier": "regression"
+    },
     "automation_agent_trace": {
       "features": [
         "kickside/workflows|http|GET /api/v1/workflows/{id}/runs/{run_id}/nodes/{def_node_id}/data"
