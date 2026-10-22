@@ -27,6 +27,7 @@ local function policy_index(): (any?, error?)
     if read_err then return nil, read_err end
     local by_id: { [string]: stypes.PolicySummary } = {}
     local list: { stypes.PolicySummary } = {}
+    local group_policies = {}
     for _, entry in ipairs(entries :: { any }) do
         local data = entry.data
         local meta = meta_of(entry)
@@ -42,11 +43,15 @@ local function policy_index(): (any?, error?)
             resources = policy.resources,
             private = meta.private == true,
         }
+        for _, group in ipairs(data.groups or {}) do
+            group_policies[group] = group_policies[group] or {}
+            group_policies[group][#group_policies[group] + 1] = tostring(entry.id)
+        end
         by_id[tostring(entry.id)] = summary
         list[#list + 1] = summary
     end
     table.sort(list, function(a, b) return tostring(a.id) < tostring(b.id) end)
-    return {by_id = by_id, list = list, entries = entries}, nil
+    return {by_id = by_id, list = list, entries = entries, groups = group_policies}, nil
 end
 
 -- policies returns the policy catalog (the grants). include_internal defaults false.
@@ -102,6 +107,20 @@ end
 
 local function default_label(id: string): string
     return id:match("([^:%.]+)$") or id
+end
+
+local function descriptor_policies(entry, index)
+    local data, selected, out = entry.data or {}, {}, {}
+    local function include(ids)
+        for _, id in ipairs(ids or {}) do
+            if not selected[id] then selected[id] = true; out[#out + 1] = id end
+        end
+    end
+    include(data.policies)
+    include(data.direct_policies)
+    for _, group in ipairs(data.groups or {}) do include(index.groups[group]) end
+    table.sort(out)
+    return out
 end
 
 -- scopes returns the merged scope/role catalog. include_internal defaults false.
@@ -164,7 +183,7 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     if declared_err then return nil, declared_err end
     for _, entry in ipairs(declared_scopes or {}) do
         local id = tostring(entry.id)
-        if descriptors[id] then group_policies[id] = entry.data.policies or {} end
+        if descriptors[id] then group_policies[id] = descriptor_policies(entry, index) end
     end
     local group_internal: { [string]: boolean } = {}
     local group_order: { string } = {}
@@ -220,7 +239,7 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
                 internal = meta.internal == true,
                 built_in = false,
                 enabled = true,
-                policies = entry.data.policies,
+                policies = descriptor_policies(entry, index),
             })
             if emit_err then return nil, emit_err end
         end

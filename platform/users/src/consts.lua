@@ -202,7 +202,7 @@ end
 
 function consts.resolve_scope(config, groups, authority_only)
     local primary, is_admin, effective = consts.derive_scope(config, groups)
-    local resolved, err = scope_store.resolve_groups(effective)
+    local resolved, err = scope_store.resolve_groups(authority_only == true and (groups or {}) or effective)
     if not resolved then return nil, is_admin, effective, err end
     return primary, is_admin, effective, nil, resolved
 end

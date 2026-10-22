@@ -38,7 +38,9 @@ Sessions compose native group policies with the source policy IDs selected by
 custom scopes. The native subject lookup resolves current memberships and live
 DB selections on validation; users without custom selections add no query, and
 all held custom selections share one query by scope primary key. Original
-membership labels remain in actor metadata for ACL checks.
+membership labels remain in actor metadata for ACL checks. Live authority uses
+actual memberships; a session-mint default does not add authority to an account
+with no memberships.
 
 Custom-scope writes ask the existing Security writer to fence the affected groups,
 including composed memberships, before changing their DB selections. The writer

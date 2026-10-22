@@ -214,7 +214,8 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
         want.id = id
         if have and not owned[id] then
             want.meta = have.meta
-            for key, value in pairs(have.data or {}) do if want.data[key] == nil then want.data[key] = value end end
+            want.data = {}
+            for key, value in pairs(have.data or {}) do want.data[key] = value end
         end
         want.data.groups = native_groups
         want.data.scope_sources = scope_sources[id] or {}
@@ -228,10 +229,16 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
         end
     end
 
-    -- Registry entries with no enabled DB row are removed.
-    for id, _ in pairs(by_id) do
-        if owned[id] and not desired_ids[id] then
-            deletes[#deletes + 1] = id
+    for id, have in pairs(by_id) do
+        if not desired_ids[id] then
+            if owned[id] then
+                deletes[#deletes + 1] = id
+            elseif have.data.scope_sources ~= nil then
+                local data = {}
+                for key, value in pairs(have.data) do data[key] = value end
+                data.groups, data.direct_policies, data.scope_sources = nil, nil, nil
+                updates[#updates + 1] = {id = id, kind = have.kind, meta = have.meta, data = data}
+            end
         end
     end
 

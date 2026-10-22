@@ -152,6 +152,19 @@ local function define_tests()
             test.eq(scope:evaluate(actor, "source.scope", "app:selected"), "allow")
         end)
 
+        test.it("keeps live authority empty when no membership selects the default overlay", function()
+            assert(scope_store.upsert({slug = slug, target = "app.security:user", policies = {source}}, "tester"))
+            assert(trigger_reconcile.trigger())
+            assert(user_group_sources_repo.set_user_groups(uid, {}))
+            local actor = assert(security.new_actor(uid, {}))
+            local selected = assert(security.new_scope({assert(security.policy(source))}))
+            local token = assert(tokens:create(actor, selected, {expiration = "1h"}))
+            local current_actor, current_scope, err = tokens:validate(token)
+            test.is_nil(err)
+            test.eq(current_scope:evaluate(current_actor, "source.scope", "app:selected"), "undefined",
+                "live membership authority does not inherit a session-mint default")
+        end)
+
         test.it("creates no generated binding or metadata policies", function()
             for _, entry in ipairs(assert(registry.find({[".kind"] = "security.policy"}))) do
                 local meta = entry.meta or {}

@@ -221,9 +221,7 @@ function M.resolve_groups(groups)
                 slugs[source.slug] = slugs[source.slug] or {}
                 slugs[source.slug][source.group_id] = true
             end
-            local selected = data.direct_policies
-            if selected == nil then selected = data.policies or {} end
-            for _, id in ipairs(selected) do policies[id] = true end
+            for _, id in ipairs(data.direct_policies or {}) do policies[id] = true end
         else
             native[group] = true
         end

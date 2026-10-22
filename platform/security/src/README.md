@@ -52,10 +52,12 @@ It creates no policy copies, metadata grants, or union-group entries. The scope
 catalog continues to merge DB selections, role descriptors, and built-in groups.
 
 The projector resolves group declarations into native group references and source
-IDs. Descriptor `data.policies` retains the complete catalog selection;
+IDs. Managed descriptor `data.policies` retains the complete catalog selection;
+authored descriptors retain their original selections and metadata.
 `data.groups` contains its native group references, `data.direct_policies` its
 other declaration selections, and `data.scope_sources` its DB selection keys
-and owning groups. These fields contain identifiers only. Native policies remain owned and evaluated by
+and owning groups. These compiled fields contain identifiers only and are
+removed when an authored descriptor no longer has a composition or DB overlay. Native policies remain owned and evaluated by
 the runtime. Group composition does not inspect their rule bodies.
 
 The Users subject lookup reads live DB selections in one primary-key query for

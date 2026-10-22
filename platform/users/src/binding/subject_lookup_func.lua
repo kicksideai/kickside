@@ -83,7 +83,7 @@ function M.lookup_credential(args: any): (any?, error?)
     end
     local result = M.lookup(args)
     if result.success ~= false then
-        result.groups = #result.groups > 0 and result.scope_groups or {}
+        result.groups = result.scope_groups
     end
     return result, nil
 end
