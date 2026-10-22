@@ -16,6 +16,7 @@ local errors = require("errors")
 local time = require("time")
 local drive = require("drive")
 local command = require("command")
+local slot = require("slot")
 local automation_test_engine = require("automation_test_engine")
 
 local DB = "app:db"
@@ -44,6 +45,79 @@ end
 local function define_tests()
     test.describe("command dispatcher pass", function()
         test.before_each(clean_fixture)
+        for _, state in ipairs({ "missing", "done", "dead", "cancelled" }) do
+            test.it("retains unserved demand for a " .. state .. " job until a slot accepts its wake", function()
+                local id, missing_job = uuid.v7(), uuid.v7()
+                local _, insert_err = in_tx(function(tx)
+                    local _, err = drive.insert_tx(tx, { automation_id = id, drive_key = "main",
+                        source_kind = "collection", job_id = missing_job, cursor = "committed-position", event_seq = 17 })
+                    if err then return nil, err end
+                    return tx:execute("UPDATE kickside_automation_drive SET wake_generation=3, wake_applied_generation=1, command_generation=4, revision=6 WHERE automation_id=$1", { id })
+                end)
+                test.is_nil(insert_err, tostring(insert_err))
+                local db = open_db()
+                local _, ledger_err = db:execute([[INSERT INTO kickside_trigger_item_ledger
+                    (owner_id,source_port,item_key,dedup_key,identity_key,envelope_json,state,
+                     first_failed_at,last_failed_at,created_at,updated_at)
+                    VALUES ($1,'source','item','dedup','identity','{}','retrying',$2,$2,$2,$2)]], { id, drive.utc_now() })
+                db:release()
+                test.is_nil(ledger_err, tostring(ledger_err))
+                if state ~= "missing" then
+                    db = open_db()
+                    local _, job_err = db:execute([[INSERT INTO kickside_job
+                        (id,job_type,payload,status,job_identity,owner_kind,owner_id)
+                        VALUES ($1,'kickside.automation:round','{}',$2,$3,'automation',$4)]],
+                        { missing_job, state, missing_job, id })
+                    db:release()
+                    test.is_nil(job_err, tostring(job_err))
+                end
+                local before = read_drive(id, "main")
+                local lib = automation_test_engine.new()
+                local pass, err = lib.dispatch({ limit = 1000 })
+                test.is_nil(err, tostring(err))
+                local after = read_drive(id, "main")
+                test.eq(after.wake_applied_generation, before.wake_applied_generation)
+                test.eq(pass.woken, 0)
+                test.eq(pass.provisioned, 0)
+                test.eq(after.job_id, missing_job)
+                test.not_nil(pass.next_deadline)
+                test.is_true(drive.after(pass.next_deadline, drive.utc_now()), "unserved wake must wait before retrying")
+                test.not_nil(after.repair_next_at)
+                local early, early_err = lib.dispatch({limit = 1000})
+                test.is_nil(early_err)
+                test.eq(early.failures, 0, "an early pass must not retry an unserved wake")
+                test.eq(early.next_deadline, pass.next_deadline)
+                for _, key in ipairs({ "cursor", "event_seq", "command_generation", "revision", "rewind_generation",
+                        "pending_command_id", "round_token", "round_seq", "delivery_revision", "wake_generation" }) do
+                    test.eq(after[key], before[key], key)
+                end
+                local replacement, provision_err = slot.provision(id, "main")
+                test.is_nil(provision_err, tostring(provision_err))
+                test.is_true(replacement ~= missing_job)
+                db = open_db()
+                local _, due_err = db:execute("UPDATE kickside_automation_drive SET repair_next_at=$1 WHERE automation_id=$2", {"1900-01-01T00:00:00Z", id})
+                db:release()
+                test.is_nil(due_err)
+                local second, second_err = lib.dispatch({ limit = 1000 })
+                test.is_nil(second_err, tostring(second_err))
+                test.eq(second.woken, 1)
+                test.eq(second.provisioned, 0)
+                test.eq(read_drive(id, "main").wake_applied_generation, before.wake_generation)
+                test.eq(read_drive(id, "main").job_id, replacement)
+                db = open_db()
+                local rows, ledger_read_err = db:query("SELECT item_key,dedup_key,identity_key,envelope_json,state FROM kickside_trigger_item_ledger WHERE owner_id=$1", { id })
+                db:release()
+                test.is_nil(ledger_read_err, tostring(ledger_read_err))
+                test.eq(#rows, 1)
+                test.eq(rows[1].item_key, "item")
+                test.eq(rows[1].dedup_key, "dedup")
+                test.eq(rows[1].identity_key, "identity")
+                test.eq(rows[1].envelope_json, "{}")
+                test.eq(rows[1].state, "retrying")
+            end)
+
+        end
+
         test.it("persists a failed slot provisioning deadline instead of immediately looping", function()
             local id = uuid.v7()
             local _, insert_err = in_tx(function(tx)
