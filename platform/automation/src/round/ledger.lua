@@ -401,8 +401,12 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
         AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c
                         WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL)]]
         or "expires_at <= $1 AND state='resolved'"
+    -- Retain delivery proof until its prepared output has been reclaimed, even
+    -- when bounded passes visit the two tables in different key orders.
+    local prepared_guard = [[ AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
+        WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)]]
     local rows, read_err = tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
-        .. " l WHERE " .. predicate .. " ORDER BY owner_id,source_port,item_key,identity_key LIMIT $2",
+        .. " l WHERE " .. predicate .. prepared_guard .. " ORDER BY owner_id,source_port,item_key,identity_key LIMIT $2",
         { cutoff, limit })
     if read_err or type(rows) ~= "table" then return nil, internal("ledger prune page read failed", read_err or "missing result") end
     local count = 0
@@ -415,7 +419,7 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     for _, row in ipairs(rows) do
         local deleted, delete_err = tx:execute("DELETE FROM " .. M.TABLE .. " AS l"
             .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
-            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard,
+            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard,
             { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
         if delete_err or not deleted or tonumber(deleted.rows_affected) == nil then
             return nil, internal("ledger prune delete failed", delete_err or "missing affected-row count")
