@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({ route: null as any, push: vi.fn(), broadcast: 
 vi.mock('vue-router', () => ({ useRoute: () => state.route, useRouter: () => ({ push: state.push, replace: state.push }) }))
 vi.mock('../composables/useWippy', () => ({
   useApi: () => ({}),
-  useHost: () => ({ layout: { broadcast: state.broadcast } }),
+  useHost: () => ({ layout: { broadcast: state.broadcast, on: () => () => {} } }),
   useWippy: () => ({ on: () => vi.fn(), loadByTagName: async () => undefined }),
 }))
 vi.mock('../composables/useSurfaces', () => ({ useSurfaces: () => ({
