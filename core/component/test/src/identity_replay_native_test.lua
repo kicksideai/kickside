@@ -6,9 +6,9 @@ local identity = require("identity")
 local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
     errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}
 local principal = {kind = "user", id = "user-1"}
-local function prepare()
+local function prepare(expected: number?)
     local token, err = context.prepare_identity({component_id = "component", principal = principal,
-        request_id = "request", expected_identity_generation = 7})
+        request_id = "request", expected_identity_generation = expected or 7})
     test.is_nil(err); test.eq(type(token), "table")
     return token
 end
@@ -34,9 +34,10 @@ return {run = test.run_cases(function()
         end
         test.it("existing successful audit replay retains identity result", function()
             authority.reset("", nil); storage.reset("", nil)
-            local digest = identity.request_digest(principal, 7)
-            storage.records = {{record_json = identity.audit_record("none", principal, principal, "request", digest, 7, "set", "canonical")}}
-            local result, err = context.set_execution_identity_tx({} :: any, prepare())
+            local digest = identity.request_digest(principal, 6)
+            storage.records = {{identity_generation = 7,
+                record_json = identity.audit_record("none", principal, principal, "request", digest, 6, "set", "canonical")}}
+            local result, err = context.set_execution_identity_tx({} :: any, prepare(6))
             test.is_nil(err); test.eq(result.component_id, "component"); test.eq(result.principal.kind, "user"); test.eq(result.principal.id, "user-1")
             test.eq(result.identity_generation, 7); test.eq(result.request_id, "request"); test.is_false(result.changes_made); test.eq(storage.writes, 0)
         end)

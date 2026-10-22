@@ -3,6 +3,7 @@ local execution_identity = require("execution_identity")
 local round_write = require("round_write")
 local registry = require("registry")
 local provenance = require("round_provenance")
+local failure_classification = require("failure_classification")
 
 local M = {}
 type Map = { [string]: any }
@@ -30,10 +31,16 @@ function M.check(request: Map): (any?, error?)
     return true,nil
 end
 
+-- write answers the sink effect's packet. A failure before the effect is
+-- invoked (a moved fence, missing admission evidence, an identity that cannot
+-- bind) answers {refused = classified failure}: nothing was sent. An error
+-- from the invocation itself may follow the send.
 function M.write(request: Map): (Map?, error?)
     local stored,read_err=identity(request)
-    if read_err then return nil,read_err end
-    return execution_identity.run_as(stored,"kickside.automation:round_sink_effect",request,{deferred_owner=OWNER})
+    if read_err then return {refused=failure_classification.classify(read_err)},nil end
+    local builder,bind_err=execution_identity.bind(stored,{deferred_owner=OWNER})
+    if bind_err or not builder then return {refused=failure_classification.classify(bind_err)},nil end
+    return builder:call("kickside.automation:round_sink_effect",request)
 end
 
 function M.compute(request: Map): (any?, error?)

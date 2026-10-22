@@ -7,6 +7,7 @@ local logger = require("logger"):named("kickside.oauth.api.init")
 local process = require("process")
 local security = require("security")
 local runtime_config = require("runtime_config")
+local funcs = require("funcs")
 
 local STATUS = http.STATUS
 local CONTENT = http.CONTENT
@@ -235,7 +236,17 @@ local function handler()
         return
     end
 
-    logger:debug("OAuth negotiator process spawned", {
+    local ready, ready_err = funcs.call("kickside.oauth.service:await_negotiator", {
+        state_token = init_result.state_token,
+        pid = tostring(negotiator_pid),
+    })
+    if ready_err or not ready or ready.success ~= true then
+        res:set_status(503)
+        res:write_json({ success = false, error = "OAuth callback session could not be initialized. Try again." })
+        return
+    end
+
+    logger:debug("OAuth negotiator process ready", {
         state_token = init_result.state_token,
         provider_name = provider_name,
         negotiator_pid = negotiator_pid,

@@ -149,6 +149,9 @@ function M.evaluate_live_scope(authorized: any, action: any, resources: any): (s
     if type(resources) ~= "table" or #resources == 0 then
         return nil, failure("authority resources are required", errors.INVALID, "declaration", false)
     end
+    if security.can(CREATE_ACTION, actor_id) ~= true then
+        return nil, failure("actor creation is not granted for " .. actor_id, errors.PERMISSION_DENIED, "access", false)
+    end
     local actor, actor_err = security.new_actor(actor_id, meta)
     if actor_err or not actor then
         return nil, failure("could not build authorizer actor: " .. tostring(actor_err),

@@ -16,6 +16,7 @@ function M.reset(stage: string, source: error?, secondary: error?, cleanup_error
     M.proc_binding, M.execution_control = nil, nil
     M.recorded_override, M.recorded_value = false, nil
     M.child_error, M.settle_error = nil, nil
+    M.retry_floor = nil
     M.marker_override, M.marker_value = false, nil
 end
 local function hit(stage: string): () M.calls[stage] = (M.calls[stage] or 0) + 1 end
@@ -64,6 +65,7 @@ function M.query(...): (any, error?)
     return M.result("marker", {{}})
 end
 function M.fail_job(...): (error?, boolean)
+    M.retry_floor = select(8, ...)
     hit("settle"); if M.recorded_override then
         local recorded = M.recorded_value
         if type(recorded) ~= "boolean" then error(errors.new({kind = errors.INTERNAL, retryable = false, message = "worker fixture requires boolean recording proof"})) end
