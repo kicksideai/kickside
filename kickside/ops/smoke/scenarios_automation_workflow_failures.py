@@ -10,6 +10,10 @@ def slot_provision_failures(ctx):
 def dispatch_slot_lifecycle(ctx):
     run_focused_module_test(ctx, 'kickside/automation', 'recovery_dispatch_test')
 
+def slot_lifetime(ctx):
+    run_focused_module_test(ctx, 'kickside/automation', 'slot_record_test')
+    run_focused_module_test(ctx, 'kickside/automation', 'slot_lifetime_test')
+
 
 def workflow_discovery_failures(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'published_catalog_errors_test')
@@ -28,6 +32,9 @@ def transfer_cleanup_failures(ctx):
 REGISTRY = [
     Scenario('automation_dispatch_slot_lifecycle', 'regression', dispatch_slot_lifecycle,
              issues=('AUTOMATION-UNSERVED-WAKE',)),
+
+    Scenario('automation_slot_lifetime', 'regression', slot_lifetime,
+             issues=('AUTOMATION-SLOT-RECORD-PURGE', 'AUTOMATION-SOURCE-SLOT-CANCEL-RACE', 'AUTOMATION-SOURCE-SLOT-FINALIZATION', 'AUTOMATION-UNSERVED-WAKE', 'AUTOMATION-STALE-SLOT-REFERENCE')),
     Scenario('automation_slot_provision_failures', 'regression', slot_provision_failures,
              issues=('DESIGN-AUTOMATION-SLOT-FAILURE',)),
     Scenario('workflow_discovery_failures', 'regression', workflow_discovery_failures,

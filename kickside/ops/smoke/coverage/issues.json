@@ -488,6 +488,21 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/selected_install_test.lua"
     },
+    "automation/slot-lifetime": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-SLOT-RECORD-PURGE",
+        "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
+        "AUTOMATION-SOURCE-SLOT-FINALIZATION",
+        "AUTOMATION-UNSERVED-WAKE",
+        "AUTOMATION-STALE-SLOT-REFERENCE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/slot_lifetime_test.lua"
+    },
     "automation/slot-provision-failure": {
       "engines": [
         "sqlite",
@@ -11097,7 +11112,10 @@
     "UPSTREAM-USAGE-CONTEXT-CORRELATION",
     "AUTOMATION-UNSERVED-WAKE",
     "AUTOMATION-STALE-SLOT-REFERENCE",
-    "APP-HOST-CHAT-INTENT-OWNERSHIP"
+    "APP-HOST-CHAT-INTENT-OWNERSHIP",
+    "AUTOMATION-SLOT-RECORD-PURGE",
+    "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
+    "AUTOMATION-SOURCE-SLOT-FINALIZATION"
   ],
   "schema_version": 1
 }
