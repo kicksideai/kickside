@@ -76,6 +76,11 @@ def workflow_original_delivery_identity(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'original_delivery_identity_test')
 
 
+def automation_prepared_output_settlement(ctx):
+    for entry in ('ledger_orphan_retention_test', 'recovery_dispatch_test', 'prepared_proof_upgrade_test'):
+        run_focused_module_test(ctx, 'kickside/automation', entry)
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -115,6 +120,10 @@ REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression'
             Scenario('workflow_original_delivery_identity', 'regression',
                      workflow_original_delivery_identity,
                      issues=('WORKFLOW-ORIGINAL-DELIVERY-IDENTITY',)),
+
+            Scenario('automation_prepared_output_settlement', 'regression',
+                     automation_prepared_output_settlement,
+                     issues=('AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF',)),
             Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,

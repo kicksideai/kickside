@@ -455,6 +455,17 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/owner_gc_test.lua"
     },
+    "automation/prepared-settlement-proof": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/ledger_orphan_retention_test.lua"
+    },
     "automation/receipt-retention": {
       "engines": [
         "sqlite",
@@ -11329,7 +11340,8 @@
     "CHANNEL-DIRECT-MESSAGE-IDEMPOTENCY",
     "DISCORD-DIRECT-MESSAGE-IDEMPOTENCY",
     "AUTOMATION-AT-MOST-ONCE-LOST-WRITE-ANSWER",
-    "COMPONENT-CAPTURED-CREATION-IDENTITY"
+    "COMPONENT-CAPTURED-CREATION-IDENTITY",
+    "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF"
   ],
   "schema_version": 1
 }
