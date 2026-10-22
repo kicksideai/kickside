@@ -2,7 +2,7 @@
 
 local M = {}
 
-function M.generate(): (any?, string?)
+function M.generate(): (any?, any?)
     return nil, "planner LLM stub was not configured"
 end
 
