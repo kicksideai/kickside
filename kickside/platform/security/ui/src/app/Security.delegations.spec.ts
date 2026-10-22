@@ -63,7 +63,7 @@ describe('Security group-based act-as administration', () => {
     await button(wrapper, 'Save act-as grant').trigger('click')
     await flushPromises()
     expect(post).toHaveBeenCalledWith('/api/v1/security/delegations', {
-      principal, root: '*', groups: [group], operation_id: expect.any(String),
+      principal, root: '*', groups: [group],
     })
     expect(wrapper.get('[data-test=delegation-confirmation]').text()).toContain('Act-as grant saved')
   })
@@ -129,7 +129,7 @@ describe('Security group-based act-as administration', () => {
     inventory = [{ ...grant, active: false, groups: [] }]
     await wrapper.get('button[aria-label="Revoke act-as grant for ' + principal.id + ' at ' + root + '"]').trigger('click')
     await flushPromises()
-    expect(remove).toHaveBeenCalledWith('/api/v1/security/delegations', { data: { principal, root, operation_id: expect.any(String) } })
+    expect(remove).toHaveBeenCalledWith('/api/v1/security/delegations', { data: { principal, root } })
     expect(wrapper.get('[data-test=delegation-confirmation]').text()).toContain('Act-as grant revoked')
     expect(wrapper.text()).toContain('Revoked')
     expect(wrapper.find('button[aria-label^="Revoke act-as grant"]').exists()).toBe(false)
@@ -196,8 +196,9 @@ describe('Security group-based act-as administration', () => {
     await button(wrapper, 'Save act-as grant').trigger('click')
     await flushPromises()
     const next = post.mock.calls[1]![1]
-    expect(next.operation_id).not.toBe(prior.operation_id)
-    expect(next).toMatchObject({ root: '*', groups: ['another:exact:group'] })
+    expect(post).toHaveBeenCalledTimes(2)
+    expect(next).not.toEqual(prior)
+    expect(next).toEqual({ principal, root: '*', groups: ['another:exact:group'] })
   })
   it('distinguishes a confirmed mutation from a subsequent inventory failure', async () => {
     const wrapper = await open()
