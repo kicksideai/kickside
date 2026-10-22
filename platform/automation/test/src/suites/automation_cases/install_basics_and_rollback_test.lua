@@ -281,7 +281,7 @@ local function define_tests()
         end)
 
         test.it("RA-H16 rejects a registry reference visible only to the declaration worker", function()
-            local evaluated = nil
+            local evaluated: table? = nil
             local authority = declaration_authority.new({
                 component = {},
                 security = {},
@@ -312,16 +312,16 @@ local function define_tests()
             test.is_nil(err)
             test.eq(allowed, false)
             test.not_nil(evaluated)
-            test.eq(evaluated.authorized.principal.id, "selected-user")
-            test.eq(evaluated.authorized.scope_name, "selected-live-scope")
-            test.eq(evaluated.authorized.scope_groups[2], "credential-restrictions")
-            test.eq(evaluated.authorized.scope_policy_ids[1], "credential:restricted")
-            test.eq(evaluated.action, "registry.get")
-            test.eq(evaluated.resources[1], "private:trait")
+            test.eq((evaluated :: table).authorized.principal.id, "selected-user")
+            test.eq((evaluated :: table).authorized.scope_name, "selected-live-scope")
+            test.eq((evaluated :: table).authorized.scope_groups[2], "credential-restrictions")
+            test.eq((evaluated :: table).authorized.scope_policy_ids[1], "credential:restricted")
+            test.eq((evaluated :: table).action, "registry.get")
+            test.eq((evaluated :: table).resources[1], "private:trait")
         end)
 
         test.it("RA-H16 checks declared functions under the selected principal's live registry scope", function()
-            local evaluated = nil
+            local evaluated: table? = nil
             local authority = declaration_authority.new({
                 component = {}, security = {},
                 execution_identity = {
@@ -344,8 +344,8 @@ local function define_tests()
             test.is_nil(err)
             test.eq(allowed, false)
             test.not_nil(evaluated)
-            test.eq(evaluated.action, "registry.get")
-            test.eq(evaluated.resources[1], "private:handler")
+            test.eq((evaluated :: table).action, "registry.get")
+            test.eq((evaluated :: table).resources[1], "private:handler")
         end)
 
         -- ─── happy path / return shape ─────────────────────────────
