@@ -35,8 +35,16 @@ local function handle(request_dto)
         if not rows or #rows == 0 then break end
         for _, u in ipairs(rows) do
             local _, del_err = upload_lib.delete_upload(tostring((u :: any).uuid))
-            if del_err and not errors.is(del_err, errors.NOT_FOUND) then
-                return { success = false, error = del_err, deleted = deleted }
+            if del_err then
+                if not errors.is(del_err, errors.NOT_FOUND) then
+                    return { success = false, error = del_err, deleted = deleted }
+                end
+                -- A delete stage may itself return NOT_FOUND while retaining the
+                -- upload. Only an absent upload proves a concurrent teardown.
+                local remaining, read_err = upload_query_repo.get(tostring((u :: any).uuid))
+                if remaining or read_err ~= "Upload not found" then
+                    return { success = false, error = del_err, deleted = deleted }
+                end
             end
             deleted = deleted + 1
         end
