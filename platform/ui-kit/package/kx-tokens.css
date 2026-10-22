@@ -91,6 +91,12 @@
   /* One height for every button, input and select on a row together. */
   --kx-control-height: 34px;
 
+  /* Library geometry has no equivalent in the host theme. */
+  --kx-control-height-sm: 30px;
+  --kx-rail-width: 264px;
+  --kx-reading-measure: 880px;
+  --kx-row-height: 32px;
+
   /* ── Elevation ─────────────────────────────────────────────────────────
      Overridden for dark below: the same alpha reads as nothing against a dark
      surface. */
