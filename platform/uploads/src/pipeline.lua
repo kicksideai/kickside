@@ -136,7 +136,7 @@ local function transcription_error(metadata: any): (string?, string?, string?)
     for key, value in pairs(metadata) do
         if type(key) == "string" and key:match("_error$") and type(value) == "string" and value ~= ""
             and not TRANSCRIPTION_CONTENT_OUTCOMES[value] then
-            local code = metadata_sanitizer.transcription_code(value)
+            local code = metadata_sanitizer.transcription_code(value) :: string
             if TRANSCRIPTION_KEYS[key] then metadata[key] = code end
             return key, code, value
         end
