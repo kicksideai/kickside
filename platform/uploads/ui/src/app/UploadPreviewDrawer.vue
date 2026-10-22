@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
-import Message from 'primevue/message'
 import type { PreviewSource, Upload, UploadArtifact } from './uploads.types.ts'
 import {
   artifactLabel,
@@ -13,6 +13,7 @@ import {
   typeIcon,
   typeLabel,
   uploadLabel,
+  uploadNotice,
 } from './uploads.format.ts'
 
 interface Props {
@@ -36,9 +37,12 @@ interface Props {
   viewPrimary: () => void
   viewArtifact: (artifact: UploadArtifact) => void
   gotoPartsPage: (page: number) => void
+  retrying: boolean
+  retryUpload: (upload: Upload) => Promise<void>
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+const notice = computed(() => (props.preview ? uploadNotice(props.preview) : null))
 const emit = defineEmits<{ (event: 'update:partsExpanded', value: boolean): void }>()
 </script>
 
@@ -116,10 +120,34 @@ const emit = defineEmits<{ (event: 'update:partsExpanded', value: boolean): void
         </Button>
       </header>
 
-      <Message v-if="typeof preview.meta?.ocr_error === 'string' && preview.meta.ocr_error"
-        severity="warn" :closable="false" role="alert">
-        Transcription: {{ preview.meta.ocr_error }}
-      </Message>
+      <!-- A failed upload keeps its original bytes, so the drawer still opens: state
+           the failure here instead of showing an empty Markdown view. -->
+      <div
+        v-if="notice"
+        :class="['kx-pv-fail', { 'kx-pv-info': notice.tone === 'info' }]"
+        :role="notice.tone === 'error' ? 'alert' : 'status'"
+        data-testid="uploads-preview-error"
+      >
+        <Icon :icon="notice.tone === 'error' ? 'tabler:alert-triangle' : 'tabler:info-circle'" aria-hidden="true" />
+        <span>{{ notice.text }}</span>
+        <Button
+          v-if="notice.tone === 'error'"
+          type="button"
+          class="kx-pv-retry"
+          size="small"
+          severity="danger"
+          outlined
+          label="Retry"
+          data-testid="uploads-preview-retry"
+          :loading="retrying"
+          :disabled="retrying"
+          @click="retryUpload(preview)"
+        >
+          <template #icon="{ class: iconClass }">
+            <Icon icon="tabler:refresh" :class="iconClass" aria-hidden="true" />
+          </template>
+        </Button>
+      </div>
 
       <!-- Default views: the original file, plus the converted markdown when the
            upload was converted. Clicking swaps the always-visible viewer below. -->

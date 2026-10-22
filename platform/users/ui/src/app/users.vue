@@ -4,6 +4,11 @@ import { Icon } from '@iconify/vue'
 import { api, host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import Tag from 'primevue/tag'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import Tab from 'primevue/tab'
+import TabList from 'primevue/tablist'
+import Tabs from 'primevue/tabs'
 import { formatDate } from '@widgets/app/datetime'
 
 // Standalone WC: no SPA composables — the authenticated API comes through the
@@ -34,7 +39,11 @@ const STATUS_OPTIONS = [
   { label: 'Pending', value: 'pending' },
 ]
 
-const DEFAULT_ROLE_ID = 'app.security:user'
+const DIALOG_PT = {
+  header: { class: 'kx-dialog-header' },
+  content: { class: 'kx-dialog-content' },
+  footer: { class: 'kx-dialog-footer' },
+}
 
 const users = ref<User[]>([])
 const accountTab = ref<'users' | 'bots'>('users')
@@ -51,6 +60,12 @@ const saving = ref(false)
 
 const showEdit = ref(false)
 const editForm = ref({ user_id: '', email: '', full_name: '', status: '', password: '', groups: [] as string[] })
+
+const editorOpen = computed({
+  get: () => showCreate.value || showEdit.value,
+  set: (visible: boolean) => { if (!visible) { showCreate.value = false; showEdit.value = false } },
+})
+const editorTitle = computed(() => (showCreate.value ? 'Create ' : 'Edit ') + (isBotForm.value ? 'bot' : 'user'))
 
 const isBotForm = computed(() => showCreate.value ? accountTab.value === 'bots' : editingBot.value)
 
@@ -226,63 +241,97 @@ useHostVisibilityRefresh(async () => {
 
 <template>
   <div class="ku">
-    <div class="ku-bar" role="tablist" aria-label="Account type">
-      <button class="ku-btn" role="tab" :aria-selected="accountTab === 'users'" aria-controls="users-accounts" @click="selectTab('users')">All users</button>
-      <button class="ku-btn" role="tab" :aria-selected="accountTab === 'bots'" aria-controls="users-bots" @click="selectTab('bots')">Bots</button>
-    </div>
+    <header class="kx-head">
+      <div class="kx-head-icon"><Icon icon="tabler:users" aria-hidden="true" /></div>
+      <div class="kx-head-text">
+        <h1 class="kx-title">Users</h1>
+        <p class="kx-head-sub">Manage user and bot accounts and their security groups.</p>
+      </div>
+      <div class="kx-head-actions">
+        <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
+          <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
+        </Button>
+      </div>
+    </header>
+    <Tabs class="ku-tabs" :value="accountTab" @update:value="selectTab($event as 'users' | 'bots')">
+      <TabList aria-label="Account type">
+        <Tab value="users" aria-controls="users-accounts">All users</Tab>
+        <Tab value="bots" aria-controls="users-bots">Bots</Tab>
+      </TabList>
+    </Tabs>
     <div class="ku-bar">
-      <span class="ku-count">{{ users.length }} user{{ users.length !== 1 ? 's' : '' }}</span>
-      <button :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn ku-btn-primary" @click="openCreate"><Icon icon="tabler:user-plus" aria-hidden="true" /> {{ accountTab === 'bots' ? 'Create bot' : 'Create user' }}</button>
+      <span class="ku-count">{{ users.length }} {{ accountTab === 'bots' ? 'bot' : 'user' }}{{ users.length !== 1 ? 's' : '' }}</span>
     </div>
 
-    <div v-if="error" role="alert" class="ku-err">{{ error }}</div>
-    <div v-if="rolesError" class="ku-err">{{ rolesError }}</div>
+    <div v-if="error && !editorOpen" role="alert" class="kx-err">{{ error }}</div>
+    <div v-if="rolesError && !editorOpen" class="kx-err">{{ rolesError }}</div>
 
     <div class="ku-body" role="tabpanel" :id="accountTab === 'bots' ? 'users-bots' : 'users-accounts'">
-      <div v-if="loading" class="ku-loading"><Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…</div>
+      <div v-if="loading" class="kx-loading"><Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…</div>
 
-      <div v-else-if="!users.length" class="ku-empty">
-        <div class="ku-empty-title">No {{ accountTab === 'bots' ? 'bots' : 'users' }} yet</div>
-        <div class="ku-empty-sub">Create your first user to grant access to the workspace.</div>
-        <button :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn ku-btn-primary" @click="openCreate"><Icon icon="tabler:user-plus" aria-hidden="true" /> {{ accountTab === 'bots' ? 'Create bot' : 'Create user' }}</button>
+      <div v-else-if="!users.length" class="ku-empty kx-empty">
+        <div class="kx-empty-ico"><Icon :icon="accountTab === 'bots' ? 'tabler:robot' : 'tabler:users'" aria-hidden="true" /></div>
+        <div class="kx-empty-title">No {{ accountTab === 'bots' ? 'bots' : 'users' }} yet</div>
+        <div class="kx-empty-sub">{{ accountTab === 'bots' ? 'Create a bot account and choose its security groups.' : 'Create your first user to grant access to the workspace.' }}</div>
+        <div class="kx-empty-actions">
+          <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
+            <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
+          </Button>
+        </div>
       </div>
 
       <div v-else class="ku-list">
-        <div v-for="user in users" :key="user.user_id" class="ku-row">
-          <span class="ku-avatar">{{ initials(user) }}</span>
-          <div class="ku-id">
-            <div class="ku-name">{{ user.full_name || user.email }}</div>
-            <div class="ku-email">{{ user.email }}</div>
-          </div>
-          <div class="ku-meta">
-            <Tag v-if="user.bot_account" severity="info" value="Bot" class="ku-badge kx-tag-sm" />
-            <Tag :severity="statusSeverity(user.status)" :value="user.status" class="ku-badge kx-tag-sm" />
-            <Tag v-for="g in user.security_groups" :key="g" :severity="groupSeverity(g)" :value="groupLabel(g)" class="ku-badge kx-tag-sm" />
-          </div>
-          <span class="ku-date">{{ formatDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) }}</span>
-          <div class="ku-actions">
-            <button class="ku-icon-btn" :aria-label="`Edit ${user.full_name || user.email}`" @click="openEdit(user)"><Icon icon="tabler:edit" aria-hidden="true" /></button>
-            <button class="ku-icon-btn ku-danger" :aria-label="`${user.bot_account ? 'Disable' : 'Delete'} ${user.full_name || user.email}`" @click="askDelete(user)"><Icon icon="tabler:trash" aria-hidden="true" /></button>
-          </div>
-        </div>
+        <table class="ku-table" :aria-label="accountTab === 'bots' ? 'Bots' : 'All users'">
+          <thead><tr><th scope="col">Account</th><th scope="col">Status</th><th scope="col">Security groups</th><th scope="col">Created</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody>
+            <tr v-for="user in users" :key="user.user_id" class="ku-row">
+              <td>
+                <div class="ku-account">
+                  <span class="ku-avatar">{{ initials(user) }}</span>
+                  <div class="ku-id">
+                    <div class="ku-name">{{ user.full_name || user.email }}</div>
+                    <div class="ku-email">{{ user.email }}</div>
+                  </div>
+                  <Tag v-if="user.bot_account" severity="info" value="Bot" class="ku-badge kx-tag-sm" />
+                </div>
+              </td>
+              <td><Tag :severity="statusSeverity(user.status)" :value="user.status" class="ku-badge kx-tag-sm" /></td>
+              <td><div class="ku-meta"><Tag v-for="g in user.security_groups" :key="g" :severity="groupSeverity(g)" :value="groupLabel(g)" class="ku-badge kx-tag-sm" /></div></td>
+              <td class="ku-date">{{ formatDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) }}</td>
+              <td>
+                <div class="ku-actions">
+                  <Button type="button" severity="secondary" outlined size="small" :aria-label="`Edit ${user.full_name || user.email}`" @click="openEdit(user)">
+                    <template #icon="{ class: iconClass }"><Icon icon="tabler:edit" :class="iconClass" aria-hidden="true" /></template>
+                  </Button>
+                  <Button type="button" severity="danger" outlined size="small" :aria-label="`${user.bot_account ? 'Disable' : 'Delete'} ${user.full_name || user.email}`" @click="askDelete(user)">
+                    <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
+                  </Button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <section v-if="showCreate || showEdit" class="ku-editor" role="dialog" :aria-label="(showCreate ? 'Create ' : 'Edit ') + (isBotForm ? 'bot' : 'user')">
-      <h2>{{ showCreate ? 'Create' : 'Edit' }} {{ isBotForm ? 'bot' : 'user' }}</h2>
+    <Dialog v-model:visible="editorOpen" modal class="kx-dialog" :pt="DIALOG_PT" :aria-label="editorTitle">
+      <template #header>
+        <span class="kx-modal-head-icon"><Icon :icon="isBotForm ? 'tabler:robot' : 'tabler:user'" aria-hidden="true" /></span>
+        <span class="kx-modal-head-text"><span class="kx-modal-head-title">{{ editorTitle }}</span></span>
+      </template>
         <form class="ku-form" @submit.prevent="showCreate ? createUser() : saveUser()">
           <template v-if="showCreate">
             <div v-if="!isBotForm" class="ku-field">
-              <label class="ku-label">Email</label>
-              <input v-model="createForm.email" type="email" class="ku-input" placeholder="user@example.com" />
+              <label class="ku-label" for="account-email">Email</label>
+              <input id="account-email" v-model="createForm.email" type="email" class="ku-input" placeholder="user@example.com" />
             </div>
             <div class="ku-field">
-              <label class="ku-label">Full name</label>
-              <input v-model="createForm.full_name" aria-label="Full name" type="text" class="ku-input" placeholder="Jane Doe" />
+              <label class="ku-label" for="account-name">Full name</label>
+              <input id="account-name" v-model="createForm.full_name" aria-label="Full name" type="text" class="ku-input" placeholder="Jane Doe" />
             </div>
             <div v-if="!isBotForm" class="ku-field">
-              <label class="ku-label">Password</label>
-              <input v-model="createForm.password" type="password" class="ku-input" placeholder="Minimum 8 characters" autocomplete="new-password" />
+              <label class="ku-label" for="account-password">Password</label>
+              <input id="account-password" v-model="createForm.password" type="password" class="ku-input" placeholder="Minimum 8 characters" autocomplete="new-password" />
             </div>
             <div class="ku-field">
               <label class="ku-label">Security groups</label>
@@ -302,12 +351,12 @@ useHostVisibilityRefresh(async () => {
 
           <template v-else>
             <div v-if="!isBotForm" class="ku-field">
-              <label class="ku-label">Email</label>
-              <input v-model="editForm.email" type="email" class="ku-input" />
+              <label class="ku-label" for="account-email">Email</label>
+              <input id="account-email" v-model="editForm.email" type="email" class="ku-input" />
             </div>
             <div class="ku-field">
-              <label class="ku-label">Full name</label>
-              <input v-model="editForm.full_name" aria-label="Full name" type="text" class="ku-input" />
+              <label class="ku-label" for="account-name">Full name</label>
+              <input id="account-name" v-model="editForm.full_name" aria-label="Full name" type="text" class="ku-input" />
             </div>
             <div class="ku-field">
               <label class="ku-label">Status</label>
@@ -316,8 +365,8 @@ useHostVisibilityRefresh(async () => {
               </select>
             </div>
             <div v-if="!isBotForm" class="ku-field">
-              <label class="ku-label">New password</label>
-              <input v-model="editForm.password" type="password" class="ku-input" placeholder="Leave empty to keep current" autocomplete="new-password" />
+              <label class="ku-label" for="account-password">New password</label>
+              <input id="account-password" v-model="editForm.password" type="password" class="ku-input" placeholder="Leave empty to keep current" autocomplete="new-password" />
             </div>
             <div class="ku-field">
               <label class="ku-label">Security groups</label>
@@ -328,17 +377,19 @@ useHostVisibilityRefresh(async () => {
               </label>
             </div>
           </template>
+          <div v-if="error" role="alert" class="kx-err inline">{{ error }}</div>
+          <div v-if="rolesError" class="kx-err inline">{{ rolesError }}</div>
         </form>
 
-        <div class="ku-bar">
-          <button class="ku-btn ku-btn-ghost" @click="showCreate = false; showEdit = false">Cancel</button>
-          <button v-if="showCreate" class="ku-btn ku-btn-primary" :disabled="saving || (isBotForm ? !createForm.full_name.trim() : !createForm.email || !createForm.password)" @click="createUser">
-            <Icon :icon="saving ? 'tabler:loader-2' : 'tabler:check'" :class="saving && 'spin'" aria-hidden="true" /> Create
-          </button>
-          <button v-else class="ku-btn ku-btn-primary" :disabled="saving" @click="saveUser">
-            <Icon :icon="saving ? 'tabler:loader-2' : 'tabler:device-floppy'" :class="saving && 'spin'" aria-hidden="true" /> Save
-          </button>
-        </div>
-    </section>
+      <template #footer>
+        <Button type="button" label="Cancel" severity="secondary" outlined :disabled="saving" @click="editorOpen = false" />
+        <Button v-if="showCreate" type="button" label="Create" class="ku-btn-primary" :loading="saving" :disabled="saving || (isBotForm ? !createForm.full_name.trim() : !createForm.email || !createForm.password)" @click="createUser">
+          <template #icon="{ class: iconClass }"><Icon icon="tabler:check" :class="iconClass" aria-hidden="true" /></template>
+        </Button>
+        <Button v-else type="button" label="Save" class="ku-btn-primary" :loading="saving" :disabled="saving" @click="saveUser">
+          <template #icon="{ class: iconClass }"><Icon icon="tabler:device-floppy" :class="iconClass" aria-hidden="true" /></template>
+        </Button>
+      </template>
+    </Dialog>
   </div>
 </template>

@@ -44,6 +44,27 @@ local function define_tests()
             end)
         end)
 
+        test.it("preserves typed LLM errors and their retry details", function()
+            local failure = errors.new({ kind = errors.RATE_LIMITED, message = "planner provider busy",
+                retryable = true, details = { retry_after = 30 } })
+            with_llm({ generate = function()
+                return nil, failure
+            end }, function()
+                local result, err = planner.plan(FILES)
+                test.is_nil(result)
+                test.eq(err, failure)
+                test.is_true(errors.is(err, errors.RATE_LIMITED))
+                test.is_true(err:retryable())
+                test.eq(err:details().retry_after, 30)
+            end)
+        end)
+
+        test.it("retains string validation errors", function()
+            local result, err = planner.plan({})
+            test.is_nil(result)
+            test.eq(err, "no files to plan")
+        end)
+
         test.it("rejects a response without result text", function()
             with_llm({ generate = function()
                 return { content = COMPLETE_RESULT }, nil

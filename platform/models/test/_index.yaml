@@ -258,3 +258,25 @@ entries:
   - name: models_catalog_fixture
     kind: library.lua
     source: file://models_catalog_fixture.lua
+
+  - name: openai_capabilities_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://openai_capabilities_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      model_mapper: kickside.models.discovery:mapper
+      discovery_common: kickside.models.discovery:common
+      models_repo: kickside.models.persist:repo
+
+  - name: discovery_metadata_migration_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://discovery_metadata_migration_test.lua
+    modules: [sql, funcs, json]
+    method: run
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo

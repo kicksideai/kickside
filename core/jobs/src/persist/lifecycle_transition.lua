@@ -276,10 +276,15 @@ end
 -- here: a deterministic failure parks it and an infrastructure failure retries
 -- it without a terminal limit, its last_error and run history showing the
 -- failure. A control wake of this lease takes priority over every path.
-local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_text: string?, failure_class: string?): error?
+local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_text: string?, failure_class: string?, retry_floor: table?): error?
     local lease_token = tostring(job.lease_token or "")
     if lease_token == "" then
         return (errors.new({ message = "missing lease_token for fail", kind = errors.INVALID }) :: error)
+    end
+    if retry_floor ~= nil and (type(retry_floor) ~= "table" or type(retry_floor.retry_after_ms) ~= "number"
+        or retry_floor.retry_after_ms < 0 or retry_floor.retry_after_ms ~= math.floor(retry_floor.retry_after_ms)
+        or retry_floor.retry_after_ms == math.huge) then
+        return errors.new({kind = errors.INVALID, message = "retry floor requires nonnegative integer retry_after_ms"})
     end
     local policy, policy_err = cfg.policy()
     if policy_err then return policy_err end
@@ -292,10 +297,14 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
     if not deterministic then
         local override, decode_err = resolve_max_backoff(job)
         if decode_err then return decode_err end
-        local cap = (override and override >= 1) and override or math.floor((policy :: any).retry_max_delay_ms / 1000)
-        local base = math.max(1, math.ceil((policy :: any).retry_after_ms / 1000))
-        local ceiling = retry_delay_seconds(attempts, base, math.floor(cap) :: integer)
-        local delay = math.max(1, math.floor(math.random() * ceiling))
+        local slot = job.slot == true or tonumber(job.slot) == 1
+        local base_ms = slot and (policy :: any).slot_retry_after_ms or (policy :: any).retry_after_ms
+        local cap_ms = slot and (policy :: any).slot_retry_max_delay_ms or (policy :: any).retry_max_delay_ms
+        local cap = (override and override >= 1) and override or math.floor(cap_ms / 1000)
+        local base = math.max(1, math.ceil(base_ms / 1000))
+        local ceiling = math.max(base, retry_delay_seconds(attempts, base, math.floor(cap) :: integer))
+        local delay = math.max(base + math.floor(math.random() * (ceiling - base)),
+            retry_floor and retry_floor.retry_after_ms / 1000 or 0)
         retry_at = future_string(dbtype, delay)
     end
     local size_err = row_mutations.fail(db_or_tx, job.id, error_text,
@@ -338,10 +347,10 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
     return worker_marker.clear(db_or_tx, job.id)
 end
 
-local function fail_job(db: sql.DB, job: table, dbtype: string, error_text: string?, failure_class: string?): error?
+local function fail_job(db: sql.DB, job: table, dbtype: string, error_text: string?, failure_class: string?, retry_floor: table?): error?
     local tx, begin_err = sql_boundary.begin(db, "fail begin failed", "transaction", response_error)
     if begin_err then return begin_err end
-    local err = fail_in_tx(tx, job, dbtype, error_text, failure_class)
+    local err = fail_in_tx(tx, job, dbtype, error_text, failure_class, retry_floor)
     if err then return sql_boundary.rollback(tx, err, "fail rollback failed") end
     local _, commit_err = tx:commit()
     if commit_err then return errors.wrap(commit_err, "fail commit failed") end
@@ -380,6 +389,7 @@ lifecycle.enqueue_job = enqueue.enqueue_job
 lifecycle.carried_identity_error = enqueue.carried_identity_error
 lifecycle.list_jobs = enqueue.list_jobs
 lifecycle.get_job = enqueue.get_job
+lifecycle.get_job_statuses = enqueue.get_job_statuses
 lifecycle.list_job_runs = enqueue.list_job_runs
 
 return lifecycle

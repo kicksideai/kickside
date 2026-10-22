@@ -105,8 +105,14 @@ function part.attach(M: any, dependencies: any, P: any): ()
             })
             if err then return nil, err end
             if state == "succeeded" and type(input.source_update) == "table" then
-                local update_err = P.apply_source_update_tx(tx, pending, input.source_update :: Map)
-                if update_err then return nil, update_err end
+                local update = input.source_update :: Map
+                if not update.changed then
+                    local update_err = P.apply_source_update_tx(tx, pending, update)
+                    if update_err then return nil, update_err end
+                elseif type(update.old_pin) == "table" then
+                    local _, release_err = P.reserve_pin_release_tx(tx, pending, { update.old_pin :: Map }, false)
+                    if release_err then return nil, release_err end
+                end
             end
             -- A succeeded reconfigure follows the declared enabled state, and
             -- its declaration is the correction a drive blocked on its
@@ -281,7 +287,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 if op_err then return nil, op_err end
                 holds_targets = op ~= nil and next(op.target_receipts) ~= nil
             end
-            if classified.retriable or holds_targets then
+            local _, parks = (dependencies.round_outcome :: any).failure_phase(classified)
+            if not parks or holds_targets then
                 return defer(p, classified)
             end
             local recorded_answer, finish_err, elsewhere = finish(p, "failed", { kind = classified.kind, message = classified.message })
@@ -307,6 +314,19 @@ function part.attach(M: any, dependencies: any, P: any): ()
             return nil, automation_error("automation " .. tostring(p.kind) .. " failed", errors.INTERNAL, write_err)
         end
 
+        local update = type(input.source_update) == "table" and (input.source_update :: Map) or nil
+        if update and update.changed then
+            local _, source_err = in_automation_tx(function(tx: any): (any?, any)
+                local _, fence_err = command.lock_pending_tx(tx, p.automation_id, p.request_id, p.generation, p.digest)
+                if fence_err then return nil, fence_err end
+                local update_err = P.apply_source_update_tx(tx, p, update)
+                return true, update_err
+            end)
+            if source_err then return nil, source_err end
+            local _, slot_err = (dependencies.slot :: any).provision(automation_id, drive_plan.MAIN)
+            if slot_err then return nil, slot_err end
+        end
+
         local outcome: Map = { component_id = automation_id, generation = p.generation }
         local finished, finish_err = finish(p, "succeeded", outcome)
         if finish_err or not finished then return nil, finish_err end
@@ -314,12 +334,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
             local provision_err = provision_slots(automation_id, p.drive_keys or {})
             if provision_err then return nil, provision_err end
         end
-        local update = type(input.source_update) == "table" and (input.source_update :: Map) or nil
         if update and update.changed then
-            -- The main drive's slot is keyed by its source; a moved source moves its key,
-            -- and the old pin's reserved release runs now (recovery runs it later).
-            local _, slot_err = (dependencies.slot :: any).provision(automation_id, drive_plan.MAIN)
-            if slot_err then return nil, slot_err end
+            -- The old pin's reserved release runs now; recovery runs it later.
             local _, release_err = execute_pending(automation_id, nil)
             if release_err then
                 (dependencies.logger :: any):named("automation.reconfigure"):error("old pin release deferred to recovery",

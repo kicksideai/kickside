@@ -25,6 +25,15 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
     errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}
 return {run = test.run_cases(function()
     test.describe("native worker completion dependencies", function()
+        test.it("forwards the structured retry floor into the failure transaction", function()
+            fixture.reset("fail", "", nil)
+            local err, recorded = worker.fail_job(fixture.database(), sql.type.SQLITE, job, {},
+                "provider unavailable", "infrastructure", {execution_seq = 7}, {retry_after_ms = 901500})
+            test.is_nil(err)
+            test.is_true(recorded)
+            test.not_nil(fixture.retry_floor)
+            test.eq(fixture.retry_floor.retry_after_ms, 901500)
+        end)
         for _, dialect in ipairs({sql.type.SQLITE, sql.type.POSTGRES}) do
             for _, path in ipairs({{operation = "complete", stages = {"begin", "transition", "history", "commit", "notify"}},
                 {operation = "fail", stages = {"begin", "settled", "failure", "history", "commit", "notify"}}}) do

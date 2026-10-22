@@ -86,6 +86,19 @@ entries:
       test: wippy.test:test
       tool_result: kickside.contract:tool_result
 
+  - name: tool_action_test
+    kind: function.lua
+    meta:
+      title: Tool Actions
+      type: test
+      suite: kickside_contract
+      comment: Per-action required and accepted fields for multi-action agent tools.
+    source: file://tool_action_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      tool_action: kickside.contract:tool_action
+
   - name: canonical_json_test
     kind: function.lua
     meta:

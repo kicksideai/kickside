@@ -1,4 +1,10 @@
 import { readonly, ref } from 'vue'
+import type { HostApi } from '../types'
+
+export interface ChatContext {
+  source?: Parameters<HostApi['setContext']>[2]
+  context: Record<string, unknown>
+}
 
 export type KicksideChatOpenDetail =
   | { kind: 'session', sessionId: string }
@@ -11,19 +17,23 @@ export function isKicksideChatOpenDetail(value: unknown): value is KicksideChatO
     || (detail.kind === 'start' && typeof detail.startToken === 'string' && detail.startToken.length > 0)
 }
 
-export function useChatController() {
+export function useChatController(applyContext?: (sessionId: string, context: ChatContext) => void) {
+  let startContext: ChatContext | undefined
   const sessionId = ref('')
   const startToken = ref('')
   const open = ref(false)
   const generation = ref(0)
 
-  function openSession(id: string) {
+  function openSession(id: string, context?: ChatContext) {
+    startContext = undefined
+    if (context) applyContext?.(id, context)
     sessionId.value = id
     startToken.value = ''
     open.value = true
   }
 
-  function startChat(token: string) {
+  function startChat(token: string, context?: ChatContext) {
+    startContext = context
     sessionId.value = ''
     startToken.value = token
     generation.value++
@@ -31,6 +41,7 @@ export function useChatController() {
   }
 
   function newChat() {
+    startContext = undefined
     sessionId.value = ''
     startToken.value = ''
     generation.value++
@@ -48,6 +59,9 @@ export function useChatController() {
   }
 
   function recordStarted(id: string) {
+    const context = startContext
+    startContext = undefined
+    if (context) applyContext?.(id, context)
     sessionId.value = id
     startToken.value = ''
   }

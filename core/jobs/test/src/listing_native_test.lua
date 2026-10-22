@@ -42,6 +42,41 @@ local function dependencies(first: integer, last: integer)
     end
 end
 local function proofs()
+    test.it("reads a set of statuses in one query and omits absent jobs", function()
+        fixture.reset("", nil, sql.type.SQLITE, false)
+        local ids = {}
+        for i = 1, 100 do ids[i] = uuid.v7() end
+        fixture.rows = {{id = ids[3], status = "running"}, {id = ids[7], status = "done"}}
+        ids[#ids + 1] = ids[3]
+        local statuses, err = listing.get_job_statuses(fixture.executor(), ids)
+        test.is_nil(err, tostring(err))
+        test.eq(statuses[ids[3]], "running")
+        test.eq(statuses[ids[7]], "done")
+        test.is_nil(statuses[ids[1]])
+        test.eq(fixture.queries, 1)
+        for _, input in ipairs({{}, {"missing-job"}}) do
+            fixture.reset("", nil, sql.type.SQLITE, false)
+            local empty, empty_err = listing.get_job_statuses(fixture.executor(), input)
+            test.is_nil(empty_err)
+            test.is_nil(next(empty))
+            test.eq(fixture.queries, 0)
+        end
+    end)
+    test.it("retains status query errors and rejects missing row proof", function()
+        local source = errors.new({kind = errors.UNAVAILABLE, message = "status read refused", retryable = true})
+        fixture.reset("rows", source, sql.type.SQLITE, false)
+        local value, err = listing.get_job_statuses(fixture.executor(), {uuid.v7()})
+        test.is_nil(value)
+        test.eq(err:kind(), source:kind())
+        test.eq(err:retryable(), source:retryable())
+        test.eq(fixture.queries, 1)
+        fixture.reset("rows", nil, sql.type.SQLITE, false)
+        fixture.missing = true
+        value, err = listing.get_job_statuses(fixture.executor(), {uuid.v7()})
+        test.is_nil(value)
+        test.is_true(errors.is(err, errors.INTERNAL))
+        test.eq(err:details().field, "statuses.rows")
+    end)
     for _, route in ipairs(routes) do
         for _, proof in ipairs({{label = "missing"}, {label = "false", value = false}, {label = "number", value = 7}, {label = "text", value = "proof"}}) do
             test.it("required proof/" .. route.operation .. "/" .. route.stage .. "/" .. proof.label, function()

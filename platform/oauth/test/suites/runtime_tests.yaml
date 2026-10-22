@@ -1,0 +1,22 @@
+version: '1.0'
+namespace: app
+entries:
+- name: negotiator_readiness_test
+  kind: function.lua
+  source: file://negotiator_readiness_test.lua
+  method: run
+  meta: {type: test, suite: oauth_readiness, timeout: 30s}
+  modules: [time]
+  imports:
+    test: wippy.test:test
+    readiness: kickside.oauth.service:negotiator_readiness
+    names: kickside.oauth:callback_names
+- name: runtime_config_test
+  kind: function.lua
+  source: file://runtime_config_test.lua
+  method: run
+  meta: {type: test, suite: oauth_runtime, timeout: 30s}
+  modules: [contract, security, sql, json, uuid]
+  imports:
+    test: wippy.test:test
+    repo: kickside.oauth.persist:oauth_repo

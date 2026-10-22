@@ -9,37 +9,37 @@ namespace: app
 entries:
   - name: public_tool_probe
     kind: function.lua
-    meta: { type: tool, title: Public tool probe, public: true, input_schema: '{}' }
+    meta: { type: tool, title: Public tool probe, public: true, input_schema: '{"type":"object"}' }
     source: file://tool_probe.lua
     method: run
 
   - name: private_tool_probe
     kind: function.lua
-    meta: { type: tool, title: Private tool probe, public: true, private: true, input_schema: '{}' }
+    meta: { type: tool, title: Private tool probe, public: true, private: true, input_schema: '{"type":"object"}' }
     source: file://tool_probe.lua
     method: run
 
   - name: missing_public_tool_probe
     kind: function.lua
-    meta: { type: tool, title: Missing public tool probe, class: public, input_schema: '{}' }
+    meta: { type: tool, title: Missing public tool probe, class: public, input_schema: '{"type":"object"}' }
     source: file://tool_probe.lua
     method: run
 
   - name: malformed_public_tool_probe
     kind: function.lua
-    meta: { type: tool, title: Malformed public tool probe, public: "true", input_schema: '{}' }
+    meta: { type: tool, title: Malformed public tool probe, public: "true", input_schema: '{"type":"object"}' }
     source: file://tool_probe.lua
     method: run
 
   - name: malformed_private_tool_probe
     kind: function.lua
-    meta: { type: tool, title: Malformed private tool probe, public: true, private: "false", input_schema: '{}' }
+    meta: { type: tool, title: Malformed private tool probe, public: true, private: "false", input_schema: '{"type":"object"}' }
     source: file://tool_probe.lua
     method: run
 
   - name: wrong_kind_tool_probe
     kind: library.lua
-    meta: { type: tool, title: Wrong-kind tool probe, public: true, input_schema: '{}' }
+    meta: { type: tool, title: Wrong-kind tool probe, public: true, input_schema: '{"type":"object"}' }
     source: file://tool_probe.lua
 
   - name: public_trait_probe

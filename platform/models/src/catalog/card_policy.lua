@@ -125,7 +125,7 @@ local function clean_card_input(input: any, base: any?): (any?, string?)
         provider_id = provider_id,
         provider_profile_id = input.provider_profile_id or (base and base.provider_profile_id),
         provider_model = provider_model,
-        capabilities = policy.normalize_list(input.capabilities, base and base.capabilities or { "generate" }),
+        capabilities = policy.explicit_list(input.capabilities, base and base.capabilities or { "generate" }),
         classes = policy.explicit_list(input.class or input.classes, base and base.class or {}),
         priority = tonumber(input.priority or (base and base.priority) or 10) or 10,
         max_tokens = tonumber(input.max_tokens or (base and base.max_tokens) or 0) or 0,

@@ -81,8 +81,8 @@ local function define_tests(group: integer)
             test.is_false(status_of("paused").wake_pending)
         end)
 
-        test.it("resumes a drive its round blocked on its declaration or access, with wake demand the round acknowledges", function()
-            for _, phase in ipairs({ drive.PHASE.BLOCKED_DECLARATION, drive.PHASE.BLOCKED_ACCESS }) do
+        test.it("resumes a corrected declaration, access or identity block with acknowledged wake demand", function()
+            for _, phase in ipairs({ drive.PHASE.BLOCKED_DECLARATION, drive.PHASE.BLOCKED_ACCESS, drive.PHASE.BLOCKED_IDENTITY }) do
                 event_drive(phase)
                 env.append("while " .. phase)
                 h.set_drive(env.automation_id, phase, "phase = $1, last_error_json = $2",
@@ -104,8 +104,8 @@ local function define_tests(group: integer)
             end
         end)
 
-        test.it("keeps a drive blocked on its identity or a deleted source parked through resume", function()
-            for _, phase in ipairs({ drive.PHASE.BLOCKED_IDENTITY, drive.PHASE.BLOCKED_SOURCE_DELETED }) do
+        test.it("keeps a drive blocked on a deleted source parked through resume", function()
+            for _, phase in ipairs({ drive.PHASE.BLOCKED_SOURCE_DELETED }) do
                 event_drive(phase)
                 h.set_drive(env.automation_id, phase, "phase = $1", { phase })
                 local resumed = control({ control = "resume", drive_key = phase })

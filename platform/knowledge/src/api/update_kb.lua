@@ -49,7 +49,7 @@ local function prepare_config(component_id: string, comp: any, patch: any): (any
     if type(store_contract) ~= "string" or store_contract == "" then
         return nil, problem("knowledge engine declares no store contract", http.STATUS.INTERNAL_ERROR)
     end
-    local store_inst, open_err = stores.open_kb_store_contract(store_contract)
+    local store_inst, open_err = stores.open_engine_store(engine)
     if open_err or not store_inst then
         return nil, problem(
             "store contract unavailable: " .. tostring(open_err or "not found"),

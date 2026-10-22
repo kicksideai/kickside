@@ -10,8 +10,29 @@
 local security = require("security")
 local automations_lib = require("automations_lib")
 local tool_result = require("tool_result")
+local tool_action = require("tool_action")
 
 type Map = { [string]: any }
+
+-- Per-action fields; the input schema root stays a flat object.
+local ACTIONS = {
+    install = { required = { "type", "input" }, optional = { "parent_id" } },
+    reconfigure = { required = { "id", "input" } },
+    pause = { required = { "id" } },
+    resume = { required = { "id" } },
+    run = { required = { "id" } },
+    call = { required = { "id", "method" }, optional = { "args" } },
+    import = { required = { "artifact" }, optional = { "parent_id", "input_overrides" } },
+    uninstall = { required = { "id" }, optional = { "options" } },
+    set_execution_identity = {
+        required = { "id", "principal", "request_id", "expected_identity_generation" },
+        optional = { "supersede_request_id" },
+    },
+    control = {
+        required = { "id", "control" },
+        optional = { "drive_key", "request_id", "keys", "from", "resolve_identity" },
+    },
+}
 
 local function require_id(args: Map): (string?, error?)
     local id = args.id
@@ -168,7 +189,8 @@ local function handler(args: any): (any, error?)
     local actor = security.actor()
     if not actor or tostring(actor:id() or "") == "" then return tool_result.fail(errors.PERMISSION_DENIED, "authentication required") end
 
-    local action = tostring(a.action or "")
+    local action, action_err = tool_action.check(a, ACTIONS)
+    if not action then return nil, action_err end
     if action == "install" then return do_install(a) end
     if action == "reconfigure" then return do_reconfigure(a) end
     if action == "pause" then return do_pause(a) end

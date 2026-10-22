@@ -228,6 +228,7 @@ local function start_compiled(workflow_id: string, opts: Map): (Map?, any?)
                 or (result.success and types.RUN_STATUS.COMPLETED or types.RUN_STATUS.FAILED)
             result.data = (execution :: Map).data
             result.error = (execution :: Map).error
+            result.error_details = (execution :: Map).error_details
         else
             local terminal = admission.terminal_status(current.status)
             local outcome = current

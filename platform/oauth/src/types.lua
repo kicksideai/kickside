@@ -17,6 +17,12 @@ M.DB_CONFIG = "kickside.oauth:db_config"
 
 type Map = { [string]: any }
 
+type ProviderConfig = {
+    provider: string,
+    connection_state: string,
+    config: Map,
+}
+
 type TokenSet = {
     access_token: string?,
     refresh_token: string?,

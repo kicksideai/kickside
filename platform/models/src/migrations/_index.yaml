@@ -14,3 +14,19 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 02_discovered_capabilities
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+        - ns:wippy.migration
+        - kickside.models.migrations:01_models_schema
+      timestamp: "2026-10-21T00:00:01Z"
+    source: file://02_discovered_capabilities.lua
+    modules: [json]
+    imports:
+      migration: wippy.migration:migration
+      provider_openai_like: kickside.models.discovery:provider.openai_like
+      discovery_common: kickside.models.discovery:common
+    method: migrate

@@ -33,8 +33,23 @@ all resolve that config, so runtime SQL always follows the host's database mappi
 
 `jobs.get_job(id)` reads the exact job returned by enqueue and returns `(row, nil)`, `(nil, nil)` when absent, or `(nil, err)` on failure. The owning caller authorizes its resource before reading the job. Thread listings remain scoped to canonical thread owners.
 
+`jobs.get_job_statuses(ids)` reads an exact set of job IDs in one query and returns an ID-to-status map; absent or malformed UUIDs are omitted. `jobs.get_job_statuses_tx(tx, ids)` reads through the caller's transaction on the configured Jobs database, including its uncommitted writes. It neither commits nor rolls back that transaction. Both are internal-owner APIs: callers authorize their resource before reading job state.
+
 `jobs.wake_job(id, { control = true, ensure_due = true })` ensures dispatch without rescheduling an already due pending job or requesting another execution of a running job. It retains their retry, lease, schedule and demand state and still notifies the worker pool. Parked, disabled and future pending jobs receive the ordinary control wake. A ready job returns `already_due = true` alongside the existing result fields. Omitting `ensure_due` retains the existing control and demand wake behavior.
 
 `jobs.enqueue` and `jobs.enqueue_tx` accept optional `demand = true` with `slot = true`. Enrollment and control demand commit together: parked work becomes due, and a running attempt retains a follow-up. Reusing an active one-shot identity with demand returns a conflict. The caller of `enqueue_tx` notifies the pool after commit. Omitting demand retains the existing enqueue behavior.
 
 `jobs.complete_tx` accepts optional `demand_satisfied = true` when the worker proves under its durable source lock that the completed run covers the source head. It consumes ordinary demand received during that run; independent control wakes still rearm the slot. Omission retains the existing demand behavior.
+
+Failure transitions accept an optional final `{ retry_after_ms = milliseconds }`
+argument on `fail_tx` and `fail_job`. The structured floor can exceed the policy
+cap. Slots use `slot_retry`; one-shot jobs use `retry`. Both retain their configured
+base as the lower bound of jitter. Worker failures carry native error details to
+this argument before rendering the history error text. Malformed provider retry
+hints are ignored so they cannot prevent failure settlement; explicit failure
+transition arguments remain validated.
+
+Completion options accept `park = true` independently of `record.status`. Parking
+suppresses ordinary wake demand while preserving the requested history status;
+a pending control wake retains priority. Without `park`, completion keeps its
+existing record-based parking behavior.

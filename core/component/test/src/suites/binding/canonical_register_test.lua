@@ -29,8 +29,8 @@ local function define_tests()
 
         -- Open the component service framed as the owner: with_actor/with_scope
         -- are the canonical seam the background memory provisioning relies on.
-        local function open_as_owner()
-            local actor = security.new_actor(owner, { security_groups = {} })
+        local function open_as_owner(metadata)
+            local actor = security.new_actor(owner, metadata or { security_groups = {} })
             local svc, err = contract.get(COMPONENT_SERVICE)
             if err or not svc then error("component_service unavailable: " .. tostring(err)) end
             local inst, oerr = svc:with_actor(actor):with_scope(test_scope()):open()
@@ -118,6 +118,44 @@ local function define_tests()
             local cid = reg.component_id
             test.not_nil(cid)
             test.is_true(owner_access_count(cid) > 0, "the framed owner must hold an access grant from register")
+        end)
+
+        test.it("preserves authenticated identity restrictions and provenance at registration", function()
+            local admitted = { version = 2, principal = {kind = "user", id = owner},
+                authorized_by = {kind = "user", id = "original-authorizer"},
+                component_id = uuid.v7(), credential_id = uuid.v7(), link_id = uuid.v7(),
+                captured_at = "2026-01-01T00:00:00Z" }
+            local inst = open_as_owner({principal = admitted.principal, execution_identity = admitted})
+            local reg, err = inst:register({impl_id = impl, captured_identity = {version = 1}})
+            test.is_nil(err)
+            test.is_true(reg.success)
+            local stored = private_context(reg.component_id)._execution_identity
+            test.eq(stored.principal.id, owner)
+            test.eq(stored.authorized_by.id, admitted.authorized_by.id)
+            test.eq(stored.component_id, admitted.component_id)
+            test.eq(stored.credential_id, admitted.credential_id)
+            test.eq(stored.link_id, admitted.link_id)
+            local d = assert(sql.get(DB))
+            local rows, query_err = d:query("SELECT identity_hash FROM kickside_components WHERE component_id = $1", {reg.component_id})
+            local audits, audit_err = d:query("SELECT record_json FROM kickside_execution_identity_audit WHERE component_id = $1", {reg.component_id})
+            d:release()
+            test.is_nil(query_err); test.is_nil(audit_err)
+            local canonical = json.decode(rows[1].identity_hash)
+            test.eq(canonical.credential_id, admitted.credential_id)
+            test.eq(canonical.link_id, admitted.link_id)
+            local audit = json.decode(audits[1].record_json)
+            test.eq(audit.authorizer, "user:" .. admitted.authorized_by.id)
+            test.eq(audit.identity_hash, rows[1].identity_hash)
+        end)
+
+        test.it("refuses malformed authenticated identity before registration writes", function()
+            local id = uuid.v7()
+            local inst = open_as_owner({execution_identity = {version = 1}})
+            local reg, err = inst:register({component_id = id, impl_id = impl})
+            test.is_nil(err)
+            test.eq(reg.success, false)
+            test.eq(reg.kind, errors.PERMISSION_DENIED)
+            test.is_nil(component_created_at(id))
         end)
 
         test.it("reports duplicate registration as a nonretryable native conflict without changing the winner", function()

@@ -39,6 +39,54 @@ local function define_tests()
             maintenance._append_event = old_append
         end)
 
+        for _, observed in ipairs({"completed", "failed", "cancelled", "terminated", "running"}) do
+            test.it("stale " .. observed .. " observation leaves an unadmitted run unchanged", function()
+                local reserved, reserve_err = sc.reserve_fixture({
+                    workflow_id = uuid.v4(), trigger_id = "automation-" .. uuid.v4(),
+                    dedup_key = uuid.v4(), version = 1, trigger_kind = "binding", automation_revision = 1,
+                    execution_identity_json = sc.TEST_IDENTITY_JSON,
+                })
+                test.is_nil(reserve_err)
+                local row = reserved.row or reserved
+                sc.exec("UPDATE workflow_runs SET completion_check_token=$1 WHERE run_id=$2",
+                    {"current-check", row.run_id})
+                local before = query_row("SELECT * FROM workflow_runs WHERE run_id=$1", {row.run_id})
+                local merged, merge_err = admission.merge(row, {status = observed, error = "terminal outcome"}, "old-check")
+                test.is_nil(merge_err)
+                test.eq(merged.changed, false)
+                local after = query_row("SELECT * FROM workflow_runs WHERE run_id=$1", {row.run_id})
+                test.eq(after.admission_state, before.admission_state)
+                test.eq(after.status, before.status)
+                test.eq(after.finished_at, before.finished_at)
+                test.eq(after.error, before.error)
+                test.eq(after.terminal_event_pending, before.terminal_event_pending)
+                test.eq(after.terminal_event_check_at, before.terminal_event_check_at)
+                test.eq(after.completion_check_at, before.completion_check_at)
+                test.eq(after.completion_check_token, before.completion_check_token)
+            end)
+        end
+
+        test.it("a current terminal observation records admission after a callback wins", function()
+            local reserved, reserve_err = sc.reserve_fixture({workflow_id = uuid.v4(),
+                trigger_id = "automation-" .. uuid.v4(), dedup_key = uuid.v4(), version = 1,
+                trigger_kind = "binding", automation_revision = 1,
+                execution_identity_json = sc.TEST_IDENTITY_JSON})
+            test.is_nil(reserve_err)
+            local row = reserved.row or reserved
+            sc.exec("UPDATE workflow_runs SET status='failed',finished_at=$1,error='callback outcome',"
+                .. "completion_check_token='current-check' WHERE run_id=$2", {admission.now(), row.run_id})
+            local before = query_row("SELECT * FROM workflow_runs WHERE run_id=$1", {row.run_id})
+            local merged, merge_err = admission.merge(row, {status = "completed", error = "checker outcome"}, "current-check")
+            test.is_nil(merge_err)
+            test.eq(merged.admitted, true)
+            local after = query_row("SELECT * FROM workflow_runs WHERE run_id=$1", {row.run_id})
+            test.eq(after.admission_state, "admitted")
+            test.eq(after.status, before.status)
+            test.eq(after.finished_at, before.finished_at)
+            test.eq(after.error, before.error)
+            test.eq(after.terminal_event_pending, before.terminal_event_pending)
+        end)
+
         test.it("commit before start: recovery uses the committed id once", function()
             local engine, calls, faults, cli = new_engine()
             local _, append = new_appender()
