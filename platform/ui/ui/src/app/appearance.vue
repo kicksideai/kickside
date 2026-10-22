@@ -158,6 +158,7 @@ async function replaySetup() {
 // saved tone with no reload and no cross-shadow reach-in from this module. On a clean
 // leave we re-emit the last committed (saved) tone so unsaved edits revert.
 let toneTimer: ReturnType<typeof setTimeout> | null = null
+let disposed = false
 let committedTone = '' // the last saved tone; what an unsaved preview reverts to on leave
 // The facade's static default css-variables (served at /app), used to preview/apply the
 // built-in ramp on "Reset to default" — clearing the overlay would only revert to the
@@ -194,6 +195,7 @@ function emitTone(hex: string) {
 }
 
 onBeforeUnmount(() => {
+  disposed = true
   if (toneTimer) clearTimeout(toneTimer)
   emitTone(committedTone) // revert any unsaved preview to the last saved tone
   unsubscribeTheme?.()
@@ -202,6 +204,7 @@ onBeforeUnmount(() => {
 async function save() {
   if (toneBlocked.value) return // guard: never persist an illegible tone
   const submitted = snapshot()
+  const submittedTone = primaryColor.value
   saving.value = true
   error.value = ''
   try {
@@ -212,11 +215,11 @@ async function save() {
     })
     if (!data.success) throw new Error(data.error || 'save failed')
     baseline.value = submitted
-    committedTone = primaryColor.value // preview is now the committed tone; keep it applied
+    committedTone = submittedTone // a draft edited during this request is still unsaved
     // Re-assert in case a save→navigate-away race already reverted the overlay: if the user
     // left before this PUT resolved, onBeforeUnmount fired emitTone(pre-save committedTone).
     // The shell singleton still listens, so re-emitting converges it to the saved tone.
-    emitTone(committedTone)
+    emitTone(disposed || hostVisible.value === false ? committedTone : primaryColor.value)
   } catch (e: any) {
     error.value = apiError(e, 'save failed')
   } finally {
