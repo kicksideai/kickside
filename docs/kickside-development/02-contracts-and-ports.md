@@ -110,9 +110,18 @@ Every binding implementing `kickside.data:writable` must declare both
 invalid values in `platform/automation/src/round/write.lua` (`describe_sink`).
 The CRM binding `kickside.crm.sink:crm_sink` declares `at_least_once` and `record`.
 
+For new writable producers and sink implementations, `identity_key` is required.
+The shared writable request schema keeps it optional for existing writers.
+Use a stable destination identity across deliveries and a separate per-delivery
+`idempotency_key` that stays unchanged on retry.
+
 The `write` method is a `function.lua` entry. It has
 stable `identity_key` for the destination record and per-delivery
-`idempotency_key`. See [Automations And Dataflows](21-automations-and-dataflows.md)
+`idempotency_key`. The shared request schema keeps `identity_key` optional for
+existing callers; when present, it must be non-empty. New writable producers
+must supply both keys, and new sink implementations must require a stable
+`identity_key`. Existing calls that omit it retain their behavior.
+See [Automations And Dataflows](21-automations-and-dataflows.md)
 for the full request and response and
 `platform/inbox/src/sink/_index.yaml` for its function declarations.
 
@@ -121,6 +130,23 @@ shapes — live in the contract.definition's input/output schemas: for
 `kickside.data:writable`, the write output's DataError constrains `scope` to
 `item`, `flow`, `connection`, or `provider`, and the success branch must not
 carry an `error` (`core/contract/src/data/_index.yaml`).
+
+Core's `kickside.core:write_receipt` library uses these signatures:
+
+```text
+replay(sink_id, idempotency_key, payload_hash)
+reserve(tx, {sink_id, idempotency_key, identity_key, payload_hash, created_at})
+commit(tx, {sink_id, idempotency_key, identity_key, payload_hash,
+            dest_refs, outcome, completed_at})
+```
+
+`commit` requires the reserved `identity_key` as well as the matching hash;
+`dest_refs` and `outcome` are tables. Reserve and commit use the caller's
+executor. Replay reports absent, pending, or committed evidence; a hash mismatch
+is `idempotency_conflict`. A local receipt does not strengthen a remote sink's
+declared delivery guarantee. The
+[receipt and replay horizon](11-design-gaps.md#receipt-and-replay-horizon)
+remains an open design decision.
 
 `contracts` is a list: one binding can implement several contracts, and
 `default: true` on a contract entry marks the default implementation. From

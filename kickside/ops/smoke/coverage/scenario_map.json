@@ -4711,6 +4711,15 @@
       ],
       "tier": "regression"
     },
+    "app_ui_contracts": {
+      "features": [],
+      "issues": [
+        "APP-UI-PUBLISHED-FACADE-GUARD",
+        "APP-UI-LOGIN-ROUTE-GUARD",
+        "SETTINGS-NOTICES-THEME-RADIUS"
+      ],
+      "tier": "regression"
+    },
     "automation_agent_trace": {
       "features": [
         "kickside/workflows|http|GET /api/v1/workflows/{id}/runs/{run_id}/nodes/{def_node_id}/data"
@@ -4765,6 +4774,13 @@
       ],
       "issues": [],
       "tier": "full"
+    },
+    "automation_at_most_once_lost_write_answer": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-AT-MOST-ONCE-LOST-WRITE-ANSWER"
+      ],
+      "tier": "regression"
     },
     "automation_blocks_tool": {
       "features": [
@@ -4906,6 +4922,13 @@
       ],
       "tier": "regression"
     },
+    "automation_dead_ledger_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-DEAD-LEDGER-RETENTION"
+      ],
+      "tier": "regression"
+    },
     "automation_declared_cases": {
       "features": [],
       "issues": [
@@ -4920,6 +4943,13 @@
       ],
       "tier": "regression"
     },
+    "automation_dispatch_slot_lifecycle": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-UNSERVED-WAKE"
+      ],
+      "tier": "regression"
+    },
     "automation_event_contract_setup": {
       "features": [],
       "issues": [],
@@ -4929,6 +4959,14 @@
       "features": [],
       "issues": [],
       "tier": "full"
+    },
+    "automation_execution_error_boundaries": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-ERROR-PRECEDENCE",
+        "AUTOMATION-INFRASTRUCTURE-RETRY"
+      ],
+      "tier": "regression"
     },
     "automation_group_principal": {
       "features": [],
@@ -4968,6 +5006,13 @@
         "RA-H19",
         "SMOKE-SHARED-SOURCE-FIXTURE-REENTRY",
         "SMOKE-AUTHORITY-FIXTURE-ISOLATION"
+      ],
+      "tier": "regression"
+    },
+    "automation_immediate_redelivery_deadline": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
       ],
       "tier": "regression"
     },
@@ -5032,6 +5077,13 @@
         "SMOKE-PARALLEL-SCENARIO-CLEANUP"
       ],
       "tier": "full"
+    },
+    "automation_infrastructure_command_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-INFRASTRUCTURE-PARKING"
+      ],
+      "tier": "regression"
     },
     "automation_management_tools": {
       "features": [
@@ -5133,6 +5185,20 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_prepared_output_settlement": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF"
+      ],
+      "tier": "regression"
+    },
+    "automation_reconfigure_reference_authority": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-RECONFIGURE-RETAINED-REFERENCE-AUTHORITY"
+      ],
+      "tier": "regression"
+    },
     "automation_reconfigure_ui": {
       "features": [
         "kickside/sync|automation|kickside.sync:sync",
@@ -5186,6 +5252,20 @@
       ],
       "tier": "regression"
     },
+    "automation_restored_identity_resume": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-RESTORED-IDENTITY-RESUME"
+      ],
+      "tier": "regression"
+    },
+    "automation_resync_operator_authority": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-RESYNC-OPERATOR-AUTHORITY"
+      ],
+      "tier": "regression"
+    },
     "automation_round_authority_reads": {
       "features": [],
       "issues": [
@@ -5204,6 +5284,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_scheduled_drive_status": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SCHEDULED-DRIVE-STATUS"
+      ],
+      "tier": "regression"
+    },
     "automation_sdk_blocks": {
       "features": [
         "kickside/code-execution|mcp_tool|kickside.code_execution.traits:run_code_tool",
@@ -5214,10 +5301,35 @@
       ],
       "tier": "full"
     },
+    "automation_settled_event_receipt_retention": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION"
+      ],
+      "tier": "regression"
+    },
+    "automation_slot_lifetime": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SLOT-RECORD-PURGE",
+        "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
+        "AUTOMATION-SOURCE-SLOT-FINALIZATION",
+        "AUTOMATION-UNSERVED-WAKE",
+        "AUTOMATION-STALE-SLOT-REFERENCE"
+      ],
+      "tier": "regression"
+    },
     "automation_slot_provision_failures": {
       "features": [],
       "issues": [
         "DESIGN-AUTOMATION-SLOT-FAILURE"
+      ],
+      "tier": "regression"
+    },
+    "automation_source_pull_fence": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SOURCE-PULL-FENCE"
       ],
       "tier": "regression"
     },
@@ -5250,6 +5362,13 @@
       ],
       "issues": [],
       "tier": "full"
+    },
+    "automation_transform_authority": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-OPAQUE-DECLARATION-AUTHORITY"
+      ],
+      "tier": "regression"
     },
     "automation_transform_code": {
       "features": [
@@ -6500,11 +6619,33 @@
       ],
       "tier": "regression"
     },
+    "channel_direct_message_idempotency": {
+      "features": [],
+      "issues": [
+        "CHANNEL-DIRECT-MESSAGE-IDEMPOTENCY"
+      ],
+      "tier": "regression"
+    },
     "channel_execution_authority": {
       "features": [],
       "issues": [
         "CHANNEL-HARNESS-AUTHORITY-SNAPSHOT",
         "CHANNEL-SUPERVISOR-HARNESS-IMPORT-CLOSURE"
+      ],
+      "tier": "regression"
+    },
+    "channel_execution_lookup_error": {
+      "features": [],
+      "issues": [
+        "CHANNEL-EXECUTION-LOOKUP-ERROR",
+        "CHANNEL-CONCURRENT-ACTIVITY-FENCE"
+      ],
+      "tier": "regression"
+    },
+    "channel_owner_lookup_failure": {
+      "features": [],
+      "issues": [
+        "CHANNEL-OWNER-LOOKUP-ERROR"
       ],
       "tier": "regression"
     },
@@ -6880,6 +7021,20 @@
       "issues": [
         "COMPAT-REPEAT-PRESERVATION",
         "RA-C15"
+      ],
+      "tier": "regression"
+    },
+    "component_creation_identity": {
+      "features": [],
+      "issues": [
+        "COMPONENT-CAPTURED-CREATION-IDENTITY"
+      ],
+      "tier": "regression"
+    },
+    "component_identity_declaration_lock_order": {
+      "features": [],
+      "issues": [
+        "COMPONENT-IDENTITY-DECLARATION-LOCK-ORDER"
       ],
       "tier": "regression"
     },
@@ -7612,6 +7767,13 @@
       ],
       "tier": "regression"
     },
+    "crm_idempotency_conflict_code": {
+      "features": [],
+      "issues": [
+        "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE"
+      ],
+      "tier": "regression"
+    },
     "crm_record": {
       "features": [
         "kickside/crm|http|GET /api/v1/workspace/crm/{id}/schema",
@@ -7625,6 +7787,28 @@
       "issues": [],
       "tier": "quick"
     },
+    "crm_resolve_record_lifetime": {
+      "features": [],
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME",
+        "MIGRATION-LEDGER-ACTIVE-SCHEMA"
+      ],
+      "tier": "regression"
+    },
+    "crm_resolve_suggestion_confidence": {
+      "features": [],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
+      ],
+      "tier": "regression"
+    },
+    "crm_resolve_suggestion_output": {
+      "features": [],
+      "issues": [
+        "CRM-RESOLVE-SUGGESTION-OUTPUT"
+      ],
+      "tier": "regression"
+    },
     "crm_schema_index_cause": {
       "features": [],
       "issues": [
@@ -7636,6 +7820,13 @@
       "features": [],
       "issues": [
         "CRM-SCHEMA-SELECT-VOCABULARY"
+      ],
+      "tier": "regression"
+    },
+    "crm_sink_idempotency_classification": {
+      "features": [],
+      "issues": [
+        "CRM-SINK-IDEMPOTENCY-CLASSIFICATION"
       ],
       "tier": "regression"
     },
@@ -7754,6 +7945,20 @@
       ],
       "tier": "full"
     },
+    "discord_direct_message_idempotency": {
+      "features": [],
+      "issues": [
+        "DISCORD-DIRECT-MESSAGE-IDEMPOTENCY"
+      ],
+      "tier": "regression"
+    },
+    "execution_authorizer_constructor_grant": {
+      "features": [],
+      "issues": [
+        "EXECUTION-AUTHORIZER-CONSTRUCTOR-GRANT"
+      ],
+      "tier": "regression"
+    },
     "execution_baseline_identity_resolution": {
       "features": [],
       "issues": [
@@ -7761,10 +7966,32 @@
       ],
       "tier": "regression"
     },
+    "execution_classifier_precedence": {
+      "features": [],
+      "issues": [
+        "EXECUTION-CLASSIFIER-PRECEDENCE",
+        "AUTOMATION-INFRASTRUCTURE-PARKING"
+      ],
+      "tier": "regression"
+    },
     "execution_resolver_private_read": {
       "features": [],
       "issues": [
         "EXECUTION-BASELINE-IDENTITY-RESOLUTION"
+      ],
+      "tier": "regression"
+    },
+    "execution_root_admin_classification": {
+      "features": [],
+      "issues": [
+        "EXECUTION-ROOT-ADMIN-CLASSIFICATION"
+      ],
+      "tier": "regression"
+    },
+    "execution_root_admin_failure_class": {
+      "features": [],
+      "issues": [
+        "IDENTITY-ROOT-ADMIN-CLASS"
       ],
       "tier": "regression"
     },
@@ -7851,11 +8078,25 @@
       ],
       "tier": "regression"
     },
+    "health_initialization_failure": {
+      "features": [],
+      "issues": [
+        "APP-HEALTH-INITIALIZATION-FAILURE"
+      ],
+      "tier": "regression"
+    },
     "host_component_loading": {
       "features": [],
       "issues": [
         "FE-SHELL-COMPONENT-LOADER-OWNERSHIP",
         "SMOKE-LOADER-ONBOARDING-STATE-ISOLATION"
+      ],
+      "tier": "regression"
+    },
+    "host_start_chat_browser": {
+      "features": [],
+      "issues": [
+        "APP-HOST-CHAT-INTENT-OWNERSHIP"
       ],
       "tier": "regression"
     },
@@ -8220,6 +8461,20 @@
       ],
       "tier": "full"
     },
+    "hub_transitive_module_update_browser": {
+      "features": [],
+      "issues": [
+        "HUB-TRANSITIVE-UPDATE-DESTINATION"
+      ],
+      "tier": "regression"
+    },
+    "hub_update_dependency_destination": {
+      "features": [],
+      "issues": [
+        "HUB-TRANSITIVE-UPDATE-DESTINATION"
+      ],
+      "tier": "regression"
+    },
     "hub_update_password_hashes": {
       "features": [],
       "issues": [
@@ -8303,6 +8558,26 @@
       ],
       "tier": "regression"
     },
+    "inbox_review_edit": {
+      "features": [
+        "kickside/inbox|workflow_block|kickside.inbox:block.review",
+        "kickside/inbox|http|POST /api/v1/inbox/{id}/{action}"
+      ],
+      "issues": [
+        "INBOX-REVIEW-INPUT-TITLE",
+        "INBOX-REVIEW-EDITABLE-INPUT",
+        "INBOX-REVIEW-ENUM-VALUE-TYPES"
+      ],
+      "tier": "regression"
+    },
+    "inbox_review_input_arm": {
+      "features": [],
+      "issues": [
+        "INBOX-REVIEW-INPUT-TITLE",
+        "INBOX-REVIEW-EDITABLE-INPUT"
+      ],
+      "tier": "regression"
+    },
     "install_keeps_member_session": {
       "features": [],
       "issues": [
@@ -8344,10 +8619,38 @@
       ],
       "tier": "regression"
     },
+    "jobs_independent_parking": {
+      "features": [],
+      "issues": [
+        "JOBS-INDEPENDENT-PARKING"
+      ],
+      "tier": "regression"
+    },
+    "jobs_infrastructure_failure": {
+      "features": [],
+      "issues": [
+        "JOBS-INFRASTRUCTURE-CLASSIFICATION"
+      ],
+      "tier": "regression"
+    },
     "jobs_native_cancel_contract": {
       "features": [],
       "issues": [
         "JOBS-POOL-CANCEL-NOT-FOUND"
+      ],
+      "tier": "regression"
+    },
+    "jobs_output_completion": {
+      "features": [],
+      "issues": [
+        "JOBS-OUTPUT-COMPLETION-LOCK-ORDER"
+      ],
+      "tier": "regression"
+    },
+    "jobs_slot_retry_floor": {
+      "features": [],
+      "issues": [
+        "JOBS-SLOT-RETRY-FLOOR"
       ],
       "tier": "regression"
     },
@@ -8374,6 +8677,27 @@
       ],
       "tier": "regression"
     },
+    "kb10_delete_identity_errors": {
+      "features": [],
+      "issues": [
+        "KB10-DELETE-IDENTITY-ERRORS"
+      ],
+      "tier": "regression"
+    },
+    "kb10_query_configuration": {
+      "features": [],
+      "issues": [
+        "KB10-QUERY-CONFIGURATION"
+      ],
+      "tier": "regression"
+    },
+    "kb10_resummarize_outcomes": {
+      "features": [],
+      "issues": [
+        "KB10-RESUMMARIZE-OUTCOMES"
+      ],
+      "tier": "regression"
+    },
     "kb_cited_answer": {
       "features": [
         "kickside/knowledge|http|POST /api/v1/knowledge/create",
@@ -8385,6 +8709,26 @@
       ],
       "issues": [],
       "tier": "quick"
+    },
+    "kb_upload_delayed_completed": {
+      "features": [],
+      "issues": [
+        "KB10-UPLOAD-NOTIFICATION-CONTRACT"
+      ],
+      "tier": "regression"
+    },
+    "kb_upload_delayed_error": {
+      "features": [],
+      "issues": [
+        "KB10-UPLOAD-NOTIFICATION-CONTRACT",
+        "UPLOAD-OPTIONAL-ERROR-CALLBACK"
+      ],
+      "tier": "regression"
+    },
+    "kb_upload_notifications": {
+      "features": [],
+      "issues": [],
+      "tier": "regression"
     },
     "keeper_dashboard_logs_ui": {
       "features": [],
@@ -8417,6 +8761,13 @@
       ],
       "tier": "full"
     },
+    "knowledge_artifact_events": {
+      "features": [],
+      "issues": [
+        "KNOWLEDGE-BOUNDED-CONTENT-EVENT"
+      ],
+      "tier": "regression"
+    },
     "knowledge_ask_capability": {
       "features": [],
       "issues": [
@@ -8435,6 +8786,25 @@
         "SMOKE-ONBOARDING-EXPLICIT-MODEL-LIMITS"
       ],
       "tier": "full"
+    },
+    "knowledge_large_upload": {
+      "features": [
+        "kickside/knowledge|http|POST /api/v1/knowledge/{id}/ingest-upload",
+        "kickside/knowledge|http|POST /api/v1/knowledge/{id}/search",
+        "kickside/uploads|http|POST /api/v1/uploads",
+        "kickside/core|http|GET /api/v1/threads/{id}/events"
+      ],
+      "issues": [
+        "KNOWLEDGE-BOUNDED-CONTENT-EVENT"
+      ],
+      "tier": "full"
+    },
+    "knowledge_store_schema": {
+      "features": [],
+      "issues": [
+        "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
+      ],
+      "tier": "regression"
     },
     "launch_about": {
       "features": [
@@ -8930,6 +9300,28 @@
       ],
       "tier": "chat"
     },
+    "model_picker_capabilities_browser": {
+      "features": [],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "tier": "regression"
+    },
+    "model_picker_class_capabilities": {
+      "features": [],
+      "issues": [
+        "WIDGETS-CLASS-CAPABILITY"
+      ],
+      "tier": "regression"
+    },
+    "models_discovery_capabilities": {
+      "features": [],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "tier": "regression"
+    },
     "models_reference_vendor": {
       "features": [],
       "issues": [
@@ -9193,7 +9585,8 @@
     "native_errors_component_identity_replay": {
       "features": [],
       "issues": [
-        "NE-217"
+        "NE-217",
+        "COMPONENT-IDENTITY-REPLAY-GENERATION"
       ],
       "tier": "regression"
     },
@@ -9743,7 +10136,8 @@
     "native_errors_core_pullable": {
       "features": [],
       "issues": [
-        "NE-117"
+        "NE-117",
+        "THREAD-EVENT-TYPE-REQUEST-FILTER"
       ],
       "tier": "regression"
     },
@@ -10380,7 +10774,8 @@
     "native_errors_projection_apply": {
       "features": [],
       "issues": [
-        "NE-130"
+        "NE-130",
+        "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER"
       ],
       "tier": "regression"
     },
@@ -10459,7 +10854,8 @@
     "native_errors_reclaim": {
       "features": [],
       "issues": [
-        "NE-166"
+        "NE-166",
+        "RECLAIM-PROCESS-LOOKUP-TRANSACTION"
       ],
       "tier": "regression"
     },
@@ -11768,6 +12164,13 @@
       ],
       "tier": "regression"
     },
+    "projection_block_retention": {
+      "features": [],
+      "issues": [
+        "PROJECTION-BLOCK-INPUT-RETENTION"
+      ],
+      "tier": "regression"
+    },
     "projection_checked_fast_path": {
       "features": [],
       "issues": [
@@ -12871,7 +13274,8 @@
         "UPSTREAM-SESSION-PREDISPATCH-INVALIDATE",
         "SMOKE-MODEL-STREAM-RESPONSE",
         "SMOKE-NATIVE-TOOL-TRANSCRIPT",
-        "SMOKE-MODEL-TOKEN-ACCOUNTING"
+        "SMOKE-MODEL-TOKEN-ACCOUNTING",
+        "UPSTREAM-USAGE-CONTEXT-CORRELATION"
       ],
       "tier": "full"
     },
@@ -14755,6 +15159,21 @@
       ],
       "tier": "full"
     },
+    "server_boot_failure": {
+      "features": [],
+      "issues": [
+        "RUNTIME-SERVER-BOOT-FAILURE"
+      ],
+      "tier": "regression"
+    },
+    "session_context_admission": {
+      "features": [],
+      "issues": [
+        "UPSTREAM-CONTEXT-ADMISSION",
+        "UPSTREAM-REJECTED-USAGE"
+      ],
+      "tier": "regression"
+    },
     "session_default_checkpoint_chat_131072": {
       "features": [],
       "issues": [
@@ -14954,12 +15373,41 @@
       "issues": [],
       "tier": "full"
     },
+    "settings_array_json_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+      ],
+      "tier": "regression"
+    },
+    "settings_form_schema_and_row_errors": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION",
+        "SETTINGS-STORED-ROW-ERROR"
+      ],
+      "tier": "regression"
+    },
+    "settings_object_json_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STRUCTURED-SCHEMA-VALIDATION"
+      ],
+      "tier": "regression"
+    },
     "settings_override_load": {
       "features": [],
       "issues": [
         "SETTINGS-OVERRIDE-LOAD-FAILURE",
         "SETTINGS-FALSE-PREDECESSOR",
         "SETTINGS-OVERRIDE-ERROR-ISOLATION"
+      ],
+      "tier": "regression"
+    },
+    "settings_stored_error_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-STORED-ROW-ERROR"
       ],
       "tier": "regression"
     },
@@ -15450,6 +15898,13 @@
       ],
       "tier": "regression"
     },
+    "uploads_component_delete": {
+      "features": [],
+      "issues": [
+        "UPLOAD-OWNER-DELETE-IDEMPOTENCE"
+      ],
+      "tier": "regression"
+    },
     "upstream_funcs_cyclic_result": {
       "features": [],
       "issues": [
@@ -15485,6 +15940,13 @@
         "USERS-SECURITY-TRANSITIVE-DB"
       ],
       "tier": "full"
+    },
+    "users_subject_builder_result": {
+      "features": [],
+      "issues": [
+        "USERS-SUBJECT-BUILDER-RESULT"
+      ],
+      "tier": "regression"
     },
     "users_whole_membership": {
       "features": [
@@ -15523,6 +15985,13 @@
       "features": [],
       "issues": [
         "WEBSCOUT-HTTP-DOMAIN-RESULTS"
+      ],
+      "tier": "regression"
+    },
+    "webscout_provider_dependency": {
+      "features": [],
+      "issues": [
+        "WEBSCOUT-PROVIDER-CORE-MINIMUM"
       ],
       "tier": "regression"
     },
@@ -15565,6 +16034,17 @@
       "issues": [],
       "tier": "full"
     },
+    "workflow_iteration_join": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-DIRECT-ITERATION-JOIN",
+        "DATAFLOW-SCALAR-ITERATION-ITEM-TYPE",
+        "DATAFLOW-SOURCE-TEST-HARNESS-IMPORT",
+        "DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT",
+        "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE"
+      ],
+      "tier": "regression"
+    },
     "workflow_management_failures": {
       "features": [],
       "issues": [
@@ -15588,6 +16068,13 @@
       ],
       "tier": "regression"
     },
+    "workflow_original_delivery_identity": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-ORIGINAL-DELIVERY-IDENTITY"
+      ],
+      "tier": "regression"
+    },
     "workflow_selected_identity": {
       "features": [],
       "issues": [
@@ -15596,6 +16083,20 @@
         "RA-H39",
         "WORKFLOW-SELECTED-READ-INTERMITTENT",
         "DATAFLOW-EXECUTION-FRAME-POLICY-CAP"
+      ],
+      "tier": "regression"
+    },
+    "workflow_stale_completion_admission": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE"
+      ],
+      "tier": "regression"
+    },
+    "workflow_terminal_publication_revoked_owner": {
+      "features": [],
+      "issues": [
+        "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER"
       ],
       "tier": "regression"
     },

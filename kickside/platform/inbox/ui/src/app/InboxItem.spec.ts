@@ -99,6 +99,40 @@ describe("InboxItem flow_decision rendering", () => {
     expect(w.emitted("resolve")?.[0]?.[0]).toEqual({ id: "item-1", action: "approve", form: { call_slot: "Thu 10:00 PT" } })
   })
 
+  it("edits a prefilled multiline draft and submits the corrected value", async () => {
+    const w = mount(InboxItem, { props: { actions: ["approve", "reject"], item: decisionItem({
+      prompt: "Correct the draft before approving.",
+      form: { type: "object", required: ["body"], properties: {
+        body: { type: "string", format: "textarea", title: "Email draft", default_expr: "input.draft", default: "Hello\nOriginal draft" },
+      } },
+    }) } })
+    expect(w.find('wc-render-markdown[source="Correct the draft before approving."]').exists()).toBe(true)
+    const draft = w.find('textarea[data-testid="decision-body"]')
+    expect(draft.exists()).toBe(true)
+    expect((draft.element as HTMLTextAreaElement).value).toBe("Hello\nOriginal draft")
+    await draft.setValue("Hello\nCorrected draft")
+    await w.find('[data-testid="inbox-action"]').trigger("click")
+    expect(w.emitted("resolve")?.[0]?.[0]).toEqual({
+      id: "item-1", action: "approve", form: { body: "Hello\nCorrected draft" },
+    })
+  })
+
+  it("preserves numeric and boolean enum defaults in the submitted form", async () => {
+    const w = mount(InboxItem, { props: { actions: ["approve", "reject"], item: decisionItem({
+      form: { type: "object", properties: {
+        stage: { type: "integer", enum: [0, 1], default: 0 },
+        notify: { type: "boolean", enum: [false, true], default: false },
+      } },
+    }) } })
+    const selects = w.findAllComponents({ name: 'Select' })
+    expect(selects[0].props('modelValue')).toBe(0)
+    expect(selects[1].props('modelValue')).toBe(false)
+    await w.find('[data-testid="inbox-action"]').trigger("click")
+    expect(w.emitted("resolve")?.[0]?.[0]).toEqual({
+      id: "item-1", action: "approve", form: { stage: 0, notify: false },
+    })
+  })
+
   it("allows rejection with missing required fields and submits values as entered", async () => {
     const w = mount(InboxItem, { props: { actions: ["approve", "reject", "dismiss"], item: decisionItem({
       form: { type: "object", required: ["reason", "confirmed"], properties: {

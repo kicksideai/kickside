@@ -263,11 +263,13 @@ class FocusedModuleHarnessTests(unittest.TestCase):
         scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
-            root = Path(directory)
-            self.assertFalse(root.is_relative_to(Path(__file__).resolve().parents[3]),
+            workspace = Path(directory)
+            repository = workspace / 'repository'
+            repository.mkdir()
+            self.assertFalse(repository.is_relative_to(Path(__file__).resolve().parents[3]),
                              'Harness fixtures must stay outside copied repository sources')
-            declare_tests(root)
-            instance = Instance(root / 'run', root / 'source')
+            declare_tests(repository)
+            instance = Instance(workspace / 'run', workspace / 'source')
             commands = []
 
             def invoke(command, **kwargs):
@@ -276,12 +278,12 @@ class FocusedModuleHarnessTests(unittest.TestCase):
 
             with patch('module_harness.subprocess.run', side_effect=invoke), \
                  patch('module_harness.drop_database'):
-                run_focused_app_test(Context(instance), root, 'guard_test')
+                run_focused_app_test(Context(instance), repository, 'guard_test')
 
             self.assertEqual(commands[0][:4], ['/bin/wippy', '--config', '.wippy.yaml', 'update'])
             self.assertEqual(len(commands), 2)
             self.assertEqual(commands[-1][:4], ['/bin/wippy', '--config', '.wippy.yaml', 'test'])
-            self.assertFalse((root / '.wippy.yaml').exists())
+            self.assertFalse((repository / '.wippy.yaml').exists())
 
     def test_runs_application_harness_preparation_in_the_disposable_copy_before_refresh(self):
         from module_harness import run_focused_app_test
@@ -290,10 +292,12 @@ class FocusedModuleHarnessTests(unittest.TestCase):
         scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch) as directory:
-            root = Path(directory)
-            declare_tests(root)
-            (root / 'prepare.sh').write_text('#!/usr/bin/env bash\nprintf generated > generated.lua\n')
-            instance = Instance(root / 'run', root / 'source')
+            workspace = Path(directory)
+            repository = workspace / 'repository'
+            repository.mkdir()
+            declare_tests(repository)
+            (repository / 'prepare.sh').write_text('#!/usr/bin/env bash\nprintf generated > generated.lua\n')
+            instance = Instance(workspace / 'run', workspace / 'source')
             commands = []
             native_run = subprocess.run
 
@@ -306,11 +310,11 @@ class FocusedModuleHarnessTests(unittest.TestCase):
 
             with patch('module_harness.subprocess.run', side_effect=invoke), \
                  patch('module_harness.drop_database'):
-                run_focused_app_test(Context(instance), root, 'guard_test')
+                run_focused_app_test(Context(instance), repository, 'guard_test')
 
             self.assertEqual(commands[0], ['bash', 'prepare.sh'])
             self.assertEqual(commands[1][:4], ['/bin/wippy', '--config', '.wippy.yaml', 'update'])
-            self.assertFalse((root / 'generated.lua').exists())
+            self.assertFalse((repository / 'generated.lua').exists())
 
     def test_keeps_requested_replacements_for_the_disposable_run(self):
         from module_harness import run_focused_module_test

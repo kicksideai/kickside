@@ -18,11 +18,11 @@ from scenarios_hot_update_work import database_rows
 FACTS = ('[FACT:temporary-blue]', '[DECISION:temporary-approved]', '[OPEN:temporary-finish]')
 
 
-def memory_checkpoint_chat(ctx, window=8192, real=False, mounted=True):
+def memory_checkpoint_chat(ctx, window=8192, real=False, mounted=True, large_tool_result=False):
     measured = []
     previous_member = ctx.state.pop('endpoint_member', None)
     try:
-        return checkpoint_chat(ctx, window, real, measured, mounted)
+        return checkpoint_chat(ctx, window, real, measured, mounted, large_tool_result)
     finally:
         ctx.inst.evidence.save('context-provider-requests', ctx.fixtures.requests('context-model'))
         ctx.inst.evidence.save('context-model-usage', measured)
@@ -32,7 +32,7 @@ def memory_checkpoint_chat(ctx, window=8192, real=False, mounted=True):
             ctx.state['endpoint_member'] = previous_member
 
 
-def checkpoint_chat(ctx, window, real, measured, mounted):
+def checkpoint_chat(ctx, window, real, measured, mounted, large_tool_result=False):
     inst = ctx.inst
     inst.install('kickside/memory')
     suffix = uuid.uuid4().hex[:12]
@@ -46,7 +46,9 @@ def checkpoint_chat(ctx, window, real, measured, mounted):
     with ctx.paused():
         directory = inst.app / 'src' / ('context-' + suffix)
         directory.mkdir()
-        (directory / 'tool.lua').write_text('return {run = function() return "[TOOL:temporary-observed] " .. string.rep("evidence ", 24) end}\n')
+        repetitions = window if large_tool_result else 24
+        (directory / 'tool.lua').write_text('return {run = function() return "[TOOL:temporary-observed] " .. string.rep("evidence ", '
+                                          + str(repetitions) + ') end}\n')
         entries = [
             {'name': 'evidence', 'kind': 'function.lua', 'source': 'file://tool.lua', 'method': 'run',
              'meta': {'type': 'tool', 'public': True, 'llm_alias': 'ContextEvidence',
@@ -162,6 +164,42 @@ def checkpoint_chat(ctx, window, real, measured, mounted):
             'checkpoints': len(checkpoints), 'prompt_sizes': [prompt_tokens(row['body']) for row in requests],
             'state': state, 'reply': reply, 'real_provider': real, 'usage': measured, 'memory_mounted': mounted})
         ctx.browser.screenshot('context-resumed-answer')
+        if large_tool_result:
+            context_rejection(ctx, session_id, window)
+
+
+def context_rejection(ctx, session_id, window):
+    inst = ctx.inst
+    chat = ctx.browser.frame.locator('wippy-chat')
+    box = chat.get_by_placeholder('Type a message', exact=True)
+    box.fill('Preserve this entire active task: ' + ('uncompressible input ' * window))
+    box.press('Enter')
+
+    def rejected_usage():
+        rows = database_rows(inst, "SELECT context_id, prompt_tokens, completion_tokens, meta FROM token_usage WHERE context_id='"
+                             + session_id + "'")
+        for row in rows:
+            meta = json.loads(row['meta']) if isinstance(row.get('meta'), str) else row.get('meta')
+            if meta and meta.get('outcome') == 'rejected' and meta.get('error_type') == 'context_window':
+                messages = database_rows(inst, "SELECT metadata FROM messages WHERE session_id='" + session_id + "'")
+                for message in messages:
+                    detail = json.loads(message['metadata']) if isinstance(message.get('metadata'), str) else message.get('metadata')
+                    if detail and detail.get('error_code') == 'context_window' and (detail.get('error_details') or {}).get('error_type') == 'context_window':
+                        return row, meta
+        return None
+
+    row, meta = inst.wait(rejected_usage, 'Oversized active task records a context rejection', seconds=60,
+                          pump=ctx.browser.page.wait_for_timeout)
+    require(row['context_id'] == session_id, 'Rejected usage loses session context')
+    require(row['prompt_tokens'] == 0 and row['completion_tokens'] == 0,
+            'Admission rejection fabricates billable token usage')
+    require(meta['estimated_prompt_tokens'] + meta['requested_output_tokens'] > window,
+            'Rejected attempt does not retain its estimated size')
+    requests = [item for item in ctx.fixtures.requests('context-model') if item['path'] == '/v1/chat/completions']
+    require(all(item['status'] == 200 for item in requests), 'Oversized request reaches the provider')
+    require(not any(item['body'].get('tools') and 'uncompressible input ' * 100 in str(item['body'])
+                    for item in requests), 'Rejected chat prompt reaches the provider')
+    inst.evidence.save('context-admission-rejection', {'usage': row, 'metadata': meta, 'requests': requests})
 
 
 REGISTRY = [Scenario('memory_checkpoint_chat', 'regression', memory_checkpoint_chat,
@@ -190,3 +228,7 @@ for window in (8192, 32768, 131072, 262144):
 REGISTRY.append(Scenario('session_default_checkpoint_real_chat', 'chat',
     lambda ctx: memory_checkpoint_chat(ctx, real=True, mounted=False), model=True,
     issues=('MEMORY-WORKING-CHECKPOINT',)))
+
+REGISTRY.append(Scenario('session_context_admission', 'regression',
+    lambda ctx: memory_checkpoint_chat(ctx, large_tool_result=True),
+    issues=('UPSTREAM-CONTEXT-ADMISSION', 'UPSTREAM-REJECTED-USAGE')))

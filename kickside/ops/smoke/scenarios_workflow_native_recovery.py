@@ -60,6 +60,27 @@ def workflow_native_recovery(ctx):
     inst.evidence.save('native-recovery', {'run_id': rid, 'decision_id': item['id'], 'hard_restarts': 2})
 
 
+def workflow_terminal_publication_revoked_owner(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'native_publication_recovery_test')
+
+def workflow_stale_completion_admission(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'tsplit_admission_test_crash_recovery')
+
+
+def crm_idempotency_conflict_code(ctx):
+    for entry in ('crm_sink_receipt_test', 'crm_sink_crm_sink_test', 'crm_sink_contract_test'):
+        run_focused_module_test(ctx, 'kickside/crm', entry)
+
+
+def workflow_original_delivery_identity(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'original_delivery_identity_test')
+
+
+def automation_prepared_output_settlement(ctx):
+    for entry in ('ledger_orphan_retention_test', 'recovery_dispatch_test', 'prepared_proof_upgrade_test'):
+        run_focused_module_test(ctx, 'kickside/automation', entry)
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -76,7 +97,34 @@ def workflow_durable_undo_history(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'undo_restart_test')
 
 
-REGISTRY = [Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
+def crm_resolve_suggestion_confidence(ctx):
+    run_focused_module_test(ctx, 'kickside/crm', 'crm_resolve_lifetime_test')
+
+
+REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression',
+                     workflow_terminal_publication_revoked_owner,
+                     issues=('WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER',)),
+
+            Scenario('workflow_stale_completion_admission', 'regression',
+                     workflow_stale_completion_admission,
+                     issues=('WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE',)),
+
+            Scenario('crm_idempotency_conflict_code', 'regression',
+                     crm_idempotency_conflict_code,
+                     issues=('CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE',)),
+
+            Scenario('crm_resolve_suggestion_confidence', 'regression',
+                     crm_resolve_suggestion_confidence,
+                     issues=('CRM-RESOLVE-SUGGESTION-CONFIDENCE',)),
+
+            Scenario('workflow_original_delivery_identity', 'regression',
+                     workflow_original_delivery_identity,
+                     issues=('WORKFLOW-ORIGINAL-DELIVERY-IDENTITY',)),
+
+            Scenario('automation_prepared_output_settlement', 'regression',
+                     automation_prepared_output_settlement,
+                     issues=('AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF',)),
+            Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,
                      issues=('WORKFLOW-UNADMITTED-RUN-READ-PROJECTION', 'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE')),

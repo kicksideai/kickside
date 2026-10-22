@@ -27242,6 +27242,364 @@
       "reason": "WebScout provider packages declare their host bindings and retain installed package documentation. This is a source, API or native contract check without a browser interaction.",
       "user_visible": false
     },
+    "AGENT-PICKER-CONFIG-HOST": {
+      "guards": {
+        "agent_picker_config_host": {
+          "assertions": [
+            "Agent configuration selection retains its declared host contract."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "agents/config-host"
+      ],
+      "reason": "Agent configuration selection retains its declared host contract. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "AUTOMATION-RECURRING-CADENCE-VOCABULARY": {
+      "guards": {
+        "automation_task_create_forms": {
+          "assertions": [
+            "Automation task creation retains the declared recurring cadence vocabulary."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/task-create-forms"
+      ],
+      "reason": "Automation task creation retains the declared recurring cadence vocabulary. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE": {
+      "guards": {
+        "automation_task_create_forms": {
+          "assertions": [
+            "Automation task creation retains its declared default cadence scope."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/task-create-forms"
+      ],
+      "reason": "Automation task creation retains its declared default cadence scope. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "AUTOMATION-TASK-CREATE-FORMS": {
+      "guards": {
+        "automation_task_create_forms": {
+          "assertions": [
+            "Automation task creation accepts its declared form values and schedule configuration."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/task-create-forms"
+      ],
+      "reason": "Automation task creation accepts its declared form values and schedule configuration. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE": {
+      "guards": {
+        "automation_task_create_forms": {
+          "assertions": [
+            "Automation task creation retains selected workflow target state."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/task-create-forms"
+      ],
+      "reason": "Automation task creation retains selected workflow target state. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "CRM-SCHEMA-SELECT-VOCABULARY": {
+      "guards": {
+        "crm_schema_select_contract": {
+          "assertions": [
+            "CRM schema selection accepts the declared vocabulary through the agent surface."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "crm/schema-select-contract"
+      ],
+      "reason": "CRM schema selection accepts the declared vocabulary through the agent surface. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "HUB-DEPLOYMENT-APPLICATION-INVENTORY": {
+      "guards": {
+        "regression_hub_root_application_update_plan": {
+          "assertions": [
+            "An installed application exposes one root and a usable update plan."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "An installed application exposes one root and a usable update plan. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "INBOX-NOTICE-MARKDOWN": {
+      "guards": {
+        "inbox_notice_markdown": {
+          "assertions": [
+            "Inbox notices retain Markdown structure and sanitize rendered content and metadata."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [
+        "inbox/notice-markdown"
+      ],
+      "reason": "Inbox notices retain Markdown structure and sanitize rendered content and metadata.",
+      "user_visible": true
+    },
+    "REQUIREMENT-DEFAULT-REMOVAL-COMPATIBILITY": {
+      "guards": {
+        "published_registry_contract": {
+          "assertions": [
+            "Published module registry contracts preserve declared requirement defaults."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "published_requirement_default_compatibility": {
+          "assertions": [
+            "Compatibility analysis rejects removal of a published requirement default."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "access_hub_requirement_defaults": {
+          "assertions": [
+            "Installed dependency roots retain requirement defaults during Hub resolution."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Published requirement defaults remain available to existing dependency roots. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "RUNTIME-REPLACEMENT-DECLARED-VERSION": {
+      "guards": {
+        "regression_replacement_declared_version": {
+          "assertions": [
+            "Dependency refresh resolves a local replacement at its declared source version."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Dependency refresh resolves a local replacement at its declared source version. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "SMOKE-FOCUSED-SOURCE-DEPENDENCY-TEST-SCOPE": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "Focused and complete module harness runs retain root test entries while excluding test entries from declared replacement sources."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Module test selection scopes execution to the root harness so replacement source tests and their setup do not run as root tests.",
+      "user_visible": false
+    },
+    "SMOKE-ONBOARDING-INSTALL-BATCH-READINESS": {
+      "guards": {
+        "platform_onboarding": {
+          "assertions": [
+            "Onboarding waits for its module install batch before continuing through the rendered flow."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [
+        "smoke/onboarding-install-batch-readiness"
+      ],
+      "reason": "Onboarding waits for its module install batch before continuing through the rendered flow.",
+      "user_visible": true
+    },
+    "SYNC-REQUIRED-DESTINATION-PICKER": {
+      "guards": {
+        "agent_picker_config_host": {
+          "assertions": [
+            "Sync creation retains required destination selection."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "sync/required-destination-picker"
+      ],
+      "reason": "Sync creation retains required destination selection. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "TEMPLATE-MOUNTED-PAGE-REFRESH": {
+      "guards": {
+        "starter_page_refresh": {
+          "assertions": [
+            "The module template retains page refresh and write-notification behavior."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "module/starter-page-refresh-ui",
+        "module/starter-write-notification"
+      ],
+      "reason": "The module template retains page refresh and write-notification behavior. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "WASM-ARTIFACT-PORTABLE-PATHS": {
+      "guards": {
+        "wasm_artifact_paths": {
+          "assertions": [
+            "Committed Wasm artifacts contain no local source paths."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Committed Wasm artifacts contain no local source paths. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA": {
+      "guards": {
+        "workflows_declared_cases": {
+          "assertions": [
+            "The Workflow catalog preserves empty object schema fields through native execution."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "workflows/empty-object-schema"
+      ],
+      "reason": "The Workflow catalog preserves empty object schema fields through native execution. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "DATAFLOW-SCALAR-ITERATION-ITEM-TYPE": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "A numeric For each item keeps its scalar type through PostgreSQL persistence and an arithmetic body transform."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Iteration item persistence classifies scalar values so PostgreSQL rehydrates numeric items as numbers. This is a native execution contract without a rendered browser operation.",
+      "user_visible": false
+    },
+    "DATAFLOW-CYCLE-PLAIN-OBJECT-RESULT": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "A Cycle body retains a plain object returned by a direct join while preserving its configured iteration limit."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Cycle result handling distinguishes plain object node results from iteration control envelopes.",
+      "user_visible": false
+    },
+    "DATAFLOW-SOURCE-TEST-HARNESS-IMPORT": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "The workflows source harness loads the Dataflow source replacement through boot and focused native execution."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Dataflow source tests load only declared runtime dependencies when consumed through the workflows source harness.",
+      "user_visible": false
+    },
+    "WORKFLOW-DIRECT-ITERATION-JOIN": {
+      "guards": {
+        "workflow_iteration_join": {
+          "assertions": [
+            "For each and Cycle bodies route a transformed iteration item to a direct join exactly once, and a forward migration repairs the compiled artifact while preserving its published definition."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Direct iteration inputs retain join classification and transformed item delivery. This is a native execution contract without a rendered browser operation.",
+      "user_visible": false
+    },
+    "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST": {
+      "guards": {
+        "workflows_published_picker_config_host": {
+          "assertions": [
+            "The published Workflow picker retains its configuration host contract."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "workflows/published-picker-config-host"
+      ],
+      "reason": "The published Workflow picker retains its configuration host contract. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
     "JOURNAL-SKIPPED-HISTORY-REPLAY": {
       "guards": {
         "journal_skipped_history_replay": {
@@ -27256,8 +27614,8 @@
       "harness": [
         "journal/skipped-history-replay"
       ],
-      "reason": "The projector deduplicates indexed events but applies a newly indexed older event to derived state without comparing its sequence with the event that produces the current value.",
-      "user_visible": true
+      "reason": "The projector deduplicates indexed events but applies a newly indexed older event to derived state without comparing its sequence with the event that produces the current value. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
     }
   },
   "schema_version": 1

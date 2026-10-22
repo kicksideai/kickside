@@ -48,7 +48,7 @@ describe('model picker discovery lifecycle', () => {
   it('clears incompatible data and reloads when capability changes', async () => {
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/classes')) {
-        return { data: { success: true, classes: [{ name: 'fast', models: [] }] } }
+        return { data: { success: true, classes: [{ name: 'fast', capability: 'generate', models: [] }] } }
       }
       if (url.includes('capability=embed')) {
         return { data: { success: true, models: [{ name: 'embed-1', title: 'Embed One' }] } }
@@ -78,7 +78,7 @@ describe('model picker discovery lifecycle', () => {
     propsRef.value = { value: 'chat-1', capability: 'generate', mode: 'classes' }
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url.includes('/classes')) {
-        return { data: { success: true, classes: [{ name: 'fast', models: [{ name: 'chat-1', title: 'Chat One' }] }] } }
+        return { data: { success: true, classes: [{ name: 'fast', capability: 'generate', models: [{ name: 'chat-1', title: 'Chat One' }] }] } }
       }
       return { data: { success: true, models: [{ name: 'chat-1', title: 'Chat One' }] } }
     })
