@@ -6,4 +6,13 @@ local function resolve(args: any): (any, error?)
     return { kb_type = row.kb_type, served_by = row.config and row.config.served_by, engine_kb_type = engine.kb_type }, nil
 end
 
-return { resolve = resolve }
+local function exercise(args: any): (any, error?)
+    local store, err = stores.open_engine_store({
+        store_contract = "kickside.knowledge:kb_store_lifecycle",
+        store_binding = args.binding,
+    })
+    if err then return nil, err end
+    return store[args.method](store, {component_id = "kb-store-binding"})
+end
+
+return { resolve = resolve, exercise = exercise }

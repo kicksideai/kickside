@@ -155,6 +155,8 @@ entries:
       value: app:gateway
     - name: kickside.models:process_host
       value: app:processes
+    - name: kickside.memory:ui_server
+      value: app:gateway
     - name: kickside.users:env_storage
       value: app:env_storage
     - name: kickside.users:public_router
@@ -281,6 +283,16 @@ entries:
     - name: wippy.migration:app_db
       value: app:db
     version: '*'
+
+  - name: dep.kickside.memory_fixture
+    version: '*'
+    kind: ns.dependency
+    meta:
+      comment: Test-only provider fixture for memory_runtime_test; Agents itself does not depend on a concrete memory provider.
+    component: kickside/memory
+    parameters:
+    - name: kickside.memory:ui_server
+      value: app:gateway
 
   - name: dep.kickside.models_fixture
     version: '*'

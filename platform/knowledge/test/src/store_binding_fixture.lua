@@ -19,7 +19,11 @@ local function bound_get(args: any): (any, error?)
 end
 
 local function accepted(_args: any): (any, error?)
-    return { success = true }, nil
+    return { success = true, served_by = "default" }, nil
+end
+
+local function bound_accepted(_args: any): (any, error?)
+    return { success = true, served_by = "bound" }, nil
 end
 
 return {
@@ -27,4 +31,5 @@ return {
     default_get = default_get,
     bound_get = bound_get,
     accepted = accepted,
+    bound_accepted = bound_accepted,
 }

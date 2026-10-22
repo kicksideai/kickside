@@ -24,6 +24,11 @@ entries:
     source: file://store_binding_fixture.lua
     method: accepted
 
+  - name: bound_accepted
+    kind: function.lua
+    source: file://store_binding_fixture.lua
+    method: bound_accepted
+
   - name: default_store
     kind: contract.binding
     contracts:
@@ -40,10 +45,10 @@ entries:
     contracts:
       - contract: kickside.knowledge:kb_store_lifecycle
         methods:
-          create_store: app.store_binding:accepted
+          create_store: app.store_binding:bound_accepted
           get_store: app.store_binding:bound_get
-          update_config: app.store_binding:accepted
-          delete_store: app.store_binding:accepted
+          update_config: app.store_binding:bound_accepted
+          delete_store: app.store_binding:bound_accepted
 
   - name: engine_bound
     kind: registry.entry
@@ -72,3 +77,19 @@ entries:
     imports:
       test: wippy.test:test
       engines: kickside.knowledge:engines
+
+  - name: exercise_probe
+    kind: function.lua
+    source: file://store_binding_probe.lua
+    method: exercise
+    modules: [contract, security]
+    imports:
+      stores: kickside.knowledge:stores
+
+  - name: allow_probe
+    kind: security.policy
+    policy: {resources: '*', actions: '*', effect: allow}
+
+  - name: deny_contract
+    kind: security.policy
+    policy: {resources: '*', actions: contract.call, effect: deny}

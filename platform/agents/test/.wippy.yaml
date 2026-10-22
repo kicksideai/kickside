@@ -16,6 +16,7 @@ workspace:
     kickside/models: ../../models
     kickside/settings: ../../settings
     kickside/uploads: ../../uploads
+    kickside/memory: ../../../../providers/memory
 vars:
   sqlite_path: ':memory:'
   pg_host: localhost

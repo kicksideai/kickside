@@ -98,6 +98,18 @@ entries:
     imports:
       user_agents: kickside.agents.binding:user_agents_func
 
+  - name: memory_runtime_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_memory
+      comment: Verifies the KB-backed memory trait runtime consumed by agents.
+    source: file://memory_runtime_test.lua
+    imports:
+      test: wippy.test:test
+      memory_runtime: kickside.memory:runtime
+    method: run
+
   - name: delegate_capture
     kind: function.lua
     meta:
