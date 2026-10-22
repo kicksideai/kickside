@@ -191,6 +191,17 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/control_initiation_test.lua"
     },
+    "automation/dead-ledger-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-DEAD-LEDGER-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/dead_retention_test.lua"
+    },
     "automation/delivery-history": {
       "engines": [
         "sqlite",
@@ -2664,6 +2675,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/core/test/src/authorization_release_test.lua"
+    },
+    "core/blocked-projection-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "PROJECTION-BLOCK-INPUT-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/suites/projections/persist/block_retention_test.lua"
     },
     "core/boot-convergence-resident": {
       "engines": [
@@ -11280,7 +11302,9 @@
     "AUTOMATION-INFRASTRUCTURE-PARKING",
     "CHANNEL-OWNER-LOOKUP-ERROR",
     "IDENTITY-ROOT-ADMIN-CLASS",
-    "CRM-RESOLVE-SUGGESTION-CONFIDENCE"
+    "CRM-RESOLVE-SUGGESTION-CONFIDENCE",
+    "PROJECTION-BLOCK-INPUT-RETENTION",
+    "AUTOMATION-DEAD-LEDGER-RETENTION"
   ],
   "schema_version": 1
 }
