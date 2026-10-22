@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Two bindings of kickside.knowledge:kb_store_lifecycle: the default one knows
 -- no store, the named one serves the "bound" engine's store row.
 

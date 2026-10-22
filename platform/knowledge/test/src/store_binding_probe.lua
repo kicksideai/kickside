@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local stores = require("stores")
 
 local function resolve(args: any): (any, error?)
