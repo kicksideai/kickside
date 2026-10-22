@@ -1,17 +1,17 @@
-import { hasInjectionContext as lo, inject as Cr, effectScope as co, ref as A, markRaw as po, onMounted as ct, onUnmounted as uo, watch as ye, createApp as ho, readonly as fo, getCurrentInstance as Ut, nextTick as mo, reactive as vo, renderSlot as it, openBlock as C, createBlock as Re, Teleport as Or, createCommentVNode as B, useId as go, mergeProps as re, h as bo, defineComponent as Tr, onBeforeUnmount as Pr, createElementBlock as N, resolveComponent as yo, createVNode as T, withCtx as Ft, Transition as wo, createElementVNode as m, computed as be, toDisplayString as ie, unref as v, normalizeClass as fe, createTextVNode as H, withDirectives as Wt, vModelText as Gt, Fragment as Le, renderList as Ze, withModifiers as Ee } from "vue";
-import { addCollection as xo, Icon as L } from "@iconify/vue";
-import { config as Kt, addIcons as ko, on as Lr, applyThemeMode as Je, host as ot, hostCss as So, loadCss as _o, loadByTagName as $o, api as nt, define as Co } from "@wippy-fe/proxy";
+import { hasInjectionContext as co, inject as Cr, effectScope as po, ref as A, markRaw as uo, onMounted as ut, onUnmounted as ho, watch as ye, createApp as fo, readonly as mo, getCurrentInstance as Ut, nextTick as vo, reactive as go, renderSlot as st, openBlock as C, createBlock as Re, Teleport as Or, createCommentVNode as B, useId as bo, mergeProps as re, h as yo, defineComponent as Tr, onBeforeUnmount as Pr, createElementBlock as N, resolveComponent as wo, createVNode as T, withCtx as Ft, Transition as xo, createElementVNode as m, computed as be, toDisplayString as ie, unref as v, normalizeClass as fe, createTextVNode as H, withDirectives as Wt, vModelText as Gt, Fragment as Le, renderList as Qe, withModifiers as Ee } from "vue";
+import { addCollection as ko, Icon as L } from "@iconify/vue";
+import { config as Kt, addIcons as So, on as Lr, applyThemeMode as et, host as it, hostCss as _o, loadCss as $o, loadByTagName as Co, api as at, define as Oo } from "@wippy-fe/proxy";
 var $t = "data-wippy-visible";
 function Yt(e) {
   const t = e.getAttribute($t);
   return t === "true" ? !0 : t === "false" ? !1 : null;
 }
-var Oo = Object.defineProperty, To = (e, t, r) => t in e ? Oo(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, R = (e, t, r) => To(e, typeof t != "symbol" ? t + "" : t, r), Po = [
+var To = Object.defineProperty, Po = (e, t, r) => t in e ? To(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, R = (e, t, r) => Po(e, typeof t != "symbol" ? t + "" : t, r), Lo = [
   "themeConfigUrl",
   "primeVueCssUrl",
   "markdownCssUrl",
   "iframeCssUrl"
-], Lo = [
+], Eo = [
   ":where([data-wippy-theme-root]).w-theme-light",
   ":where([data-wippy-theme-root]).w-theme-dark"
 ].join(`,
@@ -20,7 +20,7 @@ function Xt(e) {
   const t = e.startsWith("--") ? e : `--${e}`;
   return /^--[-\w\u0080-\uFFFF]+$/.test(t) ? t : null;
 }
-function Eo(...e) {
+function No(...e) {
   const t = /* @__PURE__ */ new Set();
   for (const r of e)
     if (r)
@@ -37,26 +37,26 @@ function Eo(...e) {
       }
   return [...t].sort();
 }
-function No(e) {
+function Ao(e) {
   if (e.length === 0)
     return "";
   const t = e.map((r) => `  ${r}: inherit;`).join(`
 `);
-  return `${Lo} {
+  return `${Eo} {
 ${t}
 }`;
 }
-function Ao(e, t) {
-  const r = No(t);
+function Vo(e, t) {
+  const r = Ao(t);
   r && Er(e, r, "@wippy-fe/css-variables-bridge");
 }
-function Vo(e, t) {
-  const o = (t ?? Po).map(async (n) => {
-    const i = So[n];
+function Mo(e, t) {
+  const o = (t ?? Lo).map(async (n) => {
+    const i = _o[n];
     if (!i)
       return console.warn(`[wippy-fe/webcomponent-core] hostCss key "${n}" is undefined — skipping. Remove it from hostCssKeys if the CSS was removed.`), null;
     try {
-      return await _o(i);
+      return await $o(i);
     } catch (a) {
       return console.warn(`[wippy-fe/webcomponent-core] Failed to load hostCss "${n}" (${i}):`, a), null;
     }
@@ -70,7 +70,7 @@ function Vo(e, t) {
     }
   });
 }
-function Mo(e, t) {
+function jo(e, t) {
   const r = document.createElement("style");
   r.textContent = t, e.appendChild(r);
 }
@@ -83,16 +83,16 @@ function Er(e, t, r) {
   const o = document.createElement("style");
   o.setAttribute("role", r), o.textContent = t, e.appendChild(o);
 }
-function jo(e, t) {
+function Ro(e, t) {
   Er(e, t, "@wippy-fe/custom-css");
 }
 function Nr(e) {
   return e.__wippyHost ?? null;
 }
-function Ro(e) {
+function Do(e) {
   return e.replace(/-([a-z])/g, (t, r) => r.toUpperCase());
 }
-function Do(e, t, r) {
+function Ho(e, t, r) {
   switch (r.type) {
     case "string":
       return { value: t };
@@ -121,17 +121,17 @@ function Do(e, t, r) {
 function xt(e, t) {
   const r = {}, o = [];
   for (const [n, i] of Object.entries(t.properties)) {
-    const a = e.getAttribute(n), s = Ro(n);
+    const a = e.getAttribute(n), s = Do(n);
     if (a === null) {
       i.default !== void 0 && (r[s] = i.default);
       continue;
     }
-    const l = Do(n, a, i);
+    const l = Ho(n, a, i);
     l.error ? o.push(l.error) : r[s] = l.value;
   }
   return { props: r, errors: o };
 }
-var Ho = class {
+var Io = class {
   constructor(e, t) {
     R(this, "_props"), R(this, "_errors"), R(this, "_content"), R(this, "_hostVisibility"), R(this, "_propsListeners", /* @__PURE__ */ new Set()), R(this, "_contentListeners", /* @__PURE__ */ new Set()), R(this, "_hostVisibilityListeners", /* @__PURE__ */ new Set()), R(this, "_disposed", !1), R(this, "_emitToDom"), R(this, "props"), R(this, "events"), R(this, "content"), R(this, "hostVisibility"), this._props = e.props, this._errors = e.errors, this._content = e.content, this._hostVisibility = e.hostVisibility, this._emitToDom = t;
     const r = this;
@@ -223,7 +223,7 @@ var Ho = class {
     };
     return t?.signal?.addEventListener("abort", r, { once: !0 }), r;
   }
-}, Io = class extends HTMLElement {
+}, Bo = class extends HTMLElement {
   constructor() {
     super(), R(this, "_internals"), R(this, "_contentObserver", null), R(this, "_initialized", !1), R(this, "_container", null), R(this, "_reactive", null), R(this, "_lastProps", null), R(this, "_lastErrors", []), R(this, "_lastContent", null), R(this, "_themeUnsub", null), R(this, "_hostVisible", null), this._internals = this.attachInternals(), this._hostVisible = Yt(this);
   }
@@ -312,7 +312,7 @@ var Ho = class {
         e.validateProps && i.errors.push(...e.validateProps(i.props)), r = i.props, o = i.errors, this._lastProps = r, this._lastErrors = o;
       }
       const n = t ? this._lastContent ?? this._extractContent(e.contentTemplate) : null;
-      t && this._lastContent === null && (this._lastContent = n), this._reactive = new Ho(
+      t && this._lastContent === null && (this._lastContent = n), this._reactive = new Io(
         { props: r, errors: o, content: n, hasContent: t, hostVisibility: this._hostVisible },
         this.emitEvent.bind(this)
       );
@@ -328,25 +328,25 @@ var Ho = class {
       if (t)
         o = this._container;
       else {
-        this.onInit(r), e.inlineCss && Mo(r, e.inlineCss);
+        this.onInit(r), e.inlineCss && jo(r, e.inlineCss);
         try {
-          const c = Kt?.theming, p = Eo(
+          const c = Kt?.theming, p = No(
             c?.global?.cssVariables,
             c?.children?.cssVariables
           );
-          Ao(r, p);
+          Vo(r, p);
         } catch {
         }
         if (e.customCss !== !1)
           try {
             const c = Kt?.theming, p = [c?.global?.customCSS, c?.children?.customCSS].filter(Boolean).join(`
 `);
-            p && jo(r, p);
+            p && Ro(r, p);
           } catch {
           }
-        (e.hostCssKeys === void 0 || e.hostCssKeys.length > 0) && Vo(r, e.hostCssKeys), o = document.createElement("div"), o.setAttribute("data-wippy-theme-root", "");
+        (e.hostCssKeys === void 0 || e.hostCssKeys.length > 0) && Mo(r, e.hostCssKeys), o = document.createElement("div"), o.setAttribute("data-wippy-theme-root", "");
         const l = e.containerClasses ?? [];
-        l.length > 0 && o.classList.add(...l), r.appendChild(o), this._container = o, ko(xo);
+        l.length > 0 && o.classList.add(...l), r.appendChild(o), this._container = o, So(ko);
       }
       this._applyTheme(), this._themeUnsub || (this._themeUnsub = Lr("@theme", (l) => this._applyTheme(l)));
       const { props: n, errors: i } = xt(this, e.propsSchema);
@@ -379,11 +379,11 @@ var Ho = class {
    * No-op for an older proxy without `getThemeMode` — `applyThemeMode` clamps
    * `undefined` to 'auto'.
    */
-  _applyTheme(e = ot.getThemeMode?.()) {
-    Je(e, this), this._container && Je(e, this._container);
+  _applyTheme(e = it.getThemeMode?.()) {
+    et(e, this), this._container && et(e, this._container);
   }
   disconnectedCallback() {
-    this._themeUnsub && (this._themeUnsub(), this._themeUnsub = null), Je("auto", this), this._container && Je("auto", this._container), this._contentObserver && (this._contentObserver.disconnect(), this._contentObserver = null), this.onUnmount(), this.emitEvent("unload"), this._internals.states.clear(), this._reactive?.dispose(), this._reactive = null, this._lastProps = null, this._lastErrors = [], this._lastContent = null, delete this.__wippyHost, delete this.__wippyHostBus;
+    this._themeUnsub && (this._themeUnsub(), this._themeUnsub = null), et("auto", this), this._container && et("auto", this._container), this._contentObserver && (this._contentObserver.disconnect(), this._contentObserver = null), this.onUnmount(), this.emitEvent("unload"), this._internals.states.clear(), this._reactive?.dispose(), this._reactive = null, this._lastProps = null, this._lastErrors = [], this._lastContent = null, delete this.__wippyHost, delete this.__wippyHostBus;
   }
   attributeChangedCallback(e, t, r) {
     if (t === r)
@@ -431,10 +431,10 @@ var Ho = class {
   onContentChanged(e) {
   }
 };
-function Bo(e) {
+function zo(e) {
   return e.__wippyHostBus ?? null;
 }
-function zo(e) {
+function Uo(e) {
   return e.dataset.wippyPanelId ?? null;
 }
 /*!
@@ -443,14 +443,14 @@ function zo(e) {
  * @license MIT
  */
 let Ar;
-const Vr = (e) => Ar = e, Uo = () => lo() && Cr(Mr) || Ar, Mr = (
+const Vr = (e) => Ar = e, Fo = () => co() && Cr(Mr) || Ar, Mr = (
   /* istanbul ignore next */
   Symbol()
 );
-function Fo() {
-  const e = co(!0), t = e.run(() => A({}));
+function Wo() {
+  const e = po(!0), t = e.run(() => A({}));
   let r = [], o = [];
-  const n = po({
+  const n = uo({
     install(i) {
       Vr(n), n._a = i, i.provide(Mr, n), i.config.globalProperties.$pinia = n, o.forEach((a) => r.push(a)), o = [];
     },
@@ -465,15 +465,15 @@ function Fo() {
   });
   return n;
 }
-var Wo = Object.defineProperty, Go = (e, t, r) => t in e ? Wo(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, Ne = (e, t, r) => Go(e, typeof t != "symbol" ? t + "" : t, r), Ko = /* @__PURE__ */ Symbol("wippy:emit"), Yo = /* @__PURE__ */ Symbol("wippy:props"), Xo = /* @__PURE__ */ Symbol("wippy:props_error"), qo = /* @__PURE__ */ Symbol("wippy:content"), Zo = /* @__PURE__ */ Symbol("wippy:panel-id"), Jo = /* @__PURE__ */ Symbol("wippy:layout-bus"), Qo = /* @__PURE__ */ Symbol("wippy:host"), jr = /* @__PURE__ */ Symbol("wippy:host-visibility");
-function en() {
+var Go = Object.defineProperty, Ko = (e, t, r) => t in e ? Go(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, Ne = (e, t, r) => Ko(e, typeof t != "symbol" ? t + "" : t, r), Yo = /* @__PURE__ */ Symbol("wippy:emit"), Xo = /* @__PURE__ */ Symbol("wippy:props"), qo = /* @__PURE__ */ Symbol("wippy:props_error"), Zo = /* @__PURE__ */ Symbol("wippy:content"), Jo = /* @__PURE__ */ Symbol("wippy:panel-id"), Qo = /* @__PURE__ */ Symbol("wippy:layout-bus"), en = /* @__PURE__ */ Symbol("wippy:host"), jr = /* @__PURE__ */ Symbol("wippy:host-visibility");
+function tn() {
   const e = Cr(jr);
   if (!e)
     throw new Error("useHostVisibility() must be called inside a WippyVueElement");
   return e;
 }
-function tn(e) {
-  const t = en();
+function rn(e) {
+  const t = tn();
   let r = !1, o = null, n = !1;
   function i() {
     if (o)
@@ -490,14 +490,14 @@ function tn(e) {
     });
     return o = s, s;
   }
-  return ct(() => (r = !0, i())), uo(() => {
+  return ut(() => (r = !0, i())), ho(() => {
     r = !1, n = !1;
   }), ye(t, (a, s) => {
     if (r && s === !1 && a === !0)
       return i();
   }), t;
 }
-var rn = class extends Io {
+var on = class extends Bo {
   constructor() {
     super(...arguments), Ne(this, "_vueApp", null), Ne(this, "_propsRef", A({})), Ne(this, "_errorsRef", A([])), Ne(this, "_contentRef", A(null)), Ne(this, "_hostVisibilityRef", A(null)), Ne(this, "_bridgeAbort", null);
   }
@@ -525,16 +525,16 @@ var rn = class extends Io {
     const l = (c) => {
       if (s.signal.aborted)
         return;
-      const p = Uo(), h = ho(c.rootComponent);
+      const p = Fo(), h = fo(c.rootComponent);
       this._vueApp = h;
-      const d = Fo();
+      const d = Wo();
       if (c.piniaPlugins)
         for (const f of c.piniaPlugins)
           d.use(f);
       if (h.use(d), c.plugins)
         for (const f of c.plugins)
           h.use(f);
-      h.provide(Yo, this._propsRef), h.provide(Xo, this._errorsRef), h.provide(Ko, this.emitEvent.bind(this)), h.provide(qo, this._contentRef), h.provide(jr, this._hostVisibilityRef), h.provide(Zo, zo(this)), h.provide(Jo, Bo(this)), h.provide(Qo, Nr(this)), c.providers && c.providers(h, this), h.mount(t), p && Vr(p);
+      h.provide(Xo, this._propsRef), h.provide(qo, this._errorsRef), h.provide(Yo, this.emitEvent.bind(this)), h.provide(Zo, this._contentRef), h.provide(jr, this._hostVisibilityRef), h.provide(Jo, Uo(this)), h.provide(Qo, zo(this)), h.provide(en, Nr(this)), c.providers && c.providers(h, this), h.mount(t), p && Vr(p);
     };
     if (a.rootComponent)
       l(a);
@@ -554,9 +554,9 @@ var rn = class extends Io {
   onUnmount() {
     this._bridgeAbort?.abort(), this._bridgeAbort = null, this._vueApp && (this._vueApp.unmount(), this._vueApp = null);
   }
-}, on = Object.defineProperty, qt = Object.getOwnPropertySymbols, nn = Object.prototype.hasOwnProperty, an = Object.prototype.propertyIsEnumerable, Zt = (e, t, r) => t in e ? on(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, sn = (e, t) => {
-  for (var r in t || (t = {})) nn.call(t, r) && Zt(e, r, t[r]);
-  if (qt) for (var r of qt(t)) an.call(t, r) && Zt(e, r, t[r]);
+}, nn = Object.defineProperty, qt = Object.getOwnPropertySymbols, an = Object.prototype.hasOwnProperty, sn = Object.prototype.propertyIsEnumerable, Zt = (e, t, r) => t in e ? nn(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, ln = (e, t) => {
+  for (var r in t || (t = {})) an.call(t, r) && Zt(e, r, t[r]);
+  if (qt) for (var r of qt(t)) sn.call(t, r) && Zt(e, r, t[r]);
   return e;
 };
 function At(e) {
@@ -572,13 +572,13 @@ function ke(e, t = !0) {
   return e instanceof Object && e.constructor === Object && (t || Object.keys(e).length !== 0);
 }
 function Dr(e = {}, t = {}) {
-  let r = sn({}, e);
+  let r = ln({}, e);
   return Object.keys(t).forEach((o) => {
     let n = o;
     ke(t[n]) && n in e && ke(e[n]) ? r[n] = Dr(e[n], t[n]) : r[n] = t[n];
   }), r;
 }
-function ln(...e) {
+function cn(...e) {
   return e.reduce((t, r, o) => o === 0 ? r : Dr(t, r), {});
 }
 function ae(e, ...t) {
@@ -601,10 +601,10 @@ function Hr(e, t = "", r = {}) {
   }
   return ae(e, r);
 }
-function cn(e, t = !0) {
+function pn(e, t = !0) {
   return Array.isArray(e) && (t || e.length !== 0);
 }
-function pn(e) {
+function un(e) {
   return M(e) && !isNaN(e);
 }
 function Oe(e, t) {
@@ -614,8 +614,8 @@ function Oe(e, t) {
   }
   return !1;
 }
-function un(...e) {
-  return ln(...e);
+function dn(...e) {
+  return cn(...e);
 }
 function He(e) {
   return e && e.replace(/\/\*(?:(?!\*\/)[\s\S])*\*\/|[\r\n\t]+/g, "").replace(/ {2,}/g, " ").replace(/ ([{:}]) /g, "$1").replace(/([;,]) /g, "$1").replace(/ !/g, "!").replace(/: /g, ":").trim();
@@ -640,18 +640,18 @@ function Vt() {
     e.clear();
   } };
 }
-function dn(e, t) {
+function hn(e, t) {
   return e ? e.classList ? e.classList.contains(t) : new RegExp("(^| )" + t + "( |$)", "gi").test(e.className) : !1;
 }
 function Jt(e, t) {
   if (e && t) {
     let r = (o) => {
-      dn(e, o) || (e.classList ? e.classList.add(o) : e.className += " " + o);
+      hn(e, o) || (e.classList ? e.classList.add(o) : e.className += " " + o);
     };
     [t].flat().filter(Boolean).forEach((o) => o.split(" ").forEach(r));
   }
 }
-function hn(e, t) {
+function fn(e, t) {
   if (e && t) {
     let r = (o) => {
       e.classList ? e.classList.remove(o) : e.className = e.className.replace(new RegExp("(^|\\b)" + o.split(" ").join("|") + "(\\b|$)", "gi"), " ");
@@ -678,28 +678,28 @@ function zr() {
   let e = window, t = document, r = t.documentElement, o = t.getElementsByTagName("body")[0], n = e.innerWidth || r.clientWidth || o.clientWidth, i = e.innerHeight || r.clientHeight || o.clientHeight;
   return { width: n, height: i };
 }
-function fn(e) {
+function mn(e) {
   return e ? Math.abs(e.scrollLeft) : 0;
-}
-function mn() {
-  let e = document.documentElement;
-  return (window.pageXOffset || fn(e)) - (e.clientLeft || 0);
 }
 function vn() {
   let e = document.documentElement;
+  return (window.pageXOffset || mn(e)) - (e.clientLeft || 0);
+}
+function gn() {
+  let e = document.documentElement;
   return (window.pageYOffset || e.scrollTop) - (e.clientTop || 0);
 }
-function gn(e) {
+function bn(e) {
   return e ? getComputedStyle(e).direction === "rtl" : !1;
 }
-function bn(e, t, r = !0) {
+function yn(e, t, r = !0) {
   var o, n, i, a;
   if (e) {
-    let s = e.offsetParent ? { width: e.offsetWidth, height: e.offsetHeight } : Br(e), l = s.height, c = s.width, p = t.offsetHeight, h = t.offsetWidth, d = t.getBoundingClientRect(), f = vn(), k = mn(), $ = zr(), _, y, E = "top";
-    d.top + p + l > $.height ? (_ = d.top + f - l, E = "bottom", _ < 0 && (_ = f)) : _ = p + d.top + f, d.left + c > $.width ? y = Math.max(0, d.left + k + h - c) : y = d.left + k, gn(e) ? e.style.insetInlineEnd = y + "px" : e.style.insetInlineStart = y + "px", e.style.top = _ + "px", e.style.transformOrigin = E, r && (e.style.marginTop = E === "bottom" ? `calc(${(n = (o = Ct(/-anchor-gutter$/)) == null ? void 0 : o.value) != null ? n : "2px"} * -1)` : (a = (i = Ct(/-anchor-gutter$/)) == null ? void 0 : i.value) != null ? a : "");
+    let s = e.offsetParent ? { width: e.offsetWidth, height: e.offsetHeight } : Br(e), l = s.height, c = s.width, p = t.offsetHeight, h = t.offsetWidth, d = t.getBoundingClientRect(), f = gn(), k = vn(), $ = zr(), _, y, E = "top";
+    d.top + p + l > $.height ? (_ = d.top + f - l, E = "bottom", _ < 0 && (_ = f)) : _ = p + d.top + f, d.left + c > $.width ? y = Math.max(0, d.left + k + h - c) : y = d.left + k, bn(e) ? e.style.insetInlineEnd = y + "px" : e.style.insetInlineStart = y + "px", e.style.top = _ + "px", e.style.transformOrigin = E, r && (e.style.marginTop = E === "bottom" ? `calc(${(n = (o = Ct(/-anchor-gutter$/)) == null ? void 0 : o.value) != null ? n : "2px"} * -1)` : (a = (i = Ct(/-anchor-gutter$/)) == null ? void 0 : i.value) != null ? a : "");
   }
 }
-function yn(e, t, r = !0, o = void 0) {
+function wn(e, t, r = !0, o = void 0) {
   var n;
   if (e) {
     let i = e.offsetParent ? { width: e.offsetWidth, height: e.offsetHeight } : Br(e), a = t.offsetHeight, s = t.getBoundingClientRect(), l = zr(), c, p, h = o ?? "top";
@@ -716,14 +716,14 @@ function Ur(e) {
   }
   return null;
 }
-function wn(e) {
+function xn(e) {
   return !!(e !== null && typeof e < "u" && e.nodeName && Ur(e));
 }
-function pt(e) {
+function dt(e) {
   return typeof Element < "u" ? e instanceof Element : e !== null && typeof e == "object" && e.nodeType === 1 && typeof e.nodeName == "string";
 }
 function Ot(e, t = {}) {
-  if (pt(e)) {
+  if (dt(e)) {
     let r = (o, n) => {
       var i, a;
       let s = (i = e?.$attrs) != null && i[o] ? [(a = e?.$attrs) == null ? void 0 : a[o]] : [];
@@ -748,13 +748,13 @@ function Ot(e, t = {}) {
   }
 }
 function Fr(e, t) {
-  return pt(e) ? e.matches(t) ? e : e.querySelector(t) : null;
+  return dt(e) ? e.matches(t) ? e : e.querySelector(t) : null;
 }
 function Wr(e, t = []) {
   let r = Ur(e);
   return r === null ? t : Wr(r, t.concat([r]));
 }
-function xn(e) {
+function kn(e) {
   let t = [];
   if (e) {
     let r = Wr(e), o = /(auto|scroll)/, n = (i) => {
@@ -782,13 +782,13 @@ function xn(e) {
 function Gr() {
   return !!(typeof window < "u" && window.document && window.document.createElement);
 }
-function kn() {
+function Sn() {
   return "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 }
-function Sn(e, t = "", r) {
-  pt(e) && r !== null && r !== void 0 && e.setAttribute(t, r);
+function _n(e, t = "", r) {
+  dt(e) && r !== null && r !== void 0 && e.setAttribute(t, r);
 }
-function _n() {
+function $n() {
   let e = [], t = (a, s, l = 999) => {
     let c = n(a, s, l), p = c.value + (c.key === a ? 0 : l) + 1;
     return e.push({ key: a, value: p }), p;
@@ -801,39 +801,39 @@ function _n() {
     a && (r(i(a)), a.style.zIndex = "");
   }, getCurrent: (a) => o(a) };
 }
-var kt = _n(), $n = Object.defineProperty, Cn = Object.defineProperties, On = Object.getOwnPropertyDescriptors, at = Object.getOwnPropertySymbols, Kr = Object.prototype.hasOwnProperty, Yr = Object.prototype.propertyIsEnumerable, Qt = (e, t, r) => t in e ? $n(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, ue = (e, t) => {
+var kt = $n(), Cn = Object.defineProperty, On = Object.defineProperties, Tn = Object.getOwnPropertyDescriptors, lt = Object.getOwnPropertySymbols, Kr = Object.prototype.hasOwnProperty, Yr = Object.prototype.propertyIsEnumerable, Qt = (e, t, r) => t in e ? Cn(e, t, { enumerable: !0, configurable: !0, writable: !0, value: r }) : e[t] = r, ue = (e, t) => {
   for (var r in t || (t = {})) Kr.call(t, r) && Qt(e, r, t[r]);
-  if (at) for (var r of at(t)) Yr.call(t, r) && Qt(e, r, t[r]);
+  if (lt) for (var r of lt(t)) Yr.call(t, r) && Qt(e, r, t[r]);
   return e;
-}, St = (e, t) => Cn(e, On(t)), ge = (e, t) => {
+}, St = (e, t) => On(e, Tn(t)), ge = (e, t) => {
   var r = {};
   for (var o in e) Kr.call(e, o) && t.indexOf(o) < 0 && (r[o] = e[o]);
-  if (e != null && at) for (var o of at(e)) t.indexOf(o) < 0 && Yr.call(e, o) && (r[o] = e[o]);
+  if (e != null && lt) for (var o of lt(e)) t.indexOf(o) < 0 && Yr.call(e, o) && (r[o] = e[o]);
   return r;
-}, Tn = Vt(), Y = Tn, Ie = /{([^}]*)}/g, Xr = /(\d+\s+[\+\-\*\/]\s+\d+)/g, qr = /var\([^)]+\)/g;
+}, Pn = Vt(), Y = Pn, Ie = /{([^}]*)}/g, Xr = /(\d+\s+[\+\-\*\/]\s+\d+)/g, qr = /var\([^)]+\)/g;
 function er(e) {
   return me(e) ? e.replace(/[A-Z]/g, (t, r) => r === 0 ? t : "." + t.toLowerCase()).toLowerCase() : e;
 }
-function Pn(e) {
+function Ln(e) {
   return ke(e) && e.hasOwnProperty("$value") && e.hasOwnProperty("$type") ? e.$value : e;
 }
-function Ln(e) {
+function En(e) {
   return e.replaceAll(/ /g, "").replace(/[^\w]/g, "-");
 }
 function Tt(e = "", t = "") {
-  return Ln(`${me(e, !1) && me(t, !1) ? `${e}-` : e}${t}`);
+  return En(`${me(e, !1) && me(t, !1) ? `${e}-` : e}${t}`);
 }
 function Zr(e = "", t = "") {
   return `--${Tt(e, t)}`;
 }
-function En(e = "") {
+function Nn(e = "") {
   let t = (e.match(/{/g) || []).length, r = (e.match(/}/g) || []).length;
   return (t + r) % 2 !== 0;
 }
 function Jr(e, t = "", r = "", o = [], n) {
   if (me(e)) {
     let i = e.trim();
-    if (En(i)) return;
+    if (Nn(i)) return;
     if (Oe(i, Ie)) {
       let a = i.replaceAll(Ie, (s) => {
         let l = s.replace(/{|}/g, "").split(".").filter((c) => !o.some((p) => Oe(c, p)));
@@ -842,9 +842,9 @@ function Jr(e, t = "", r = "", o = [], n) {
       return Oe(a.replace(qr, "0"), Xr) ? `calc(${a})` : a;
     }
     return i;
-  } else if (pn(e)) return e;
+  } else if (un(e)) return e;
 }
-function Nn(e, t, r) {
+function An(e, t, r) {
   me(t, !1) && e.push(`${t}:${r};`);
 }
 function Ae(e, t) {
@@ -884,14 +884,14 @@ function Qr(e, t) {
   }
   return e;
 }
-var Te = (...e) => An(I.getTheme(), ...e), An = (e = {}, t, r, o) => {
+var Te = (...e) => Vn(I.getTheme(), ...e), Vn = (e = {}, t, r, o) => {
   if (t) {
     let { variable: n, options: i } = I.defaults || {}, { prefix: a, transform: s } = e?.options || i || {}, l = Oe(t, Ie) ? t : `{${t}}`;
     return o === "value" || At(o) && s === "strict" ? I.getTokenValue(t) : Jr(l, void 0, a, [n.excludedKeyRegex], r);
   }
   return "";
 };
-function Qe(e, ...t) {
+function tt(e, ...t) {
   if (e instanceof Array) {
     let r = e.reduce((o, n, i) => {
       var a;
@@ -901,16 +901,16 @@ function Qe(e, ...t) {
   }
   return ae(e, { dt: Te });
 }
-function Vn(e, t = {}) {
+function Mn(e, t = {}) {
   let r = I.defaults.variable, { prefix: o = r.prefix, selector: n = r.selector, excludedKeyRegex: i = r.excludedKeyRegex } = t, a = [], s = [], l = [{ node: e, path: o }];
   for (; l.length; ) {
     let { node: p, path: h } = l.pop();
     for (let d in p) {
-      let f = p[d], k = Pn(f), $ = Oe(d, i) ? Tt(h) : Tt(h, Ir(d));
+      let f = p[d], k = Ln(f), $ = Oe(d, i) ? Tt(h) : Tt(h, Ir(d));
       if (ke(k)) l.push({ node: k, path: $ });
       else {
         let _ = Zr($), y = Jr(k, $, o, [i]);
-        Nn(s, _, y);
+        An(s, _, y);
         let E = $;
         o && E.startsWith(o + "-") && (E = E.slice(o.length + 1)), a.push(E.replace(/-/g, "."));
       }
@@ -936,25 +936,25 @@ var pe = { regex: { rules: { class: { pattern: /^\.([a-zA-Z][\w-]*)$/, resolve(e
     return (o = t.map((n) => n.resolve(r)).find((n) => n.matched)) != null ? o : this.rules.custom.resolve(r);
   });
 } }, _toVariables(e, t) {
-  return Vn(e, { prefix: t?.prefix });
+  return Mn(e, { prefix: t?.prefix });
 }, getCommon({ name: e = "", theme: t = {}, params: r, set: o, defaults: n }) {
   var i, a, s, l, c, p, h;
   let { preset: d, options: f } = t, k, $, _, y, E, W, oe;
   if (M(d) && f.transform !== "strict") {
-    let { primitive: de, semantic: j, extend: q } = d, Z = j || {}, { colorScheme: Q } = Z, J = ge(Z, ["colorScheme"]), G = q || {}, { colorScheme: ee } = G, K = ge(G, ["colorScheme"]), te = Q || {}, { dark: se } = te, ne = ge(te, ["dark"]), le = ee || {}, { dark: g } = le, b = ge(le, ["dark"]), w = M(de) ? this._toVariables({ primitive: de }, f) : {}, V = M(J) ? this._toVariables({ semantic: J }, f) : {}, D = M(ne) ? this._toVariables({ light: ne }, f) : {}, z = M(se) ? this._toVariables({ dark: se }, f) : {}, U = M(K) ? this._toVariables({ semantic: K }, f) : {}, ve = M(b) ? this._toVariables({ light: b }, f) : {}, Se = M(g) ? this._toVariables({ dark: g }, f) : {}, [we, ut] = [(i = w.declarations) != null ? i : "", w.tokens], [Ke, dt] = [(a = V.declarations) != null ? a : "", V.tokens || []], [ht, Ye] = [(s = D.declarations) != null ? s : "", D.tokens || []], [ft, mt] = [(l = z.declarations) != null ? l : "", z.tokens || []], [vt, _e] = [(c = U.declarations) != null ? c : "", U.tokens || []], [gt, xe] = [(p = ve.declarations) != null ? p : "", ve.tokens || []], [Xe, bt] = [(h = Se.declarations) != null ? h : "", Se.tokens || []];
-    k = this.transformCSS(e, we, "light", "variable", f, o, n), $ = ut;
-    let ce = this.transformCSS(e, `${Ke}${ht}`, "light", "variable", f, o, n), $e = this.transformCSS(e, `${ft}`, "dark", "variable", f, o, n);
-    _ = `${ce}${$e}`, y = [.../* @__PURE__ */ new Set([...dt, ...Ye, ...mt])];
-    let qe = this.transformCSS(e, `${vt}${gt}color-scheme:light`, "light", "variable", f, o, n), yt = this.transformCSS(e, `${Xe}color-scheme:dark`, "dark", "variable", f, o, n);
-    E = `${qe}${yt}`, W = [.../* @__PURE__ */ new Set([..._e, ...xe, ...bt])], oe = ae(d.css, { dt: Te });
+    let { primitive: de, semantic: j, extend: q } = d, Z = j || {}, { colorScheme: Q } = Z, J = ge(Z, ["colorScheme"]), G = q || {}, { colorScheme: ee } = G, K = ge(G, ["colorScheme"]), te = Q || {}, { dark: se } = te, ne = ge(te, ["dark"]), le = ee || {}, { dark: g } = le, b = ge(le, ["dark"]), x = M(de) ? this._toVariables({ primitive: de }, f) : {}, V = M(J) ? this._toVariables({ semantic: J }, f) : {}, D = M(ne) ? this._toVariables({ light: ne }, f) : {}, z = M(se) ? this._toVariables({ dark: se }, f) : {}, U = M(K) ? this._toVariables({ semantic: K }, f) : {}, ve = M(b) ? this._toVariables({ light: b }, f) : {}, Se = M(g) ? this._toVariables({ dark: g }, f) : {}, [we, ht] = [(i = x.declarations) != null ? i : "", x.tokens], [Ke, ft] = [(a = V.declarations) != null ? a : "", V.tokens || []], [mt, Ye] = [(s = D.declarations) != null ? s : "", D.tokens || []], [vt, gt] = [(l = z.declarations) != null ? l : "", z.tokens || []], [bt, _e] = [(c = U.declarations) != null ? c : "", U.tokens || []], [yt, xe] = [(p = ve.declarations) != null ? p : "", ve.tokens || []], [Xe, wt] = [(h = Se.declarations) != null ? h : "", Se.tokens || []];
+    k = this.transformCSS(e, we, "light", "variable", f, o, n), $ = ht;
+    let ce = this.transformCSS(e, `${Ke}${mt}`, "light", "variable", f, o, n), qe = this.transformCSS(e, `${vt}`, "dark", "variable", f, o, n);
+    _ = `${ce}${qe}`, y = [.../* @__PURE__ */ new Set([...ft, ...Ye, ...gt])];
+    let $e = this.transformCSS(e, `${bt}${yt}color-scheme:light`, "light", "variable", f, o, n), Ze = this.transformCSS(e, `${Xe}color-scheme:dark`, "dark", "variable", f, o, n);
+    E = `${$e}${Ze}`, W = [.../* @__PURE__ */ new Set([..._e, ...xe, ...wt])], oe = ae(d.css, { dt: Te });
   }
   return { primitive: { css: k, tokens: $ }, semantic: { css: _, tokens: y }, global: { css: E, tokens: W }, style: oe };
 }, getPreset({ name: e = "", preset: t = {}, options: r, params: o, set: n, defaults: i, selector: a }) {
   var s, l, c;
   let p, h, d;
   if (M(t) && r.transform !== "strict") {
-    let f = e.replace("-directive", ""), k = t, { colorScheme: $, extend: _, css: y } = k, E = ge(k, ["colorScheme", "extend", "css"]), W = _ || {}, { colorScheme: oe } = W, de = ge(W, ["colorScheme"]), j = $ || {}, { dark: q } = j, Z = ge(j, ["dark"]), Q = oe || {}, { dark: J } = Q, G = ge(Q, ["dark"]), ee = M(E) ? this._toVariables({ [f]: ue(ue({}, E), de) }, r) : {}, K = M(Z) ? this._toVariables({ [f]: ue(ue({}, Z), G) }, r) : {}, te = M(q) ? this._toVariables({ [f]: ue(ue({}, q), J) }, r) : {}, [se, ne] = [(s = ee.declarations) != null ? s : "", ee.tokens || []], [le, g] = [(l = K.declarations) != null ? l : "", K.tokens || []], [b, w] = [(c = te.declarations) != null ? c : "", te.tokens || []], V = this.transformCSS(f, `${se}${le}`, "light", "variable", r, n, i, a), D = this.transformCSS(f, b, "dark", "variable", r, n, i, a);
-    p = `${V}${D}`, h = [.../* @__PURE__ */ new Set([...ne, ...g, ...w])], d = ae(y, { dt: Te });
+    let f = e.replace("-directive", ""), k = t, { colorScheme: $, extend: _, css: y } = k, E = ge(k, ["colorScheme", "extend", "css"]), W = _ || {}, { colorScheme: oe } = W, de = ge(W, ["colorScheme"]), j = $ || {}, { dark: q } = j, Z = ge(j, ["dark"]), Q = oe || {}, { dark: J } = Q, G = ge(Q, ["dark"]), ee = M(E) ? this._toVariables({ [f]: ue(ue({}, E), de) }, r) : {}, K = M(Z) ? this._toVariables({ [f]: ue(ue({}, Z), G) }, r) : {}, te = M(q) ? this._toVariables({ [f]: ue(ue({}, q), J) }, r) : {}, [se, ne] = [(s = ee.declarations) != null ? s : "", ee.tokens || []], [le, g] = [(l = K.declarations) != null ? l : "", K.tokens || []], [b, x] = [(c = te.declarations) != null ? c : "", te.tokens || []], V = this.transformCSS(f, `${se}${le}`, "light", "variable", r, n, i, a), D = this.transformCSS(f, b, "dark", "variable", r, n, i, a);
+    p = `${V}${D}`, h = [.../* @__PURE__ */ new Set([...ne, ...g, ...x])], d = ae(y, { dt: Te });
   }
   return { css: p, tokens: h, style: d };
 }, getPresetC({ name: e = "", theme: t = {}, params: r, set: o, defaults: n }) {
@@ -1120,7 +1120,7 @@ var pe = { regex: { rules: { class: { pattern: /^\.([a-zA-Z][\w-]*)$/, resolve(e
   DATE_IS_NOT: "dateIsNot",
   DATE_BEFORE: "dateBefore",
   DATE_AFTER: "dateAfter"
-}, Mn = `
+}, jn = `
     *,
     ::before,
     ::after {
@@ -1255,21 +1255,21 @@ function rr(e) {
   for (var t = 1; t < arguments.length; t++) {
     var r = arguments[t] != null ? arguments[t] : {};
     t % 2 ? tr(Object(r), !0).forEach(function(o) {
-      jn(e, o, r[o]);
+      Rn(e, o, r[o]);
     }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(r)) : tr(Object(r)).forEach(function(o) {
       Object.defineProperty(e, o, Object.getOwnPropertyDescriptor(r, o));
     });
   }
   return e;
 }
-function jn(e, t, r) {
-  return (t = Rn(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
+function Rn(e, t, r) {
+  return (t = Dn(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
 }
-function Rn(e) {
-  var t = Dn(e, "string");
+function Dn(e) {
+  var t = Hn(e, "string");
   return Be(t) == "symbol" ? t : t + "";
 }
-function Dn(e, t) {
+function Hn(e, t) {
   if (Be(e) != "object" || !e) return e;
   var r = e[Symbol.toPrimitive];
   if (r !== void 0) {
@@ -1279,23 +1279,23 @@ function Dn(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-function Hn(e) {
+function In(e) {
   var t = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : !0;
-  Ut() && Ut().components ? ct(e) : t ? e() : mo(e);
+  Ut() && Ut().components ? ut(e) : t ? e() : vo(e);
 }
-var In = 0;
-function Bn(e) {
-  var t = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, r = A(!1), o = A(e), n = A(null), i = Gr() ? window.document : void 0, a = t.document, s = a === void 0 ? i : a, l = t.immediate, c = l === void 0 ? !0 : l, p = t.manual, h = p === void 0 ? !1 : p, d = t.name, f = d === void 0 ? "style_".concat(++In) : d, k = t.id, $ = k === void 0 ? void 0 : k, _ = t.media, y = _ === void 0 ? void 0 : _, E = t.nonce, W = E === void 0 ? void 0 : E, oe = t.first, de = oe === void 0 ? !1 : oe, j = t.onMounted, q = j === void 0 ? void 0 : j, Z = t.onUpdated, Q = Z === void 0 ? void 0 : Z, J = t.onLoad, G = J === void 0 ? void 0 : J, ee = t.props, K = ee === void 0 ? {} : ee, te = function() {
+var Bn = 0;
+function zn(e) {
+  var t = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, r = A(!1), o = A(e), n = A(null), i = Gr() ? window.document : void 0, a = t.document, s = a === void 0 ? i : a, l = t.immediate, c = l === void 0 ? !0 : l, p = t.manual, h = p === void 0 ? !1 : p, d = t.name, f = d === void 0 ? "style_".concat(++Bn) : d, k = t.id, $ = k === void 0 ? void 0 : k, _ = t.media, y = _ === void 0 ? void 0 : _, E = t.nonce, W = E === void 0 ? void 0 : E, oe = t.first, de = oe === void 0 ? !1 : oe, j = t.onMounted, q = j === void 0 ? void 0 : j, Z = t.onUpdated, Q = Z === void 0 ? void 0 : Z, J = t.onLoad, G = J === void 0 ? void 0 : J, ee = t.props, K = ee === void 0 ? {} : ee, te = function() {
   }, se = function(g) {
     var b = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
     if (s) {
-      var w = rr(rr({}, K), b), V = w.name || f, D = w.id || $, z = w.nonce || W;
+      var x = rr(rr({}, K), b), V = x.name || f, D = x.id || $, z = x.nonce || W;
       n.value = s.querySelector('style[data-primevue-style-id="'.concat(V, '"]')) || s.getElementById(D) || s.createElement("style"), n.value.isConnected || (o.value = g || e, Ot(n.value, {
         type: "text/css",
         id: D,
         media: y,
         nonce: z
-      }), de ? s.head.prepend(n.value) : s.head.appendChild(n.value), Sn(n.value, "data-primevue-style-id", V), Ot(n.value, w), n.value.onload = function(U) {
+      }), de ? s.head.prepend(n.value) : s.head.appendChild(n.value), _n(n.value, "data-primevue-style-id", V), Ot(n.value, x), n.value.onload = function(U) {
         return G?.(U, {
           name: V
         });
@@ -1306,16 +1306,16 @@ function Bn(e) {
       }), r.value = !0);
     }
   }, ne = function() {
-    !s || !r.value || (te(), wn(n.value) && s.head.removeChild(n.value), r.value = !1, n.value = null);
+    !s || !r.value || (te(), xn(n.value) && s.head.removeChild(n.value), r.value = !1, n.value = null);
   };
-  return c && !h && Hn(se), {
+  return c && !h && In(se), {
     id: $,
     name: f,
     el: n,
     css: o,
     unload: ne,
     load: se,
-    isLoaded: fo(r)
+    isLoaded: mo(r)
   };
 }
 function ze(e) {
@@ -1328,13 +1328,13 @@ function ze(e) {
 }
 var or, nr, ir, ar;
 function sr(e, t) {
-  return Wn(e) || Fn(e, t) || Un(e, t) || zn();
+  return Gn(e) || Wn(e, t) || Fn(e, t) || Un();
 }
-function zn() {
+function Un() {
   throw new TypeError(`Invalid attempt to destructure non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function Un(e, t) {
+function Fn(e, t) {
   if (e) {
     if (typeof e == "string") return lr(e, t);
     var r = {}.toString.call(e).slice(8, -1);
@@ -1346,7 +1346,7 @@ function lr(e, t) {
   for (var r = 0, o = Array(t); r < t; r++) o[r] = e[r];
   return o;
 }
-function Fn(e, t) {
+function Wn(e, t) {
   var r = e == null ? null : typeof Symbol < "u" && e[Symbol.iterator] || e["@@iterator"];
   if (r != null) {
     var o, n, i, a, s = [], l = !0, c = !1;
@@ -1364,7 +1364,7 @@ function Fn(e, t) {
     return s;
   }
 }
-function Wn(e) {
+function Gn(e) {
   if (Array.isArray(e)) return e;
 }
 function cr(e, t) {
@@ -1381,21 +1381,21 @@ function _t(e) {
   for (var t = 1; t < arguments.length; t++) {
     var r = arguments[t] != null ? arguments[t] : {};
     t % 2 ? cr(Object(r), !0).forEach(function(o) {
-      Gn(e, o, r[o]);
+      Kn(e, o, r[o]);
     }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(r)) : cr(Object(r)).forEach(function(o) {
       Object.defineProperty(e, o, Object.getOwnPropertyDescriptor(r, o));
     });
   }
   return e;
 }
-function Gn(e, t, r) {
-  return (t = Kn(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
+function Kn(e, t, r) {
+  return (t = Yn(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
 }
-function Kn(e) {
-  var t = Yn(e, "string");
+function Yn(e) {
+  var t = Xn(e, "string");
   return ze(t) == "symbol" ? t : t + "";
 }
-function Yn(e, t) {
+function Xn(e, t) {
   if (ze(e) != "object" || !e) return e;
   var r = e[Symbol.toPrimitive];
   if (r !== void 0) {
@@ -1405,10 +1405,10 @@ function Yn(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-function et(e, t) {
+function rt(e, t) {
   return t || (t = e.slice(0)), Object.freeze(Object.defineProperties(e, { raw: { value: Object.freeze(t) } }));
 }
-var Xn = function(t) {
+var qn = function(t) {
   var r = t.dt;
   return `
 .p-hidden-accessible {
@@ -1430,17 +1430,17 @@ var Xn = function(t) {
     padding-right: `.concat(r("scrollbar.width"), `;
 }
 `);
-}, qn = {}, Zn = {}, X = {
+}, Zn = {}, Jn = {}, X = {
   name: "base",
-  css: Xn,
-  style: Mn,
-  classes: qn,
-  inlineStyles: Zn,
+  css: qn,
+  style: jn,
+  classes: Zn,
+  inlineStyles: Jn,
   load: function(t) {
     var r = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, o = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : function(i) {
       return i;
-    }, n = o(Qe(or || (or = et(["", ""])), t));
-    return M(n) ? Bn(He(n), _t({
+    }, n = o(tt(or || (or = rt(["", ""])), t));
+    return M(n) ? zn(He(n), _t({
       name: this.name
     }, r)) : {};
   },
@@ -1452,7 +1452,7 @@ var Xn = function(t) {
     var t = this, r = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {}, o = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : "";
     return this.load(this.style, r, function() {
       var n = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : "";
-      return I.transformCSS(r.name || t.name, "".concat(n).concat(Qe(nr || (nr = et(["", ""])), o)));
+      return I.transformCSS(r.name || t.name, "".concat(n).concat(tt(nr || (nr = rt(["", ""])), o)));
     });
   },
   getCommonTheme: function(t) {
@@ -1475,7 +1475,7 @@ var Xn = function(t) {
     if (this.css) {
       var o = ae(this.css, {
         dt: Te
-      }) || "", n = He(Qe(ir || (ir = et(["", "", ""])), o, t)), i = Object.entries(r).reduce(function(a, s) {
+      }) || "", n = He(tt(ir || (ir = rt(["", "", ""])), o, t)), i = Object.entries(r).reduce(function(a, s) {
         var l = sr(s, 2), c = l[0], p = l[1];
         return a.push("".concat(c, '="').concat(p, '"')) && a;
       }, []).join(" ");
@@ -1490,7 +1490,7 @@ var Xn = function(t) {
   getThemeStyleSheet: function(t) {
     var r = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, o = [I.getStyleSheet(this.name, t, r)];
     if (this.style) {
-      var n = this.name === "base" ? "global-style" : "".concat(this.name, "-style"), i = Qe(ar || (ar = et(["", ""])), ae(this.style, {
+      var n = this.name === "base" ? "global-style" : "".concat(this.name, "-style"), i = tt(ar || (ar = rt(["", ""])), ae(this.style, {
         dt: Te
       })), a = He(I.transformCSS(n, i)), s = Object.entries(r).reduce(function(l, c) {
         var p = sr(c, 2), h = p[0], d = p[1];
@@ -1506,7 +1506,7 @@ var Xn = function(t) {
       style: void 0
     }, t);
   }
-}, tt = Vt();
+}, ot = Vt();
 function Ue(e) {
   "@babel/helpers - typeof";
   return Ue = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
@@ -1525,25 +1525,25 @@ function pr(e, t) {
   }
   return r;
 }
-function rt(e) {
+function nt(e) {
   for (var t = 1; t < arguments.length; t++) {
     var r = arguments[t] != null ? arguments[t] : {};
     t % 2 ? pr(Object(r), !0).forEach(function(o) {
-      Jn(e, o, r[o]);
+      Qn(e, o, r[o]);
     }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(r)) : pr(Object(r)).forEach(function(o) {
       Object.defineProperty(e, o, Object.getOwnPropertyDescriptor(r, o));
     });
   }
   return e;
 }
-function Jn(e, t, r) {
-  return (t = Qn(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
+function Qn(e, t, r) {
+  return (t = ei(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
 }
-function Qn(e) {
-  var t = ei(e, "string");
+function ei(e) {
+  var t = ti(e, "string");
   return Ue(t) == "symbol" ? t : t + "";
 }
-function ei(e, t) {
+function ti(e, t) {
   if (Ue(e) != "object" || !e) return e;
   var r = e[Symbol.toPrimitive];
   if (r !== void 0) {
@@ -1553,7 +1553,7 @@ function ei(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var ti = {
+var ri = {
   ripple: !1,
   inputStyle: null,
   inputVariant: null,
@@ -1699,33 +1699,33 @@ var ti = {
   csp: {
     nonce: void 0
   }
-}, ri = Symbol();
-function oi(e, t) {
+}, oi = Symbol();
+function ni(e, t) {
   var r = {
-    config: vo(t)
+    config: go(t)
   };
-  return e.config.globalProperties.$primevue = r, e.provide(ri, r), ni(), ii(e, r), r;
+  return e.config.globalProperties.$primevue = r, e.provide(oi, r), ii(), ai(e, r), r;
 }
 var Ve = [];
-function ni() {
+function ii() {
   Y.clear(), Ve.forEach(function(e) {
     return e?.();
   }), Ve = [];
 }
-function ii(e, t) {
+function ai(e, t) {
   var r = A(!1), o = function() {
     var c;
     if (((c = t.config) === null || c === void 0 ? void 0 : c.theme) !== "none" && !I.isStyleNameLoaded("common")) {
       var p, h, d = ((p = X.getCommonTheme) === null || p === void 0 ? void 0 : p.call(X)) || {}, f = d.primitive, k = d.semantic, $ = d.global, _ = d.style, y = {
         nonce: (h = t.config) === null || h === void 0 || (h = h.csp) === null || h === void 0 ? void 0 : h.nonce
       };
-      X.load(f?.css, rt({
+      X.load(f?.css, nt({
         name: "primitive-variables"
-      }, y)), X.load(k?.css, rt({
+      }, y)), X.load(k?.css, nt({
         name: "semantic-variables"
-      }, y)), X.load($?.css, rt({
+      }, y)), X.load($?.css, nt({
         name: "global-variables"
-      }, y)), X.loadStyle(rt({
+      }, y)), X.loadStyle(nt({
         name: "global-style"
       }, y), _), I.setLoadedStyleName("common");
     }
@@ -1734,7 +1734,7 @@ function ii(e, t) {
     r.value || (e.config.globalProperties.$primevue.config.theme = l, r.value = !0);
   });
   var n = ye(t.config, function(l, c) {
-    tt.emit("config:change", {
+    ot.emit("config:change", {
       newValue: l,
       oldValue: c
     });
@@ -1744,7 +1744,7 @@ function ii(e, t) {
   }), i = ye(function() {
     return t.config.ripple;
   }, function(l, c) {
-    tt.emit("config:ripple:change", {
+    ot.emit("config:ripple:change", {
       newValue: l,
       oldValue: c
     });
@@ -1754,7 +1754,7 @@ function ii(e, t) {
   }), a = ye(function() {
     return t.config.theme;
   }, function(l, c) {
-    r.value || I.setTheme(l), t.config.unstyled || o(), r.value = !1, tt.emit("config:theme:change", {
+    r.value || I.setTheme(l), t.config.unstyled || o(), r.value = !1, ot.emit("config:theme:change", {
       newValue: l,
       oldValue: c
     });
@@ -1764,7 +1764,7 @@ function ii(e, t) {
   }), s = ye(function() {
     return t.config.unstyled;
   }, function(l, c) {
-    !l && t.config.theme && o(), tt.emit("config:unstyled:change", {
+    !l && t.config.theme && o(), ot.emit("config:unstyled:change", {
       newValue: l,
       oldValue: c
     });
@@ -1774,10 +1774,10 @@ function ii(e, t) {
   });
   Ve.push(n), Ve.push(i), Ve.push(a), Ve.push(s);
 }
-var ai = {
+var si = {
   install: function(t, r) {
-    var o = un(ti, r);
-    oi(t, o);
+    var o = dn(ri, r);
+    ni(t, o);
   }
 }, Mt = {
   name: "Portal",
@@ -1805,15 +1805,15 @@ var ai = {
     }
   }
 };
-function si(e, t, r, o, n, i) {
-  return i.inline ? it(e.$slots, "default", {
+function li(e, t, r, o, n, i) {
+  return i.inline ? st(e.$slots, "default", {
     key: 0
   }) : n.mounted ? (C(), Re(Or, {
     key: 1,
     to: r.appendTo
-  }, [it(e.$slots, "default")], 8, ["to"])) : B("", !0);
+  }, [st(e.$slots, "default")], 8, ["to"])) : B("", !0);
 }
-Mt.render = si;
+Mt.render = li;
 var Me = {
   _loadedStyleNames: /* @__PURE__ */ new Set(),
   getLoadedStyleNames: function() {
@@ -1832,8 +1832,8 @@ var Me = {
     this._loadedStyleNames.clear();
   }
 };
-function li() {
-  var e = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : "pc", t = go();
+function ci() {
+  var e = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : "pc", t = bo();
   return "".concat(e).concat(t.replace("v-", "").replaceAll("-", "_"));
 }
 var ur = X.extend({
@@ -1847,14 +1847,14 @@ function Fe(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Fe(e);
 }
-function ci(e) {
-  return ro(e) || pi(e) || to(e) || eo();
-}
 function pi(e) {
+  return ro(e) || ui(e) || to(e) || eo();
+}
+function ui(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
 function je(e, t) {
-  return ro(e) || ui(e, t) || to(e, t) || eo();
+  return ro(e) || di(e, t) || to(e, t) || eo();
 }
 function eo() {
   throw new TypeError(`Invalid attempt to destructure non-iterable instance.
@@ -1872,7 +1872,7 @@ function Pt(e, t) {
   for (var r = 0, o = Array(t); r < t; r++) o[r] = e[r];
   return o;
 }
-function ui(e, t) {
+function di(e, t) {
   var r = e == null ? null : typeof Symbol < "u" && e[Symbol.iterator] || e["@@iterator"];
   if (r != null) {
     var o, n, i, a, s = [], l = !0, c = !1;
@@ -1918,13 +1918,13 @@ function O(e) {
   return e;
 }
 function De(e, t, r) {
-  return (t = di(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
+  return (t = hi(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
 }
-function di(e) {
-  var t = hi(e, "string");
+function hi(e) {
+  var t = fi(e, "string");
   return Fe(t) == "symbol" ? t : t + "";
 }
-function hi(e, t) {
+function fi(e, t) {
   if (Fe(e) != "object" || !e) return e;
   var r = e[Symbol.toPrimitive];
   if (r !== void 0) {
@@ -1934,7 +1934,7 @@ function hi(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var fi = {
+var mi = {
   name: "BaseComponent",
   props: {
     pt: {
@@ -1984,14 +1984,14 @@ var fi = {
     var t, r, o, n, i, a, s, l, c, p, h, d = (t = this.pt) === null || t === void 0 ? void 0 : t._usept, f = d ? (r = this.pt) === null || r === void 0 || (r = r.originalValue) === null || r === void 0 ? void 0 : r[this.$.type.name] : void 0, k = d ? (o = this.pt) === null || o === void 0 || (o = o.value) === null || o === void 0 ? void 0 : o[this.$.type.name] : this.pt;
     (n = k || f) === null || n === void 0 || (n = n.hooks) === null || n === void 0 || (i = n.onBeforeCreate) === null || i === void 0 || i.call(n);
     var $ = (a = this.$primevueConfig) === null || a === void 0 || (a = a.pt) === null || a === void 0 ? void 0 : a._usept, _ = $ ? (s = this.$primevue) === null || s === void 0 || (s = s.config) === null || s === void 0 || (s = s.pt) === null || s === void 0 ? void 0 : s.originalValue : void 0, y = $ ? (l = this.$primevue) === null || l === void 0 || (l = l.config) === null || l === void 0 || (l = l.pt) === null || l === void 0 ? void 0 : l.value : (c = this.$primevue) === null || c === void 0 || (c = c.config) === null || c === void 0 ? void 0 : c.pt;
-    (p = y || _) === null || p === void 0 || (p = p[this.$.type.name]) === null || p === void 0 || (p = p.hooks) === null || p === void 0 || (h = p.onBeforeCreate) === null || h === void 0 || h.call(p), this.$attrSelector = li(), this.uid = this.$attrs.id || this.$attrSelector.replace("pc", "pv_id_");
+    (p = y || _) === null || p === void 0 || (p = p[this.$.type.name]) === null || p === void 0 || (p = p.hooks) === null || p === void 0 || (h = p.onBeforeCreate) === null || h === void 0 || h.call(p), this.$attrSelector = ci(), this.uid = this.$attrs.id || this.$attrSelector.replace("pc", "pv_id_");
   },
   created: function() {
     this._hook("onCreated");
   },
   beforeMount: function() {
     var t;
-    this.rootEl = Fr(pt(this.$el) ? this.$el : (t = this.$el) === null || t === void 0 ? void 0 : t.parentElement, "[".concat(this.$attrSelector, "]")), this.rootEl && (this.rootEl.$pc = O({
+    this.rootEl = Fr(dt(this.$el) ? this.$el : (t = this.$el) === null || t === void 0 ? void 0 : t.parentElement, "[".concat(this.$attrSelector, "]")), this.rootEl && (this.rootEl.$pc = O({
       name: this.$.type.name,
       attrSelector: this.$attrSelector
     }, this.$params)), this._loadStyles(), this._hook("onBeforeMount");
@@ -2122,7 +2122,7 @@ var fi = {
     },
     _getPTClassValue: function() {
       var t = this._getOptionValue.apply(this, arguments);
-      return me(t) || cn(t) ? {
+      return me(t) || pn(t) ? {
         class: t
       } : t;
     },
@@ -2257,7 +2257,7 @@ var fi = {
         var r = je(t, 1), o = r[0];
         return o?.startsWith("pt:");
       }).reduce(function(t, r) {
-        var o = je(r, 2), n = o[0], i = o[1], a = n.split(":"), s = ci(a), l = Pt(s).slice(1);
+        var o = je(r, 2), n = o[0], i = o[1], a = n.split(":"), s = pi(a), l = Pt(s).slice(1);
         return l?.reduce(function(c, p, h, d) {
           return !c[p] && (c[p] = h === d.length - 1 ? i : {}), c[p];
         }, t), t;
@@ -2282,23 +2282,23 @@ function We(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, We(e);
 }
-function mi(e, t) {
+function vi(e, t) {
   if (!(e instanceof t)) throw new TypeError("Cannot call a class as a function");
 }
-function vi(e, t) {
+function gi(e, t) {
   for (var r = 0; r < t.length; r++) {
     var o = t[r];
-    o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, bi(o.key), o);
+    o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, yi(o.key), o);
   }
 }
-function gi(e, t, r) {
-  return t && vi(e.prototype, t), Object.defineProperty(e, "prototype", { writable: !1 }), e;
+function bi(e, t, r) {
+  return t && gi(e.prototype, t), Object.defineProperty(e, "prototype", { writable: !1 }), e;
 }
-function bi(e) {
-  var t = yi(e, "string");
+function yi(e) {
+  var t = wi(e, "string");
   return We(t) == "symbol" ? t : t + "";
 }
-function yi(e, t) {
+function wi(e, t) {
   if (We(e) != "object" || !e) return e;
   var r = e[Symbol.toPrimitive];
   if (r !== void 0) {
@@ -2308,16 +2308,16 @@ function yi(e, t) {
   }
   return String(e);
 }
-var wi = /* @__PURE__ */ (function() {
+var xi = /* @__PURE__ */ (function() {
   function e(t) {
     var r = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : function() {
     };
-    mi(this, e), this.element = t, this.listener = r;
+    vi(this, e), this.element = t, this.listener = r;
   }
-  return gi(e, [{
+  return bi(e, [{
     key: "bindScrollListener",
     value: function() {
-      this.scrollableParents = xn(this.element);
+      this.scrollableParents = kn(this.element);
       for (var r = 0; r < this.scrollableParents.length; r++)
         this.scrollableParents[r].addEventListener("scroll", this.listener);
     }
@@ -2334,26 +2334,26 @@ var wi = /* @__PURE__ */ (function() {
       this.unbindScrollListener(), this.element = null, this.listener = null, this.scrollableParents = null;
     }
   }]);
-})(), xi = Vt();
-const ki = "data-wippy-overlay-layer";
+})(), ki = Vt();
+const Si = "data-wippy-overlay-layer";
 function oo() {
   return typeof window < "u" && typeof window.document < "u";
 }
 function no() {
   return oo() && typeof HTMLElement < "u" && Object.hasOwn(HTMLElement.prototype, "popover");
 }
-function Si() {
+function _i() {
   return no() && typeof CSS < "u" && typeof CSS.supports == "function" && CSS.supports("anchor-name: --a") && CSS.supports("position-area", "bottom span-right") && CSS.supports("position-try-fallbacks", "flip-block") && CSS.supports("min-width", "min(anchor-size(width), 100vw)") && CSS.supports("max-width", "stretch");
 }
-const _i = /\bp-(?:select|multiselect|treeselect|cascadeselect)-overlay\b/;
-let $i = 0;
-const st = /* @__PURE__ */ new WeakMap();
+const $i = /\bp-(?:select|multiselect|treeselect|cascadeselect)-overlay\b/;
+let Ci = 0;
+const ct = /* @__PURE__ */ new WeakMap();
 function hr(e, t) {
   const r = e.style;
   r.setProperty("position", "fixed", "important"), r.setProperty("inset", "auto", "important"), r.setProperty("margin", "0", "important"), r.setProperty("position-anchor", t), r.setProperty("position-area", "bottom span-right"), r.setProperty("position-try-fallbacks", "flip-block, flip-inline, flip-block flip-inline"), r.setProperty("min-width", "min(anchor-size(width), 100vw)", "important"), r.setProperty("max-width", "stretch", "important");
 }
-function Ci(e, t) {
-  if (!_i.test(e.className))
+function Oi(e, t) {
+  if (!$i.test(e.className))
     return;
   const r = e.style.cssText;
   hr(e, t), e.getAttribute("popover") !== "manual" && e.setAttribute("popover", "manual");
@@ -2365,19 +2365,19 @@ function Ci(e, t) {
     e.removeAttribute("popover"), e.style.cssText = r;
     return;
   }
-  if (!st.has(e)) {
+  if (!ct.has(e)) {
     const o = new MutationObserver(() => {
       const n = e.style;
       (n.top !== "auto" || n.left !== "auto" || n.margin !== "0px" || n.getPropertyPriority("top") !== "important" || n.getPropertyPriority("left") !== "important" || n.getPropertyPriority("margin") !== "important" || n.getPropertyPriority("min-width") !== "important" || n.maxWidth !== "stretch" || n.getPropertyPriority("max-width") !== "important") && hr(e, t);
     });
-    o.observe(e, { attributes: !0, attributeFilter: ["style"] }), st.set(e, o);
+    o.observe(e, { attributes: !0, attributeFilter: ["style"] }), ct.set(e, o);
   }
 }
 function jt(e) {
-  const t = st.get(e);
-  t && (t.disconnect(), st.delete(e));
+  const t = ct.get(e);
+  t && (t.disconnect(), ct.delete(e));
 }
-function Oi(e) {
+function Ti(e) {
   const t = e && typeof e.getRootNode == "function" ? e.getRootNode() : null;
   return t instanceof ShadowRoot ? t : null;
 }
@@ -2386,26 +2386,26 @@ function Lt(e) {
   const t = e.getBoundingClientRect();
   e.style.top = `${-window.scrollY - t.top}px`, e.style.left = `${-window.scrollX - t.left}px`;
 }
-const lt = /* @__PURE__ */ new Set(), Rt = /* @__PURE__ */ new WeakMap();
+const pt = /* @__PURE__ */ new Set(), Rt = /* @__PURE__ */ new WeakMap();
 let fr = !1, Et = !1;
-function Ti() {
+function Pi() {
   Et = !1;
-  for (const e of lt) {
+  for (const e of pt) {
     if (!e.isConnected) {
       for (const t of Array.from(e.children))
         t instanceof HTMLElement && jt(t);
-      lt.delete(e), Rt.get(e)?.disconnect();
+      pt.delete(e), Rt.get(e)?.disconnect();
       continue;
     }
     e.childElementCount > 0 && Lt(e);
   }
 }
 function mr() {
-  Et || (Et = !0, requestAnimationFrame(Ti));
+  Et || (Et = !0, requestAnimationFrame(Pi));
 }
-function Pi(e) {
+function Li(e) {
   const t = document.createElement("div");
-  t.setAttribute(ki, "");
+  t.setAttribute(Si, "");
   const r = no();
   if (t.style.cssText = r ? "position:fixed;width:0 !important;height:0 !important;margin:0 !important;border:0 !important;padding:0 !important;background:transparent !important;color:inherit !important;overflow:visible !important;" : "position:fixed;top:0;left:0;width:0;height:0;", r && t.setAttribute("popover", "manual"), e.appendChild(t), r) {
     try {
@@ -2420,29 +2420,29 @@ function Pi(e) {
     for (const a of n) {
       if (i)
         for (const s of Array.from(a.addedNodes))
-          s instanceof HTMLElement && Ci(s, i);
+          s instanceof HTMLElement && Oi(s, i);
       for (const s of Array.from(a.removedNodes))
         s instanceof HTMLElement && jt(s);
     }
     t.isConnected && t.childElementCount > 0 && Lt(t);
   });
-  return o.observe(t, { childList: !0 }), Rt.set(t, o), lt.add(t), fr || (fr = !0, window.addEventListener("scroll", mr, { capture: !0, passive: !0 }), window.addEventListener("resize", mr, { passive: !0 })), t;
+  return o.observe(t, { childList: !0 }), Rt.set(t, o), pt.add(t), fr || (fr = !0, window.addEventListener("scroll", mr, { capture: !0, passive: !0 }), window.addEventListener("resize", mr, { passive: !0 })), t;
 }
 function vr(e) {
-  if (!(!e.hostRoot || e.layer) && (e.layer = Pi(e.hostRoot), Si())) {
+  if (!(!e.hostRoot || e.layer) && (e.layer = Li(e.hostRoot), _i())) {
     const t = e.$el ? e.$el.parentElement : null;
-    t && (e.anchorName = `--wippy-a-${++$i}`, e.anchorTrigger = t, t.style.setProperty("anchor-name", e.anchorName), e.layer.__wippyAnchorName = e.anchorName);
+    t && (e.anchorName = `--wippy-a-${++Ci}`, e.anchorTrigger = t, t.style.setProperty("anchor-name", e.anchorName), e.layer.__wippyAnchorName = e.anchorName);
   }
 }
 function gr(e) {
   if (e.anchorTrigger && (e.anchorTrigger.style.removeProperty("anchor-name"), e.anchorTrigger = null), e.anchorName = null, e.layer) {
     for (const t of Array.from(e.layer.children))
       t instanceof HTMLElement && jt(t);
-    lt.delete(e.layer), Rt.get(e.layer)?.disconnect(), e.layer.remove(), e.layer = null;
+    pt.delete(e.layer), Rt.get(e.layer)?.disconnect(), e.layer.remove(), e.layer = null;
   }
 }
 let br = !1;
-function Li() {
+function Ei() {
   if (br)
     return;
   br = !0;
@@ -2454,20 +2454,20 @@ function Li() {
   }, e.data = function() {
     return { mounted: !1, hostRoot: null, layer: null, anchorName: null, anchorTrigger: null };
   }, e.mounted = function() {
-    oo() && (this.hostRoot = Oi(this.$el), this.mounted = !0, this.hostRoot && (this.inline || vr(this), this.$watch("inline", (t) => {
+    oo() && (this.hostRoot = Ti(this.$el), this.mounted = !0, this.hostRoot && (this.inline || vr(this), this.$watch("inline", (t) => {
       t ? gr(this) : vr(this);
     })));
   }, e.render = function() {
-    return this.inline ? it(this.$slots, "default", { key: 0 }) : this.mounted ? bo(Or, { key: 1, to: this.resolvedTarget || document.body }, [
-      it(this.$slots, "default")
+    return this.inline ? st(this.$slots, "default", { key: 0 }) : this.mounted ? yo(Or, { key: 1, to: this.resolvedTarget || document.body }, [
+      st(this.$slots, "default")
     ]) : B("", !0);
   }, e.unmounted = function() {
     gr(this);
   };
 }
-const Ei = {
+const Ni = {
   install: (e) => {
-    Li(), e.use(ai, { theme: "none" });
+    Ei(), e.use(si, { theme: "none" });
   }
 }, yr = /* @__PURE__ */ Tr({
   __name: "IconField",
@@ -2486,13 +2486,13 @@ const Ei = {
       if (n.value) {
         i && i.removeEventListener("select", a), n.value.innerHTML = "";
         try {
-          customElements.get("wc-icon-picker") || await $o("wc-icon-picker", { timeoutMs: 8e3 });
+          customElements.get("wc-icon-picker") || await Co("wc-icon-picker", { timeoutMs: 8e3 });
         } catch {
         }
         n.value && (i = document.createElement("wc-icon-picker"), i.setAttribute("value", r.modelValue || ""), r.fallback && i.setAttribute("fallback", r.fallback), i.addEventListener("select", a), n.value.appendChild(i));
       }
     }
-    return ct(s), ye(() => r.modelValue, (l) => {
+    return ut(s), ye(() => r.modelValue, (l) => {
       i && i.getAttribute("value") !== l && i.setAttribute("value", l || "");
     }), Pr(() => {
       i && i.removeEventListener("select", a);
@@ -2503,9 +2503,9 @@ const Ei = {
     }, null, 512));
   }
 });
-var Ni = {
+var Ai = {
   name: "BaseEditableHolder",
-  extends: fi,
+  extends: mi,
   emits: ["update:modelValue", "value-change"],
   props: {
     modelValue: {
@@ -2639,7 +2639,7 @@ var Ni = {
       return this.$filled;
     }
   }
-}, Ai = `
+}, Vi = `
     .p-colorpicker {
         display: inline-block;
         position: relative;
@@ -2746,7 +2746,7 @@ var Ni = {
         cursor: pointer;
         border-color: dt('colorpicker.handle.color');
     }
-`, Vi = {
+`, Mi = {
   root: "p-colorpicker p-component",
   preview: function(t) {
     var r = t.props;
@@ -2767,13 +2767,13 @@ var Ni = {
   colorHandle: "p-colorpicker-color-handle",
   hue: "p-colorpicker-hue",
   hueHandle: "p-colorpicker-hue-handle"
-}, Mi = X.extend({
+}, ji = X.extend({
   name: "colorpicker",
-  style: Ai,
-  classes: Vi
-}), ji = {
+  style: Vi,
+  classes: Mi
+}), Ri = {
   name: "BaseColorPicker",
-  extends: Ni,
+  extends: Ai,
   props: {
     defaultColor: {
       type: null,
@@ -2810,7 +2810,7 @@ var Ni = {
     panelClass: null,
     overlayClass: null
   },
-  style: Mi,
+  style: ji,
   provide: function() {
     return {
       $pcColorPicker: this,
@@ -2819,7 +2819,7 @@ var Ni = {
   }
 }, io = {
   name: "ColorPicker",
-  extends: ji,
+  extends: Ri,
   inheritAttrs: !1,
   emits: ["change", "show", "hide"],
   data: function() {
@@ -3014,7 +3014,7 @@ var Ni = {
       this.autoZIndex && kt.clear(t);
     },
     alignOverlay: function() {
-      this.appendTo === "self" ? yn(this.picker, this.$refs.input) : bn(this.picker, this.$refs.input);
+      this.appendTo === "self" ? wn(this.picker, this.$refs.input) : yn(this.picker, this.$refs.input);
     },
     onInputClick: function() {
       this.disabled || (this.overlayVisible = !this.overlayVisible);
@@ -3044,7 +3044,7 @@ var Ni = {
       this.colorDragging && (this.pickColor(t), t.preventDefault()), this.hueDragging && (this.pickHue(t), t.preventDefault());
     },
     onDragEnd: function() {
-      this.colorDragging = !1, this.hueDragging = !1, this.$el.setAttribute("p-colorpicker-dragging", "false"), !this.isUnstyled && hn(this.$el, "p-colorpicker-dragging"), this.unbindDragListeners();
+      this.colorDragging = !1, this.hueDragging = !1, this.$el.setAttribute("p-colorpicker-dragging", "false"), !this.isUnstyled && fn(this.$el, "p-colorpicker-dragging"), this.unbindDragListeners();
     },
     onHueMousedown: function(t) {
       this.disabled || (this.bindDragListeners(), this.onHueDragStart(t));
@@ -3072,7 +3072,7 @@ var Ni = {
     },
     bindScrollListener: function() {
       var t = this;
-      this.scrollHandler || (this.scrollHandler = new wi(this.$refs.container, function() {
+      this.scrollHandler || (this.scrollHandler = new xi(this.$refs.container, function() {
         t.overlayVisible && (t.overlayVisible = !1);
       })), this.scrollHandler.bindScrollListener();
     },
@@ -3082,7 +3082,7 @@ var Ni = {
     bindResizeListener: function() {
       var t = this;
       this.resizeListener || (this.resizeListener = function() {
-        t.overlayVisible && !kn() && (t.overlayVisible = !1);
+        t.overlayVisible && !Sn() && (t.overlayVisible = !1);
       }, window.addEventListener("resize", this.resizeListener));
     },
     unbindResizeListener: function() {
@@ -3119,7 +3119,7 @@ var Ni = {
       this.picker = null, this.colorSelector = null, this.colorHandle = null, this.hueView = null, this.hueHandle = null;
     },
     onOverlayClick: function(t) {
-      xi.emit("overlay-click", {
+      ki.emit("overlay-click", {
         originalEvent: t,
         target: this.$el
       });
@@ -3151,21 +3151,21 @@ function xr(e) {
   for (var t = 1; t < arguments.length; t++) {
     var r = arguments[t] != null ? arguments[t] : {};
     t % 2 ? wr(Object(r), !0).forEach(function(o) {
-      Ri(e, o, r[o]);
+      Di(e, o, r[o]);
     }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(r)) : wr(Object(r)).forEach(function(o) {
       Object.defineProperty(e, o, Object.getOwnPropertyDescriptor(r, o));
     });
   }
   return e;
 }
-function Ri(e, t, r) {
-  return (t = Di(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
+function Di(e, t, r) {
+  return (t = Hi(t)) in e ? Object.defineProperty(e, t, { value: r, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = r, e;
 }
-function Di(e) {
-  var t = Hi(e, "string");
+function Hi(e) {
+  var t = Ii(e, "string");
   return Ge(t) == "symbol" ? t : t + "";
 }
-function Hi(e, t) {
+function Ii(e, t) {
   if (Ge(e) != "object" || !e) return e;
   var r = e[Symbol.toPrimitive];
   if (r !== void 0) {
@@ -3175,9 +3175,9 @@ function Hi(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var Ii = ["id", "tabindex", "disabled"];
-function Bi(e, t, r, o, n, i) {
-  var a = yo("Portal");
+var Bi = ["id", "tabindex", "disabled"];
+function zi(e, t, r, o, n, i) {
+  var a = wo("Portal");
   return C(), N("div", re({
     ref: "container",
     class: e.cx("root")
@@ -3199,12 +3199,12 @@ function Bi(e, t, r, o, n, i) {
     onBlur: t[2] || (t[2] = function() {
       return i.onInputBlur && i.onInputBlur.apply(i, arguments);
     })
-  }, e.ptm("preview")), null, 16, Ii)), T(a, {
+  }, e.ptm("preview")), null, 16, Bi)), T(a, {
     appendTo: e.appendTo,
     disabled: e.inline
   }, {
     default: Ft(function() {
-      return [T(wo, re({
+      return [T(xo, re({
         name: "p-anchored-overlay",
         onEnter: i.onOverlayEnter,
         onLeave: i.onOverlayLeave,
@@ -3266,9 +3266,9 @@ function Bi(e, t, r, o, n, i) {
     _: 1
   }, 8, ["appendTo", "disabled"])], 16);
 }
-io.render = Bi;
+io.render = zi;
 const kr = "#22c55e", Dt = "--p-primary";
-function zi(e) {
+function Ui(e) {
   const t = /^rgba?\(([^)]+)\)/i.exec((e || "").trim());
   if (!t) return null;
   const r = t[1].split(",").map((n) => parseFloat(n.trim()));
@@ -3303,12 +3303,12 @@ function Nt(e, t) {
   ].join(`
 `);
 }
-function Ui(e, t) {
+function Fi(e, t) {
   if (!e || typeof e != "object") return "";
   const r = e[Dt];
   return typeof r == "string" ? Nt(r, t) : "";
 }
-const Fi = { r: 255, g: 255, b: 255 }, Wi = { r: 12, g: 14, b: 18 }, Gi = 2, Ki = 2;
+const Wi = { r: 255, g: 255, b: 255 }, Gi = { r: 12, g: 14, b: 18 }, Ki = 2, Yi = 2;
 function _r(e) {
   const t = (r) => {
     const o = r / 255;
@@ -3320,29 +3320,29 @@ function $r(e, t) {
   const r = _r(e), o = _r(t);
   return (Math.max(r, o) + 0.05) / (Math.min(r, o) + 0.05);
 }
-function Yi(e, t = typeof document < "u" ? document : void 0) {
+function Xi(e, t = typeof document < "u" ? document : void 0) {
   const r = Ht(e);
   if (!r) return null;
   if (!t || !t.body || !t.defaultView) return Sr(r);
   const o = t.createElement("span");
   o.style.setProperty(Dt, r), o.style.color = "var(--p-primary-color)", o.style.display = "none", t.body.appendChild(o);
   const n = t.defaultView.getComputedStyle(o).color;
-  return o.remove(), Sr(zi(n) || r);
+  return o.remove(), Sr(Ui(n) || r);
 }
-function Xi(e) {
-  const t = Yi(e);
+function qi(e) {
+  const t = Xi(e);
   if (!t) return null;
-  const r = $r(t, Fi), o = $r(t, Wi), n = r >= Gi, i = o >= Ki;
+  const r = $r(t, Wi), o = $r(t, Gi), n = r >= Ki, i = o >= Yi;
   let a = "";
   return !n && !i ? a = "This tone is too low-contrast - buttons and accents would be unreadable in both light and dark mode." : n ? i || (a = "This tone is too dark - accents would be invisible against the dark background.") : a = "This tone is too light - white button text and accents would be unreadable in light mode.", { ok: n && i, onLight: r, onDark: o, reason: a };
 }
-function qi({ items: e, categories: t, overrides: r, home: o }) {
+function Zi({ items: e, categories: t, overrides: r, home: o }) {
   const n = (g) => g.route_name || g.id;
   function i(g, b) {
-    const w = n(g), V = { ...r.value[w] || {} };
+    const x = n(g), V = { ...r.value[x] || {} };
     for (const [D, z] of Object.entries(b))
       z === void 0 || z === "" ? delete V[D] : V[D] = z;
-    r.value = { ...r.value, [w]: V };
+    r.value = { ...r.value, [x]: V };
   }
   function a(g, b) {
     i(g, { hidden: b || void 0 }), g.hidden = b;
@@ -3354,12 +3354,12 @@ function qi({ items: e, categories: t, overrides: r, home: o }) {
     i(g, { order: b }), g.order = b;
   }
   function c(g, b) {
-    const w = b.replace(/^\s+/, "");
-    g.label = w, i(g, { label: w || void 0 });
+    const x = b.replace(/^\s+/, "");
+    g.label = x, i(g, { label: x || void 0 });
   }
   function p(g, b) {
-    const w = (b || "").trim();
-    g.icon = w, i(g, { icon: w || void 0 });
+    const x = (b || "").trim();
+    g.icon = x, i(g, { icon: x || void 0 });
   }
   function h(g) {
     const b = r.value[n(g)];
@@ -3367,15 +3367,15 @@ function qi({ items: e, categories: t, overrides: r, home: o }) {
   }
   const d = be(() => [...t.value].sort((g, b) => g.order - b.order));
   function f(g) {
-    return e.value.filter((b) => !b.hidden && (b.category || "") === g).sort((b, w) => b.order - w.order || b.label.localeCompare(w.label));
+    return e.value.filter((b) => !b.hidden && (b.category || "") === g).sort((b, x) => b.order - x.order || b.label.localeCompare(x.label));
   }
   const k = be(() => {
     const g = [];
     g.push({ key: "", label: "Ungrouped", real: !1 });
-    for (const w of d.value) g.push({ key: w.key, label: w.label || w.key, real: !0 });
-    const b = /* @__PURE__ */ new Set(["", ...t.value.map((w) => w.key)]);
-    for (const w of e.value)
-      w.category && !b.has(w.category) && (b.add(w.category), g.push({ key: w.category, label: w.category, real: !1 }));
+    for (const x of d.value) g.push({ key: x.key, label: x.label || x.key, real: !0 });
+    const b = /* @__PURE__ */ new Set(["", ...t.value.map((x) => x.key)]);
+    for (const x of e.value)
+      x.category && !b.has(x.category) && (b.add(x.category), g.push({ key: x.category, label: x.category, real: !1 }));
     return g;
   }), $ = be(() => e.value.filter((g) => g.hidden)), _ = (g) => t.value.find((b) => b.key === g), y = A(null), E = A(null), W = A(null), oe = (g) => e.value.find((b) => b.id === g);
   function de(g, b) {
@@ -3387,14 +3387,14 @@ function qi({ items: e, categories: t, overrides: r, home: o }) {
   function q(g) {
     const b = y.value ? oe(y.value) : null;
     if (!b || b.id === g.id) return j();
-    const w = g.category || "", V = f(w).filter((z) => z.id !== b.id), D = V.indexOf(g);
-    V.splice(D < 0 ? V.length : D, 0, b), s(b, w), V.forEach((z, U) => l(z, U * 10)), j();
+    const x = g.category || "", V = f(x).filter((z) => z.id !== b.id), D = V.indexOf(g);
+    V.splice(D < 0 ? V.length : D, 0, b), s(b, x), V.forEach((z, U) => l(z, U * 10)), j();
   }
   function Z(g) {
     const b = y.value ? oe(y.value) : null;
     if (!b) return j();
-    const w = f(g).filter((V) => V.id !== b.id);
-    w.push(b), s(b, g), w.forEach((V, D) => l(V, D * 10)), j();
+    const x = f(g).filter((V) => V.id !== b.id);
+    x.push(b), s(b, g), x.forEach((V, D) => l(V, D * 10)), j();
   }
   function Q(g, b) {
     E.value = g, b.dataTransfer && (b.dataTransfer.effectAllowed = "move", b.dataTransfer.setData("text/plain", "cat:" + g));
@@ -3402,10 +3402,10 @@ function qi({ items: e, categories: t, overrides: r, home: o }) {
   function J(g) {
     const b = E.value;
     if (!b || b === g) return j();
-    const w = [...d.value], V = w.findIndex((U) => U.key === b), D = w.findIndex((U) => U.key === g);
+    const x = [...d.value], V = x.findIndex((U) => U.key === b), D = x.findIndex((U) => U.key === g);
     if (V < 0 || D < 0) return j();
-    const [z] = w.splice(V, 1);
-    w.splice(D, 0, z), w.forEach((U, ve) => {
+    const [z] = x.splice(V, 1);
+    x.splice(D, 0, z), x.forEach((U, ve) => {
       const Se = t.value.find((we) => we.key === U.key);
       Se && (Se.order = ve * 10);
     }), j();
@@ -3421,12 +3421,12 @@ function qi({ items: e, categories: t, overrides: r, home: o }) {
     t.value = t.value.filter((b) => b.key !== g);
   }
   function te(g, b) {
-    const w = _(g);
-    w && (w.label = b);
+    const x = _(g);
+    x && (x.label = b);
   }
   function se(g, b) {
-    const w = _(g);
-    w && (w.icon = (b || "").trim() || void 0);
+    const x = _(g);
+    x && (x.icon = (b || "").trim() || void 0);
   }
   function ne(g) {
     return !!o.value && o.value === g.path;
@@ -3465,7 +3465,7 @@ function qi({ items: e, categories: t, overrides: r, home: o }) {
     setHome: le
   };
 }
-function Zi({ logoUrl: e, error: t, apiError: r }) {
+function Ji({ logoUrl: e, error: t, apiError: r }) {
   const o = A(!1);
   async function n(a) {
     const s = a.target, l = s.files && s.files[0];
@@ -3482,7 +3482,7 @@ function Zi({ logoUrl: e, error: t, apiError: r }) {
       try {
         const c = new FormData();
         c.append("logo", l);
-        const { data: p } = await nt.post("/api/v1/nav/logo", c, { headers: { "Content-Type": "multipart/form-data" } });
+        const { data: p } = await at.post("/api/v1/nav/logo", c, { headers: { "Content-Type": "multipart/form-data" } });
         if (!p.success || !p.url) throw new Error(p.error || "upload failed");
         e.value = p.url;
       } catch (c) {
@@ -3497,59 +3497,59 @@ function Zi({ logoUrl: e, error: t, apiError: r }) {
   }
   return { uploadingLogo: o, uploadLogo: n, removeLogo: i };
 }
-const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" }, ta = {
+const Qi = { class: "ap" }, ea = { class: "ap-body" }, ta = { class: "ap-bar" }, ra = {
   key: 0,
   class: "ap-dirty ap-dirty-warn"
-}, ra = {
+}, oa = {
   key: 1,
   class: "ap-dirty"
-}, oa = ["disabled"], na = ["disabled"], ia = {
+}, na = ["disabled"], ia = ["disabled"], aa = {
   key: 0,
   class: "ap-msg ap-err"
-}, aa = {
+}, sa = {
   key: 1,
   class: "ap-loading"
-}, sa = {
+}, la = {
   key: 2,
   class: "ap-grid"
-}, la = { class: "ap-side" }, ca = { class: "ap-card" }, pa = { class: "ap-h" }, ua = { class: "ap-logo" }, da = { class: "ap-logo-prev" }, ha = ["src"], fa = { class: "ap-logo-actions" }, ma = ["disabled"], va = { class: "ap-tone" }, ga = {
+}, ca = { class: "ap-side" }, pa = { class: "ap-card" }, ua = { class: "ap-h" }, da = { class: "ap-logo" }, ha = { class: "ap-logo-prev" }, fa = ["src"], ma = { class: "ap-logo-actions" }, va = ["disabled"], ga = { class: "ap-tone" }, ba = {
   key: 0,
   class: "ap-tone-warn",
   role: "alert"
-}, ba = {
+}, ya = {
   class: "ap-theme-modes",
   role: "group",
   "aria-label": "Color scheme"
-}, ya = ["aria-pressed", "onClick"], wa = { class: "ap-card" }, xa = { class: "ap-h" }, ka = { class: "ap-layouts" }, Sa = { class: "ap-lo-name" }, _a = { class: "ap-lo-name" }, $a = { class: "ap-card ap-legend" }, Ca = { class: "ap-h" }, Oa = { class: "ap-tips" }, Ta = { class: "ap-card" }, Pa = { class: "ap-h" }, La = ["disabled"], Ea = {
+}, wa = ["aria-pressed", "onClick"], xa = { class: "ap-card" }, ka = { class: "ap-h" }, Sa = { class: "ap-layouts" }, _a = { class: "ap-lo-name" }, $a = { class: "ap-lo-name" }, Ca = { class: "ap-card ap-legend" }, Oa = { class: "ap-h" }, Ta = { class: "ap-tips" }, Pa = { class: "ap-card" }, La = { class: "ap-h" }, Ea = ["disabled"], Na = {
   key: 0,
   class: "ap-hint"
-}, Na = { class: "ap-card ap-structure" }, Aa = { class: "ap-h" }, Va = ["onDragover", "onDragleave", "onDrop"], Ma = ["onDrop"], ja = ["onDragstart"], Ra = {
+}, Aa = { class: "ap-card ap-structure" }, Va = { class: "ap-h" }, Ma = ["onDragover", "onDragleave", "onDrop"], ja = ["onDrop"], Ra = ["onDragstart"], Da = {
   key: 1,
   class: "ap-grip ap-grip-ghost",
   "aria-hidden": "true"
-}, Da = ["value", "onInput"], Ha = { class: "ap-tile ap-tile-muted" }, Ia = { class: "ap-field ap-field-strong ap-field-static" }, Ba = { class: "ap-count" }, za = ["onClick"], Ua = {
+}, Ha = ["value", "onInput"], Ia = { class: "ap-tile ap-tile-muted" }, Ba = { class: "ap-field ap-field-strong ap-field-static" }, za = { class: "ap-count" }, Ua = ["onClick"], Fa = {
   key: 0,
   class: "ap-drop-hint"
-}, Fa = ["onDrop"], Wa = ["onDragstart"], Ga = ["value", "onInput"], Ka = { class: "ap-path" }, Ya = {
+}, Wa = ["onDrop"], Ga = ["onDragstart"], Ka = ["value", "onInput"], Ya = { class: "ap-path" }, Xa = {
   key: 0,
   class: "ap-pill kx-tag-sm"
-}, Xa = {
+}, qa = {
   key: 1,
   class: "ap-pill kx-tag-sm ap-pill-home"
-}, qa = ["aria-label", "title", "onClick"], Za = ["onClick"], Ja = {
+}, Za = ["aria-label", "title", "onClick"], Ja = ["onClick"], Qa = {
   key: 0,
   class: "ap-hidden"
-}, Qa = {
+}, es = {
   key: 0,
   class: "ap-hidden-list"
-}, es = { class: "ap-tile" }, ts = { class: "ap-field ap-field-strong ap-field-static" }, rs = ["onClick"], os = /* @__PURE__ */ Tr({
+}, ts = { class: "ap-tile" }, rs = { class: "ap-field ap-field-strong ap-field-static" }, os = ["onClick"], ns = /* @__PURE__ */ Tr({
   __name: "appearance",
   setup(e) {
     const t = A(!0), r = A(!1), o = A("");
     function n(S, u) {
       return S?.response?.data?.error || S?.message || u;
     }
-    const i = A("vertical"), a = A(ot.getThemeMode?.() ?? "auto"), s = A([]), l = A([]), c = A({}), p = A(!1), h = A(""), d = A(""), f = Zi({ logoUrl: d, error: o, apiError: n }), { uploadingLogo: k, uploadLogo: $, removeLogo: _ } = f, y = A(""), E = A(kr), W = be({
+    const i = A("vertical"), a = A(it.getThemeMode?.() ?? "auto"), s = A([]), l = A([]), c = A({}), p = A(!1), h = A(""), d = A(""), f = Ji({ logoUrl: d, error: o, apiError: n }), { uploadingLogo: k, uploadLogo: $, removeLogo: _ } = f, y = A(""), E = A(kr), W = be({
       // PrimeVue's <ColorPicker format="hex"> exchanges a BARE rrggbb string, while the stored
       // setting and the hex text field both keep the #-prefixed form — so strip on the way in
       // and re-add on the way out. Falling back to defaultTone keeps the swatch showing the live
@@ -3564,11 +3564,9 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       y.value = "";
     }
     function de(S) {
-      a.value = S, ot.setThemeMode(S);
+      a.value = S, it.setThemeMode(S);
     }
-    const j = be(() => y.value.trim() ? Xi(y.value) : null), q = be(() => !!y.value.trim() && j.value === null), Z = be(() => q.value || !!j.value && !j.value.ok), Q = be(() => q.value ? "Enter a valid hex color, e.g. #2563eb." : j.value && !j.value.ok ? j.value.reason : ""), J = A("");
-    let G = "";
-    const ee = () => JSON.stringify({
+    const j = be(() => y.value.trim() ? qi(y.value) : null), q = be(() => !!y.value.trim() && j.value === null), Z = be(() => q.value || !!j.value && !j.value.ok), Q = be(() => q.value ? "Enter a valid hex color, e.g. #2563eb." : j.value && !j.value.ok ? j.value.reason : ""), J = A(""), G = A(""), ee = () => JSON.stringify({
       layout: i.value,
       cats: l.value,
       overrides: c.value,
@@ -3577,27 +3575,27 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       home: J.value,
       tone: y.value,
       pos: s.value.map((S) => [S.id, S.category, S.order, !!S.hidden])
-    }), K = be(() => ee() !== G);
+    }), K = be(() => ee() !== G.value);
     async function te() {
       t.value = !0, o.value = "";
       try {
-        const { data: S } = await nt.get("/api/v1/nav/list?manage=1");
+        const { data: S } = await at.get("/api/v1/nav/list?manage=1");
         if (!S.success) throw new Error(S.error || "failed to load nav");
-        s.value = (S.items ?? []).map((x) => ({ ...x })), i.value = S.layout === "horizontal" ? "horizontal" : "vertical";
+        s.value = (S.items ?? []).map((w) => ({ ...w })), i.value = S.layout === "horizontal" ? "horizontal" : "vertical";
         const u = S.config ?? {};
-        return l.value = Array.isArray(u.categories) ? u.categories.map((x) => ({ ...x })) : [], c.value = u.overrides && typeof u.overrides == "object" ? structuredClone(u.overrides) : {}, h.value = typeof u.title == "string" ? u.title : "", d.value = typeof u.logo_url == "string" ? u.logo_url : "", y.value = typeof u.primary_color == "string" ? u.primary_color : "", $e = y.value, J.value = typeof S.home == "string" ? S.home : typeof u.home == "string" ? u.home : "", G = ee(), !0;
+        return l.value = Array.isArray(u.categories) ? u.categories.map((w) => ({ ...w })) : [], c.value = u.overrides && typeof u.overrides == "object" ? structuredClone(u.overrides) : {}, h.value = typeof u.title == "string" ? u.title : "", d.value = typeof u.logo_url == "string" ? u.logo_url : "", y.value = typeof u.primary_color == "string" ? u.primary_color : "", $e = y.value, J.value = typeof S.home == "string" ? S.home : typeof u.home == "string" ? u.home : "", G.value = ee(), !0;
       } catch (S) {
         return o.value = n(S, "failed to load"), !1;
       } finally {
         t.value = !1;
       }
     }
-    const se = qi({ items: s, categories: l, overrides: c, home: J }), {
+    const se = Zi({ items: s, categories: l, overrides: c, home: J }), {
       setHidden: ne,
       setLabel: le,
       setIcon: g,
       hasOverride: b,
-      itemsOf: w,
+      itemsOf: x,
       editorGroups: V,
       hiddenItems: D,
       catByKey: z,
@@ -3605,21 +3603,21 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       overGroup: ve,
       onItemDragStart: Se,
       endDrag: we,
-      onItemDrop: ut,
+      onItemDrop: ht,
       onGroupDrop: Ke,
-      onCatDragStart: dt,
-      onCatDrop: ht,
+      onCatDragStart: ft,
+      onCatDrop: mt,
       addCategory: Ye,
-      removeCategory: ft,
-      renameCategory: mt,
-      setCatIcon: vt,
+      removeCategory: vt,
+      renameCategory: gt,
+      setCatIcon: bt,
       isHome: _e,
-      setHome: gt
+      setHome: yt
     } = se, xe = A(!1), Xe = A(!1);
-    async function bt() {
+    async function wt() {
       xe.value = !0, o.value = "";
       try {
-        const { data: S } = await nt.delete("/api/v1/ui/splash/seen");
+        const { data: S } = await at.delete("/api/v1/ui/splash/seen");
         if (S?.success !== !0) throw new Error(S?.error || "could not reset setup");
         Xe.value = !0, window.dispatchEvent(new CustomEvent("kickside:nav-changed"));
       } catch (S) {
@@ -3628,22 +3626,22 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
         xe.value = !1;
       }
     }
-    let ce = null, $e = "", qe = null;
-    async function yt() {
+    let ce = null, qe = !1, $e = "", Ze = null;
+    async function ao() {
       try {
         const S = await fetch("/app/css-variables.facade.json", { cache: "no-store" });
         if (!S.ok) return;
         const u = await S.json();
         if (u && typeof u == "object") {
-          qe = u;
-          const x = u["--p-primary"];
-          typeof x == "string" && (E.value = x), !y.value.trim() && wt.value !== !1 && Pe("");
+          Ze = u;
+          const w = u["--p-primary"];
+          typeof w == "string" && (E.value = w), !y.value.trim() && Je.value !== !1 && Pe("");
         }
       } catch {
       }
     }
     function It(S, u) {
-      return Nt(S, u) || Ui(qe, u) || Nt(kr, u);
+      return Nt(S, u) || Fi(Ze, u) || Nt(kr, u);
     }
     function Pe(S) {
       window.dispatchEvent(new CustomEvent("kickside:tone-apply", {
@@ -3651,58 +3649,58 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       }));
     }
     Pr(() => {
-      ce && clearTimeout(ce), Pe($e), Bt?.();
+      qe = !0, ce && clearTimeout(ce), Pe($e), Bt?.();
     });
-    async function ao() {
-      if (!Z.value) {
-        r.value = !0, o.value = "";
-        try {
-          const { data: S } = await nt.put("/api/v1/nav/config", {
-            layout: i.value,
-            overrides: c.value,
-            categories: l.value,
-            title: h.value,
-            logo_url: d.value,
-            home: J.value,
-            primary_color: y.value
-          });
-          if (!S.success) throw new Error(S.error || "save failed");
-          G = ee(), $e = y.value, Pe($e);
-        } catch (S) {
-          o.value = n(S, "save failed");
-        } finally {
-          r.value = !1;
-        }
+    async function so() {
+      if (Z.value) return;
+      const S = ee(), u = y.value;
+      r.value = !0, o.value = "";
+      try {
+        const { data: w } = await at.put("/api/v1/nav/config", {
+          layout: i.value,
+          overrides: c.value,
+          categories: l.value,
+          title: h.value,
+          logo_url: d.value,
+          home: J.value,
+          primary_color: y.value
+        });
+        if (!w.success) throw new Error(w.error || "save failed");
+        G.value = S, $e = u, Pe(qe || Je.value === !1 ? $e : y.value);
+      } catch (w) {
+        o.value = n(w, "save failed");
+      } finally {
+        r.value = !1;
       }
     }
     let Bt = null;
-    ct(() => {
-      a.value = ot.getThemeMode?.() ?? "auto", Bt = Lr("@theme", (S) => {
+    ut(() => {
+      a.value = it.getThemeMode?.() ?? "auto", Bt = Lr("@theme", (S) => {
         a.value = S;
-      }), yt();
+      }), ao();
     });
     let zt = !1;
-    async function so() {
+    async function lo() {
       zt && K.value || await te() && (zt = !0);
     }
-    const wt = tn(so);
+    const Je = rn(lo);
     return ye(y, (S) => {
-      ce && clearTimeout(ce), ce = null, wt.value !== !1 && (ce = setTimeout(() => Pe(S), 90));
-    }), ye(wt, (S, u) => {
+      ce && clearTimeout(ce), ce = null, Je.value !== !1 && (ce = setTimeout(() => Pe(S), 90));
+    }), ye(Je, (S, u) => {
       u === !0 && S === !1 ? (ce && clearTimeout(ce), ce = null, Pe($e)) : u === !1 && S === !0 && K.value && Pe(y.value);
-    }), (S, u) => (C(), N("div", Ji, [
-      m("div", Qi, [
-        m("header", ea, [
-          Z.value ? (C(), N("span", ta, ie(q.value ? "Invalid color" : "Tone unreadable"), 1)) : K.value ? (C(), N("span", ra, "Unsaved changes")) : B("", !0),
+    }), (S, u) => (C(), N("div", Qi, [
+      m("div", ea, [
+        m("header", ta, [
+          Z.value ? (C(), N("span", ra, ie(q.value ? "Invalid color" : "Tone unreadable"), 1)) : K.value ? (C(), N("span", oa, "Unsaved changes")) : B("", !0),
           m("button", {
             class: "ap-btn ap-btn-ghost",
             disabled: !K.value || r.value,
             onClick: te
-          }, "Discard", 8, oa),
+          }, "Discard", 8, na),
           m("button", {
             class: "ap-btn ap-btn-primary",
             disabled: !K.value || r.value || Z.value,
-            onClick: ao
+            onClick: so
           }, [
             T(v(L), {
               icon: r.value ? "tabler:loader-2" : "tabler:device-floppy",
@@ -3710,19 +3708,19 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
             H(" " + ie(r.value ? "Saving…" : "Save"), 1)
-          ], 8, na)
+          ], 8, ia)
         ]),
-        o.value ? (C(), N("div", ia, ie(o.value), 1)) : B("", !0),
-        t.value ? (C(), N("div", aa, [
+        o.value ? (C(), N("div", aa, ie(o.value), 1)) : B("", !0),
+        t.value ? (C(), N("div", sa, [
           T(v(L), {
             icon: "tabler:loader-2",
             class: "spin"
           }),
           u[13] || (u[13] = H(" Loading…", -1))
-        ])) : (C(), N("div", sa, [
-          m("aside", la, [
-            m("section", ca, [
-              m("header", pa, [
+        ])) : (C(), N("div", la, [
+          m("aside", ca, [
+            m("section", pa, [
+              m("header", ua, [
                 T(v(L), {
                   icon: "tabler:photo",
                   "aria-hidden": "true"
@@ -3732,7 +3730,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
               u[17] || (u[17] = m("p", { class: "ap-sub" }, "Title and logo apply to everyone on this installation — header, login page, and browser tab.", -1)),
               u[18] || (u[18] = m("label", { class: "ap-blabel" }, "Title", -1)),
               Wt(m("input", {
-                "onUpdate:modelValue": u[0] || (u[0] = (x) => h.value = x),
+                "onUpdate:modelValue": u[0] || (u[0] = (w) => h.value = w),
                 class: "ap-binput",
                 type: "text",
                 maxlength: "60",
@@ -3741,19 +3739,19 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 [Gt, h.value]
               ]),
               u[19] || (u[19] = m("label", { class: "ap-blabel" }, "Logo", -1)),
-              m("div", ua, [
-                m("span", da, [
+              m("div", da, [
+                m("span", ha, [
                   d.value ? (C(), N("img", {
                     key: 0,
                     src: d.value,
                     alt: "Logo preview"
-                  }, null, 8, ha)) : (C(), Re(v(L), {
+                  }, null, 8, fa)) : (C(), Re(v(L), {
                     key: 1,
                     icon: "tabler:photo",
                     "aria-hidden": "true"
                   }))
                 ]),
-                m("div", fa, [
+                m("div", ma, [
                   m("label", {
                     class: fe(["ap-btn ap-btn-ghost", v(k) && "ap-btn-busy"])
                   }, [
@@ -3769,14 +3767,14 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                       class: "ap-file",
                       disabled: v(k),
                       onChange: u[1] || (u[1] = //@ts-ignore
-                      (...x) => v($) && v($)(...x))
-                    }, null, 40, ma)
+                      (...w) => v($) && v($)(...w))
+                    }, null, 40, va)
                   ], 2),
                   d.value ? (C(), N("button", {
                     key: 0,
                     class: "ap-btn ap-btn-ghost ap-danger",
                     onClick: u[2] || (u[2] = //@ts-ignore
-                    (...x) => v(_) && v(_)(...x))
+                    (...w) => v(_) && v(_)(...w))
                   }, [
                     T(v(L), {
                       icon: "tabler:trash",
@@ -3788,16 +3786,16 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
               ]),
               u[20] || (u[20] = m("p", { class: "ap-hint" }, "PNG, SVG, JPG, WebP or GIF · up to 2 MB.", -1)),
               u[21] || (u[21] = m("label", { class: "ap-blabel" }, "Base tone", -1)),
-              m("div", va, [
+              m("div", ga, [
                 T(v(io), {
                   modelValue: W.value,
-                  "onUpdate:modelValue": u[3] || (u[3] = (x) => W.value = x),
+                  "onUpdate:modelValue": u[3] || (u[3] = (w) => W.value = w),
                   format: "hex",
                   class: "ap-tone-swatch",
                   pt: { preview: { class: "ap-tone-preview", "aria-label": "Base tone color", "data-testid": "appearance-base-tone-picker" } }
                 }, null, 8, ["modelValue"]),
                 Wt(m("input", {
-                  "onUpdate:modelValue": u[4] || (u[4] = (x) => y.value = x),
+                  "onUpdate:modelValue": u[4] || (u[4] = (w) => y.value = w),
                   class: "ap-binput ap-tone-hex",
                   type: "text",
                   maxlength: "7",
@@ -3818,7 +3816,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                   u[16] || (u[16] = H(" Reset", -1))
                 ])) : B("", !0)
               ]),
-              Q.value ? (C(), N("p", ga, [
+              Q.value ? (C(), N("p", ba, [
                 T(v(L), {
                   icon: "tabler:alert-triangle",
                   "aria-hidden": "true"
@@ -3827,29 +3825,29 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
               ])) : B("", !0),
               u[22] || (u[22] = m("p", { class: "ap-hint" }, "Primary color for buttons, links and accents. Applies across the app instantly.", -1)),
               u[23] || (u[23] = m("label", { class: "ap-blabel" }, "Color scheme", -1)),
-              m("div", ba, [
-                (C(), N(Le, null, Ze([
+              m("div", ya, [
+                (C(), N(Le, null, Qe([
                   { mode: "auto", label: "Auto", icon: "tabler:device-desktop" },
                   { mode: "light", label: "Light", icon: "tabler:sun" },
                   { mode: "dark", label: "Dark", icon: "tabler:moon" }
-                ], (x) => m("button", {
-                  key: x.mode,
+                ], (w) => m("button", {
+                  key: w.mode,
                   type: "button",
-                  class: fe(["ap-theme-mode", a.value === x.mode && "ap-theme-mode-on"]),
-                  "aria-pressed": a.value === x.mode,
-                  onClick: (P) => de(x.mode)
+                  class: fe(["ap-theme-mode", a.value === w.mode && "ap-theme-mode-on"]),
+                  "aria-pressed": a.value === w.mode,
+                  onClick: (P) => de(w.mode)
                 }, [
                   T(v(L), {
-                    icon: x.icon,
+                    icon: w.icon,
                     "aria-hidden": "true"
                   }, null, 8, ["icon"]),
-                  H(" " + ie(x.label), 1)
-                ], 10, ya)), 64))
+                  H(" " + ie(w.label), 1)
+                ], 10, wa)), 64))
               ]),
               u[24] || (u[24] = m("p", { class: "ap-hint" }, "Auto follows your browser or operating system setting. Changes apply immediately.", -1))
             ]),
-            m("section", wa, [
-              m("header", xa, [
+            m("section", xa, [
+              m("header", ka, [
                 T(v(L), {
                   icon: "tabler:layout-2",
                   "aria-hidden": "true"
@@ -3857,10 +3855,10 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 u[25] || (u[25] = H(" Layout", -1))
               ]),
               u[32] || (u[32] = m("p", { class: "ap-sub" }, "Where navigation sits.", -1)),
-              m("div", ka, [
+              m("div", Sa, [
                 m("button", {
                   class: fe(["ap-lo", i.value === "vertical" && "ap-lo-on"]),
-                  onClick: u[5] || (u[5] = (x) => i.value = "vertical")
+                  onClick: u[5] || (u[5] = (w) => i.value = "vertical")
                 }, [
                   u[27] || (u[27] = m("span", { class: "mock mock-v" }, [
                     m("span", { class: "mock-rail" }, [
@@ -3870,7 +3868,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                     ]),
                     m("span", { class: "mock-fill" })
                   ], -1)),
-                  m("span", Sa, [
+                  m("span", _a, [
                     u[26] || (u[26] = H("Vertical ", -1)),
                     i.value === "vertical" ? (C(), Re(v(L), {
                       key: 0,
@@ -3882,7 +3880,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 ], 2),
                 m("button", {
                   class: fe(["ap-lo", i.value === "horizontal" && "ap-lo-on"]),
-                  onClick: u[6] || (u[6] = (x) => i.value = "horizontal")
+                  onClick: u[6] || (u[6] = (w) => i.value = "horizontal")
                 }, [
                   u[30] || (u[30] = m("span", { class: "mock mock-h" }, [
                     m("span", { class: "mock-top" }, [
@@ -3892,7 +3890,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                     ]),
                     m("span", { class: "mock-fill" })
                   ], -1)),
-                  m("span", _a, [
+                  m("span", $a, [
                     u[29] || (u[29] = H("Horizontal ", -1)),
                     i.value === "horizontal" ? (C(), Re(v(L), {
                       key: 0,
@@ -3904,15 +3902,15 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 ], 2)
               ])
             ]),
-            m("section", $a, [
-              m("header", Ca, [
+            m("section", Ca, [
+              m("header", Oa, [
                 T(v(L), {
                   icon: "tabler:info-circle",
                   "aria-hidden": "true"
                 }),
                 u[33] || (u[33] = H(" How it works", -1))
               ]),
-              m("ul", Oa, [
+              m("ul", Ta, [
                 m("li", null, [
                   T(v(L), {
                     icon: "tabler:grip-vertical",
@@ -3943,8 +3941,8 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 ])
               ])
             ]),
-            m("section", Ta, [
-              m("header", Pa, [
+            m("section", Pa, [
+              m("header", La, [
                 T(v(L), {
                   icon: "tabler:rocket",
                   "aria-hidden": "true"
@@ -3955,7 +3953,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
               m("button", {
                 class: "ap-btn ap-btn-ghost",
                 disabled: xe.value,
-                onClick: bt
+                onClick: wt
               }, [
                 T(v(L), {
                   icon: xe.value ? "tabler:loader-2" : "tabler:refresh",
@@ -3963,12 +3961,12 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                   "aria-hidden": "true"
                 }, null, 8, ["icon", "class"]),
                 H(" " + ie(xe.value ? "Resetting…" : "Show setup again"), 1)
-              ], 8, La),
-              Xe.value ? (C(), N("p", Ea, "Setup will appear now, or next time the app loads.")) : B("", !0)
+              ], 8, Ea),
+              Xe.value ? (C(), N("p", Na, "Setup will appear now, or next time the app loads.")) : B("", !0)
             ])
           ]),
-          m("section", Na, [
-            m("header", Aa, [
+          m("section", Aa, [
+            m("header", Va, [
               T(v(L), {
                 icon: "tabler:sitemap",
                 "aria-hidden": "true"
@@ -3977,7 +3975,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
               m("button", {
                 class: "ap-btn ap-btn-ghost ap-add",
                 onClick: u[7] || (u[7] = //@ts-ignore
-                (...x) => v(Ye) && v(Ye)(...x))
+                (...w) => v(Ye) && v(Ye)(...w))
               }, [
                 T(v(L), {
                   icon: "tabler:folder-plus",
@@ -3986,25 +3984,25 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 u[40] || (u[40] = H(" Add category", -1))
               ])
             ]),
-            (C(!0), N(Le, null, Ze(v(V), (x) => (C(), N("div", {
-              key: x.key || "_root",
-              class: fe(["ap-group", v(ve) === x.key && "ap-group-over"]),
-              onDragover: Ee((P) => ve.value = x.key, ["prevent"]),
-              onDragleave: (P) => v(ve) === x.key && (ve.value = null),
-              onDrop: Ee((P) => v(Ke)(x.key), ["prevent"])
+            (C(!0), N(Le, null, Qe(v(V), (w) => (C(), N("div", {
+              key: w.key || "_root",
+              class: fe(["ap-group", v(ve) === w.key && "ap-group-over"]),
+              onDragover: Ee((P) => ve.value = w.key, ["prevent"]),
+              onDragleave: (P) => v(ve) === w.key && (ve.value = null),
+              onDrop: Ee((P) => v(Ke)(w.key), ["prevent"])
             }, [
               m("div", {
                 class: "ap-group-head",
                 onDragover: u[9] || (u[9] = Ee(() => {
                 }, ["prevent"])),
-                onDrop: Ee((P) => x.real ? v(ht)(x.key) : v(Ke)(x.key), ["prevent", "stop"])
+                onDrop: Ee((P) => w.real ? v(mt)(w.key) : v(Ke)(w.key), ["prevent", "stop"])
               }, [
-                x.real ? (C(), N("span", {
+                w.real ? (C(), N("span", {
                   key: 0,
                   class: "ap-grip ap-grip-cat",
                   draggable: "true",
                   title: "Drag to reorder category",
-                  onDragstart: (P) => v(dt)(x.key, P),
+                  onDragstart: (P) => v(ft)(w.key, P),
                   onDragend: u[8] || (u[8] = //@ts-ignore
                   (...P) => v(we) && v(we)(...P))
                 }, [
@@ -4012,50 +4010,50 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                     icon: "tabler:grip-vertical",
                     "aria-hidden": "true"
                   })
-                ], 40, ja)) : (C(), N("span", Ra)),
-                x.real ? (C(), N(Le, { key: 2 }, [
+                ], 40, Ra)) : (C(), N("span", Da)),
+                w.real ? (C(), N(Le, { key: 2 }, [
                   T(yr, {
-                    "model-value": v(z)(x.key)?.icon || "",
+                    "model-value": v(z)(w.key)?.icon || "",
                     fallback: "tabler:folder",
-                    "onUpdate:modelValue": (P) => v(vt)(x.key, P)
+                    "onUpdate:modelValue": (P) => v(bt)(w.key, P)
                   }, null, 8, ["model-value", "onUpdate:modelValue"]),
                   m("input", {
-                    value: v(z)(x.key)?.label,
+                    value: v(z)(w.key)?.label,
                     class: "ap-field ap-field-strong",
                     "aria-label": "Category name",
                     placeholder: "Category name",
-                    onInput: (P) => v(mt)(x.key, P.target.value)
-                  }, null, 40, Da)
+                    onInput: (P) => v(gt)(w.key, P.target.value)
+                  }, null, 40, Ha)
                 ], 64)) : (C(), N(Le, { key: 3 }, [
-                  m("span", Ha, [
+                  m("span", Ia, [
                     T(v(L), {
                       icon: "tabler:layout-list",
                       "aria-hidden": "true"
                     })
                   ]),
-                  m("span", Ia, ie(x.label), 1)
+                  m("span", Ba, ie(w.label), 1)
                 ], 64)),
-                m("span", Ba, ie(v(w)(x.key).length), 1),
-                x.real ? (C(), N("button", {
+                m("span", za, ie(v(x)(w.key).length), 1),
+                w.real ? (C(), N("button", {
                   key: 4,
                   class: "ap-icon-btn ap-danger",
                   "aria-label": "Remove category",
                   title: "Remove category",
-                  onClick: (P) => v(ft)(x.key)
+                  onClick: (P) => v(vt)(w.key)
                 }, [
                   T(v(L), {
                     icon: "tabler:trash",
                     "aria-hidden": "true"
                   })
-                ], 8, za)) : B("", !0)
-              ], 40, Ma),
-              v(w)(x.key).length === 0 ? (C(), N("div", Ua, "Drag a surface here")) : B("", !0),
-              (C(!0), N(Le, null, Ze(v(w)(x.key), (P) => (C(), N("div", {
+                ], 8, Ua)) : B("", !0)
+              ], 40, ja),
+              v(x)(w.key).length === 0 ? (C(), N("div", Fa, "Drag a surface here")) : B("", !0),
+              (C(!0), N(Le, null, Qe(v(x)(w.key), (P) => (C(), N("div", {
                 key: P.id,
                 class: fe(["ap-row", v(U) === P.id && "ap-row-dragging"]),
                 onDragover: u[11] || (u[11] = Ee(() => {
                 }, ["prevent", "stop"])),
-                onDrop: Ee((he) => v(ut)(P), ["prevent", "stop"])
+                onDrop: Ee((he) => v(ht)(P), ["prevent", "stop"])
               }, [
                 m("span", {
                   class: "ap-grip",
@@ -4069,7 +4067,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                     icon: "tabler:grip-vertical",
                     "aria-hidden": "true"
                   })
-                ], 40, Wa),
+                ], 40, Ga),
                 T(yr, {
                   "model-value": P.icon || "",
                   fallback: "tabler:square",
@@ -4081,10 +4079,10 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                   "aria-label": "Surface label",
                   placeholder: "Label",
                   onInput: (he) => v(le)(P, he.target.value)
-                }, null, 40, Ga),
-                m("span", Ka, ie(P.path), 1),
-                P.source === "custom" ? (C(), N("span", Ya, "custom")) : B("", !0),
-                v(_e)(P) ? (C(), N("span", Xa, [
+                }, null, 40, Ka),
+                m("span", Ya, ie(P.path), 1),
+                P.source === "custom" ? (C(), N("span", Xa, "custom")) : B("", !0),
+                v(_e)(P) ? (C(), N("span", qa, [
                   T(v(L), {
                     icon: "tabler:home",
                     "aria-hidden": "true"
@@ -4102,13 +4100,13 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                   class: fe(["ap-icon-btn", v(_e)(P) && "ap-home-on"]),
                   "aria-label": v(_e)(P) ? "Home page (click to unset)" : "Set as home page",
                   title: v(_e)(P) ? "Home page — click to unset" : "Set as home page",
-                  onClick: (he) => v(gt)(P)
+                  onClick: (he) => v(yt)(P)
                 }, [
                   T(v(L), {
                     icon: v(_e)(P) ? "tabler:home-filled" : "tabler:home",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
-                ], 10, qa),
+                ], 10, Za),
                 m("button", {
                   class: "ap-icon-btn",
                   "aria-label": "Hide",
@@ -4119,13 +4117,13 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                     icon: "tabler:eye",
                     "aria-hidden": "true"
                   })
-                ], 8, Za)
-              ], 42, Fa))), 128))
-            ], 42, Va))), 128)),
-            v(D).length ? (C(), N("div", Ja, [
+                ], 8, Ja)
+              ], 42, Wa))), 128))
+            ], 42, Ma))), 128)),
+            v(D).length ? (C(), N("div", Qa, [
               m("button", {
                 class: "ap-hidden-h",
-                onClick: u[12] || (u[12] = (x) => p.value = !p.value)
+                onClick: u[12] || (u[12] = (w) => p.value = !p.value)
               }, [
                 T(v(L), {
                   icon: p.value ? "tabler:chevron-down" : "tabler:chevron-right",
@@ -4137,33 +4135,33 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
                 }),
                 H(" Hidden (" + ie(v(D).length) + ") ", 1)
               ]),
-              p.value ? (C(), N("div", Qa, [
-                (C(!0), N(Le, null, Ze(v(D), (x) => (C(), N("div", {
-                  key: x.id,
+              p.value ? (C(), N("div", es, [
+                (C(!0), N(Le, null, Qe(v(D), (w) => (C(), N("div", {
+                  key: w.id,
                   class: "ap-row ap-row-off"
                 }, [
                   u[43] || (u[43] = m("span", {
                     class: "ap-grip ap-grip-ghost",
                     "aria-hidden": "true"
                   }, null, -1)),
-                  m("span", es, [
+                  m("span", ts, [
                     T(v(L), {
-                      icon: x.icon || "tabler:square",
+                      icon: w.icon || "tabler:square",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"])
                   ]),
-                  m("span", ts, ie(x.label), 1),
+                  m("span", rs, ie(w.label), 1),
                   m("button", {
                     class: "ap-icon-btn",
                     "aria-label": "Show",
                     title: "Show",
-                    onClick: (P) => v(ne)(x, !1)
+                    onClick: (P) => v(ne)(w, !1)
                   }, [
                     T(v(L), {
                       icon: "tabler:eye-plus",
                       "aria-hidden": "true"
                     })
-                  ], 8, rs)
+                  ], 8, os)
                 ]))), 128))
               ])) : B("", !0)
             ])) : B("", !0)
@@ -4172,20 +4170,20 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       ])
     ]));
   }
-}), ns = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.ap{--system-surface-gutter: var(--kickside-system-surface-gutter, 24px);height:100%;display:flex;flex-direction:column;color:var(--p-text-color);background:var(--p-content-background)}.ap-bar{display:flex;align-items:center;justify-content:flex-end;gap:10px;width:100%;margin:0;padding:12px var(--system-surface-gutter);background:var(--p-content-background);position:sticky;top:0;z-index:3}.ap-dirty{display:inline-flex;align-items:center;height:34px;font-size:12px;font-weight:600;color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 16%,transparent);padding:0 11px;border-radius:8px}.ap-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:8px;border:1px solid transparent;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:filter .15s,background .15s,opacity .15s}.ap-btn:disabled{opacity:.45;cursor:default}.ap-btn-primary{background:var(--p-primary-color);color:var(--p-button-primary-color)}.ap-btn-primary:hover:not(:disabled){filter:brightness(1.05)}.ap-btn-ghost{background:transparent;border-color:var(--p-content-border-color);color:var(--p-text-color)}.ap-btn-ghost:hover:not(:disabled){background:color-mix(in srgb,var(--p-text-color) 8%,transparent)}.ap-btn svg{width:16px;height:16px}.ap-msg{width:calc(100% - (var(--system-surface-gutter) * 2));margin:12px 0 0 var(--system-surface-gutter);padding:9px 12px;border-radius:8px;font-size:13px}.ap-err{background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.ap-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.ap-body{flex:1;overflow-y:auto;padding:0 0 28px}.ap-grid{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start;width:100%;margin:0;padding:6px var(--system-surface-gutter) 0}.ap-side{position:sticky;top:58px;display:flex;flex-direction:column;gap:16px}@media(max-width:880px){.ap-grid{grid-template-columns:1fr}.ap-side{position:static}}.ap-card{background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:14px;padding:16px 18px}.ap-structure{min-height:0}.ap-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--p-text-color);letter-spacing:-.2px}.ap-h svg{width:17px;height:17px;color:var(--p-text-muted-color)}.ap-add{margin-left:auto;height:30px;padding:0 10px}.ap-sub{font-size:12.5px;color:var(--p-text-muted-color);margin:4px 0 12px}.ap-blabel{display:block;font-size:11.5px;font-weight:700;color:var(--p-text-muted-color);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}.ap-binput{width:100%;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--p-content-border-color);background:var(--p-content-background);color:var(--p-text-color);font:inherit;font-size:13px;box-sizing:border-box}.ap-logo{display:flex;align-items:center;gap:12px}.ap-logo-prev{display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex:none;border-radius:11px;border:1px solid var(--p-content-border-color);background:color-mix(in srgb,var(--p-text-color) 4%,transparent);overflow:hidden}.ap-logo-prev img{width:100%;height:100%;object-fit:contain}.ap-logo-prev svg{width:22px;height:22px;color:var(--p-text-muted-color)}.ap-logo-actions{display:flex;flex-wrap:wrap;gap:8px}.ap-btn-busy{opacity:.7;pointer-events:none}.ap-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}.ap-hint{font-size:11.5px;color:var(--p-text-muted-color);margin:8px 0 0}.ap-tone-warn{display:flex;align-items:flex-start;gap:6px;margin:8px 0 0;font-size:11.5px;font-weight:600;line-height:1.35;color:var(--p-danger-600, var(--p-danger-500))}.ap-tone-warn svg{width:14px;height:14px;flex:none;margin-top:1px}.ap-dirty-warn{color:var(--p-danger-600, var(--p-danger-500));background:color-mix(in srgb,var(--p-danger-500) 16%,transparent)}.ap-tone{display:flex;align-items:center;gap:8px}.ap-tone-swatch{flex:none;display:inline-flex}.ap-tone-preview{width:40px;height:34px;border-radius:8px;border:1px solid var(--p-content-border-color);cursor:pointer}.ap-tone-hex{flex:1}.ap-theme-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border-radius:8px;background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.ap-theme-mode{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0;height:28px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--p-text-muted-color);cursor:pointer;font:inherit;font-size:12px;font-weight:600}.ap-theme-mode svg{width:15px;height:15px;flex:none}.ap-theme-mode:hover{color:var(--p-text-color)}.ap-theme-mode-on{color:var(--p-text-color);background:var(--p-content-background);box-shadow:0 1px 3px color-mix(in srgb,var(--p-text-color) 12%,transparent)}.ap-layouts{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ap-lo{display:flex;flex-direction:column;gap:8px;padding:11px;background:var(--p-content-background);border:2px solid var(--p-content-border-color);border-radius:14px;cursor:pointer;transition:border-color .15s,transform .15s;text-align:left}.ap-lo:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--p-text-color) 24%,var(--p-content-border-color))}.ap-lo-on{border-color:var(--p-primary-color)}.ap-lo-name{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--p-text-color)}.ap-lo-name svg{width:15px;height:15px;color:var(--p-primary-color)}.ap-lo-desc{font-size:11.5px;color:var(--p-text-muted-color)}.mock{display:block;height:56px;border:1px solid var(--p-content-border-color);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--p-text-color) 4%,var(--p-content-background))}.mock-v{display:flex}.mock-v .mock-rail{width:26%;background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));display:flex;flex-direction:column;gap:5px;padding:7px 6px}.mock-v .mock-rail i{height:5px;border-radius:3px;background:color-mix(in srgb,var(--p-text-color) 22%,transparent)}.mock-v .mock-fill{flex:1}.mock-h{display:flex;flex-direction:column}.mock-h .mock-top{height:30%;background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));display:flex;gap:6px;align-items:center;padding:0 7px}.mock-h .mock-top i{width:16px;height:5px;border-radius:3px;background:color-mix(in srgb,var(--p-text-color) 22%,transparent)}.mock-h .mock-fill{flex:1}.ap-lo-on .mock-rail i,.ap-lo-on .mock-top i{background:var(--p-primary-color)}.ap-legend .ap-tips{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}.ap-legend .ap-tips li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--p-text-color)}.ap-legend .ap-tips svg{width:15px;height:15px;color:var(--p-text-muted-color);flex-shrink:0}.ap-group{border:1px solid var(--p-content-border-color);border-radius:14px;margin-top:12px;overflow:hidden;transition:border-color .12s,box-shadow .12s}.ap-group-over{border-color:var(--p-primary-color);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-primary-color) 14%,transparent)}.ap-group-head{display:flex;align-items:center;gap:9px;padding:9px 12px;background:color-mix(in srgb,var(--p-text-color) 4%,var(--p-content-background));border-bottom:1px solid var(--p-content-border-color)}.ap-count{margin-left:auto;font-size:11px;color:var(--p-text-muted-color);background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));padding:1px 8px;border-radius:999px;font-variant-numeric:tabular-nums;flex-shrink:0}.ap-grip{display:flex;align-items:center;justify-content:center;width:22px;cursor:grab;color:color-mix(in srgb,var(--p-text-muted-color) 70%,transparent);flex-shrink:0}.ap-grip:active{cursor:grabbing}.ap-grip:hover{color:var(--p-text-color)}.ap-grip svg{width:16px;height:16px}.ap-grip-cat svg{width:15px;height:15px}.ap-grip-ghost{cursor:default}.ap-drop-hint{font-size:12px;color:color-mix(in srgb,var(--p-text-muted-color) 70%,transparent);padding:14px;text-align:center;font-style:italic}.ap-row{display:flex;align-items:center;gap:9px;padding:8px 12px 8px 6px;border-bottom:1px solid var(--p-content-border-color);background:var(--p-content-background)}.ap-row:last-child{border-bottom:none}.ap-row:hover{background:color-mix(in srgb,var(--p-text-color) 4%,var(--p-content-background))}.ap-row-dragging{opacity:.4}.ap-row-off{opacity:.8;padding-left:6px}.ap-tile{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));color:var(--p-text-color);flex-shrink:0}.ap-tile-muted{color:var(--p-text-muted-color)}.ap-tile svg{width:18px;height:18px}.wc-iconfield{display:inline-flex;align-items:center;flex-shrink:0}.ap-field{min-width:0;background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 9px;font:inherit;font-size:13px;color:var(--p-text-color);transition:border-color .12s,background .12s}.ap-field-strong{flex:1;font-weight:600}.ap-field:not(.ap-field-static):hover{border-color:var(--p-content-border-color)}.ap-field:focus{background:var(--p-content-background)}.ap-field-static{border-color:transparent;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ap-path{font-family:ui-monospace,monospace;font-size:11.5px;color:color-mix(in srgb,var(--p-text-muted-color) 80%,transparent);flex-shrink:0;white-space:nowrap}@media(max-width:640px){.ap-path{display:none}}.ap-pill{flex-shrink:0;color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 14%,transparent)}.ap-edited{width:14px;height:14px;color:var(--p-primary-color);flex-shrink:0}.ap-icon-btn{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;color:var(--p-text-muted-color);cursor:pointer;flex-shrink:0;transition:background .15s,color .15s}.ap-icon-btn:hover{color:var(--p-text-color);background:color-mix(in srgb,var(--p-text-color) 8%,transparent)}.ap-icon-btn svg{width:16px;height:16px}.ap-danger:hover{color:var(--p-danger-600, var(--p-danger-500))}.ap-home-on{color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 12%,transparent)}.ap-home-on:hover{color:var(--p-primary-color)}.ap-pill-home svg{width:11px;height:11px}.ap-hidden{margin-top:14px}.ap-hidden-h{display:flex;align-items:center;gap:6px;width:100%;font-size:12px;font-weight:600;color:var(--p-text-color);background:transparent;border:none;padding:6px 2px;cursor:pointer}.ap-hidden-h svg{width:15px;height:15px}.ap-hidden-list{border:1px dashed var(--p-content-border-color);border-radius:14px;margin-top:4px;overflow:hidden}', is = { props: { type: "object", properties: {} } }, as = {
-  wippy: is
+}), is = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.ap{--system-surface-gutter: var(--kickside-system-surface-gutter, 24px);height:100%;display:flex;flex-direction:column;color:var(--p-text-color);background:var(--p-content-background)}.ap-bar{display:flex;align-items:center;justify-content:flex-end;gap:10px;width:100%;margin:0;padding:12px var(--system-surface-gutter);background:var(--p-content-background);position:sticky;top:0;z-index:3}.ap-dirty{display:inline-flex;align-items:center;height:34px;font-size:12px;font-weight:600;color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 16%,transparent);padding:0 11px;border-radius:8px}.ap-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border-radius:8px;border:1px solid transparent;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:filter .15s,background .15s,opacity .15s}.ap-btn:disabled{opacity:.45;cursor:default}.ap-btn-primary{background:var(--p-primary-color);color:var(--p-button-primary-color)}.ap-btn-primary:hover:not(:disabled){filter:brightness(1.05)}.ap-btn-ghost{background:transparent;border-color:var(--p-content-border-color);color:var(--p-text-color)}.ap-btn-ghost:hover:not(:disabled){background:color-mix(in srgb,var(--p-text-color) 8%,transparent)}.ap-btn svg{width:16px;height:16px}.ap-msg{width:calc(100% - (var(--system-surface-gutter) * 2));margin:12px 0 0 var(--system-surface-gutter);padding:9px 12px;border-radius:8px;font-size:13px}.ap-err{background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.ap-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.ap-body{flex:1;overflow-y:auto;padding:0 0 28px}.ap-grid{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start;width:100%;margin:0;padding:6px var(--system-surface-gutter) 0}.ap-side{position:sticky;top:58px;display:flex;flex-direction:column;gap:16px}@media(max-width:880px){.ap-grid{grid-template-columns:1fr}.ap-side{position:static}}.ap-card{background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:14px;padding:16px 18px}.ap-structure{min-height:0}.ap-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--p-text-color);letter-spacing:-.2px}.ap-h svg{width:17px;height:17px;color:var(--p-text-muted-color)}.ap-add{margin-left:auto;height:30px;padding:0 10px}.ap-sub{font-size:12.5px;color:var(--p-text-muted-color);margin:4px 0 12px}.ap-blabel{display:block;font-size:11.5px;font-weight:700;color:var(--p-text-muted-color);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}.ap-binput{width:100%;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--p-content-border-color);background:var(--p-content-background);color:var(--p-text-color);font:inherit;font-size:13px;box-sizing:border-box}.ap-logo{display:flex;align-items:center;gap:12px}.ap-logo-prev{display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex:none;border-radius:11px;border:1px solid var(--p-content-border-color);background:color-mix(in srgb,var(--p-text-color) 4%,transparent);overflow:hidden}.ap-logo-prev img{width:100%;height:100%;object-fit:contain}.ap-logo-prev svg{width:22px;height:22px;color:var(--p-text-muted-color)}.ap-logo-actions{display:flex;flex-wrap:wrap;gap:8px}.ap-btn-busy{opacity:.7;pointer-events:none}.ap-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}.ap-hint{font-size:11.5px;color:var(--p-text-muted-color);margin:8px 0 0}.ap-tone-warn{display:flex;align-items:flex-start;gap:6px;margin:8px 0 0;font-size:11.5px;font-weight:600;line-height:1.35;color:var(--p-danger-600, var(--p-danger-500))}.ap-tone-warn svg{width:14px;height:14px;flex:none;margin-top:1px}.ap-dirty-warn{color:var(--p-danger-600, var(--p-danger-500));background:color-mix(in srgb,var(--p-danger-500) 16%,transparent)}.ap-tone{display:flex;align-items:center;gap:8px}.ap-tone-swatch{flex:none;display:inline-flex}.ap-tone-preview{width:40px;height:34px;border-radius:8px;border:1px solid var(--p-content-border-color);cursor:pointer}.ap-tone-hex{flex:1}.ap-theme-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border-radius:8px;background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.ap-theme-mode{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0;height:28px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--p-text-muted-color);cursor:pointer;font:inherit;font-size:12px;font-weight:600}.ap-theme-mode svg{width:15px;height:15px;flex:none}.ap-theme-mode:hover{color:var(--p-text-color)}.ap-theme-mode-on{color:var(--p-text-color);background:var(--p-content-background);box-shadow:0 1px 3px color-mix(in srgb,var(--p-text-color) 12%,transparent)}.ap-layouts{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ap-lo{display:flex;flex-direction:column;gap:8px;padding:11px;background:var(--p-content-background);border:2px solid var(--p-content-border-color);border-radius:14px;cursor:pointer;transition:border-color .15s,transform .15s;text-align:left}.ap-lo:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--p-text-color) 24%,var(--p-content-border-color))}.ap-lo-on{border-color:var(--p-primary-color)}.ap-lo-name{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--p-text-color)}.ap-lo-name svg{width:15px;height:15px;color:var(--p-primary-color)}.ap-lo-desc{font-size:11.5px;color:var(--p-text-muted-color)}.mock{display:block;height:56px;border:1px solid var(--p-content-border-color);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--p-text-color) 4%,var(--p-content-background))}.mock-v{display:flex}.mock-v .mock-rail{width:26%;background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));display:flex;flex-direction:column;gap:5px;padding:7px 6px}.mock-v .mock-rail i{height:5px;border-radius:3px;background:color-mix(in srgb,var(--p-text-color) 22%,transparent)}.mock-v .mock-fill{flex:1}.mock-h{display:flex;flex-direction:column}.mock-h .mock-top{height:30%;background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));display:flex;gap:6px;align-items:center;padding:0 7px}.mock-h .mock-top i{width:16px;height:5px;border-radius:3px;background:color-mix(in srgb,var(--p-text-color) 22%,transparent)}.mock-h .mock-fill{flex:1}.ap-lo-on .mock-rail i,.ap-lo-on .mock-top i{background:var(--p-primary-color)}.ap-legend .ap-tips{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}.ap-legend .ap-tips li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--p-text-color)}.ap-legend .ap-tips svg{width:15px;height:15px;color:var(--p-text-muted-color);flex-shrink:0}.ap-group{border:1px solid var(--p-content-border-color);border-radius:14px;margin-top:12px;overflow:hidden;transition:border-color .12s,box-shadow .12s}.ap-group-over{border-color:var(--p-primary-color);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-primary-color) 14%,transparent)}.ap-group-head{display:flex;align-items:center;gap:9px;padding:9px 12px;background:color-mix(in srgb,var(--p-text-color) 4%,var(--p-content-background));border-bottom:1px solid var(--p-content-border-color)}.ap-count{margin-left:auto;font-size:11px;color:var(--p-text-muted-color);background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));padding:1px 8px;border-radius:999px;font-variant-numeric:tabular-nums;flex-shrink:0}.ap-grip{display:flex;align-items:center;justify-content:center;width:22px;cursor:grab;color:color-mix(in srgb,var(--p-text-muted-color) 70%,transparent);flex-shrink:0}.ap-grip:active{cursor:grabbing}.ap-grip:hover{color:var(--p-text-color)}.ap-grip svg{width:16px;height:16px}.ap-grip-cat svg{width:15px;height:15px}.ap-grip-ghost{cursor:default}.ap-drop-hint{font-size:12px;color:color-mix(in srgb,var(--p-text-muted-color) 70%,transparent);padding:14px;text-align:center;font-style:italic}.ap-row{display:flex;align-items:center;gap:9px;padding:8px 12px 8px 6px;border-bottom:1px solid var(--p-content-border-color);background:var(--p-content-background)}.ap-row:last-child{border-bottom:none}.ap-row:hover{background:color-mix(in srgb,var(--p-text-color) 4%,var(--p-content-background))}.ap-row-dragging{opacity:.4}.ap-row-off{opacity:.8;padding-left:6px}.ap-tile{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-text-color) 8%,var(--p-content-background));color:var(--p-text-color);flex-shrink:0}.ap-tile-muted{color:var(--p-text-muted-color)}.ap-tile svg{width:18px;height:18px}.wc-iconfield{display:inline-flex;align-items:center;flex-shrink:0}.ap-field{min-width:0;background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 9px;font:inherit;font-size:13px;color:var(--p-text-color);transition:border-color .12s,background .12s}.ap-field-strong{flex:1;font-weight:600}.ap-field:not(.ap-field-static):hover{border-color:var(--p-content-border-color)}.ap-field:focus{background:var(--p-content-background)}.ap-field-static{border-color:transparent;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ap-path{font-family:ui-monospace,monospace;font-size:11.5px;color:color-mix(in srgb,var(--p-text-muted-color) 80%,transparent);flex-shrink:0;white-space:nowrap}@media(max-width:640px){.ap-path{display:none}}.ap-pill{flex-shrink:0;color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 14%,transparent)}.ap-edited{width:14px;height:14px;color:var(--p-primary-color);flex-shrink:0}.ap-icon-btn{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;background:transparent;color:var(--p-text-muted-color);cursor:pointer;flex-shrink:0;transition:background .15s,color .15s}.ap-icon-btn:hover{color:var(--p-text-color);background:color-mix(in srgb,var(--p-text-color) 8%,transparent)}.ap-icon-btn svg{width:16px;height:16px}.ap-danger:hover{color:var(--p-danger-600, var(--p-danger-500))}.ap-home-on{color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 12%,transparent)}.ap-home-on:hover{color:var(--p-primary-color)}.ap-pill-home svg{width:11px;height:11px}.ap-hidden{margin-top:14px}.ap-hidden-h{display:flex;align-items:center;gap:6px;width:100%;font-size:12px;font-weight:600;color:var(--p-text-color);background:transparent;border:none;padding:6px 2px;cursor:pointer}.ap-hidden-h svg{width:15px;height:15px}.ap-hidden-list{border:1px dashed var(--p-content-border-color);border-radius:14px;margin-top:4px;overflow:hidden}', as = { props: { type: "object", properties: {} } }, ss = {
+  wippy: as
 };
-class ss extends rn {
+class ls extends on {
   static get wippyConfig() {
     return {
-      propsSchema: as.wippy.props,
+      propsSchema: ss.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: ns
+      inlineCss: is
     };
   }
   static get vueConfig() {
-    return { rootComponent: os, plugins: [Ei] };
+    return { rootComponent: ns, plugins: [Ni] };
   }
 }
-Co(import.meta.url, ss);
+Oo(import.meta.url, ls);
 //# sourceMappingURL=index.js.map
