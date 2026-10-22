@@ -119,6 +119,35 @@ local function define_tests()
             test.is_nil(malformed_err)
             test.is_nil(malformed)
         end)
+        test.it("reads statuses for exact job ids across owners and states", function()
+            with_db(function(db)
+                local ids, expected = {}, {}
+                for _, state in ipairs({ "pending", "running", "done", "dead", "cancelled" }) do
+                    local id = uuid.v7()
+                    local _, err = db:execute([[INSERT INTO kickside_job
+                        (id,job_type,payload,status,job_identity,owner_kind,owner_id)
+                        VALUES ($1,'test.status','{}',$2,$3,'test',$4)]], { id, state, id, uuid.v7() })
+                    test.is_nil(err, tostring(err))
+                    ids[#ids + 1], expected[id] = id, state
+                end
+                local absent = uuid.v7()
+                ids[#ids + 1], ids[#ids + 2], ids[#ids + 3] = absent, ids[1], "missing-job"
+                local statuses, err = jobs.get_job_statuses(ids)
+                test.is_nil(err, tostring(err))
+                for id, status in pairs(expected) do test.eq(statuses[id], status) end
+                test.is_nil(statuses[absent])
+                test.is_nil(statuses["missing-job"])
+                local empty, empty_err = jobs.get_job_statuses({})
+                test.is_nil(empty_err, tostring(empty_err))
+                test.is_nil(next(empty))
+                for _, invalid in ipairs({ "id", { "" }, { false } }) do
+                    local value, invalid_err = jobs.get_job_statuses(invalid)
+                    test.is_nil(value)
+                    test.is_true(errors.is(invalid_err, errors.INVALID))
+                end
+            end)
+        end)
+
         test.it("clamps rows_affected to a non-negative integer", function()
             test.eq(lifecycle.rows_affected({ rows_affected = 5 }), 5)
             test.eq(lifecycle.rows_affected({ rows_affected = -1 }), 0)

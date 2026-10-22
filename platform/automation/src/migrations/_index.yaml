@@ -49,3 +49,19 @@ entries:
     method: migration
     imports:
       migration: wippy.migration:migration
+
+  - name: 13_stranded_drives
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.core.jobs.migrations:21_retire_upload_intent_slot]
+    source: file://13_stranded_drives.lua
+    method: migration
+    modules: [sql, json]
+    imports:
+      migration: wippy.migration:migration
+      jobs: kickside.core.jobs:jobs
+      slot: kickside.automation:slot
+      job_listing: kickside.core.jobs.persist:listing
+      jobs_config: kickside.core.jobs:config
+      types: kickside.automation:types

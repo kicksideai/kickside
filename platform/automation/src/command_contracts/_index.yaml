@@ -20,6 +20,7 @@ entries:
     imports:
       jobs: kickside.core.jobs:jobs
       slot_purge: kickside.core.jobs.persist:slot_purge
+      jobs_config: kickside.core.jobs:config
       types: kickside.automation:types
       drive: kickside.automation:drive
 
