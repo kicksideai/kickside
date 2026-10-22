@@ -300,6 +300,17 @@
       "repository": "kickside/kickside",
       "test": "platform/automation/ui/src/app/ActionMenu.spec.ts"
     },
+    "automation/existing-drive-repair": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AUTOMATION-EXISTING-SLOT-REFERENCES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/drive_repair_test.lua"
+    },
     "automation/generic-control-initiation": {
       "engines": [
         "sqlite",
@@ -3003,6 +3014,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "core/execution/test/execution_identity_test_execution_live_authority.lua"
+    },
+    "core/existing-blocked-projection-retention": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "PROJECTION-EXISTING-BLOCK-RETENTION"
+      ],
+      "repository": "kickside/kickside",
+      "test": "core/core/test/src/projection_pin_migration_test.lua"
     },
     "core/find-release-native": {
       "engines": [
@@ -11389,6 +11411,8 @@
     "KB10-QUERY-CONFIGURATION",
     "KB10-RESUMMARIZE-OUTCOMES",
     "KB10-DELETE-IDENTITY-ERRORS",
+    "PROJECTION-EXISTING-BLOCK-RETENTION",
+    "AUTOMATION-EXISTING-SLOT-REFERENCES",
     "KEEPER-MCP-TRANSPORT-CONTEXT",
     "KEEPER-CHANGELOG-UTC",
     "UPSTREAM-TOOL-ARGUMENT-DIAGNOSTIC",

@@ -4968,6 +4968,13 @@
       ],
       "tier": "regression"
     },
+    "automation_existing_drive_repair": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-EXISTING-SLOT-REFERENCES"
+      ],
+      "tier": "regression"
+    },
     "automation_group_principal": {
       "features": [],
       "issues": [
@@ -8044,6 +8051,13 @@
       "features": [],
       "issues": [
         "IDENTITY-ROOT-ADMIN-CLASS"
+      ],
+      "tier": "regression"
+    },
+    "existing_projection_block_retention": {
+      "features": [],
+      "issues": [
+        "PROJECTION-EXISTING-BLOCK-RETENTION"
       ],
       "tier": "regression"
     },
