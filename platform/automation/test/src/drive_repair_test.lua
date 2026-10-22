@@ -79,6 +79,42 @@ return test.run_cases(function()
             end
             db:release()
         end)
+        test.it("preserves paused and deleting drives and leaves healthy running slots alone",function()
+            local db=assert(sql.get(types.db_id()))
+            local paused=fixture(db)
+            execute(db,"UPDATE kickside_automation_drive SET enabled=false,phase='paused' WHERE automation_id=$1",{paused})
+            local deleting=fixture(db)
+            execute(db,"UPDATE kickside_automation_drive SET pending_command_id=$1 WHERE automation_id=$2",
+                {"owner-delete:"..deleting,deleting})
+            local running=fixture(db)
+            local running_job=assert(slot.provision(running,"main"))
+            local jobs_db=assert(sql.get(jobs_config.db_id()))
+            execute(jobs_db,"UPDATE kickside_job SET status='running' WHERE id=$1",{running_job})
+            jobs_db:release()
+            local terminal={}
+            for _,status in ipairs({"done","dead"}) do
+                local owner=fixture(db)
+                local job=assert(slot.provision(owner,"main"))
+                jobs_db=assert(sql.get(jobs_config.db_id()))
+                execute(jobs_db,"UPDATE kickside_job SET status=$1 WHERE id=$2",{status,job})
+                jobs_db:release()
+                terminal[#terminal+1]=owner
+            end
+            local owners={paused,deleting,running,terminal[1],terminal[2]}
+            local before={}
+            for _,owner in ipairs(owners) do before[owner]=snapshot(db,owner) end
+            local result=run(db,"app:drive-repair:"..uuid.v7())
+            test.eq(result.status,"complete",tostring(result.error))
+            for _,owner in ipairs(owners) do unchanged(before[owner],snapshot(db,owner)) end
+            test.eq(snapshot(db,deleting).job_id,before[deleting].job_id)
+            test.eq(active_jobs(deleting),0)
+            test.eq(snapshot(db,running).job_id,running_job)
+            for _,owner in ipairs({paused,terminal[1],terminal[2]}) do
+                test.is_true(snapshot(db,owner).job_id~=before[owner].job_id)
+                test.eq(active_jobs(owner),1)
+            end
+            db:release()
+        end)
         test.it("resumes after a committed page without creating duplicate slots",function()
             local db=assert(sql.get(types.db_id()))
             local owners={}
