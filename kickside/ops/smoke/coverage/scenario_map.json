@@ -8678,6 +8678,35 @@
       ],
       "tier": "regression"
     },
+    "kb10_delete_identity_errors": {
+      "features": [],
+      "issues": [
+        "KB10-DELETE-IDENTITY-ERRORS"
+      ],
+      "tier": "regression"
+    },
+    "kb10_digest_errors": {
+      "features": [],
+      "issues": [
+        "KB10-DIGEST-ERRORS",
+        "SDK-LLM-FAILURE-METADATA"
+      ],
+      "tier": "regression"
+    },
+    "kb10_query_configuration": {
+      "features": [],
+      "issues": [
+        "KB10-QUERY-CONFIGURATION"
+      ],
+      "tier": "regression"
+    },
+    "kb10_resummarize_outcomes": {
+      "features": [],
+      "issues": [
+        "KB10-RESUMMARIZE-OUTCOMES"
+      ],
+      "tier": "regression"
+    },
     "kb_cited_answer": {
       "features": [
         "kickside/knowledge|http|POST /api/v1/knowledge/create",

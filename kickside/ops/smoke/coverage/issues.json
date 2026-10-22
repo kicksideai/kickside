@@ -5606,6 +5606,29 @@
       "repository": "kickside/providers",
       "test": "kb10/test/node_tools_test.lua"
     },
+    "kb10/delete-identity-errors": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "KB10-DELETE-IDENTITY-ERRORS"
+      ],
+      "repository": "kickside/providers",
+      "test": "kb10/test/http_error_producers_test.lua"
+    },
+    "kb10/digest-errors": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "KB10-DIGEST-ERRORS",
+        "SDK-LLM-FAILURE-METADATA"
+      ],
+      "repository": "kickside/providers",
+      "test": "kb10/test/digest_errors_test.lua"
+    },
     "kb10/external-identity": {
       "engines": [
         "sqlite",
@@ -5628,6 +5651,17 @@
       "repository": "kickside/providers",
       "test": "kb10/test/source_worker_test.lua"
     },
+    "kb10/query-configuration": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "KB10-QUERY-CONFIGURATION"
+      ],
+      "repository": "kickside/providers",
+      "test": "kb10/test/engine_config_test.lua"
+    },
     "kb10/query-model-failure-classification": {
       "engines": [
         "sqlite",
@@ -5638,6 +5672,17 @@
       ],
       "repository": "kickside/providers",
       "test": "kb10/test/query_service_test.lua"
+    },
+    "kb10/resummarize-outcomes": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "KB10-RESUMMARIZE-OUTCOMES"
+      ],
+      "repository": "kickside/providers",
+      "test": "kb10/test/resummarize_test.lua"
     },
     "kb10/source-worker-lineage": {
       "engines": [
@@ -11358,7 +11403,12 @@
     "UPSTREAM-CONTEXT-ADMISSION",
     "UPSTREAM-REJECTED-USAGE",
     "KNOWLEDGE-BOUNDED-CONTENT-EVENT",
-    "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
+    "KNOWLEDGE-STORE-OUTPUT-SCHEMA",
+    "KB10-QUERY-CONFIGURATION",
+    "KB10-DIGEST-ERRORS",
+    "KB10-RESUMMARIZE-OUTCOMES",
+    "KB10-DELETE-IDENTITY-ERRORS",
+    "SDK-LLM-FAILURE-METADATA"
   ],
   "schema_version": 1
 }
