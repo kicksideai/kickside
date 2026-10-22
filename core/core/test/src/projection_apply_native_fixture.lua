@@ -31,6 +31,7 @@ function M.lock_thread_rows_tx(...: any): (any, error?)
     return M.outcome("lock", {thread = {event_count = 1}})
 end
 function M.append_system_tx(...: any): (any, error?) return M.outcome("append", {max_seq = 1}) end
+function M.lower_tx(...: any): (any, error?) return M.outcome("pin", {pin_generation = 1}) end
 function M.complete_tx(...: any): (any, error?) return M.outcome("complete", {completed = true}) end
 function M.notify_cursor(...: any): (any, error?) return M.outcome("notify", false) end
 function M.notify(...: any): (any, error?) return M.outcome("retention", false) end

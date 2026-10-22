@@ -17,6 +17,7 @@ local execution_identity = require("execution_identity")
 local job_lifecycle = require("job_lifecycle")
 local jobs_wake = require("jobs_wake")
 local retention_notifier = require("retention_notifier")
+local retention_pin = require("retention_pin")
 local persisted_json = require("persisted_json")
 local sql_boundary = require("sql_boundary")
 local committed_error = require("committed_error")
@@ -413,6 +414,14 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         if prior_generation == nil then return fail("projection cursor generation is missing", errors.INTERNAL) end
         generation = prior_generation
         if params.ensure ~= true then
+            local held, pin_err = retention_pin.read(tx, thread_id, "projection:" .. cursor_id)
+            if pin_err then return nil, pin_err end
+            if held then
+                local _, release_err = retention_pin.release_tx(tx, { thread_id = thread_id,
+                    consumer_key = "projection:" .. cursor_id, expected_pin_generation = held.generation,
+                    terminal_op_id = cursor_id .. ":correct:" .. tostring(prior_generation) })
+                if release_err then return nil, release_err end
+            end
             generation = prior_generation + (declaration_changed and 0 or 1)
             local updated, update_err = sql.builder.update("kickside_projection_cursor")
                 :set("last_seq", cursor_head):set("status", "active")

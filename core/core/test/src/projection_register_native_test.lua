@@ -6,7 +6,7 @@ local routes = {
     {stage = "type"}, {stage = "begin"}, {stage = "query_1"}, {stage = "encode_1"},
     {stage = "query_2"}, {stage = "encode_2", existing = true},
     {stage = "write_1"}, {stage = "write_1", existing = true},
-    {stage = "query_3"}, {stage = "write_2"}, {stage = "write_2", existing = true},
+    {stage = "query_3"}, {stage = "pin_read", existing = true}, {stage = "pin_release", existing = true}, {stage = "write_2"}, {stage = "write_2", existing = true},
     {stage = "write_3"}, {stage = "write_4"}, {stage = "commit"},
 }
 return {run = test.run_cases(function()

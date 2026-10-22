@@ -9,6 +9,7 @@ local threads_writer = require("threads_writer")
 local jobs = require("jobs")
 local cursor_waiters = require("cursor_waiters")
 local retention_notifier = require("retention_notifier")
+local retention_pin = require("retention_pin")
 local execution_identity = require("execution_identity")
 local error_envelope = require("error_envelope")
 
@@ -248,8 +249,26 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
     local function abort(err: error): (nil, error)
         return nil, release(db, rollback(tx, err)) :: error
     end
-    local _, lock_err = threads_writer.lock_thread_rows_tx(tx, dbtype, { tostring(snapshot.thread_id) })
+    local locked, lock_err = threads_writer.lock_thread_rows_tx(tx, dbtype, { tostring(snapshot.thread_id) })
     if lock_err then return abort(lock_err) end
+    if deterministic then
+        if type(locked) ~= "table" then return abort(response_error("locked_threads")) end
+        local rows, read_err = tx:query([[SELECT generation,last_seq,status,job_id FROM kickside_projection_cursor
+            WHERE id=$1]], { snapshot.id })
+        if read_err then return abort(errors.wrap(read_err, "projection failure fence read failed")) end
+        if type(rows) ~= "table" then return abort(response_error("cursor.rows")) end
+        local current = rows[1]
+        if current and current.status == "active" and tostring(current.job_id) == tostring(job.id)
+            and tonumber(current.generation) == tonumber(snapshot.generation)
+            and tonumber(current.last_seq) == tonumber(snapshot.last_seq) then
+            local held, pin_err = retention_pin.lower_tx(tx, { thread_id = snapshot.thread_id,
+                consumer_key = "projection:" .. tostring(snapshot.id),
+                command_id = tostring(snapshot.id) .. ":" .. tostring(snapshot.generation),
+                command_generation = tonumber(snapshot.generation), target_cursor = tonumber(snapshot.last_seq) })
+            if pin_err then return abort(pin_err) end
+            if type(held) ~= "table" then return abort(response_error("retention.pin")) end
+        end
+    end
     local now = clock.now(dbtype)
     local fenced, fence_err = tx:execute([[UPDATE kickside_projection_cursor SET status=$1,last_error=$2,updated_at=$3
         WHERE id=$4 AND job_id=$5 AND generation=$6 AND last_seq=$7 AND status='active']],
