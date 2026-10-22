@@ -19,8 +19,6 @@ modules:
       version: 0.0.0
     - name: kickside/jobs
       version: 0.0.0
-    - name: kickside/memory
-      version: 0.0.0
     - name: kickside/models
       version: 0.0.0
     - name: kickside/realtime-dispatch
