@@ -24,7 +24,6 @@ local function target_port(kind)
 end
 
 -- Convenience targets lower to the same declared writable port as an action.
--- A workflow reference pins its published version; an agent remains a port.
 function M.resolve(target: any): (any?, any)
     if type(target) ~= "table" then return nil, invalid("target is required") end
     if (target.kind == "workflow" or target.kind == "action") and type(target.input) == "table" then
@@ -39,21 +38,13 @@ function M.resolve(target: any): (any?, any)
         local port, port_err = target_port("workflow")
         if port_err then return nil, port_err end
         return { port = port, config = { flow_ref = ref }, input = target.input or canonical_json.object({}) }, nil
-    elseif target.kind == "agent" then
-        if not nonempty(target.agent_id) or not nonempty(target.prompt) then
-            return nil, invalid("agent target requires agent_id and prompt")
-        end
-        local port, port_err = target_port("agent")
-        if port_err then return nil, port_err end
-        return { port = port, config = { agent_id = target.agent_id },
-            input = { content = target.prompt, content_type = "text/plain" } }, nil
     elseif target.kind == "action" then
         if not nonempty(target.port) or type(target.input) ~= "table" then
             return nil, invalid("action target requires a declared writable port and input object")
         end
         return { port = target.port, config = target.config or {}, input = target.input }, nil
     end
-    return nil, invalid("target.kind must be workflow, agent or action")
+    return nil, invalid("target.kind must be workflow or action")
 end
 
 function M.validate(input: any): (any?, any)

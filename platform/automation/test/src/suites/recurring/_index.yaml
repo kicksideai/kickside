@@ -51,12 +51,6 @@ entries:
     binding: kickside.automation.recurring.fixture:sink
     input_schema: '{ "type": "object" }'
     operations: { upsert: {} }
-  - name: agent_action
-    kind: registry.entry
-    meta: { type: kickside.automation.port, title: Agent target fixture, recurring_target: agent }
-    binding: kickside.automation.recurring.fixture:sink
-    input_schema: '{ "type": "object" }'
-    operations: { upsert: {} }
   - name: typed_action
     kind: registry.entry
     meta: { type: kickside.automation.port, title: Typed recurring action }

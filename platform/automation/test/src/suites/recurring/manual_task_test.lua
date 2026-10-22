@@ -78,6 +78,41 @@ return {run = test.run_cases(function()
             test.eq(json.encode(stored.target.input), "{}", "stored target input")
             test.eq(json.encode(stored._portable_input.target.input), "{}", "stored portable input")
         end)
+        test.it("parks stored agent targets visibly without changing their declaration", function()
+            for _, kind in ipairs({KIND, "kickside.automation.recurring:task"}) do
+                local result, install_err = env.caller:call(TOOL, {action = "install", type = kind, input = {
+                    schedule = kind ~= KIND and {type = "interval", expression = "1h"} or nil,
+                    target = {kind = "action", port = PORT, input = {text = "unused"}}}})
+                test.is_nil(install_err, tostring(install_err))
+                local id = result.id
+                ids[#ids + 1] = id
+                local row = h.query("SELECT private_context FROM kickside_components WHERE component_id=$1", {id})[1]
+                local stored = type(row.private_context) == "table" and row.private_context or json.decode(row.private_context)
+                stored.target = {kind = "agent", agent_id = "example:agent", prompt = "Retained prompt"}
+                stored._portable_input.target = stored.target
+                local encoded = canonical_json.encode(stored)
+                h.exec("UPDATE kickside_components SET private_context=$1 WHERE component_id=$2", {encoded, id})
+                local applied = h.read_drive(id, "main").applied
+                applied.declaration.target = stored.target
+                h.exec("UPDATE kickside_automation_drive SET applied_json=$1 WHERE automation_id=$2 AND drive_key='main'",
+                    {canonical_json.encode(applied), id})
+                control(id, "run_now")
+                local ran, run_err = env.run(id, "main")
+                test.is_nil(run_err, tostring(run_err))
+                test.not_nil(ran)
+                local drive = h.read_drive(id, "main")
+                test.eq(drive.phase, "blocked_declaration")
+                test.contains(drive.last_error_json, "target.kind")
+                test.is_nil(drive.next_run_at)
+                test.eq(env.last_completion().options.record.status, "parked")
+                local status, status_err = env.caller:call("kickside.automation.agent:automations_read", {action = "status", id = id})
+                test.is_nil(status_err, tostring(status_err))
+                test.contains(json.encode(status), "target.kind")
+                local after = h.query("SELECT private_context FROM kickside_components WHERE component_id=$1", {id})[1].private_context
+                test.eq(canonical_json.encode(type(after) == "table" and after or json.decode(after)), encoded)
+                test.eq(#h.query("SELECT * FROM recurring_fixture_log WHERE owner_id=$1", {id}), 0)
+            end
+        end)
         test.it("rejects an undeclared target or a target input that fails its port schema before install", function()
             for _, target in ipairs({{kind = "action", port = "absent:port", input = {}},
                 {kind = "action", port = "kickside.automation.recurring.fixture:typed_action", input = {}}}) do

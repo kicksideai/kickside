@@ -3,7 +3,7 @@ import { defineComponent as te, ref as u, watch as se, onMounted as ne, computed
 import { Icon as d } from "@iconify/vue";
 import { api as z, define as ae } from "@wippy-fe/proxy";
 import { _ as B } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DSLnUKFT.js";
-import { s as ie } from "./styles-CiCzyjUM.js";
+import { s as ie } from "./styles-DLTipENZ.js";
 const le = { class: "kx-ns" }, oe = { class: "kx-ns-toggle" }, ce = ["checked"], re = { class: "kx-ns-section" }, ue = { class: "kx-ns-chips" }, pe = ["onClick"], de = {
   key: 0,
   class: "kx-ns-empty"

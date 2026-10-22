@@ -11,9 +11,7 @@ import { validateInstall } from './install-form'
 import type { InputSchema } from './automation-types'
 
 export interface TaskTarget {
-  kind: 'agent' | 'workflow' | 'action'
-  agent_id?: string
-  prompt?: string
+  kind: 'workflow' | 'action'
   flow_ref?: { kind: 'flow'; id: string; version: number }
   port?: string
   config?: Record<string, unknown>
@@ -47,8 +45,6 @@ const items = computed(() => destinations.value.map(row => ({ id: row.id, title:
 const primary = computed(() => primaryPicker(selected.value, 'TaskTarget'))
 const optionsSchema = computed(() => schemaFormFields(selected.value, 'TaskTarget'))
 const pickerMeta = computed(() => pickerMetaOf(selected.value, primary.value))
-const agentSchema = { properties: { agent_id: { picker: 'wc-agent-picker', title: 'Agent', required: true } } }
-const agentConfig = computed(() => props.modelValue.agent_id ? { agent_id: props.modelValue.agent_id } : {})
 const inputSchema = computed(() => kind.value === 'workflow' ? flowSchema.value : selected.value?.input_schema)
 
 function update(value: Partial<TaskTarget>) { emit('update:modelValue', { ...props.modelValue, ...value }) }
@@ -64,7 +60,6 @@ function onFlow(raw: unknown) {
 function record(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
 }
-function onAgent(raw: unknown) { update({ agent_id: String(record(raw).agent_id || '') }) }
 function requiredError(schema: unknown, values: Record<string, unknown>): string {
   const parsed = parseSchema(schema) as InputSchema | null
   if (!parsed) return ''
@@ -72,10 +67,6 @@ function requiredError(schema: unknown, values: Record<string, unknown>): string
 }
 const validation = computed(() => {
   const target = props.modelValue
-  if (kind.value === 'agent') {
-    if (!target.agent_id?.trim()) return 'Choose an agent.'
-    return target.prompt?.trim() ? '' : 'Enter a prompt.'
-  }
   if (kind.value === 'workflow') {
     if (flowLoading.value) return 'Loading the published workflow…'
     if (flowError.value) return flowError.value
@@ -128,19 +119,11 @@ watch(() => props.modelValue.flow_ref, async (reference, _previous, onCleanup) =
   <div class="task-target">
     <label class="task-field">Target
       <select :value="kind" aria-label="Target kind" :disabled="disabled" @change="changeKind">
-        <option value="agent">Agent prompt</option>
         <option value="workflow">Published workflow</option>
         <option value="action">Writable action</option>
       </select>
     </label>
-    <template v-if="kind === 'agent'">
-      <WcMount tag="wc-agent-picker" :config="agentConfig" :schema="agentSchema" @change="onAgent" />
-      <label class="task-field">Prompt
-        <textarea :value="modelValue.prompt || ''" aria-label="Prompt" rows="4" :disabled="disabled"
-          @input="update({ prompt: ($event.target as HTMLTextAreaElement).value })" />
-      </label>
-    </template>
-    <template v-else-if="kind === 'workflow'">
+    <template v-if="kind === 'workflow'">
       <WcMount tag="wc-workflow-picker" :config="workflowConfig" :schema="workflowSchema" @change="onFlow" />
       <p v-if="flowError" role="alert">{{ flowError }}</p>
     </template>
@@ -157,7 +140,7 @@ watch(() => props.modelValue.flow_ref, async (reference, _previous, onCleanup) =
           @change="update({ config: record($event) })" />
       </template>
     </template>
-    <div v-if="kind !== 'agent' && schemaHasProps(inputSchema)" data-test="task-target-input" class="task-field">
+    <div v-if="schemaHasProps(inputSchema)" data-test="task-target-input" class="task-field">
       <span>Input</span>
       <WcMount tag="wc-schema-form" :schema="inputSchema" :config="modelValue.input || {}" @change="update({ input: record($event) })" />
     </div>

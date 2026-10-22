@@ -44,7 +44,6 @@ local function task_summary(task)
     local target = task.target or {}
     local target_summary = { kind = target.kind }
     if target.flow_ref ~= nil then target_summary.flow_ref = target.flow_ref end
-    if target.agent_id ~= nil then target_summary.agent_id = target.agent_id end
     if target.port ~= nil then target_summary.port = target.port end
     return {
         id = task.id,
