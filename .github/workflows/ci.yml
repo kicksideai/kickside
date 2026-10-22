@@ -344,7 +344,7 @@ jobs:
             createdb "$database"
             databases+=("$database")
             wippy install
-            wippy test --profile postgres --set "vars.pg_database=$database" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
+            wippy test --profile postgres --set "vars.pg_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
             awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
             cd "$source_root"
