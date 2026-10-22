@@ -140,7 +140,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
         })
         if write_err ~= nil or type(written) ~= "table" then
             local classified = (dependencies.failure_classification :: any).classify(write_err or "identity write returned no result")
-            if classified.retriable or input.supersede_request_id ~= nil then
+            local _, parks = (dependencies.round_outcome :: any).failure_phase(classified)
+            if not parks or input.supersede_request_id ~= nil then
                 return P.defer_command(pending, classified)
             end
             return finalize(pending, "failed", { kind = classified.kind, message = classified.message })

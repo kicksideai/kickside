@@ -343,6 +343,36 @@ local function define_tests()
             test.is_true(tostring(tg.node_id):find("^id%-") ~= nil, "edge target reminted")
         end)
 
+        test.it("remints iteration input route targets with their template nodes", function()
+            local res = select(1, compiler.compile(doc(
+                {
+                    fn("t"),
+                    n("p", "for_each", { config = { source_array_key = "items" } }),
+                    fn("item", { ref = "m:item" }),
+                    n("join", "combine", { config = { mode = "wait_all" } }),
+                }, {
+                    e("e0", "t", "p"),
+                    e("body-item", "p", "item", { source_port = "body" }),
+                    e("body-join", "p", "join", { source_port = "body" }),
+                    e("item-join", "item", "join"),
+                }), { workflow_id = "wf-routes", version = 1 }))
+            test.is_true((res :: Map).ok)
+
+            local fresh, ids, err = compiler.remint((res :: Map).commands, counter(), {})
+            test.is_nil(err)
+            local parallel: Map? = nil
+            for _, command in ipairs(fresh :: { Map }) do
+                if command.type == consts.COMMAND_TYPES.CREATE_NODE
+                    and tostring(((command.payload :: Map).metadata :: Map).def_node_id) == "p" then
+                    parallel = command.payload :: Map
+                end
+            end
+            test.not_nil(parallel)
+            local routes = (((parallel :: Map).config :: Map).iteration_input_routes :: { Map })
+            test.eq(tostring(routes[1].node_id), tostring((ids :: Map).item))
+            test.eq(tostring(routes[2].node_id), tostring((ids :: Map).join))
+        end)
+
         test.it("injects a namespaced run context without a second node context dialect", function()
             local res = select(1, compiler.compile(doc(
                 {

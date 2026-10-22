@@ -3,6 +3,7 @@ local receive_module = require("receive")
 local receive = receive_module
 local test_state = require("test_state")
 local execution_ref = require("execution_ref")
+local session_acquire = require("session_acquire")
 local real_dm = require("real_dm")
 local persist = require("persist")
 local turn_recovery = require("turn_recovery")
@@ -621,6 +622,23 @@ local function define_tests()
             test.eq(test_state.state.resolve_request.execution_root.record_id, "auto-1")
         end)
 
+        test.it("preserves responder lookup outages before identity resolution", function()
+            seed_responder()
+            local source = errors.new({kind = errors.TIMEOUT, retryable = true,
+                message = "component lookup unavailable", details = {code = "responder_lookup", error_kind = "infrastructure"}})
+            test_state.state.component_list_error = source
+            local identity, err = execution_ref.load(
+                {owner_id = "automation.component", record_id = "auto-1", generation = 0},
+                "channel", {inbound = inbound()})
+            test_state.state.component_list_error = nil
+            test.is_nil(identity)
+            test.not_nil(err)
+            test.is_true(errors.is(err, errors.TIMEOUT))
+            test.is_true(err:retryable())
+            test.eq(err:details().code, "responder_lookup")
+            test.eq(err:details().error_kind, "infrastructure")
+        end)
+
         test.it("loads only the responder owning the channel at its current generation", function()
             seed_responder()
             local ref = { owner_id = "automation.component", record_id = "auto-1", generation = 0 }
@@ -676,6 +694,34 @@ local function define_tests()
             test.eq(second.status, "routed")
             test.is_true(second.session_id ~= first.session_id)
             test.eq(sent_route(2).execution_ref.generation, 1)
+        end)
+
+        test.it("touches an unchanged session after concurrent activity without backdating it", function()
+            test.is_nil(persist.set(DB, TABLE, "discord", "activity-race", "session-activity"))
+            local db = assert(sql.get(DB))
+            local _, seed_err = db:execute("UPDATE " .. TABLE .. " SET updated_at=$1 WHERE provider=$2 AND external_id=$3",
+                {"2099-01-01T00:00:00Z", "discord", "activity-race"})
+            test.is_nil(seed_err)
+            local touched, touch_err = session_acquire.touch_existing(DB, TABLE, "discord", "activity-race",
+                "session-activity", "2000-01-01T00:00:00Z")
+            test.is_nil(touch_err)
+            test.is_true(touched)
+            local rows, read_err = db:query("SELECT updated_at FROM " .. TABLE .. " WHERE provider=$1 AND external_id=$2",
+                {"discord", "activity-race"})
+            test.is_nil(read_err)
+            test.eq(rows[1].updated_at, "2099-01-01T00:00:00Z")
+            local other, other_err = session_acquire.touch_existing(DB, TABLE, "discord", "activity-race",
+                "other-session", "2099-01-01T00:00:00Z")
+            test.is_nil(other_err)
+            test.is_false(other)
+            local _, delete_err = db:execute("DELETE FROM " .. TABLE .. " WHERE provider=$1 AND external_id=$2",
+                {"discord", "activity-race"})
+            test.is_nil(delete_err)
+            local removed, removed_err = session_acquire.touch_existing(DB, TABLE, "discord", "activity-race",
+                "session-activity", "2099-01-01T00:00:00Z")
+            test.is_nil(removed_err)
+            test.is_false(removed)
+            db:release()
         end)
 
         test.it("converges concurrent first messages on one admitted session", function()

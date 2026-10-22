@@ -23,11 +23,14 @@ local function thread_with_events(db: sql.DB, events: integer, body: string?): s
 end
 
 local function append_event(db: sql.DB, thread_id: string, seq: integer)
-    local _, event_err = db:execute("INSERT INTO kickside_event (id,thread_id,type,role,body,seq) VALUES ($1,$2,'test:event','user','{}',$3)",
+    local tx = assert(db:begin())
+    local _, event_err = tx:execute("INSERT INTO kickside_event (id,thread_id,type,role,body,seq) VALUES ($1,$2,'test:event','user','{}',$3)",
         { uuid.v7(), thread_id, seq })
     if event_err then error("event insert failed: " .. tostring(event_err)) end
-    local _, head_err = db:execute("UPDATE kickside_thread SET event_count=$1 WHERE id=$2", { seq, thread_id })
+    local _, head_err = tx:execute("UPDATE kickside_thread SET event_count=$1 WHERE id=$2", { seq, thread_id })
     if head_err then error("thread head update failed: " .. tostring(head_err)) end
+    assert(jobs.wake_tx(tx, "thread:" .. thread_id))
+    assert(tx:commit())
 end
 
 -- Make this slot due and claim it the way slot_test does.
@@ -147,9 +150,10 @@ local function define_tests()
             test.contains(tostring(cursor.last_error), "bad declaration")
             test.eq(tonumber(cursor.last_seq), 0)
             test.eq(read(db, "SELECT state FROM kickside_projection WHERE id=$1", { registered.projection_id }).state, "invalid")
-            local slot = read(db, "SELECT status,scheduled_at FROM kickside_job WHERE id=$1", { registered.job_id })
+            local slot = read(db, "SELECT status,scheduled_at,wake_enabled FROM kickside_job WHERE id=$1", { registered.job_id })
             test.eq(slot.status, "pending")
             test.is_nil(slot.scheduled_at)
+            test.is_false(slot.wake_enabled == true or tonumber(slot.wake_enabled) == 1)
             test.eq(tonumber(read(db, "SELECT COUNT(*) AS n FROM kickside_job_run WHERE job_id=$1 AND status='failed'",
                 { registered.job_id }).n), 1)
             db:release()
@@ -162,15 +166,8 @@ local function define_tests()
             test.is_true(reported)
             db = assert(sql.get("app:db"))
 
-            -- A new event wakes the slot; the invalid cursor runs no worker and
-            -- the slot parks again without another failure.
             append_event(db, thread_id, 2)
-            db:release()
-            local woken = claim_slot(registered.job_id)
-            local again, again_err = invoke.run(input_for(woken, cursor_id))
-            test.is_nil(again_err)
-            test.is_true(again.self_completed)
-            db = assert(sql.get("app:db"))
+            test.is_nil(read(db, "SELECT scheduled_at FROM kickside_job WHERE id=$1", { registered.job_id }).scheduled_at)
             test.eq(read(db, "SELECT status FROM kickside_projection_cursor WHERE id=$1", { cursor_id }).status, "invalid")
             test.eq(tonumber(read(db, "SELECT COUNT(*) AS n FROM kickside_job_run WHERE job_id=$1 AND status='failed'",
                 { registered.job_id }).n), 1)

@@ -281,7 +281,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 if op_err then return nil, op_err end
                 holds_targets = op ~= nil and next(op.target_receipts) ~= nil
             end
-            if classified.retriable or holds_targets then
+            local _, parks = (dependencies.round_outcome :: any).failure_phase(classified)
+            if not parks or holds_targets then
                 return defer(p, classified)
             end
             local recorded_answer, finish_err, elsewhere = finish(p, "failed", { kind = classified.kind, message = classified.message })

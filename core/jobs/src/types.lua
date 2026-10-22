@@ -71,8 +71,8 @@ M.JOB_STATE = {
 }
 
 -- Error kinds a retry cannot change. A failure of one of these kinds is
--- deterministic; an explicitly non-retryable Internal error also parks.
--- Other failures retain infrastructure retries.
+-- deterministic. Other failures retain infrastructure retries independently
+-- of invocation retry policy.
 local DETERMINISTIC_KINDS: { [string]: boolean } = {
     [errors.INVALID] = true,
     [errors.PERMISSION_DENIED] = true,

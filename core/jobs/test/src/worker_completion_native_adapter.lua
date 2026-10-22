@@ -8,7 +8,8 @@ function M.fail_job(db, job, dialect, message, classification)
     local _, err = fixture.result("park", true)
     return err
 end
-function M.fail_tx(tx, job, dialect, message, classification)
+function M.fail_tx(tx, job, dialect, message, classification, retry_floor)
+    fixture.retry_floor = retry_floor
     local _, err = fixture.result("failure", true)
     return err
 end
