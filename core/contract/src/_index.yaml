@@ -57,6 +57,12 @@ entries:
       comment: Agent tool results - typed tool failures and structured domain errors.
     source: file://tool_result.lua
 
+  - name: tool_action
+    kind: library.lua
+    meta:
+      comment: Multi-action agent tools - per-action required and accepted fields over one flat object schema.
+    source: file://tool_action.lua
+
   - name: canonical_json
     kind: library.lua
     meta:
