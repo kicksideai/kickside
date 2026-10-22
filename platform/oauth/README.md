@@ -52,6 +52,18 @@ variables in the harness configuration for your test server.
 | [`kickside.oauth.discovery:provider_discovery`](src/discovery/_index.yaml) | `list_available_providers`, `get_provider_info`, `get_connector_contract`, `get_component_contract` |
 | [`kickside.oauth:connector`](src/registry/connection/_index.yaml) | `init_oauth`, `handle_callback`, `refresh_token` |
 | [`kickside.oauth:oauth_connection_contract`](src/registry/connection_contracts/_index.yaml) | `get_access_token`, `get_info` |
+| [`kickside.oauth.runtime:connection`](src/runtime/_index.yaml) | `get_config` |
+
+Providers read private runtime options through `kickside.oauth.runtime:connection`.
+Open it under the current actor and scope, then call `get_config({component_id = id})`.
+OAuth checks Component READ access and returns only `provider`, `connection_state`,
+and the provider's `config`. Tokens, client credentials, profile, and negotiation
+state stay behind OAuth's existing lifecycle. Public `get_info` remains metadata-only.
+Providers must not import OAuth persistence libraries.
+
+Initialization reports success only after the spawned negotiator's callback name
+is visible. Readiness has a five-second deadline; a failed startup returns 503
+without publishing an authorization URL.
 
 ### Host requirements
 
