@@ -41,3 +41,47 @@ class HarnessSelectionTests(unittest.TestCase):
             config = {}
             _focus_tests(root, config, 'case')
             self.assertNotIn('fixture:initialize:meta.type', config['override'])
+
+    def test_focused_runs_exclude_replacement_source_tests_and_their_setup(self):
+        from module_harness import _focus_tests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'harness'
+            root.mkdir()
+            (root / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'fixture', 'entries': [
+                {'name': 'setup', 'meta': {'type': 'test', 'suite': '00_setup'}},
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            dependency = Path(directory) / 'dependency'
+            dependency.mkdir()
+            (dependency / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'foreign', 'entries': [
+                {'name': 'setup', 'meta': {'type': 'test', 'suite': '00_setup'}},
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            config = {'workspace': {'replacements': {'example/dependency': str(dependency)}}}
+            _focus_tests(root, config, 'case')
+            self.assertNotIn('fixture:setup:meta.type', config['override'])
+            self.assertEqual(config['override']['foreign:setup:meta.type'], 'test_focus_excluded')
+            self.assertEqual(config['override']['foreign:case:meta.type'], 'test_focus_excluded')
+
+    def test_full_root_runs_exclude_replacement_source_tests_and_their_setup(self):
+        from module_harness import _focus_tests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'harness'
+            root.mkdir()
+            (root / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'fixture', 'entries': [
+                {'name': 'setup', 'meta': {'type': 'test', 'suite': '00_setup'}},
+                {'name': 'first', 'meta': {'type': 'test', 'suite': 'behavior'}},
+                {'name': 'second', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            dependency = Path(directory) / 'dependency'
+            dependency.mkdir()
+            (dependency / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'foreign', 'entries': [
+                {'name': 'setup', 'meta': {'type': 'test', 'suite': '00_setup'}},
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            config = {'workspace': {'replacements': {'example/dependency': str(dependency)}}}
+            _focus_tests(root, config)
+            self.assertEqual(config['override'], {
+                'foreign:setup:meta.type': 'test_focus_excluded',
+                'foreign:case:meta.type': 'test_focus_excluded',
+            })
