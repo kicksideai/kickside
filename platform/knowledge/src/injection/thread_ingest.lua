@@ -127,7 +127,11 @@ function M.check_delivery(kb_id: string, external_id: string, delivery_key: stri
     if body_err then return false, body_err end
     local metadata, metadata_err = decode_object(body.metadata == nil and {} or body.metadata)
     if metadata_err then return false, metadata_err end
-    if body.content ~= content or not util.same_value(metadata.sink_write, sink_write) then
+    local same_content = body.content == content
+    if body.content == nil and body.content_omitted == true then
+        same_content = body.content_bytes == #content and body.content_sha256 == content_sha(content)
+    end
+    if not same_content or not util.same_value(metadata.sink_write, sink_write) then
         return false, errors.new({ message = "idempotency key already used for a different write", kind = errors.CONFLICT, retryable = false })
     end
     return true, nil
@@ -360,6 +364,8 @@ function M.append_content(kb_id, params)
             body.content = nil
             body.content_omitted = true
             body.content_bytes = #content
+            body.content_sha256 = content_sha(content)
+            if not body.content_sha256 then return nil, "failed to hash omitted artifact content" end
         end
     end
     local appended, append_err = emit_event(exec, kb_id, {

@@ -166,7 +166,7 @@ local function define_tests()
                 local result, append_err = funcs.new():with_actor(actor):with_scope(scope):call(APPEND_PROBE, {
                     kb_id = component_id, content = case.content,
                     source_ref = {kind = "upload", upload_id = "test-upload", artifact_id = "test-text"},
-                    external_id = "upload:test-upload", external_version = "v1"})
+                    external_id = "upload:test-upload", external_version = case.omitted and "delivery:artifact-pull" or "v1"})
                 test.is_nil(append_err, tostring(append_err))
                 test.eq(result.success, true)
                 local page, pull_err = funcs.new():with_actor(actor):with_scope(scope)
@@ -182,6 +182,17 @@ local function define_tests()
                 if case.omitted then
                     test.is_nil(body.content)
                     test.eq(body.content_omitted, true)
+                    test.eq(body.content_sha256,thread_ingest_base.content_sha(case.content))
+                    local matched,match_err=funcs.new():with_actor(actor):with_scope(scope):call(APPEND_PROBE,{
+                        check_delivery=true,kb_id=component_id,external_id="upload:test-upload",
+                        delivery_key="artifact-pull",content=case.content})
+                    test.is_nil(match_err)
+                    test.eq(matched,true)
+                    local changed,changed_err=funcs.new():with_actor(actor):with_scope(scope):call(APPEND_PROBE,{
+                        check_delivery=true,kb_id=component_id,external_id="upload:test-upload",
+                        delivery_key="artifact-pull",content=case.content.."changed"})
+                    test.is_nil(changed)
+                    test.is_true(errors.is(changed_err,errors.CONFLICT))
                     test.eq(body.content_bytes, #case.content)
                 else
                     test.eq(body.content, case.content)
