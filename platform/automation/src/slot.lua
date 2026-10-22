@@ -7,7 +7,7 @@
 --
 -- provision enqueues the slot in the jobs store, then records its id on the
 -- drive in the automation store; it also keeps the command dispatcher's one
--- maintenance slot active. The two stores never share a transaction:
+-- maintenance slot active. Normal provisioning commits each store separately:
 -- enqueue is idempotent on the active identity, so a repeated provision after a
 -- crash between them (or the dispatcher's missing-slot repair) converges on the
 -- same job.
@@ -17,6 +17,7 @@ local jobs = require("jobs")
 local slot_purge = require("slot_purge")
 local types = require("types")
 local drive = require("drive")
+local jobs_config = require("jobs_config")
 
 local slot = {}
 
@@ -39,15 +40,24 @@ end
 
 -- enqueue(automation_id, drive_key, wake_key?) -> the slot's job id, existing
 -- or new. An event drive's slot carries its source thread's wake key.
-function slot.enqueue(automation_id: string, drive_key: string, wake_key: string?): (string?, error?)
-    local enqueued, err = jobs.enqueue({
+local function enqueue(params: table, tx: sql.Transaction?): (table?, error?)
+    if tx and jobs_config.db_id() == types.db_id() then
+        local dialect, err = tx:db_type()
+        if err then return nil, err end
+        return jobs.enqueue_tx(tx, tostring(dialect), params)
+    end
+    return jobs.enqueue(params)
+end
+
+local function enqueue_drive(automation_id: string, drive_key: string, wake_key: string?, tx: sql.Transaction?): (string?, error?)
+    local enqueued, err = enqueue({
         namespace = slot.NAMESPACE, scope = automation_id, key = drive_key,
         owner_locator = { kind = "automation", id = automation_id },
         job_type = slot.JOB_TYPE,
         slot = true,
         wake_key = wake_key,
         immutable_payload = { automation_id = automation_id, drive_key = drive_key },
-    })
+    }, tx)
     if err then return nil, err end
     local job_id = type(enqueued) == "table" and (enqueued :: Map).id or nil
     if type(job_id) ~= "string" or job_id == "" then
@@ -56,19 +66,20 @@ function slot.enqueue(automation_id: string, drive_key: string, wake_key: string
     return job_id :: string, nil
 end
 
+function slot.enqueue(automation_id: string, drive_key: string, wake_key: string?): (string?, error?)
+    return enqueue_drive(automation_id, drive_key, wake_key, nil)
+end
+
 -- record(automation_id, drive_key, job_id) stores the slot id on the drive.
 -- The active identity admits one slot per drive, so the id enqueue returned is
 -- the drive's slot and replaces whatever the drive recorded before.
-function slot.record(automation_id: string, drive_key: string, job_id: string): error?
-    local db, db_err = sql.get(types.db_id())
-    if db_err or not db then return unavailable("automation database unavailable", db_err) end
+local function record(db: any, automation_id: string, drive_key: string, job_id: string): error?
     -- A source move legitimately provisions while release_pins is pending.
     -- Only owner deletion forbids a new slot; its fence precedes jobs purge.
     local result, err = db:execute("UPDATE " .. drive.TABLE .. " SET job_id = $1"
         .. " WHERE automation_id = $2 AND drive_key = $3"
         .. " AND (pending_command_id IS NULL OR pending_command_id <> $4)",
         { job_id, automation_id, drive_key, "owner-delete:" .. automation_id })
-    db:release()
     if err then return internal("failed to record the drive slot", err) end
     local count = type(result) == "table" and tonumber(result.rows_affected) or nil
     if count == 0 then
@@ -79,25 +90,37 @@ function slot.record(automation_id: string, drive_key: string, job_id: string): 
     return nil
 end
 
+function slot.record(automation_id: string, drive_key: string, job_id: string): error?
+    local db, db_err = sql.get(types.db_id())
+    if db_err or not db then return unavailable("automation database unavailable", db_err) end
+    local err = record(db, automation_id, drive_key, job_id)
+    db:release()
+    return err
+end
+
 -- ensure_dispatcher() -> the id of the command dispatcher's maintenance slot,
 -- enqueued when no active one exists. Every drive slot provision ensures it, so
 -- the dispatcher is active wherever a drive exists.
-function slot.ensure_dispatcher(): (string?, error?)
+local function ensure_dispatcher(tx: sql.Transaction?): (string?, error?)
     local identity = slot.DISPATCHER_IDENTITY
-    local enqueued, err = jobs.enqueue({
+    local enqueued, err = enqueue({
         namespace = identity.namespace, scope = identity.scope, key = identity.key,
         owner_locator = { kind = "installation", id = "kickside.automation" },
         job_type = slot.DISPATCHER_JOB_TYPE,
         slot = true,
         queue_tier = "maintenance",
         immutable_payload = {},
-    })
+    }, tx)
     if err then return nil, err end
     local job_id = type(enqueued) == "table" and (enqueued :: Map).id or nil
     if type(job_id) ~= "string" or job_id == "" then
         return nil, internal("dispatcher slot enqueue returned no job id", slot.DISPATCHER_JOB_TYPE)
     end
     return job_id :: string, nil
+end
+
+function slot.ensure_dispatcher(): (string?, error?)
+    return ensure_dispatcher(nil)
 end
 
 -- The drive's source: kind and source thread.
@@ -112,6 +135,43 @@ local function drive_source(automation_id: string, drive_key: string): (Map?, er
             retryable = false }) :: error)
     end
     return row, nil
+end
+
+local function attach(automation_id: string, drive_key: string, source: Map, tx: sql.Transaction?): (string?, error?)
+    local wake_key: string? = nil
+    if source.source_kind == drive.SOURCE_KIND.EVENT then wake_key = drive.wake_key(tostring(source.source_thread_id)) end
+    local dispatcher_err
+    if tx then
+        local _
+        _, dispatcher_err = ensure_dispatcher(tx)
+    else
+        local _
+        _, dispatcher_err = slot.ensure_dispatcher()
+    end
+    if dispatcher_err then return nil, dispatcher_err end
+    local job_id, enqueue_err
+    if tx then
+        job_id, enqueue_err = enqueue_drive(automation_id, drive_key, wake_key, tx)
+    else
+        job_id, enqueue_err = slot.enqueue(automation_id, drive_key, wake_key)
+    end
+    if enqueue_err or not job_id then return nil, enqueue_err end
+    local record_err = tx and record(tx, automation_id, drive_key, job_id) or nil
+    if not tx then record_err = slot.record(automation_id, drive_key, job_id) end
+    if tx then
+        if record_err then return nil, record_err end
+        return job_id, nil
+    end
+    if record_err then
+        if not errors.is(record_err, errors.CONFLICT) then return nil, record_err end
+        local _, purge_err = slot_purge.purge_slot({ namespace = slot.NAMESPACE, scope = automation_id, key = drive_key })
+        if purge_err then
+            return nil, internal("slot recording failed and its unrecorded job could not be reclaimed",
+                tostring(record_err) .. "; " .. tostring(purge_err))
+        end
+        return nil, record_err
+    end
+    return job_id, nil
 end
 
 -- provision(automation_id, drive_key) -> the slot's job id, enqueued and
@@ -130,23 +190,17 @@ function slot.provision(automation_id: string, drive_key: string): (string?, err
         end
         return nil, nil
     end
-    local wake_key: string? = nil
-    if source.source_kind == drive.SOURCE_KIND.EVENT then wake_key = drive.wake_key(tostring(source.source_thread_id)) end
-    local _, dispatcher_err = slot.ensure_dispatcher()
-    if dispatcher_err then return nil, dispatcher_err end
-    local job_id, enqueue_err = slot.enqueue(automation_id, drive_key, wake_key)
-    if enqueue_err or not job_id then return nil, enqueue_err end
-    local record_err = slot.record(automation_id, drive_key, job_id)
-    if record_err then
-        if not errors.is(record_err, errors.CONFLICT) then return nil, record_err end
-        local _, purge_err = slot_purge.purge_slot({ namespace = slot.NAMESPACE, scope = automation_id, key = drive_key })
-        if purge_err then
-            return nil, internal("slot recording failed and its unrecorded job could not be reclaimed",
-                tostring(record_err) .. "; " .. tostring(purge_err))
-        end
-        return nil, record_err
+    return attach(automation_id, drive_key, source, nil)
+end
+
+-- Attach a sourced drive under the owning caller's transaction and row lock.
+function slot.provision_tx(tx: sql.Transaction, automation_id: string, drive_key: string): (string?, error?)
+    local source, err = drive.get(tx, automation_id, drive_key)
+    if err then return nil, err end
+    if not source or source.source_kind == drive.SOURCE_KIND.NONE then
+        return nil, errors.new({kind = errors.INVALID, message = "slot attachment requires a sourced drive"})
     end
-    return job_id, nil
+    return attach(automation_id, drive_key, source, tx)
 end
 
 -- wake(job_id) -> { woken, scheduled_at? }: wakes a drive slot with control

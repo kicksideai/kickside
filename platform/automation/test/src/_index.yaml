@@ -300,3 +300,29 @@ entries:
       resources: write
       actions: contract.call
       effect: deny
+
+  - name: drive_repair
+    kind: library.lua
+    source: file://drive_repair_source.lua
+    modules: [json, sql]
+    imports:
+      migration: wippy.migration:migration
+      jobs: kickside.core.jobs:jobs
+      slot: kickside.automation:slot
+      jobs_config: kickside.core.jobs:config
+      types: kickside.automation:types
+
+  - name: drive_repair_test
+    kind: function.lua
+    meta: {type: test, suite: drive_repair}
+    source: file://drive_repair_test.lua
+    method: run
+    modules: [sql, uuid, json, process, channel, time]
+    imports:
+      test: wippy.test:test
+      drive: kickside.automation:drive
+      slot: kickside.automation:slot
+      jobs: kickside.core.jobs:jobs
+      repair: app:drive_repair
+      types: kickside.automation:types
+      jobs_config: kickside.core.jobs:config

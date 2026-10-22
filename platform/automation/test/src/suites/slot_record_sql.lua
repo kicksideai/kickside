@@ -1,4 +1,5 @@
 local native = require("sql")
+type Transaction = native.Transaction
 local M = { calls = 0 }
 function M.get(...)
     local db, err = native.get(...)
