@@ -83,7 +83,12 @@ end
 -- Privileged subject read through the Users-owned seam. Returns the lookup
 -- row or (nil, typed_error); infrastructure stays typed and retryable.
 local function lookup_subject(subject_id: string, authority_only: boolean?): (any?, error?)
-    local resolved, call_err = funcs_module().new():call(SUBJECT_LOOKUP, { subject_id = subject_id, authority_only = authority_only == true })
+    local executor, executor_err = funcs_module().new()
+    if executor_err ~= nil then return nil, executor_err :: error end
+    if executor == nil then
+        return nil, failure("subject lookup executor is unavailable", errors.UNAVAILABLE, "infrastructure", true)
+    end
+    local resolved, call_err = executor:call(SUBJECT_LOOKUP, { subject_id = subject_id, authority_only = authority_only == true })
     if call_err ~= nil then return nil, call_err :: error end
     if type(resolved) ~= "table" then
         return nil, failure("subject lookup failed for " .. subject_id, errors.UNAVAILABLE, "infrastructure", true)
