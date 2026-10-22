@@ -82,6 +82,12 @@ function isPaused(d: DriveSummary): boolean {
   return d.enabled === false || d.phase === 'paused'
 }
 
+function isScheduled(d: DriveSummary): boolean {
+  return (d.source_kind === 'timer' || d.source_kind === 'collection')
+    && (d.phase === 'pending' || d.phase === 'active')
+    && typeof d.next_run_at === 'string' && Date.parse(d.next_run_at) > Date.now()
+}
+
 // drivePill -> the status pill of the drives, or null when the automation has
 // no source drives and reports through its public state instead.
 export function drivePill(status?: DriveStatus | null): StatusPill | null {
@@ -93,7 +99,9 @@ export function drivePill(status?: DriveStatus | null): StatusPill | null {
   if (failed) return { kind: 'warn', label: 'Needs attention' }
   if (drives.some(d => d.phase === 'degraded')) return { kind: 'warn', label: 'Retrying' }
   if (drives.some(d => d.phase === 'backpressure')) return { kind: 'live', label: 'Catching up' }
-  if (drives.some(d => d.phase === 'pending')) return { kind: 'neutral', label: 'Starting' }
+  if (drives.some(d => !isPaused(d) && d.phase === 'pending' && !isScheduled(d))) return { kind: 'neutral', label: 'Starting' }
+  const primary = drives.filter(d => !isPaused(d) && d.source_kind !== 'reconcile')
+  if (primary.length && primary.every(isScheduled)) return { kind: 'on', label: 'Scheduled' }
   return { kind: 'on', label: 'Active' }
 }
 

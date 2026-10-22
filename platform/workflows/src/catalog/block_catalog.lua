@@ -17,28 +17,25 @@ local function map(value: any): Map
     return type(value) == "table" and (value :: Map) or {}
 end
 
-local function copy(value: any): any
-    if type(value) ~= "table" then return value end
-    local out: Map = {}
-    for key, item in pairs(value :: Map) do out[key] = copy(item) end
-    return out
-end
-
 local function normalize(descriptor: Map): (Map?, string?)
     local d = descriptor :: Map
     local id = str(d.id)
     if id == "" then return nil, "Block descriptor id is required" end
     local presentation = map(d.presentation)
     local execution = map(d.execution)
-    local ports = copy(d.ports)
-    for _, raw_port in ipairs(ports :: { any }) do
-        if type(raw_port) == "table" and (raw_port :: Map).schema == nil then
-            local port_id = str((raw_port :: Map).id)
-            if port_id == "failed" then
-                ; (raw_port :: Map).schema = copy(d.error)
-            elseif port_id == "result" then
-                ; (raw_port :: Map).schema = copy(d.output)
+    local ports: { any } = {}
+    for _, raw_port in ipairs(d.ports :: { any }) do
+        if type(raw_port) == "table" then
+            local port: Map = {}
+            for key, value in pairs(raw_port :: Map) do port[key] = value end
+            if port.schema == nil then
+                local port_id = str(port.id)
+                if port_id == "failed" then port.schema = d.error
+                elseif port_id == "result" then port.schema = d.output end
             end
+            ports[#ports + 1] = port
+        else
+            ports[#ports + 1] = raw_port
         end
     end
     return {
@@ -56,7 +53,7 @@ local function normalize(descriptor: Map): (Map?, string?)
         -- field the Blocks library validates a tool instance against, so it
         -- rides along the same way `declaration` does. Dropping it makes every
         -- tool-backed Block fail materialization with "schema is required".
-        config = copy(d.config),
+        config = d.config,
         config_wc = presentation.config_wc,
         output_schema = d.output,
         error_schema = d.error,
@@ -64,11 +61,11 @@ local function normalize(descriptor: Map): (Map?, string?)
         public = d.public == true,
         source_kind = str(d.source_kind) ~= "" and d.source_kind or "block",
         tool = d.tool == true or d.source_kind == "tool",
-        execution = copy(d.execution),
+        execution = d.execution,
         -- Explicit Blocks lower from their canonical registry declaration so
         -- instance validation and execution policy have one source of truth.
         -- The public Blocks API deliberately omits this internal field.
-        declaration = copy(d.declaration),
+        declaration = d.declaration,
     }, nil
 end
 
@@ -101,7 +98,7 @@ function M.resolve(block_id: any): (Map?, error?)
     if err then return nil, err end
     local descriptor = (catalog :: Map)[id]
     if type(descriptor) ~= "table" then return nil, errors.new({ kind = errors.NOT_FOUND, message = "Block not found: " .. id }) end
-    return copy(descriptor) :: Map, nil
+    return descriptor :: Map, nil
 end
 
 return M

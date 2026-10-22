@@ -20,6 +20,7 @@ const webHostImportMap = JSON.parse(
 const entries = {
   index: resolve(uiRoot, 'src/index.ts'),
   workflow_setup: resolve(uiRoot, 'src/workflow_setup.ts'),
+  workflow_picker: resolve(uiRoot, 'src/workflow_picker.ts'),
   workflow_embed: resolve(uiRoot, 'src/workflow_embed.ts'),
   component_workflows: resolve(uiRoot, 'src/component_workflows.ts'),
 }

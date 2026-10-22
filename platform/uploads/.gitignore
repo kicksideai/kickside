@@ -3,3 +3,6 @@ ui/dist/
 node_modules/
 *.tsbuildinfo
 test/src/fixtures/
+
+static/*.map
+static/**/*.map

@@ -160,6 +160,7 @@ entries:
     method: acquire
     modules: [funcs, contract, security]
     imports:
+      round_write: kickside.automation:round_write
       connection_capacity: kickside.automation:connection_capacity
       failure_classification: kickside.automation:failure_classification
       automations_lib: kickside.automation:automation
@@ -209,6 +210,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
   - name: round_authority_write
     kind: function.lua
     meta:
@@ -229,6 +231,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
   - name: round_authority_compute
     kind: function.lua
     meta:
@@ -249,6 +252,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
 
   - name: round_sink_effect
     kind: function.lua
@@ -263,6 +267,7 @@ entries:
       round_write: kickside.automation:round_write
       component: kickside.component:component
       round_provenance: kickside.automation:round_provenance
+      failure_classification: kickside.automation:failure_classification
 
   - name: round_provenance
     kind: library.lua

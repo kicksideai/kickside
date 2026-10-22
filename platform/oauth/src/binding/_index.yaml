@@ -91,6 +91,7 @@ entries:
       - ctx
       - logger
     imports:
+      token_request: kickside.oauth.client:token_request
       form: kickside.oauth:form
       creds: kickside.oauth:creds
       provider_errors: kickside.oauth:provider_errors
@@ -133,6 +134,7 @@ entries:
       - ctx
       - logger
     imports:
+      token_request: kickside.oauth.client:token_request
       form: kickside.oauth:form
       creds: kickside.oauth:creds
       provider_errors: kickside.oauth:provider_errors

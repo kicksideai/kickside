@@ -7,6 +7,7 @@ local logger = require("logger"):named("kickside.oauth.api.init")
 local process = require("process")
 local security = require("security")
 local runtime_config = require("runtime_config")
+local funcs = require("funcs")
 
 local STATUS = http.STATUS
 local CONTENT = http.CONTENT
@@ -76,6 +77,14 @@ local function handler()
         local msg = tostring(access_err or "access denied")
             res:set_status(status)
             res:write_json({ success = false, error = msg })
+            return
+        end
+        local rows, read_err = component.query({component_ids = {body.component_id}, include = {meta = true}, limit = 1})
+        local meta = rows and rows[1] and rows[1].meta
+        local is_oauth = meta and (meta.oauth_connection == true or meta.oauth_connection == "true")
+        if read_err or not is_oauth or meta.provider ~= provider_name then
+            res:set_status(STATUS.BAD_REQUEST)
+            res:write_json({success = false, error = "Reconnect requires an OAuth connection for the same provider. Create a new connection to change providers or authentication type."})
             return
         end
     end
@@ -178,7 +187,10 @@ local function handler()
 
     local init_result, err = oauth_instance:init_oauth({
         redirect_uri = redirect_uri,
-        scopes = final_scopes
+        scopes = final_scopes,
+        -- Provider-owned options are input to the connector, never runtime
+        -- context overrides. Dynamic providers validate their own allowlist.
+        provider_options = body.provider_options
     })
     if err then
         res:set_status(STATUS.INTERNAL_ERROR)
@@ -224,7 +236,17 @@ local function handler()
         return
     end
 
-    logger:debug("OAuth negotiator process spawned", {
+    local ready, ready_err = funcs.call("kickside.oauth.service:await_negotiator", {
+        state_token = init_result.state_token,
+        pid = tostring(negotiator_pid),
+    })
+    if ready_err or not ready or ready.success ~= true then
+        res:set_status(503)
+        res:write_json({ success = false, error = "OAuth callback session could not be initialized. Try again." })
+        return
+    end
+
+    logger:debug("OAuth negotiator process ready", {
         state_token = init_result.state_token,
         provider_name = provider_name,
         negotiator_pid = negotiator_pid,

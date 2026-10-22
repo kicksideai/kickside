@@ -19,12 +19,9 @@ export default defineConfig({
     outDir: resolve(__dirname, '../static'),
     emptyOutDir: true,
     lib: {
-      // Two elements ship from this package: the Settings page shell (index →
-      // kickside-settings) and the consolidated Files & Uploads panel (storage →
-      // kickside-settings-storage) mounted by its own settings block.
+      // Independently mounted Settings shell, provider card, and About view.
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
-        storage: resolve(__dirname, 'src/storage.ts'),
         provider: resolve(__dirname, 'src/provider.ts'),
         about: resolve(__dirname, 'src/about.ts'),
       },
@@ -35,7 +32,6 @@ export default defineConfig({
       preserveEntrySignatures: false,
       input: {
         index: resolve(__dirname, 'src/index.ts'),
-        storage: resolve(__dirname, 'src/storage.ts'),
         provider: resolve(__dirname, 'src/provider.ts'),
         about: resolve(__dirname, 'src/about.ts'),
       },

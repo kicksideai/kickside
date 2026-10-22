@@ -16,6 +16,7 @@ local function define_tests()
             local owner = uuid.v7()
             local db, db_err = sql.get(DB)
             test.is_nil(db_err)
+            if not db then error("ledger order test requires a database: " .. tostring(db_err)) end
             local tx, tx_err = db:begin()
             test.is_nil(tx_err)
             local _, record_err = round_ledger.record_tx(tx, owner, "fixture:precision", {

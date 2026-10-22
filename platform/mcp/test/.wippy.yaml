@@ -10,6 +10,7 @@ workspace:
     kickside/jobs: ../../../core/jobs
     kickside/mcp: ..
     kickside/uploads: ../../uploads
+    kickside/settings: ../../settings
     kickside/execution: ../../../core/execution
 vars:
   sqlite_path: ":memory:"

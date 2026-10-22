@@ -96,7 +96,7 @@ local function define_tests()
             test.is_true(d.next_run_at < far)
         end)
 
-        test.it("writes no ledger row for a first-attempt delivery or skip and gives every terminal row an expiry", function()
+        test.it("writes no ledger row for a first-attempt delivery or skip and expires only resolved tombstones", function()
             local key = "first_attempt"
             new_drive({ automation_id = automation_id, drive_key = key, source_kind = "collection", action = collection({
                 { key = "d-1" }, { key = "s-1", directive = "skip" }, { key = "x-1", directive = "fail_dead" },
@@ -107,7 +107,7 @@ local function define_tests()
             test.is_nil(ledger_row(automation_id, "d-1"))
             test.is_nil(ledger_row(automation_id, "s-1"))
             test.eq((ledger_row(automation_id, "x-1") :: Map).state, "dead")
-            test.not_nil((ledger_row(automation_id, "x-1") :: Map).expires_at, "a dead item expires")
+            test.is_nil((ledger_row(automation_id, "x-1") :: Map).expires_at, "dead evidence has no automatic expiry")
 
             exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND item_key='r-1'", { PAST, automation_id })
             local _, retry_err = run(automation_id, key)
@@ -116,7 +116,9 @@ local function define_tests()
             test.eq(resolved.state, "resolved", "a formerly unresolved item keeps its tombstone")
             test.not_nil(resolved.expires_at)
             test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1"
-                .. " AND state IN ('resolved','dead') AND expires_at IS NULL", { automation_id }), 0)
+                .. " AND state='resolved' AND expires_at IS NULL", { automation_id }), 0)
+            test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1"
+                .. " AND state='dead' AND expires_at IS NOT NULL", { automation_id }), 0)
             test.eq(read_drive(automation_id, key).unresolved_count, 0)
         end)
 
@@ -140,7 +142,7 @@ local function define_tests()
                 .. " WHERE owner_id=$1 AND state='dead' ORDER BY item_key", { automation_id })
             test.eq(#after, 2)
             for index, row in ipairs(after) do
-                test.eq(row.expires_at, before[index].expires_at, "a terminal row keeps its expiry")
+                test.eq(row.expires_at, before[index].expires_at, "dead evidence keeps its retention state")
                 test.eq(row.updated_at, SENTINEL, "a terminal row is not rewritten by another item's round")
             end
         end)

@@ -99,6 +99,7 @@ local function proofs()
                 test.is_nil(err)
                 if mode == "settled" then test.is_true(value); test.eq(fixture.executes, 0)
                 else
+                    if type(value) ~= "table" then error("completion requires a result table") end
                     test.eq(value.status, "completed")
                     test.is_true(value.run_history_settled)
                     test.eq(fixture.executes, dialect == sql.type.SQLITE and 2 or 1)

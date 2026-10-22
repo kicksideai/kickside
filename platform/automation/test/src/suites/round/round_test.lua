@@ -43,6 +43,37 @@ local function define_tests()
         end)
 
 
+        for _, source_kind in ipairs({ "timer", "collection" }) do
+            test.it("activates an idle " .. source_kind .. " drive before its first scheduled occurrence", function()
+                local key = "scheduled_" .. source_kind
+                new_drive({ automation_id = automation_id, drive_key = key, source_kind = source_kind,
+                    action = { source_ref = "kickside.automation.round.fixture:records",
+                        schedule = { type = "interval", expression = "1h" } } })
+                test.eq(read_drive(automation_id, key).phase, "pending")
+                local notifications, completions = #env.notifications, #env.completions
+                local _, err = run(automation_id, key)
+                test.is_nil(err, tostring(err))
+                local waiting = read_drive(automation_id, key)
+                test.eq(waiting.phase, "active")
+                test.is_true(drive.after(waiting.next_run_at, drive.utc_now()))
+                test.eq(waiting.round_seq, 0)
+                test.is_nil(waiting.round_token)
+                test.is_nil(waiting.occurrence_seq)
+                test.eq(waiting.last_committed_occurrence_seq, 0)
+                test.eq(#log_rows(automation_id, key), 0)
+                test.eq(last_completion().options.rearm, waiting.next_run_at)
+                test.eq(#env.notifications, notifications + 1)
+                local notice = env.notifications[#env.notifications]
+                test.eq(notice.phase, "active")
+                test.eq(notice.completions, completions)
+
+                local _, again_err = run(automation_id, key)
+                test.is_nil(again_err, tostring(again_err))
+                test.eq(read_drive(automation_id, key).next_run_at, waiting.next_run_at)
+                test.eq(read_drive(automation_id, key).phase, "active")
+            end)
+        end
+
         test.it("notifies the component channel after an empty round commits its phase", function()
             local key = "phase_notify"
             new_drive({ automation_id = automation_id, drive_key = key, source_kind = "event",
@@ -259,7 +290,7 @@ local function define_tests()
             test.eq(states.fail_dead, "dead")
             for _, r in ipairs(rows) do
                 if json.decode(r.detail_json).directive == "fail_dead" then
-                    test.not_nil((ledger_row(automation_id, r.item_key) :: Map).expires_at, "a dead item expires")
+                    test.is_nil((ledger_row(automation_id, r.item_key) :: Map).expires_at, "dead evidence has no automatic expiry")
                 end
             end
             test.eq(states.wait, "waiting")

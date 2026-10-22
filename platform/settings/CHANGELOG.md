@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/kicksideai/kickside/compare/settings-v0.1.48...settings-v0.2.0) (2026-10-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **uploads:** Post-processing S3 placement requires explicitly installing kickside/storage-s3 in the same module plan as this update. The base module no longer installs its S3 policy, controller, jobs, endpoints, or UI.
+
+### Bug Fixes
+
+* **uploads:** extract S3 placement into an optional extension ([#55](https://github.com/kicksideai/kickside/issues/55)) ([c3d9c0c](https://github.com/kicksideai/kickside/commit/c3d9c0c64e2c0b566e17689d53e3ddec07208a90))
+
+## [0.1.48](https://github.com/kicksideai/kickside/compare/settings-v0.1.47...settings-v0.1.48) (2026-10-21)
+
+
+### Features
+
+* **uploads:** offload processed content through owned S3 storage ([#47](https://github.com/kicksideai/kickside/issues/47)) ([33c7e72](https://github.com/kicksideai/kickside/commit/33c7e72a784cbc9e0b0733767373fbe3c0932596))
+
 ## 0.1.45 (2026-10-09)
 
 - Build frontend assets with the current published UI Kit stylesheet.

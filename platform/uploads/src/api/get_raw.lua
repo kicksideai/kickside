@@ -1,6 +1,6 @@
 local http = require("http")
 local security = require("security")
-local fs = require("fs")
+local uploads_resources = require("uploads_resources")
 
 local upload_query_repo = require("upload_query_repo")
 local component = require("component")
@@ -84,15 +84,15 @@ local function raw_handler()
         end
     end
 
-    local storage = fs.get(upload.storage_id :: string)
+    local storage = uploads_resources.get_storage(upload.storage_id :: string)
     if not storage or not storage:exists(upload.storage_path) then
         res:set_status(http.STATUS.NOT_FOUND)
         res:set_content_type(http.CONTENT.JSON)
         res:write_json({ success = false, error = "File not in storage" })
         return
     end
-    local content = storage:readfile(upload.storage_path :: string)
-    if not content then
+    local file, open_err = storage:open(upload.storage_path :: string, "r")
+    if open_err or not file then
         res:set_status(http.STATUS.INTERNAL_ERROR)
         res:set_content_type(http.CONTENT.JSON)
         res:write_json({ success = false, error = "Failed to read file" })
@@ -101,7 +101,18 @@ local function raw_handler()
 
     res:set_content_type(upload.mime_type or "application/octet-stream")
     res:set_status(http.STATUS.OK)
-    res:write(content)
+    while true do
+        local chunk, read_err = file:read(1024 * 1024)
+        if read_err then
+            if errors.is(read_err, errors.NOT_FOUND) then break end
+            file:close(); return nil, read_err
+        end
+        if not chunk or #chunk == 0 then break end
+        local _, write_err = res:write(chunk)
+        if write_err then file:close(); return nil, write_err end
+    end
+    local _, close_err = file:close()
+    if close_err then return nil, close_err end
 end
 
 return {

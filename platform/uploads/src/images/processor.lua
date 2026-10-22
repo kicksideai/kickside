@@ -1,4 +1,4 @@
-local fs = require("fs")
+local uploads_resources = require("uploads_resources")
 local hash = require("hash")
 local artifact_content_repo = require("artifact_content_repo")
 
@@ -13,7 +13,7 @@ local function process(params)
     end
 
     -- Get the file storage to verify file exists
-    local storage = fs.get(params.storage_id :: string)
+    local storage = uploads_resources.get_storage(params.storage_id :: string)
     if not storage then
         error("Failed to get storage")
     end

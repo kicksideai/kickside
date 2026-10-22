@@ -61,7 +61,7 @@ function artifact_cleanup_repo.collect_orphan_blobs(db, candidate_ids)
                 local blob, blob_err = load_blob_by_id(db, blob_id)
                 if blob_err and not errors.is(blob_err, errors.NOT_FOUND) then return nil, blob_err end
                 if not blob_err and blob then
-                    local storage, storage_err = resources.get_storage(blob.storage_id)
+                    local storage, storage_err = resources.get_storage(blob.storage_id, db)
                     if storage_err or not storage then
                         return nil, "failed to get storage for orphan blob cleanup: " .. tostring(storage_err)
                     end

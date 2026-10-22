@@ -6,6 +6,7 @@ local callback_names = require("callback_names")
 type CallbackMessage = {
     code: string?,
     state: string?,
+    iss: string?,
     error: string?,
     error_description: string?,
 }
@@ -43,6 +44,21 @@ local function define_tests()
 
             test.eq(data.error, "access_denied")
             test.eq(data.error_description, "The user denied the request")
+        end)
+        test.it("preserves the authorization issuer in query and JSON callbacks", function()
+            for _, method in ipairs({"GET", "POST"}) do
+                local values = {code = "code", state = "state", iss = "https://issuer.example/tenant"}
+                local req = {
+                    query = function(_self: any, key: string): any return method == "GET" and values[key] or nil end,
+                    method = function(): string return method end,
+                    is_content_type = function(): boolean return true end,
+                    body_json = function(): any return values end,
+                }
+                local result = callback_params.extract(req)
+                test.eq(result.iss, values.iss)
+                test.eq(result.state, values.state)
+            end
+            test.is_nil(callback_params.normalize({iss = ""}).iss)
         end)
 
         test.it("normalizes absent callback params to nil", function()

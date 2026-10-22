@@ -5,6 +5,7 @@ registry:
   dispatch_internal_kinds: [registry.entry, ns.requirement, ns.dependency, ns.definition, security.scope]
 workspace:
   replacements:
+    kickside/oauth: ../../platform/oauth
     kickside/mcp-client: ../../../providers/mcp-client
     kickside/realtime-dispatch: ../../core/realtime-dispatch
     kickside/app-security-test: .

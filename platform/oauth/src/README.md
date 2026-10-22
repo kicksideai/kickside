@@ -26,3 +26,9 @@ The shared authorization URL builder includes the provider's
 `oauth_extra_auth_params` with percent encoding. Google declares
 `access_type=offline` and `prompt=consent` to request a refresh token at consent.
 Extra parameters cannot replace the generated state, PKCE or core grant fields.
+
+## Provider token protocols
+
+The base connector accepts `oauth_token_auth_method` (`client_secret_post`, the default; `client_secret_basic`; or `none`) and `oauth_token_body_encoding` (`form`, the default; or `json`). Both authorization-code exchange and refresh use the same setting. Basic credentials are excluded from the body. Token requests have a 15-second timeout and a 1 MiB response limit.
+
+`oauth_scope_separator` defaults to a space; Linear uses a comma. PKCE remains configured with `oauth_use_pkce` and `oauth_pkce_method: S256`. Existing connector IDs and default request formats remain compatible.

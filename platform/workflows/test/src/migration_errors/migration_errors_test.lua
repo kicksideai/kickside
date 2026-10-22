@@ -44,7 +44,10 @@ local function run_migration(fn: any, dialect: string, direction: string, fail_a
     local db: any = {}
     function db:type() return dialect, nil end
     function db:query(statement: string, _args: any)
-        if string.find(statement, "pg_tables", 1, true) then return { { exists = true } }, nil end
+        if string.find(statement, "pg_tables", 1, true)
+            or string.find(statement, "to_regclass('_migrations')", 1, true) then
+            return { { exists = true } }, nil
+        end
         if string.find(statement, "sqlite_master", 1, true) then return { { count = 1 } }, nil end
         return {}, nil
     end

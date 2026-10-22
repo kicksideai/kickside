@@ -1,4 +1,5 @@
 local test = require("test")
+local json = require("json")
 local block_catalog = require("block_catalog")
 
 type Map = { [string]: any }
@@ -84,6 +85,36 @@ end
 
 local function run()
     test.describe("Workflow canonical Block catalog", function()
+        test.it("preserves empty objects and arrays through catalog projection and resolution", function()
+            local schema = json.decode('{"type":"object","additionalProperties":false,"properties":{},"$defs":{"value":{}},"examples":[]}')
+            local explicit = explicit_descriptor("example:block")
+            explicit.config = schema
+            explicit.output = schema
+            ; (((explicit.declaration :: Map).data :: Map).block :: Map).config = schema
+            local tool = tool_descriptor("example:tool", true)
+            tool.config = schema
+            local old = block_catalog._blocks
+            block_catalog._blocks = {
+                catalog = function() return { [explicit.id] = explicit, [tool.id] = tool }, nil end,
+            }
+            local catalog, catalog_err = block_catalog.catalog()
+            local resolved, resolve_err = block_catalog.resolve("example:block")
+            block_catalog._blocks = old
+
+            test.is_nil(catalog_err)
+            test.is_nil(resolve_err)
+            local encoded = json.encode(schema)
+            for _, descriptor in ipairs({ (catalog :: Map)[explicit.id], (catalog :: Map)[tool.id], resolved }) do
+                test.eq(json.encode((descriptor :: Map).config), encoded)
+                local valid, err = json.validate((descriptor :: Map).config, {})
+                test.is_nil(err)
+                test.is_true(valid)
+            end
+            local declaration = ((resolved :: Map).declaration :: Map)
+            test.eq(json.encode(((declaration.data :: Map).block :: Map).config), encoded)
+            test.eq(json.encode(((((catalog :: Map)[explicit.id] :: Map).ports :: { Map })[1] :: Map).schema), encoded)
+            test.is_nil(((explicit.ports :: { Map })[1] :: Map).schema)
+        end)
         test.it("projects tools with exact identity and preserves non-public compiler descriptors", function()
             local old = block_catalog._blocks
             block_catalog._blocks = {

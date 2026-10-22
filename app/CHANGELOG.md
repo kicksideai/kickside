@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.18](https://github.com/kicksideai/kickside/compare/kickside-v0.2.17...kickside-v0.2.18) (2026-10-21)
+
+
+### Features
+
+* **connection:** support native productivity provider adapters ([#43](https://github.com/kicksideai/kickside/issues/43)) ([1efcf58](https://github.com/kicksideai/kickside/commit/1efcf58af4a637bde446dcf2902ece5eb866c90c))
+
+
+### Bug Fixes
+
+* **workflows:** preserve empty objects in block catalog schemas ([#40](https://github.com/kicksideai/kickside/issues/40)) ([1d0b93b](https://github.com/kicksideai/kickside/commit/1d0b93bd85c835fdb2926b0a19f18be9d563b4e6))
+
+## [0.2.17](https://github.com/kicksideai/kickside/compare/kickside-v0.2.16...kickside-v0.2.17) (2026-10-20)
+
+
+### Features
+
+* **oauth:** support resource-specific provider options and issuer validation ([#37](https://github.com/kicksideai/kickside/issues/37)) ([fb172f1](https://github.com/kicksideai/kickside/commit/fb172f15dcc32688a520f2b90476a7374efc0121))
+
 ## 0.2.16 (2026-10-19)
 
 - The external-agent setup step issues an MCP client config with `"type": "http"`, so clients such as Claude Code load the pasted config.

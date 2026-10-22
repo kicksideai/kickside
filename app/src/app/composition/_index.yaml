@@ -205,11 +205,42 @@ entries:
       type: kickside.hub:onboarding_profile
     profile: google_workspace
     title: Google Workspace
-    description: Connect Gmail, Drive, Calendar, Docs, Sheets, Slides, Contacts, and Analytics.
+    description: Read and draft Gmail, and connect Drive, Calendar, Docs, Sheets, Slides, Contacts, and Analytics.
     icon: tabler:brand-google
     order: 55
     packages:
       - component: kickside/google
+
+  - name: onboarding_profile.connected_apps
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: connected_apps
+    title: Connected Apps
+    description: Connect Notion, Linear, Airtable, Dropbox, and Box with OAuth and separate reader/writer capabilities.
+    icon: tabler:apps
+    order: 56
+    packages:
+      - component: kickside/notion
+        parameters:
+          - name: kickside.notion:env_storage
+            value: app:env_storage
+      - component: kickside/linear
+        parameters:
+          - name: kickside.linear:env_storage
+            value: app:env_storage
+      - component: kickside/airtable
+        parameters:
+          - name: kickside.airtable:env_storage
+            value: app:env_storage
+      - component: kickside/dropbox
+        parameters:
+          - name: kickside.dropbox:env_storage
+            value: app:env_storage
+      - component: kickside/box
+        parameters:
+          - name: kickside.box:env_storage
+            value: app:env_storage
 
   - name: onboarding_profile.channels
     kind: registry.entry

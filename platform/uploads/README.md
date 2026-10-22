@@ -47,6 +47,31 @@ commit regenerated tracked assets with the source.
 
 Add a file in **Uploads** and inspect its processing state and preview. Installed processors select conversion and derived artifacts. Consumers read through Uploads content interfaces or signed purpose-bound tokens; original bytes, derived artifacts, and metadata remain owned by Uploads.
 
+### Optional storage extensions
+
+The base module keeps processed files in its host filesystem. S3 placement is
+provided by the independently installed `kickside/storage-s3` package. That
+extension owns its Settings component, policy, endpoints, durable jobs, tables,
+and registry overlay controller. It is not installed by default.
+
+Storage extensions bind the generic `storage_adapter`, `processing_hooks`, and
+`storage_runtime_policy` requirements through `ns.dependency.parameters`.
+The native library interfaces preserve file handles and the caller's active SQL
+transaction, as the platform Component lifecycle interface does. Adapters expose
+`get(storage_id, db_id, staging_id, legacy_cloud_id, query_db)` and the filesystem
+read/write/stat/remove interface. Hooks implement `prepare(output)`,
+`completed(tx, dbtype, job, output, trace, prepared)`, and `prune(cutoff, limit)`.
+The default hooks have no effects. The default adapter uses native filesystem IO.
+
+`kickside.uploads.binding:storage_catalog` owns SQL for logical content addresses:
+`objects(db_id, upload_id)`, `get_upload(id)`, and `contains(db, storage_id, path)`.
+An implementation uses this interface instead of querying Uploads' tables.
+An optional runtime policy is bound only when its implementing package is installed.
+Uploads depends on neither Settings nor a particular storage extension.
+
+Disable placement before uninstalling a backend, and restore its remote content
+first. Removing an implementation must not be treated as deleting its files.
+
 ## Reference
 
 - [Module reference](src/README.md)

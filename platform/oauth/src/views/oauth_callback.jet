@@ -376,6 +376,7 @@
     const urlParams = {
         code: searchParams.get('code') || '',
         state: searchParams.get('state') || '',
+        iss: searchParams.get('iss') || undefined,
         error: searchParams.get('error') || '',
         error_description: searchParams.get('error_description') || '',
         provider: searchParams.get('provider') || 'oauth'
@@ -512,6 +513,7 @@
                 body: JSON.stringify({
                     code: urlParams.code,
                     state: urlParams.state,
+                    iss: urlParams.iss,
                     provider: urlParams.provider
                 })
             });

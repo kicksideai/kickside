@@ -36,6 +36,11 @@ local function define_tests()
             local result = get_provider_info.handle({})
             test.eq(result.success, false)
         end)
+        test.it("honors the provider's custom component binding", function()
+            local result = get_component_contract.handle({oauth_provider = "native-refresh-test"})
+            test.is_true(result.success, result.error)
+            test.eq(result.component_contract_id, "app:refresh_fixture_connector")
+        end)
     end)
 end
 

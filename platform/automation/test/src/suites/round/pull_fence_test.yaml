@@ -1,0 +1,13 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+  - name: round_pull_fence_test
+    kind: function.lua
+    source: file://pull_fence_test.lua
+    method: run
+    meta:
+      type: test
+      suite: kickside_automation_round
+    imports:
+      test: wippy.test:test
+      round_harness: kickside.automation:round_harness
