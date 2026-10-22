@@ -32,7 +32,7 @@ return test.run_cases(function()
                 local ok, answer, err = pcall(subject.provision,owner,"main")
                 test.is_true(ok,tostring(answer));test.is_nil(answer);test.not_nil(err)
                 test.is_true(errors.is(err,errors.INTERNAL),tostring(err))
-                local job, read_err = jobs.get_job(id)
+                local job, read_err = jobs.get_job(assert(id))
                 test.is_nil(read_err,tostring(read_err));test.not_nil(job);test.eq(job.status,"pending")
             end)
         end

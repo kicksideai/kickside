@@ -44,7 +44,7 @@ local function new_slot(kind)
     opened:release()
     local id, provision_err = slot.provision(owner, "main")
     if provision_err then error(tostring(provision_err)) end
-    return owner, id
+    return owner, assert(id)
 end
 local function state(owner, id)
     local opened = db()
@@ -310,7 +310,7 @@ return test.run_cases(function()
                 jobs.cancel=original
                 local inner=db();exec(inner,"UPDATE kickside_automation_drive SET source_kind='timer' WHERE automation_id=$1",{owner});inner:release()
                 nested_id,nested_err=slot.provision(owner,"main")
-                return original(job_id,token)
+                return original(assert(job_id),token)
             end
             local ok,result,err=pcall(slot.provision,owner,"main")
             jobs.cancel=original
