@@ -84,6 +84,16 @@
       "repository": "kickside/kickside",
       "test": "app/src/app/security/user_endpoint_policy_test.lua"
     },
+    "app/appearance-nav-updates": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "APPEARANCE-CONSECUTIVE-NAV-UPDATES"
+      ],
+      "repository": "kickside/kickside",
+      "test": "app/frontend/applications/main/src/app/appearanceNavigation.spec.ts"
+    },
     "app/baseline-identity-resolution": {
       "engines": [
         "sqlite",
@@ -9685,6 +9695,16 @@
       "repository": "kickside/kickside",
       "test": "platform/transform/test/src/snippet_native_test.lua"
     },
+    "ui/appearance-save-state": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "APPEARANCE-SAVE-DIRTY-STATE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/ui/ui/src/app/appearance.spec.ts"
+    },
     "ui/branding-read-only": {
       "engines": [
         "sqlite",
@@ -11426,7 +11446,9 @@
     "AUTOMATION-STALE-SLOT-REFERENCE",
     "USERS-ACCOUNT-EDITOR-MODAL",
     "USERS-ACCOUNT-PAGE-LAYOUT",
-    "SECURITY-ADMIN-TAB-STRUCTURE"
+    "SECURITY-ADMIN-TAB-STRUCTURE",
+    "APPEARANCE-SAVE-DIRTY-STATE",
+    "APPEARANCE-CONSECUTIVE-NAV-UPDATES"
   ],
   "schema_version": 1
 }

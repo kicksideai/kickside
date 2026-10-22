@@ -4720,6 +4720,18 @@
       ],
       "tier": "regression"
     },
+    "appearance_save_state": {
+      "features": [
+        "kickside/ui|http|PUT /api/v1/nav/config",
+        "kickside/ui|http|GET /api/v1/nav/list",
+        "kickside/ui|navigation|kickside.ui:tab.appearance"
+      ],
+      "issues": [
+        "APPEARANCE-SAVE-DIRTY-STATE",
+        "APPEARANCE-CONSECUTIVE-NAV-UPDATES"
+      ],
+      "tier": "regression"
+    },
     "automation_agent_trace": {
       "features": [
         "kickside/workflows|http|GET /api/v1/workflows/{id}/runs/{run_id}/nodes/{def_node_id}/data"

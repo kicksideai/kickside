@@ -170,6 +170,90 @@ describe('appearance.vue (mounted)', () => {
     w.unmount()
   })
 
+  it('clears dirty state after each of two consecutive saves', async () => {
+    const w = mount(Appearance, { global })
+    await flushPromises()
+    const save = w.get('.ap-btn-primary')
+    const discard = w.get('.ap-btn-ghost')
+    for (const title of ['First title', 'Second title']) {
+      await w.get('input[placeholder="KickSide"]').setValue(title)
+      expect(w.text()).toContain('Unsaved changes')
+      expect(save.attributes('disabled')).toBeUndefined()
+      await save.trigger('click')
+      await flushPromises()
+      expect(api.put).toHaveBeenLastCalledWith('/api/v1/nav/config', expect.objectContaining({ title }))
+      expect(w.text()).not.toContain('Unsaved changes')
+      expect(save.attributes('disabled')).toBeDefined()
+      expect(discard.attributes('disabled')).toBeDefined()
+    }
+    expect(api.put).toHaveBeenCalledTimes(2)
+    w.unmount()
+  })
+
+  it('keeps edits made during a pending save dirty', async () => {
+    const w = mount(Appearance, { global })
+    await flushPromises()
+    let complete!: (response: any) => void
+    api.put.mockReturnValueOnce(new Promise(resolve => { complete = resolve }))
+    const title = w.get('input[placeholder="KickSide"]')
+    await title.setValue('Submitted title')
+    await w.get('.ap-btn-primary').trigger('click')
+    await title.setValue('New draft')
+    complete({ data: { success: true } })
+    await flushPromises()
+    expect(w.text()).toContain('Unsaved changes')
+    expect(w.get('.ap-btn-primary').attributes('disabled')).toBeUndefined()
+    await title.setValue('Submitted title')
+    expect(w.text()).not.toContain('Unsaved changes')
+    w.unmount()
+  })
+
+  it.each(['hide after save', 'hide during save', 'unmount during save'])(
+    'restores the submitted tone when leaving: %s', async leave => {
+      const tones: string[] = []
+      const onTone = (event: Event) => tones.push(String((event as CustomEvent).detail?.hostCss || ''))
+      window.addEventListener('kickside:tone-apply', onTone)
+      const w = mount(Appearance, { global })
+      let unmounted = false
+      try {
+        await flushPromises()
+        let complete!: (response: any) => void
+        api.put.mockReturnValueOnce(new Promise(resolve => { complete = resolve }))
+        const tone = w.get('input[aria-label="Base tone hex"]')
+        await tone.setValue('#2563eb')
+        await w.get('.ap-btn-primary').trigger('click')
+        await tone.setValue('#7c3aed')
+        await vi.advanceTimersByTimeAsync(100)
+        if (leave === 'hide during save') await visibilityHarness.setVisible?.(false)
+        if (leave === 'unmount during save') { w.unmount(); unmounted = true }
+        complete({ data: { success: true } })
+        await flushPromises()
+        if (leave === 'hide after save') {
+          expect(w.text()).toContain('Unsaved changes')
+          expect(tones.at(-1)).toContain('#7c3aed')
+          await visibilityHarness.setVisible?.(false)
+        }
+        expect(tones.at(-1)).toContain('#2563eb')
+        expect(tones.at(-1)).not.toContain('#7c3aed')
+      } finally {
+        if (!unmounted) w.unmount()
+        window.removeEventListener('kickside:tone-apply', onTone)
+      }
+    })
+
+  it('keeps the draft dirty when the server refuses a save', async () => {
+    const w = mount(Appearance, { global })
+    await flushPromises()
+    await w.get('input[placeholder="KickSide"]').setValue('Draft title')
+    api.put.mockResolvedValueOnce({ data: { success: false, error: 'Save refused' } } as any)
+    await w.get('.ap-btn-primary').trigger('click')
+    await flushPromises()
+    expect(w.text()).toContain('Save refused')
+    expect(w.text()).toContain('Unsaved changes')
+    expect(w.get('.ap-btn-primary').attributes('disabled')).toBeUndefined()
+    w.unmount()
+  })
+
   it('uploads a logo as multipart and adopts the returned url', async () => {
     const w = mount(Appearance, { global })
     await flushPromises()

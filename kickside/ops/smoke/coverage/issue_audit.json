@@ -1,5 +1,41 @@
 {
   "issues": {
+    "APPEARANCE-SAVE-DIRTY-STATE": {
+      "guards": {
+        "appearance_save_state": {
+          "assertions": [
+            "Two consecutive saves clear the dirty indicator and disable Save/Discard while persisting each category change without a reload."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "ui/appearance-save-state"
+      ],
+      "reason": "The saved baseline was not reactive; edits made during an in-flight save must remain unsaved, including tone previews when leaving.",
+      "user_visible": true
+    },
+    "APPEARANCE-CONSECUTIVE-NAV-UPDATES": {
+      "guards": {
+        "appearance_save_state": {
+          "assertions": [
+            "The mounted application navigation reflects both consecutive saved category updates without a reload."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "app/appearance-nav-updates"
+      ],
+      "reason": "A reported navigation failure after a later save remains unconfirmed; retain a regression guard for both updates.",
+      "user_visible": true
+    },
     "AGENTS-CAPABILITY-CONTEXT-GUIDANCE": {
       "guards": {
         "chat_knowledge_search_admin": {
