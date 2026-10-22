@@ -9707,6 +9707,51 @@
         "sqlite",
         "postgres"
       ]
+    },
+    "kb10/query-configuration": {
+      "repository": "kickside/providers",
+      "test": "kb10/test/engine_config_test.lua",
+      "issues": [
+        "KB10-QUERY-CONFIGURATION"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
+    },
+    "kb10/digest-errors": {
+      "repository": "kickside/providers",
+      "test": "kb10/test/digest_errors_test.lua",
+      "issues": [
+        "KB10-DIGEST-ERRORS",
+        "SDK-LLM-FAILURE-METADATA"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
+    },
+    "kb10/resummarize-outcomes": {
+      "repository": "kickside/providers",
+      "test": "kb10/test/resummarize_test.lua",
+      "issues": [
+        "KB10-RESUMMARIZE-OUTCOMES"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
+    },
+    "kb10/delete-identity-errors": {
+      "repository": "kickside/providers",
+      "test": "kb10/test/http_error_producers_test.lua",
+      "issues": [
+        "KB10-DELETE-IDENTITY-ERRORS"
+      ],
+      "engines": [
+        "sqlite",
+        "postgres"
+      ]
     }
   },
   "issues": [
@@ -10880,7 +10925,12 @@
     "WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST",
     "AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE",
     "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
-    "TEMPLATE-MOUNTED-PAGE-REFRESH"
+    "TEMPLATE-MOUNTED-PAGE-REFRESH",
+    "KB10-QUERY-CONFIGURATION",
+    "KB10-DIGEST-ERRORS",
+    "KB10-RESUMMARIZE-OUTCOMES",
+    "KB10-DELETE-IDENTITY-ERRORS",
+    "SDK-LLM-FAILURE-METADATA"
   ],
   "schema_version": 1
 }
