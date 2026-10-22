@@ -9,10 +9,18 @@ local M = {}
 
 local calls = {}
 local partial_failure = false
+local next_failure = nil
 
 function M.reset()
     calls = {}
     partial_failure = false
+    next_failure = nil
+end
+
+-- fail_next(err): the next send records its call and fails with err before
+-- anything is known to be delivered.
+function M.fail_next(err)
+    next_failure = err
 end
 
 function M.fail_partially()
@@ -30,6 +38,11 @@ function M.send_reply(worker_config, content)
     end
     calls[#calls + 1] = { worker_config = worker_config, content = content }
     if partial_failure then return nil, "later chunk failed", true end
+    if next_failure ~= nil then
+        local failure = next_failure
+        next_failure = nil
+        return nil, failure
+    end
     return { sent = true, message_ref = "stub-message" }, nil
 end
 

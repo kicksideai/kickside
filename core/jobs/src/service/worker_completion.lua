@@ -20,6 +20,9 @@ local function completion_opts(output: any): (table?, error?)
     if value.rearm ~= nil and (type(value.rearm) ~= "string" or value.rearm == "") then
         return nil, (errors.new({ message = "worker rearm must be a timestamp", kind = errors.INVALID }) :: error)
     end
+    if value.park ~= nil and value.park ~= true then
+        return nil, errors.new({kind = errors.INVALID, message = "worker park must be true or absent"})
+    end
     if value.tier ~= nil and value.tier ~= "live" and value.tier ~= "backfill"
         and value.tier ~= "maintenance" then
         return nil, (errors.new({ message = "worker tier is invalid", kind = errors.INVALID }) :: error)
@@ -29,20 +32,12 @@ local function completion_opts(output: any): (table?, error?)
             and value.record.status ~= "parked")) then
         return nil, (errors.new({ message = "worker record status is invalid", kind = errors.INVALID }) :: error)
     end
-    return { rearm = value.rearm, tier = value.tier, record = value.record }, nil
+    return { rearm = value.rearm, tier = value.tier, record = value.record, park = value.park }, nil
 end
 worker_completion.completion_opts = completion_opts
 
 local function failure_class_for(err: error): string
-    local retryable = err:retryable()
-    local details = err:details()
-    local cause = details and details.cause
-    -- Dispatch disables invocation retries while retaining the worker's policy.
-    if type(cause) == "table" and cause.kind == err:kind() then
-        retryable = cause.retryable
-    end
-    if job_types.is_deterministic_kind(err:kind())
-        or (err:kind() == errors.INTERNAL and retryable == false) then
+    if job_types.is_deterministic_kind(err:kind()) then
         return "deterministic"
     end
     return "infrastructure"
@@ -90,7 +85,7 @@ end
 worker_completion.complete_job = complete_job
 
 local function fail_job(db: sql.DB, dbtype: string, job: table, output: any,
-    error_text: string, failure_class: string?, run_ctx: table?): (error?, boolean)
+    error_text: string, failure_class: string?, run_ctx: table?, retry_floor: table?): (error?, boolean)
     local tx, begin_err = sql_boundary.begin(db, "failure begin failed", "transaction", response_error)
     if begin_err or not tx then return begin_err or response_error("transaction"), false end
     local settled, settled_err = completion.worker_settled_tx(tx, tostring(job.id),
@@ -100,7 +95,7 @@ local function fail_job(db: sql.DB, dbtype: string, job: table, output: any,
         local rollback_err = sql_boundary.rollback(tx, nil, "failure rollback failed")
         return rollback_err, rollback_err == nil
     end
-    local fail_err = lifecycle.fail_tx(tx, job, dbtype, error_text, failure_class)
+    local fail_err = lifecycle.fail_tx(tx, job, dbtype, error_text, failure_class, retry_floor)
     if fail_err then
         return sql_boundary.rollback(tx, fail_err, "failure rollback failed"), false
     end
