@@ -114,7 +114,9 @@ local function define_tests()
                         test.not_nil(row.scheduled_at)
                         test.is_true(row.last_error:find("database unavailable", 1, true) ~= nil)
                         local again, lease_err = job_fixture.lease_own(db, dbtype, job.id)
-                        test.is_nil(lease_err); job = again
+                        test.is_nil(lease_err)
+                        if not again then error("retry test requires a leased job: " .. tostring(lease_err)) end
+                        job = again
                     end
                 end)
             end)
