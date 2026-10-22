@@ -9,6 +9,31 @@ local get_encryption_key = support.get_encryption_key
 local decrypt_oauth_data = support.decrypt_oauth_data
 local M = {}
 
+-- Private runtime reads stay behind the OAuth-owned, actor-validated contract.
+-- Only provider options leave this module; never return the decrypted envelope.
+function M.get_provider_config(component_id: string): (oauth_types.ProviderConfig?, error?)
+    local db, db_err = get_db()
+    if db_err or not db then
+        return nil, errors.new({kind=errors.UNAVAILABLE, message="OAuth storage unavailable", retryable=true})
+    end
+    local rows, read_err = db:query([[SELECT provider,connection_state,oauth_data_encrypted
+        FROM kickside_oauth_connections WHERE component_id=$1]], {component_id})
+    db:release()
+    if read_err then return nil, errors.wrap(read_err, "OAuth provider configuration read failed") end
+    if #rows == 0 then return nil, errors.new({kind=errors.NOT_FOUND, message="OAuth connection not found"}) end
+    local key, key_err = get_encryption_key()
+    if key_err or not key then return nil, errors.new({kind=errors.INTERNAL, message="OAuth encryption key unavailable"}) end
+    local data, decrypt_err = decrypt_oauth_data(rows[1].oauth_data_encrypted, key)
+    if decrypt_err or type(data) ~= "table" then
+        return nil, errors.new({kind=errors.INTERNAL, message="OAuth provider configuration could not be decrypted"})
+    end
+    local config = data.provider_specific
+    if config ~= nil and type(config) ~= "table" then
+        return nil, errors.new({kind=errors.INTERNAL, message="OAuth provider configuration is invalid"})
+    end
+    return ({provider=rows[1].provider, connection_state=rows[1].connection_state, config=config or {}} :: oauth_types.ProviderConfig), nil
+end
+
 function M.get_connection(component_id: string?): (oauth_types.Connection?, string?)
     if not component_id or component_id == "" then
         return nil, VALIDATION_ERRORS.COMPONENT_ID_REQUIRED

@@ -1,0 +1,31 @@
+version: '1.0'
+namespace: kickside.oauth.runtime
+entries:
+- name: connection
+  kind: contract.definition
+  meta:
+    comment: Actor-validated private provider configuration for an OAuth connection. Token envelopes remain owned by OAuth.
+  methods:
+  - name: get_config
+    description: Read provider-owned runtime options after Component READ authorization. Does not return tokens, client credentials, profile or negotiation state. Storage failures remain typed errors.
+    input_schemas:
+    - format: application/schema+json
+      definition: '{"type":"object","properties":{"component_id":{"type":"string","minLength":1}},"required":["component_id"],"additionalProperties":false}'
+    output_schemas:
+    - format: application/schema+json
+      definition: '{"type":"object","properties":{"provider":{"type":"string"},"connection_state":{"type":"string"},"config":{"type":"object"}},"required":["provider","connection_state","config"],"additionalProperties":false}'
+- name: implementation
+  kind: contract.binding
+  contracts:
+  - contract: kickside.oauth.runtime:connection
+    default: true
+    methods:
+      get_config: kickside.oauth.runtime:get_config
+- name: get_config
+  kind: function.lua
+  source: file://get_config.lua
+  method: handle
+  imports:
+    component: kickside.component:component
+    repo: kickside.oauth.persist:oauth_read_repo
+    oauth_types: kickside.oauth:oauth_types
