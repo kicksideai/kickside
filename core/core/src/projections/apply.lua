@@ -249,9 +249,9 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
     local function abort(err: error): (nil, error)
         return nil, release(db, rollback(tx, err)) :: error
     end
+    local locked, lock_err = threads_writer.lock_thread_rows_tx(tx, dbtype, { tostring(snapshot.thread_id) })
+    if lock_err then return abort(lock_err) end
     if deterministic then
-        local locked, lock_err = threads_writer.lock_thread_rows_tx(tx, dbtype, { tostring(snapshot.thread_id) })
-        if lock_err then return abort(lock_err) end
         if type(locked) ~= "table" then return abort(response_error("locked_threads")) end
         local rows, read_err = tx:query([[SELECT generation,last_seq,status,job_id FROM kickside_projection_cursor
             WHERE id=$1]], { snapshot.id })
