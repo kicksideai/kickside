@@ -27,7 +27,7 @@ def transfer_cleanup_failures(ctx):
 
 REGISTRY = [
     Scenario('automation_dispatch_slot_lifecycle', 'regression', dispatch_slot_lifecycle,
-             issues=('AUTOMATION-UNSERVED-WAKE', 'AUTOMATION-STALE-SLOT-REFERENCE')),
+             issues=('AUTOMATION-UNSERVED-WAKE',)),
     Scenario('automation_slot_provision_failures', 'regression', slot_provision_failures,
              issues=('DESIGN-AUTOMATION-SLOT-FAILURE',)),
     Scenario('workflow_discovery_failures', 'regression', workflow_discovery_failures,
