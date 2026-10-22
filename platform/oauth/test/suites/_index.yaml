@@ -591,6 +591,9 @@ entries:
   - name: protocol_creds
     kind: library.lua
     source: file://protocol_fixture.lua
+    modules: [http, json]
+    imports:
+      form: kickside.oauth:form
   - name: protocol_token
     kind: function.lua
     source: file://protocol_fixture.lua

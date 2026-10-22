@@ -27,6 +27,39 @@ local function define_tests()
         end)
 
 
+        test.it("hands every attempt of a keyed delivery the same provider delivery key", function()
+            local req = { origin = ORIGIN, identity_key = "message:retry", idempotency_key = "delivery:retry",
+                config = { connection_id = "conn-1", channel_id = "chan-1" }, input = { content = "retried" } }
+            reply_sender_stub.fail_next(errors.new({ message = "provider timed out", kind = errors.UNAVAILABLE }))
+            local failed = channel_sink.write(req)
+            test.is_false(failed.success)
+            test.eq(failed.error.code, "provider_unavailable")
+            test.is_true(failed.error.retriable)
+            local retried = channel_sink.write(req)
+            test.is_true(retried.success)
+            local other = channel_sink.write({ origin = ORIGIN, idempotency_key = "delivery:other",
+                config = { connection_id = "conn-1", channel_id = "chan-1" }, input = { content = "retried" } })
+            test.is_true(other.success)
+            local calls = reply_sender_stub.calls()
+            test.eq(#calls, 3)
+            test.not_nil(calls[1].worker_config.idempotency_key)
+            test.eq(calls[2].worker_config.idempotency_key, calls[1].worker_config.idempotency_key)
+            test.is_true(calls[3].worker_config.idempotency_key ~= calls[1].worker_config.idempotency_key)
+        end)
+
+        test.it("posts a keyless write once and hands the provider no delivery key", function()
+            local res = channel_sink.write({
+                origin = ORIGIN,
+                config = { connection_id = "conn-1", channel_id = "chan-1" },
+                input = { content = "no key" },
+            })
+            test.is_true(res.success)
+            test.eq(res.result, "created")
+            local calls = reply_sender_stub.calls()
+            test.eq(#calls, 1)
+            test.is_nil(calls[1].worker_config.idempotency_key)
+        end)
+
         test.it("posts content to the configured connection/channel on upsert", function()
             local res = channel_sink.write({
                 origin = ORIGIN,

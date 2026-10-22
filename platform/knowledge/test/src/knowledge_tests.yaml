@@ -27,5 +27,5 @@ entries:
     meta: { type: test, suite: knowledge_packaging }
     source: file://contract_surface_test.lua
     method: run
-    modules: [registry]
+    modules: [registry, json]
     imports: { test: wippy.test:test }

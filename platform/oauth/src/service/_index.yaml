@@ -2,6 +2,27 @@ version: "1.0"
 namespace: kickside.oauth.service
 
 entries:
+  - name: negotiator_readiness
+    kind: library.lua
+    source: file://negotiator_readiness.lua
+    modules: [process, time]
+    imports:
+      callback_names: kickside.oauth:callback_names
+
+  - name: await_negotiator
+    kind: function.lua
+    meta:
+      private: true
+      comment: Waits for the spawned negotiator's own callback name before initialization reports success.
+    source: file://negotiator_readiness.lua
+    method: handle
+    modules: [process, time]
+    imports:
+      callback_names: kickside.oauth:callback_names
+    security:
+      actor: {id: kickside.oauth.service:await_negotiator}
+      policies: [kickside.oauth.api.public:callback_registry_runtime]
+
   # kickside.oauth.service:connection_negotiator
   - name: connection_negotiator
     kind: process.lua

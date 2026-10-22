@@ -14,6 +14,7 @@ entries:
     source: file://channel_sink.lua
     method: write
     imports:
+      canonical_json: kickside.contract:canonical_json
       writable_sink: kickside.data:writable_sink
       reply_sender: kickside.connection:reply_sender
 
