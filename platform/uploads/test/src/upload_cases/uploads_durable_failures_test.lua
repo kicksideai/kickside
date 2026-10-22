@@ -540,7 +540,7 @@ local function define_tests()
 
             local db = assert(sql.get("app:db"))
             local jobs_rows = assert(db:query([[SELECT * FROM kickside_job
-                WHERE job_type = 'kickside.uploads.service:process_job_proc' AND payload LIKE $1 AND status = 'pending']],
+                WHERE job_type = 'kickside.uploads.service:process_job_proc' AND CAST(payload AS TEXT) LIKE $1 AND status = 'pending']],
                 { "%" .. upload.uuid .. "%" }))
             test.eq(#jobs_rows, 1)
             local token = uuid_v4()
