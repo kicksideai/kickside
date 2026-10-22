@@ -85,13 +85,13 @@ const toneWarning = computed(() =>
 const home = ref('')
 // Baseline snapshot for dirty detection. Label/icon edits live inside overrides
 // (items) and cats (categories), so tracking those two captures every change.
-let baseline = ''
+const baseline = ref('')
 const snapshot = () => JSON.stringify({
   layout: layout.value, cats: cats.value, overrides: overrides.value,
   title: title.value, logo: logoUrl.value, home: home.value, tone: primaryColor.value,
   pos: items.value.map(i => [i.id, i.category, i.order, !!i.hidden]),
 })
-const dirty = computed(() => snapshot() !== baseline)
+const dirty = computed(() => snapshot() !== baseline.value)
 
 async function load(): Promise<boolean> {
   loading.value = true
@@ -109,7 +109,7 @@ async function load(): Promise<boolean> {
     primaryColor.value = typeof cfg.primary_color === 'string' ? cfg.primary_color : ''
     committedTone = primaryColor.value // baseline tone an unsaved preview reverts to
     home.value = typeof data.home === 'string' ? data.home : (typeof cfg.home === 'string' ? cfg.home : '')
-    baseline = snapshot()
+    baseline.value = snapshot()
     return true
   } catch (e: any) {
     error.value = apiError(e, 'failed to load')
@@ -201,6 +201,7 @@ onBeforeUnmount(() => {
 
 async function save() {
   if (toneBlocked.value) return // guard: never persist an illegible tone
+  const submitted = snapshot()
   saving.value = true
   error.value = ''
   try {
@@ -210,7 +211,7 @@ async function save() {
       primary_color: primaryColor.value,
     })
     if (!data.success) throw new Error(data.error || 'save failed')
-    baseline = snapshot()
+    baseline.value = submitted
     committedTone = primaryColor.value // preview is now the committed tone; keep it applied
     // Re-assert in case a save→navigate-away race already reverted the overlay: if the user
     // left before this PUT resolved, onBeforeUnmount fired emitTone(pre-save committedTone).

@@ -3566,9 +3566,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
     function de(S) {
       a.value = S, ot.setThemeMode(S);
     }
-    const j = be(() => y.value.trim() ? Xi(y.value) : null), q = be(() => !!y.value.trim() && j.value === null), Z = be(() => q.value || !!j.value && !j.value.ok), Q = be(() => q.value ? "Enter a valid hex color, e.g. #2563eb." : j.value && !j.value.ok ? j.value.reason : ""), J = A("");
-    let G = "";
-    const ee = () => JSON.stringify({
+    const j = be(() => y.value.trim() ? Xi(y.value) : null), q = be(() => !!y.value.trim() && j.value === null), Z = be(() => q.value || !!j.value && !j.value.ok), Q = be(() => q.value ? "Enter a valid hex color, e.g. #2563eb." : j.value && !j.value.ok ? j.value.reason : ""), J = A(""), G = A(""), ee = () => JSON.stringify({
       layout: i.value,
       cats: l.value,
       overrides: c.value,
@@ -3577,7 +3575,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       home: J.value,
       tone: y.value,
       pos: s.value.map((S) => [S.id, S.category, S.order, !!S.hidden])
-    }), K = be(() => ee() !== G);
+    }), K = be(() => ee() !== G.value);
     async function te() {
       t.value = !0, o.value = "";
       try {
@@ -3585,7 +3583,7 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
         if (!S.success) throw new Error(S.error || "failed to load nav");
         s.value = (S.items ?? []).map((x) => ({ ...x })), i.value = S.layout === "horizontal" ? "horizontal" : "vertical";
         const u = S.config ?? {};
-        return l.value = Array.isArray(u.categories) ? u.categories.map((x) => ({ ...x })) : [], c.value = u.overrides && typeof u.overrides == "object" ? structuredClone(u.overrides) : {}, h.value = typeof u.title == "string" ? u.title : "", d.value = typeof u.logo_url == "string" ? u.logo_url : "", y.value = typeof u.primary_color == "string" ? u.primary_color : "", $e = y.value, J.value = typeof S.home == "string" ? S.home : typeof u.home == "string" ? u.home : "", G = ee(), !0;
+        return l.value = Array.isArray(u.categories) ? u.categories.map((x) => ({ ...x })) : [], c.value = u.overrides && typeof u.overrides == "object" ? structuredClone(u.overrides) : {}, h.value = typeof u.title == "string" ? u.title : "", d.value = typeof u.logo_url == "string" ? u.logo_url : "", y.value = typeof u.primary_color == "string" ? u.primary_color : "", $e = y.value, J.value = typeof S.home == "string" ? S.home : typeof u.home == "string" ? u.home : "", G.value = ee(), !0;
       } catch (S) {
         return o.value = n(S, "failed to load"), !1;
       } finally {
@@ -3654,25 +3652,25 @@ const Ji = { class: "ap" }, Qi = { class: "ap-body" }, ea = { class: "ap-bar" },
       ce && clearTimeout(ce), Pe($e), Bt?.();
     });
     async function ao() {
-      if (!Z.value) {
-        r.value = !0, o.value = "";
-        try {
-          const { data: S } = await nt.put("/api/v1/nav/config", {
-            layout: i.value,
-            overrides: c.value,
-            categories: l.value,
-            title: h.value,
-            logo_url: d.value,
-            home: J.value,
-            primary_color: y.value
-          });
-          if (!S.success) throw new Error(S.error || "save failed");
-          G = ee(), $e = y.value, Pe($e);
-        } catch (S) {
-          o.value = n(S, "save failed");
-        } finally {
-          r.value = !1;
-        }
+      if (Z.value) return;
+      const S = ee();
+      r.value = !0, o.value = "";
+      try {
+        const { data: u } = await nt.put("/api/v1/nav/config", {
+          layout: i.value,
+          overrides: c.value,
+          categories: l.value,
+          title: h.value,
+          logo_url: d.value,
+          home: J.value,
+          primary_color: y.value
+        });
+        if (!u.success) throw new Error(u.error || "save failed");
+        G.value = S, $e = y.value, Pe($e);
+      } catch (u) {
+        o.value = n(u, "save failed");
+      } finally {
+        r.value = !1;
       }
     }
     let Bt = null;
