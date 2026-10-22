@@ -79,6 +79,16 @@ entries:
       agents_by_name: kickside.agents.api:agents_by_name
     method: run
 
+  - name: list_agents_probe
+    kind: function.lua
+    meta:
+      comment: Test-only probe that builds the agent list under the caller actor.
+    source: file://list_agents_probe.lua
+    modules: [security]
+    imports:
+      list_agents: kickside.agents.api:list_agents
+    method: run
+
   - name: user_agents_update_wipe_probe
     kind: function.lua
     meta:

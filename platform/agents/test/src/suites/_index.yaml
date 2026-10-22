@@ -132,6 +132,21 @@ entries:
   - security
   imports:
     test: wippy.test:test
+- name: kickside_agents_api__list_agents_launch_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents
+  source: file://api/list_agents_launch_test.lua
+  method: run
+  modules:
+  - sql
+  - json
+  - crypto
+  - funcs
+  - security
+  imports:
+    test: wippy.test:test
 - name: kickside_agents_api__list_agents_test
   kind: function.lua
   meta:

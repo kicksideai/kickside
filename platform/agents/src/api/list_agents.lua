@@ -37,9 +37,22 @@ local function open_start_resolver(actor)
     return resolver, nil
 end
 
-local function can_start(resolver, agent_id)
+-- The reason an agent cannot start, as the launch list reports it.
+local function start_error(err: error)
+    local details = err:details()
+    return {
+        code = type(details) == "table" and details.code or nil,
+        kind = err:kind(),
+        message = err:message(),
+    }
+end
+
+-- Resolves an agent for launch. The resolver returns nil without an error for
+-- an agent the caller cannot reach, which stays out of the list. A resolver
+-- error names why a reachable agent cannot start.
+local function resolve_start(resolver, agent_id)
     local spec, err = resolver:resolve({ agent_id = agent_id })
-    if err then return false, err end
+    if err then return true, start_error(err) end
     return spec ~= nil, nil
 end
 
@@ -93,76 +106,28 @@ local function palette_metadata(meta)
     }
 end
 
-local function handler()
-    local res = http.response()
-    local req = http.request()
-    if not res or not req then
-        return
+local function agent_before(a, b)
+    -- The user's own agents lead, so a limited picker browse always surfaces
+    -- them ahead of the system catalog instead of trimming them off the tail.
+    if a.source ~= b.source then
+        return a.source == "user"
     end
+    if a.order == b.order then
+        return (a.title or "") < (b.title or "")
+    end
+    return a.order < b.order
+end
 
-    res:set_content_type(http.CONTENT.JSON)
-    res:set_header("Cache-Control", "no-store")
-
-    local actor = security.actor()
-    if not actor then
-        res:set_status(http.STATUS.UNAUTHORIZED)
-        res:write_json({ success = false, error = "authentication required" })
-        return
-    end
-
-    -- Optional ?class=<tag> narrows system agents to a specific surface
-    -- (e.g. agent_manager for the agent-management page). User agents are
-    -- always merged regardless of this filter.
-    local required_class = req:query("class")
-    if not required_class or required_class == "" then
-        required_class = DEFAULT_CLASS
-    end
-
-    -- Selection mode: the shared multi-select resolves chips via ?ids=<refs> and
-    -- searches via ?q=&limit=. In either mode we return the same agent shape but
-    -- skip start-token packing (a picker never launches a session), so a chip
-    -- resolves its real title from the canonical id with no per-agent token cost.
-    local ids_param = req:query("ids")
-    local want_ids: { [string]: boolean }? = nil
-    local wanted_user_ids: { string } = {}
-    local wanted_user_seen: { [string]: boolean } = {}
-    if type(ids_param) == "string" and ids_param ~= "" then
-        local parsed_want: { [string]: boolean } = {}
-        for id in string.gmatch(ids_param, "([^,]+)") do
-            local trimmed = agent_ref.trim(id)
-            if trimmed ~= "" then
-                parsed_want[trimmed] = true
-                local user_id = agent_ref.user_component_id(trimmed)
-                if user_id and not wanted_user_seen[user_id] then
-                    wanted_user_seen[user_id] = true
-                    wanted_user_ids[#wanted_user_ids + 1] = user_id
-                end
-            end
-        end
-        want_ids = parsed_want
-    end
-    local q = req:query("q")
-    if type(q) == "string" and q ~= "" then q = string.lower(q) else q = nil end
-    -- A picker call carries ids (resolve chips), q (search), or limit (browse).
-    -- Only the bare, param-less call is the chat host's launch list, which is the
-    -- one mode that needs start tokens — pickers never launch a session, so they
-    -- skip token packing (and the silent per-agent drop on a pack failure).
-    local raw_limit = req:query("limit")
-    local has_limit = type(raw_limit) == "string" and raw_limit ~= ""
-    local resolve_mode = want_ids ~= nil or q ~= nil or has_limit
-    local limit = nil
-    if want_ids == nil then
-        local parsed_limit, limit_err = query_params.query_int(req, "limit", nil, { min = 1, max = MAX_PICKER_LIMIT })
-        if limit_err then
-            query_params.bad_request(res, limit_err)
-            return
-        end
-        if parsed_limit ~= nil then
-            limit = parsed_limit
-        elseif q ~= nil then
-            limit = 20
-        end
-    end
+-- Builds the agent list for `actor`. `opts.launch` selects the chat host's
+-- launch list, the one mode that resolves each agent and packs start tokens.
+-- Returns the response payload and its HTTP status.
+local function list(actor, opts)
+    local required_class = opts.required_class
+    local want_ids: { [string]: boolean }? = opts.want_ids
+    local wanted_user_ids: { string } = opts.wanted_user_ids or {}
+    local q = opts.q
+    local limit = opts.limit
+    local resolve_mode = opts.launch ~= true
 
     local function id_wanted(name)
         return want_ids == nil or want_ids[name] == true
@@ -177,9 +142,7 @@ local function handler()
     if not resolve_mode then
         local resolver, resolver_err = open_start_resolver(actor)
         if not resolver then
-            res:set_status(http.STATUS.INTERNAL_ERROR)
-            res:write_json({ success = false, error = "Failed to open agent resolver: " .. tostring(resolver_err) })
-            return
+            return { success = false, error = "Failed to open agent resolver: " .. tostring(resolver_err) }, http.STATUS.INTERNAL_ERROR
         end
         start_resolver = resolver
     end
@@ -190,12 +153,13 @@ local function handler()
     })
 
     if err then
-        res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({ success = false, error = err })
-        return
+        return { success = false, error = err }, http.STATUS.INTERNAL_ERROR
     end
 
     local agents = {}
+    -- Launch mode only: reachable agents the resolver rejects, with the reason.
+    -- They stay out of `agents`, whose entries all carry a start token.
+    local unavailable = {}
     for _, entry in ipairs(entries) do
         if not system_agent_visible(entry.meta, required_class) then
             goto continue
@@ -231,20 +195,25 @@ local function handler()
         end
 
         if not resolve_mode then
-            local startable, start_err = can_start(start_resolver, agent.name)
-            if not startable then
+            local reachable, failure = resolve_start(start_resolver, agent.name)
+            if not reachable then
+                goto continue
+            end
+            if failure then
+                agent.can_start = false
+                agent.start_error = failure
+                table.insert(unavailable, agent)
                 goto continue
             end
             local token, token_err = pack_token(entry.id or "", model, kind)
             if not token then
-                res:set_status(http.STATUS.INTERNAL_ERROR)
-                res:write_json({
+                return {
                     success = false,
                     error = "Failed to generate start token for " .. (agent.name or "unknown") .. ": " .. (token_err or "unknown error")
-                })
-                return
+                }, http.STATUS.INTERNAL_ERROR
             end
             agent.start_token = token
+            agent.can_start = true
         end
 
         table.insert(agents, agent)
@@ -317,13 +286,20 @@ local function handler()
                 if resolve_mode then
                     table.insert(agents, agent)
                 else
-                    local startable, _ = can_start(start_resolver, name)
-                    if not startable then
+                    local reachable, failure = resolve_start(start_resolver, name)
+                    if not reachable then
+                        goto continue_user_component
+                    end
+                    if failure then
+                        agent.can_start = false
+                        agent.start_error = failure
+                        table.insert(unavailable, agent)
                         goto continue_user_component
                     end
                     local token, _ = pack_token(name, model, DEFAULT_KIND)
                     if token then
                         agent.start_token = token
+                        agent.can_start = true
                         table.insert(agents, agent)
                     end
                 end
@@ -332,17 +308,7 @@ local function handler()
         end
     end
 
-    table.sort(agents, function(a, b)
-        -- The user's own agents lead, so a limited picker browse always surfaces
-        -- them ahead of the system catalog instead of trimming them off the tail.
-        if a.source ~= b.source then
-            return a.source == "user"
-        end
-        if a.order == b.order then
-            return (a.title or "") < (b.title or "")
-        end
-        return a.order < b.order
-    end)
+    table.sort(agents, agent_before)
 
     if limit and #agents > limit then
         local trimmed = {}
@@ -375,17 +341,104 @@ local function handler()
         return a.order < b.order
     end)
 
-    res:set_status(http.STATUS.OK)
-    res:write_json({
+    local payload: { [string]: any } = {
         success = true,
         count = #agents,
         agents = agents,
         grouped = groups
+    }
+    if not resolve_mode then
+        table.sort(unavailable, agent_before)
+        payload.unavailable = unavailable
+    end
+    return payload, http.STATUS.OK
+end
+
+local function handler()
+    local res = http.response()
+    local req = http.request()
+    if not res or not req then
+        return
+    end
+
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_header("Cache-Control", "no-store")
+
+    local actor = security.actor()
+    if not actor then
+        res:set_status(http.STATUS.UNAUTHORIZED)
+        res:write_json({ success = false, error = "authentication required" })
+        return
+    end
+
+    -- Optional ?class=<tag> narrows system agents to a specific surface
+    -- (e.g. agent_manager for the agent-management page). User agents are
+    -- always merged regardless of this filter.
+    local required_class = req:query("class")
+    if not required_class or required_class == "" then
+        required_class = DEFAULT_CLASS
+    end
+
+    -- Selection mode: the shared multi-select resolves chips via ?ids=<refs> and
+    -- searches via ?q=&limit=. In either mode we return the same agent shape but
+    -- skip start-token packing (a picker never launches a session), so a chip
+    -- resolves its real title from the canonical id with no per-agent token cost.
+    local ids_param = req:query("ids")
+    local want_ids: { [string]: boolean }? = nil
+    local wanted_user_ids: { string } = {}
+    local wanted_user_seen: { [string]: boolean } = {}
+    if type(ids_param) == "string" and ids_param ~= "" then
+        local parsed_want: { [string]: boolean } = {}
+        for id in string.gmatch(ids_param, "([^,]+)") do
+            local trimmed = agent_ref.trim(id)
+            if trimmed ~= "" then
+                parsed_want[trimmed] = true
+                local user_id = agent_ref.user_component_id(trimmed)
+                if user_id and not wanted_user_seen[user_id] then
+                    wanted_user_seen[user_id] = true
+                    wanted_user_ids[#wanted_user_ids + 1] = user_id
+                end
+            end
+        end
+        want_ids = parsed_want
+    end
+    local q = req:query("q")
+    if type(q) == "string" and q ~= "" then q = string.lower(q) else q = nil end
+    -- A picker call carries ids (resolve chips), q (search), or limit (browse).
+    -- Only the bare, param-less call is the chat host's launch list, which is the
+    -- one mode that needs start tokens — pickers never launch a session, so they
+    -- skip token packing (and the silent per-agent drop on a pack failure).
+    local raw_limit = req:query("limit")
+    local has_limit = type(raw_limit) == "string" and raw_limit ~= ""
+    local limit = nil
+    if want_ids == nil then
+        local parsed_limit, limit_err = query_params.query_int(req, "limit", nil, { min = 1, max = MAX_PICKER_LIMIT })
+        if limit_err then
+            query_params.bad_request(res, limit_err)
+            return
+        end
+        if parsed_limit ~= nil then
+            limit = parsed_limit
+        elseif q ~= nil then
+            limit = 20
+        end
+    end
+
+    local payload, status = list(actor, {
+        required_class = required_class,
+        want_ids = want_ids,
+        wanted_user_ids = wanted_user_ids,
+        q = q,
+        limit = limit,
+        launch = want_ids == nil and q == nil and not has_limit,
     })
+    res:set_status(status)
+    res:write_json(payload)
 end
 
 return {
     handler = handler,
+    list = list,
     system_agent_visible = system_agent_visible,
     user_agent_visible = agent_types.component_is_public,
     palette_metadata = palette_metadata,
