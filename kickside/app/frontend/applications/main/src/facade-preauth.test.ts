@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runInNewContext } from 'node:vm'
@@ -13,7 +13,9 @@ beforeAll(() => {
   const lock = parse(readFileSync(new URL('wippy.lock', appRoot), 'utf8'))
   const facade = lock.modules.find((module: { name: string }) => module.name === 'wippy/facade')
   expect(facade, 'app lock resolves wippy/facade').toBeDefined()
-  fixtureRoot = mkdtempSync(fileURLToPath(new URL('.wippy/facade-preauth-', appRoot)))
+  const fixtures = fileURLToPath(new URL('.wippy/', appRoot))
+  mkdirSync(fixtures, { recursive: true })
+  fixtureRoot = mkdtempSync(join(fixtures, 'facade-preauth-'))
   // Unpack the verified app dependency without changing the app's release lock.
   const fixtureLock = join(fixtureRoot, 'wippy.lock')
   writeFileSync(fixtureLock, stringify({

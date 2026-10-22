@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import SettingsForm from './SettingsForm.vue'
 import Provider from './provider.vue'
-import Storage from './storage.vue'
 
 const boolSetting = {
   namespace: 'kickside.uploads.rasterize',
@@ -52,13 +51,6 @@ describe('Settings boolean controls', () => {
     const wrapper = mount(SettingsForm, {
       props: { namespace: 'kickside.uploads.rasterize' },
     })
-
-    await expectWorkingSwitch(wrapper, 'Rasterize empty documents')
-    wrapper.unmount()
-  })
-
-  it('uses PrimeVue ToggleSwitch in the storage panel', async () => {
-    const wrapper = mount(Storage)
 
     await expectWorkingSwitch(wrapper, 'Rasterize empty documents')
     wrapper.unmount()

@@ -1,0 +1,19 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: slot_open_lifetime_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://slot_open_lifetime_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    jobs: kickside.core.jobs:jobs
+    factory: kickside.automation:automation_test_engine

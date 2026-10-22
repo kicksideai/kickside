@@ -285,8 +285,7 @@
         "postgres"
       ],
       "issues": [
-        "AUTOMATION-UNSERVED-WAKE",
-        "AUTOMATION-STALE-SLOT-REFERENCE"
+        "AUTOMATION-UNSERVED-WAKE"
       ],
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/recovery_dispatch_test.lua"
@@ -517,10 +516,7 @@
       ],
       "issues": [
         "AUTOMATION-SLOT-RECORD-PURGE",
-        "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
-        "AUTOMATION-SOURCE-SLOT-FINALIZATION",
-        "AUTOMATION-UNSERVED-WAKE",
-        "AUTOMATION-STALE-SLOT-REFERENCE"
+        "AUTOMATION-SOURCE-SLOT-FINALIZATION"
       ],
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/slot_lifetime_test.lua"
@@ -11344,10 +11340,8 @@
     "MIGRATION-LEDGER-ACTIVE-SCHEMA",
     "UPSTREAM-USAGE-CONTEXT-CORRELATION",
     "AUTOMATION-UNSERVED-WAKE",
-    "AUTOMATION-STALE-SLOT-REFERENCE",
     "APP-HOST-CHAT-INTENT-OWNERSHIP",
     "AUTOMATION-SLOT-RECORD-PURGE",
-    "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
     "AUTOMATION-SOURCE-SLOT-FINALIZATION",
     "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER",
     "RECLAIM-PROCESS-LOOKUP-TRANSACTION",

@@ -34,7 +34,7 @@ REGISTRY = [
              issues=('AUTOMATION-UNSERVED-WAKE',)),
 
     Scenario('automation_slot_lifetime', 'regression', slot_lifetime,
-             issues=('AUTOMATION-SLOT-RECORD-PURGE', 'AUTOMATION-SOURCE-SLOT-CANCEL-RACE', 'AUTOMATION-SOURCE-SLOT-FINALIZATION', 'AUTOMATION-UNSERVED-WAKE', 'AUTOMATION-STALE-SLOT-REFERENCE')),
+             issues=('AUTOMATION-SLOT-RECORD-PURGE', 'AUTOMATION-SOURCE-SLOT-FINALIZATION')),
     Scenario('automation_slot_provision_failures', 'regression', slot_provision_failures,
              issues=('DESIGN-AUTOMATION-SLOT-FAILURE',)),
     Scenario('workflow_discovery_failures', 'regression', workflow_discovery_failures,

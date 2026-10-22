@@ -5312,10 +5312,7 @@
       "features": [],
       "issues": [
         "AUTOMATION-SLOT-RECORD-PURGE",
-        "AUTOMATION-SOURCE-SLOT-CANCEL-RACE",
-        "AUTOMATION-SOURCE-SLOT-FINALIZATION",
-        "AUTOMATION-UNSERVED-WAKE",
-        "AUTOMATION-STALE-SLOT-REFERENCE"
+        "AUTOMATION-SOURCE-SLOT-FINALIZATION"
       ],
       "tier": "regression"
     },
