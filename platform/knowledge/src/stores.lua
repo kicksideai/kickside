@@ -36,6 +36,16 @@ function M.open_kb_store_contract(contract_id: string, binding: string?, context
     return inst
 end
 
+-- Open an engine's store lifecycle through the binding its descriptor names.
+function M.open_engine_store(engine: any): (any, error?)
+    local binding = trim(engine.store_binding)
+    return M.open_kb_store_contract(trim(engine.store_contract), binding ~= "" and binding or nil)
+end
+
+local function store_key(engine: any): string
+    return trim(engine.store_contract) .. "|" .. trim(engine.store_binding)
+end
+
 -- Resolve a KB component to the engine-owned store lifecycle instance + store row.
 -- API handlers validate component access before calling into store readers;
 -- background workers already run under the frozen projection actor and must not
@@ -54,10 +64,10 @@ function M.resolve_component_store(component_id: string): (any?, any?, any?, err
     local opened = 0
 
     for _, engine in ipairs(list or {}) do
-        local contract_id = trim(engine.store_contract)
-        if contract_id ~= "" and not seen[contract_id] then
-            seen[contract_id] = true
-            local store_inst, store_err = M.open_kb_store_contract(contract_id)
+        local key = store_key(engine)
+        if trim(engine.store_contract) ~= "" and not seen[key] then
+            seen[key] = true
+            local store_inst, store_err = M.open_engine_store(engine)
             if store_err or not store_inst then
                 last_open_err = tostring(store_err or "open failed")
             else
@@ -76,9 +86,8 @@ function M.resolve_component_store(component_id: string): (any?, any?, any?, err
                         return nil, nil, nil, errors.new({ kind = errors.NOT_FOUND, message = "no knowledge engine for kb_type " .. kb_type })
                     end
 
-                    local canonical_contract = trim((row_engine :: any).store_contract)
-                    if canonical_contract ~= "" and canonical_contract ~= contract_id then
-                        local canonical_store, canonical_err = M.open_kb_store_contract(canonical_contract)
+                    if trim((row_engine :: any).store_contract) ~= "" and store_key(row_engine) ~= key then
+                        local canonical_store, canonical_err = M.open_engine_store(row_engine)
                         if canonical_err then return nil, nil, nil, errors.wrap(canonical_err, "failed to open canonical store") end
                         local canonical_row, get_err = canonical_store:get_store({ component_id = kb_id })
                         if get_err then return nil, nil, nil, errors.wrap(get_err, "canonical store row read failed") end

@@ -16,6 +16,7 @@ local errors = require("errors")
 local security = require("security")
 local component = require("component")
 local engines = require("engines")
+local stores = require("stores")
 local kb_types = require("kb_types")
 local envelope = require("envelope")
 
@@ -35,22 +36,6 @@ local M = {}
 
 local function is_str(v: any): boolean
     return type(v) == "string" and (v :: string) ~= ""
-end
-
--- Open the store engine for a given store contract id. Every KB engine
--- implements the same (component_id, embedding_model, config, opts?) create_store
--- and (component_id) delete_store shape, so one opener serves every engine.
-local function open_store(contract_id: string): (any, error?)
-    local svc, err = contract.get(contract_id)
-    if err or not svc then return nil, errors.new({ kind = errors.INTERNAL, message = "store contract '" .. contract_id .. "' unavailable: " .. tostring(err) }) end
-    local actor = security.actor()
-    local scope = security.scope()
-    if not actor or not scope then
-        return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "security actor and scope are required" })
-    end
-    local inst, oerr = (svc :: any):with_actor(actor):with_scope(scope):open()
-    if oerr or not inst then return nil, errors.new({ kind = errors.INTERNAL, message = "store '" .. contract_id .. "' open failed: " .. tostring(oerr) }) end
-    return inst, nil
 end
 
 -- validate_enrichment_agent rejects a non-existent enrichment_agent_id at the write
@@ -82,32 +67,18 @@ local function open_component_service(): (any, error?)
     return instance, nil
 end
 
-local function add_store_contract(out: { any }, seen: { [string]: boolean }, contract_id: any): ()
-    if type(contract_id) == "string" and contract_id ~= "" and not seen[contract_id] then
-        seen[contract_id] = true
-        out[#out + 1] = contract_id
-    end
-end
-
-local function store_contracts_for_component(component_row: any): ({ any }?, error?)
+-- The engines whose stores may hold a knowledge base: its declared kb_type's
+-- engine, else the engine registered for its impl.
+local function store_engines_for_component(component_row: any): ({ any }?, error?)
     local meta: any = type(component_row.meta) == "table" and component_row.meta or {}
-    local seen: { [string]: boolean } = {}
-    local out: { any } = {}
-
     if is_str(meta.kb_type) then
         local engine, err = engines.resolve(meta.kb_type)
         if not engine then return nil, err end
-        add_store_contract(out, seen, engine.store_contract)
-        return out, nil
+        return { engine }, nil
     end
-
     local by_impl, impl_err = engines.by_impl(component_row.impl_id)
     if impl_err then return nil, impl_err end
-    if by_impl then
-        add_store_contract(out, seen, by_impl.store_contract)
-        return out, nil
-    end
-
+    if by_impl then return { by_impl }, nil end
     return nil, errors.new({ kind = errors.INTERNAL, message = "knowledge base has no declared owner engine" })
 end
 
@@ -206,7 +177,7 @@ function M.create(args: any): (kb_types.CreateResult?, error?)
     -- contextual summary/chunk models kb10's embed_func mandates). The kb_type +
     -- enrichment agent travel in opts, which engines that don't need them ignore.
     local config: any = engines.apply_default_config(args.config, engine)
-    local store, store_err = open_store(engine.store_contract :: string)
+    local store, store_err = stores.open_engine_store(engine)
     if not store then
         svc:delete({ component_id = component_id })
         return nil, store_err
@@ -355,11 +326,11 @@ function M.delete(args: any): (kb_types.ComponentRef?, error?)
         return nil, errors.new({ message = "component is not a knowledge base: " .. component_id, kind = errors.INVALID })
     end
 
-    local contract_ids, contract_err = store_contracts_for_component(comp)
-    if contract_err then return nil, envelope.call_error(contract_err, "store_contract") end
+    local store_engines, engines_err = store_engines_for_component(comp)
+    if engines_err then return nil, envelope.call_error(engines_err, "store_contract") end
 
-    for _, contract_id in ipairs(contract_ids or {}) do
-        local store, store_err = open_store(contract_id :: string)
+    for _, engine in ipairs(store_engines or {}) do
+        local store, store_err = stores.open_engine_store(engine)
         if not store then return nil, envelope.call_error(store_err, "store_open") end
     end
 

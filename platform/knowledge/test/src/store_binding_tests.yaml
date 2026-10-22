@@ -1,0 +1,74 @@
+version: "1.0"
+namespace: app.store_binding
+
+# An engine that names its own binding of kickside.knowledge:kb_store_lifecycle,
+# beside a default binding that knows none of its stores.
+
+entries:
+  - name: fixture
+    kind: library.lua
+    source: file://store_binding_fixture.lua
+
+  - name: default_get
+    kind: function.lua
+    source: file://store_binding_fixture.lua
+    method: default_get
+
+  - name: bound_get
+    kind: function.lua
+    source: file://store_binding_fixture.lua
+    method: bound_get
+
+  - name: accepted
+    kind: function.lua
+    source: file://store_binding_fixture.lua
+    method: accepted
+
+  - name: default_store
+    kind: contract.binding
+    contracts:
+      - contract: kickside.knowledge:kb_store_lifecycle
+        default: true
+        methods:
+          create_store: app.store_binding:accepted
+          get_store: app.store_binding:default_get
+          update_config: app.store_binding:accepted
+          delete_store: app.store_binding:accepted
+
+  - name: bound_store
+    kind: contract.binding
+    contracts:
+      - contract: kickside.knowledge:kb_store_lifecycle
+        methods:
+          create_store: app.store_binding:accepted
+          get_store: app.store_binding:bound_get
+          update_config: app.store_binding:accepted
+          delete_store: app.store_binding:accepted
+
+  - name: engine_bound
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      kb_type: bound
+      title: Bound-store harness engine
+      impl_id: test.kb:bound
+      store_contract: kickside.knowledge:kb_store_lifecycle
+      store_binding: app.store_binding:bound_store
+
+  - name: resolve_probe
+    kind: function.lua
+    source: file://store_binding_probe.lua
+    method: resolve
+    modules: [contract, security]
+    imports:
+      stores: kickside.knowledge:stores
+
+  - name: store_binding_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_store_binding }
+    source: file://store_binding_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+      engines: kickside.knowledge:engines
