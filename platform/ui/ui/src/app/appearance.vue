@@ -42,6 +42,11 @@ const showHidden = ref(false)
 // controls and saved through the same PUT /nav/config path.
 const title = ref('')
 const logoUrl = ref('')
+const logoUpload = ref<{ max_bytes: number, formats: { label: string, mime: string, extensions: string[] }[] }>()
+const logoAccept = computed(() => logoUpload.value?.formats.flatMap(f => [f.mime, ...f.extensions.map(ext => `.${ext}`)]).join(','))
+const logoHint = computed(() => logoUpload.value
+  ? `${logoUpload.value.formats.map(f => f.label).join(', ')} · up to ${logoUpload.value.max_bytes / 1048576} MB.`
+  : '')
 const branding = useAppearanceBranding({ logoUrl, error, apiError })
 const { uploadingLogo, uploadLogo, removeLogo } = branding
 
@@ -99,6 +104,7 @@ async function load(): Promise<boolean> {
   try {
     const { data } = await api.get('/api/v1/nav/list?manage=1')
     if (!data.success) throw new Error(data.error || 'failed to load nav')
+    logoUpload.value = data.logo_upload
     items.value = (data.items ?? []).map((i: Item) => ({ ...i }))
     layout.value = data.layout === 'horizontal' ? 'horizontal' : 'vertical'
     const cfg = data.config ?? {}
@@ -298,14 +304,14 @@ watch(hostVisible, (visible, previous) => {
                 <label class="ap-btn ap-btn-ghost" :class="uploadingLogo && 'ap-btn-busy'">
                   <Icon :icon="uploadingLogo ? 'tabler:loader-2' : 'tabler:upload'" :class="uploadingLogo && 'spin'" aria-hidden="true" />
                   {{ uploadingLogo ? 'Uploading…' : 'Upload' }}
-                  <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif,.png,.jpg,.jpeg,.svg,.webp,.gif" class="ap-file" :disabled="uploadingLogo" @change="uploadLogo" />
+                  <input type="file" :accept="logoAccept" class="ap-file" :disabled="uploadingLogo || !logoUpload" @change="uploadLogo" />
                 </label>
                 <button v-if="logoUrl" class="ap-btn ap-btn-ghost ap-danger" @click="removeLogo">
                   <Icon icon="tabler:trash" aria-hidden="true" /> Remove
                 </button>
               </div>
             </div>
-            <p class="ap-hint">PNG, SVG, JPG, WebP or GIF · up to 2 MB.</p>
+            <p class="ap-hint">{{ logoHint }}</p>
 
             <label class="ap-blabel">Base tone</label>
             <div class="ap-tone">
