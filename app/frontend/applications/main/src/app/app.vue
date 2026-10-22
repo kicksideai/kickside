@@ -16,10 +16,11 @@ import ChatPanel from './ChatPanel.vue'
 import ChatFlap from './ChatFlap.vue'
 import SessionsPanel from './SessionsPanel.vue'
 import ArtifactsGalleryPanel from './ArtifactsGalleryPanel.vue'
-import { useChatController, isKicksideChatOpenDetail } from './useChatController'
+import { useChatController, isKicksideChatOpenDetail, type ChatContext, type KicksideChatOpenDetail } from './useChatController'
 import { useShellBranding } from './useShellBranding'
 import { useShellAccount } from './useShellAccount'
 import { useSessionWorkspace } from './useSessionWorkspace'
+import { sessionPath } from './sessionRoute'
 import { completeSplashNavigation as navigateAfterSplash } from './splashNavigation'
 import { useToneOverlay } from './useToneOverlay'
 import {
@@ -36,7 +37,9 @@ const api = useApi()
 const host = useHost()
 const instance = useWippy()
 
-const chat = useChatController()
+const chat = useChatController((sessionId, context) => {
+  host.setContext(context.context, sessionId, context.source)
+})
 const portalsReady = ref(false)
 const mobileNavOpen = ref(false)
 const mobileSessionsOpen = ref(false)
@@ -188,11 +191,31 @@ function handleChatOpen(event: Event) {
     console.warn('[kickside-chat] ignored invalid chat intent', detail)
     return
   }
+  openChat(detail)
+}
+
+function openChat(detail: KicksideChatOpenDetail, context?: ChatContext) {
   mobileNavOpen.value = false
   mobileSessionsOpen.value = false
-  if (detail.kind === 'session') chat.openSession(detail.sessionId)
-  else chat.startChat(detail.startToken)
+  if (detail.kind === 'session') chat.openSession(detail.sessionId, context)
+  else chat.startChat(detail.startToken, context)
 }
+
+const unsubChatOpen = host.layout.on('kickside:chat-open', ({ payload }) => {
+  if (!isRecord(payload)) return
+  const detail = payload.intent === 'startChat'
+    ? { kind: 'start', startToken: payload.startToken }
+    : payload.intent === 'openSession'
+      ? { kind: 'session', sessionId: payload.uuid }
+      : null
+  if (!isKicksideChatOpenDetail(detail)) return
+  const context = payload.context as ChatContext | undefined
+  if (payload.sidebar && !isSessionsRoute.value) openChat(detail, context)
+  else {
+    const path = detail.kind === 'session' ? sessionPath(detail.sessionId) : '/sessions'
+    router.push(path).then(() => openChat(detail, context)).catch(reportOwnedPanelError)
+  }
+})
 
 async function completeSplashNavigation(detail: {path: string; startToken?: string}) {
   await navigateAfterSplash(detail, {
@@ -323,6 +346,7 @@ onUnmounted(() => {
   window.removeEventListener('kickside:nav-changed', refreshShellRegistryState)
   window.removeEventListener('kickside:modules-changed', scheduleRegistryRefresh)
   toneOverlay.stop()
+  unsubChatOpen()
   unsubNavigate?.()
   unsubNavChanged?.()
   unsubHubChanged?.()
