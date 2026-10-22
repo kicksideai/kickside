@@ -20,6 +20,14 @@ function host(onDone = () => {}) {
 }
 
 const emit = (msg: any) => (globalThis as any).__kbEmit__(msg)
+const uploadMessage = (uuid: string, status: string, error?: string) => ({
+  topic: `upload:${uuid}`,
+  data: {
+    uuid, status, mime_type: 'text/plain', size: 1,
+    created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:01:00Z',
+    meta: { filename: 'file.txt' }, ...(error ? { error } : {}),
+  },
+})
 
 describe('useIngest', () => {
   beforeEach(() => { (globalThis as any).__kbHandlers__ = []; (globalThis as any).__kbApi__ = {}; vi.clearAllMocks() })
@@ -65,7 +73,7 @@ describe('useIngest', () => {
     await flushPromises()
     expect(ig.busy.value).toBe(true) // queued, waiting on realtime
     // Drive upload completion; KB materialization is reflected by later component meta.
-    emit({ topic: 'component.uploads-u1.events', data: { event: 'kickside.uploads.events:upload.status.changed', upload_id: 'u9', status: 'completed' } })
+    emit(uploadMessage('u9', 'completed'))
     await flushPromises()
     expect(ig.busy.value).toBe(false)
     expect(done).toBe(1)
@@ -87,20 +95,77 @@ describe('useIngest', () => {
     w.unmount()
   })
 
-  it('tracks upload completion by upload id when the response has no event topic', async () => {
+  it('tracks upload completion when the response has no component id', async () => {
     ;(globalThis as any).__kbApi__ = {
       '/upload-token': { success: true, upload_token: 't' },
       '/api/v1/uploads': { success: true, uuid: 'u-no-topic' },
     }
     const { w, ig } = host()
-    await ig.uploadFile(new File(['x'], 'fallback.txt', { type: 'text/plain' }))
+    await ig.uploadFile(new File(['x'], 'file.txt', { type: 'text/plain' }))
     await flushPromises()
     expect(on).toHaveBeenCalledWith('@message', expect.any(Function))
     expect(ig.busy.value).toBe(true)
-    emit({ topic: 'any.topic', data: { event: 'kickside.uploads.events:upload.status.changed', upload_id: 'u-no-topic', status: 'completed' } })
+    emit(uploadMessage('u-no-topic', 'completed'))
     await flushPromises()
     expect(ig.busy.value).toBe(false)
     w.unmount()
+  })
+
+  it.each(['completed', 'error'])('settles delayed %s after the final status read', async (status) => {
+    vi.useFakeTimers()
+    ;(globalThis as any).__kbApi__ = {
+      '/upload-token': { success: true, upload_token: 't' },
+      '/api/v1/uploads/u-delayed': { success: true, upload: { uuid: 'u-delayed', status: 'processing' } },
+      '/api/v1/uploads': { success: true, uuid: 'u-delayed', component_id: 'uploads-u1' },
+    }
+    const done = vi.fn()
+    const { w, ig } = host(done)
+    try {
+      ig.uploadFile(new File(['x'], 'delayed.txt', { type: 'text/plain' }))
+      await flushPromises()
+      await vi.advanceTimersByTimeAsync(30000)
+      const reads = vi.mocked(api.get).mock.calls.length
+      expect(ig.items.value[0].status).toBe('processing')
+      expect(ig.busy.value).toBe(true)
+      emit(uploadMessage('u-delayed', status, status === 'error' ? 'Conversion failed' : undefined))
+      await flushPromises()
+      expect(ig.items.value[0].status).toBe(status === 'completed' ? 'done' : 'error')
+      expect(ig.busy.value).toBe(false)
+      expect(api.get).toHaveBeenCalledTimes(reads)
+      expect(done).toHaveBeenCalledTimes(status === 'completed' ? 1 : 0)
+      if (status === 'error') expect(ig.items.value[0].error).toBe('Conversion failed')
+      emit(uploadMessage('u-delayed', status))
+      emit(uploadMessage('u-delayed', 'processing'))
+      expect(ig.busy.value).toBe(false)
+      expect(done).toHaveBeenCalledTimes(status === 'completed' ? 1 : 0)
+    } finally { w.unmount() }
+  })
+
+  it('settles only the matching upload in a batch and unbinds on unmount', async () => {
+    ;(globalThis as any).__kbApi__ = { '/upload-token': { success: true, upload_token: 't' } }
+    vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true, upload_token: 't' } })
+      .mockResolvedValueOnce({ data: { success: true, upload_token: 't' } })
+      .mockResolvedValueOnce({ data: { success: true, uuid: 'first', component_id: 'uploads-u1' } })
+      .mockResolvedValueOnce({ data: { success: true, uuid: 'second', component_id: 'uploads-u1' } })
+    const done = vi.fn()
+    const { w, ig } = host(done)
+    try {
+      ig.uploadFiles([new File(['a'], 'a.txt'), new File(['b'], 'b.txt')])
+      await flushPromises()
+      expect(ig.items.value.map(i => i.uuid)).toEqual(['first', 'second'])
+      emit({ ...uploadMessage('first', 'completed'), topic: 'upload:other' })
+      emit({ ...uploadMessage('other', 'completed'), topic: 'upload:first' })
+      emit(uploadMessage('other', 'completed'))
+      expect(ig.items.value.map(i => i.status)).toEqual(['processing', 'processing'])
+      emit(uploadMessage('first', 'completed'))
+      expect(ig.items.value.map(i => i.status)).toEqual(['done', 'processing'])
+      expect(ig.busy.value).toBe(true)
+      emit(uploadMessage('second', 'error', 'Conversion failed'))
+      expect(ig.items.value.map(i => i.status)).toEqual(['done', 'error'])
+      expect(ig.busy.value).toBe(false)
+      expect(done).toHaveBeenCalledTimes(1)
+    } finally { w.unmount() }
+    expect((globalThis as any).__kbHandlers__).toHaveLength(0)
   })
 
   it('rejects unsupported files before requesting an upload token', async () => {

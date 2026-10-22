@@ -8458,6 +8458,26 @@
       "issues": [],
       "tier": "quick"
     },
+    "kb_upload_delayed_completed": {
+      "features": [],
+      "issues": [
+        "KB10-UPLOAD-NOTIFICATION-CONTRACT"
+      ],
+      "tier": "regression"
+    },
+    "kb_upload_delayed_error": {
+      "features": [],
+      "issues": [
+        "KB10-UPLOAD-NOTIFICATION-CONTRACT",
+        "UPLOAD-OPTIONAL-ERROR-CALLBACK"
+      ],
+      "tier": "regression"
+    },
+    "kb_upload_notifications": {
+      "features": [],
+      "issues": [],
+      "tier": "regression"
+    },
     "keeper_dashboard_logs_ui": {
       "features": [],
       "issues": [
@@ -15570,6 +15590,13 @@
       "features": [],
       "issues": [
         "EE2-2635"
+      ],
+      "tier": "regression"
+    },
+    "uploads_component_delete": {
+      "features": [],
+      "issues": [
+        "UPLOAD-OWNER-DELETE-IDEMPOTENCE"
       ],
       "tier": "regression"
     },
