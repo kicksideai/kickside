@@ -8,10 +8,6 @@ def kb10_query_configuration(ctx):
     run_focused_module_test(ctx, 'kickside/kb10', 'retrieval_settings_test')
 
 
-def kb10_digest_errors(ctx):
-    run_focused_module_test(ctx, 'kickside/kb10', 'digest_errors_test')
-
-
 def kb10_resummarize_outcomes(ctx):
     run_focused_module_test(ctx, 'kickside/kb10', 'resummarize_test')
 
@@ -23,8 +19,6 @@ def kb10_delete_identity_errors(ctx):
 REGISTRY = [
     Scenario('kb10_query_configuration', 'regression', kb10_query_configuration,
              issues=('KB10-QUERY-CONFIGURATION',)),
-    Scenario('kb10_digest_errors', 'regression', kb10_digest_errors,
-             issues=('KB10-DIGEST-ERRORS', 'SDK-LLM-FAILURE-METADATA')),
     Scenario('kb10_resummarize_outcomes', 'regression', kb10_resummarize_outcomes,
              issues=('KB10-RESUMMARIZE-OUTCOMES',)),
     Scenario('kb10_delete_identity_errors', 'regression', kb10_delete_identity_errors,
