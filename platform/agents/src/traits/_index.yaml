@@ -101,36 +101,36 @@ entries:
             },
             "content": {
               "type": "string",
-              "description": "Text mode only: non-empty HTML or Markdown content.",
+              "description": "Text mode: non-empty HTML or Markdown content. Exactly one mode per call: text mode (content, optional content_type), tag mode (tag_name, optional props), or package mode (resource_kind + resource_id, optional props). Never combine fields of different modes.",
               "minLength": 1,
               "maxLength": 1048576
             },
             "content_type": {
               "type": "string",
-              "description": "Text mode only, required: text/html for HTML documents, text/markdown for Markdown.",
+              "description": "Text mode only, requires content: text/html for HTML documents, text/markdown (default) for Markdown.",
               "enum": ["text/html", "text/markdown"]
             },
             "tag_name": {
               "type": "string",
-              "description": "Component tag mode only: an approved auto-registered tag from the capability catalog.",
+              "description": "Tag mode only: an approved auto-registered tag from the capability catalog. Do not combine with content, content_type, resource_kind or resource_id.",
               "pattern": "^[a-z][a-z0-9]*-[a-z0-9-]+$",
               "maxLength": 120
             },
             "resource_kind": {
               "type": "string",
-              "description": "Package mode resource type from the capability catalog.",
+              "description": "Package mode only, requires resource_id: the resource type from the capability catalog. Do not combine with content, content_type or tag_name.",
               "enum": ["component", "page"]
             },
             "resource_id": {
               "type": "string",
-              "description": "Package mode registry ID from the capability catalog.",
+              "description": "Package mode only, requires resource_kind: the registry ID from the capability catalog.",
               "minLength": 1,
               "maxLength": 160,
               "pattern": "^[A-Za-z0-9._:/-]+$"
             },
             "props": {
               "type": "object",
-              "description": "Props passed to a tag-mode or component-package artifact."
+              "description": "Tag mode or component package mode only: props passed to the component. Not valid in text mode or for page packages."
             },
             "preview": {
               "type": "string",
@@ -149,33 +149,6 @@ entries:
             }
           },
           "required": ["title"],
-          "oneOf": [
-            {
-              "required": ["content"],
-              "not": { "anyOf": [
-                { "required": ["tag_name"] },
-                { "required": ["resource_kind"] },
-                { "required": ["resource_id"] }
-              ] }
-            },
-            {
-              "required": ["tag_name"],
-              "not": { "anyOf": [
-                { "required": ["content"] },
-                { "required": ["content_type"] },
-                { "required": ["resource_kind"] },
-                { "required": ["resource_id"] }
-              ] }
-            },
-            {
-              "required": ["resource_kind", "resource_id"],
-              "not": { "anyOf": [
-                { "required": ["content"] },
-                { "required": ["content_type"] },
-                { "required": ["tag_name"] }
-              ] }
-            }
-          ],
           "additionalProperties": false
         }
       output_schema: |

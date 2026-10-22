@@ -87,6 +87,7 @@ local function run_version(workflow_id: string, version: number, input: any, opt
         success = res.success,
         data = res.data,
         error = res.error,
+        error_details = res.error_details,
         deduped = res.deduped == true,
     }, nil
 end

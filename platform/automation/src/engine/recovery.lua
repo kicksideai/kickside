@@ -146,14 +146,14 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if demand_err then return nil, demand_err end
         for _, d in ipairs(demand :: { Map }) do
             if type(d.job_id) == "string" and d.job_id ~= "" then
-                local _, wake_err = slot.wake(d.job_id)
+                local wake, wake_err = slot.wake(d.job_id)
                 if wake_err then
                     local retry_err = repair_deadline(d, true)
                     if retry_err then return nil, retry_err end
                     counts.failures = counts.failures + 1
                     log_failure("drive slot wake failed", { automation_id = d.automation_id, drive_key = d.drive_key,
                         job_id = d.job_id, error = tostring(wake_err) })
-                else
+                elseif (type(wake) == "table" and wake.woken == true) or d.source_kind == drive.SOURCE_KIND.NONE then
                     local _, ack_err = P.in_automation_tx(function(tx: any): (any?, any)
                         return drive.ack_wake_tx(tx, d.automation_id, d.drive_key, d.wake_applied_generation, d.wake_generation)
                     end)
@@ -168,6 +168,12 @@ function part.attach(M: any, dependencies: any, P: any): ()
                         if clear_err then return nil, clear_err end
                         counts.woken = counts.woken + 1
                     end
+                else
+                    -- Preserve demand when the slot cannot serve it, but defer
+                    -- the next repair pass rather than rearming immediately.
+                    local retry_err = repair_deadline(d, true)
+                    if retry_err then return nil, retry_err end
+                    counts.failures = counts.failures + 1
                 end
             end
         end

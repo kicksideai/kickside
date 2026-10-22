@@ -4,8 +4,8 @@ local reclaim = require("reclaim")
 local fixture = require("fixture")
 local routes: {{name: string, stages: {string}}} = {
     {name = "expired", stages = {"policy", "begin", "lookup", "size", "update", "marker", "history", "history_update", "commit", "notify"}},
-    {name = "terminated", stages = {"policy", "begin", "lookup", "alive", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
-    {name = "live", stages = {"begin", "lookup", "alive", "size", "update", "commit"}},
+    {name = "terminated", stages = {"policy", "begin", "build", "lookup", "alive", "locked", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
+    {name = "live", stages = {"begin", "build", "lookup", "alive", "locked", "size", "update", "commit"}},
     {name = "confirmed", stages = {"begin", "lookup", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
     {name = "one", stages = {"policy", "history", "size", "history_update"}},
     {name = "many", stages = {"policy", "begin", "lookup", "history", "size", "history_update", "commit"}},
@@ -42,6 +42,13 @@ local function group(index: integer)
     return test.run_cases(function()
         test.describe("native recovery/" .. route.name, function()
             fixture.dialect = dialect()
+            if route.name == "terminated" or route.name == "live" then
+                test.it("reads execution liveness before opening the transaction", function()
+                    fixture.reset(route.name, "", nil)
+                    test.is_nil(invoke(route.name))
+                    test.is_false(fixture.lookup_in_transaction)
+                end)
+            end
             for _, stage in ipairs(route.stages) do
                 for _, kind in ipairs({errors.INVALID, errors.UNAVAILABLE, errors.CONFLICT}) do
                     for _, policy in ipairs({{}, {retryable = false}, {retryable = true}}) do
@@ -74,6 +81,7 @@ local function group(index: integer)
                 or route.name == "live" and {"policy", "begin", "lookup", "alive", "update"}
                 or {"policy", "begin", "lookup", "update", "history"}
             if route.name == "terminated" then proofs[#proofs + 1] = "alive" end
+            if route.name == "terminated" or route.name == "live" then proofs[#proofs + 1] = "locked" end
             for _, stage in ipairs(proofs) do
                 test.it("missing successful proof/" .. stage, function()
                     fixture.reset(route.name, stage, nil); fixture.missing = true

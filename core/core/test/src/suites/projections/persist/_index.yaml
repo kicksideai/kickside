@@ -3,6 +3,19 @@ namespace: kickside.core.projections.persist
 
 # Harness-owned declarations for colocated production tests.
 entries:
+  - name: failure_removal_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://failure_removal_test.lua
+    method: run
+    modules: [sql, uuid, channel]
+    imports:
+      test: wippy.test:test
+      writer: kickside.core.projections.persist:writer
+      apply: kickside.core.projections:apply
+      claim: kickside.core.jobs.persist:claim
+      cancellation: kickside.core.jobs.persist:lifecycle_cancel
+      prune_scaffold: app:prune_scaffold
   - name: returned_authorization_test
     kind: function.lua
     meta: { type: test, suite: kickside_core }

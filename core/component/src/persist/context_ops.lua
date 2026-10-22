@@ -317,9 +317,8 @@ local function audit_row(tx: any, component_id: string, generation: number, requ
     return nil
 end
 
--- set_execution_identity_tx(tx, token): component-row lock first, then ADMIN,
--- then the request replay check and generation fence, then the identity write
--- plus its immutable audit row in the same transaction.
+-- set_execution_identity_tx(tx, token): component row, declaration fence,
+-- access rows, then identity and audit in the same transaction.
 function M.set_execution_identity_tx(tx: Executor, token: any): (component_types.CommandResult?, error?)
     local prepared = authorized_identity[token]
     if not prepared then return nil, failure("validated identity token is required", errors.PERMISSION_DENIED, "access") end
@@ -327,10 +326,6 @@ function M.set_execution_identity_tx(tx: Executor, token: any): (component_types
     local component_id = prepared.component_id :: string
     local state, read_err = lock_and_read_identity(tx, component_id)
     if read_err or not state then return nil, read_err end
-    local allowed, access_err = access_ops.check_user_access(tx, prepared.actor_id, component_id,
-        component_types.ACCESS.ADMIN, prepared.subjects, prepared.prefixes, true)
-    if access_err then return nil, access_err end
-    if not allowed then return nil, failure("ADMIN access is required", errors.PERMISSION_DENIED, "access") end
     -- The fence is read under the component lock: a fenced component takes an
     -- identity only for the owner command confirmed at prepare.
     local owner, owner_err = declaration_fence.owner(tx, component_id)
@@ -348,6 +343,10 @@ function M.set_execution_identity_tx(tx: Executor, token: any): (component_types
         local save_err = declaration_fence.save_tx(tx, prior ~= nil, input)
         if save_err then return nil, save_err end
     end
+    local allowed, access_err = access_ops.check_user_access(tx, prepared.actor_id, component_id,
+        component_types.ACCESS.ADMIN, prepared.subjects, prepared.prefixes, true)
+    if access_err then return nil, access_err end
+    if not allowed then return nil, failure("ADMIN access is required", errors.PERMISSION_DENIED, "access") end
     local credential_id, link_id, introduced, restriction_err = preserved_restrictions((state :: any).context, prepared)
     if restriction_err then return nil, restriction_err end
     local replays, replay_err = sql.builder.select("record_json", "identity_generation"):from(identity.AUDIT_TABLE)

@@ -25,6 +25,9 @@ const props = withDefaults(defineProps<{
 // A minimal JSON-schema subset the field renderer + validator understand.
 interface FieldSchema {
   type?: string
+  items?: FieldSchema
+  properties?: Record<string, FieldSchema>
+  required?: string[]
   minimum?: number
   maximum?: number
   minLength?: number
@@ -40,6 +43,7 @@ interface Setting {
   namespace: string
   key: string
   value: unknown
+  error?: string | null
   value_type: 'string' | 'int' | 'bool' | 'duration' | 'json' | 'secret'
   default: unknown
   is_default: boolean
@@ -139,34 +143,57 @@ function uiConfig(s: Setting) {
 // Validate a draft value against a declared JSON-schema (the subset the UI
 // renders). Returns an error message, or '' when valid / no schema. This is the
 // UI-level gate; the backend validate_func remains the authority on save.
-function validateAgainstSchema(s: Setting, value: unknown): string {
-  const sc = s.schema
+function validateAgainstSchema(sc: FieldSchema | null | undefined, value: unknown, path = ''): string {
   if (!sc) return ''
+  const error = (message: string) => path ? `${path}: ${message}` : message
+  if (sc.type === 'array' && !Array.isArray(value)) return error('Must be an array')
+  if (sc.type === 'object' && (value === null || typeof value !== 'object' || Array.isArray(value))) return error('Must be an object')
+  if (sc.type === 'boolean' && typeof value !== 'boolean') return error('Must be a boolean')
+  if (sc.type === 'null' && value !== null) return error('Must be null')
   if (sc.type === 'integer' || sc.type === 'number') {
-    const n = Number(value)
-    if (Number.isNaN(n)) return 'Must be a number'
-    if (sc.type === 'integer' && !Number.isInteger(n)) return 'Must be a whole number'
-    if (typeof sc.minimum === 'number' && n < sc.minimum) return `Must be ≥ ${sc.minimum}`
-    if (typeof sc.maximum === 'number' && n > sc.maximum) return `Must be ≤ ${sc.maximum}`
+    if (typeof value !== 'number' || !Number.isFinite(value)) return error('Must be a number')
+    if (sc.type === 'integer' && !Number.isInteger(value)) return error('Must be a whole number')
   }
-  if (sc.type === 'string') {
-    const str = String(value)
-    if (typeof sc.minLength === 'number' && str.length < sc.minLength) return `Must be at least ${sc.minLength} characters`
-    if (typeof sc.maxLength === 'number' && str.length > sc.maxLength) return `Must be at most ${sc.maxLength} characters`
-    if (sc.pattern && !new RegExp(sc.pattern).test(str)) return 'Does not match the required format'
+  if (sc.type === 'string' && typeof value !== 'string') return error('Must be a string')
+  if (typeof value === 'number') {
+    if (typeof sc.minimum === 'number' && value < sc.minimum) return error(`Must be ≥ ${sc.minimum}`)
+    if (typeof sc.maximum === 'number' && value > sc.maximum) return error(`Must be ≤ ${sc.maximum}`)
+  }
+  if (typeof value === 'string') {
+    if (typeof sc.minLength === 'number' && value.length < sc.minLength) return error(`Must be at least ${sc.minLength} characters`)
+    if (typeof sc.maxLength === 'number' && value.length > sc.maxLength) return error(`Must be at most ${sc.maxLength} characters`)
+    if (sc.pattern && !new RegExp(sc.pattern).test(value)) return error('Does not match the required format')
   }
   if (Array.isArray(sc.enum) && !sc.enum.includes(value)) {
-    return `Must be one of: ${sc.enum.join(', ')}`
+    return error(`Must be one of: ${sc.enum.join(', ')}`)
+  }
+  if (Array.isArray(value) && sc.items) {
+    for (let i = 0; i < value.length; i++) {
+      const message = validateAgainstSchema(sc.items, value[i], `${path}[${i}]`)
+      if (message) return message
+    }
+  }
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    const object = value as Record<string, unknown>
+    const propertyPath = (key: string) => path ? `${path}.${key}` : key
+    for (const key of sc.required ?? []) {
+      if (!Object.hasOwn(object, key)) return `${propertyPath(key)}: Required`
+    }
+    for (const [key, schema] of Object.entries(sc.properties ?? {})) {
+      if (!Object.hasOwn(object, key)) continue
+      const message = validateAgainstSchema(schema, object[key], propertyPath(key))
+      if (message) return message
+    }
   }
   return ''
 }
 
 // A short, human-readable hint describing the schema's constraints, shown under
 // the field so the operator knows the accepted range before typing.
-function schemaHint(s: Setting): string {
-  const sc = s.schema
+function schemaHint(sc: FieldSchema | null | undefined): string {
   if (!sc) return ''
   const parts: string[] = []
+  if (sc.type) parts.push(sc.type)
   if (typeof sc.minimum === 'number' || typeof sc.maximum === 'number') {
     const lo = typeof sc.minimum === 'number' ? sc.minimum : '−∞'
     const hi = typeof sc.maximum === 'number' ? sc.maximum : '∞'
@@ -175,7 +202,13 @@ function schemaHint(s: Setting): string {
   if (typeof sc.minLength === 'number' || typeof sc.maxLength === 'number') {
     parts.push(`length ${sc.minLength ?? 0}–${sc.maxLength ?? '∞'}`)
   }
+  if (sc.pattern) parts.push(`pattern ${sc.pattern}`)
   if (Array.isArray(sc.enum)) parts.push(`one of ${sc.enum.join(', ')}`)
+  if (sc.required?.length) parts.push(`required: ${sc.required.join(', ')}`)
+  if (sc.items) parts.push(`items: ${schemaHint(sc.items)}`)
+  for (const [key, schema] of Object.entries(sc.properties ?? {})) {
+    parts.push(`${key}: ${schemaHint(schema)}`)
+  }
   return parts.join(' · ')
 }
 
@@ -189,8 +222,17 @@ function revalidate(s: Setting): string {
     return ''
   }
   let value: unknown = drafts.value[id]
-  if (s.value_type === 'int') value = Number(value)
-  const msg = validateAgainstSchema(s, value)
+  let msg: string
+  try {
+    if (s.value_type === 'json') value = JSON.parse(String(value))
+    else {
+      if (s.value_type === 'int' || s.schema?.type === 'integer' || s.schema?.type === 'number') value = Number(value)
+      if (s.schema?.type === 'string') value = String(value)
+    }
+    msg = validateAgainstSchema(s.schema, value)
+  } catch (e) {
+    msg = e instanceof Error ? e.message : String(e)
+  }
   if (msg) fieldErrors.value[id] = msg
   else delete fieldErrors.value[id]
   return msg
@@ -297,7 +339,7 @@ onMounted(load)
           <thead v-if="all"><tr><th scope="col">Owner</th><th scope="col">Setting</th><th scope="col">Value</th></tr></thead>
           <component :is="all ? 'tbody' : 'div'">
           <component :is="all ? 'tr' : 'div'" v-for="s in g.items" :key="idOf(s)" class="ks-row"
-            :class="{ 'ks-row-invalid': fieldErrors[idOf(s)], 'ks-row-wc': s.ui }">
+            :class="{ 'ks-row-invalid': s.error || fieldErrors[idOf(s)], 'ks-row-wc': s.ui }">
             <td v-if="all" class="ks-owner">{{ ownerOf(s) }}</td>
             <component :is="all ? 'td' : 'div'" class="ks-row-main">
               <div class="ks-row-head">
@@ -306,8 +348,9 @@ onMounted(load)
                 <span v-if="s.is_secret && s.has_value" class="ks-tag kx-tag-caps ks-tag-on">set</span>
                 <span v-else-if="!s.is_default && !s.is_secret" class="ks-tag kx-tag-caps ks-tag-on">overridden</span>
               </div>
+              <p v-if="s.error" class="ks-field-err" role="alert">{{ s.error }}</p>
               <p v-if="s.description" class="ks-desc">{{ s.description }}</p>
-              <p v-if="schemaHint(s)" class="ks-hint">{{ schemaHint(s) }}</p>
+              <p v-if="schemaHint(s.schema)" class="ks-hint">{{ schemaHint(s.schema) }}</p>
               <p v-if="!s.is_default && s.updated_by" class="ks-prov">by {{ s.updated_by }}<span v-if="s.updated_at"> · {{ relativeTime(s.updated_at) }}</span></p>
             </component>
 
