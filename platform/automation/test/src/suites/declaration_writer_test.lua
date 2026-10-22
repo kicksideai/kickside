@@ -80,7 +80,11 @@ local function reconfigured(schema: any, before: any, after: any, same_subject: 
     local context, read_err = component.get_private_context(id)
     local _, delete_err = service:delete({ component_id = id })
     test.is_nil(read_err, tostring(read_err))
-    test.eq(json.encode(context._portable_input), json.encode(before))
+    local actual_json, actual_err = json.encode(context._portable_input)
+    local expected_json, expected_err = json.encode(before)
+    test.is_nil(actual_err, tostring(actual_err))
+    test.is_nil(expected_err, tostring(expected_err))
+    test.eq(actual_json, expected_json)
     test.is_nil(delete_err, tostring(delete_err))
     return receipt, err
 end
