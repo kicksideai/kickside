@@ -70,11 +70,12 @@ function slot.record(automation_id: string, drive_key: string, job_id: string): 
         { job_id, automation_id, drive_key, "owner-delete:" .. automation_id })
     db:release()
     if err then return internal("failed to record the drive slot", err) end
-    local count = result and tonumber(result.rows_affected)
-    if count ~= 1 then
+    local count = type(result) == "table" and tonumber(result.rows_affected) or nil
+    if count == 0 then
         return (errors.new({ message = "drive disappeared or entered owner deletion before slot recording: "
             .. automation_id .. "/" .. drive_key, kind = errors.CONFLICT, retryable = true }) :: error)
     end
+    if count ~= 1 then return internal("failed to record the drive slot", "invalid affected-row count") end
     return nil
 end
 
@@ -137,6 +138,7 @@ function slot.provision(automation_id: string, drive_key: string): (string?, err
     if enqueue_err or not job_id then return nil, enqueue_err end
     local record_err = slot.record(automation_id, drive_key, job_id)
     if record_err then
+        if not errors.is(record_err, errors.CONFLICT) then return nil, record_err end
         local _, purge_err = slot_purge.purge_slot({ namespace = slot.NAMESPACE, scope = automation_id, key = drive_key })
         if purge_err then
             return nil, internal("slot recording failed and its unrecorded job could not be reclaimed",
