@@ -29,6 +29,22 @@ end
 
 return test.run_cases(function()
     test.describe("prepared settlement index upgrade",function()
+        test.it("installs the lookup on the configured Automation database",function()
+            local db, db_err = sql.get("app:db")
+            test.is_nil(db_err)
+            test.not_nil(db)
+            local dialect = tostring(db:type())
+            local indexes, index_err = db:query(dialect == sql.type.POSTGRES
+                and "SELECT indexname AS name FROM pg_indexes WHERE schemaname=current_schema() AND tablename='kickside_trigger_item_ledger'"
+                or "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='kickside_trigger_item_ledger'")
+            db:release()
+            test.is_nil(index_err)
+            local present = false
+            for _, index in ipairs(indexes) do
+                if index.name == "idx_trigger_ledger_settled_delivery" then present = true end
+            end
+            test.is_true(present,"target_db must wire the lookup migration to Automation's database")
+        end)
         test.it("preserves published ledger data and resumes an already applied index migration",function()
             -- These migrations are unchanged from automation-v0.1.133.
             for _, name in ipairs({"06_trigger_item_ledger","10_drive_schema",
