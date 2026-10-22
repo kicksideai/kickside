@@ -4073,6 +4073,18 @@
       "repository": "kickside/kickside",
       "test": "core/core/test/src/writer_read_test.lua"
     },
+    "crm/alias-claim-migration": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME",
+        "MIGRATION-LEDGER-ACTIVE-SCHEMA"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_alias_migration_test.lua"
+    },
     "crm/callable-owner": {
       "engines": [
         "sqlite",
@@ -4160,6 +4172,17 @@
       ],
       "repository": "kickside/crm",
       "test": "test/src/crm_resolve_api_test.lua"
+    },
+    "crm/resolve-record-lifetime": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "CRM-RESOLVE-RECORD-LIFETIME"
+      ],
+      "repository": "kickside/crm",
+      "test": "test/src/crm_resolve_lifetime_test.lua"
     },
     "crm/schema-index-cause": {
       "engines": [
@@ -11053,7 +11076,9 @@
     "APP-UI-LOGIN-ROUTE-GUARD",
     "SETTINGS-NOTICES-THEME-RADIUS",
     "AUTOMATION-SETTLED-EVENT-RECEIPT-RETENTION",
-    "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE"
+    "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE",
+    "CRM-RESOLVE-RECORD-LIFETIME",
+    "MIGRATION-LEDGER-ACTIVE-SCHEMA"
   ],
   "schema_version": 1
 }
