@@ -8779,6 +8779,13 @@
       ],
       "tier": "full"
     },
+    "knowledge_store_schema": {
+      "features": [],
+      "issues": [
+        "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
+      ],
+      "tier": "regression"
+    },
     "launch_about": {
       "features": [
         "kickside/settings|http|GET /api/v1/settings/about",

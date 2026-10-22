@@ -6431,6 +6431,17 @@
       "repository": "kickside/kickside",
       "test": "core/contract/test/contract_smoke_test.lua"
     },
+    "knowledge/store-output-schema": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/knowledge/test/src/contract_surface_test.lua"
+    },
     "mcp-authority-lifecycle": {
       "engines": [
         "sqlite",
@@ -11346,7 +11357,8 @@
     "AUTOMATION-SOURCE-PULL-FENCE",
     "UPSTREAM-CONTEXT-ADMISSION",
     "UPSTREAM-REJECTED-USAGE",
-    "KNOWLEDGE-BOUNDED-CONTENT-EVENT"
+    "KNOWLEDGE-BOUNDED-CONTENT-EVENT",
+    "KNOWLEDGE-STORE-OUTPUT-SCHEMA"
   ],
   "schema_version": 1
 }
