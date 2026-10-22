@@ -39,6 +39,14 @@ all resolve that config, so runtime SQL always follows the host's database mappi
 
 `jobs.complete_tx` accepts optional `demand_satisfied = true` when the worker proves under its durable source lock that the completed run covers the source head. It consumes ordinary demand received during that run; independent control wakes still rearm the slot. Omission retains the existing demand behavior.
 
+Failure transitions accept an optional final `{ retry_after_ms = milliseconds }`
+argument on `fail_tx` and `fail_job`. The structured floor can exceed the policy
+cap. Slots use `slot_retry`; one-shot jobs use `retry`. Both retain their configured
+base as the lower bound of jitter. Worker failures carry native error details to
+this argument before rendering the history error text. Malformed provider retry
+hints are ignored so they cannot prevent failure settlement; explicit failure
+transition arguments remain validated.
+
 Completion options accept `park = true` independently of `record.status`. Parking
 suppresses ordinary wake demand while preserving the requested history status;
 a pending control wake retains priority. Without `park`, completion keeps its
