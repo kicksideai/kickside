@@ -1,0 +1,15 @@
+version: '1.0'
+namespace: app
+entries:
+- name: prepared_upgrade_db
+  kind: db.sql.sqlite
+  file: ':memory:'
+  pool: {max_open: 1, max_idle: 1}
+- name: prepared_proof_upgrade_test
+  kind: function.lua
+  source: file://prepared_proof_upgrade_test.lua
+  method: run
+  meta: {type: test, suite: prepared_proof_upgrade}
+  modules: [sql, funcs]
+  imports:
+    test: wippy.test:test
