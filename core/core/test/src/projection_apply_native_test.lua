@@ -9,7 +9,7 @@ for _, stage in ipairs({"append_encode", "identity", "admission", "get", "type",
     "cursor", "body_encode", "update", "cursor_update", "append", "complete", "commit", "notify", "retention", "release"}) do
     routes[#routes + 1] = {stage = stage, mode = "advance"}
 end
-for _, stage in ipairs({"get", "type", "begin", "fence", "invalidate", "complete", "commit", "notify", "release"}) do
+for _, stage in ipairs({"get", "type", "begin", "lock", "fence", "invalidate", "complete", "commit", "notify", "release"}) do
     routes[#routes + 1] = {stage = stage, mode = "fail"}
 end
 for _, stage in ipairs({"complete", "commit", "notify"}) do routes[#routes + 1] = {stage = stage, mode = "stale"} end
@@ -54,6 +54,14 @@ local function native(first: integer, last: integer)
     end
 end
 local function outcomes()
+    test.it("locks the source thread before recording a failure", function()
+        fixture.reset("", nil, "fail")
+        local value, err = call("fail")
+        test.is_nil(err)
+        test.not_nil(value)
+        test.is_true(fixture.thread_locked)
+        test.is_false(fixture.cursor_before_thread)
+    end)
     for _, mode in ipairs({"advance", "fail", "stale"}) do
         for _, stage in ipairs({"type", "begin", "complete", "commit", "notify"}) do
             local prior_stage = mode == "fail" and stage == "notify" and "fence" or stage

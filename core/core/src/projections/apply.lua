@@ -248,6 +248,8 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
     local function abort(err: error): (nil, error)
         return nil, release(db, rollback(tx, err)) :: error
     end
+    local _, lock_err = threads_writer.lock_thread_rows_tx(tx, dbtype, { tostring(snapshot.thread_id) })
+    if lock_err then return abort(lock_err) end
     local now = clock.now(dbtype)
     local fenced, fence_err = tx:execute([[UPDATE kickside_projection_cursor SET status=$1,last_error=$2,updated_at=$3
         WHERE id=$4 AND job_id=$5 AND generation=$6 AND last_seq=$7 AND status='active']],
