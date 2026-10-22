@@ -171,6 +171,8 @@ local function enqueue_upload_token_once(upload, token: string, success, error_m
             retryable = false, details = { error_kind = "declaration" } })
     end
 
+    if not success and payload.on_error_id == nil then return true, nil end
+
     local func_id = tostring(success and payload.function_id or payload.on_error_id)
     if not func_id or func_id == "nil" then
         return false, errors.new({ message = "upload callback function is required", kind = errors.INVALID,
