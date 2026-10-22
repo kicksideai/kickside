@@ -5204,6 +5204,13 @@
       "issues": [],
       "tier": "full"
     },
+    "automation_scheduled_drive_status": {
+      "features": [],
+      "issues": [
+        "AUTOMATION-SCHEDULED-DRIVE-STATUS"
+      ],
+      "tier": "regression"
+    },
     "automation_sdk_blocks": {
       "features": [
         "kickside/code-execution|mcp_tool|kickside.code_execution.traits:run_code_tool",

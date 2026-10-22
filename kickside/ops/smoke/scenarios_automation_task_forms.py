@@ -26,6 +26,14 @@ def task_forms(ctx):
     ), 'automation-task-forms')
 
 
+def scheduled_drive_status(ctx):
+    from module_harness import run_focused_module_test
+    run_focused_module_test(ctx, 'kickside/automation', 'round_test')
+    frontend_specs(ctx, 'automation', (
+        'src/app/automations.drive-status.spec.ts', 'src/app/automations.realtime-drive.spec.ts',
+    ), 'automation-scheduled-drive-status')
+
+
 def workflow_picker(ctx):
     frontend_specs(ctx, 'workflows', (
         'src/app/embed/WorkflowPicker.test.ts', 'src/app/embed/embed-workflow.test.ts',
@@ -38,4 +46,6 @@ REGISTRY = [Scenario('automation_task_create_forms', 'regression', task_forms,
                              'AUTOMATION-TASK-CADENCE-DEFAULT-SCOPE',
                              'AUTOMATION-WORKFLOW-TARGET-SELECTION-STATE',)),
             Scenario('workflows_published_picker_config_host', 'regression', workflow_picker,
-                     issues=('WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST',))]
+                     issues=('WORKFLOWS-PUBLISHED-PICKER-CONFIG-HOST',)),
+            Scenario('automation_scheduled_drive_status', 'regression', scheduled_drive_status,
+                     issues=('AUTOMATION-SCHEDULED-DRIVE-STATUS',))]
