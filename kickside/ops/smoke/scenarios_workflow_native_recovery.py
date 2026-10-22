@@ -72,6 +72,10 @@ def crm_idempotency_conflict_code(ctx):
         run_focused_module_test(ctx, 'kickside/crm', entry)
 
 
+def workflow_original_delivery_identity(ctx):
+    run_focused_module_test(ctx, 'kickside/workflows', 'original_delivery_identity_test')
+
+
 def workflow_native_creation_errors(ctx):
     run_focused_module_test(ctx, 'kickside/workflows', 'launch_reconciliation_live_test')
 
@@ -107,6 +111,10 @@ REGISTRY = [Scenario('workflow_terminal_publication_revoked_owner', 'regression'
             Scenario('crm_resolve_suggestion_confidence', 'regression',
                      crm_resolve_suggestion_confidence,
                      issues=('CRM-RESOLVE-SUGGESTION-CONFIDENCE',)),
+
+            Scenario('workflow_original_delivery_identity', 'regression',
+                     workflow_original_delivery_identity,
+                     issues=('WORKFLOW-ORIGINAL-DELIVERY-IDENTITY',)),
             Scenario('workflow_durable_undo_history', 'regression', workflow_durable_undo_history,
                      issues=('WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',)),
             Scenario('workflow_unadmitted_run_reads', 'regression', workflow_unadmitted_run_reads,

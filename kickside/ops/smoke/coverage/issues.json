@@ -10021,6 +10021,17 @@
       "repository": "kickside/kickside",
       "test": "platform/workflows/test/src/suites/agent_tools_test.lua"
     },
+    "workflows/original-delivery-identity": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WORKFLOW-ORIGINAL-DELIVERY-IDENTITY"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/test/src/original_identity/original_identity_test.lua"
+    },
     "workflows/published-picker-config-host": {
       "engines": [
         "independent"
@@ -11313,7 +11324,8 @@
     "AUTOMATION-INFRASTRUCTURE-RETRY",
     "CHANNEL-EXECUTION-LOOKUP-ERROR",
     "EXECUTION-ROOT-ADMIN-CLASSIFICATION",
-    "CHANNEL-CONCURRENT-ACTIVITY-FENCE"
+    "CHANNEL-CONCURRENT-ACTIVITY-FENCE",
+    "WORKFLOW-ORIGINAL-DELIVERY-IDENTITY"
   ],
   "schema_version": 1
 }
