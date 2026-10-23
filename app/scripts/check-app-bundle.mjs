@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -27,6 +27,24 @@ export async function checkAppBundle(appDir) {
     await requireFile(path)
   }
   await requireFile(join(bundle, 'wippy-meta.json'))
+  const staticDir = resolve(appDir, 'static')
+  for (const name of await readdir(staticDir, { recursive: true })) {
+    if (!name.endsWith('.css')) continue
+    const path = join(staticDir, name)
+    const css = await readFile(path, 'utf8')
+    for (const match of css.matchAll(/url\(\s*(?:(["'])(.*?)\1|([^\s)]+))\s*\)/g)) {
+      const reference = match[2] ?? match[3]
+      if (/^(?:[a-z]+:|\/\/|#)/i.test(reference)) continue
+      const target = reference.startsWith('/app/')
+        ? resolve(staticDir, reference.slice('/app/'.length))
+        : resolve(dirname(path), reference)
+      const fromStatic = relative(staticDir, target)
+      if (fromStatic.startsWith('../') || fromStatic === '..' || target === staticDir) {
+        throw new Error(`Application contains an invalid local asset path: ${reference}`)
+      }
+      await requireFile(target)
+    }
+  }
   return references.length
 }
 

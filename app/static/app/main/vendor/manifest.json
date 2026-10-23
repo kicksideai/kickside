@@ -1,0 +1,438 @@
+{
+  "imports": {
+    "@wippy-fe/proxy": {
+      "package": "@wippy-fe/proxy",
+      "version": "0.0.60",
+      "integrity": "sha512-eozDUOqlqAdKj+kwY7IYNHqKsuTXYtWOOKJGhT7Y+IDDBDFYIlZMB3qndhsR/2uLyszvdV+N54Gnjyw6xCFU1g==",
+      "file": "vendor/@wippy-fe/proxy@0.0.60/index.js"
+    },
+    "vue": {
+      "package": "vue",
+      "version": "3.5.42",
+      "integrity": "sha512-4RyHQTbQvOPs3MfvUO1Sg0YRrKNnA0mAVtvpd12Tg1fKDN7OHBUl1IqSn8zGJjK9nI3NkNp8cgTpVrSZC5TTcA==",
+      "file": "vendor/vue@3.5.42/index.js"
+    },
+    "pinia": {
+      "package": "pinia",
+      "version": "2.3.1",
+      "integrity": "sha512-khUlZSwt9xXCaTbbxFYBKDc/bWAGWJjOgvxETwkTN7KRm66EeT1ZdZj6i2ceh9sP2Pzqsbc704r2yngBrxBVug==",
+      "file": "vendor/pinia@2.3.1/index.js"
+    },
+    "vue-router": {
+      "package": "vue-router",
+      "version": "4.6.4",
+      "integrity": "sha512-Hz9q5sa33Yhduglwz6g9skT8OBPii+4bFn88w6J+J4MfEo4KRRpmiNG/hHHkdbRFlLBOqxN8y8gf2Fb0MTUgVg==",
+      "file": "vendor/vue-router@4.6.4/index.js"
+    },
+    "luxon": {
+      "package": "luxon",
+      "version": "3.7.2",
+      "integrity": "sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==",
+      "file": "vendor/luxon@3.7.2/index.js"
+    },
+    "@iconify/vue": {
+      "package": "@iconify/vue",
+      "version": "5.0.1",
+      "integrity": "sha512-aumwwooJlFJ5H5qYWB6ZTAyM0C8hpfcSVLB9/a3qnH1GGvIJ+FEbpEs4s/HfErYe/M5qZeLjwmESR5fFm3lXEw==",
+      "file": "vendor/@iconify/vue@5.0.1/index.js"
+    },
+    "primevue/config": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/config.js"
+    },
+    "primevue/button": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/button.js"
+    },
+    "primevue/tag": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/tag.js"
+    },
+    "primevue/dialog": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/dialog.js"
+    },
+    "primevue/checkbox": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/checkbox.js"
+    },
+    "primevue/inputtext": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/inputtext.js"
+    },
+    "primevue/password": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/password.js"
+    },
+    "primevue/select": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/select.js"
+    },
+    "primevue/datatable": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/datatable.js"
+    },
+    "primevue/column": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/column.js"
+    },
+    "primevue/avatar": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/avatar.js"
+    },
+    "primevue/accordion": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/accordion.js"
+    },
+    "primevue/accordionpanel": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/accordionpanel.js"
+    },
+    "primevue/accordionheader": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/accordionheader.js"
+    },
+    "primevue/accordioncontent": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/accordioncontent.js"
+    },
+    "primevue/chip": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/chip.js"
+    },
+    "primevue/textarea": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/textarea.js"
+    },
+    "primevue/toggleswitch": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/toggleswitch.js"
+    },
+    "primevue/radiobutton": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/radiobutton.js"
+    },
+    "primevue/inputnumber": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/inputnumber.js"
+    },
+    "primevue/datepicker": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/datepicker.js"
+    },
+    "primevue/listbox": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/listbox.js"
+    },
+    "primevue/panel": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/panel.js"
+    },
+    "primevue/card": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/card.js"
+    },
+    "primevue/toolbar": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/toolbar.js"
+    },
+    "primevue/message": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/message.js"
+    },
+    "primevue/badge": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/badge.js"
+    },
+    "primevue/divider": {
+      "package": "primevue",
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A==",
+      "file": "vendor/primevue@4.5.5/divider.js"
+    },
+    "axios": {
+      "package": "axios",
+      "version": "1.20.0",
+      "integrity": "sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==",
+      "file": "vendor/axios@1.20.0/index.js"
+    },
+    "nanoevents": {
+      "package": "nanoevents",
+      "version": "9.1.0",
+      "integrity": "sha512-Jd0fILWG44a9luj8v5kED4WI+zfkkgwKyRQKItTtlPfEsh7Lznfi1kr8/iZ+XAIss4Qq5GqRB0qtWbaz9ceO/A==",
+      "file": "vendor/nanoevents@9.1.0/index.js"
+    }
+  },
+  "packages": {
+    "node_modules/@fontsource-variable/inter": {
+      "version": "5.3.0",
+      "integrity": "sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA=="
+    },
+    "node_modules/@fontsource-variable/jetbrains-mono": {
+      "version": "5.3.0",
+      "integrity": "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="
+    },
+    "node_modules/@fontsource-variable/outfit": {
+      "version": "5.3.0",
+      "integrity": "sha512-fPb5XnYK0k7SbR++HEmm4+ZqDszmLKQ+sPRUr8oQ/KNC0vy6r6hazJFe8iYozv4cqlHbvJ/JECkJWrfDodUMVQ=="
+    },
+    "node_modules/@iconify-json/tabler": {
+      "version": "1.2.42",
+      "integrity": "sha512-fObaBh/H2zJphk3lS1dWPUf/buuGaCHQXnB4UYgKOPXQub5Ac1qEu0AHRj/0+E2FEl8pWfgM2xQWzfz7ffcY+A=="
+    },
+    "node_modules/@iconify/vue": {
+      "version": "5.0.1",
+      "integrity": "sha512-aumwwooJlFJ5H5qYWB6ZTAyM0C8hpfcSVLB9/a3qnH1GGvIJ+FEbpEs4s/HfErYe/M5qZeLjwmESR5fFm3lXEw=="
+    },
+    "node_modules/@primeuix/styled": {
+      "version": "0.7.4",
+      "integrity": "sha512-QSO/NpOQg8e9BONWRBx9y8VGMCMYz0J/uKfNJEya/RGEu7ARx0oYW0ugI1N3/KB1AAvyGxzKBzGImbwg0KUiOQ=="
+    },
+    "node_modules/@primeuix/styles": {
+      "version": "2.0.3",
+      "integrity": "sha512-2ykAB6BaHzR/6TwF8ShpJTsZrid6cVIEBVlookSdvOdmlWuevGu5vWOScgIwqWwlZcvkFYAGR/SUV3OHCTBMdw=="
+    },
+    "node_modules/@primeuix/utils": {
+      "version": "0.6.4",
+      "integrity": "sha512-pZ5f+vj7wSzRhC7KoEQRU5fvYAe+RP9+m39CTscZ3UywCD1Y2o6Fe1rRgklMPSkzUcty2jzkA0zMYkiJBD1hgg=="
+    },
+    "node_modules/@primevue/core": {
+      "version": "4.5.5",
+      "integrity": "sha512-JpkXhq1ddc70JdsC3CC4dM+UbeeWuCW/8DpS9dNBfrOk824TLSlRlMEGFyVKqRMn5WPQvYLiy3xXfLQeNdSqhQ=="
+    },
+    "node_modules/@primevue/icons": {
+      "version": "4.5.5",
+      "integrity": "sha512-eteOhTdAOXEYE9qW1AOrBBgDxQ2szHJxSkEK1XVdV2TKxGM5FQf03Ovms0VDyZTc16XBIgvwYjXJQS0BPbhPaA=="
+    },
+    "node_modules/@vue/devtools-api": {
+      "version": "6.6.4",
+      "integrity": "sha512-sGhTPMuXqZ1rVOk32RylztWkfXTRhuS7vgAKv0zjqk8gbsHkJ7xfFf+jbySxt7tWObEJwyKaHMikV/WGDiQm8g=="
+    },
+    "node_modules/@vue/reactivity": {
+      "version": "3.5.42",
+      "integrity": "sha512-TzNNfKpb7hDxbQltwAut8VDQA5YP+BuRlxntHUuRjyKwlMvmAPbs3unhCvieijifY6vFfVBwsS7wG/C7uq+bEQ=="
+    },
+    "node_modules/@vue/runtime-core": {
+      "version": "3.5.42",
+      "integrity": "sha512-9uACtuHs7vJGkm5Bp3xu4xRDLFTIYy5DgxpToVjqGIAhAEKwQfsaLvKINhM6nFVp6bZPRFGdDqd1g52MqKsotA=="
+    },
+    "node_modules/@vue/runtime-dom": {
+      "version": "3.5.42",
+      "integrity": "sha512-rsCmhiWLaRxGltLwhlCWyYkFn7WAbKRh0q17eZ1A6Dq6eqc2ACQ61IIryxz0LrsvCzHSilLA9JHovVwM8CNE2g=="
+    },
+    "node_modules/@vue/shared": {
+      "version": "3.5.42",
+      "integrity": "sha512-2rPxex1jQf4jvl9MOHl6YaXCPcrNqz/FstMOEh3QWY+/OME9nQTvl9WYeCwhW7AFjaR0SnngZGlp/wkR6rkI6g=="
+    },
+    "node_modules/@wippy-fe/layout": {
+      "version": "0.0.60",
+      "integrity": "sha512-VPrhfiXeve8fUraciiJ9G1hRZ+maKRX/yKmT2/nbS2d2xXhCfXrj6xQyKx9ZvlZ8cyXjgguZU8i5W1ribHVmuQ=="
+    },
+    "node_modules/@wippy-fe/proxy": {
+      "version": "0.0.60",
+      "integrity": "sha512-eozDUOqlqAdKj+kwY7IYNHqKsuTXYtWOOKJGhT7Y+IDDBDFYIlZMB3qndhsR/2uLyszvdV+N54Gnjyw6xCFU1g=="
+    },
+    "node_modules/@wippy-fe/router": {
+      "version": "0.0.60",
+      "integrity": "sha512-H71JZlIY0cdrKad8dYUZv+dpvcYcl4t33bF6KbQmtrr3Uuz+YRqLYy/nlqtvBJrve/5rvf8ashEaXWEwkTNJfw=="
+    },
+    "node_modules/@wippy-fe/shared": {
+      "version": "0.0.60",
+      "integrity": "sha512-dQkm1VqlcMVj+ejGJYrAFb5am5zmSMSIWnu51p7i+J5kJFpBbo12S1O+0qd0VLzD58SwL48VJW2phFfcZ5WNxw=="
+    },
+    "node_modules/@wippy-fe/theme": {
+      "version": "0.0.61",
+      "integrity": "sha512-J8EviloRZFgM4IfVhhEX0gTz1RPnGGPSPIhf4JH71DcqPEzVhlssKYYYs1trIQKdfHjh8zFC4tbZf1eTGMsxzA=="
+    },
+    "node_modules/axios": {
+      "version": "1.20.0",
+      "integrity": "sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg=="
+    },
+    "node_modules/luxon": {
+      "version": "3.7.2",
+      "integrity": "sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew=="
+    },
+    "node_modules/nanoevents": {
+      "version": "9.1.0",
+      "integrity": "sha512-Jd0fILWG44a9luj8v5kED4WI+zfkkgwKyRQKItTtlPfEsh7Lznfi1kr8/iZ+XAIss4Qq5GqRB0qtWbaz9ceO/A=="
+    },
+    "node_modules/pinia": {
+      "version": "2.3.1",
+      "integrity": "sha512-khUlZSwt9xXCaTbbxFYBKDc/bWAGWJjOgvxETwkTN7KRm66EeT1ZdZj6i2ceh9sP2Pzqsbc704r2yngBrxBVug=="
+    },
+    "node_modules/primevue": {
+      "version": "4.5.5",
+      "integrity": "sha512-Kv5REIewCdP806QaoU+4nBXfmpzOGFKkZ9qH4KsL6MjiAQVc4PUzypt8erl4r3Vzh3nr3aWZIxkxYRRsLGiX2A=="
+    },
+    "node_modules/vue": {
+      "version": "3.5.42",
+      "integrity": "sha512-4RyHQTbQvOPs3MfvUO1Sg0YRrKNnA0mAVtvpd12Tg1fKDN7OHBUl1IqSn8zGJjK9nI3NkNp8cgTpVrSZC5TTcA=="
+    },
+    "node_modules/vue-demi": {
+      "version": "0.14.10",
+      "integrity": "sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg=="
+    },
+    "node_modules/vue-router": {
+      "version": "4.6.4",
+      "integrity": "sha512-Hz9q5sa33Yhduglwz6g9skT8OBPii+4bFn88w6J+J4MfEo4KRRpmiNG/hHHkdbRFlLBOqxN8y8gf2Fb0MTUgVg=="
+    }
+  },
+  "files": {
+    "fonts/inter-cyrillic-ext-wght-normal.woff2": "sha256-yhVwYzOaxK1BjyFPOr/tEZsHmKtNN3OGzlyeWnpDXr0=",
+    "fonts/inter-cyrillic-wght-normal.woff2": "sha256-cdXuk8wenx1SCjqLZkVt4Yx4edjfCdV/zS6v91/vAHU=",
+    "fonts/inter-greek-ext-wght-normal.woff2": "sha256-bp4CCiX5tW1BjywIWx08CXJaTaI/5pOltGMGRgZzIZA=",
+    "fonts/inter-greek-wght-normal.woff2": "sha256-G+NEjikvvwX/4Xb+HkPxNQE9ULHn0yStGlWPYj07tvY=",
+    "fonts/inter-vietnamese-wght-normal.woff2": "sha256-XGb54H6QxtSsSSLMaNYN4mwXsYWOZ3+15gP845UrP/I=",
+    "fonts/inter-latin-ext-wght-normal.woff2": "sha256-NLnFBMq3pz43t0Y0OkSRMuVs97VIGvLLgdx03P8lyVY=",
+    "fonts/inter-latin-wght-normal.woff2": "sha256-MQDndehhbNJhG+7PojpCY9cDdYZ4m0PwNSNqLm+9TGI=",
+    "fonts/outfit-latin-ext-wght-normal.woff2": "sha256-D1PRwDs5GNdEqEO1A5AB7jFpXKHiVeORQYjfgb60Yek=",
+    "fonts/outfit-latin-wght-normal.woff2": "sha256-bBjVef2Hw3dr4Gi3YsvIP946y1Q9Seq9Ot6ELrmH6Ic=",
+    "fonts/jetbrains-mono-cyrillic-ext-wght-normal.woff2": "sha256-WTzNb+NuKZ4VGurkUhvpv+g6xIfZbXzbRPUL5KBAQcc=",
+    "fonts/jetbrains-mono-cyrillic-wght-normal.woff2": "sha256-0nRgTEB1f5jwffYjqLj7UZRQim+k9UE6ehB/CeO3RSo=",
+    "fonts/jetbrains-mono-greek-wght-normal.woff2": "sha256-7oYxmAd/MJP/qBwHJYHMS9YIoE5gqKnAuEY5bOTxQQk=",
+    "fonts/jetbrains-mono-vietnamese-wght-normal.woff2": "sha256-Ioh5Xaid2X5kiVS5biK0UBvYXfxFMmRGCyUviItYLKI=",
+    "fonts/jetbrains-mono-latin-ext-wght-normal.woff2": "sha256-eb/aubpGfibupBIubyVn4YjdigmoxzDVAfxIfEq5nG4=",
+    "fonts/jetbrains-mono-latin-wght-normal.woff2": "sha256-GL5FJyS/3CNsB0ypSiSaf0GoZ1LH0EqyWM6e1WUfan4=",
+    "vendor/@wippy-fe/proxy@0.0.60/index.js": "sha256-sYho0YYes64L2ubSXD4SBX8FbobNOMx9fXNRfSELHxA=",
+    "vendor/vue@3.5.42/index.js": "sha256-wI2+z+D+rd0TxffSd2JWErAWxB/W7zpgxIxtsoHE31g=",
+    "vendor/pinia@2.3.1/index.js": "sha256-WlAJEAl13N1Gku5E7JCl1EWFJ/Wl9cJmkF1vIetmFYU=",
+    "vendor/vue-router@4.6.4/index.js": "sha256-ZewiSLSPEe7nacGnNPK0Ts8bmjVcDyYylG7HWv73/F8=",
+    "vendor/luxon@3.7.2/index.js": "sha256-JNYRUkdL/53nLJuBFORCdZINXI+eQ+0ygiiObaCsdrU=",
+    "vendor/@iconify/vue@5.0.1/index.js": "sha256-tT+K18yGOR8RV5P7pK40VV3eZsBlk8KBxEqvBYrhNuc=",
+    "vendor/primevue@4.5.5/config.js": "sha256-axM/m+f5vUghhcPC+6JeFmbkieHrxJpEm2o5St6Lqa4=",
+    "vendor/primevue@4.5.5/button.js": "sha256-9HY9p+K0dQ08LBcMe0OLJWbRFf43TTZRcoPsh/JiZT0=",
+    "vendor/primevue@4.5.5/tag.js": "sha256-jtwXnKhGMJroxqFHOm6SJoch6HDo9BFQukB0x5g2JRQ=",
+    "vendor/primevue@4.5.5/dialog.js": "sha256-8KQ15pkHJvkF9Bw2poi78PnI5K/eIyORL1NCYosgkjw=",
+    "vendor/primevue@4.5.5/checkbox.js": "sha256-ZTSQ7bYpFY2Vb2FXsqrStUga3JHmCe6O/NuNOrVoe4c=",
+    "vendor/primevue@4.5.5/inputtext.js": "sha256-CS7G0OStl/aZPVAmnatBdhwU6x0TPBIavnJGKA7I5KQ=",
+    "vendor/primevue@4.5.5/password.js": "sha256-8xGWJwTtOrKQlQ/tmuy3k3cPCN47+XOC5BfDi+WiNjw=",
+    "vendor/primevue@4.5.5/select.js": "sha256-q/eKl1RCKfm2CZhyeLYfTG1pjRYG3YvFBBKrAlcfMEc=",
+    "vendor/primevue@4.5.5/datatable.js": "sha256-gdkW6Yuj1D49FQQuQ9tnstPLovuNfQ+rPop/CxkertA=",
+    "vendor/primevue@4.5.5/column.js": "sha256-oHg5gae57YEDne/ZSzYfUdMJbG/kSwhzl6tpIIdo53k=",
+    "vendor/primevue@4.5.5/avatar.js": "sha256-pDqDNwV1bvB62AzngW3l/aNuaxenO/ExRcUCJG2pXeE=",
+    "vendor/primevue@4.5.5/accordion.js": "sha256-HhA8GfR6QLfriDoWshT7dkapO+/U6Okc4uEKICWNXGg=",
+    "vendor/primevue@4.5.5/accordionpanel.js": "sha256-1hwkE45EFv39W7S5khEzDwjS7J5XM4OcgH5VVoEVHTA=",
+    "vendor/primevue@4.5.5/accordionheader.js": "sha256-aI2z/LnYruOL+xEIY8WFGaCpV+Xy+dnAZO0P21lD43E=",
+    "vendor/primevue@4.5.5/accordioncontent.js": "sha256-MI2T59LRNnlAm51bt/XImDy/cDNcob0Ct08x4Lq0x+s=",
+    "vendor/primevue@4.5.5/chip.js": "sha256-SFPggMfGzL9uz/DgMLb+i/9QUs+Vlcpe/Xuo/fOwqHY=",
+    "vendor/primevue@4.5.5/textarea.js": "sha256-xMpNSLJ8fABIhWCQ5L6DasWIClWy4/eSBY+Q6vKXG2I=",
+    "vendor/primevue@4.5.5/toggleswitch.js": "sha256-O9Xk7wOGI5fqiDjs3qhGVTIpXregvpD/4tK8ygYt7I8=",
+    "vendor/primevue@4.5.5/radiobutton.js": "sha256-0nPUbw3tfkur6zlmWAjjmj9aVKhSiJ2JBSaKwvgMl68=",
+    "vendor/primevue@4.5.5/inputnumber.js": "sha256-Df2ecZB4fhYkiwQbfjbQCzXsQfeecV7h45hjZgxZAW4=",
+    "vendor/primevue@4.5.5/datepicker.js": "sha256-Uo0ZywDb5msHEW+NwUJOu/Q7yrK6H/deP95j/djVhxI=",
+    "vendor/primevue@4.5.5/listbox.js": "sha256-INSwHU23A2YabE3ZuHBTyVc3Mz0gcTBqMcHPcki4RoE=",
+    "vendor/primevue@4.5.5/panel.js": "sha256-2IoY9is7yOiJ9I/+GwHCoN3JkhXS8hZh5n0prThbIuw=",
+    "vendor/primevue@4.5.5/card.js": "sha256-UY6hAZB464VavzHiKij+ye6SMAXD5CSTyFbhUPzYL3c=",
+    "vendor/primevue@4.5.5/toolbar.js": "sha256-ojD9hUWmXhd7qxAZc/rpHtMkuDRmuqM1LLxKmBRIIh4=",
+    "vendor/primevue@4.5.5/message.js": "sha256-2thyCsiq3ETFvAevByO+j4tiD7s7TmPBsruMJ781Ls4=",
+    "vendor/primevue@4.5.5/badge.js": "sha256-5vGGzgbqWdJbR0TTyj46ymhA3Oiikue90xIZNym/q20=",
+    "vendor/primevue@4.5.5/divider.js": "sha256-VTLcVusTagRWibAYCs+QpWwogZX3l3CQD9miDq93KFE=",
+    "vendor/axios@1.20.0/index.js": "sha256-2b6ZPf38Ci2LbHm8OAX2NNaNlzy4H8y96sGckLfhAQQ=",
+    "vendor/nanoevents@9.1.0/index.js": "sha256-UdpQ6kgyzm5QravgXxRU3opZ2kjW9UIlhmgXAV4hMGM=",
+    "app.js": "sha256-6y78mqg/F/JeNlSWo/5QtygZvVLcX3LBUG7708Yz8HE=",
+    "assets/index-D1vSOEmb.js": "sha256-r9MSrkO2mBzcfCR6FN7seqToEPHCee17Nj6WAMxyePs=",
+    "assets/index-BxWdXs-5.js": "sha256-XW3iKNVEe5DOdqHlf1mSerMvjOfpu+Ve7raCmQafOVQ=",
+    "assets/index-9LTxh96p.js": "sha256-1n8TxvZoLiJW28cyQFVLcI6kruh6SRqXzgomq9+iszU=",
+    "assets/index-BRIBt8_1.js": "sha256-u+MtZnZ6sFnY+7bqyqeHiGsTRlwNfvrGdb7hrvqE6xU=",
+    "assets/index-ZiFZ6rf9.js": "sha256-Ne+Ku6aKdRNTuY/RrZcbc/VYvwyq8OMXL1ncbDWl/SI=",
+    "assets/index-DmTHcoVQ.js": "sha256-zrugUymkqetLjcB7UR0w3btFXNw5cLZKJb7fwE3YqD0=",
+    "assets/index-DJWrREMT.js": "sha256-6nmI0SaokMgQxUyZg5b4fWicY7fTzZhS2/iDZswTchE=",
+    "assets/index-W9Pk6zFl.js": "sha256-GvJ9UZtj9zAzicFQKMb111/E/Q4XM7rLa0uGQ2lrf8M=",
+    "assets/index-Bx5k58hA.js": "sha256-6rREjGDz96pNothBX3DMgyu81NyctZzuPeFrE/xmtIo=",
+    "assets/index-CfLAG1JL.js": "sha256-xhNYwu5Oz2rZqMg6uqBrBNj6HPY4RZEiqPoHmfGjJqo=",
+    "assets/index-Dw4gIfUi.js": "sha256-EoLpUDcUelvD+ZEZa81zADuSfBdR/3w5y42OyqYyd3k=",
+    "assets/index-CLs7nh7g.js": "sha256-oMUjANBk9YRFbd87kRa6v/0S5hjK3zj+nkLfzlAuAC4=",
+    "assets/index-Diis60gH.js": "sha256-L+vslUTr9dVIMNOdXmY4/mtonyVY6w5q3afZEsIki50=",
+    "assets/index-he6uyOs9.js": "sha256-inTNt9GWCBge8pgov/Lj5/cK19Hte9DiWYEM3ysAPyE=",
+    "assets/index-DUH9qg1f.js": "sha256-o4xxFiVid/JZrnlyiN7qWksl9l+wJUWQx1CysC7Xawk=",
+    "assets/index-BspojqFd.js": "sha256-YJfWGDbEd6bU/slSQjSIc9AHmX07GDJb1ChnJ2Jmedo=",
+    "assets/index-BdubFIrx.js": "sha256-dMLA/3OyX40M3cewUrTRqhaZIjaKXBEzRwWqNaTOt/k=",
+    "assets/index-DDXdxOiJ.js": "sha256-D/l/FNIvkO2GgrHhLE86LlBEboAkAWl27YpA28q8uTQ=",
+    "assets/index-baoEhc9I.js": "sha256-BZGQIC4CF9HNAUg9bnFzugqvF9K3M2ylGPpR+y0iSfo=",
+    "assets/index-DfuZ80BP.js": "sha256-S2NLxmhTtY1CeDHh+1CJZU3pYcYBTyipBXYp2Ehpq+A=",
+    "assets/index-ZhWAdK_X.js": "sha256-+bKz7ApPu9NcGr7fyMZxqWz+vq6uO4jNKmyHlxor5yc=",
+    "assets/index-C9Ot20_D.js": "sha256-TUr75l0aUfaKq2V50oppotqlR0itWAojE8gY3kVYpsU=",
+    "assets/index-DsSd_yBo.js": "sha256-Efv9Xd7//zZMbtj5o+vRDDpGE7tjJx3mXdNpx7pMDPg=",
+    "assets/index-XkW3JamT.js": "sha256-B3lpueoLviLRDmxN2BMusdZVtCCOa7WHiBCA+L8wW4A=",
+    "assets/index-DN-tYhB1.js": "sha256-0yR4oNRpVtxLbFAjL+0GAVfRxkzAW4oAHJHQB34jt6E=",
+    "assets/system-j8F0PEMk.js": "sha256-36jgrWGLxS8ziImVLZIEgpsMmAWD0/GMCHNdG90Gcoo=",
+    "wippy-meta.json": "sha256-7ot9pyl6J8Tqnl4ujPed0r4N7wnd+9aJrWjb1Zx775Y=",
+    "style-D45373cy.css": "sha256-Jm5nLcd9n+KKy/ckee9yFKsf+r9+wVTC5ZcUn6s2tow=",
+    "app.html": "sha256-zFZPyZuyHyg7Uwn0giQjKE1y387RVpqimqfcDulI68I=",
+    "vendor/licenses/@fontsource-variable/inter@5.3.0/LICENSE": "sha256-Owpfyj0XlCzeiJBpiJ3tu70HXptZmWjIKpX02UTps0U=",
+    "vendor/licenses/@fontsource-variable/outfit@5.3.0/LICENSE": "sha256-Dl/O9dk7/K4nPBHADwu0U9O1SRhg4ayLZYdnt1d8k48=",
+    "vendor/licenses/@fontsource-variable/jetbrains-mono@5.3.0/LICENSE": "sha256-QDWBtp2sXP9AeSBeAca0Z+Vq9EnsvXJHaT3bG6r6AFs=",
+    "vendor/licenses/vue@3.5.42/LICENSE": "sha256-G7hcybE7ge9ByBxRhmFy/DReBQPIZyamdVt5ZZC3AXU=",
+    "vendor/licenses/@vue/runtime-dom@3.5.42/LICENSE": "sha256-G7hcybE7ge9ByBxRhmFy/DReBQPIZyamdVt5ZZC3AXU=",
+    "vendor/licenses/pinia@2.3.1/LICENSE": "sha256-kaKEXE20TnSXtRS5hjSmdMc3mGrQ24FZkwfPczv4ULI=",
+    "vendor/licenses/vue-router@4.6.4/LICENSE": "sha256-kaKEXE20TnSXtRS5hjSmdMc3mGrQ24FZkwfPczv4ULI=",
+    "vendor/licenses/luxon@3.7.2/LICENSE.md": "sha256-bLLyv2l+6cb6nrjyJ8Y+5uejy6QtRxfxTHRe+bbLwAY=",
+    "vendor/licenses/@iconify/vue@5.0.1/license.txt": "sha256-fO9QpEd9zR8OoDbTxwMUMIUeohIo5lZYxshKV3VOG2U=",
+    "vendor/licenses/primevue@4.5.5/LICENSE.md": "sha256-OaLOjXWc/LWezMSbCkF61clD+WDBvN+6RyDKdUcCmvc=",
+    "vendor/licenses/axios@1.20.0/LICENSE": "sha256-gnYQWertrLM1aAOuqKFw2CmGCfkbFPwy7hv7QNaQGDw=",
+    "vendor/licenses/@primevue/core@4.5.5/LICENSE.md": "sha256-OaLOjXWc/LWezMSbCkF61clD+WDBvN+6RyDKdUcCmvc=",
+    "vendor/licenses/@primeuix/utils@0.6.4/LICENSE": "sha256-xucM5BT22V1EAB7Li21bZrtJkNuFgp6mvotRVJGVrTE=",
+    "vendor/licenses/@primevue/icons@4.5.5/LICENSE.md": "sha256-OaLOjXWc/LWezMSbCkF61clD+WDBvN+6RyDKdUcCmvc=",
+    "vendor/licenses/nanoevents@9.1.0/LICENSE": "sha256-8grbeukr+3/eUnkYOf8XFFZLTqYKTNAx13IIpSFZKk4=",
+    "vendor/licenses/vue-demi@0.14.10/LICENSE": "sha256-JbD/WogPkwQ0G6PqOIQpcjUSVvX+Hd7TOVuhtGSoyk4=",
+    "vendor/licenses/@vue/runtime-core@3.5.42/LICENSE": "sha256-G7hcybE7ge9ByBxRhmFy/DReBQPIZyamdVt5ZZC3AXU=",
+    "vendor/licenses/@vue/shared@3.5.42/LICENSE": "sha256-G7hcybE7ge9ByBxRhmFy/DReBQPIZyamdVt5ZZC3AXU=",
+    "vendor/licenses/@primeuix/styled@0.7.4/LICENSE": "sha256-xucM5BT22V1EAB7Li21bZrtJkNuFgp6mvotRVJGVrTE=",
+    "vendor/licenses/@primeuix/styles@2.0.3/LICENSE": "sha256-xucM5BT22V1EAB7Li21bZrtJkNuFgp6mvotRVJGVrTE=",
+    "vendor/licenses/@vue/reactivity@3.5.42/LICENSE": "sha256-G7hcybE7ge9ByBxRhmFy/DReBQPIZyamdVt5ZZC3AXU="
+  }
+}

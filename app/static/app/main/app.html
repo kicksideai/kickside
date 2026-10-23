@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script type="importmap" id="kickside-shell-import-map">{
+  "imports": {
+    "@wippy-fe/proxy": "/app/app/main/vendor/@wippy-fe/proxy@0.0.60/index.js",
+    "vue": "/app/app/main/vendor/vue@3.5.42/index.js",
+    "pinia": "/app/app/main/vendor/pinia@2.3.1/index.js",
+    "vue-router": "/app/app/main/vendor/vue-router@4.6.4/index.js",
+    "luxon": "/app/app/main/vendor/luxon@3.7.2/index.js",
+    "@iconify/vue": "/app/app/main/vendor/@iconify/vue@5.0.1/index.js",
+    "primevue/config": "/app/app/main/vendor/primevue@4.5.5/config.js",
+    "primevue/button": "/app/app/main/vendor/primevue@4.5.5/button.js",
+    "primevue/tag": "/app/app/main/vendor/primevue@4.5.5/tag.js",
+    "primevue/dialog": "/app/app/main/vendor/primevue@4.5.5/dialog.js",
+    "primevue/checkbox": "/app/app/main/vendor/primevue@4.5.5/checkbox.js",
+    "primevue/inputtext": "/app/app/main/vendor/primevue@4.5.5/inputtext.js",
+    "primevue/password": "/app/app/main/vendor/primevue@4.5.5/password.js",
+    "primevue/select": "/app/app/main/vendor/primevue@4.5.5/select.js",
+    "primevue/datatable": "/app/app/main/vendor/primevue@4.5.5/datatable.js",
+    "primevue/column": "/app/app/main/vendor/primevue@4.5.5/column.js",
+    "primevue/avatar": "/app/app/main/vendor/primevue@4.5.5/avatar.js",
+    "primevue/accordion": "/app/app/main/vendor/primevue@4.5.5/accordion.js",
+    "primevue/accordionpanel": "/app/app/main/vendor/primevue@4.5.5/accordionpanel.js",
+    "primevue/accordionheader": "/app/app/main/vendor/primevue@4.5.5/accordionheader.js",
+    "primevue/accordioncontent": "/app/app/main/vendor/primevue@4.5.5/accordioncontent.js",
+    "primevue/chip": "/app/app/main/vendor/primevue@4.5.5/chip.js",
+    "primevue/textarea": "/app/app/main/vendor/primevue@4.5.5/textarea.js",
+    "primevue/toggleswitch": "/app/app/main/vendor/primevue@4.5.5/toggleswitch.js",
+    "primevue/radiobutton": "/app/app/main/vendor/primevue@4.5.5/radiobutton.js",
+    "primevue/inputnumber": "/app/app/main/vendor/primevue@4.5.5/inputnumber.js",
+    "primevue/datepicker": "/app/app/main/vendor/primevue@4.5.5/datepicker.js",
+    "primevue/listbox": "/app/app/main/vendor/primevue@4.5.5/listbox.js",
+    "primevue/panel": "/app/app/main/vendor/primevue@4.5.5/panel.js",
+    "primevue/card": "/app/app/main/vendor/primevue@4.5.5/card.js",
+    "primevue/toolbar": "/app/app/main/vendor/primevue@4.5.5/toolbar.js",
+    "primevue/message": "/app/app/main/vendor/primevue@4.5.5/message.js",
+    "primevue/badge": "/app/app/main/vendor/primevue@4.5.5/badge.js",
+    "primevue/divider": "/app/app/main/vendor/primevue@4.5.5/divider.js",
+    "axios": "/app/app/main/vendor/axios@1.20.0/index.js",
+    "nanoevents": "/app/app/main/vendor/nanoevents@9.1.0/index.js"
+  },
+  "scopes": {
+    "/app/app/main/": {
+      "@wippy-fe/proxy": "/app/app/main/vendor/@wippy-fe/proxy@0.0.60/index.js",
+      "vue": "/app/app/main/vendor/vue@3.5.42/index.js",
+      "pinia": "/app/app/main/vendor/pinia@2.3.1/index.js",
+      "vue-router": "/app/app/main/vendor/vue-router@4.6.4/index.js",
+      "luxon": "/app/app/main/vendor/luxon@3.7.2/index.js",
+      "@iconify/vue": "/app/app/main/vendor/@iconify/vue@5.0.1/index.js",
+      "primevue/config": "/app/app/main/vendor/primevue@4.5.5/config.js",
+      "primevue/button": "/app/app/main/vendor/primevue@4.5.5/button.js",
+      "primevue/tag": "/app/app/main/vendor/primevue@4.5.5/tag.js",
+      "primevue/dialog": "/app/app/main/vendor/primevue@4.5.5/dialog.js",
+      "primevue/checkbox": "/app/app/main/vendor/primevue@4.5.5/checkbox.js",
+      "primevue/inputtext": "/app/app/main/vendor/primevue@4.5.5/inputtext.js",
+      "primevue/password": "/app/app/main/vendor/primevue@4.5.5/password.js",
+      "primevue/select": "/app/app/main/vendor/primevue@4.5.5/select.js",
+      "primevue/datatable": "/app/app/main/vendor/primevue@4.5.5/datatable.js",
+      "primevue/column": "/app/app/main/vendor/primevue@4.5.5/column.js",
+      "primevue/avatar": "/app/app/main/vendor/primevue@4.5.5/avatar.js",
+      "primevue/accordion": "/app/app/main/vendor/primevue@4.5.5/accordion.js",
+      "primevue/accordionpanel": "/app/app/main/vendor/primevue@4.5.5/accordionpanel.js",
+      "primevue/accordionheader": "/app/app/main/vendor/primevue@4.5.5/accordionheader.js",
+      "primevue/accordioncontent": "/app/app/main/vendor/primevue@4.5.5/accordioncontent.js",
+      "primevue/chip": "/app/app/main/vendor/primevue@4.5.5/chip.js",
+      "primevue/textarea": "/app/app/main/vendor/primevue@4.5.5/textarea.js",
+      "primevue/toggleswitch": "/app/app/main/vendor/primevue@4.5.5/toggleswitch.js",
+      "primevue/radiobutton": "/app/app/main/vendor/primevue@4.5.5/radiobutton.js",
+      "primevue/inputnumber": "/app/app/main/vendor/primevue@4.5.5/inputnumber.js",
+      "primevue/datepicker": "/app/app/main/vendor/primevue@4.5.5/datepicker.js",
+      "primevue/listbox": "/app/app/main/vendor/primevue@4.5.5/listbox.js",
+      "primevue/panel": "/app/app/main/vendor/primevue@4.5.5/panel.js",
+      "primevue/card": "/app/app/main/vendor/primevue@4.5.5/card.js",
+      "primevue/toolbar": "/app/app/main/vendor/primevue@4.5.5/toolbar.js",
+      "primevue/message": "/app/app/main/vendor/primevue@4.5.5/message.js",
+      "primevue/badge": "/app/app/main/vendor/primevue@4.5.5/badge.js",
+      "primevue/divider": "/app/app/main/vendor/primevue@4.5.5/divider.js",
+      "axios": "/app/app/main/vendor/axios@1.20.0/index.js",
+      "nanoevents": "/app/app/main/vendor/nanoevents@9.1.0/index.js"
+    }
+  }
+}</script>
+    <script type="application/json" data-role="@wippy/package">{"name":"@wippy/app-main","version":"1.0.0","specification":"wippy-component-1.0","title":"KickSide","description":"KickSide application shell","files":["dist/","src/","package.json"],"browser":"dist/app.js","wippy":{"type":"page","renderEngine":"iframe","title":"KickSide","icon":"tabler:home","path":"dist/app.html","proxy":{"enabled":true,"injections":{"css":{"themeConfig":true,"iframe":true,"primevue":true,"markdown":false,"customCss":true,"customVariables":true},"tailwindConfig":false,"resizeObserver":false,"preventLinkClicks":false,"iconifyIcons":false,"errorCapture":true}},"scripts":{"build":"build","debug":"build:debug"}},"scripts":{"build":"vite build","build:debug":"vite build --mode development","dev":"vite build --watch","type-check":"vue-tsc --build --force"},"dependencies":{"@kickside/ui-kit":"*","@iconify-json/tabler":"*","@wippy-fe/layout":"*","@wippy-fe/router":"*","@wippy-fe/shared":"*","@wippy-fe/theme":"*","@fontsource-variable/inter":"*","@fontsource-variable/outfit":"*","@fontsource-variable/jetbrains-mono":"*"},"devDependencies":{"@vitejs/plugin-vue":"^5.0.0","@vue/test-utils":"^2.4.11","@wippy-fe/types-global-proxy":"*","@wippy-fe/vite-plugin":"*","autoprefixer":"^10.4.0","es-module-lexer":"*","happy-dom":"^20.10.6","postcss":"^8.4.0","primevue":"4.5.5","tailwindcss":"3","typescript":"^5.0.0","vite":"^6.0.0","vitest":"^4.1.8","vue":"^3.5.0","vue-router":"^4.6.4","vue-tsc":"^3.3.8","yaml":"*"},"peerDependencies":{"@iconify/vue":"^5.0.0","@wippy-fe/proxy":"*","axios":"^1.0.0","luxon":"^3.5.0","pinia":"^2.1.0","primevue":"^4.3.3","vue":"^3.5.0","vue-router":"^4.0.0"},"workspaces":["./.wippy/npm/@*/*"]}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KickSide</title>
+
+    <script data-role="@wippy/scripts"></script>
+    
+  <script type="module" crossorigin src="./app.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/index-DUH9qg1f.js">
+  <link rel="modulepreload" crossorigin href="./assets/index-Diis60gH.js">
+  <link rel="stylesheet" crossorigin href="./style-D45373cy.css">
+</head>
+<body>
+    <div id="app">
+        <wippy-loading title="Loading..."></wippy-loading>
+    </div>
+</body>
+</html>

@@ -3,7 +3,6 @@ wippy.lock
 .env
 .idea/
 node_modules/
-static/app/
 static/wc/
 frontend/**/dist/
 *.wapp

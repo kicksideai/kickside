@@ -6,6 +6,7 @@ WIPPY ?= wippy
 .PHONY: build dev lint install-deps refresh-deps build-app-main build-facade-css publish
 
 build: build-app-main build-facade-css
+	node scripts/check-app-bundle.mjs
 
 # Facade CSS assembler: concatenates facade-src/{custom,children}/*.css into
 # static/*.facade.generated.css (committed and checked for generated-source drift).
