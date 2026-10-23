@@ -146,6 +146,7 @@ local function define_tests()
     test.describe("thread_ingest identity", function()
         for _, case in ipairs({
             { name = "small inline text", content = string.rep("a", 1024), omitted = false },
+            { name = "previously supported inline text", content = string.rep("a", 3584 * 1024), omitted = false },
             { name = "text above the event row bound", content = string.rep("a", 5 * 1024 * 1024), omitted = true },
             { name = "text above the bound after JSON escaping", content = string.rep("\0", 800 * 1024), omitted = true },
         }) do
@@ -195,7 +196,7 @@ local function define_tests()
                     test.is_true(errors.is(changed_err,errors.CONFLICT))
                     test.eq(body.content_bytes, #case.content)
                 else
-                    test.eq(body.content, case.content)
+                    test.eq(body.content == case.content, true, "inline event must retain complete submitted content")
                     test.is_nil(body.content_omitted)
                     test.is_nil(body.content_bytes)
                     local keys = {}

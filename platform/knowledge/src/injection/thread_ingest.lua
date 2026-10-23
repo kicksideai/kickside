@@ -48,8 +48,6 @@ local projection_cursor = status.projection_cursor
 local status_result = status.status_result
 local load_status = status.load_status
 local emit_event = status.emit_event
--- Leave room below Core's 4 MiB row bound for metadata and row identities.
-local INLINE_CONTENT_BUDGET = 3 * 1024 * 1024
 
 function M.request_digest(kb_id: string): (any?, any?)
     local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
@@ -350,25 +348,7 @@ function M.append_content(kb_id, params)
         source_ref = source_ref,
         actor_id = actor_id,
     }
-    -- JSON can expand one input byte to six bytes. Small inputs need no
-    -- additional serialization or artifact checks to establish that they fit.
-    if #content * 6 + 2 > INLINE_CONTENT_BUDGET
-        and trim(source_ref.upload_id) ~= "" and trim(source_ref.artifact_id) ~= "" then
-        local omitted = #content > INLINE_CONTENT_BUDGET
-        if not omitted then
-            local encoded, encode_err = json.encode(content)
-            if encode_err then return nil, encode_err end
-            omitted = #encoded > INLINE_CONTENT_BUDGET
-        end
-        if omitted then
-            body.content = nil
-            body.content_omitted = true
-            body.content_bytes = #content
-            body.content_sha256 = content_sha(content)
-            if not body.content_sha256 then return nil, "failed to hash omitted artifact content" end
-        end
-    end
-    local appended, append_err = emit_event(exec, kb_id, {
+    local event = {
         type = M.EVENT_CONTENT_UPSERTED,
         role = "system",
         body = body,
@@ -378,7 +358,24 @@ function M.append_content(kb_id, params)
             external_version = external_version,
         },
         trace_context = event_trace,
-    })
+    }
+    local appended, append_err = emit_event(exec, kb_id, event)
+    -- Preserve every previously accepted inline event. Core owns the row limit:
+    -- only its typed, rolled-back size refusal permits an artifact-only retry.
+    -- Infrastructure/access errors must never change the stored representation.
+    if append_err and errors.is(append_err, errors.INVALID)
+        and trim(source_ref.upload_id) ~= "" and trim(source_ref.artifact_id) ~= "" then
+        local details = append_err:details()
+        if type(details) == "table" and details.reason == "row_too_large"
+            and details.operation == "append_events" and details.scope == kb_id then
+            body.content = nil
+            body.content_omitted = true
+            body.content_bytes = #content
+            body.content_sha256 = content_sha(content)
+            if not body.content_sha256 then return nil, "failed to hash omitted artifact content" end
+            appended, append_err = emit_event(exec, kb_id, event)
+        end
+    end
     if append_err then return nil, append_err end
 
     local cursor = projection_cursor(projection)
