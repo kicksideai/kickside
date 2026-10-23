@@ -91,7 +91,7 @@ end
 
 local function define_tests(): ()
     test.describe("automation declaration writer authority", function()
-        local opaque_schema = { type = "object", properties = {
+        local opaque_schema = { properties = {
             title = { type = "string" },
             behavior = { type = "object", properties = {
                 target = { type = "string", ["x-authority"] = "subject" },

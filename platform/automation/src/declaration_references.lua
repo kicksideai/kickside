@@ -12,6 +12,64 @@ local function invalid(message: string): error
         details = { error_kind = "declaration" } }) :: error)
 end
 
+-- The engine supports properties and homogeneous array items, not JSON Schema
+-- composition/ref evaluation. Refuse protected annotations in other schema
+-- positions rather than silently treating them as unprotected data.
+local SCHEMA_MAPS = { patternProperties = true, definitions = true, ["$defs"] = true,
+    dependentSchemas = true }
+local SCHEMA_LISTS = { allOf = true, anyOf = true, oneOf = true, prefixItems = true }
+local SCHEMA_SINGLE = { additionalProperties = true, unevaluatedProperties = true,
+    additionalItems = true, unevaluatedItems = true, contains = true,
+    propertyNames = true, ["not"] = true, ["if"] = true, ["then"] = true,
+    ["else"] = true, contentSchema = true }
+
+local function annotation_schema(schema: any, supported: boolean, path: string,
+    active: { [any]: boolean }, depth: integer): error?
+    if type(schema) ~= "table" then return nil end
+    if depth > canonical_json.MAX_DEPTH or active[schema] then
+        return invalid("cyclic or excessively nested reference schema at " .. path)
+    end
+    if schema["x-authority"] ~= nil and schema["x-authority"] ~= "subject" then
+        return invalid("invalid x-authority at " .. path)
+    end
+    if not supported and (schema["x-authority"] ~= nil or schema["x-reference"] ~= nil) then
+        return invalid("protected annotation in unsupported schema position at " .. path)
+    end
+    active[schema] = true
+    for key, value in pairs(schema) do
+        if key == "properties" or SCHEMA_MAPS[key] or SCHEMA_LISTS[key] then
+            if type(value) == "table" then
+                local child_supported = supported and key == "properties"
+                    and (schema.type == nil or schema.type == "object")
+                for name, child in pairs(value) do
+                    local err = annotation_schema(child, child_supported,
+                        path .. "." .. tostring(key) .. "." .. tostring(name), active, depth + 1)
+                    if err then active[schema] = nil; return err end
+                end
+            elseif key == "properties" then
+                active[schema] = nil
+                return invalid("invalid properties at " .. path)
+            end
+        elseif key == "items" then
+            local child_supported = supported and schema.type == "array"
+            if type(value) == "table" and #(value :: { any }) > 0 then
+                for index, child in ipairs(value :: { any }) do
+                    local err = annotation_schema(child, false, path .. ".items[" .. tostring(index) .. "]", active, depth + 1)
+                    if err then active[schema] = nil; return err end
+                end
+            else
+                local err = annotation_schema(value, child_supported, path .. ".items", active, depth + 1)
+                if err then active[schema] = nil; return err end
+            end
+        elseif SCHEMA_SINGLE[key] then
+            local err = annotation_schema(value, false, path .. "." .. tostring(key), active, depth + 1)
+            if err then active[schema] = nil; return err end
+        end
+    end
+    active[schema] = nil
+    return nil
+end
+
 local function walk(schema: any, value: any, path: string, result: { any }): error?
     if type(schema) ~= "table" then return invalid("invalid reference schema at " .. path) end
     local annotation = schema["x-reference"]
@@ -52,7 +110,7 @@ local function walk(schema: any, value: any, path: string, result: { any }): err
                 if err then return err end
             end
         end
-    elseif schema.type == "object" then
+    elseif schema.type == "object" or (schema.type == nil and schema.properties ~= nil) then
         if value ~= nil and type(value) ~= "table" then return invalid("reference object expected at " .. path) end
         local properties = schema.properties
         if properties ~= nil then
@@ -91,7 +149,7 @@ local function authority_change(schema: any, previous: any, current: any, path: 
         if before ~= after then return path, nil end
         return nil, nil
     end
-    if schema.type == "object" then
+    if schema.type == "object" or (schema.type == nil and schema.properties ~= nil) then
         for name, child in pairs(schema.properties or {}) do
             local changed, err = authority_change(child, field(previous, name), field(current, name),
                 path == "" and name or path .. "." .. name)
@@ -112,6 +170,8 @@ end
 -- Both admission and the trusted writer enforce the same schema policy.
 function M.validate_edit(schema: any, previous: any, current: any, operator_id: string, subject_id: string): error?
     if operator_id == subject_id then return nil end
+    local schema_err = annotation_schema(schema, true, "input", {}, 1)
+    if schema_err then return schema_err end
     local changed, err = authority_change(schema, previous, current, "")
     if err then return err end
     if changed then
@@ -126,6 +186,8 @@ function M.collect(schema: any, declaration: any): ({ any }?, error?)
     -- A kind without an input schema declares no authority-bearing fields.
     if schema == nil then return {}, nil end
     if type(schema) ~= "table" then return nil, invalid("kind input schema must be an object") end
+    local schema_err = annotation_schema(schema, true, "input", {}, 1)
+    if schema_err then return nil, schema_err end
     local result: { any } = {}
     local err = walk(schema, declaration, "", result)
     if err then return nil, err end

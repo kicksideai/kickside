@@ -78,7 +78,11 @@ generation.
 Kind input schemas can mark a field with `x-authority: subject`. Only the
 execution subject can change that field, including adding or removing it.
 The annotation applies to the whole value of an object or array; nested
-properties and array item schemas can also carry it. For example:
+properties (including object schemas without an explicit `type`) and
+homogeneous array item schemas can also carry it. Protected annotations under
+unsupported composition, references, tuple items or dynamic property schemas
+are rejected rather than silently ignored. Schema traversal rejects cycles and
+nesting beyond the canonical JSON limit. For example:
 
 ```yaml
 inputs:

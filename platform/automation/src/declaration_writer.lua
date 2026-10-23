@@ -148,7 +148,6 @@ local function verify(request: any): (any?, error?)
         if context_err then return nil, context_err end
         if not context then return nil, invalid("automation declaration context is unavailable") end
         previous_declaration = type(context._portable_input) == "table" and context._portable_input or {}
-
         operator_refs[#operator_refs + 1] = { kind = "component", id = pending.automation_id, access = "WRITE" }
     end
     local operator_valid, operator_err = authority.check(input.operator_identity,
