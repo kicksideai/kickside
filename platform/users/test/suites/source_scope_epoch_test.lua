@@ -10,6 +10,7 @@ local session = require("session")
 local session_index = require("session_index")
 local scope_store = require("scope_store")
 local trigger_reconcile = require("trigger_reconcile")
+local funcs = require("funcs")
 
 local function define_tests()
     test.describe("source policy session authority", function()
@@ -45,6 +46,24 @@ local function define_tests()
             if parent_declaration then changes:delete(parent_declaration) end
             test.is_nil(select(2, changes:apply()))
             assert(trigger_reconcile.trigger())
+        end)
+
+        test.it("maps the internal scope descriptor to Runtime's subject authority contract", function()
+            local request = {subject_id = uid, authority_only = true}
+            local internal, lookup_err = funcs.call("kickside.users.binding:subject_lookup", request)
+            test.is_nil(lookup_err)
+            test.eq(internal.groups[1], group)
+            test.eq(internal.scope_policy_ids[1], source)
+            test.is_nil(internal.policies)
+
+            local credential, credential_err = funcs.call("kickside.users.binding:credential_subject_lookup", request)
+            test.is_nil(credential_err)
+            test.eq(credential.subject_id, uid)
+            test.eq(#credential.groups, 0)
+            test.eq(#credential.policies, 1)
+            test.eq(credential.policies[1], source)
+            test.eq(credential.authority_epochs["kickside.users:" .. uid],
+                internal.authority_epochs["kickside.users:" .. uid])
         end)
 
         test.it("mints custom sessions with source policy references", function()

@@ -83,7 +83,10 @@ function M.lookup_credential(args: any): (any?, error?)
     end
     local result = M.lookup(args)
     if result.success ~= false then
+        -- Runtime's trusted subject lookup consumes groups and policies.
+        -- Keep the scope descriptor used by KickSide's resolver separate.
         result.groups = result.scope_groups
+        result.policies = result.scope_policy_ids
     end
     return result, nil
 end

@@ -397,7 +397,7 @@ entries:
       actor: { id: app:test_runner }
       policies: [app:test_runtime]
     method: run
-    modules: [registry, security]
+    modules: [registry, security, funcs]
     imports:
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_store: kickside.security.persist:scope_store
