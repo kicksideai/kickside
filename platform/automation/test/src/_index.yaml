@@ -304,11 +304,8 @@ entries:
   - name: drive_repair
     kind: library.lua
     source: file://drive_repair_source.lua
-    modules: [json, sql, time]
     imports:
-      migration_repository: wippy.migration:repository
-      jobs: kickside.core.jobs:jobs
-      slot: kickside.automation:slot
+      repair: kickside.automation.migrations:stranded_drives
 
 
   - name: drive_repair_test
@@ -369,9 +366,15 @@ entries:
   - name: drive_repair_race_subject
     kind: library.lua
     source: file://drive_repair_source.lua
-    modules: [sql, json, time]
     imports:
-      migration_repository: wippy.migration:repository
+      repair: app:drive_repair_race_definition
+
+  - name: drive_repair_race_definition
+    kind: library.lua
+    source: file://drive_repair_definition_source.lua
+    modules: [sql, json]
+    imports:
+      migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: app:drive_repair_slot_boundary
 
@@ -399,3 +402,24 @@ entries:
     imports:
       types: kickside.automation:types
       jobs_config: kickside.core.jobs:config
+
+  - name: drive_repair_forward
+    kind: library.lua
+    source: file://drive_repair_forward_source.lua
+    imports:
+      repair: app:drive_repair_race_definition
+
+  - name: drive_repair_forward_test
+    kind: function.lua
+    meta: {type: test, suite: drive_repair_forward}
+    source: file://drive_repair_forward_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      repair: app:drive_repair
+      forward: app:drive_repair_forward
+      boundary: app:drive_repair_slot_boundary
+      cleanup: app:drive_repair_cleanup
+      drive: kickside.automation:drive
+      types: kickside.automation:types
