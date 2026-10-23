@@ -1,9 +1,10 @@
-"""Live lifecycle reductions precede an already admitted Agent's tool response."""
+"""Admitted Agent invocations finish; new invocations resolve current authority."""
 import json
 import threading
 import uuid
 
 from harness import Scenario, require
+from module_harness import run_focused_module_test
 from runtime_fixtures import isolated_fixture
 from scenarios_agent_background import _fixture, _effects
 from scenarios_core import system
@@ -155,34 +156,48 @@ def _held_agent(ctx, reduction):
         def settled():
             effects = _effects(inst, fixture)
             requests = [row for row in ctx.fixtures.requests('openai-tools') if row['path'] == '/v1/chat/completions']
-            if reduction == 'disable':
-                require(len(requests) <= 1, 'A disabled admitted Agent issues a subsequent model provider request')
-            if reduction not in ('control', 'adopt'):
-                require(not effects, 'An admitted Agent performs a tool effect after live bot ' + reduction)
+            require(len(effects) <= 1 and len(requests) <= 2, 'One admitted Agent invocation duplicates its effect or model turns')
             drive = _drive(inst, root)
-            return {'effects': effects, 'model_requests': requests, 'drive': drive} if len(requests) >= 2 or drive['phase'].startswith('blocked_') else None
-        result = inst.wait(settled, 'Held Agent reaches its post-response tool or refused execution boundary', seconds=60,
+            return {'effects': effects, 'model_requests': requests, 'drive': drive} if (len(requests) == 2
+                and drive['last_committed_occurrence_seq'] == 1) else None
+        result = inst.wait(settled, 'Already admitted Agent invocation commits once under its original frame', seconds=60,
                            pump=browser.page.wait_for_timeout)
-        if reduction in ('control', 'adopt'):
-            require(len(result['effects']) == 1 and result['effects'][0]['actor_id'] == fixture['bot']
-                    and json.loads(result['effects'][0]['identity_json']) == identity, 'Unchanged held control has no exact native bot effect')
-        else:
-            require(not _effects(inst, fixture), 'Reduced held Agent retains an effect')
-            tool_results = [value for request in result['model_requests'] for value in request['body']['messages'] if value.get('role') == 'tool']
-            require(result['drive']['phase'].startswith('blocked_') or (tool_results and all('"success":true' not in value.get('content', '') for value in tool_results)),
-                    'Reduced held Agent has no explicit execution or tool refusal')
-        if reduction == 'disable':
-            require(len(result['model_requests']) == 1 and result['drive']['phase'].startswith('blocked_'),
-                    'Disabled held execution does not block before another provider call')
+        require(len(result['effects']) == 1 and result['effects'][0]['actor_id'] == fixture['bot']
+                and json.loads(result['effects'][0]['identity_json']) == identity,
+                'Admitted Agent invocation changes its original bot identity or effect')
+        require(any(value.get('role') == 'tool' for value in result['model_requests'][1]['body']['messages']),
+                'Admitted Agent invocation bypasses its native model/tool continuation')
         require(_identity(inst, root) == expected_identity, 'Live lifecycle transition rewrites the canonical identity or generation')
         audits = database_rows(inst, "SELECT identity_generation,record_json FROM kickside_execution_identity_audit WHERE component_id='" + root + "' ORDER BY identity_generation")
         generations = [0, 1, 2] if reduction == 'adopt' else [0, 1]
         require(len(audits) == len(generations) and [int(value['identity_generation']) for value in audits] == generations,
                 'Held transition rewrites or duplicates the identity audit')
+        if reduction in ('disable', 'groups'):
+            # The first invocation owns its admitted frame. A later durable
+            # invocation must resolve the disabled/reduced principal anew.
+            queued = inst.request('POST', '/api/v1/automations/' + root + '/actions/run_now',
+                                  {'request_id': uuid.uuid4().hex}, auth=fixture['token'])
+            require(queued.get('result', {}).get('state') == 'succeeded', 'Next invocation demand is not durably queued')
+            expected_phase = 'blocked_identity' if reduction == 'disable' else 'blocked_access'
+            def refused():
+                require(_effects(inst, fixture) == result['effects'], 'New invocation performs an effect with reduced authority')
+                requests = [row for row in ctx.fixtures.requests('openai-tools') if row['path'] == '/v1/chat/completions']
+                require(len(requests) == 2, 'New invocation reaches the model with disabled or reduced authority')
+                drive = _drive(inst, root)
+                return drive if drive['phase'] == expected_phase else None
+            refused_drive = inst.wait(refused, 'Next Agent invocation refuses current disabled/reduced authority', seconds=60,
+                                      pump=browser.page.wait_for_timeout)
+            failure = json.loads(refused_drive['last_error_json'])
+            require(refused_drive['event_seq'] == 2 and refused_drive['last_committed_occurrence_seq'] == 1
+                    and failure.get('kind') == 'PermissionDenied', 'Refused invocation loses its pending demand or typed denial')
+            require(_identity(inst, root) == expected_identity and database_rows(inst,
+                "SELECT identity_generation,record_json FROM kickside_execution_identity_audit WHERE component_id='" + root + "' ORDER BY identity_generation") == audits,
+                'Refusing new work rewrites the selected identity or its original audit')
+            inst.evidence.save('held-agent-' + reduction + '-next-admission', {'queued': queued,
+                'drive': refused_drive, 'original_effects': result['effects'], 'identity': expected_identity,
+                'model_request_count': 2, 'audits': audits})
         if reduction == 'adopt':
             original_effects = result['effects']
-            inst.wait(lambda: _drive(inst, root)['last_committed_occurrence_seq'] == 1,
-                      'Original held admission commits once after adoption', seconds=60, pump=browser.page.wait_for_timeout)
             require(_effects(inst, fixture) == original_effects, 'Adoption duplicates its original admitted effect')
             drawer = browser.frame.locator('kickside-automation-manager aside')
             drawer.get_by_role('button', name='More actions for Held Agent tool boundary', exact=True).click()
@@ -222,6 +237,10 @@ def _held_agent(ctx, reduction):
         inst.evidence.paths.append(str(trace))
 
 
+def automation_config_access(ctx):
+    run_focused_module_test(ctx, 'kickside/automation', 'config_access_test')
+
+
 def browser_bot_held_agent_control(ctx):
     with isolated_fixture(ctx) as fixture:
         _held_agent(fixture, 'control')
@@ -243,12 +262,13 @@ def browser_bot_held_agent_adoption(ctx):
 
 
 REGISTRY = [
+    Scenario('automation_config_access', 'regression', automation_config_access, ('boot',)),
     Scenario('browser_bot_held_agent_control', 'regression', browser_bot_held_agent_control, ('boot',), instance_setup=True,
              issues=('BOT-HELD-AGENT-AUTHORITY',)),
     Scenario('browser_bot_held_agent_disable', 'regression', browser_bot_held_agent_disable, ('boot',), instance_setup=True,
-             issues=('RA-S04', 'BOT-HELD-AGENT-AUTHORITY', 'RA-B11', 'RA-H40', 'UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY')),
+             issues=('RA-S04', 'BOT-HELD-AGENT-AUTHORITY', 'RA-B11', 'RA-H40')),
     Scenario('browser_bot_held_agent_group_reduction', 'regression', browser_bot_held_agent_group_reduction, ('boot',), instance_setup=True,
-             issues=('BOT-HELD-AGENT-AUTHORITY', 'RA-H40', 'UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY')),
+             issues=('BOT-HELD-AGENT-AUTHORITY', 'RA-H40')),
     Scenario('browser_bot_held_agent_adoption', 'regression', browser_bot_held_agent_adoption, ('boot',), instance_setup=True,
              issues=('BOT-HELD-CARRIER-ADOPTION', 'RA-H38', 'RA-H50', 'RA-H51')),
 ]

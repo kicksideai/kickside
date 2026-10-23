@@ -153,6 +153,20 @@ requests, and HTTP errors fail the active scenario. API permission-denial checks
 run outside browser traffic. Any scenario or cleanup failure returns exit code 1;
 configuration errors return 2. Timeouts remain at the source harness limits.
 
+## Agent authority admission
+
+A bounded Agent invocation uses the actor and scope admitted when it starts.
+Disabling its bot or reducing groups does not require cancelling a pending model
+response or replacing the frame between tool calls. The held-Agent scenarios
+verify that this invocation commits once with its original identity and audit.
+They then queue another invocation and require current authority to refuse it
+before any additional model request or tool effect. A queued Run now receipt
+acknowledges demand; it does not authorize its execution.
+
+New durable invocations resolve the stored principal again. Workflow Await/resume
+has its own admission checks and remains covered separately. These checks do not
+require per-request policy rebuilding, polling or mid-invocation cancellation.
+
 ## Installation permission equality
 
 `permission_equality_native_proof` exercises the reusable targeted comparison
