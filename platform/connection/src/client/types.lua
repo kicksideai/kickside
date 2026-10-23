@@ -22,7 +22,10 @@ type Config = {
     health_action: string, discovery_action: string, discovery_params: Object?, api_key_scheme: string?, query_array_format: string?,
 }
 type Token = { success: boolean, access_token: string?, error: string? }
-type TokenSource = { get_access_token: (({ rejected_access_token: string? }?) -> (Token?, error?)) }
+-- OAuth connections are opened as capability objects.  The runtime invokes
+-- their token operation with method syntax, so the receiver is part of the
+-- callable contract as well as the optional rejection context.
+type TokenSource = { get_access_token: ((TokenSource, { rejected_access_token: string? }?) -> (Token?, error?)) }
 type Connection = { component_id: string, access_token: string?, oauth: TokenSource?, deadline: string?, api_key_scheme: string? }
 type Request = { method: string, url: string, headers: { [string]: string }, body: string?, raw: boolean? }
 type Prepare = (Config, Operation, Object) -> (Request?, error?)
