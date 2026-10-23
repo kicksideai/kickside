@@ -137,14 +137,15 @@ function M.admit(executor: any, owner: string, port: string, items: { Map }, rou
     return { items = pending, fronts = fronts }, nil
 end
 
--- next_attempt(executor, owner_id, source_port) -> the earliest pending
--- redelivery time, or nil.
-function M.next_attempt(executor: any, owner_id: string, source_port: string): (string?, error?)
+-- next_attempt(executor, owner_id, source_port, decision_at?) -> the earliest
+-- pending redelivery time, or nil. Deadline-free work is due at the caller's
+-- captured decision time, even when the query crosses a clock boundary.
+function M.next_attempt(executor: any, owner_id: string, source_port: string, decision_at: string?): (string?, error?)
     local order, order_err = drive.time_sql(executor, "COALESCE(next_attempt_at,$1)")
     if order_err then return nil, order_err end
     local rows, err = executor:query("SELECT COALESCE(next_attempt_at,$1) AS next_at FROM " .. M.TABLE
         .. " l WHERE owner_id = $2 AND source_port = $3 AND state IN ('retrying', 'waiting', 'parked') AND identity_parked=false"
-        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { time.now():utc():format(time.RFC3339), owner_id, source_port })
+        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { decision_at or time.now():utc():format(time.RFC3339), owner_id, source_port })
     if err then return nil, internal("failed to read the next ledger attempt", err) end
     local row = (rows :: { Map })[1]
     if not row or row.next_at == nil then return nil, nil end
@@ -401,8 +402,12 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
         AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c
                         WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL)]]
         or "expires_at <= $1 AND state='resolved'"
+    -- Retain delivery proof until its prepared output has been reclaimed, even
+    -- when bounded passes visit the two tables in different key orders.
+    local prepared_guard = [[ AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
+        WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)]]
     local rows, read_err = tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
-        .. " l WHERE " .. predicate .. " ORDER BY owner_id,source_port,item_key,identity_key LIMIT $2",
+        .. " l WHERE " .. predicate .. prepared_guard .. " ORDER BY owner_id,source_port,item_key,identity_key LIMIT $2",
         { cutoff, limit })
     if read_err or type(rows) ~= "table" then return nil, internal("ledger prune page read failed", read_err or "missing result") end
     local count = 0
@@ -415,7 +420,7 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     for _, row in ipairs(rows) do
         local deleted, delete_err = tx:execute("DELETE FROM " .. M.TABLE .. " AS l"
             .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
-            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard,
+            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard,
             { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
         if delete_err or not deleted or tonumber(deleted.rows_affected) == nil then
             return nil, internal("ledger prune delete failed", delete_err or "missing affected-row count")

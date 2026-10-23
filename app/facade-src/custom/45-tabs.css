@@ -52,20 +52,25 @@
 }
 
 /* A surface that already draws its own separator sets this, so the tab list does
-   not add a second one directly above it. */
+   not add a second one directly above it. Keep the list transparent at the same
+   specificity as the theme's dark selectors, or its background covers the
+   surface separator where the row overlaps it. */
 .p-tabs[data-kx-separator='surface'] .p-tablist-tab-list {
   border-bottom-width: 0;
+  background: transparent;
 }
 
 /* The accent IS the tab's own bottom border, as on System. An idle tab shows
    none of it, so the row reads as a single separator rather than a dotted line
-   of grey stubs. */
-.p-tab {
+   of grey stubs. The tab containers and selected state keep these rules above
+   the theme's dark selectors, which otherwise replace both state colors. */
+.p-tabs .p-tablist .p-tab[aria-selected] {
   border-bottom-color: transparent;
 }
 
-.p-tab[aria-selected='true'] {
+.p-tabs .p-tablist .p-tab[aria-selected='true'] {
   border-bottom-color: var(--p-primary-color);
+  color: var(--p-primary-color);
 }
 
 /* PrimeVue also slides its own indicator under the active tab. With the border

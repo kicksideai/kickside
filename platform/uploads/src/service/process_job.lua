@@ -161,6 +161,7 @@ local function run(input: any): (any, any?)
     -- retry must never repeat conversion or OCR for an already processed upload.
     if upload.storage_state ~= "completed" then
         success, proc_err, processed_upload, retriable = pipeline_lib.process_upload(upload, {
+            final_attempt = is_final_attempt(job),
             should_continue = function(_phase)
                 return ensure_running(job)
             end,

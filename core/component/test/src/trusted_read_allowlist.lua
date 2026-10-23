@@ -194,13 +194,6 @@ M.ALLOW = {
             entry = "kickside.automation.engine:actions",
         },
     },
-    ["platform/automation/src/declaration_writer.lua"] = {
-        get_private_context = {
-            count = 1,
-            why = "pending-command declaration writer derives retained references from persisted state, then rechecks the operator's live WRITE and new-reference grants plus the executor's grants for every reference",
-            entry = "kickside.automation:declaration_writer_apply",
-        },
-    },
     ["platform/automation/src/engine/state_write.lua"] = {
         get_private_context = {
             count = 1,

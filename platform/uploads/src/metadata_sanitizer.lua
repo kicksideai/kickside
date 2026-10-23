@@ -38,11 +38,34 @@ function metadata_sanitizer.validate_client(value)
     return validate(value)
 end
 
+-- Transcription stages report a stable code under these keys. Any other text is
+-- provider detail and must not leave the server.
+metadata_sanitizer.TRANSCRIPTION_ERROR_KEYS = { "ocr_error", "asr_error", "conversion_error" }
+local TRANSCRIPTION_KEY_SET = { ocr_error = true, asr_error = true, conversion_error = true }
+local TRANSCRIPTION_CODES = {
+    no_text_detected = true,
+    too_large = true,
+    transcript_too_large = true,
+    transcription_failed = true,
+    persist_failed = true,
+    storage_unavailable = true,
+    storage_stat_failed = true,
+    storage_read_failed = true,
+    storage_pointer_missing = true,
+}
+
+function metadata_sanitizer.transcription_code(value)
+    if value == nil or value == false or value == "" then return value end
+    if type(value) == "string" and TRANSCRIPTION_CODES[value] then return value end
+    return "transcription_failed"
+end
+
 function metadata_sanitizer.public(value)
     if type(value) ~= "table" then return {} end
     local out = {}
     for key, item in pairs(value) do
         if type(key) ~= "string" or (key:sub(1, 1) ~= "_" and not PRIVATE_LOCATOR_KEYS[key] and not MANAGED_METADATA_KEYS[key]) then
+            if TRANSCRIPTION_KEY_SET[key] then item = metadata_sanitizer.transcription_code(item) end
             out[key] = item
         end
     end

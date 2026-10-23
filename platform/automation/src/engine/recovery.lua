@@ -146,14 +146,14 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if demand_err then return nil, demand_err end
         for _, d in ipairs(demand :: { Map }) do
             if type(d.job_id) == "string" and d.job_id ~= "" then
-                local _, wake_err = slot.wake(d.job_id)
+                local wake, wake_err = slot.wake(d.job_id)
                 if wake_err then
                     local retry_err = repair_deadline(d, true)
                     if retry_err then return nil, retry_err end
                     counts.failures = counts.failures + 1
                     log_failure("drive slot wake failed", { automation_id = d.automation_id, drive_key = d.drive_key,
                         job_id = d.job_id, error = tostring(wake_err) })
-                else
+                elseif (type(wake) == "table" and wake.woken == true) or d.source_kind == drive.SOURCE_KIND.NONE then
                     local _, ack_err = P.in_automation_tx(function(tx: any): (any?, any)
                         return drive.ack_wake_tx(tx, d.automation_id, d.drive_key, d.wake_applied_generation, d.wake_generation)
                     end)
@@ -168,6 +168,12 @@ function part.attach(M: any, dependencies: any, P: any): ()
                         if clear_err then return nil, clear_err end
                         counts.woken = counts.woken + 1
                     end
+                else
+                    -- Preserve demand when the slot cannot serve it, but defer
+                    -- the next repair pass rather than rearming immediately.
+                    local retry_err = repair_deadline(d, true)
+                    if retry_err then return nil, retry_err end
+                    counts.failures = counts.failures + 1
                 end
             end
         end
@@ -210,6 +216,9 @@ function part.attach(M: any, dependencies: any, P: any): ()
         end
 
         local pruned, prune_err = (dependencies.automation_db :: any).in_tx(function(tx: any): (any?, any)
+            local prepared_count, prepared_err = (dependencies.prepared_retention :: any).prune_orphans_tx(tx,
+                drive.utc_after(-(policy :: Map).prepared_ms), limit)
+            if prepared_err then return nil, prepared_err end
             local ledger_count, ledger_err = (dependencies.round_ledger :: any).prune_tx(tx, drive.utc_now(), limit)
             if ledger_err then return nil, ledger_err end
             local orphan_ledger_count, orphan_ledger_err = (dependencies.round_ledger :: any).prune_orphans_tx(tx,
@@ -217,9 +226,6 @@ function part.attach(M: any, dependencies: any, P: any): ()
             if orphan_ledger_err then return nil, orphan_ledger_err end
             local op_count, op_err = command.prune_ops_tx(tx, drive.utc_after(-(policy :: Map).ops_ms), limit)
             if op_err then return nil, op_err end
-            local prepared_count, prepared_err = (dependencies.prepared_retention :: any).prune_orphans_tx(tx,
-                drive.utc_after(-(policy :: Map).prepared_ms), limit)
-            if prepared_err then return nil, prepared_err end
             local receipt_count, receipt_err = (dependencies.receipt_retention :: any).prune_orphans_tx(tx,
                 drive.utc_after(-(policy :: Map).receipts_ms), limit)
             if receipt_err then return nil, receipt_err end
@@ -242,22 +248,24 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 UNION ALL SELECT MIN(COALESCE(repair_next_at,$2)), 0 FROM kickside_automation_drive
                 WHERE (job_id IS NOT NULL AND wake_generation > wake_applied_generation)
                    OR (job_id IS NULL AND pending_command_id IS NULL AND source_kind <> 'none')
-                UNION ALL SELECT MIN(expires_at), 0 FROM kickside_trigger_item_ledger WHERE state='resolved'
+                UNION ALL SELECT MIN(expires_at), 0 FROM kickside_trigger_item_ledger l WHERE state='resolved'
+                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)
                 UNION ALL SELECT MIN(expires_at), 0 FROM kickside_automation_delivery_history
                 UNION ALL SELECT MIN(updated_at), CAST($3 AS BIGINT) FROM kickside_trigger_item_ledger l WHERE state IN ('resolved','dead')
+                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)
                   AND NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=l.owner_id)
                   AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL)
                 UNION ALL SELECT MIN(CASE WHEN created_at > completed_at THEN created_at ELSE completed_at END), CAST($4 AS BIGINT)
                   FROM kickside_automation_op WHERE state IN ('succeeded','failed','superseded')
-                UNION ALL SELECT MIN(created_at), CAST($5 AS BIGINT) FROM kickside_automation_prepared p
-                  WHERE NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=p.automation_id)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=p.automation_id AND c.pending_request_id IS NOT NULL)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_trigger_item_ledger l WHERE l.owner_id=p.automation_id AND l.state NOT IN ('resolved','dead'))
-                UNION ALL SELECT MIN(updated_at), CAST($6 AS BIGINT) FROM kickside_automation_receipt r WHERE dest_ref_json IS NULL
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=r.owner_id)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=r.owner_id AND c.pending_request_id IS NOT NULL)]],
-                { command.OWNER_DELETE_KIND, now, (policy :: Map).ledger_resolved_ms, (policy :: Map).ops_ms, (policy :: Map).prepared_ms, (policy :: Map).receipts_ms })
+]],
+                { command.OWNER_DELETE_KIND, now, (policy :: Map).ledger_resolved_ms, (policy :: Map).ops_ms })
             if err then return nil, err end
+            local receipt_at, receipt_err = (dependencies.receipt_retention :: any).oldest_eligible(db)
+            if receipt_err then return nil, receipt_err end
+            rows[#rows + 1] = { at = receipt_at, delay = (policy :: Map).receipts_ms }
+            local prepared_at, prepared_err = (dependencies.prepared_retention :: any).oldest_eligible(db)
+            if prepared_err then return nil, prepared_err end
+            rows[#rows + 1] = { at = prepared_at, delay = (policy :: Map).prepared_ms }
             local earliest: string? = nil
             for _, row in ipairs(rows :: { Map }) do
                 if row.at ~= nil then

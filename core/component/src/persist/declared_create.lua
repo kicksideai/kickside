@@ -70,7 +70,7 @@ function M.create_tx(tx: any, db: any, token: any): (any?, error?)
             actor_id = operator_id,
             parent_id = input.parent_id,
         },
-    })
+    }, receipt.captured_identity)
     if create_err then return nil, create_err end
 
     local _, declaration_err = declaration_ops.write_declaration_tx(tx, receipt)

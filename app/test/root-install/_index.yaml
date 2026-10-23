@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 version: "1.0"
 namespace: compat.root
 entries:
@@ -13,7 +14,8 @@ entries:
     kind: function.lua
     meta: { type: test, suite: published_root }
     source: file://published_root_test.lua
-    modules: [registry, http_client]
+    modules: [registry, http_client, base64]
     imports:
       test: wippy.test:test
+      branding: kickside.ui:branding
     method: run

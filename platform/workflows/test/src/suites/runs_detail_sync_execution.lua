@@ -334,6 +334,38 @@ local function define_tests()
             test.eq(((result :: Map).data :: Map).answer, 42)
         end)
 
+        test.it("preserves structured failure details from synchronous Dataflow execution", function()
+            local id = wid()
+            publishable(id)
+            local flows = {}
+            local details = { { node_id = "test_node", error = { code = "EXEC_FAILED",
+                cause = { kind = "RateLimited", retryable = true, details = { error_type = "rate_limit_exceeded" } } } } }
+            runs._client_new = function()
+                return {
+                    create_workflow = function(_, _, options)
+                        flows[options.dataflow_id] = "pending"
+                        return options.dataflow_id, nil
+                    end,
+                    get_status = function(_, dataflow_id)
+                        if not flows[dataflow_id] then return nil, "Workflow not found" end
+                        return flows[dataflow_id], nil
+                    end,
+                    start = function() error("Unexpected asynchronous start") end,
+                    output = function() return {}, nil end,
+                    execute = function(_, dataflow_id)
+                        flows[dataflow_id] = "failed"
+                        return { success = false, dataflow_id = dataflow_id,
+                            error = "Model request failed", error_details = details }, nil
+                    end,
+                }, nil
+            end
+            runs._update_public_meta = function() end
+            local result, err = runs.launch(id, { version = 1, input = {}, mode = "sync" })
+            test.is_nil(err)
+            test.eq(result.error, "Model request failed")
+            test.eq(result.error_details, details)
+        end)
+
         test.it("keeps a synchronous caller running when Dataflow passivates", function()
             local id = wid()
             publishable(id)

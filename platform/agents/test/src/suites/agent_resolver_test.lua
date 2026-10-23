@@ -356,8 +356,60 @@ local function define_tests()
 
             local resolved, err = new_executor(owner):call(RESOLVER, { agent_id = cid })
 
-            test.is_nil(err)
             test.is_nil(resolved)
+            test.not_nil(err)
+            test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            test.eq(err:details().code, "agent_trait_context_invalid")
+            test.eq(err:details().component_id, cid)
+            test.contains(tostring(err), ROSTER_TRAIT .. ".namespaces")
+        end)
+
+        test.it("returns a typed error naming the trait and field for an undeclared saved context field", function()
+            local cid = insert_raw_user_agent({
+                prompt = "Undeclared trait context prompt.",
+                model = "class:fast",
+                traits = { ROSTER_TRAIT },
+                trait_contexts = {
+                    [ROSTER_TRAIT] = {
+                        namespaces = { "user_agent" },
+                        memory_ids = { "kb-fixture" },
+                    },
+                },
+            }, "Resolver Undeclared Trait Context Agent")
+
+            local resolved, err = new_executor(owner):call(RESOLVER, { agent_id = "user_agent:" .. cid })
+
+            test.is_nil(resolved)
+            test.not_nil(err)
+            test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            test.eq(err:details().code, "agent_trait_context_invalid")
+            test.eq(err:details().component_id, cid)
+            test.contains(tostring(err),
+                ROSTER_TRAIT .. ".memory_ids expected declared context field, got extra")
+        end)
+
+        test.it("surfaces the trait context error through wippy.agent context loading", function()
+            local cid = insert_raw_user_agent({
+                prompt = "Undeclared trait context prompt.",
+                model = "class:fast",
+                traits = { ROSTER_TRAIT },
+                trait_contexts = {
+                    [ROSTER_TRAIT] = {
+                        memory_ids = { "kb-fixture" },
+                    },
+                },
+            }, "Resolver Context Load Trait Error Agent")
+
+            local loaded, err = new_executor(owner):call(CONTEXT_PROBE, {
+                agent_id = "user_agent:" .. cid,
+            })
+
+            test.is_nil(err, "context probe call: " .. tostring(err))
+            test.not_nil(loaded)
+            test.eq(loaded.success, false)
+            test.contains(loaded.error,
+                ROSTER_TRAIT .. ".memory_ids expected declared context field, got extra")
+            test.is_nil(string.find(loaded.error, "No agent found", 1, true), loaded.error)
         end)
 
         test.it("resolves memory implementation from the provider registry", function()

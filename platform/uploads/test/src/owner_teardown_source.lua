@@ -1,0 +1,1 @@
+../../src/binding/delete_uploads_func.lua

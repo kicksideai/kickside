@@ -91,3 +91,5 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
+
+Synchronous execution results and run detail responses expose optional `error_details` from Dataflow alongside the existing error message. Run detail reads these diagnostics from its existing engine snapshot and applies the same secret redaction. Stored run rows and routed Error output shapes remain unchanged.

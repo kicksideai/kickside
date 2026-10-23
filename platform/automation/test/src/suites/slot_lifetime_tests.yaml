@@ -1,0 +1,31 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+- name: slot_lifetime_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://slot_lifetime_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - registry
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    slot: kickside.automation:slot
+    jobs: kickside.core.jobs:jobs
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    completion: kickside.core.jobs.persist:completion
+    cancel: kickside.core.jobs.persist:lifecycle_cancel
+    retention: kickside.core.jobs.persist:retention
+    slot_purge: kickside.core.jobs.persist:slot_purge
+    owner_gc: kickside.automation:owner_gc
+    thread_teardown: kickside.core.jobs.persist:thread_teardown
+    reclaim: kickside.core.jobs.persist:reclaim
+    command: kickside.automation:command
+    factory: kickside.automation:automation_test_engine
+    worker: kickside.core.jobs.service:worker_dispatch
+    worker_completion: kickside.core.jobs.service:worker_completion

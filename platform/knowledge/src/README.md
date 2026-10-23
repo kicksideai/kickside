@@ -63,8 +63,9 @@ required `api_router`, which must enforce auth + endpoint_firewall.
 
 Add one `registry.entry` with `meta.type = kickside.kb_engine` per public
 `kb_type`. The entry is the routing contract: declare `impl_id`,
-`query_binding`, `store_contract`, UI tags,
-stats labels, and default config there. The knowledge control plane resolves
+`query_binding`, `store_contract` and `store_binding` (the binding of the store
+contract that serves this engine's rows; empty uses the contract's default
+binding), UI tags, stats labels, and default config there. The knowledge control plane resolves
 create, read/list, query, delete, and source projection from that descriptor
 instead of branching on engine names.
 

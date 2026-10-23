@@ -281,9 +281,13 @@ function M.merge(row: any, observation: any, token: string?): (any?, any?)
             local affected = tonumber(result and result.rows_affected) or 0
             -- A callback may have committed first. Admission is still recorded,
             -- without moving its terminal status back to running.
-            local _, mark_err = tx:execute("UPDATE " .. RUNS ..
-                " SET admission_state='admitted' WHERE run_id=$1 AND admission_state='unadmitted'", { row.run_id })
-            if mark_err then return nil, mark_err end
+            if affected == 0 then
+                local mark_suffix = token and " AND completion_check_token=$2" or ""
+                local _, mark_err = tx:execute("UPDATE " .. RUNS ..
+                    " SET admission_state='admitted' WHERE run_id=$1 AND admission_state='unadmitted'" .. mark_suffix,
+                    token and { row.run_id, token } or { row.run_id })
+                if mark_err then return nil, mark_err end
+            end
             local rows, read_err = tx:query("SELECT status,admission_state FROM " .. RUNS .. " WHERE run_id=$1", { row.run_id })
             if read_err then return nil, read_err end
             local current = rows and rows[1] or nil

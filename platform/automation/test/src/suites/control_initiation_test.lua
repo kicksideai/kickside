@@ -1,4 +1,5 @@
 local test = require("test")
+local execution_identity = require("execution_identity")
 local uuid = require("uuid")
 local errors = require("errors")
 local canonical = require("canonical_json")
@@ -144,7 +145,23 @@ local function define_tests()
                 execute_pending = function() return nil, outage end}
             local product: Map = {}
             local deps = {drive = drive, command = command, canonical_json = canonical,
-                component = cf.component_stub({sets = {}, access = {}}, {[id] = 15}), security = cf.actor_frame("first-operator")}
+                component = cf.component_stub({sets = {}, access = {}}, {[id] = 15}), security = cf.actor_frame("first-operator"),
+                execution_identity = {validate = execution_identity.validate, actor_key = execution_identity.actor_key,
+                    same_principal = execution_identity.same_principal,
+                    authorize = function(saved, opts)
+                        test.eq(saved.principal.id, "first-operator")
+                        test.eq(opts.deferred_owner, "kickside.automation:command_dispatcher")
+                        return {principal = saved.principal, meta = {security_groups = {}}}, nil
+                    end, capture = function()
+                    return {version = 2, principal = {kind = "user", id = "first-operator"},
+                        authorized_by = {kind = "user", id = "first-operator"}, captured_at = "2026-10-01T00:00:00Z"}, nil
+                end}}
+            deps.component.validate_principal_access = function(component_id, mask, principal)
+                test.eq(component_id, id)
+                test.eq(mask, deps.component.ACCESS.WRITE)
+                test.eq(principal.id, "first-operator")
+                return true, nil
+            end
             controls.attach(product, deps, shared)
             local args = {control = "resync", request_id = "deferred", from = 0}
             local result, err = product.control(id, args)
@@ -154,6 +171,8 @@ local function define_tests()
             test.not_nil(before.target_receipts.initiation)
             test.eq(before.target_receipts.initiation.actor_id, "first-operator")
             local pending = assert(cf.pending(id))
+            test.eq(pending.input.operator_id, "first-operator")
+            test.eq(pending.input.operator_identity.principal.id, "first-operator")
             deps.security = cf.actor_frame("second-operator")
             product.control(id, args)
             test.eq(fingerprint(cf.op(id, "deferred")), fingerprint(before))
