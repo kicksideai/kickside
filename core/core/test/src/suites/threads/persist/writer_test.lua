@@ -28,6 +28,32 @@ local MULTI = "app:test_ingest_multi"
 
 local function define_tests()
     test.describe("Threads Writer", function()
+        test.it("reuses a locked thread head across deferred engine appends", function()
+            local db = assert(sql.get(DB))
+            local dialect = tostring(db:type())
+            local id = uuid.v7()
+            assert(db:execute("INSERT INTO kickside_thread (id,thread_class,component_id,event_count) VALUES ($1,'test',$2,0)", {id, id}))
+            local tx = assert(db:begin())
+            local ok, result = pcall(function()
+                local locked = assert(writer.lock_thread_rows_tx(tx, dialect, {id}))
+                local first = assert(writer.append_system_tx(tx, dialect, id, {{type = "test:first", body_json = "{}"}}, nil,
+                    {defer_wake = true, locked_threads = locked}))
+                local second = assert(writer.append_system_tx(tx, dialect, id, {{type = "test:second", body_json = "{}"}}, nil,
+                    {defer_wake = true, locked_threads = locked}))
+                local rows = assert(tx:query("SELECT seq FROM kickside_event WHERE thread_id=$1 ORDER BY seq", {id}))
+                local demand = assert(tx:query("SELECT COUNT(*) AS n FROM kickside_wake_fanout WHERE key=$1", {"thread:" .. id}))
+                return {first = first, second = second, rows = rows, demand = demand}
+            end)
+            tx:rollback()
+            db:release()
+            if not ok then error(result) end
+            test.eq(result.first.max_seq, 1)
+            test.eq(result.second.max_seq, 2)
+            test.eq(#result.rows, 2)
+            test.eq(tonumber(result.rows[1].seq), 1)
+            test.eq(tonumber(result.rows[2].seq), 2)
+            test.eq(tonumber(result.demand[1].n), 0)
+        end)
         local suffix = uuid.v4():sub(1, 8)
         local owner = "tw-owner-" .. suffix
         local stranger = "tw-stranger-" .. suffix

@@ -33,6 +33,7 @@ entries:
     imports:
       clock: kickside.core.jobs:clock
       threads_writer: kickside.core.threads.persist:writer
+      jobs_wake: kickside.core.jobs.persist:wake
       jobs: kickside.core.jobs:jobs
       cursor_waiters: kickside.core.threads:cursor_waiters
       retention_notifier: kickside.core.retention:notifier

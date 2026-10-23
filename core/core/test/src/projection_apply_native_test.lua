@@ -6,7 +6,7 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
     errors.RATE_LIMITED, errors.UNKNOWN}
 local routes = {}
 for _, stage in ipairs({"append_encode", "identity", "admission", "get", "type", "begin", "lock",
-    "cursor", "body_encode", "update", "cursor_update", "append", "complete", "commit", "notify", "retention", "release"}) do
+    "cursor", "body_encode", "update", "cursor_update", "append", "wake", "complete", "commit", "notify", "retention", "release"}) do
     routes[#routes + 1] = {stage = stage, mode = "advance"}
 end
 for _, stage in ipairs({"get", "type", "begin", "lock", "cursor", "pin", "fence", "invalidate", "complete", "commit", "notify", "release"}) do
@@ -54,6 +54,22 @@ local function native(first: integer, last: integer)
     end
 end
 local function outcomes()
+    test.it("defers output demand until all appends and prelocks the completing job", function()
+        fixture.reset("", nil, "advance")
+        local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
+            {id = "cursor", thread_id = "thread", projection_id = "projection", generation = 1, last_seq = 0, body = {}}, 1,
+            {append_events = {{thread_id = "other", events = {{type = "example", body_json = "{}"}}},
+                {thread_id = "another", events = {{type = "example", body_json = "{}"}}}}})
+        test.is_nil(err)
+        test.not_nil(value)
+        test.eq(fixture.appends, 2)
+        test.eq(fixture.cached_appends, 2)
+        test.eq(fixture.deferred, fixture.appends)
+        test.eq(fixture.published_after, 2)
+        test.eq(#fixture.wake_keys, 2)
+        test.eq(fixture.wakes, 1)
+        test.eq(fixture.completing, "job")
+    end)
     test.it("locks the source thread before recording a failure", function()
         fixture.reset("", nil, "fail")
         local value, err = call("fail")
@@ -61,6 +77,7 @@ local function outcomes()
         test.not_nil(value)
         test.is_true(fixture.thread_locked)
         test.is_false(fixture.cursor_before_thread)
+
     end)
     for _, mode in ipairs({"advance", "fail", "stale"}) do
         for _, stage in ipairs({"type", "begin", "complete", "commit", "notify"}) do
@@ -116,7 +133,7 @@ local function outcomes()
         {stage = "lock", field = "locked_threads"}, {stage = "cursor", field = "cursor.rows"},
         {stage = "body_encode", field = "body_json"}, {stage = "update", field = "projection.update"},
         {stage = "cursor_update", field = "cursor.update"}, {stage = "append", field = "append"},
-        {stage = "complete", field = "completion"}, {stage = "fence", mode = "fail", field = "failure.fence"},
+        {stage = "wake", field = "wake"}, {stage = "complete", field = "completion"}, {stage = "fence", mode = "fail", field = "failure.fence"},
         {stage = "invalidate", mode = "fail", field = "projection.invalidate"},
         {stage = "lock", mode = "fail", field = "locked_threads"},
         {stage = "cursor", mode = "fail", field = "cursor.rows"},
