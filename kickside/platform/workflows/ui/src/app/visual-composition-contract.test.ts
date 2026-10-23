@@ -53,7 +53,7 @@ describe('workflow visual composition contract', () => {
   it('scrolls the past runs list instead of shrinking its rows over each other', () => {
     const runs = css('runs.css')
     expect(runs).toMatch(/\.wf-runs-list\s*\{[^}]*overflow-y:\s*auto/s)
-    expect(runs).toMatch(/\.wf-runs-row\s*\{[^}]*flex:\s*none/s)
+    expect(runs).toMatch(/\.wf-runs-row(?:\.p-button)?\s*\{[^}]*flex:\s*none/s)
   })
 
   it('contains the step search within the palette rail', () => {
