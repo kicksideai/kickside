@@ -2038,7 +2038,7 @@ def regression_png_ingest(ctx):
                 path = ctx.inst.root / 'temp' / ('northwind-ingest-' + r + '-' + n + '.png')
                 im = Image.new('RGB', (600, 180), 'white')
                 ImageDraw.Draw(im).multiline_text((20, 35), 'NORTHWIND PNG\nNW-PNG-731 17 DAYS', fill='black',
-                    font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 28), spacing=12)
+                    font=ImageFont.load_default(size=28), spacing=12)
                 im.save(path)
                 uid = upload_path(ctx, r, path)
                 result = request(ctx, r, 'POST', '/knowledge/' + f.id + '/ingest-upload', {'upload_id': uid})

@@ -47,9 +47,11 @@ def fixture_owner(declaration, resources, ports, oauth_providers=()):
                 for oauth in oauth_providers:
                     if oauth.get('meta', {}).get('oauth_provider') != provider:
                         continue
-                    binding = oauth.get('data', {}).get('component_contract')
-                    matches = matches or (resource['id'] == binding if binding else
-                        'kickside.oauth:oauth_connection_contract' in contracts(resource))
+                    data = oauth.get('data', {})
+                    binding = data.get('component_contract_id') or data.get('component_contract')
+                    matches = matches or (resource['id'] == binding if binding else any(
+                        row['contract'] == 'kickside.oauth:oauth_connection_contract' and row.get('default') is True
+                        for row in resource.get('data', {}).get('contracts', [])))
             elif required_classes:
                 matches = bool(classes(resource) & required_classes)
             else:

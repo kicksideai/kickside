@@ -482,6 +482,35 @@ class OwnershipTests(unittest.TestCase):
         port = {'id': 'source', 'binding': 'calendar', 'config_schema': {'connection': {'provider': 'fixture_oauth'}}}
         self.assertEqual(fixture_owner(facet, [owner], [port], [provider]), ('oauth_connection', port))
 
+    def test_oauth_provider_selects_its_default_or_explicit_owner_among_other_implementations(self):
+        facet = binding('calendar', ['meetings'], ['kickside.data:pullable'], provider='google')
+        owner = binding('oauth', ['connection'], ['kickside.contract:component', 'kickside.oauth:oauth_connection_contract'])
+        owner['data']['contracts'][1]['default'] = True
+        mcp = binding('mcp', ['connection'], ['kickside.contract:component', 'kickside.oauth:oauth_connection_contract'],
+                      provider='mcp_remote')
+        provider = {'meta': {'oauth_provider': 'google'}, 'data': {}}
+        port = {'id': 'calendar_source', 'binding': 'calendar', 'config_schema': {'connection': {'provider': 'google'}}}
+        for resources in ([owner, mcp], [mcp, owner]):
+            self.assertEqual(fixture_owner(facet, resources, [port], [provider]), ('oauth', port))
+        provider['data']['component_contract_id'] = 'mcp'
+        self.assertEqual(fixture_owner(facet, [owner, mcp], [port], [provider]), ('mcp', port))
+        provider['data']['component_contract_id'] = 'missing'
+        with self.assertRaises(Failure):
+            fixture_owner(facet, [owner, mcp], [port], [provider])
+
+    def test_oauth_owner_requires_a_unique_declared_default(self):
+        facet = binding('source', ['messages'], ['kickside.data:pullable'], provider='service')
+        owners = [binding(id, ['connection'], ['kickside.contract:component', 'kickside.oauth:oauth_connection_contract'])
+                  for id in ('one', 'two')]
+        provider = {'meta': {'oauth_provider': 'service'}, 'data': {}}
+        port = {'id': 'source', 'binding': 'source', 'config_schema': {'connection': {'provider': 'service'}}}
+        with self.assertRaises(Failure):
+            fixture_owner(facet, owners, [port], [provider])
+        for owner in owners:
+            owner['data']['contracts'][1]['default'] = True
+        with self.assertRaises(Failure):
+            fixture_owner(facet, owners, [port], [provider])
+
     def test_store_facet_exercises_native_writable_contract_and_checks_destination(self):
         from unittest.mock import Mock, patch
         import scenarios_access as access
