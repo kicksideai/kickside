@@ -8,6 +8,10 @@ entries:
       private: true
     source: file://../dispatcher.lua
     method: run
+    security:
+      policies:
+        - kickside.automation.security:round_worker_defer
+        - kickside.automation.security:execution_scope
     imports:
       automations_lib: kickside.automation:automation
 

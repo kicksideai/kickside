@@ -30,7 +30,7 @@ local audit_policy = require("audit_policy")
 -- CREATE_COMPONENT payload: { component_id?, impl_id, private_context?,
 -- initial_meta?, actor_id, parent_id?, position? }. parent_id omitted =>
 -- root; position omitted => append after last sibling.
-local function create_component(tx: Executor, db: Executor, command: component_types.Command): (component_types.CommandResult?, error?)
+local function create_component(tx: Executor, db: Executor, command: component_types.Command, captured_identity: any?): (component_types.CommandResult?, error?)
     local payload = command.payload or {}
 
     if not payload.impl_id or payload.impl_id == "" then
@@ -72,22 +72,34 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     local context_err = context_policy.validate_public(context)
     if context_err then return nil, context_err end
 
-    -- The creator's validated initial ADMIN and identity initialization commit
-    -- together: a user creator starts as their own v2 principal at generation
-    -- 0 with an audit row. Framework maintenance creators stay outside the
-    -- user-facing lifecycle and start without an identity until SET.
+    -- Only the authenticated creator or the verified install receipt supplies
+    -- captured authority. Generic command payloads cannot select it.
+    local initial_identity = captured_identity
+    if initial_identity == nil and execution_identity.is_valid_id(payload.actor_id) then
+        local actor, actor_err = security.actor()
+        if actor_err then return nil, actor_err end
+        if actor and actor:id() == payload.actor_id then
+            local captured, capture_err = execution_identity.capture()
+            if capture_err then return nil, capture_err end
+            initial_identity = captured
+        end
+    end
     local now_ts = execution_identity.utc_now()
     local initial_hash: string? = nil
     if execution_identity.is_valid_id(payload.actor_id) then
-        local creator = payload.actor_id :: string
-        initial_hash = identity.canonical_identity({ kind = "user", id = creator }, { kind = "user", id = creator }, component_id, now_ts)
-        context._execution_identity = {
-            version = 2,
-            principal = { kind = "user", id = payload.actor_id },
-            authorized_by = { kind = "user", id = payload.actor_id },
-            component_id = component_id,
-            captured_at = now_ts,
-        }
+        if initial_identity == nil then
+            initial_identity = {
+                version = 2,
+                principal = { kind = "user", id = payload.actor_id },
+                authorized_by = { kind = "user", id = payload.actor_id },
+                captured_at = now_ts,
+            }
+        end
+        if initial_identity.component_id == nil then initial_identity.component_id = component_id end
+        initial_hash = identity.canonical_identity(initial_identity.principal, initial_identity.authorized_by,
+            initial_identity.component_id, initial_identity.captured_at,
+            initial_identity.credential_id, initial_identity.link_id)
+        context._execution_identity = initial_identity
     end
     local private_context, enc_err = encode_context(context)
     if enc_err then
@@ -179,8 +191,8 @@ local function create_component(tx: Executor, db: Executor, command: component_t
 
     if initial_hash ~= nil then
         local record = identity.audit_record("none",
-            { kind = "user", id = tostring(payload.actor_id) },
-            { kind = "user", id = tostring(payload.actor_id) },
+            initial_identity.principal,
+            initial_identity.authorized_by,
             "initial:" .. component_id, "initial", 0, "initial", initial_hash)
         local size_err = audit_policy.check_row(component_id, record, "create_component")
         if size_err then return nil, size_err end

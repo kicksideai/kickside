@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.61](https://github.com/kicksideai/kickside/compare/jobs-v0.1.60...jobs-v0.1.61) (2026-10-23)
+
+
+### Bug Fixes
+
+* **core:** order projection output wakes with job completion ([#82](https://github.com/kicksideai/kickside/issues/82)) ([5550708](https://github.com/kicksideai/kickside/commit/5550708a2c80ee064cd5a6bab6fa48de0f73e313))
+
+## [0.1.60](https://github.com/kicksideai/kickside/compare/jobs-v0.1.59...jobs-v0.1.60) (2026-10-22)
+
+
+### Bug Fixes
+
+* **automation:** repair drives that reference finished slot jobs ([#103](https://github.com/kicksideai/kickside/issues/103)) ([2e85f34](https://github.com/kicksideai/kickside/commit/2e85f3405600ccde7d7636010dc7e521630719f1))
+* **jobs:** apply slot retry policy and structured retry floors ([#81](https://github.com/kicksideai/kickside/issues/81)) ([dfd3baa](https://github.com/kicksideai/kickside/commit/dfd3baa8d9e45c50119344f3786e1cd38b57ec3e))
+* **jobs:** park deterministic projection failures without wake demand ([#83](https://github.com/kicksideai/kickside/issues/83)) ([2351ec4](https://github.com/kicksideai/kickside/commit/2351ec43eb07c6667393a5bd6dadc7eb3e6cdfa2))
+* **jobs:** read child liveness before reclaim locks ([809fd16](https://github.com/kicksideai/kickside/commit/809fd162784cf380a17841214f186ccdf3b668eb))
+* **jobs:** retry infrastructure failures independently of invocation policy ([#80](https://github.com/kicksideai/kickside/issues/80)) ([048967c](https://github.com/kicksideai/kickside/commit/048967c89552a9d95a287dd5a1089ca54cf02e1b))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## 0.1.59 (2026-10-17)
 
 - Keep thread teardown consistent during concurrent lifecycle changes.

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.6](https://github.com/kicksideai/kickside/compare/execution-v0.2.5...execution-v0.2.6) (2026-10-22)
+
+
+### Bug Fixes
+
+* return typed execution construction failures ([#73](https://github.com/kicksideai/kickside/issues/73)) ([1219db2](https://github.com/kicksideai/kickside/commit/1219db2e21623b8e578c2fb4bafe2bc199ea1968))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## 0.2.5 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

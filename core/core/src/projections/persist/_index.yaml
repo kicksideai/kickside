@@ -54,6 +54,7 @@ entries:
       job_lifecycle: kickside.core.jobs.persist:lifecycle
       jobs_wake: kickside.core.jobs.persist:wake
       retention_notifier: kickside.core.retention:notifier
+      retention_pin: kickside.core.retention:pin
       persisted_json: kickside.contract:persisted_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
@@ -73,6 +74,7 @@ entries:
       jobs_wake: kickside.core.jobs.persist:wake
       cursor_waiters: kickside.core.threads:cursor_waiters
       retention_notifier: kickside.core.retention:notifier
+      retention_pin: kickside.core.retention:pin
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error

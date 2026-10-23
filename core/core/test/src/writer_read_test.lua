@@ -16,6 +16,43 @@ local function call(method: string, db: any): (any, error?)
 end
 return {run = test.run_cases(function()
     test.describe("native thread writer read and dialect boundaries", function()
+        for _, dialect in ipairs({sql.type.SQLITE, sql.type.POSTGRES}) do
+            test.it("engine append reuses ordered thread snapshots/" .. dialect, function()
+                fixture.reset("", nil)
+                local snapshot = {id = "thread", event_count = 0}
+                local id = dialect == sql.type.POSTGRES and " THREAD " or " thread "
+                local result, err = api.append_system_tx(fixture.database(), dialect, id, {{type = "test:event"}}, nil,
+                    {defer_wake = true, locked_threads = {thread = snapshot}})
+                test.is_nil(err)
+                test.not_nil(result)
+                test.is_true(fixture.append_options.defer_wake)
+                test.eq(fixture.append_options.locked_thread, snapshot)
+                local again, again_err = api.append_system_tx(fixture.database(), dialect, id, {{type = "test:event"}}, nil,
+                    {defer_wake = true, locked_threads = {thread = snapshot}})
+                test.is_nil(again_err)
+                test.eq(again.max_seq, 2)
+                test.eq(snapshot.event_count, 2)
+                test.eq(fixture.queries, 0)
+            end)
+        end
+        test.it("engine append refuses a missing supplied lock snapshot", function()
+            fixture.reset("", nil)
+            local result, err = api.append_system_tx(fixture.database(), sql.type.SQLITE, "thread", {{type = "test:event"}}, nil,
+                {defer_wake = true, locked_threads = {}})
+            test.is_nil(result)
+            test.is_true(errors.is(err, errors.NOT_FOUND))
+            test.is_nil(fixture.append_options)
+            test.eq(fixture.queries, 0)
+        end)
+        test.it("engine append retains omitted-option behavior", function()
+            fixture.reset("", nil)
+            local result, err = api.append_system_tx(fixture.database(), sql.type.SQLITE, "thread", {{type = "test:event"}}, "completion")
+            test.is_nil(err)
+            test.not_nil(result)
+            test.eq(fixture.append_options.completion_job_id, "completion")
+            test.is_nil(fixture.append_options.defer_wake)
+            test.is_nil(fixture.append_options.locked_thread)
+        end)
         for _, route in ipairs({{method = "type", stage = "type"}, {method = "lock", stage = "query"},
             {method = "gate", stage = "query"}, {method = "gate", stage = "access"}, {method = "gate", stage = "access_success_error"}}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,

@@ -6,7 +6,7 @@ import Select from 'primevue/select'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import { relativeTime } from '@widgets/app/datetime'
 import {
-  fmtNum, fmtBytes, moduleAccent, moduleIcon, isAppModule,
+  fmtNum, fmtBytes, formatLicense, moduleAccent, moduleIcon, isAppModule,
   moduleComponent, moduleIsPrivate, moduleLabel, moduleKey, resolvedDependencyVersion,
 } from '../lib.ts'
 import { useModulesPage } from './useModulesPage.ts'
@@ -192,7 +192,7 @@ const anchorEl = ref<HTMLElement | null>(null)
                     <span class="feat-meta">
                       <span class="meta-pill"><Icon icon="tabler:tag" class="km-i-xs" aria-hidden="true" /> {{ m.latest_version || '?' }}</span>
                       <span class="meta-pill"><Icon icon="tabler:download" class="km-i-xs" aria-hidden="true" /> {{ fmtNum(m.total_downloads) }}</span>
-                      <span v-if="m.license" class="meta-pill"><Icon icon="tabler:license" class="km-i-xs" aria-hidden="true" /> {{ m.license }}</span>
+                      <span v-if="m.license" class="meta-pill" :title="m.license"><Icon icon="tabler:license" class="km-i-xs" aria-hidden="true" /> {{ formatLicense(m.license) }}</span>
                     </span>
                   </span>
                 </button>
@@ -223,7 +223,7 @@ const anchorEl = ref<HTMLElement | null>(null)
                     <span class="mod-foot">
                       <span class="foot-stat"><Icon icon="tabler:download" class="km-i-xs" aria-hidden="true" /> {{ fmtNum(m.total_downloads) }}</span>
                       <span v-if="m.favorites_count" class="foot-stat"><Icon icon="tabler:star" class="km-i-xs" aria-hidden="true" /> {{ m.favorites_count }}</span>
-                      <span v-if="m.license" class="foot-stat km-dim">{{ m.license }}</span>
+                      <span v-if="m.license" class="foot-stat km-dim" :title="m.license">{{ formatLicense(m.license) }}</span>
                       <span v-if="m.update_time" class="foot-stat km-dim km-ml-auto">{{ relativeTime(m.update_time, { maxUnit: 'year' }) }}</span>
                     </span>
                   </span>

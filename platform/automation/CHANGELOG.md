@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.2.1](https://github.com/kicksideai/kickside/compare/automation-v0.2.0...automation-v0.2.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** delegate repair checkpoints to migration framework ([#114](https://github.com/kicksideai/kickside/issues/114)) ([de7b929](https://github.com/kicksideai/kickside/commit/de7b929b98da72bacf5d63ce031d6c628ae40c3f))
+* **automation:** require the published tool-action contract ([#117](https://github.com/kicksideai/kickside/issues/117)) ([aa4589c](https://github.com/kicksideai/kickside/commit/aa4589cc2873628ba2bf9494bce90b38755c261c))
+* **automation:** revalidate resync operator WRITE before applying ([#85](https://github.com/kicksideai/kickside/issues/85)) ([bdca99f](https://github.com/kicksideai/kickside/commit/bdca99ff5a3d5664000927fe54a444f097a43b00))
+
+## [0.2.0](https://github.com/kicksideai/kickside/compare/automation-v0.1.133...automation-v0.2.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflows:** Post-processing S3 placement requires explicitly installing kickside/storage-s3 in the same module plan as this update. The base module no longer installs its S3 policy, controller, jobs, endpoints, or UI.
+
+### Bug Fixes
+
+* **automation:** acknowledge only served slot wakes ([f6f0e87](https://github.com/kicksideai/kickside/commit/f6f0e877c8629c07d67ca11161ec0157f8753d6d))
+* **automation:** check every current reference on reconfigure ([04690ea](https://github.com/kicksideai/kickside/commit/04690ea7e5246dc4e53e16ab3d5550c7149ae084))
+* **automation:** fence source pulls with the round lease ([#84](https://github.com/kicksideai/kickside/issues/84)) ([4ad30e7](https://github.com/kicksideai/kickside/commit/4ad30e71c5a406cd3884d3e46663977148a541c9))
+* **automation:** keep an at-most-once item uncertain when its write call fails ([#87](https://github.com/kicksideai/kickside/issues/87)) ([105039a](https://github.com/kicksideai/kickside/commit/105039ae51cc40f4d1fb636d2e44b6587606ccae))
+* **automation:** keep stranded repair outside migration transactions ([#113](https://github.com/kicksideai/kickside/issues/113)) ([90da7cd](https://github.com/kicksideai/kickside/commit/90da7cd633be99bc17f8b63017ece9e4825a8b0c))
+* **automation:** preserve dead delivery evidence while its owner exists ([#71](https://github.com/kicksideai/kickside/issues/71)) ([309f1b6](https://github.com/kicksideai/kickside/commit/309f1b6ec6047bfc846dbeece92d93ffa6441693))
+* **automation:** repair drives that reference finished slot jobs ([#103](https://github.com/kicksideai/kickside/issues/103)) ([2e85f34](https://github.com/kicksideai/kickside/commit/2e85f3405600ccde7d7636010dc7e521630719f1))
+* **automation:** resume restored execution identities ([#75](https://github.com/kicksideai/kickside/issues/75)) ([47c34fa](https://github.com/kicksideai/kickside/commit/47c34fa752c3c673bcbe5bd47b76ba3009b9164e))
+* **automation:** retain slots and commands until provisioning completes ([7f7f188](https://github.com/kicksideai/kickside/commit/7f7f18818cd1a9a6138d80f8b42b16e70f4dfe14))
+* **automation:** retire settled event receipt mappings by age ([7f24385](https://github.com/kicksideai/kickside/commit/7f243850bc538566a3454e4bb760f4ff73a6d5b1))
+* **component:** start new components with the creator's captured identity ([1a9b12e](https://github.com/kicksideai/kickside/commit/1a9b12ea4204a37235a5101fe25f25129eb2cfd1))
+* declare plain object roots for agent tool input schemas ([75fd0fe](https://github.com/kicksideai/kickside/commit/75fd0fed2a0c71206ae914c6ee497e1b37301a54))
+* preserve execution failure and session acquisition semantics ([#76](https://github.com/kicksideai/kickside/issues/76)) ([2df07e3](https://github.com/kicksideai/kickside/commit/2df07e32a36bb5cf2f20a2eaf030c7d12a4ccb08))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+* **workflows:** route iteration inputs to body joins ([#46](https://github.com/kicksideai/kickside/issues/46)) ([efed521](https://github.com/kicksideai/kickside/commit/efed521d398ca78422f806d83bb09c3b24b609b3))
+
 ## [0.1.133](https://github.com/kicksideai/kickside/compare/automation-v0.1.132...automation-v0.1.133) (2026-10-21)
 
 

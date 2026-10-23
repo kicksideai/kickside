@@ -15,7 +15,6 @@ local sql = require("sql")
 local types = require("types")
 local command = require("command")
 local component_command = require("component_command")
-local component = require("component")
 local references = require("declaration_references")
 local drive = require("drive")
 local core_db = require("core_db")
@@ -141,18 +140,15 @@ local function verify(request: any): (any?, error?)
         or (pending.kind == "install" and "kickside.automation:declaration_writer_create"
             or "kickside.automation:declaration_writer_apply")
     local previous_declaration: any = {}
-    local operator_refs = current_refs
+    local operator_refs: { any } = {}
+    for _, ref in ipairs(current_refs) do operator_refs[#operator_refs + 1] = ref end
     if pending.kind == "reconfigure" then
-        -- The trusted writer derives the baseline from the component, never
-        -- from caller-supplied previous references. Recheck live WRITE on the
-        -- task and grants for new targets; its stored executor checks every target.
+        -- Only the writer's live component context is a trusted baseline.
         local context, context_err = component.get_private_context(pending.automation_id)
-        if context_err or not context then return nil, context_err end
-        local stored = type(context._portable_input) == "table" and context._portable_input or {}
-        previous_declaration = stored
-        local previous_refs, previous_err = references.collect(input.schema, stored)
-        if previous_err or not previous_refs then return nil, previous_err end
-        operator_refs = references.added(current_refs, previous_refs)
+        if context_err then return nil, context_err end
+        if not context then return nil, invalid("automation declaration context is unavailable") end
+        previous_declaration = type(context._portable_input) == "table" and context._portable_input or {}
+
         operator_refs[#operator_refs + 1] = { kind = "component", id = pending.automation_id, access = "WRITE" }
     end
     local operator_valid, operator_err = authority.check(input.operator_identity,
@@ -183,6 +179,7 @@ local function verify(request: any): (any?, error?)
         public_meta = input.public_meta,
         operator_id = input.operator_id,
         execution_subject_id = subject_id,
+        captured_identity = subject_identity,
         affected_drive_keys = pending.drive_keys,
     }, nil
 end

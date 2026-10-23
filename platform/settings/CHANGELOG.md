@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/kicksideai/kickside/compare/settings-v0.2.0...settings-v0.3.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflows:** Post-processing S3 placement requires explicitly installing kickside/storage-s3 in the same module plan as this update. The base module no longer installs its S3 policy, controller, jobs, endpoints, or UI.
+
+### Bug Fixes
+
+* **settings:** use the published content radius token ([1560a1a](https://github.com/kicksideai/kickside/commit/1560a1a2e259d821d72c85fac8ed877050783637))
+* **settings:** validate structured drafts and show row errors ([9204407](https://github.com/kicksideai/kickside/commit/9204407c204fb2c72cb443e3f08482905ddf03a6))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+* **workflows:** route iteration inputs to body joins ([#46](https://github.com/kicksideai/kickside/issues/46)) ([efed521](https://github.com/kicksideai/kickside/commit/efed521d398ca78422f806d83bb09c3b24b609b3))
+
 ## [0.2.0](https://github.com/kicksideai/kickside/compare/settings-v0.1.48...settings-v0.2.0) (2026-10-21)
 
 

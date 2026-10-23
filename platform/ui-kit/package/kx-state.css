@@ -118,3 +118,24 @@
 .kx-err.inline {
   margin: 12px 0 0;
 }
+
+/* Spacious state for an open reader; the compact surface defaults stay intact. */
+.kx-empty.kx-empty-spacious { padding: 60px 24px; gap: 9px; }
+.kx-empty-spacious .kx-empty-ico { width: 58px; height: 58px; margin-bottom: 5px; }
+.kx-empty-spacious .kx-empty-ico svg { width: 27px; height: 27px; }
+.kx-empty-spacious .kx-empty-title { font-size: 14.5px; }
+.kx-empty-spacious .kx-empty-sub { font-size: 12.5px; max-width: 360px; line-height: 1.55; }
+.kx-empty-ico.primary {
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 28%, transparent);
+}
+.kx-empty-ico.muted {
+  background: var(--kx-surface-2); color: color-mix(in srgb, var(--p-text-color) 45%, transparent);
+  border: 1px solid var(--p-content-border-color);
+}
+/* The controls sheet owns the button; state owns its spacing. */
+.kx-empty > .kx-empty-cta { margin-top: 8px; padding-inline: 16px; }
+
+.kx-loading.kx-loading-centered { flex: 1; display: grid; place-items: center; padding: 64px 20px; }
+.kx-loading-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 13px; }
+.kx-loading-inner svg { width: 24px; height: 24px; }

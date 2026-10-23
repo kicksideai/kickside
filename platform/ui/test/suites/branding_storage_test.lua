@@ -59,6 +59,61 @@ end
 
 local function define_tests()
     test.describe("instance branding storage", function()
+        test.it("declares the raster upload contract to the appearance editor", function()
+            local response, err = http_client.get(base_url() .. "/api/auth/nav/list?manage=1", {
+                timeout = 10, headers = { Authorization = "Bearer " .. admin_token() },
+            })
+            local contract = decoded(response, err).logo_upload
+            test.not_nil(contract)
+            test.eq(contract.max_bytes, 2 * 1024 * 1024)
+            test.eq(#contract.formats, 4)
+            test.eq(contract.formats[1].mime, "image/png")
+            test.eq(contract.formats[2].extensions[2], "jpeg")
+        end)
+
+        local accepted = {
+            { "png", "image/png" }, { "jpg", "image/jpeg" }, { "jpeg", "image/jpeg" },
+            { "webp", "image/webp" }, { "gif", "image/gif" }, { "PNG", "image/png" },
+        }
+        local rejected = {
+            { "svg", "image/svg+xml" }, { "png", "image/svg+xml" },
+            { "svg", "image/png" }, { "png", "image/jpeg" },
+            { "bmp", "image/bmp" }, { "avif", "image/avif" },
+            { "ico", "image/x-icon" }, { "txt", "text/plain" },
+            { "png", "application/octet-stream" }, { "png", "text/html" },
+        }
+        for _, cases in ipairs({ accepted, rejected }) do
+            for _, case in ipairs(cases) do
+                local ext, mime = tostring(case[1]), tostring(case[2])
+                local allowed = cases == accepted
+                test.it((allowed and "accepts " or "rejects ") .. ext .. " as " .. mime, function()
+                    local boundary = "BrandingTypeFixture"
+                    local bytes = "<svg xmlns='http://www.w3.org/2000/svg'/>"
+                    if allowed then
+                        local fixture_ext = ext:lower()
+                        if fixture_ext == "jpeg" then fixture_ext = "jpg" end
+                        bytes = volume("app:module_source"):readfile("test/fixtures/logo." .. fixture_ext)
+                    end
+                    local response, err = http_client.post(base_url() .. "/api/auth/nav/logo", {
+                        timeout = 10,
+                        headers = { Authorization = "Bearer " .. admin_token(),
+                            ["Content-Type"] = "multipart/form-data; boundary=" .. boundary },
+                        body = "--" .. boundary .. '\r\nContent-Disposition: form-data; name="logo"; filename="example.' .. ext
+                            .. '"\r\nContent-Type: ' .. mime .. '\r\n\r\n' .. bytes .. "\r\n--" .. boundary .. "--\r\n",
+                    })
+                    test.is_nil(err)
+                    test.eq(response.status_code, allowed and 200 or 400, tostring(response.body))
+                    if allowed then
+                        local body = decoded(response, err)
+                        local served, serve_err = http_client.get(base_url() .. body.url, { timeout = 10 })
+                        test.is_nil(serve_err)
+                        test.eq(served.headers["Content-Type"], mime)
+                        test.eq(served.headers["X-Content-Type-Options"], "nosniff")
+                    end
+                end)
+            end
+        end
+
         test.it("serves a missing stored logo without importing files or writing state", function()
             local token = admin_token()
             save_logo(token, "/kickside-branding/logo.webp")

@@ -1,4 +1,5 @@
 local decision_content = require("decision_content")
+local expr = require("expr")
 local security = require("security")
 local contract = require("contract")
 local inbox_writer = require("inbox_writer")
@@ -25,6 +26,39 @@ local function copy_map(value: any): Map
     local out: Map = {}
     if type(value) == "table" then for key, item in pairs(value :: Map) do out[key] = item end end
     return out
+end
+
+local function resolved_form(form: any, input: any): (any?, string?)
+    if type(form) ~= "table" then return nil, nil end
+    local resolved = form
+    if type(form.properties) ~= "table" then return resolved, nil end
+    for key, property in pairs(form.properties :: Map) do
+        if type(property) == "table" and property.default_expr ~= nil then
+            local path = "form.properties." .. tostring(key) .. ".default_expr"
+            if type(property.default_expr) ~= "string" or property.default_expr == "" then
+                return nil, path .. " must be a non-empty expression"
+            end
+            local value, err = expr.eval(property.default_expr, { input = input })
+            if err then return nil, path .. ": " .. tostring(err) end
+            local expected = property.type
+            local valid = value ~= nil and (type(value) == expected
+                or (expected == "integer" and type(value) == "number" and value % 1 == 0))
+            if type(property.enum) == "table" then
+                local member = false
+                for _, option in ipairs(property.enum) do if option == value then member = true end end
+                valid = valid and member
+            end
+            if not valid then return nil, path .. " must return a value matching the field type and enum" end
+            if resolved == form then
+                resolved = copy_map(form)
+                resolved.properties = copy_map(form.properties)
+            end
+            local field = copy_map(property)
+            field.default = value
+            resolved.properties[key] = field
+        end
+    end
+    return resolved, nil
 end
 
 local function decision_params(args: Map): (Map?, string?)
@@ -55,7 +89,9 @@ local function decision_params(args: Map): (Map?, string?)
     metadata.dataflow_id = dataflow_id
     metadata.signal_id = signal_id
     metadata.prompt = emit.prompt
-    metadata.form = type(emit.form) == "table" and emit.form or nil
+    local form, form_err = resolved_form(emit.form, args.input)
+    if form_err then return nil, form_err end
+    metadata.form = form
     metadata.approve_label = emit.approve_label
     metadata.reject_label = emit.reject_label
     metadata.assignee = assignee
@@ -65,11 +101,23 @@ local function decision_params(args: Map): (Map?, string?)
     local content, content_err = decision_content.render(args.input, args.context)
     if content_err then return nil, content_err end
     local prompt = str(emit.prompt)
+    local title = prompt ~= "" and prompt or "Workflow decision"
+    if config.title_expr ~= nil then
+        if type(config.title_expr) ~= "string" or config.title_expr == "" then
+            return nil, "title_expr must be a non-empty expression"
+        end
+        local value, title_err = expr.eval(config.title_expr, { input = args.input })
+        if title_err then return nil, "title_expr: " .. tostring(title_err) end
+        if type(value) ~= "string" or not value:find("%S") then
+            return nil, "title_expr must return a non-empty string"
+        end
+        title = value
+    end
     local item_id = "workflow-decision:" .. dataflow_id .. ":" .. signal_id
     return {
         id = item_id,
         item_type = ITEM_TYPE,
-        title = prompt ~= "" and prompt or "Workflow decision",
+        title = title,
         content = content,
         priority = str(emit.priority) ~= "" and str(emit.priority) or "normal",
         metadata = metadata,

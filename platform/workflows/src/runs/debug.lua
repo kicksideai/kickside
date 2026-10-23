@@ -96,6 +96,8 @@ function M.debug_detail(workflow_id: any, run_id: any): (Map?, error?)
             execution.parent_dataflow_id = flow.parent_dataflow_id
             execution.dataflow_status = flow.status
             I.apply_live_status(run, flow)
+            local metadata = type(flow.metadata) == "table" and (flow.metadata :: Map) or {}
+            (run :: Map).error_details = metadata.error_details
             execution.dataflow_type = flow.type
             execution.created_at = flow.created_at
             execution.updated_at = flow.updated_at

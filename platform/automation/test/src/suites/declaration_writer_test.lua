@@ -152,6 +152,57 @@ local function define_tests(): ()
             test.not_nil(err)
             test.contains(tostring(err), "execution subject")
         end)
+        for _, allowed in ipairs({ false, true }) do
+            test.it(allowed and "accepts retained references with live grants on both principals"
+                or "rejects a pure edit when only the subject can access a retained reference", function()
+                local service = assert(component.get_service())
+                local id = tostring(uuid.v7())
+                local target = tostring(uuid.v7())
+                for _, component_id in ipairs({ id, target }) do
+                    local created, create_err = service:register({ component_id = component_id,
+                        impl_id = "kickside.automation.agent.fixture:automation_type" })
+                    test.is_nil(create_err, tostring(create_err))
+                    test.is_true(created.success)
+                end
+                local db = assert(sql.get(types.db_id()))
+                local _, context_err = db:execute("UPDATE kickside_components SET private_context=$1 WHERE component_id=$2", {
+                    json.encode({ _portable_input = { target = target, title = "Before" } }), id,
+                })
+                test.is_nil(context_err, tostring(context_err))
+                local _, subject_err = sql.builder.insert("kickside_component_access"):set_map({
+                    access_id = uuid.v7(), subject_type = "user", subject_id = "writer_subject",
+                    component_id = target, source_component_id = target, access_mask = 1, inherited = 0,
+                }):run_with(db):exec()
+                test.is_nil(subject_err, tostring(subject_err))
+                if not allowed then
+                    local _, revoke_err = db:execute("DELETE FROM kickside_component_access WHERE component_id=$1 AND subject_id=$2", {
+                        target, "writer_operator",
+                    })
+                    test.is_nil(revoke_err, tostring(revoke_err))
+                end
+                db:release()
+                local schema = { type = "object", properties = {
+                    target = { type = "string", ["x-reference"] = { kind = "component", access = "READ" } },
+                    title = { type = "string" },
+                } }
+                local request = reserved(input(schema, { target = target, title = "After" }, {
+                    { path = "target", kind = "component", id = target, access = "READ" },
+                }), "reconfigure", id)
+                local receipt, err = verify(request)
+                if allowed then
+                    test.is_nil(err, tostring(err))
+                    test.is_true(receipt.valid)
+                else
+                    test.is_nil(receipt)
+                    test.not_nil(err)
+                    test.contains(tostring(err), "operator lacks")
+                end
+                for _, component_id in ipairs({ id, target }) do
+                    local _, delete_err = service:delete({ component_id = component_id })
+                    test.is_nil(delete_err, tostring(delete_err))
+                end
+            end)
+        end
 
         test.it("rejects omitted references that the kind schema declares", function()
             local schema = { type = "object", properties = {
@@ -265,6 +316,20 @@ local function define_tests(): ()
             test.is_nil(receipt)
             test.not_nil(err)
             test.contains(tostring(err), "retained by no pin")
+        end)
+
+        test.it("returns the recorded subject identity in the verified creation receipt", function()
+            local command_input = input(nil, {}, {})
+            local request = reserved(command_input)
+            local receipt, err = verify(request)
+            test.is_nil(err, tostring(err))
+            test.not_nil(receipt.captured_identity)
+            test.eq(receipt.captured_identity.version, command_input.subject_identity.version)
+            test.eq(receipt.captured_identity.principal.kind, command_input.subject_identity.principal.kind)
+            test.eq(receipt.captured_identity.principal.id, command_input.subject_identity.principal.id)
+            test.eq(receipt.captured_identity.authorized_by.kind, command_input.subject_identity.authorized_by.kind)
+            test.eq(receipt.captured_identity.authorized_by.id, command_input.subject_identity.authorized_by.id)
+            test.eq(receipt.captured_identity.captured_at, command_input.subject_identity.captured_at)
         end)
 
         test.it("records computed validity for a pure declaration", function()

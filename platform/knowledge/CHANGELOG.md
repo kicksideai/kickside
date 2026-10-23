@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.65...knowledge-v0.1.66) (2026-10-23)
+
+
+### Bug Fixes
+
+* **knowledge:** reference large content artifacts instead of inlining them ([#88](https://github.com/kicksideai/kickside/issues/88)) ([08d13f6](https://github.com/kicksideai/kickside/commit/08d13f6e1caeddd470549da5e7adba7862df44ea))
+
+## [0.1.65](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.64...knowledge-v0.1.65) (2026-10-22)
+
+
+### Bug Fixes
+
+* **knowledge:** describe store lifecycle row output ([#90](https://github.com/kicksideai/kickside/issues/90)) ([81d54a9](https://github.com/kicksideai/kickside/commit/81d54a9c16c78d42b895d7ac0b4d8f1c626d4132))
+* **knowledge:** open engine stores through their named binding ([#108](https://github.com/kicksideai/kickside/issues/108)) ([b3dfa4c](https://github.com/kicksideai/kickside/commit/b3dfa4cd2d1c4682be51297fdc1dd30a193de9b7))
+* preserve typed LLM errors in agents and knowledge ([f56ef7f](https://github.com/kicksideai/kickside/commit/f56ef7fefcf00e51278751304fa88597382634b4))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## 0.1.64 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

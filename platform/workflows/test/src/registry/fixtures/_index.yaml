@@ -351,7 +351,7 @@ entries:
 
   - name: tool_count_files
     kind: function.lua
-    meta: { type: tool, public: true, test_only: true, environment: test }
+    meta: { type: tool, public: true, test_only: true, environment: test, input_schema: '{"type":"object"}' }
     source: file://../../suites/engine_execution_helper.lua
     method: linear
     modules: [ctx]

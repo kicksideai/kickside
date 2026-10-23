@@ -2,6 +2,7 @@ local M = {}
 function M.reset(stage: string, source: error?)
     M.stage, M.source, M.queries, M.accesses = stage, source, 0, 0
     M.rows = {{id = "thread", component_id = "component", marker = "kept"}}
+    M.append_options = nil
 end
 function M.query(...): (any, error?)
     M.queries = M.queries + 1
@@ -30,6 +31,10 @@ function M.has_access(...): (boolean?, error?)
     if M.stage == "missing_access" then return nil, nil end
     if M.stage == "denied" then return false, nil end
     return true, nil
+end
+function M.append_events_tx(_tx: any, _id: any, _events: any, options: any): (any, error?)
+    M.append_options = options
+    return {inserted = 1, max_seq = options.locked_thread and options.locked_thread.event_count + 1 or 1}, nil
 end
 local builder = {}
 function builder:from(...) return self end

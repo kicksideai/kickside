@@ -1,9 +1,9 @@
 import { a as q, b as H, W as $ } from "./index-D52CRMw6.js";
-import { P as G } from "./primevue-plugin-DzKV8Brb.js";
-import { defineComponent as J, computed as m, ref as d, onMounted as Q, onUnmounted as X, openBlock as s, createBlock as Z, unref as x, withCtx as ee, createElementBlock as l, createVNode as g, createTextVNode as v, toDisplayString as n, createElementVNode as t, normalizeClass as A, Fragment as L, createCommentVNode as w, withDirectives as _, vModelText as z } from "vue";
+import { e as G, P as J } from "./index-CKAvFXRR.js";
+import { defineComponent as Q, computed as m, ref as d, onMounted as X, onUnmounted as Z, openBlock as s, createBlock as ee, unref as x, withCtx as te, createElementBlock as l, createVNode as g, createTextVNode as v, toDisplayString as n, createElementVNode as t, normalizeClass as A, Fragment as L, createCommentVNode as w, withDirectives as _, vModelText as z } from "vue";
 import { Icon as k } from "@iconify/vue";
-import { api as N, host as D, define as te } from "@wippy-fe/proxy";
-import { s as oe, e as ae } from "./errMsg-CeWnWjjl.js";
+import { api as N, host as D, define as oe } from "@wippy-fe/proxy";
+import { e as ae } from "./errMsg-CxKGcp1F.js";
 import { f as re } from "./datetime--PfqsqnZ.js";
 const ie = {
   key: 0,
@@ -23,7 +23,7 @@ const ie = {
 }, ke = { class: "kxp-foot" }, he = { class: "kxp-form" }, ye = { class: "kxp-input-group" }, _e = { class: "kxp-input-group" }, ze = ["value"], Ce = { class: "kxp-input-group" }, Ee = { class: "kxp-input-group" }, je = {
   key: 0,
   class: "kxp-err"
-}, Se = { class: "kxp-foot" }, Pe = ["disabled"], Ue = ["disabled"], Me = /* @__PURE__ */ J({
+}, Se = { class: "kxp-foot" }, Pe = ["disabled"], Ue = ["disabled"], Me = /* @__PURE__ */ Q({
   __name: "profile",
   setup(I) {
     const R = q(), b = H(), C = m(() => !!(R.value.config || {}).readonly), a = d(null), h = d(!0), f = d(""), u = d(!1), c = d(!1), p = d(""), i = d({ full_name: "", password: "", confirm: "" }), E = m(() => a.value?.full_name?.trim() || a.value?.email || "Your account"), T = m(() => {
@@ -108,11 +108,11 @@ const ie = {
     function V(o) {
       o.key === "Escape" && (u.value ? U() : y.value = !1);
     }
-    return Q(() => {
+    return X(() => {
       O(), window.addEventListener("keydown", V);
-    }), X(() => {
+    }), Z(() => {
       window.removeEventListener("keydown", V);
-    }), (o, e) => (s(), Z(x(oe), {
+    }), (o, e) => (s(), ee(x(G), {
       visible: y.value,
       "onUpdate:visible": [
         e[3] || (e[3] = (r) => y.value = r),
@@ -126,7 +126,7 @@ const ie = {
       "aria-label": "Profile",
       class: "kxp-dialog"
     }, {
-      default: ee(() => [
+      default: te(() => [
         h.value ? (s(), l("div", ie, [
           g(x(k), {
             icon: "tabler:loader-2",
@@ -286,8 +286,8 @@ class Le extends $ {
     };
   }
   static get vueConfig() {
-    return { rootComponent: Me, plugins: [G] };
+    return { rootComponent: Me, plugins: [J] };
   }
 }
-te(import.meta.url, Le);
+oe(import.meta.url, Le);
 //# sourceMappingURL=profile.js.map

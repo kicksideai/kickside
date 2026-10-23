@@ -107,8 +107,9 @@ entries:
   - name: receipt_retention
     kind: library.lua
     meta:
-      comment: Bounded dispatcher prune of aged receipts after their recovery owner is absent.
+      comment: Bounded dispatcher retention of orphan receipts and settled event mappings.
     source: file://../receipt_retention.lua
+    modules: [sql]
     imports:
 
   - name: round_outcome
