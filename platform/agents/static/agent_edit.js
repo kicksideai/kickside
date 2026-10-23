@@ -2,7 +2,7 @@ import { u as y, g as C, W as h, P as _ } from "./primevue-plugin-Dn0ACs8V.js";
 import { computed as p, defineComponent as I, ref as s, onMounted as P, openBlock as w, createBlock as E, unref as S } from "vue";
 import { api as u, define as b } from "@wippy-fe/proxy";
 import { _ as k, l as x } from "./toolCatalog-B7JOn9aF.js";
-import { s as A } from "./styles-CiCzyjUM.js";
+import { s as A } from "./styles-DLTipENZ.js";
 import "@iconify/vue";
 function V(o) {
   return p(() => {

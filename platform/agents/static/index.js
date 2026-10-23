@@ -1,120 +1,92 @@
-import { g as ie, h as re, W as ce, P as ue } from "./primevue-plugin-Dn0ACs8V.js";
-import { defineComponent as de, ref as o, computed as ve, watch as pe, openBlock as r, createElementBlock as u, createElementVNode as s, createVNode as l, unref as n, createTextVNode as $, toDisplayString as p, withDirectives as K, vModelText as O, withCtx as f, normalizeClass as C, createCommentVNode as _, createBlock as P, Fragment as he, renderList as ke, withKeys as H, withModifiers as U } from "vue";
-import { Icon as c } from "@iconify/vue";
-import { s as h, _ as me, e as z, l as ge } from "./toolCatalog-B7JOn9aF.js";
-import { host as ye, api as T, loadByTagName as be, define as fe } from "@wippy-fe/proxy";
-import { W as Ce } from "./trait-presentation-BWGyO4dN.js";
-import { s as _e } from "./styles-CiCzyjUM.js";
-const xe = () => ie(), we = { class: "kx" }, $e = { class: "kx-head" }, Ee = { class: "kx-head-icon" }, Ne = { class: "kx-head-actions" }, Te = { class: "kx-count" }, Le = { class: "kx-search" }, Se = {
+import { g as G, h as Q, W as X, P as Y } from "./primevue-plugin-Dn0ACs8V.js";
+import { defineComponent as Z, ref as r, computed as ee, watch as te, openBlock as c, createElementBlock as d, createElementVNode as a, createVNode as n, unref as i, createTextVNode as C, toDisplayString as h, withDirectives as se, vModelText as ae, withCtx as g, normalizeClass as f, createCommentVNode as V, Fragment as ne, renderList as ie, withKeys as K, withModifiers as D } from "vue";
+import { Icon as l } from "@iconify/vue";
+import { s as y, _ as le, e as M, l as oe } from "./toolCatalog-B7JOn9aF.js";
+import { host as re, api as x, loadByTagName as ce, define as de } from "@wippy-fe/proxy";
+import { s as ue } from "./styles-DLTipENZ.js";
+const pe = () => G(), ve = { class: "kx" }, he = { class: "kx-head" }, me = { class: "kx-head-icon" }, ke = { class: "kx-head-actions" }, ge = { class: "kx-count" }, fe = { class: "kx-search" }, ye = {
   key: 0,
   class: "kx-err"
-}, Ve = {
-  key: 1,
-  class: "kx-background-run",
-  "aria-label": "Background agent run"
-}, Re = ["readonly"], Be = {
-  key: 2,
-  role: "alert"
-}, Ae = { class: "kx-body" }, De = {
+}, be = { class: "kx-body" }, _e = {
   key: 0,
   class: "kx-loading"
-}, Pe = {
+}, Ce = {
   key: 1,
   class: "kx-empty"
-}, Ue = { class: "kx-empty-ico" }, ze = {
+}, xe = { class: "kx-empty-ico" }, we = {
   key: 2,
   class: "kx-empty"
-}, Me = {
+}, $e = {
   key: 3,
   class: "kx-grid"
-}, We = ["onClick", "onKeydown"], Ie = { class: "kx-card-head" }, Ke = { class: "kx-ficon" }, Oe = { class: "kx-card-id" }, He = ["title"], je = {
+}, Ee = ["onClick", "onKeydown"], Ne = { class: "kx-card-head" }, Le = { class: "kx-ficon" }, Se = { class: "kx-card-id" }, Te = ["title"], Ve = {
   key: 0,
   class: "kx-card-meta"
-}, qe = ["title"], Je = { class: "kx-card-desc" }, Fe = ["disabled", "onClick", "title"], Ge = /* @__PURE__ */ de({
+}, De = ["title"], Ae = { class: "kx-card-desc" }, Ue = ["disabled", "onClick", "title"], Ke = /* @__PURE__ */ Z({
   __name: "agents",
-  setup(j) {
-    const L = o(!1), m = o(""), d = o([]), S = o(""), V = o([]), R = o([]), E = o([]), q = xe();
-    function J(e) {
+  setup(P) {
+    const w = r(!1), p = r(""), u = r([]), $ = r(""), E = r([]), N = r([]), b = r([]), z = pe();
+    function H(e) {
       return e && e.charAt(0).toUpperCase() + e.slice(1);
     }
-    function F(e) {
-      return e ? e.startsWith("class:") ? J(e.slice(6)) : E.value.find((a) => a.name === e)?.title || e : "";
+    function I(e) {
+      return e ? e.startsWith("class:") ? H(e.slice(6)) : b.value.find((s) => s.name === e)?.title || e : "";
     }
-    function G(e) {
+    function O(e) {
       return !!e && e.startsWith("class:");
     }
-    const M = ve(() => {
-      const e = S.value.trim().toLowerCase();
-      return e ? d.value.filter(
-        (a) => (a.title || "").toLowerCase().includes(e) || (a.description || "").toLowerCase().includes(e)
-      ) : d.value;
+    const A = ee(() => {
+      const e = $.value.trim().toLowerCase();
+      return e ? u.value.filter(
+        (s) => (s.title || "").toLowerCase().includes(e) || (s.description || "").toLowerCase().includes(e)
+      ) : u.value;
     });
-    async function B() {
-      L.value = !0, m.value = "";
+    async function L() {
+      w.value = !0, p.value = "";
       try {
-        const { data: e } = await T.get("/api/v1/user-agents");
+        const { data: e } = await x.get("/api/v1/user-agents");
         if (!e?.success) throw new Error(e?.error || "failed to load agents");
-        d.value = e.agents || [];
+        u.value = e.agents || [];
       } catch (e) {
-        d.value = [], m.value = z(e, "could not load agents");
+        u.value = [], p.value = M(e, "could not load agents");
       } finally {
-        L.value = !1;
+        w.value = !1;
       }
     }
-    async function Q() {
+    async function R() {
       try {
-        const { data: e } = await T.get("/api/v1/agents/traits");
-        V.value = e?.success ? e.traits || [] : [];
-      } catch {
-        V.value = [];
-      }
-      try {
-        R.value = await ge();
-      } catch {
-        R.value = [];
-      }
-      try {
-        const { data: e } = await T.get("/api/v1/models/list?capability=generate", { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } });
-        E.value = e?.success ? e.models || [] : [];
+        const { data: e } = await x.get("/api/v1/agents/traits");
+        E.value = e?.success ? e.traits || [] : [];
       } catch {
         E.value = [];
       }
+      try {
+        N.value = await oe();
+      } catch {
+        N.value = [];
+      }
+      try {
+        const { data: e } = await x.get("/api/v1/models/list?capability=generate", { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } });
+        b.value = e?.success ? e.models || [] : [];
+      } catch {
+        b.value = [];
+      }
     }
-    function X(e) {
-      e.start_token && q("kickside-chat-open", { kind: "start", startToken: e.start_token });
-    }
-    const v = o(null), g = o(""), k = o(null), y = o("");
     function W(e) {
-      return ((e.access_level || 0) & 2) !== 0;
+      e.start_token && z("kickside-chat-open", { kind: "start", startToken: e.start_token });
     }
-    function Y(e) {
-      W(e) && (v.value = { ...e }, g.value = "", k.value = null, y.value = "");
+    const m = r(!1), S = r(null);
+    function U() {
+      S.value = null, m.value = !0;
     }
-    function Z() {
-      v.value = null, k.value = null, y.value = "";
+    function _(e) {
+      S.value = e.id, m.value = !0;
     }
-    function ee() {
-      !v.value || !g.value.trim() || k.value || (k.value = {
-        parent: v.value.id,
-        title: `Run ${v.value.title || "agent"}`,
-        target: JSON.stringify({ kind: "agent", agent_id: v.value.id, prompt: g.value })
-      });
+    function B() {
+      m.value = !1, L();
     }
-    function te(e) {
-      y.value = z(e, "Could not launch the background task");
-    }
-    const x = o(!1), A = o(null);
-    function I() {
-      A.value = null, x.value = !0;
-    }
-    function N(e) {
-      A.value = e.id, x.value = !0;
-    }
-    function ae() {
-      x.value = !1, B();
-    }
-    async function se(e) {
-      if (await ye.confirm({
+    async function j(e) {
+      if (await re.confirm({
         header: "Delete agent",
         message: `Delete “${e.title || "(untitled)"}”? This can't be undone.`,
         icon: "tabler:trash",
@@ -122,88 +94,88 @@ const xe = () => ie(), we = { class: "kx" }, $e = { class: "kx-head" }, Ee = { c
         rejectLabel: "Cancel",
         acceptClass: "p-button-danger"
       })) {
-        m.value = "";
+        p.value = "";
         try {
-          const { data: t } = await T.delete(`/api/v1/user-agents/${e.id}`);
+          const { data: t } = await x.delete(`/api/v1/user-agents/${e.id}`);
           if (!t?.success) throw new Error(t?.error || "delete failed");
-          await B();
+          await L();
         } catch (t) {
-          m.value = z(t, "delete failed");
+          p.value = M(t, "delete failed");
         }
       }
     }
-    const w = o(!1), D = o(null), b = o(null);
-    function ne(e) {
-      D.value = e, w.value = !0;
+    const k = r(!1), T = r(null), v = r(null);
+    function q(e) {
+      T.value = e, k.value = !0;
     }
-    function le() {
-      w.value = !1, D.value = null;
+    function F() {
+      k.value = !1, T.value = null;
     }
-    async function oe() {
-      const e = D.value;
-      if (!b.value || !e) return;
-      if (b.value.innerHTML = "", !customElements.get("kickside-share"))
+    async function J() {
+      const e = T.value;
+      if (!v.value || !e) return;
+      if (v.value.innerHTML = "", !customElements.get("kickside-share"))
         try {
-          await be("kickside-share", { timeoutMs: 8e3 });
+          await ce("kickside-share", { timeoutMs: 8e3 });
         } catch {
         }
-      const a = document.createElement("kickside-share");
-      a.setAttribute("config", JSON.stringify({
+      const s = document.createElement("kickside-share");
+      s.setAttribute("config", JSON.stringify({
         resource_id: e.id,
         access_url: `/api/v1/component-access/grants/${encodeURIComponent(e.id)}`,
         share_url: `/api/v1/component-access/share/${encodeURIComponent(e.id)}`,
         title: e.title || ""
-      })), a.style.display = "block", a.addEventListener("close", le), b.value.appendChild(a);
+      })), s.style.display = "block", s.addEventListener("close", F), v.value.appendChild(s);
     }
-    return pe([w, b], async () => {
-      w.value && b.value && await oe();
-    }), re(async () => {
-      await Promise.all([B(), Q()]);
-    }), (e, a) => (r(), u("div", we, [
-      s("header", $e, [
-        s("div", Ee, [
-          l(n(c), {
+    return te([k, v], async () => {
+      k.value && v.value && await J();
+    }), Q(async () => {
+      await Promise.all([L(), R()]);
+    }), (e, s) => (c(), d("div", ve, [
+      a("header", he, [
+        a("div", me, [
+          n(i(l), {
             icon: "tabler:robot",
             "aria-hidden": "true"
           })
         ]),
-        a[5] || (a[5] = s("div", { class: "kx-head-text" }, [
-          s("h1", { class: "kx-title" }, "Agents"),
-          s("p", { class: "kx-head-sub" }, "Configured assistants — a model, a prompt, and the capabilities and tools they use.")
+        s[3] || (s[3] = a("div", { class: "kx-head-text" }, [
+          a("h1", { class: "kx-title" }, "Agents"),
+          a("p", { class: "kx-head-sub" }, "Configured assistants — a model, a prompt, and the capabilities and tools they use.")
         ], -1)),
-        s("div", Ne, [
-          s("span", Te, [
-            l(n(c), {
+        a("div", ke, [
+          a("span", ge, [
+            n(i(l), {
               icon: "tabler:robot",
               "aria-hidden": "true"
             }),
-            $(" " + p(d.value.length) + " agent" + p(d.value.length !== 1 ? "s" : ""), 1)
+            C(" " + h(u.value.length) + " agent" + h(u.value.length !== 1 ? "s" : ""), 1)
           ]),
-          s("div", Le, [
-            l(n(c), {
+          a("div", fe, [
+            n(i(l), {
               icon: "tabler:search",
               class: "kx-search-ico",
               "aria-hidden": "true"
             }),
-            K(s("input", {
-              "onUpdate:modelValue": a[0] || (a[0] = (t) => S.value = t),
+            se(a("input", {
+              "onUpdate:modelValue": s[0] || (s[0] = (t) => $.value = t),
               class: "kx-search-input",
               type: "text",
               placeholder: "Search agents…"
             }, null, 512), [
-              [O, S.value]
+              [ae, $.value]
             ])
           ]),
-          l(n(h), {
+          n(i(y), {
             type: "button",
             "data-testid": "agents-create",
             label: "New agent",
-            onClick: I
+            onClick: U
           }, {
-            icon: f(({ class: t }) => [
-              l(n(c), {
+            icon: g(({ class: t }) => [
+              n(i(l), {
                 icon: "tabler:plus",
-                class: C(t),
+                class: f(t),
                 "aria-hidden": "true"
               }, null, 8, ["class"])
             ]),
@@ -211,162 +183,105 @@ const xe = () => ie(), we = { class: "kx" }, $e = { class: "kx-head" }, Ee = { c
           })
         ])
       ]),
-      m.value ? (r(), u("div", Se, p(m.value), 1)) : _("", !0),
-      v.value ? (r(), u("section", Ve, [
-        s("header", null, [
-          s("h2", null, "Run " + p(v.value.title || "agent") + " in background", 1),
-          l(n(h), {
-            type: "button",
-            label: "Close background run",
-            severity: "secondary",
-            outlined: "",
-            onClick: Z
-          })
-        ]),
-        a[7] || (a[7] = s("p", null, "The task runs with its selected account's current access. Its recorded human authorizer still needs access and permission to select that account.", -1)),
-        s("label", null, [
-          a[6] || (a[6] = $("Task prompt", -1)),
-          K(s("textarea", {
-            "onUpdate:modelValue": a[1] || (a[1] = (t) => g.value = t),
-            "aria-label": "Task prompt",
-            readonly: !!k.value,
-            rows: "4"
-          }, null, 8, Re), [
-            [O, g.value]
-          ])
-        ]),
-        k.value ? (r(), P(Ce, {
-          key: 1,
-          tag: "wc-manual-task-launcher",
-          attrs: k.value,
-          onError: te,
-          onCreated: a[2] || (a[2] = (t) => y.value = "")
-        }, null, 8, ["attrs"])) : (r(), P(n(h), {
-          key: 0,
-          type: "button",
-          label: "Prepare background run",
-          disabled: !g.value.trim(),
-          onClick: ee
-        }, null, 8, ["disabled"])),
-        y.value ? (r(), u("p", Be, p(y.value), 1)) : _("", !0)
-      ])) : _("", !0),
-      s("div", Ae, [
-        L.value && !d.value.length ? (r(), u("div", De, [
-          l(n(c), {
+      p.value ? (c(), d("div", ye, h(p.value), 1)) : V("", !0),
+      a("div", be, [
+        w.value && !u.value.length ? (c(), d("div", _e, [
+          n(i(l), {
             icon: "tabler:loader-2",
             class: "spin",
             "aria-hidden": "true"
           }),
-          a[8] || (a[8] = $(" Loading… ", -1))
-        ])) : d.value.length ? M.value.length ? (r(), u("div", Me, [
-          (r(!0), u(he, null, ke(M.value, (t) => (r(), u("div", {
+          s[4] || (s[4] = C(" Loading… ", -1))
+        ])) : u.value.length ? A.value.length ? (c(), d("div", $e, [
+          (c(!0), d(ne, null, ie(A.value, (t) => (c(), d("div", {
             key: t.id,
             class: "kx-card kx-focus-halo",
             tabindex: "0",
-            onClick: (i) => N(t),
+            onClick: (o) => _(t),
             onKeydown: [
-              H((i) => N(t), ["enter"]),
-              H(U((i) => N(t), ["prevent"]), ["space"])
+              K((o) => _(t), ["enter"]),
+              K(D((o) => _(t), ["prevent"]), ["space"])
             ]
           }, [
-            s("div", Ie, [
-              s("span", Ke, [
-                l(n(c), {
+            a("div", Ne, [
+              a("span", Le, [
+                n(i(l), {
                   icon: t.icon || "tabler:robot",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
               ]),
-              s("div", Oe, [
-                s("div", {
+              a("div", Se, [
+                a("div", {
                   class: "kx-card-name",
                   title: t.title || "(untitled)"
-                }, p(t.title || "(untitled)"), 9, He),
-                t.model ? (r(), u("div", je, [
-                  s("span", {
+                }, h(t.title || "(untitled)"), 9, Te),
+                t.model ? (c(), d("div", Ve, [
+                  a("span", {
                     class: "kx-model",
                     title: t.model
                   }, [
-                    l(n(c), {
-                      icon: G(t.model) ? "tabler:category" : "tabler:cpu",
+                    n(i(l), {
+                      icon: O(t.model) ? "tabler:category" : "tabler:cpu",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"]),
-                    $(" " + p(F(t.model)), 1)
-                  ], 8, qe)
-                ])) : _("", !0)
+                    C(" " + h(I(t.model)), 1)
+                  ], 8, De)
+                ])) : V("", !0)
               ]),
-              s("div", {
+              a("div", {
                 class: "kx-card-actions",
-                onClick: a[3] || (a[3] = U(() => {
+                onClick: s[1] || (s[1] = D(() => {
                 }, ["stop"]))
               }, [
-                W(t) ? (r(), P(n(h), {
-                  key: 0,
-                  type: "button",
-                  severity: "secondary",
-                  outlined: "",
-                  size: "small",
-                  title: "Run in background",
-                  "aria-label": `Run ${t.title} in background`,
-                  onClick: (i) => Y(t)
-                }, {
-                  icon: f(({ class: i }) => [
-                    l(n(c), {
-                      icon: "tabler:player-play",
-                      class: C(i),
-                      "aria-hidden": "true"
-                    }, null, 8, ["class"])
-                  ]),
-                  _: 1
-                }, 8, ["aria-label", "onClick"])) : _("", !0),
-                l(n(h), {
+                n(i(y), {
                   type: "button",
                   severity: "secondary",
                   outlined: "",
                   size: "small",
                   title: "Edit",
                   "aria-label": `Edit ${t.title}`,
-                  onClick: (i) => N(t)
+                  onClick: (o) => _(t)
                 }, {
-                  icon: f(({ class: i }) => [
-                    l(n(c), {
+                  icon: g(({ class: o }) => [
+                    n(i(l), {
                       icon: "tabler:pencil",
-                      class: C(i),
+                      class: f(o),
                       "aria-hidden": "true"
                     }, null, 8, ["class"])
                   ]),
                   _: 1
                 }, 8, ["aria-label", "onClick"]),
-                l(n(h), {
+                n(i(y), {
                   type: "button",
                   severity: "secondary",
                   outlined: "",
                   size: "small",
                   title: "Share",
                   "aria-label": `Share ${t.title}`,
-                  onClick: (i) => ne(t)
+                  onClick: (o) => q(t)
                 }, {
-                  icon: f(({ class: i }) => [
-                    l(n(c), {
+                  icon: g(({ class: o }) => [
+                    n(i(l), {
                       icon: "tabler:share",
-                      class: C(i),
+                      class: f(o),
                       "aria-hidden": "true"
                     }, null, 8, ["class"])
                   ]),
                   _: 1
                 }, 8, ["aria-label", "onClick"]),
-                l(n(h), {
+                n(i(y), {
                   type: "button",
                   severity: "danger",
                   outlined: "",
                   size: "small",
                   title: "Delete",
                   "aria-label": `Delete ${t.title}`,
-                  onClick: (i) => se(t)
+                  onClick: (o) => j(t)
                 }, {
-                  icon: f(({ class: i }) => [
-                    l(n(c), {
+                  icon: g(({ class: o }) => [
+                    n(i(l), {
                       icon: "tabler:trash",
-                      class: C(i),
+                      class: f(o),
                       "aria-hidden": "true"
                     }, null, 8, ["class"])
                   ]),
@@ -374,42 +289,42 @@ const xe = () => ie(), we = { class: "kx" }, $e = { class: "kx-head" }, Ee = { c
                 }, 8, ["aria-label", "onClick"])
               ])
             ]),
-            s("div", Je, p(t.description || "No description"), 1),
-            s("button", {
+            a("div", Ae, h(t.description || "No description"), 1),
+            a("button", {
               class: "kx-card-chat",
               disabled: !t.start_token,
-              onClick: U((i) => X(t), ["stop"]),
+              onClick: D((o) => W(t), ["stop"]),
               title: t.start_token ? "Chat with this agent" : "Chat unavailable"
             }, [
-              l(n(c), {
+              n(i(l), {
                 icon: "tabler:message",
                 "aria-hidden": "true"
               }),
-              a[12] || (a[12] = $(" Chat ", -1))
-            ], 8, Fe)
-          ], 40, We))), 128))
-        ])) : (r(), u("div", ze, [...a[11] || (a[11] = [
-          s("div", { class: "kx-empty-title" }, "No matches", -1),
-          s("div", { class: "kx-empty-sub" }, "No agents match the current search.", -1)
-        ])])) : (r(), u("div", Pe, [
-          s("div", Ue, [
-            l(n(c), {
+              s[8] || (s[8] = C(" Chat ", -1))
+            ], 8, Ue)
+          ], 40, Ee))), 128))
+        ])) : (c(), d("div", we, [...s[7] || (s[7] = [
+          a("div", { class: "kx-empty-title" }, "No matches", -1),
+          a("div", { class: "kx-empty-sub" }, "No agents match the current search.", -1)
+        ])])) : (c(), d("div", Ce, [
+          a("div", xe, [
+            n(i(l), {
               icon: "tabler:robot",
               "aria-hidden": "true"
             })
           ]),
-          a[9] || (a[9] = s("div", { class: "kx-empty-title" }, "No agents yet", -1)),
-          a[10] || (a[10] = s("div", { class: "kx-empty-sub" }, "Agents are configured assistants — a model, a prompt, and the capabilities and tools they can use. Create one to get started.", -1)),
-          l(n(h), {
+          s[5] || (s[5] = a("div", { class: "kx-empty-title" }, "No agents yet", -1)),
+          s[6] || (s[6] = a("div", { class: "kx-empty-sub" }, "Agents are configured assistants — a model, a prompt, and the capabilities and tools they can use. Create one to get started.", -1)),
+          n(i(y), {
             type: "button",
             "data-testid": "agents-create",
             label: "New agent",
-            onClick: I
+            onClick: U
           }, {
-            icon: f(({ class: t }) => [
-              l(n(c), {
+            icon: g(({ class: t }) => [
+              n(i(l), {
                 icon: "tabler:plus",
-                class: C(t),
+                class: f(t),
                 "aria-hidden": "true"
               }, null, 8, ["class"])
             ]),
@@ -417,37 +332,37 @@ const xe = () => ie(), we = { class: "kx" }, $e = { class: "kx-head" }, Ee = { c
           })
         ]))
       ]),
-      l(me, {
-        open: x.value,
-        "agent-id": A.value,
-        traits: V.value,
-        tools: R.value,
-        models: E.value,
-        agents: d.value,
-        onClose: a[4] || (a[4] = (t) => x.value = !1),
-        onSaved: ae
+      n(le, {
+        open: m.value,
+        "agent-id": S.value,
+        traits: E.value,
+        tools: N.value,
+        models: b.value,
+        agents: u.value,
+        onClose: s[2] || (s[2] = (t) => m.value = !1),
+        onSaved: B
       }, null, 8, ["open", "agent-id", "traits", "tools", "models", "agents"]),
-      w.value ? (r(), u("div", {
-        key: 2,
+      k.value ? (c(), d("div", {
+        key: 1,
         ref_key: "shareHost",
-        ref: b
-      }, null, 512)) : _("", !0)
+        ref: v
+      }, null, 512)) : V("", !0)
     ]));
   }
-}), Qe = { props: { type: "object", properties: {} } }, Xe = {
-  wippy: Qe
+}), Me = { props: { type: "object", properties: {} } }, Pe = {
+  wippy: Me
 };
-class Ye extends ce {
+class ze extends X {
   static get wippyConfig() {
     return {
-      propsSchema: Xe.wippy.props,
+      propsSchema: Pe.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: _e
+      inlineCss: ue
     };
   }
   static get vueConfig() {
-    return { rootComponent: Ge, plugins: [ue] };
+    return { rootComponent: Ke, plugins: [Y] };
   }
 }
-fe(import.meta.url, Ye);
+de(import.meta.url, ze);
 //# sourceMappingURL=index.js.map
