@@ -501,6 +501,7 @@ entries:
     kind: registry.entry
     meta:
       type: kickside.automation.port
+      recurring_target: agent
       title: Run Agent
       comment: Run the selected agent on the delivered prompt.
       icon: tabler:robot

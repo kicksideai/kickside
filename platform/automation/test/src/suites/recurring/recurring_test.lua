@@ -57,13 +57,6 @@ return { run = test.run_cases(function()
         -- arm every unrelated task left by preceding sharing assertions.
         test.after_each(cleanup)
         test.after_all(cleanup)
-        test.it("rejects retired agent targets with a typed declaration error", function()
-            local target, err = recurring.target({ kind = "agent", agent_id = "example:agent", prompt = "Run" })
-            test.is_nil(target)
-            test.is_true(errors.is(err, errors.INVALID), tostring(err))
-            test.eq(err:details().error_kind, "declaration")
-            test.is_false(err:retryable())
-        end)
         test.it("creates a source-free timer automation with the caller's identity and generic UI controls", function()
             local id = create()
             local d = h.read_drive(id, "main")
@@ -89,6 +82,8 @@ return { run = test.run_cases(function()
                 { action = "create", target = { kind = "action", port = PORT, input = {} } },
                 { action = "create", schedule = schedule },
                 { action = "create", schedule = schedule, target = { kind = "workflow" } },
+                { action = "create", schedule = schedule, target = { kind = "agent", agent_id = "daily-agent" } },
+                { action = "create", schedule = schedule, target = { kind = "agent", prompt = "Daily summary" } },
                 { action = "create", schedule = schedule, target = { kind = "action", input = {} } },
                 { action = "create", schedule = schedule, target = { kind = "action", port = PORT } },
                 { action = "create", schedule = schedule, target = { kind = "action", port = "app.sink:write" } },
@@ -109,7 +104,7 @@ return { run = test.run_cases(function()
             end
             local id = create()
             local original = canonical_json.encode(component.get_private_context(id))
-            for _, target in ipairs({ { kind = "workflow" },
+            for _, target in ipairs({ { kind = "workflow" }, { kind = "agent", agent_id = "daily-agent" },
                 { kind = "action", port = PORT }, { kind = "action", input = {} } }) do
                 local result, err = call({ action = "update", id = id, target = target })
                 test.is_nil(result)
@@ -655,7 +650,7 @@ return { run = test.run_cases(function()
         test.it("sharees need live grants for retained and new targets when editing cadence", function()
             local target, replacement = create(), create()
             local id = create({ action = "create", schedule = { type = "interval", expression = "1h" },
-                target = { kind = "workflow", flow_ref = { kind = "flow", id = target, version = 1 }, input = {} } })
+                target = { kind = "agent", agent_id = target, prompt = "Existing target" } })
             grant(id, 3)
             local before = canonical_json.encode(component.get_private_context(id)._execution_identity)
             refused({ action = "update", id = id,
@@ -669,15 +664,15 @@ return { run = test.run_cases(function()
                 schedule = { type = "interval", expression = "2h" } }, other)
             test.is_nil(err, tostring(err))
             test.not_nil(changed)
-            local new_target = { kind = "workflow", flow_ref = { kind = "flow", id = replacement, version = 1 }, input = {} }
+            local new_target = { kind = "agent", agent_id = replacement, prompt = "New target" }
             refused({ action = "update", id = id, target = new_target })
-            test.eq(component.get_private_context(id).target.flow_ref.id, target)
+            test.eq(component.get_private_context(id).target.agent_id, target)
             grant(replacement, component.ACCESS.READ)
             local updated, update_err = other:call("kickside.automation.agent:automations_manage", {
                 action = "reconfigure", id = id, input = { target = new_target } })
             test.is_nil(update_err, tostring(update_err))
             test.not_nil(updated)
-            test.eq(component.get_private_context(id).target.flow_ref.id, replacement)
+            test.eq(component.get_private_context(id).target.agent_id, replacement)
             test.eq(canonical_json.encode(component.get_private_context(id)._execution_identity), before)
             -- Retaining a target never skips the executor's live resource grant.
             h.exec("UPDATE kickside_component_access SET access_mask=0 WHERE component_id=$1 AND subject_id=$2",
@@ -795,14 +790,19 @@ return { run = test.run_cases(function()
             test.eq(entry.meta.type, "tool")
             test.not_nil(select(1, json.decode(entry.meta.input_schema)))
         end)
-        test.it("lowers workflow targets to their owning declared endpoint", function()
+        test.it("lowers workflow and agent targets to their owning declared endpoints", function()
             local ref = { kind = "flow", id = "published-flow", version = 3 }
             local workflow, err = recurring.target({ kind = "workflow", flow_ref = ref, input = { label = "hello" } })
             test.is_nil(err, tostring(err))
             test.eq(workflow.port, "kickside.automation.recurring.fixture:workflow_action")
             test.eq(workflow.config.flow_ref.version, 3)
             test.eq(workflow.input.label, "hello")
+            local agent = recurring.target({ kind = "agent", agent_id = "my-agent", prompt = "Check daily" })
+            test.eq(agent.port, "kickside.automation.recurring.fixture:agent_action")
+            test.eq(agent.input.content, "Check daily")
+            test.eq(agent.config.agent_id, "my-agent")
             test.is_nil(select(1, recurring.target({ kind = "workflow", flow_ref = { id = "draft" } })))
+            test.is_nil(select(1, recurring.target({ kind = "agent", agent_id = "my-agent", prompt = "" })))
         end)
         test.it("runs at least two scheduled ticks through Jobs under the creator's live identity", function()
             local id = create({ action = "create", title = "Live recurring", schedule = { type = "interval", expression = "2s" },

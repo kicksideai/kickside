@@ -12,7 +12,7 @@ entries:
   meta:
     type: kickside.automation
     title: Manual task
-    comment: Run a published workflow or declared writable action on explicit request.
+    comment: Run a published workflow, agent prompt or declared writable action on explicit request.
     icon: tabler:player-play
     class: automation
     exportable: true
@@ -41,6 +41,7 @@ entries:
               type: string
               enum:
               - workflow
+              - agent
               - action
             flow_ref:
               type: object
@@ -61,6 +62,14 @@ entries:
                 version:
                   type: integer
                   minimum: 1
+            agent_id:
+              type: string
+              x-reference:
+                kind: agent
+                access: READ
+            prompt:
+              type: string
+              minLength: 1
             port:
               type: string
               minLength: 1
