@@ -10,17 +10,19 @@
 .kx-notice svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
 .kx-notice.info svg { color: var(--p-primary-color); }
 .kx-notice.warn {
-  background: color-mix(in srgb, var(--p-warn-500) 12%, transparent); color: var(--p-warn-500);
+  background: color-mix(in srgb, var(--p-warn-500) 12%, transparent); color: var(--p-text-color);
   border: 1px solid color-mix(in srgb, var(--p-warn-500) 30%, transparent);
 }
 .kx-notice.error {
-  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-500);
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-text-color);
   border: 1px solid color-mix(in srgb, var(--p-danger-500) 30%, transparent);
 }
 .kx-notice.help {
   background: color-mix(in srgb, var(--p-help-500) 12%, transparent); color: var(--p-text-color);
   border: 1px solid color-mix(in srgb, var(--p-help-500) 30%, transparent);
 }
+.kx-notice.warn svg { color: var(--p-warn-500); }
+.kx-notice.error svg { color: var(--p-danger-500); }
 .kx-notice.help svg { color: var(--p-help-500); }
 .kx-notice-action {
   margin-left: 8px; padding: 2px 10px; border-radius: var(--kx-radius-8);

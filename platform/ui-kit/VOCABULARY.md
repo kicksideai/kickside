@@ -233,7 +233,9 @@ as described above.
 
 The chrome reuses `--kx-control-height`, `--kx-radius-6/8/14` and
 `--kx-surface-1/2`. Background, border, text, primary and severity colors read
-`--p-*` directly. The quieter text, transparent border and primary tint use
+`--p-*` directly. Rail labels and search hints use the semantic muted text color;
+notice text uses the semantic text color while its icon, border and wash carry
+severity. Filled danger controls use the danger contrast token. The quieter text, transparent border and primary tint use
 `color-mix` directly where their proportions differ from an existing derived
 token; they do not introduce aliases. Focus reads `--p-focus-ring-color` and
 `--p-focus-ring-shadow`. Pills use 999px corners, chips 6px, controls 8px and
