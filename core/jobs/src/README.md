@@ -33,6 +33,8 @@ all resolve that config, so runtime SQL always follows the host's database mappi
 
 `jobs.get_job(id)` reads the exact job returned by enqueue and returns `(row, nil)`, `(nil, nil)` when absent, or `(nil, err)` on failure. The owning caller authorizes its resource before reading the job. Thread listings remain scoped to canonical thread owners.
 
+`jobs.get_job_statuses(ids)` reads an exact set of job IDs in one query and returns an ID-to-status map; absent or malformed UUIDs are omitted. `jobs.get_job_statuses_tx(tx, ids)` reads through the caller's transaction on the configured Jobs database, including its uncommitted writes. It neither commits nor rolls back that transaction. Both are internal-owner APIs: callers authorize their resource before reading job state.
+
 `jobs.wake_job(id, { control = true, ensure_due = true })` ensures dispatch without rescheduling an already due pending job or requesting another execution of a running job. It retains their retry, lease, schedule and demand state and still notifies the worker pool. Parked, disabled and future pending jobs receive the ordinary control wake. A ready job returns `already_due = true` alongside the existing result fields. Omitting `ensure_due` retains the existing control and demand wake behavior.
 
 `jobs.enqueue` and `jobs.enqueue_tx` accept optional `demand = true` with `slot = true`. Enrollment and control demand commit together: parked work becomes due, and a running attempt retains a follow-up. Reusing an active one-shot identity with demand returns a conflict. The caller of `enqueue_tx` notifies the pool after commit. Omitting demand retains the existing enqueue behavior.
@@ -51,3 +53,9 @@ Completion options accept `park = true` independently of `record.status`. Parkin
 suppresses ordinary wake demand while preserving the requested history status;
 a pending control wake retains priority. Without `park`, completion keeps its
 existing record-based parking behavior.
+
+`wake_multi(tx, keys, dbtype?, completion_job_id?)` accepts an optional completing
+job ID. When fan-out locks jobs, it includes that row in the globally ordered
+prelock without waking it unless it independently qualifies for a supplied key.
+With no fan-out job locks, completion takes its sole job lock itself. Wake keys
+are published before any job row is locked.

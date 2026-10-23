@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local sql = require("sql")
 local funcs = require("funcs")
@@ -5,7 +6,7 @@ local registry = require("registry")
 
 local DATABASE = "app:prepared_upgrade_db"
 local ROWS = 200
-local INDEX_MIGRATION = "13_prepared_settlement_index"
+local INDEX_MIGRATION = "15_prepared_settlement_index"
 
 local function migrate(name: string): any
     local result, err = funcs.call("kickside.automation.migrations:" .. name,

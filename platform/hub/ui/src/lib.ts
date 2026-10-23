@@ -26,6 +26,11 @@ export function fmtBytes(n?: number): string {
   return n + ' B'
 }
 
+export function formatLicense(license?: string | null): string {
+  return license?.replace(/[^\s()]+/g, operand =>
+    operand.startsWith('LicenseRef-') ? operand.slice('LicenseRef-'.length).replace(/-/g, ' ') : operand) ?? ''
+}
+
 // ── Per-module accent + icon (mirrors keeper's hub) ─────────────────────────
 const TYPE_ICONS: Record<string, string> = {
   library: 'tabler:book-2',

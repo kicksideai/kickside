@@ -1,5 +1,6 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 return require("migration").define(function()
-    migration("13 prepared settlement index", function()
+    migration("15 prepared settlement index", function()
         for _, dialect in ipairs({"postgres", "sqlite"}) do
             database(dialect, function()
                 up(function(db)

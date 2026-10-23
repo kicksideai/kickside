@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.21](https://github.com/kicksideai/kickside/compare/kickside-v0.2.20...kickside-v0.2.21) (2026-10-23)
+
+
+### Bug Fixes
+
+* **app:** build and verify complete release packages ([#119](https://github.com/kicksideai/kickside/issues/119)) ([277f2b0](https://github.com/kicksideai/kickside/commit/277f2b0455bf68bc81187228e90dd1b54e42af70))
+
+## [0.2.20](https://github.com/kicksideai/kickside/compare/kickside-v0.2.19...kickside-v0.2.20) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** delegate repair checkpoints to migration framework ([#114](https://github.com/kicksideai/kickside/issues/114)) ([de7b929](https://github.com/kicksideai/kickside/commit/de7b929b98da72bacf5d63ce031d6c628ae40c3f))
+* **automation:** require the published tool-action contract ([#117](https://github.com/kicksideai/kickside/issues/117)) ([aa4589c](https://github.com/kicksideai/kickside/commit/aa4589cc2873628ba2bf9494bce90b38755c261c))
+* **core:** require Jobs lock ordering for projection completion ([#116](https://github.com/kicksideai/kickside/issues/116)) ([80d8ce9](https://github.com/kicksideai/kickside/commit/80d8ce992efe2dc435c0364ef40ce10a75489a41))
+
+## [0.2.19](https://github.com/kicksideai/kickside/compare/kickside-v0.2.18...kickside-v0.2.19) (2026-10-22)
+
+
+### Bug Fixes
+
+* **app:** restore dark tab highlights and separators ([48794e1](https://github.com/kicksideai/kickside/commit/48794e1dfc238126f3fb7ebf019587df51bbac6f))
+* **app:** route host chat intents to the application chat ([11a4921](https://github.com/kicksideai/kickside/commit/11a4921f6ca31095e37d37e2222aeca9728737a6))
+* **inbox:** derive review titles and prefill editable drafts ([674ac87](https://github.com/kicksideai/kickside/commit/674ac877dd57bb38d97cb67a5a0a9fd7ddc6de73))
+* **settings:** use the published content radius token ([1560a1a](https://github.com/kicksideai/kickside/commit/1560a1a2e259d821d72c85fac8ed877050783637))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/kickside-v0.2.17...kickside-v0.2.18) (2026-10-21)
 
 

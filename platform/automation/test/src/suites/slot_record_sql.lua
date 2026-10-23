@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local native = require("sql")
 local M = { calls = 0 }
 function M.get(...)

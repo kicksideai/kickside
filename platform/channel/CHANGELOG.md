@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.5](https://github.com/kicksideai/kickside/compare/channel-v0.2.4...channel-v0.2.5) (2026-10-22)
+
+
+### Bug Fixes
+
+* **channel:** pass the delivery key to reply providers on keyed writes ([#77](https://github.com/kicksideai/kickside/issues/77)) ([ca9c879](https://github.com/kicksideai/kickside/commit/ca9c879efcad63267a7796481b4d24af9cf52092))
+* preserve execution failure and session acquisition semantics ([#76](https://github.com/kicksideai/kickside/issues/76)) ([2df07e3](https://github.com/kicksideai/kickside/commit/2df07e32a36bb5cf2f20a2eaf030c7d12a4ccb08))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## 0.2.4 (2026-10-17)
 
 - Remove retired retention metadata and refresh packaged documentation.

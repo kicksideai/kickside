@@ -46,6 +46,14 @@ entries:
     path: /nav/config
     func: kickside.ui.api:set_config
 
+  - name: list_nav.endpoint
+    kind: http.endpoint
+    meta:
+      router: api.auth
+    method: GET
+    path: /nav/list
+    func: kickside.ui.api:list_nav
+
   - name: db
     kind: db.sql.sqlite
     foreign_keys: true

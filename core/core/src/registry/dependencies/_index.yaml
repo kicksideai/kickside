@@ -28,10 +28,10 @@ entries:
     component: kickside/contract
 
   - name: dep.kickside.jobs
-    version: '*'
+    version: '>=0.1.61'
     kind: ns.dependency
     meta:
-      comment: Durable leased-job engine and internal transaction APIs used by Core thread and projection owners.
+      comment: Durable leased-job engine; projection completion requires ordered wake and completing-job locks from 0.1.61.
     component: kickside/jobs
 
   - name: dep.wippy.migration

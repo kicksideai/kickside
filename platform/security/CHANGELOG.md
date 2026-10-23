@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.10](https://github.com/kicksideai/kickside/compare/security-v0.2.9...security-v0.2.10) (2026-10-22)
+
+
+### Bug Fixes
+
+* **security:** return a module install only after the scope projection applies ([595b4db](https://github.com/kicksideai/kickside/commit/595b4db248055aa304f5ecd2919329133dc5681c))
+* **security:** return a module install only after the scope projection applies ([ed4c0e2](https://github.com/kicksideai/kickside/commit/ed4c0e28979c921e9a799e7e042f8e6d913ab16a))
+* **security:** use shared tabs for administration ([74cd95a](https://github.com/kicksideai/kickside/commit/74cd95aa1590c84bf0d127150684a8f974bff155))
+
 ## 0.2.9 (2026-10-17)
 
 - Refresh packaged frontend assets and documentation.

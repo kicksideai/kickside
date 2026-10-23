@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kicksideai/kickside/compare/contract-v0.3.0...contract-v0.3.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* declare plain object roots for agent tool input schemas ([75fd0fe](https://github.com/kicksideai/kickside/commit/75fd0fed2a0c71206ae914c6ee497e1b37301a54))
+
 ## 0.2.2 (2026-10-09)
 
 - Preserve committed native failure metadata through the shared contract helper.
