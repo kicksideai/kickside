@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.65...knowledge-v0.1.66) (2026-10-23)
+
+
+### Bug Fixes
+
+* **knowledge:** reference large content artifacts instead of inlining them ([#88](https://github.com/kicksideai/kickside/issues/88)) ([08d13f6](https://github.com/kicksideai/kickside/commit/08d13f6e1caeddd470549da5e7adba7862df44ea))
+
 ## [0.1.65](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.64...knowledge-v0.1.65) (2026-10-22)
 
 
