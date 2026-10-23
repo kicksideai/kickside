@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.2](https://github.com/kicksideai/kickside/compare/automation-v0.2.1...automation-v0.2.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** preserve denied configuration lookup errors ([e24cb7c](https://github.com/kicksideai/kickside/commit/e24cb7c5d42ea64c8426e8d4f64d501382877627))
+* **automation:** prune prepared output only with settlement proof ([#79](https://github.com/kicksideai/kickside/issues/79)) ([6578982](https://github.com/kicksideai/kickside/commit/657898216c8f9c40f0c9a7d4ca6f7b360d0307a2))
+* **automation:** repair stale job references on unserved wakes ([#127](https://github.com/kicksideai/kickside/issues/127)) ([7fb479a](https://github.com/kicksideai/kickside/commit/7fb479a83cedeefcb6cc7a55bcd0f4b22aa750cb))
+* **automation:** restrict authority-bearing edits to the execution subject ([#68](https://github.com/kicksideai/kickside/issues/68)) ([aed8ab5](https://github.com/kicksideai/kickside/commit/aed8ab5ec044ff0cbe8fb1962a8c7caa44bd88b1))
+* **automation:** retire direct agent launch controls without breaking saved tasks ([#95](https://github.com/kicksideai/kickside/issues/95)) ([86e687a](https://github.com/kicksideai/kickside/commit/86e687ad79c4d29d91c753d5e7d1ca9e7caf873a))
+
 ## [0.2.1](https://github.com/kicksideai/kickside/compare/automation-v0.2.0...automation-v0.2.1) (2026-10-23)
 
 

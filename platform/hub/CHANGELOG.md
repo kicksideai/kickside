@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.65](https://github.com/kicksideai/kickside/compare/hub-v0.1.64...hub-v0.1.65) (2026-10-23)
+
+
+### Bug Fixes
+
+* **hub:** display readable custom license references ([#118](https://github.com/kicksideai/kickside/issues/118)) ([252820d](https://github.com/kicksideai/kickside/commit/252820d476db7b6d9344e6c50bd1778d9ecf5b1b))
+
 ## [0.1.64](https://github.com/kicksideai/kickside/compare/hub-v0.1.63...hub-v0.1.64) (2026-10-22)
 
 
