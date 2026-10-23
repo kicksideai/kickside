@@ -365,7 +365,7 @@ function M.append_content(kb_id, params)
     -- Infrastructure/access errors must never change the stored representation.
     if append_err and errors.is(append_err, errors.INVALID)
         and trim(source_ref.upload_id) ~= "" and trim(source_ref.artifact_id) ~= "" then
-        local details = append_err:details()
+        local details = (append_err :: error):details()
         if type(details) == "table" and details.reason == "row_too_large"
             and details.operation == "append_events" and details.scope == kb_id then
             body.content = nil
