@@ -435,7 +435,7 @@ end
 -- wake_due(db_or_tx, limit) -> drives whose control wake demand has not been
 -- acknowledged, through the partial wake index.
 function drive.wake_due(executor: any, limit: integer): ({ Map }?, error?)
-    local rows, err = executor:query("SELECT automation_id, drive_key, job_id, source_kind, wake_generation, wake_applied_generation FROM "
+    local rows, err = executor:query("SELECT automation_id, drive_key, job_id, source_kind, pending_command_id, wake_generation, wake_applied_generation FROM "
         .. drive.TABLE .. " WHERE wake_generation > wake_applied_generation AND (repair_next_at IS NULL OR repair_next_at <= $1) ORDER BY CASE WHEN job_id IS NULL THEN 1 ELSE 0 END, automation_id, drive_key LIMIT $2", { drive.utc_now(), limit })
     if err then return nil, internal("failed to scan drive wake demand", err) end
     local out: { Map } = {}
@@ -445,6 +445,7 @@ function drive.wake_due(executor: any, limit: integer): ({ Map }?, error?)
             drive_key = row.drive_key,
             job_id = row.job_id,
             source_kind = row.source_kind,
+            pending_command_id = row.pending_command_id,
             wake_generation = math.floor(tonumber(row.wake_generation) :: number),
             wake_applied_generation = math.floor(tonumber(row.wake_applied_generation) :: number),
         }

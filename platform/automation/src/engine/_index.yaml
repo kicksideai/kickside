@@ -190,6 +190,7 @@ entries:
       comment: "Automation engine part: pending command recovery and the command dispatcher pass (wake, acknowledge, slot repair)."
     source: file://recovery.lua
     imports:
+      engine_slot_repair: kickside.automation.engine:slot_repair
       types: kickside.automation:types
       engine_support: kickside.automation.engine:support
 
