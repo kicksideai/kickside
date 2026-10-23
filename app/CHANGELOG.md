@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.21](https://github.com/kicksideai/kickside/compare/kickside-v0.2.20...kickside-v0.2.21) (2026-10-23)
+
+
+### Bug Fixes
+
+* **app:** build and verify complete release packages ([#119](https://github.com/kicksideai/kickside/issues/119)) ([277f2b0](https://github.com/kicksideai/kickside/commit/277f2b0455bf68bc81187228e90dd1b54e42af70))
+
 ## [0.2.20](https://github.com/kicksideai/kickside/compare/kickside-v0.2.19...kickside-v0.2.20) (2026-10-23)
 
 
