@@ -267,12 +267,12 @@ local function define_tests()
             for _, policy_id in ipairs(policies) do
                 if policy_id == "kickside.users.security:login_scope_compose" then has_compose = true end
                 test.is_true(policy_id:sub(1, #"kickside.users.security:") == "kickside.users.security:"
-                    or policy_id == "kickside.security.service:group_set_db")
+                    or policy_id == "kickside.users.security:resolve_scope_groups")
                 test.is_true(policy_id:sub(1, #"app.security:login.") ~= "app.security:login.")
             end
             test.is_true(has_compose)
             for _, required in ipairs({"kickside.users.security:session_group_policy_read",
-                "kickside.security.service:group_set_db"}) do
+                "kickside.users.security:resolve_scope_groups"}) do
                 local found = false
                 for _, id in ipairs(policies) do if id == required then found = true end end
                 test.is_true(found, required)

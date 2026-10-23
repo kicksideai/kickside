@@ -125,7 +125,11 @@ function M.check_delivery(kb_id: string, external_id: string, delivery_key: stri
     if body_err then return false, body_err end
     local metadata, metadata_err = decode_object(body.metadata == nil and {} or body.metadata)
     if metadata_err then return false, metadata_err end
-    if body.content ~= content or not util.same_value(metadata.sink_write, sink_write) then
+    local same_content = body.content == content
+    if body.content == nil and body.content_omitted == true then
+        same_content = body.content_bytes == #content and body.content_sha256 == content_sha(content)
+    end
+    if not same_content or not util.same_value(metadata.sink_write, sink_write) then
         return false, errors.new({ message = "idempotency key already used for a different write", kind = errors.CONFLICT, retryable = false })
     end
     return true, nil
@@ -335,25 +339,43 @@ function M.append_content(kb_id, params)
     if source_ref_err or not source_ref then return nil, source_ref_err end
     metadata.source_ref = source_ref
 
-    local appended, append_err = emit_event(exec, kb_id, {
+    local body = {
+        kb_id = kb_id,
+        content = content,
+        content_type = content_type,
+        title = title ~= "" and title or nil,
+        metadata = metadata,
+        source_ref = source_ref,
+        actor_id = actor_id,
+    }
+    local event = {
         type = M.EVENT_CONTENT_UPSERTED,
         role = "system",
-        body = {
-            kb_id = kb_id,
-            content = content,
-            content_type = content_type,
-            title = title ~= "" and title or nil,
-            metadata = metadata,
-            source_ref = source_ref,
-            actor_id = actor_id,
-        },
+        body = body,
         external = {
             external_source = EXTERNAL_SOURCE,
             external_id = external_id,
             external_version = external_version,
         },
         trace_context = event_trace,
-    })
+    }
+    local appended, append_err = emit_event(exec, kb_id, event)
+    -- Preserve every previously accepted inline event. Core owns the row limit:
+    -- only its typed, rolled-back size refusal permits an artifact-only retry.
+    -- Infrastructure/access errors must never change the stored representation.
+    if append_err and errors.is(append_err, errors.INVALID)
+        and trim(source_ref.upload_id) ~= "" and trim(source_ref.artifact_id) ~= "" then
+        local details = (append_err :: error):details()
+        if type(details) == "table" and details.reason == "row_too_large"
+            and details.operation == "append_events" and details.scope == kb_id then
+            body.content = nil
+            body.content_omitted = true
+            body.content_bytes = #content
+            body.content_sha256 = content_sha(content)
+            if not body.content_sha256 then return nil, "failed to hash omitted artifact content" end
+            appended, append_err = emit_event(exec, kb_id, event)
+        end
+    end
     if append_err then return nil, append_err end
 
     local cursor = projection_cursor(projection)

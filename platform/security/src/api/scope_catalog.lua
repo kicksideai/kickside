@@ -12,6 +12,7 @@ local registry = require("registry")
 local consts = require("security_consts")
 local store = require("scope_store")
 local stypes = require("security_types")
+local scope_key = require("scope_key")
 
 local M = {}
 
@@ -109,7 +110,7 @@ local function default_label(id: string): string
     return id:match("([^:%.]+)$") or id
 end
 
-local function descriptor_policies(entry, index)
+local function descriptor_policies(entry, index, projection)
     local data, selected, out = entry.data or {}, {}, {}
     local function include(ids)
         for _, id in ipairs(ids or {}) do
@@ -118,6 +119,7 @@ local function descriptor_policies(entry, index)
     end
     include(data.policies)
     include(data.direct_policies)
+    if projection then include((projection.data or {}).policies) end
     for _, group in ipairs(data.groups or {}) do include(index.groups[group]) end
     table.sort(out)
     return out
@@ -129,6 +131,16 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     local include_internal = opts.include_internal == true
     local index, policies_err = policy_index()
     if policies_err then return nil, policies_err end
+    local projections, projection_err = registry.find({[".kind"] = "registry.entry", ["meta.type"] = scope_key.META_TYPE})
+    if projection_err then return nil, projection_err end
+    local by_target = {}
+    for _, entry in ipairs(projections or {}) do
+        local meta = entry.meta or {}
+        if entry.kind == "registry.entry" and meta.type == scope_key.META_TYPE
+            and meta.managed_by == consts.MANAGED_BY and type(meta.target) == "string" then
+            by_target[meta.target] = entry
+        end
+    end
     local descriptors, roles_err = role_descriptors()
     if roles_err then return nil, roles_err end
     local by_id = index.by_id
@@ -183,7 +195,10 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     if declared_err then return nil, declared_err end
     for _, entry in ipairs(declared_scopes or {}) do
         local id = tostring(entry.id)
-        if descriptors[id] then group_policies[id] = descriptor_policies(entry, index) end
+        if descriptors[id] then group_policies[id] = descriptor_policies(entry, index, by_target[tostring(entry.id)]) end
+    end
+    for id, projection in pairs(by_target) do
+        if descriptors[id] and not group_policies[id] then group_policies[id] = projection.data.policies or {} end
     end
     local group_internal: { [string]: boolean } = {}
     local group_order: { string } = {}
@@ -239,7 +254,7 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
                 internal = meta.internal == true,
                 built_in = false,
                 enabled = true,
-                policies = descriptor_policies(entry, index),
+                policies = descriptor_policies(entry, index, by_target[tostring(entry.id)]),
             })
             if emit_err then return nil, emit_err end
         end

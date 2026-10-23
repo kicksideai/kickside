@@ -1,5 +1,5 @@
 local env = require("env")
-local scope_store = require("scope_store")
+local funcs = require("funcs")
 local errors = require("errors")
 
 local consts = {
@@ -202,8 +202,12 @@ end
 
 function consts.resolve_scope(config, groups, authority_only)
     local primary, is_admin, effective = consts.derive_scope(config, groups)
-    local resolved, err = scope_store.resolve_groups(authority_only == true and (groups or {}) or effective)
-    if not resolved then return nil, is_admin, effective, err end
+    local resolved, err = funcs.call("kickside.security.runtime:resolve_groups", {groups = authority_only == true and (groups or {}) or effective})
+    if err then return nil, is_admin, effective, err end
+    if type(resolved) ~= "table" or type(resolved.groups) ~= "table" or type(resolved.policy_ids) ~= "table" then
+        return nil, is_admin, effective, errors.new({kind = errors.UNAVAILABLE, retryable = true,
+            message = "Security scope resolver returned no authority descriptor"})
+    end
     return primary, is_admin, effective, nil, resolved
 end
 

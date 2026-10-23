@@ -49,4 +49,5 @@ function M.nudge_workers(...: any): (any, error?) M.nudges = M.nudges + 1; retur
 function M.notify_cancellations(...: any): error? M.cancellations = M.cancellations + 1; return M.failures.cancellations end
 function M.cancel_jobs_tx(...: any): (any, error?, table[]) return true, nil, {} end
 function M.notify(...: any): (any, error?) M.retention = M.retention + 1; return outcome("retention", false) end
+function M.read(...: any): (any, error?) return nil, nil end
 return M

@@ -144,6 +144,68 @@ end
 
 local function define_tests()
     test.describe("thread_ingest identity", function()
+        for _, case in ipairs({
+            { name = "small inline text", content = string.rep("a", 1024), omitted = false },
+            { name = "previously supported inline text", content = string.rep("a", 3584 * 1024), omitted = false },
+            { name = "text above the event row bound", content = string.rep("a", 5 * 1024 * 1024), omitted = true },
+            { name = "text above the bound after JSON escaping", content = string.rep("\0", 800 * 1024), omitted = true },
+        }) do
+            test.it("ingests " .. case.name .. " through the event source", function()
+                local owner = "artifact-writer-" .. uuid.v4()
+                local component_id = uuid.v7()
+                seed_kb(component_id, owner)
+                local actor = security.new_actor(owner, {user_id = owner, email = owner, status = "active",
+                    security_groups = {"app.security:user"}})
+                local scope = limited_scope()
+                local def, get_err = contract.get(THREADS_CONTRACT)
+                test.is_nil(get_err)
+                local threads, open_err = def:with_actor(actor):with_scope(scope):open()
+                test.is_nil(open_err)
+                local _, ensure_err = threads:ensure_thread({component_id = component_id,
+                    impl_id = ENGINE_IMPL, thread_class = THREAD_CLASS})
+                test.is_nil(ensure_err)
+                local result, append_err = funcs.new():with_actor(actor):with_scope(scope):call(APPEND_PROBE, {
+                    kb_id = component_id, content = case.content,
+                    source_ref = {kind = "upload", upload_id = "test-upload", artifact_id = "test-text"},
+                    external_id = "upload:test-upload", external_version = case.omitted and "delivery:artifact-pull" or "v1"})
+                test.is_nil(append_err, tostring(append_err))
+                test.eq(result.success, true)
+                local page, pull_err = funcs.new():with_actor(actor):with_scope(scope)
+                    :call("kickside.core.threads:events_pullable", {
+                        config = {thread_id = component_id, event_type = "kickside.knowledge.events:content.upserted"},
+                        cursor = 0, limit = 1, idempotency_key = "artifact-pull"})
+                test.is_nil(pull_err)
+                test.eq(page.success, true)
+                test.eq(#page.items, 1)
+                local body = page.items[1].payload
+                test.eq(body.source_ref.upload_id, "test-upload")
+                test.eq(body.source_ref.artifact_id, "test-text")
+                if case.omitted then
+                    test.is_nil(body.content)
+                    test.eq(body.content_omitted, true)
+                    test.eq(body.content_sha256,thread_ingest_base.content_sha(case.content))
+                    local matched,match_err=funcs.new():with_actor(actor):with_scope(scope):call(APPEND_PROBE,{
+                        check_delivery=true,kb_id=component_id,external_id="upload:test-upload",
+                        delivery_key="artifact-pull",content=case.content})
+                    test.is_nil(match_err)
+                    test.eq(matched,true)
+                    local changed,changed_err=funcs.new():with_actor(actor):with_scope(scope):call(APPEND_PROBE,{
+                        check_delivery=true,kb_id=component_id,external_id="upload:test-upload",
+                        delivery_key="artifact-pull",content=case.content.."changed"})
+                    test.is_nil(changed)
+                    test.is_true(errors.is(changed_err,errors.CONFLICT))
+                    test.eq(body.content_bytes, #case.content)
+                else
+                    test.eq(body.content == case.content, true, "inline event must retain complete submitted content")
+                    test.is_nil(body.content_omitted)
+                    test.is_nil(body.content_bytes)
+                    local keys = {}
+                    for key in pairs(body) do keys[#keys + 1] = key end
+                    table.sort(keys)
+                    test.eq(table.concat(keys, ","), "actor_id,content,content_type,kb_id,metadata,source_ref,title")
+                end
+            end)
+        end
         test.it("retains native trace validation metadata", function()
             local context, err = thread_ingest_base.trace_for("kb.ingest", "kb", "source", { run_id = "only-run" })
             test.is_nil(context)

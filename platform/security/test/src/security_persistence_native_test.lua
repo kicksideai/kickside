@@ -1,3 +1,4 @@
+local group_resolver = require("group_resolver")
 local scope_writer = require("scope_writer")
 local trigger_reconcile = require("trigger_reconcile")
 local test = require("test")
@@ -30,7 +31,7 @@ local function define_tests()
         end)
         test.it("reports native scope membership input errors", function()
             for _, value in ipairs({false, {false}, {""}}) do
-                local _, err = scopes.resolve_groups(value)
+                local _, err = group_resolver.resolve(value)
                 invalid(err)
             end
             local _, empty_err = projection.group_set({})

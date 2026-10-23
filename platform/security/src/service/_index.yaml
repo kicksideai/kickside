@@ -49,6 +49,8 @@ entries:
     imports:
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
+      scope_key: kickside.security.projection:scope_key
+      group_resolver: kickside.security.runtime:groups
       policy_composition: kickside.security:policy_composition
 
   - name: scope_projection_proc

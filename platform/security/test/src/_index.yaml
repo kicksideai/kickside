@@ -439,6 +439,7 @@ entries:
     method: run
     modules: [sql, uuid]
     imports:
+      group_resolver: kickside.security.runtime:groups
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_writer: app:registry_fixture
       test: wippy.test:test
@@ -657,6 +658,7 @@ entries:
     kind: library.lua
     source: file://catalog_source.lua
     imports:
+      scope_key: kickside.security.projection:scope_key
       registry: app:security_dependency_fixture
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
@@ -673,6 +675,7 @@ entries:
     source: file://database_config_test.lua
     method: run
     imports:
+      group_resolver: kickside.security.runtime:groups
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_writer: app:registry_fixture
       projection: kickside.security.service:scope_projection
@@ -704,6 +707,8 @@ entries:
     source: file://projection_source.lua
     modules: [logger, funcs]
     imports:
+      scope_key: kickside.security.projection:scope_key
+      group_resolver: kickside.security.runtime:groups
       registry: app:security_dependency_fixture
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
@@ -742,6 +747,7 @@ entries:
     kind: library.lua
     source: file://source_scope.lua
     imports:
+      group_resolver: kickside.security.runtime:groups
       scope_store: kickside.security.persist:scope_store
       execution_identity: kickside.execution:execution_identity
 
@@ -771,3 +777,39 @@ entries:
     modules: [registry, security]
     imports:
       test: wippy.test:test
+
+  - name: resolver_boundary_client
+    kind: function.lua
+    source: file://resolver_boundary_client.lua
+    method: resolve
+    modules: [sql, funcs]
+  - name: resolver_boundary_calls
+    kind: security.policy
+    policy:
+      actions: [funcs.call, funcs.security, registry.get]
+      resources: [app:resolver_boundary_client, kickside.security.runtime:resolve_groups]
+      effect: allow
+  - name: resolver_boundary_client_only
+    kind: security.policy
+    policy:
+      actions: [funcs.call, funcs.security, registry.get]
+      resources: app:resolver_boundary_client
+      effect: allow
+  - name: resolver_boundary_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://resolver_boundary_test.lua
+    method: run
+    modules: [funcs, security, registry, sql]
+    imports:
+      test: wippy.test:test
+      scope_writer: app:registry_fixture
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_store: kickside.security.persist:scope_store
+
+  - name: resolver_boundary_own_db
+    kind: security.policy
+    policy:
+      actions: db.get
+      resources: app:db
+      effect: allow

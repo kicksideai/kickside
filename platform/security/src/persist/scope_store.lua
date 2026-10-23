@@ -196,69 +196,24 @@ function M.delete(slug: any): (boolean, error?)
     return true
 end
 
--- Resolves memberships into native groups and live DB-selected source IDs.
--- The catalog supplies declaration IDs, never copied policy bodies.
-function M.resolve_groups(groups)
-    if type(groups) ~= "table" then
-        return nil, errors.new({kind = errors.INVALID, retryable = false, message = "groups must be an array"})
+-- One bounded query for the source selections requested by the runtime resolver.
+function M.selections(slugs: {string}): (any?, error?)
+    if #slugs == 0 then return {}, nil end
+    local marks = {}
+    for i in ipairs(slugs) do marks[i] = "$" .. tostring(i) end
+    local db, db_err = open()
+    if not db then return nil, db_err end
+    local rows, read_err = db:query("SELECT slug, target, policies, enabled FROM kickside_security_scopes WHERE slug IN ("
+        .. table.concat(marks, ",") .. ")", slugs)
+    db:release()
+    if read_err then return nil, read_err end
+    local out = {}
+    for _, row in ipairs(rows or {}) do
+        local decoded, decode_err = decode_row(row)
+        if decode_err then return nil, decode_err end
+        out[#out + 1] = decoded
     end
-    for _, group in ipairs(groups) do
-        if type(group) ~= "string" or group == "" then
-            return nil, errors.new({kind = errors.INVALID, retryable = false, message = "group must be a non-empty id"})
-        end
-    end
-    local native, policies, slugs, visited = {}, {}, {}, {}
-    local function visit(group)
-        if visited[group] then return nil end
-        visited[group] = true
-        local entry, read_err = registry.get(group)
-        if read_err and not errors.is(read_err, errors.NOT_FOUND) then return read_err end
-        if entry and entry.kind == consts.SCOPE_KIND then
-            local data = entry.data or {}
-            if data.groups == nil then native[group] = true end
-            for _, id in ipairs(data.groups or {}) do native[id] = true end
-            for _, source in ipairs(data.scope_sources or {}) do
-                slugs[source.slug] = slugs[source.slug] or {}
-                slugs[source.slug][source.group_id] = true
-            end
-            for _, id in ipairs(data.direct_policies or {}) do policies[id] = true end
-        else
-            native[group] = true
-        end
-        return nil
-    end
-    for _, group in ipairs(groups) do
-        local err = visit(group)
-        if err then return nil, err end
-    end
-    local selected_slugs, marks = {}, {}
-    for slug in pairs(slugs) do
-        selected_slugs[#selected_slugs + 1] = slug
-        marks[#marks + 1] = "$" .. tostring(#marks + 1)
-    end
-    if #selected_slugs > 0 then
-        local db, db_err = open()
-        if not db then return nil, db_err end
-        local rows, read_err = db:query("SELECT slug, target, policies, enabled FROM kickside_security_scopes WHERE slug IN (" .. table.concat(marks, ",") .. ")", selected_slugs)
-        db:release()
-        if read_err then return nil, read_err end
-        for _, row in ipairs(rows or {}) do
-            local group = row.target ~= "" and row.target or consts.CUSTOM_SCOPE_NS .. ":" .. row.slug
-            if to_bool(row.enabled) and slugs[row.slug][group] == true then
-                local ids, decode_err = persisted_json.decode_table(row.policies, "kickside_security_scopes.policies")
-                if decode_err then return nil, decode_err end
-                for _, id in ipairs(ids) do policies[id] = true end
-            end
-        end
-    end
-    local native_ids, policy_ids = {}, {}
-    for id in pairs(native) do native_ids[#native_ids + 1] = id end
-    for id in pairs(policies) do policy_ids[#policy_ids + 1] = id end
-    table.sort(native_ids)
-    table.sort(policy_ids)
-    local expanded, expand_err = composition.expand_available(policy_ids)
-    if expand_err then return nil, expand_err end
-    return {groups = native_ids, policy_ids = expanded}, nil
+    return out, nil
 end
 
 return M

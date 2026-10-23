@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.security.runtime
+entries:
+  - name: groups
+    kind: library.lua
+    source: file://groups.lua
+    modules: [registry]
+    imports:
+      scope_store: kickside.security.persist:scope_store
+      security_consts: kickside.security:security_consts
+      scope_key: kickside.security.projection:scope_key
+      policy_composition: kickside.security:policy_composition
+  - name: resolve_groups
+    kind: function.lua
+    meta:
+      comment: Resolve group IDs into native groups and live selected policy IDs without exposing Security persistence.
+    source: file://resolve_groups.lua
+    method: resolve
+    security:
+      actor: {id: kickside.security.runtime:resolve_groups}
+      policies:
+        - kickside.security.service:group_set_registry_read
+        - kickside.security.service:group_set_db
+    imports:
+      groups: kickside.security.runtime:groups

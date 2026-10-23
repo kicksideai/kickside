@@ -1,3 +1,4 @@
+local group_resolver = require("group_resolver")
 local scope_writer = require("scope_writer")
 local trigger_reconcile = require("trigger_reconcile")
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
@@ -42,7 +43,7 @@ return {run = test.run_cases(function()
                     function() return scopes.get("configured") end,
                     function() return scopes.upsert({slug = "configured", policies = {}}) end,
                     function() return scopes.delete("configured") end,
-                    function() return scopes.resolve_groups({"kickside.security.scopes:" .. slug}) end,
+                    function() return group_resolver.resolve({"kickside.security.scopes:" .. slug}) end,
                 }) do
                     local result, err = read()
                     test.is_true(result == nil or result == false, "persistence boundary " .. index)

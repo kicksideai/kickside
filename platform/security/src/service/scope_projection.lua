@@ -11,6 +11,8 @@ local consts = require("security_consts")
 local store = require("scope_store")
 local funcs = require("funcs")
 local composition = require("policy_composition")
+local key = require("scope_key")
+local group_resolver = require("group_resolver")
 
 local M = {}
 
@@ -184,6 +186,24 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
         return out
     end
     for group in pairs(group_sources) do group_policies[group] = group_policies[group] or {} end
+    local function ordered(values)
+        local set = {}
+        for _, value in ipairs(values or {}) do set[value] = true end
+        return ids(set)
+    end
+    -- Runtime routes retain only each target's own source IDs. The resolver
+    -- follows group references live; authored descriptors are never snapshotted.
+    local routes = {}
+    for group in pairs(group_policies) do
+        local sources = {}
+        for slug, target in pairs(scope_sources[group] or {}) do
+            sources[#sources + 1] = {slug = slug, group_id = target}
+        end
+        table.sort(sources, function(left, right) return left.slug < right.slug end)
+        routes[group] = {native_groups = native[group] and {group} or {},
+            groups = ordered(group_sources[group]), scope_sources = sources,
+            direct_policies = ordered(direct_policies[group])}
+    end
     local native_groups_by_id = {}
     for group in pairs(group_policies) do
         local source_err = include_groups(group)
@@ -205,42 +225,46 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
     for id in pairs(group_policies) do
         group_rows[id] = group_rows[id] or {label = id, internal = false}
     end
+    local projected, projected_err = snap:find({[".kind"] = "registry.entry", ["meta.type"] = key.META_TYPE})
+    if projected_err then return nil, projected_err end
+    local owned_projections = {}
+    for _, entry in ipairs(projected or {}) do
+        if (entry.meta or {}).managed_by == consts.MANAGED_BY then owned_projections[tostring(entry.id)] = entry end
+    end
     for id, row in pairs(group_rows) do
-        local policies = group_policies[id]
-        desired_ids[id] = true
-        local have = by_id[id]
-        local native_groups = native_groups_by_id[id] or {}
-        local want = desired_entry(row, policies)
-        want.id = id
-        if have and not owned[id] then
-            want.meta = have.meta
-            want.data = {}
-            for key, value in pairs(have.data or {}) do want.data[key] = value end
+        local route_id, route_err = key.id(id)
+        if route_err then return nil, route_err end
+        desired_ids[route_id] = true
+        local data = routes[id]
+        data.has_scope_sources = next(slug_sets[id] or {}) ~= nil
+        -- Catalog-only projection. Runtime resolves local routes and live DB
+        -- rows instead of authorizing from this derived policy list.
+        data.policies = group_policies[id]
+        local want = {id = route_id, kind = "registry.entry",
+            meta = {type = key.META_TYPE, managed_by = consts.MANAGED_BY, target = id}, data = data}
+        local have, read_err = snap:get(route_id)
+        if read_err and not errors.is(read_err, errors.NOT_FOUND) then return nil, read_err end
+        if have and not owned_projections[route_id] then
+            return nil, errors.new({kind = errors.INVALID, message = "scope projection id is owned by another declaration: " .. route_id})
         end
-        want.data.groups = native_groups
-        want.data.scope_sources = scope_sources[id] or {}
-        want.data.direct_policies = direct_policies[id] or {}
-        if not have then
-            creates[#creates + 1] = want
-        else
-            if not equal(have.meta, want.meta) or not equal(have.data, want.data) then
-                updates[#updates + 1] = want
-            end
-        end
-    end
+        if not have then creates[#creates + 1] = want
+        elseif not equal(have.meta, want.meta) or not equal(have.data, want.data) then updates[#updates + 1] = want end
 
-    for id, have in pairs(by_id) do
-        if not desired_ids[id] then
-            if owned[id] then
-                deletes[#deletes + 1] = id
-            elseif have.data.scope_sources ~= nil then
-                local data = {}
-                for key, value in pairs(have.data) do data[key] = value end
-                data.groups, data.direct_policies, data.scope_sources = nil, nil, nil
-                updates[#updates + 1] = {id = id, kind = have.kind, meta = have.meta, data = data}
+        -- Custom scope descriptors are Security-owned. Overlays and group
+        -- compositions never update or replace another owner's scope entry.
+        if row.slug and tostring(row.target or "") == "" then
+            desired_ids[id] = true
+            have = by_id[id]
+            if have and not owned[id] then
+                return nil, errors.new({kind = errors.INVALID, message = "custom scope id is owned by another declaration: " .. id})
             end
+            want = desired_entry(row, group_policies[id])
+            if not have then creates[#creates + 1] = want
+            elseif not equal(have.meta, want.meta) or not equal(have.data, want.data) then updates[#updates + 1] = want end
         end
     end
+    for id in pairs(owned) do if not desired_ids[id] then deletes[#deletes + 1] = id end end
+    for id in pairs(owned_projections) do if not desired_ids[id] then deletes[#deletes + 1] = id end end
 
     local fences = {}
     for group in pairs(affected) do fences[#fences + 1] = group end
@@ -305,7 +329,7 @@ function M.group_set(groups)
             return nil, errors.new({kind = errors.INVALID, retryable = false, message = "group must be a non-empty id"})
         end
     end
-    local resolved, err = store.resolve_groups(groups)
+    local resolved, err = group_resolver.resolve(groups)
     if not resolved then return nil, err end
     return {scope_name = groups[#groups], current = true}, nil
 end

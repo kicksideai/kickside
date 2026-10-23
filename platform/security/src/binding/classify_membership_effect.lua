@@ -1,4 +1,5 @@
 local registry = require("registry")
+local scope_key = require("scope_key")
 local security = require("security")
 local policy_coverage = require("policy_coverage")
 local error_envelope = require("error_envelope")
@@ -66,9 +67,11 @@ local function new(dependencies: {fingerprint: ((any) -> (any?, error?))}?): any
         local fences = {}
         for id in pairs(after) do
             if not before[id] then
-                local entry, read_err = snapshot:get(id)
+                local projection_id, key_err = scope_key.id(id)
+                if key_err then return nil, key_err end
+                local entry, read_err = snapshot:get(projection_id)
                 if read_err and not errors.is(read_err, errors.NOT_FOUND) then return nil, read_err end
-                if entry and entry.kind == "security.scope" and #(entry.data.scope_sources or {}) > 0 then
+                if entry and entry.kind == "registry.entry" and entry.meta.type == scope_key.META_TYPE and entry.data.has_scope_sources == true then
                     fences[#fences + 1] = id
                 end
             end

@@ -12,6 +12,7 @@ local function handler()
     end
     res:set_header("ETag", logo.etag)
     res:set_header("Cache-Control", "no-cache")
+    res:set_header("X-Content-Type-Options", "nosniff")
     res:set_content_type(logo.content_type)
     if req:header("If-None-Match") == logo.etag then
         res:set_status(304)

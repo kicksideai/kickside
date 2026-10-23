@@ -41,7 +41,7 @@ entries:
 
   - name: dep.kickside.security
     kind: ns.dependency
-    version: '*'
+    version: '>=0.2.11'
     component: kickside/security
 
   - name: baseline_security_scope
@@ -255,8 +255,6 @@ entries:
     modules:
       - env
       - funcs
-    imports:
-      scope_store: kickside.security.persist:scope_store
     method: consts
 
   - name: session_metadata

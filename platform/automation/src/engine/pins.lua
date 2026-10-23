@@ -13,6 +13,13 @@ type Map = { [string]: any }
 
 local part = {}
 
+local function same_source(current: Map, planned: Map): boolean
+    local current_action = type(current.action) == "table" and current.action or {}
+    local planned_action = type(planned.action) == "table" and planned.action or {}
+    return current.source_kind == planned.source_kind and current.source_thread_id == planned.source_thread_id
+        and current_action.source_ref == planned_action.source_ref
+end
+
 -- The drive every installed automation starts with.
 
 -- The command that releases a failed install's retention pins.
@@ -284,8 +291,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local d = current :: Map
         local planned = drive_plan.main_drive(main_source, 0)
         local action = type(d.action) == "table" and d.action or {}
-        local changed = d.source_kind ~= planned.source_kind or d.source_thread_id ~= planned.source_thread_id
-            or action.source_ref ~= (planned.action :: Map).source_ref
+        local changed = not same_source(d, planned)
         local old_schedule = type(action.schedule) == "table" and action.schedule or {}
         local new_schedule = type(planned.action.schedule) == "table" and planned.action.schedule or {}
         local cadence_changed = old_schedule.type ~= new_schedule.type or old_schedule.expression ~= new_schedule.expression
@@ -306,17 +312,19 @@ function part.attach(M: any, dependencies: any, P: any): ()
             reconcile_action = reconcile_action, old_pin = old_pin }, nil
     end
 
-    -- apply_source_update_tx writes a finalized reconfigure's main source onto
+    -- apply_source_update_tx writes a fenced reconfigure's main source onto
     -- the drive: the new action always; for a moved source also the new kind,
     -- thread and start position under a new rewind generation, the pin the
-    -- command lowered, and the reserved release of the old pin.
+    -- command lowered. Replaying an applied source preserves its position.
     local function apply_source_update_tx(tx: any, pending: Map, update: Map): error?
         local drive = dependencies.drive :: any
         local fields: Map = { action = update.action }
+        local current: Map = {}
         if update.cadence_changed or update.changed then
             local locked, lock_err = drive.lock_tx(tx, pending.automation_id, { drive_plan.MAIN })
             if lock_err then return lock_err end
-            local current = (locked :: { [string]: Map })[drive_plan.MAIN]
+            current = (locked :: { [string]: Map })[drive_plan.MAIN]
+            if update.changed and same_source(current, update) then return nil end
             local sql_null = (dependencies.sql :: any).NULL
             fields.last_error_json = sql_null
             if current.occurrence_seq == nil then fields.next_run_at = sql_null end
@@ -325,9 +333,6 @@ function part.attach(M: any, dependencies: any, P: any): ()
             end
         end
         if update.changed then
-            local locked, lock_err = drive.lock_tx(tx, pending.automation_id, { drive_plan.MAIN })
-            if lock_err then return lock_err end
-            local d = (locked :: { [string]: Map })[drive_plan.MAIN]
             local sql_null = (dependencies.sql :: any).NULL
             fields.source_kind = update.source_kind
             fields.source_thread_id = update.source_thread_id or sql_null
@@ -339,7 +344,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
             fields.next_run_at = sql_null
             fields.pass_pages = 0
             fields.pass_items = 0
-            fields.rewind_generation = (d.rewind_generation :: integer) + 1
+            fields.rewind_generation = (current.rewind_generation :: integer) + 1
             if update.source_kind ~= "event" then fields.pin_generation = sql_null end
         end
         local _, set_err = drive.update_cas_tx(tx, pending.automation_id, drive_plan.MAIN, {}, fields)
@@ -351,10 +356,6 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 reconcile_pass_id = sql_null, sweep_pending = false, cursor = sql_null,
             })
             if reconcile_err then return reconcile_err end
-        end
-        if update.changed and type(update.old_pin) == "table" then
-            local _, release_err = P.reserve_pin_release_tx(tx, pending, { update.old_pin :: Map }, false)
-            if release_err then return release_err end
         end
         return nil
     end

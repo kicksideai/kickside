@@ -1,9 +1,9 @@
 import { a as cr, b as nr, W as sr } from "./index-D52CRMw6.js";
-import { P as lr } from "./primevue-plugin-DzKV8Brb.js";
-import { defineComponent as dr, computed as T, ref as s, onMounted as ur, onUnmounted as vr, watch as gr, openBlock as t, createBlock as W, unref as u, withCtx as q, createElementVNode as n, withModifiers as F, createVNode as g, normalizeClass as M, createTextVNode as z, createElementBlock as p, Fragment as V, renderList as L, toDisplayString as m, createCommentVNode as C } from "vue";
+import { e as lr, P as dr } from "./index-CKAvFXRR.js";
+import { defineComponent as ur, computed as T, ref as s, onMounted as vr, onUnmounted as gr, watch as mr, openBlock as t, createBlock as W, unref as u, withCtx as q, createElementVNode as n, withModifiers as F, createVNode as g, normalizeClass as M, createTextVNode as z, createElementBlock as p, Fragment as V, renderList as L, toDisplayString as m, createCommentVNode as C } from "vue";
 import { Icon as f } from "@iconify/vue";
-import { api as B, host as Y, define as mr } from "@wippy-fe/proxy";
-import { s as fr, e as hr } from "./errMsg-CeWnWjjl.js";
+import { api as B, host as Y, define as fr } from "@wippy-fe/proxy";
+import { e as hr } from "./errMsg-CxKGcp1F.js";
 import { _ as xr, r as br } from "./PrincipalPicker.vue_vue_type_script_setup_true_lang-zrnf6sTm.js";
 const wr = { class: "kxs-head-text" }, yr = { class: "kxs-title" }, kr = { key: 0 }, _r = { class: "kxs" }, zr = ["disabled"], Cr = ["title", "onClick"], jr = {
   key: 0,
@@ -33,7 +33,7 @@ const wr = { class: "kxs-head-text" }, yr = { class: "kxs-title" }, kr = { key: 
   key: 1,
   class: "kxs-icon-btn kxs-icon-locked",
   title: "The owner can't be removed"
-}, Rr = /* @__PURE__ */ dr({
+}, Rr = /* @__PURE__ */ ur({
   __name: "share",
   setup(G) {
     const H = cr(), $ = nr();
@@ -115,11 +115,11 @@ const wr = { class: "kxs-head-text" }, yr = { class: "kxs-title" }, kr = { key: 
     function R(r) {
       r.key === "Escape" && (U.value = !1);
     }
-    ur(() => {
+    vr(() => {
       Z(), window.addEventListener("keydown", R);
-    }), vr(() => {
+    }), gr(() => {
       window.removeEventListener("keydown", R);
-    }), gr(() => b.value.access_url, () => O(), { immediate: !0 });
+    }), mr(() => b.value.access_url, () => O(), { immediate: !0 });
     const x = s(null), v = s(1), E = s(!1), D = s(0);
     function ar(r) {
       x.value = { ...r };
@@ -161,7 +161,7 @@ const wr = { class: "kxs-head-text" }, yr = { class: "kxs-title" }, kr = { key: 
     async function ir(r) {
       r.owner || await S(r.id, r.type, 0, !0);
     }
-    return (r, o) => (t(), W(u(fr), {
+    return (r, o) => (t(), W(u(lr), {
       visible: U.value,
       "onUpdate:visible": [
         o[2] || (o[2] = (a) => U.value = a),
@@ -322,8 +322,8 @@ class Tr extends sr {
     };
   }
   static get vueConfig() {
-    return { rootComponent: Rr, plugins: [lr] };
+    return { rootComponent: Rr, plugins: [dr] };
   }
 }
-mr(import.meta.url, Tr);
+fr(import.meta.url, Tr);
 //# sourceMappingURL=share.js.map

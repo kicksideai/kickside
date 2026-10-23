@@ -188,6 +188,13 @@ function M.prepare_creation(input: any, verify: any): (any?, error?)
         return nil, failure("a created component runs as its operator; select another principal through SET_EXECUTION_IDENTITY",
             errors.INVALID, "declaration")
     end
+    if receipt.captured_identity ~= nil then
+        local valid, identity_err = execution_identity.validate(receipt.captured_identity)
+        if not valid then return nil, identity_err end
+        if execution_identity.actor_key(receipt.captured_identity.principal) ~= receipt.execution_subject_id then
+            return nil, failure("captured identity does not match the verified execution subject", errors.INVALID, "declaration")
+        end
+    end
     local encoded, encode_err = json.encode({
         component_id = input.component_id, impl_id = input.impl_id, parent_id = input.parent_id,
         context = input.context or {}, meta = input.meta or {}, rollback = input.rollback,

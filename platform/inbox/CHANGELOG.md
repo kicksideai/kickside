@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.65](https://github.com/kicksideai/kickside/compare/inbox-v0.1.64...inbox-v0.1.65) (2026-10-22)
+
+
+### Bug Fixes
+
+* **inbox:** derive review titles and prefill editable drafts ([674ac87](https://github.com/kicksideai/kickside/commit/674ac877dd57bb38d97cb67a5a0a9fd7ddc6de73))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## [0.1.64](https://github.com/kicksideai/kickside/compare/inbox-v0.1.63...inbox-v0.1.64) (2026-10-20)
 
 

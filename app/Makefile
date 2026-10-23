@@ -42,6 +42,22 @@ publish: refresh-deps
 	@echo "Releases use GitHub Release Please (.github/workflows/release.yml)." >&2
 	@exit 1
 
+# Both CI and release publication must build the untracked application page.
+# A valid registry pack can otherwise contain only the login/static shell.
+VERSION ?= $(shell cat version.txt)
+HUB_REGISTRY ?= https://hub.wippy.ai
+.PHONY: release-build release-check release-publish
+release-build: build
+	node scripts/check-app-bundle.mjs
+
+release-check: release-build
+	$(WIPPY) publish --config . --version "$(VERSION)" --registry "$(HUB_REGISTRY)" --dry-run --embed app:app_fs
+
+release-publish: release-build
+	@test "$(VERSION)" = "$$(cat version.txt)" || { echo "Use the Release Please application version" >&2; exit 1; }
+	@test "$$(git rev-parse HEAD)" = "$$(git rev-parse 'kickside-v$(VERSION)^{commit}')" || { echo "Publish from the exact application release tag" >&2; exit 1; }
+	$(WIPPY) publish --config . --version "$(VERSION)" --registry "$(HUB_REGISTRY)" --embed app:app_fs
+
 .PHONY: composition-lockrefresh composition-lint
 composition-lockrefresh:
 	cd test/composition && $(WIPPY) update --src-dir . --config .wippy.yaml --lock-file wippy.lock.fresh && mv wippy.lock.fresh wippy.lock

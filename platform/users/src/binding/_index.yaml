@@ -84,7 +84,7 @@ entries:
         - kickside.users.security:login_db_access
         - kickside.users.security:login_env_read
         - kickside.users.security:session_group_policy_read
-        - kickside.security.service:group_set_db
+        - kickside.users.security:resolve_scope_groups
     imports:
       consts: kickside.users:consts
       user_groups_repo: kickside.users.persist:user_groups_repo
@@ -103,7 +103,7 @@ entries:
         - kickside.users.security:login_db_access
         - kickside.users.security:login_env_read
         - kickside.users.security:session_group_policy_read
-        - kickside.security.service:group_set_db
+        - kickside.users.security:resolve_scope_groups
     imports:
       credential_eligibility: kickside.users.persist:credential_eligibility
       consts: kickside.users:consts

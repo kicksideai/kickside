@@ -359,6 +359,20 @@ local function define_tests()
 
         end)
 
+        test.it("preserves structured failure details from the workflow launcher", function()
+            local details = { { node_id = "test_node", error = { code = "EXEC_FAILED",
+                cause = { kind = "PermissionDenied", retryable = false,
+                    details = { error_type = "payment_required", provider = "test_provider", model = "test_model" } } } } }
+            local scoped_runner = runner.new({ runs_launch = function()
+                return { run_id = "test_run", status = "failed", success = false,
+                    error = "Model request failed", error_details = details }, nil
+            end })
+            local result, err = scoped_runner.run({ kind = "flow", id = "test_workflow", version = 1 }, {}, { mode = "sync" })
+            test.is_nil(err)
+            test.eq(result.error, "Model request failed")
+            test.eq(result.error_details, details)
+        end)
+
         test.it("seeds Start from the native input object", function()
             local captured: Map = {}
             local scoped_runner = runner.new({ runs_launch = function(workflow_id: string, opts: Map): (Map?, string?)

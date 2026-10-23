@@ -31,6 +31,8 @@ never the reverse:
   a dedicated trust group because `wippy.security:process` denies registry writes.
 - `kickside.security.api` — `scope_catalog` (read model) plus the admin endpoints
   for scopes, policies, and roles.
+- `kickside.security.runtime` — public live group-selection boundary.
+- `kickside.security.projection` — Security-owned routing keys and derived entries.
 - `kickside.security.migrations` — schema.
 
 ## API (admin-only; firewalled `api_router`)
@@ -51,18 +53,19 @@ source IDs selected by the user's custom scopes, then creates one native scope.
 It creates no policy copies, metadata grants, or union-group entries. The scope
 catalog continues to merge DB selections, role descriptors, and built-in groups.
 
-The projector resolves group declarations into native group references and source
-IDs. Managed descriptor `data.policies` retains the complete catalog selection;
-authored descriptors retain their original selections and metadata.
-`data.groups` contains its native group references, `data.direct_policies` its
-other declaration selections, and `data.scope_sources` its DB selection keys
-and owning groups. These compiled fields contain identifiers only and are
-removed when an authored descriptor no longer has a composition or DB overlay. Native policies remain owned and evaluated by
-the runtime. Group composition does not inspect their rule bodies.
+The projector writes Security-owned custom-scope descriptors and derived routing
+entries in `kickside.security.projection`. It never updates another owner's
+`security.scope` fields, including `groups`, `policies`, or metadata. Each
+routing entry holds only local source IDs and group references; runtime follows
+those references live with bounded cycle detection. The catalog's derived
+policy list is display data and is not an authorization source.
 
-The Users subject lookup reads live DB selections in one primary-key query for
-all held custom scopes, checking the current target and enabled state before
-using each row. Memberships without DB selections require no additional query. Native token
+Users calls `kickside.security.runtime:resolve_groups`. This Security-owned
+function carries its own configured database and registry authority. Users
+neither imports Security persistence nor takes its private DB policy, so the
+modules can use different databases. The resolver reads all held custom-scope
+selections in one primary-key query, checking target and enabled state before
+using each row. Memberships without DB selections require no SQL query. Native token
 validation unions these source IDs with current native group policies and applies the credential ceiling. Existing stored sessions use the
 same live lookup and keep their bearer tokens.
 

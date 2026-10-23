@@ -84,6 +84,7 @@ entries:
     source: file://scope_catalog.lua
     modules: [registry]
     imports:
+      scope_key: kickside.security.projection:scope_key
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
       security_types: kickside.security:security_types

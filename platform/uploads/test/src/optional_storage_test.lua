@@ -7,14 +7,19 @@ local resources = require("resources")
 return {run = test.run_cases(function()
     test.describe("Uploads without an optional storage extension", function()
         test.it("boots and reads processed local content without an S3 controller or settings block", function()
-            test.is_nil(registry.get("kickside.storage_s3.service:controller"))
-            test.is_nil(registry.get("kickside.storage_s3:settings_block"))
-            test.is_nil(registry.get("kickside.storage_s3.api:configure.endpoint"))
-            test.is_nil(registry.get("kickside.uploads.storage.service:controller"))
+            for _, id in ipairs({
+                "kickside.storage_s3.service:controller", "kickside.storage_s3:settings_block",
+                "kickside.storage_s3.api:configure.endpoint", "kickside.uploads.storage.service:controller",
+            }) do
+                local entry = registry.get(id)
+                test.is_nil(entry, id)
+            end
             local path = "base-install-" .. uuid.v4()
             local native = assert(fs.get("app:uploads"))
             local value = "Local uploads work without installing an extension"
-            test.not_nil(native:writefile(path, value))
+            local written, write_err = native:writefile(path, value)
+            test.is_nil(write_err)
+            test.not_nil(written)
             local storage = assert(resources.get_storage("app:uploads"))
             local actual, err = storage:readfile(path)
             native:remove(path)

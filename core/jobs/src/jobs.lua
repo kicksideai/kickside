@@ -280,6 +280,18 @@ function jobs.get_job(id: string): (table?, error?)
     end)
 end
 
+function jobs.get_job_statuses(ids: string[]): (table?, error?)
+    return with_db(function(db: sql.DB, _dbtype: string): (table?, error?)
+        return lifecycle.get_job_statuses(db, ids)
+    end)
+end
+
+-- Read uncommitted Jobs state when the caller owns a transaction on the
+-- configured Jobs database. Transaction ownership and commit stay with it.
+function jobs.get_job_statuses_tx(tx: sql.Transaction, ids: string[]): (table?, error?)
+    return lifecycle.get_job_statuses(tx, ids)
+end
+
 local function list_history(collection: string, thread_ids: string[], filters: table?, limit: integer?,
         after: table?): (table[]?, error?, boolean?)
     local result, err = with_db(function(db: sql.DB, _dbtype: string): (table?, error?)

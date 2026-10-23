@@ -27,6 +27,14 @@ entries:
       resources: '*'
       effect: allow
 
+  - name: resolve_scope_groups
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: funcs.call
+      resources: kickside.security.runtime:resolve_groups
+      effect: allow
+
   - name: session_group_policy_read
     kind: security.policy
     meta: {private: true, service_only: true}

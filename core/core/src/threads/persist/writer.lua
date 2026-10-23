@@ -239,8 +239,39 @@ end
 
 -- append_system_tx appends engine-owned events inside an already-open
 -- transaction. The caller owns commit/rollback and scheduler wakeups.
-function writer.append_system_tx(tx: sql.Transaction, dbtype: string, thread_id: string, events: { table }, completion_job_id: string?): (BatchResult?, error?)
-    return append.append_events_tx(tx, thread_id, events, { completion_job_id = completion_job_id })
+-- Options defer wake publication and reuse snapshots from lock_thread_rows_tx.
+function writer.append_system_tx(tx: sql.Transaction, dbtype: string, thread_id: string, events: { table }, completion_job_id: string?, options: table?): (BatchResult?, error?)
+    local append_options: table = { completion_job_id = completion_job_id }
+    local snapshot: table? = nil
+    if options ~= nil then
+        if type(options) ~= "table" then
+            return nil, errors.new({kind = errors.INVALID, retryable = false, message = "append options must be an object"})
+        end
+        if options.defer_wake ~= nil and type(options.defer_wake) ~= "boolean" then
+            return nil, errors.new({kind = errors.INVALID, retryable = false, message = "defer_wake must be boolean"})
+        end
+        append_options.defer_wake = options.defer_wake
+        if options.locked_threads ~= nil then
+            if type(options.locked_threads) ~= "table" then
+                return nil, errors.new({kind = errors.INVALID, retryable = false, message = "locked_threads must be a thread snapshot map"})
+            end
+            snapshot = options.locked_threads[thread_key(dbtype, trim(thread_id))]
+            if snapshot == nil then
+                return nil, errors.new({kind = errors.NOT_FOUND, retryable = false, message = "thread not found",
+                    details = {code = "thread_writer_not_found"}})
+            end
+            if type(snapshot) ~= "table" then
+                return nil, errors.new({kind = errors.INVALID, retryable = false, message = "locked thread snapshot must be an object"})
+            end
+            append_options.locked_thread = snapshot
+        end
+    end
+    local result, err = append.append_events_tx(tx, thread_id, events, append_options)
+    if snapshot and not err then
+        if type(result) ~= "table" or type(result.max_seq) ~= "number" then return nil, response_error("append.max_seq") end
+        snapshot.event_count = result.max_seq
+    end
+    return result, err
 end
 
 return writer

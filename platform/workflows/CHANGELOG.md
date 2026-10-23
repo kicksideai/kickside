@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/kicksideai/kickside/compare/workflows-v0.1.120...workflows-v0.2.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflows:** Post-processing S3 placement requires explicitly installing kickside/storage-s3 in the same module plan as this update. The base module no longer installs its S3 policy, controller, jobs, endpoints, or UI.
+
+### Bug Fixes
+
+* declare plain object roots for agent tool input schemas ([75fd0fe](https://github.com/kicksideai/kickside/commit/75fd0fed2a0c71206ae914c6ee497e1b37301a54))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+* **workflows:** acknowledge published terminal runs without reexecution authority ([ffc2dde](https://github.com/kicksideai/kickside/commit/ffc2dde5988ca5f0984b83e4cfc8a568fc2fedc8))
+* **workflows:** fence admission marking by completion token ([421bc69](https://github.com/kicksideai/kickside/commit/421bc690f2f745a2628628152838843341d477e2))
+* **workflows:** retain structured failure details ([a9e9f4c](https://github.com/kicksideai/kickside/commit/a9e9f4c071a8e51ce23e4205b4df416c71f0e78d))
+* **workflows:** route iteration inputs to body joins ([#46](https://github.com/kicksideai/kickside/issues/46)) ([efed521](https://github.com/kicksideai/kickside/commit/efed521d398ca78422f806d83bb09c3b24b609b3))
+* **workflows:** run deliveries under their persisted original identity ([1620989](https://github.com/kicksideai/kickside/commit/1620989285be27fbdf3ea33b1b28d60705542630))
+
 ## [0.1.120](https://github.com/kicksideai/kickside/compare/workflows-v0.1.119...workflows-v0.1.120) (2026-10-21)
 
 

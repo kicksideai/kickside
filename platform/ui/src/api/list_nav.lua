@@ -165,6 +165,7 @@ local function handler()
         count = #result.items,
         home = ui_types.safe_home_path(cfg.home),
         config = include_hidden and cfg or nil,
+        logo_upload = include_hidden and ui_types.BRANDING_UPLOAD or nil,
         -- The full-screen splash (if any) the user has not yet seen; nil otherwise.
         -- Resolved here so the SPA needs no extra (state-leaking) endpoint.
         splash = resolved_splash,

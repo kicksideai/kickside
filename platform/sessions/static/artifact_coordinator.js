@@ -2,11 +2,11 @@ import { u as E, a as P, b as D, W as L } from "./useSessionsApi-WrUiyRNa.js";
 import { defineComponent as B, ref as j, onMounted as x, onBeforeUnmount as O, openBlock as W, createElementBlock as q } from "vue";
 import { getLayoutManager as F, on as H, define as T } from "@wippy-fe/proxy";
 import "@iconify/vue";
-const U = { "aria-hidden": "true" }, r = "artifact", f = "artifact-modal", z = /* @__PURE__ */ B({
+const U = { "aria-hidden": "true" }, r = "artifact", d = "artifact-modal", z = /* @__PURE__ */ B({
   __name: "ArtifactCoordinator",
   setup(w) {
-    const g = { width: "80vw", height: "80vh" }, i = E(), l = P(), S = D(), s = i ? F(i) : null, c = [], a = j(b(window.location.pathname));
-    let u = 0;
+    const S = { width: "80vw", height: "80vh" }, i = E(), c = P(), g = D(), s = i ? F(i) : null, u = [], a = j(b(window.location.pathname));
+    let f = 0;
     function b(t) {
       if (!t.startsWith("/sessions/")) return "";
       const n = t.slice(10).split("/")[0] || "";
@@ -16,12 +16,12 @@ const U = { "aria-hidden": "true" }, r = "artifact", f = "artifact-modal", z = /
         return "";
       }
     }
-    function A(t) {
+    function k(t) {
       if (!t || typeof t != "object") return "";
       const n = t;
       return String(n.uuid || n.artifactId || "");
     }
-    function k(t) {
+    function A(t) {
       if (!t || typeof t != "object") return "";
       const n = t;
       return String(n.sessionId || n.session_id || "");
@@ -29,68 +29,73 @@ const U = { "aria-hidden": "true" }, r = "artifact", f = "artifact-modal", z = /
     function v() {
       s?.expandPanel(r), s?.openDrawer(r);
     }
-    function d() {
+    function l() {
       s?.closeDrawer(r), s?.collapsePanel(r);
     }
     function p() {
-      u++, i?.layout?.closeModal(f);
+      f++, i?.layout?.closeModal(d);
     }
     async function m(t) {
-      const n = ++u;
-      let o = "Artifact";
+      const n = ++f;
+      let e = "Artifact";
       try {
-        const e = await S.artifact(t);
-        e?.title && (o = e.title);
+        const o = await g.artifact(t);
+        o?.title && (e = o.title);
       } catch {
       }
-      n === u && (i?.layout?.closeModal(f), i?.layout?.openModal(f, {
+      n === f && (i?.layout?.closeModal(d), i?.layout?.openModal(d, {
         kind: "artifact",
         id: t,
-        title: o,
+        title: e,
         dismissable: !0,
-        size: g
+        size: S
       }));
     }
-    function h(t, n, o) {
+    function h(t, n, e) {
       if (n?.target === "modal") {
         m(t);
         return;
       }
-      if (!(!!a.value && o !== r)) {
+      if (!(!!a.value && e !== r)) {
         if (n?.reason === "arrival") return;
         m(t);
         return;
       }
-      v(), window.setTimeout(() => l?.broadcast("kickside:artifact-open", { uuid: t }), 0);
+      v(), window.setTimeout(() => c?.broadcast("kickside:artifact-open", { uuid: t }), 0);
     }
     function I(t) {
-      p(), t !== a.value && (a.value = t, d());
+      p(), t !== a.value && (a.value = t, l());
     }
-    function M(t) {
+    function C(t) {
       if (t.channel === "kickside:artifact-session") {
-        I(k(t.payload));
+        I(A(t.payload));
         return;
       }
       if (t.channel === "@HOST/intent") {
-        const n = t.payload, o = A(n);
-        n?.intent === "openArtifact" && o && h(o, n, t.sourcePanelId);
+        const n = t.payload;
+        if (n?.intent === "startChat" || n?.intent === "openSession") {
+          c?.send("main", "kickside:chat-open", n);
+          return;
+        }
+        const e = k(n);
+        n?.intent === "openArtifact" && e && h(e, n, t.sourcePanelId);
         return;
       }
-      t.channel === "kickside:artifact-close" && (p(), d());
+      t.channel === "kickside:artifact-close" && (p(), l());
     }
-    function C(t) {
+    function M(t) {
       if (!t || typeof t != "object") return;
-      const n = t, [, o] = String(n.topic || "").split(":");
-      if (o !== "sidebar") return;
-      const e = String(n.data?.artifact_uuid || "");
-      if (!e) return;
+      const n = t, [, e] = String(n.topic || "").split(":");
+      if (e !== "sidebar") return;
+      const o = String(n.data?.artifact_uuid || "");
+      if (!o) return;
       const y = String(n.data?.session_id || "");
-      y && y !== a.value || h(e, { reason: "arrival" });
+      y && y !== a.value || h(o, { reason: "arrival" });
     }
     return x(() => {
-      const t = l?.subscribe(M);
-      t && c.push(t), c.push(H("action:*", C));
-    }), O(() => c.forEach((t) => t())), (t, n) => (W(), q("span", U));
+      const t = c?.subscribe(C);
+      t && u.push(t), u.push(H("action:*", M));
+    }), O(() => u.forEach((t) => t())), (t, n) => (W(), q("span", U));
   }
 });
 class _ extends L {
