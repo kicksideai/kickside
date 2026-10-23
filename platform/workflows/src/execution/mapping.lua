@@ -3,6 +3,7 @@
 -- Go slices with zero-based indexes; this module owns both bridges so neither
 -- implementation detail leaks into authoring.
 
+local json = require("json")
 local M = {}
 
 type Map = { [string]: any }
@@ -23,7 +24,7 @@ local MODES: { [string]: boolean } = {
 
 local function copy_tree(v: any): any
     if type(v) ~= "table" then return v end
-    local out: Map = {}
+    local out: Map = next(v) == nil and json.encode(v) == "{}" and table.create(0, 1) or {}
     for k, item in pairs(v :: Map) do out[k] = copy_tree(item) end
     return out
 end

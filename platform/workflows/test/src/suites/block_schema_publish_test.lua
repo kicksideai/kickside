@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local json = require("json")
 local funcs = require("funcs")
@@ -133,6 +134,26 @@ local function run()
             } } }, uuid.v4, {})
             test.is_nil(remint_err)
             test.eq(json.encode(((((commands :: { Map })[1] :: Map).payload :: Map).config :: Map).schema), json.encode(schema))
+        end)
+
+        test.it("preserves historical v1 checksums while retaining object data", function()
+            local schema = json.decode('{"type":"object","properties":{},"default":{},"examples":[]}')
+            local function source(value)
+                return { key = "checksum-compat", title = "Checksum compatibility", version = 1, refs = {},
+                    document = { nodes = { { id = "step", kind = "block", ref = "app:block.engine_linear",
+                        config = { schema = value } } }, edges = {} } }
+            end
+            local artifact, err = flow_contract.build(source(schema))
+            test.is_nil(err, tostring(err))
+            -- Before this repair the copier turned all empty containers into [].
+            local legacy_schema = json.decode('{"type":"object","properties":[],"default":[],"examples":[]}')
+            local legacy, legacy_err = flow_contract.build(source(legacy_schema))
+            test.is_nil(legacy_err, tostring(legacy_err))
+            test.eq(artifact.checksum, legacy.checksum)
+            local materialized, materialize_err = flow_contract.materialize(artifact, {})
+            test.is_nil(materialize_err, tostring(materialize_err))
+            test.eq(json.encode(materialized.document.nodes[1].config.schema.default), "{}")
+            test.eq(json.encode(materialized.document.nodes[1].config.schema.examples), "[]")
         end)
 
         test.it("retains schema objects while constructing portable artifacts", function()

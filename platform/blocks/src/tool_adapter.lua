@@ -14,7 +14,7 @@ end
 
 local function copy(value: any): any
     if type(value) ~= "table" then return value end
-    local out: Map = {}
+    local out: Map = next(value) == nil and json.encode(value) == "{}" and table.create(0, 1) or {}
     for key, item in pairs(value :: Map) do out[key] = copy(item) end
     return out
 end
