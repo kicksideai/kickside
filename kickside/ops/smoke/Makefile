@@ -6,6 +6,7 @@ ENGINE ?= both
 WORKERS ?= 1
 TIER ?= full
 ARGS ?=
+TEST ?=
 
 DEPLOYMENT = $(if $(strip $(SOURCE)),--source "$(SOURCE)",--published "$(PUBLISHED)")
 REPLACE_ARGS = $(foreach replacement,$(REPLACEMENTS),--replace "$(replacement)")
@@ -31,4 +32,4 @@ source:
 list:
 	$(PYTHON) smoke.py --tier full --list
 test:
-	$(PYTHON) -m unittest -v
+	$(PYTHON) -m unittest -v $(TEST)

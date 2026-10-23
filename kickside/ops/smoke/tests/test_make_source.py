@@ -26,12 +26,17 @@ class SourceMakeTests(unittest.TestCase):
         self.python = f'{sys.executable} {capture}'
         self.environment = dict(os.environ, CAPTURE_ARGS=str(self.arguments),
                                 BUILD_LOG=str(self.build_log))
-        self.environment.pop('MAKEFLAGS', None)
 
     def run_make(self, *arguments):
+        environment = dict(self.environment)
+        # Test each invocation's declared inputs. An outer `make test SOURCE=...`
+        # must not turn a default/published fixture into a real source build.
+        for name in ('SOURCE', 'REPLACEMENTS', 'PUBLISHED', 'ENGINE', 'WORKERS',
+                     'TIER', 'ARGS', 'MAKEFLAGS', 'MAKEOVERRIDES', 'MFLAGS'):
+            environment.pop(name, None)
         return subprocess.run(['make', '--no-print-directory', '-f', str(MAKEFILE),
                                *arguments, f'PYTHON={self.python}'],
-                              cwd=self.root, env=self.environment, text=True, capture_output=True)
+                              cwd=self.root, env=environment, text=True, capture_output=True)
 
     def fixture(self, directory, label, fail=False):
         directory.mkdir(parents=True)
@@ -43,6 +48,18 @@ class SourceMakeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         arguments = json.loads(self.arguments.read_text())
         self.assertEqual(arguments[1:3], ['--published', 'latest'])
+        self.assertEqual(arguments[-2:], ['--workers', '1'])
+
+    def test_outer_source_run_cannot_change_fixture_defaults(self):
+        self.environment.update(SOURCE='/outer/source', REPLACEMENTS='example/module=/outer/module',
+                                PUBLISHED='outer-version', ENGINE='outer-engine', WORKERS='97',
+                                ARGS='--scenario outer-scenario')
+        result = self.run_make('quick')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        arguments = json.loads(self.arguments.read_text())
+        self.assertEqual(arguments[1:3], ['--published', 'latest'])
+        self.assertNotIn('--replace', arguments)
+        self.assertEqual(arguments[arguments.index('--engine') + 1], 'both')
         self.assertEqual(arguments[-2:], ['--workers', '1'])
 
     def test_source_builds_selected_ui_then_runs_parallel_without_publication(self):
