@@ -293,6 +293,14 @@ class Browser:
             self.inst.evidence.save('expected-http-rejection', {k: v for k, v in matched[0].items()})
         elif response.status >= 400:
             self.errors.append(self.inst.redactor.text(f'HTTP {response.status}: {response.url}'))
+            if response.url.startswith(self.inst.base + '/api/'):
+                receipt = {'method': response.request.method,
+                           'url': self.inst.redactor.text(response.url), 'status': response.status}
+                try:
+                    receipt['body'] = self.inst.redactor.value(response.json())
+                except Exception as error:
+                    receipt['body_error'] = self.inst.redactor.text(str(error))
+                self.inst.evidence.save('unexpected-http-response-' + str(len(self.errors)), receipt)
         if '/api/v1/uploads' in response.url and response.request.method == 'POST' and response.status == 200:
             self.uploads.append(response.json())
 

@@ -7,6 +7,41 @@ import yaml
 
 
 class HarnessSelectionTests(unittest.TestCase):
+    def test_resolved_catalog_excludes_only_loaded_replacement_tests(self):
+        from module_harness import _focus_tests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'harness'
+            root.mkdir()
+            (root / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'fixture', 'entries': [
+                {'name': 'setup', 'meta': {'type': 'test', 'suite': '00_setup'}},
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+                {'name': 'other', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            dependency = Path(directory) / 'dependency'
+            dependency.mkdir()
+            (dependency / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'foreign', 'entries': [
+                {'name': 'loaded', 'meta': {'type': 'test'}},
+                {'name': 'not_imported', 'meta': {'type': 'test'}},
+            ]}))
+            config = {'workspace': {'replacements': {'example/dependency': str(dependency)}}}
+            available = {'fixture:setup', 'fixture:case', 'fixture:other', 'foreign:loaded'}
+            _focus_tests(root, config, 'case', available=available)
+            self.assertEqual(config['override'], {
+                'fixture:other:meta.type': 'test_focus_excluded',
+                'foreign:loaded:meta.type': 'test_focus_excluded',
+            })
+
+    def test_source_declaration_does_not_credit_a_test_absent_from_the_loaded_catalog(self):
+        from module_harness import _focus_tests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'fixture', 'entries': [
+                {'name': 'setup', 'meta': {'type': 'test', 'suite': '00_setup'}},
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            with self.assertRaisesRegex(RuntimeError, 'matches no test'):
+                _focus_tests(root, {}, 'case', available={'fixture:setup'})
+
     def test_focuses_entries_and_suites_without_removing_declarations(self):
         from module_harness import _focus_tests
         with tempfile.TemporaryDirectory() as directory:

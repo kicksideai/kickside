@@ -2,6 +2,7 @@
 import copy
 import fcntl
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -130,13 +131,14 @@ def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repos
         if module_root is None and preparation.is_file():
             _command(inst, label + '-prepare', ['bash', preparation.name], root, environment, timeout)
         _command(inst, label + '-refresh', refresh, module_root or root, environment, timeout)
+        available = _loaded_test_ids(inst, root, environment, timeout, label)
         if lint:
             command = [inst.config['binary'], '--config', config_path.name, 'lint']
             if inst.engine == 'postgres':
                 command.extend(('--profile', 'postgres'))
             _command(inst, label + '-lint', command, root, environment, timeout)
         focused_config = yaml.safe_load(config_path.read_text())
-        _focus_tests(root, focused_config, None if repository_gate else entry)
+        _focus_tests(root, focused_config, None if repository_gate else entry, available=available)
         config_path.write_text(yaml.safe_dump(focused_config, sort_keys=False))
         test = [inst.config['binary'], '--config', config_path.name, 'test']
         if inst.engine == 'postgres':
@@ -231,8 +233,23 @@ def replacement_test_entries(root, config):
     return entries
 
 
-def _focus_tests(root, config, selection=None):
+def _loaded_test_ids(inst, root, environment, timeout, label):
+    command = [inst.config['binary'], '--config', '.wippy.yaml', 'registry', 'list',
+               '--meta', 'type=test', '--json']
+    if inst.engine == 'postgres':
+        command.extend(('--profile', 'postgres'))
+    completed = _command(inst, label + '-test-catalog', command, root, environment, timeout)
+    entries = json.loads(completed.stdout)
+    require(isinstance(entries, list) and all(isinstance(row, dict) and
+            isinstance(row.get('id'), str) and row['id'] for row in entries),
+            'Native test catalog has invalid entries')
+    return {row['id'] for row in entries}
+
+
+def _focus_tests(root, config, selection=None, *, available=None):
     entries = test_entries(root)
+    if available is not None:
+        entries = {identifier: entry for identifier, entry in entries.items() if identifier in available}
     if selection is None:
         selected = set(entries)
     else:
@@ -242,7 +259,10 @@ def _focus_tests(root, config, selection=None):
         selected.update(identifier for identifier, entry in entries.items()
                         if str(entry.get('meta', {}).get('suite', '')).startswith('00_'))
     overrides = config.setdefault('override', {})
-    for identifier in (entries.keys() - selected) | replacement_test_entries(root, config).keys():
+    excluded = (entries.keys() - selected) | replacement_test_entries(root, config).keys()
+    if available is not None:
+        excluded.intersection_update(available)
+    for identifier in excluded:
         overrides[identifier + ':meta.type'] = 'test_focus_excluded'
 
 

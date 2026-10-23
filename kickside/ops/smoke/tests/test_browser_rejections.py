@@ -49,6 +49,31 @@ class BrowserRejectionTests(unittest.TestCase):
         self.assertEqual(browser.errors, ['Uncaught application failure'])
 
 
+class BrowserErrorReceiptTests(BrowserRejectionTests):
+    def test_api_failure_keeps_redacted_response_evidence_before_any_later_timeout(self):
+        from harness import Redactor
+        browser = self.browser()
+        browser.inst.redactor = Redactor()
+        response = self.response('/api/v1/install', 500)
+        response.json.return_value = {'error': 'migration failed', 'api_key': 'fixture-secret'}
+        browser.response_received(response)
+        self.assertEqual(browser.errors, ['HTTP 500: http://localhost:731/api/v1/install'])
+        browser.inst.evidence.save.assert_called_once_with('unexpected-http-response-1', {
+            'method': 'POST', 'url': 'http://localhost:731/api/v1/install', 'status': 500,
+            'body': {'error': 'migration failed', 'api_key': '[redacted]'},
+        })
+        with self.assertRaisesRegex(Failure, 'HTTP 500'):
+            browser.clean(0)
+
+    def test_unreadable_error_body_does_not_hide_the_http_failure(self):
+        browser = self.browser()
+        response = self.response('/api/v1/install', 500)
+        response.json.side_effect = ValueError('body unavailable')
+        browser.response_received(response)
+        self.assertEqual(browser.errors, ['HTTP 500: http://localhost:731/api/v1/install'])
+        self.assertEqual(browser.inst.evidence.save.call_args.args[1]['body_error'], 'body unavailable')
+
+
 class BrowserFailureFixtureTests(BrowserRejectionTests):
     def configured(self):
         browser = self.browser()

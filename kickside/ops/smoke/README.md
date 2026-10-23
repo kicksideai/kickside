@@ -122,7 +122,8 @@ replacement for every module they exercise. For a full source run, prepare all
 selected repositories and use their `.github/modules.json` catalogs to supply
 the complete replacement list. A focused PR run selects its relevant scenarios.
 
-The target builds the app and each replacement with a `ui/package.json` through
+The target prepares shared Widgets dependencies through the repository's Make
+interface, then builds the app and each replacement with a `ui/package.json` through
 its existing `make build` target before starting the suite. A failed build stops
 the run instead of testing stale bundles. It does not fetch, switch or reset Git
 branches, edit release locks, or publish packages. Prepare the checkouts and

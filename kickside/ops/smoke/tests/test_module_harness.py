@@ -72,7 +72,48 @@ def command_harness(command, kwargs):
     return cwd / 'test' if command[0] == 'make' else cwd
 
 
+class LoadedTestCatalogTests(unittest.TestCase):
+    def test_catalog_uses_the_resolved_registry_and_matching_database_profile(self):
+        from types import SimpleNamespace
+        from module_harness import _loaded_test_ids
+        result = SimpleNamespace(returncode=0, stderr='',
+            stdout='[{"id":"fixture:case","meta":{"type":"test"}}]')
+        for engine in ('sqlite', 'postgres'):
+            with self.subTest(engine=engine):
+                inst = SimpleNamespace(config={'binary': '/bin/wippy'}, engine=engine,
+                    evidence=Evidence(), redactor=SimpleNamespace(text=str))
+                with patch('module_harness.subprocess.run', return_value=result) as invoke:
+                    loaded = _loaded_test_ids(inst, Path('/owned/harness'), {}, 900, 'fixture')
+                self.assertEqual(loaded, {'fixture:case'})
+                command = invoke.call_args.args[0]
+                self.assertEqual(command[:5], ['/bin/wippy', '--config', '.wippy.yaml', 'registry', 'list'])
+                self.assertEqual('--profile' in command, engine == 'postgres')
+                self.assertEqual(inst.evidence.saved[0][0], 'focused-fixture-test-catalog')
+
+    def test_catalog_failure_cannot_fall_back_to_unresolved_source_declarations(self):
+        from types import SimpleNamespace
+        from module_harness import _loaded_test_ids
+        inst = SimpleNamespace(config={'binary': '/bin/wippy'}, engine='sqlite',
+            evidence=Evidence(), redactor=SimpleNamespace(text=str))
+        result = SimpleNamespace(returncode=1, stdout='', stderr='registry could not load')
+        with patch('module_harness.subprocess.run', return_value=result):
+            with self.assertRaisesRegex(RuntimeError, 'registry could not load'):
+                _loaded_test_ids(inst, Path('/owned/harness'), {}, 900, 'fixture')
+
+
 class FocusedModuleHarnessTests(unittest.TestCase):
+    def setUp(self):
+        from module_harness import test_entries, replacement_test_entries
+        import yaml
+
+        def catalog(inst, root, environment, timeout, label):
+            config = yaml.safe_load((root / '.wippy.yaml').read_text())
+            return test_entries(root).keys() | replacement_test_entries(root, config).keys()
+
+        patcher = patch('module_harness._loaded_test_ids', side_effect=catalog)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_isolates_declared_sqlite_files_and_http_ports_for_every_focused_run(self):
         import yaml
         from module_harness import _write_config

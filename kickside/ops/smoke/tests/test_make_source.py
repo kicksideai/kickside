@@ -75,6 +75,18 @@ class SourceMakeTests(unittest.TestCase):
         arguments = json.loads(self.arguments.read_text())
         self.assertEqual(arguments[arguments.index('--workers') + 1], '2')
 
+    def test_cold_source_prepares_shared_widget_dependencies_before_consumer_builds(self):
+        source = self.root / 'source'
+        self.fixture(source / 'app', 'app')
+        widgets = source / 'platform/widgets/ui'
+        widgets.mkdir(parents=True)
+        (widgets / 'package.json').write_text('{}')
+        (source / 'Makefile').write_text(
+            'typecheck-shared:\n\t@printf "%s\\n" shared >> "$$BUILD_LOG"\n')
+        result = self.run_make('source', f'SOURCE={source}')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.build_log.read_text().splitlines(), ['shared', 'app'])
+
     def test_failed_build_does_not_run_suite_on_stale_assets(self):
         source = self.root / 'source'
         self.fixture(source / 'app', 'app', fail=True)

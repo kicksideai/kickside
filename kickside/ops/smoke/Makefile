@@ -21,6 +21,7 @@ source: WORKERS = 4
 source:
 	@test -n "$$SOURCE" || { echo "source needs SOURCE=<kickside-checkout>" >&2; exit 2; }
 	@case "$(TIER)" in quick|full|regression|chat) ;; *) echo "invalid TIER=$(TIER)" >&2; exit 2;; esac
+	@if [ -f "$(SOURCE)/platform/widgets/ui/package.json" ]; then $(MAKE) -C "$(SOURCE)" typecheck-shared; fi
 	$(MAKE) -C "$(SOURCE)/app" build
 	@set -e; for replacement in $$REPLACEMENTS; do \
 	  directory=$${replacement#*=}; \
