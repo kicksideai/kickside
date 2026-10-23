@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 version: "1.0"
 namespace: app
 entries:
@@ -13,3 +14,4 @@ entries:
       apply: kickside.core.projections:apply
       claim: kickside.core.jobs.persist:claim
       jobs: kickside.core.jobs:jobs
+      clock: kickside.core.jobs:clock

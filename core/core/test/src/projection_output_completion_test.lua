@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test=require("test")
 local sql=require("sql")
 local uuid=require("uuid")
@@ -8,6 +9,7 @@ local writer=require("writer")
 local apply=require("apply")
 local claim=require("claim")
 local jobs=require("jobs")
+local clock=require("clock")
 
 local function checked(value: any, err: any): any
     if err then error(err) end
@@ -31,14 +33,17 @@ return test.run_cases(function()
                 all_jobs[#all_jobs+1]=row.job_id
                 if head==1 then registered[#registered+1]=row end
             end
-            local leased={}
-            for _=1,10 do
-                for _,row in ipairs(checked(claim.claim_batch(db,dialect,16,nil,nil))) do leased[row.id]=row end
-                if leased[registered[1].job_id] and leased[registered[2].job_id] then break end
-            end
             local start,done=channel.new(2),channel.new(2)
             for index,row in ipairs(registered) do
-                local job=assert(leased[row.job_id],"both projection jobs must be leased")
+                -- Lease only this fixture's row through the Jobs-owned primitive;
+                -- a shared-queue claim could consume another suite's work.
+                local tx=assert(db:begin())
+                local token=uuid.v7()
+                local leased,lease_err=claim.lease_row(tx,dialect,row.job_id,token,
+                    clock.format(time.now():add("1m"),dialect),clock.now(dialect))
+                if lease_err or not leased then tx:rollback();error(lease_err or "fixture job is not pending") end
+                checked(tx:commit())
+                local job={id=row.job_id,lease_token=token,execution_seq=leased.execution_seq}
                 local snapshot=checked(db:query([[SELECT c.*,p.body,p.kind FROM kickside_projection_cursor c
                     JOIN kickside_projection p ON p.id=c.projection_id WHERE c.id=$1]],{row.cursor_id}))[1]
                 snapshot.body=checked(json.decode(snapshot.body))
@@ -53,6 +58,7 @@ return test.run_cases(function()
                     done:send({ok=ok,result=result,err=err})
                 end)
             end
+            db:release()
             start:send(true);start:send(true)
             local deadline=time.after("30s")
             for _=1,2 do
@@ -62,6 +68,7 @@ return test.run_cases(function()
                 test.is_nil(result.value.err,tostring(result.value.err))
                 test.not_nil(result.value.result)
             end
+            db=assert(sql.get("app:db"))
             for _,id in ipairs(output_ids) do
                 test.eq(checked(db:query("SELECT event_count FROM kickside_thread WHERE id=$1",{id}))[1].event_count,2)
             end
