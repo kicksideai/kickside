@@ -297,24 +297,25 @@ entries:
             required: [kind]
             properties:
               # The kickside.transform:strategy bindings the round applies.
-              kind: { type: string, enum: [none, expr, llm, func, code] }
+              kind: { x-authority: subject, type: string, enum: [none, expr, llm, func, code] }
               expr: { type: string, title: Expression }
-              prompt: { type: string, title: LLM prompt }
-              model: { type: string, title: Model }
-              temperature: { type: number, title: Temperature }
-              max_tokens: { type: integer, title: Runtime token budget }
-              generation_policy: { type: object, title: Generation policy, description: Optional kickside.transform.generation_policy/v1 runtime values (model.selector, sampling.temperature, budgets.runtime, prompts.runtime); model, sampling and budget fields agree when both are present; an explicit prompt overrides the policy prompt. }
-              function: { type: string, title: Trusted function reference }
+              prompt: { x-authority: subject, type: string, title: LLM prompt }
+              model: { x-authority: subject, type: string, title: Model }
+              temperature: { x-authority: subject, type: number, title: Temperature }
+              max_tokens: { x-authority: subject, type: integer, title: Runtime token budget }
+              generation_policy: { x-authority: subject, type: object, title: Generation policy, description: Optional kickside.transform.generation_policy/v1 runtime values (model.selector, sampling.temperature, budgets.runtime, prompts.runtime); model, sampling and budget fields agree when both are present; an explicit prompt overrides the policy prompt. }
+              function: { x-authority: subject, type: string, title: Trusted function reference }
               # The func strategy hands this table to its target alongside the
               # item, so a func transform is parameterised here.
-              config: { type: object, title: Transform config }
+              config: { x-authority: subject, type: object, title: Transform config }
               input_version: { type: string, title: Declared transform input version }
               output_version: { type: string, title: Declared transform output version }
-              code: { type: string, title: Code }
-              tool_ids: { type: array, items: { type: string } }
-              resource_id: { type: string, minLength: 1, title: Function resource }
-              required_mask: { type: integer, enum: [1, 2, 4, 8], title: Required access }
+              code: { x-authority: subject, type: string, title: Code }
+              tool_ids: { x-authority: subject, type: array, items: { type: string } }
+              resource_id: { x-authority: subject, type: string, minLength: 1, title: Function resource }
+              required_mask: { x-authority: subject, type: integer, enum: [1, 2, 4, 8], title: Required access }
               resources:
+                x-authority: subject
                 type: array
                 title: Declared resources
                 items:

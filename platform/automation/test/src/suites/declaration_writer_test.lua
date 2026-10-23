@@ -57,8 +57,101 @@ local function verify(request: any): (any?, any)
     return executor:call(VERIFY, request)
 end
 
+local function reconfigured(schema: any, before: any, after: any, same_subject: boolean?): (any?, any)
+    local service = assert(component.get_service())
+    local id = tostring(uuid.v7())
+    local created, create_err = service:register({ component_id = id,
+        impl_id = "kickside.automation.agent.fixture:automation_type" })
+    test.is_nil(create_err, tostring(create_err))
+    test.is_true(created.success)
+    local db = assert(sql.get(types.db_id()))
+    local _, context_err = db:execute("UPDATE kickside_components SET private_context=$1 WHERE component_id=$2", {
+        json.encode({ _portable_input = before }), id,
+    })
+    db:release()
+    test.is_nil(context_err, tostring(context_err))
+    local command_input = input(schema, after, {})
+    if same_subject then
+        command_input.subject_id = command_input.operator_id
+        command_input.subject_identity = command_input.operator_identity
+    end
+    local request = reserved(command_input, "reconfigure", id)
+    local receipt, err = verify(request)
+    local context, read_err = component.get_private_context(id)
+    local _, delete_err = service:delete({ component_id = id })
+    test.is_nil(read_err, tostring(read_err))
+    local actual_json, actual_err = json.encode(context._portable_input)
+    local expected_json, expected_err = json.encode(before)
+    test.is_nil(actual_err, tostring(actual_err))
+    test.is_nil(expected_err, tostring(expected_err))
+    test.eq(actual_json, expected_json)
+    test.is_nil(delete_err, tostring(delete_err))
+    return receipt, err
+end
+
 local function define_tests(): ()
     test.describe("automation declaration writer authority", function()
+        local opaque_schema = { properties = {
+            title = { type = "string" },
+            behavior = { type = "object", properties = {
+                target = { type = "string", ["x-authority"] = "subject" },
+                config = { type = "object", ["x-authority"] = "subject" },
+                enabled = { type = "boolean", ["x-authority"] = "subject" },
+                expression = { type = "string" },
+            } },
+            steps = { type = "array", items = { type = "object", properties = {
+                code = { type = "string", ["x-authority"] = "subject" },
+                note = { type = "string" },
+            } } },
+        } }
+        local changes = {
+            { name = "nested opaque config", before = { behavior = { config = { nested = { resource = "first" } } } },
+                after = { behavior = { config = { nested = { resource = "second" } } } } },
+            { name = "function target", before = { behavior = { target = "example:first" } },
+                after = { behavior = { target = "example:second" } } },
+            { name = "added authority", before = {}, after = { behavior = { target = "example:first" } } },
+            { name = "removed authority", before = { behavior = { target = "example:first" } }, after = {} },
+            { name = "false authority value", before = { behavior = { enabled = true } }, after = { behavior = { enabled = false } } },
+            { name = "removed false authority value", before = { behavior = { enabled = false } }, after = {} },
+            { name = "array item code", before = { steps = { { code = "return 1" } } },
+                after = { steps = { { code = "return 2" } } } },
+            { name = "removed array item", before = { steps = { { code = "return 1" } } }, after = { steps = {} } },
+        }
+        for _, change in ipairs(changes) do
+            test.it("rejects non-subject edits to " .. change.name, function()
+                local receipt, err = reconfigured(opaque_schema, change.before, change.after)
+                test.is_nil(receipt)
+                test.not_nil(err)
+                test.contains(tostring(err), "execution subject")
+                test.eq(err:kind(), errors.PERMISSION_DENIED)
+                test.eq(err:details().error_kind, "access")
+            end)
+            test.it("accepts subject edits to " .. change.name, function()
+                local receipt, err = reconfigured(opaque_schema, change.before, change.after, true)
+                test.is_nil(err, tostring(err))
+                test.is_true(receipt.valid)
+            end)
+        end
+        test.it("accepts pure edits with unchanged opaque fields", function()
+            local receipt, err = reconfigured(opaque_schema,
+                { title = "Before", behavior = { config = { a = 1, b = false }, expression = "1" } },
+                { title = "After", behavior = { config = { b = false, a = 1 }, expression = "2" } })
+            test.is_nil(err, tostring(err))
+            test.is_true(receipt.valid)
+        end)
+        test.it("preserves edits for schemas without authority annotations", function()
+            local receipt, err = reconfigured({ type = "object", properties = { config = { type = "object" } } },
+                { config = { resource = "first" } }, { config = { resource = "second" } })
+            test.is_nil(err, tostring(err))
+            test.is_true(receipt.valid)
+        end)
+        test.it("rejects non-subject installation of marked fields", function()
+            local request = reserved(input(opaque_schema, { behavior = { target = "example:first" } }, {}))
+            local receipt, err = verify(request)
+            test.is_nil(receipt)
+            test.not_nil(err)
+            test.contains(tostring(err), "execution subject")
+        end)
         for _, allowed in ipairs({ false, true }) do
             test.it(allowed and "accepts retained references with live grants on both principals"
                 or "rejects a pure edit when only the subject can access a retained reference", function()
