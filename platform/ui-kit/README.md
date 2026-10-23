@@ -72,3 +72,13 @@ There is no build target in this module: the package directory is embedded as-is
 ## License
 
 [KickSide Community License 1.0](LICENSE).
+
+The library chrome is split by ownership: `kx-shell.css` owns the rail and
+reader layout, `kx-controls.css` owns native controls, and `kx-overlay.css`
+owns notices, confirm surfaces and drawers. `kx-state.css` provides empty and
+loading layouts, including spacious reader variants. Import only the sheets a
+surface uses, after `kx-tokens.css`, and delete the corresponding local rules.
+These sheets do not implement Vue components or dialog behavior.
+
+Run the package contract checks with `make test`. They validate package exports,
+theme colors, the focus contract, and the existing surface-state defaults.

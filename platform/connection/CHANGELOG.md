@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/kicksideai/kickside/compare/connection-v0.4.0...connection-v0.5.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflows:** Post-processing S3 placement requires explicitly installing kickside/storage-s3 in the same module plan as this update. The base module no longer installs its S3 policy, controller, jobs, endpoints, or UI.
+
+### Bug Fixes
+
+* **channel:** pass the delivery key to reply providers on keyed writes ([#77](https://github.com/kicksideai/kickside/issues/77)) ([ca9c879](https://github.com/kicksideai/kickside/commit/ca9c879efcad63267a7796481b4d24af9cf52092))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+* **workflows:** route iteration inputs to body joins ([#46](https://github.com/kicksideai/kickside/issues/46)) ([efed521](https://github.com/kicksideai/kickside/commit/efed521d398ca78422f806d83bb09c3b24b609b3))
+
 ## [0.4.0](https://github.com/kicksideai/kickside/compare/connection-v0.3.1...connection-v0.4.0) (2026-10-21)
 
 

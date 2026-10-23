@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.0](https://github.com/kicksideai/kickside/compare/uploads-v0.2.0...uploads-v0.3.0) (2026-10-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflows:** Post-processing S3 placement requires explicitly installing kickside/storage-s3 in the same module plan as this update. The base module no longer installs its S3 policy, controller, jobs, endpoints, or UI.
+
+### Bug Fixes
+
+* **uploads:** classify transcription codes, retry failed uploads, keep provider text private ([b633f94](https://github.com/kicksideai/kickside/commit/b633f94820c5e0b75e0cbce1bc46995e75476b61))
+* **uploads:** compose retries with guarded idempotent teardown ([72d2b12](https://github.com/kicksideai/kickside/commit/72d2b12b3f2fe70862ce90c91ee5ff04bdc23f80))
+* **uploads:** honor optional callbacks and idempotent teardown ([318ab49](https://github.com/kicksideai/kickside/commit/318ab49a1f6c5267cb1a902e75d6e21d705f1779))
+* **uploads:** narrow validated transcription code for typed pipeline ([4b06e86](https://github.com/kicksideai/kickside/commit/4b06e86984ccb6d0f780c4cf6540e04f2c9ff5a2))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+* **uploads:** verify row absence before accepting teardown not found ([966fca4](https://github.com/kicksideai/kickside/commit/966fca422303cc14ca01a1a87584253f4767a6ce))
+* **workflows:** route iteration inputs to body joins ([#46](https://github.com/kicksideai/kickside/issues/46)) ([efed521](https://github.com/kicksideai/kickside/commit/efed521d398ca78422f806d83bb09c3b24b609b3))
+
 ## [0.2.0](https://github.com/kicksideai/kickside/compare/uploads-v0.1.74...uploads-v0.2.0) (2026-10-21)
 
 

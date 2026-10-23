@@ -3,8 +3,11 @@ local security = require("security")
 local branding = require("branding")
 local ui_types = require("ui_types")
 
-local MAX_BYTES = 2 * 1024 * 1024
-local ALLOWED_EXT: { [string]: boolean } = ui_types.BRANDING_IMAGE_EXT
+local MAX_BYTES = ui_types.BRANDING_UPLOAD.max_bytes
+local TYPE_LABELS: { string } = {}
+for _, format in ipairs(ui_types.BRANDING_UPLOAD.formats) do
+    TYPE_LABELS[#TYPE_LABELS + 1] = format.label
+end
 
 local function fail(res: any, status: number, message: string)
     res:set_status(status)
@@ -43,8 +46,8 @@ local function handler()
         return fail(res, http.STATUS.BAD_REQUEST, "logo must be an image")
     end
     local ext = (filename:match("%.([%a%d]+)$") or ""):lower()
-    if not ALLOWED_EXT[ext] then
-        return fail(res, http.STATUS.BAD_REQUEST, "unsupported image type (png, jpg, webp, gif)")
+    if ui_types.BRANDING_IMAGE_MIME[ext] ~= mime then
+        return fail(res, http.STATUS.BAD_REQUEST, "unsupported image type (" .. table.concat(TYPE_LABELS, ", ") .. ")")
     end
 
     local fstream, serr = part:stream()

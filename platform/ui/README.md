@@ -2,6 +2,13 @@
 
 Navigation discovery and appearance administration.
 
+Logo uploads accept PNG, JPEG (`.jpg` and `.jpeg`), WebP, and GIF, up to 2 MB.
+The filename extension and MIME type must agree. Uploaded SVG is excluded because
+logos are served on the application origin without an SVG sanitizer; bundled,
+trusted application SVGs remain available. `BRANDING_UPLOAD` in `src/types.lua`
+declares the upload contract returned by `GET /nav/list?manage=1` and used by the
+Appearance editor for its file picker and hint.
+
 This module installs independently into a [KickSide](https://kickside.ai) host.
 
 ## Quick start

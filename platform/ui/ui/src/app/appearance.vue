@@ -42,6 +42,11 @@ const showHidden = ref(false)
 // controls and saved through the same PUT /nav/config path.
 const title = ref('')
 const logoUrl = ref('')
+const logoUpload = ref<{ max_bytes: number, formats: { label: string, mime: string, extensions: string[] }[] }>()
+const logoAccept = computed(() => logoUpload.value?.formats.flatMap(f => [f.mime, ...f.extensions.map(ext => `.${ext}`)]).join(','))
+const logoHint = computed(() => logoUpload.value
+  ? `${logoUpload.value.formats.map(f => f.label).join(', ')} · up to ${logoUpload.value.max_bytes / 1048576} MB.`
+  : '')
 const branding = useAppearanceBranding({ logoUrl, error, apiError })
 const { uploadingLogo, uploadLogo, removeLogo } = branding
 
@@ -85,13 +90,13 @@ const toneWarning = computed(() =>
 const home = ref('')
 // Baseline snapshot for dirty detection. Label/icon edits live inside overrides
 // (items) and cats (categories), so tracking those two captures every change.
-let baseline = ''
+const baseline = ref('')
 const snapshot = () => JSON.stringify({
   layout: layout.value, cats: cats.value, overrides: overrides.value,
   title: title.value, logo: logoUrl.value, home: home.value, tone: primaryColor.value,
   pos: items.value.map(i => [i.id, i.category, i.order, !!i.hidden]),
 })
-const dirty = computed(() => snapshot() !== baseline)
+const dirty = computed(() => snapshot() !== baseline.value)
 
 async function load(): Promise<boolean> {
   loading.value = true
@@ -99,6 +104,7 @@ async function load(): Promise<boolean> {
   try {
     const { data } = await api.get('/api/v1/nav/list?manage=1')
     if (!data.success) throw new Error(data.error || 'failed to load nav')
+    logoUpload.value = data.logo_upload
     items.value = (data.items ?? []).map((i: Item) => ({ ...i }))
     layout.value = data.layout === 'horizontal' ? 'horizontal' : 'vertical'
     const cfg = data.config ?? {}
@@ -109,7 +115,7 @@ async function load(): Promise<boolean> {
     primaryColor.value = typeof cfg.primary_color === 'string' ? cfg.primary_color : ''
     committedTone = primaryColor.value // baseline tone an unsaved preview reverts to
     home.value = typeof data.home === 'string' ? data.home : (typeof cfg.home === 'string' ? cfg.home : '')
-    baseline = snapshot()
+    baseline.value = snapshot()
     return true
   } catch (e: any) {
     error.value = apiError(e, 'failed to load')
@@ -158,6 +164,7 @@ async function replaySetup() {
 // saved tone with no reload and no cross-shadow reach-in from this module. On a clean
 // leave we re-emit the last committed (saved) tone so unsaved edits revert.
 let toneTimer: ReturnType<typeof setTimeout> | null = null
+let disposed = false
 let committedTone = '' // the last saved tone; what an unsaved preview reverts to on leave
 // The facade's static default css-variables (served at /app), used to preview/apply the
 // built-in ramp on "Reset to default" — clearing the overlay would only revert to the
@@ -194,6 +201,7 @@ function emitTone(hex: string) {
 }
 
 onBeforeUnmount(() => {
+  disposed = true
   if (toneTimer) clearTimeout(toneTimer)
   emitTone(committedTone) // revert any unsaved preview to the last saved tone
   unsubscribeTheme?.()
@@ -201,6 +209,8 @@ onBeforeUnmount(() => {
 
 async function save() {
   if (toneBlocked.value) return // guard: never persist an illegible tone
+  const submitted = snapshot()
+  const submittedTone = primaryColor.value
   saving.value = true
   error.value = ''
   try {
@@ -210,12 +220,12 @@ async function save() {
       primary_color: primaryColor.value,
     })
     if (!data.success) throw new Error(data.error || 'save failed')
-    baseline = snapshot()
-    committedTone = primaryColor.value // preview is now the committed tone; keep it applied
+    baseline.value = submitted
+    committedTone = submittedTone // a draft edited during this request is still unsaved
     // Re-assert in case a save→navigate-away race already reverted the overlay: if the user
     // left before this PUT resolved, onBeforeUnmount fired emitTone(pre-save committedTone).
     // The shell singleton still listens, so re-emitting converges it to the saved tone.
-    emitTone(committedTone)
+    emitTone(disposed || hostVisible.value === false ? committedTone : primaryColor.value)
   } catch (e: any) {
     error.value = apiError(e, 'save failed')
   } finally {
@@ -298,14 +308,14 @@ watch(hostVisible, (visible, previous) => {
                 <label class="ap-btn ap-btn-ghost" :class="uploadingLogo && 'ap-btn-busy'">
                   <Icon :icon="uploadingLogo ? 'tabler:loader-2' : 'tabler:upload'" :class="uploadingLogo && 'spin'" aria-hidden="true" />
                   {{ uploadingLogo ? 'Uploading…' : 'Upload' }}
-                  <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif,.png,.jpg,.jpeg,.svg,.webp,.gif" class="ap-file" :disabled="uploadingLogo" @change="uploadLogo" />
+                  <input type="file" :accept="logoAccept" class="ap-file" :disabled="uploadingLogo || !logoUpload" @change="uploadLogo" />
                 </label>
                 <button v-if="logoUrl" class="ap-btn ap-btn-ghost ap-danger" @click="removeLogo">
                   <Icon icon="tabler:trash" aria-hidden="true" /> Remove
                 </button>
               </div>
             </div>
-            <p class="ap-hint">PNG, SVG, JPG, WebP or GIF · up to 2 MB.</p>
+            <p class="ap-hint">{{ logoHint }}</p>
 
             <label class="ap-blabel">Base tone</label>
             <div class="ap-tone">

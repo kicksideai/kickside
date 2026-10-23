@@ -2,7 +2,7 @@ version: "1.0"
 namespace: kickside.automation
 entries:
   - name: dep.wippy.migration
-    version: '*'
+    version: '>=0.3.26'
     kind: ns.dependency
     meta:
       comment: Migration framework for the module read-model tables.
@@ -29,7 +29,7 @@ entries:
     component: kickside/execution
 
   - name: dep.kickside.contract
-    version: '*'
+    version: '>=0.3.1'
     kind: ns.dependency
     meta:
       comment: Provides the Trigger lifecycle, delivery, and acquisition-control contracts.

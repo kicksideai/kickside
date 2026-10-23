@@ -3375,6 +3375,7 @@ entries:
       json: app:projection_apply_native_json_adapter
       registry: app:projection_apply_native_registry_adapter
       clock: app:projection_apply_native_clock_adapter
+      jobs_wake: app:projection_apply_native_wake_adapter
       threads_writer: app:projection_apply_native_threads_writer_adapter
       jobs: app:projection_apply_native_jobs_adapter
       cursor_waiters: app:projection_apply_native_cursor_waiters_adapter
@@ -4282,6 +4283,12 @@ entries:
       test: wippy.test:test
       writer: app:projection_register_native_source
       fixture: app:projection_register_native_fixture
+
+  - name: projection_apply_native_wake_adapter
+    kind: library.lua
+    source: file://projection_apply_native_dependency_adapter.lua
+    imports:
+      fixture: app:projection_apply_native_fixture
 
   - name: projection_pin_repair
     kind: library.lua

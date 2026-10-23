@@ -1,7 +1,7 @@
 version: "1.0"
 namespace: app.deps
 entries:
-  - version: "*"
+  - version: ">=0.5.11"
     name: llm
     kind: ns.dependency
     meta: {}
@@ -13,7 +13,7 @@ entries:
         value: app.env:store
 
   # app.deps:migration
-  - version: "*"
+  - version: ">=0.3.26"
     name: migration
     kind: ns.dependency
     meta: {}
@@ -23,7 +23,7 @@ entries:
         value: app:db
 
   # app.deps:relay
-  - version: "*"
+  - version: ">=0.3.17"
     name: relay
     kind: ns.dependency
     meta: {}
@@ -43,7 +43,7 @@ entries:
         value: 7200s
 
   # app.deps:renderers
-  - version: "*"
+  - version: ">=0.1.35"
     name: renderers
     kind: ns.dependency
     meta: {}
@@ -55,14 +55,14 @@ entries:
         value: app:gateway
 
   # app.deps:security
-  - version: "*"
+  - version: ">=0.4.3"
     name: security
     kind: ns.dependency
     meta: {}
     component: wippy/security
 
   # app.deps:session
-  - version: "*"
+  - version: ">=0.6.13"
     name: session
     kind: ns.dependency
     meta: {}
@@ -86,14 +86,14 @@ entries:
         value: 300s
 
   # app.deps:terminal
-  - version: "*"
+  - version: ">=0.4.6"
     name: terminal
     kind: ns.dependency
     meta: {}
     component: wippy/terminal
 
   # app.deps:uploads
-  - version: "*"
+  - version: ">=0.2.0"
     name: uploads
     kind: ns.dependency
     meta: {}
@@ -111,7 +111,7 @@ entries:
         value: app:gateway
 
   # app.deps:usage
-  - version: "*"
+  - version: ">=0.3.26"
     name: usage
     kind: ns.dependency
     meta: {}
@@ -121,7 +121,7 @@ entries:
         value: app:db
 
   # app.deps:views
-  - version: "*"
+  - version: ">=0.5.13"
     name: views
     kind: ns.dependency
     meta: {}

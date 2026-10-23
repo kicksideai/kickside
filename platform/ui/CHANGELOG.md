@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/kicksideai/kickside/compare/ui-v0.2.2...ui-v0.2.3) (2026-10-22)
+
+
+### Bug Fixes
+
+* **ui:** clear appearance dirty state after save ([#111](https://github.com/kicksideai/kickside/issues/111)) ([7e5c759](https://github.com/kicksideai/kickside/commit/7e5c7595260072f22160656e93ee93b55acce9af))
+* **ui:** share the logo upload type contract ([#112](https://github.com/kicksideai/kickside/issues/112)) ([eff2e4d](https://github.com/kicksideai/kickside/commit/eff2e4d7b6830a56b764f77b0bd590e67b8d631e))
+
 ## 0.2.2 (2026-10-17)
 
 - Refresh packaged frontend assets and documentation.

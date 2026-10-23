@@ -15,12 +15,26 @@ entries:
       properties:
         kb_id: { type: string }
         content: { type: string }
+        content_omitted: { type: boolean }
+        content_bytes: { type: integer, minimum: 0 }
+        content_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
         content_type: { type: string }
         title: { type: string }
         metadata: { type: object }
         source_ref: { type: object }
         actor_id: { type: string }
-      required: [kb_id, content, content_type, source_ref]
+      required: [kb_id, content_type, source_ref]
+      anyOf:
+        - required: [content]
+        - required: [content_omitted, content_bytes, content_sha256]
+          properties:
+            content_omitted: { const: true }
+            source_ref:
+              type: object
+              required: [upload_id, artifact_id]
+              properties:
+                upload_id: { type: string, minLength: 1 }
+                artifact_id: { type: string, minLength: 1 }
 
   # Emit site: thread_ingest.delete_content
   # (body { kb_id, metadata, source_ref, actor_id }).

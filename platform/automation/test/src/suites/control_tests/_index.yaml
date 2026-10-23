@@ -1,6 +1,29 @@
 version: "1.0"
 namespace: kickside.automation
 entries:
+- name: resync_control_probe
+  kind: function.lua
+  source: file://../resync_control_probe.lua
+  method: run
+  imports:
+    automation_test_engine: kickside.automation:automation_test_engine
+    retention_pin: kickside.core.retention:pin
+- name: resync_authority_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation
+  source: file://../resync_authority_test.lua
+  method: run
+  modules: [uuid]
+  imports:
+    test: wippy.test:test
+    controls: kickside.automation.engine:controls
+    command: kickside.automation:command
+    drive: kickside.automation:drive
+    control_fixture: kickside.automation:control_fixture
+    canonical_json: kickside.contract:canonical_json
+    execution_identity: kickside.execution:execution_identity
 - name: resync_lock_test
   kind: function.lua
   meta:
@@ -11,6 +34,7 @@ entries:
   method: run
   modules: [sql, uuid, time, channel]
   imports:
+    execution_identity: kickside.execution:execution_identity
     test: wippy.test:test
     drive: kickside.automation:drive
     command: kickside.automation:command
@@ -71,6 +95,7 @@ entries:
   method: run
   modules: [uuid]
   imports:
+    execution_identity: kickside.execution:execution_identity
     test: wippy.test:test
     canonical_json: kickside.contract:canonical_json
     command: kickside.automation:command

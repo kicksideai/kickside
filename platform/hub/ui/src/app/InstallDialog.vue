@@ -7,7 +7,7 @@ import { loadByTagName } from '@wippy-fe/proxy'
 import { relativeTime } from '@widgets/app/datetime'
 import {
   moduleLabel, moduleIcon, moduleAccent, isAppModule,
-  fmtNum, fmtBytes, requirementKey,
+  fmtNum, fmtBytes, formatLicense, requirementKey,
 } from '../lib.ts'
 import { SEVERITY_META, type ScanFinding } from '../scan.ts'
 import { useInstallDialog, type InstallDialogProps, type SectionKey, type HubPlanRequirement } from './useInstallDialog.ts'
@@ -178,7 +178,7 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
             <div class="km-ov-meta">
               <div class="km-meta-row"><Icon icon="tabler:download" class="km-i-sm" aria-hidden="true" /><span>Downloads</span><b>{{ fmtNum(item.total_downloads) }}</b></div>
               <div v-if="item.favorites_count" class="km-meta-row"><Icon icon="tabler:star" class="km-i-sm" aria-hidden="true" /><span>Favorites</span><b>{{ item.favorites_count }}</b></div>
-              <div v-if="item.license" class="km-meta-row"><Icon icon="tabler:license" class="km-i-sm" aria-hidden="true" /><span>License</span><b>{{ item.license }}</b></div>
+              <div v-if="item.license" class="km-meta-row"><Icon icon="tabler:license" class="km-i-sm" aria-hidden="true" /><span>License</span><b :title="item.license">{{ formatLicense(item.license) }}</b></div>
               <div v-if="item.type" class="km-meta-row"><Icon icon="tabler:category" class="km-i-sm" aria-hidden="true" /><span>Type</span><b>{{ item.type }}</b></div>
               <div v-if="c.versionMeta.value?.entry_count" class="km-meta-row"><Icon icon="tabler:list-numbers" class="km-i-sm" aria-hidden="true" /><span>Entries</span><b>{{ c.versionMeta.value.entry_count }}</b></div>
               <div v-if="c.versionMeta.value?.size_bytes" class="km-meta-row"><Icon icon="tabler:weight" class="km-i-sm" aria-hidden="true" /><span>Size</span><b>{{ fmtBytes(c.versionMeta.value.size_bytes) }}</b></div>

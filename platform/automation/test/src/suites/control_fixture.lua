@@ -150,7 +150,7 @@ function M.engine_with(actor_id: string?, component: Map, extra: Map?): any
         local principal, err = execution_identity.principal_of_key(actor_id)
         if err then return nil, err end
         return {version = 2, principal = principal, authorized_by = principal,
-            component_id = input.component_id, captured_at = "2026-10-10T00:00:00Z"}, nil
+            component_id = input and input.component_id, captured_at = "2026-10-10T00:00:00Z"}, nil
     end
     local overrides: Map = { security = M.actor_frame(actor_id), component = component, funcs = M.funcs_stub(component),
         execution_identity = captured_identity }

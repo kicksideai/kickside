@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.40](https://github.com/kicksideai/kickside/compare/oauth-v0.1.39...oauth-v0.1.40) (2026-10-22)
+
+
+### Bug Fixes
+
+* **oauth:** authorize runtime config and await callback readiness ([#89](https://github.com/kicksideai/kickside/issues/89)) ([54f96c6](https://github.com/kicksideai/kickside/commit/54f96c60e9ed316e9a87a80baad1c6222afbab26))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## [0.1.39](https://github.com/kicksideai/kickside/compare/oauth-v0.1.38...oauth-v0.1.39) (2026-10-21)
 
 
