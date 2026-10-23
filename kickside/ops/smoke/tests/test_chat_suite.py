@@ -157,6 +157,37 @@ class ChatTransportTests(unittest.TestCase):
 
 
 class GroundingTests(unittest.TestCase):
+    def test_structured_retrieval_cites_the_passage_containing_the_fact(self):
+        from scenarios_chat import assert_grounded
+        source = '01a12252-794e-7f11-83e2-cf6acc2fad26'
+        result = {'success': True, 'count': 1, 'results': [
+            {'id': source, 'content': 'The release code is ORCHID-FACT.',
+             'meta': {'node_type': 'chunk'}}]}
+        assert_grounded('ORCHID-FACT. Source: ' + source, 'ORCHID-FACT', [result])
+
+    def test_structured_retrieval_rejects_unrelated_or_invented_citations(self):
+        from scenarios_chat import assert_grounded
+        source = '01a12252-794e-7f11-83e2-cf6acc2fad26'
+        other = '01a12252-794e-7f11-83e2-cf6acc2fad27'
+        upload = '01a12252-794e-7f11-83e2-cf6acc2fad28'
+        result = {'success': True, 'results': [
+            {'id': source, 'content': 'The release code is ORCHID-FACT.',
+             'meta': {'upload_id': upload}},
+            {'id': other, 'content': 'An unrelated document.'}]}
+        for citation in ('invented', other, upload, ''):
+            with self.subTest(citation=citation), self.assertRaises(Failure):
+                assert_grounded('ORCHID-FACT. Source: ' + citation, 'ORCHID-FACT', [result])
+        with self.assertRaises(Failure):
+            assert_grounded('Wrong fact. Source: ' + source, 'ORCHID-FACT', [result])
+
+    def test_structured_retrieval_requires_passage_content_and_identity(self):
+        from scenarios_chat import assert_grounded
+        source = '01a12252-794e-7f11-83e2-cf6acc2fad26'
+        for row in ({'content': 'ORCHID-FACT'},
+                    {'id': source, 'meta': {'description': 'ORCHID-FACT'}}):
+            with self.subTest(row=row), self.assertRaises(Failure):
+                assert_grounded('ORCHID-FACT. Source: ' + source, 'ORCHID-FACT', [{'results': [row]}])
+
     def test_citation_identifies_an_actual_retrieved_passage(self):
         from scenarios_chat import assert_grounded
         from harness import Failure

@@ -238,7 +238,14 @@ def assert_grounded(reply, fact, results):
     require(fact in reply, 'Answer does not contain the document-only fact: ' + reply)
     evidence = '\n'.join(str(result) for result in results)
     require(fact in evidence, 'Retrieved passages do not contain the answer fact')
-    sources = re.findall(r'^- ([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?:@[^ ]+)?\s*·', evidence, re.M)
+    sources = []
+    for result in results:
+        if isinstance(result, dict):
+            sources.extend(row['id'] for row in result.get('results', [])
+                           if isinstance(row, dict) and isinstance(row.get('id'), str) and row['id']
+                           and fact in row.get('content', ''))
+        elif isinstance(result, str):
+            sources.extend(re.findall(r'^- ([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?:@[^ ]+)?\s*·', result, re.M))
     require(sources and any(source in reply for source in sources),
             'Answer does not cite an actual retrieved KB passage: ' + reply)
 
