@@ -27,11 +27,19 @@ vars:
   pg_host: localhost
   pg_port: 5433
   pg_database: kickside_test_automation
+  pg_prepared_upgrade_database: kickside_prepared_upgrade
   pg_username: kickside
   pg_password: kickside
 profiles:
   postgres:
     override:
+      "app:prepared_upgrade_db:kind": db.sql.postgres
+      "app:prepared_upgrade_db:host": "${pg_host}"
+      "app:prepared_upgrade_db:port": "${pg_port}"
+      "app:prepared_upgrade_db:database": "${pg_prepared_upgrade_database}"
+      "app:prepared_upgrade_db:username": "${pg_username}"
+      "app:prepared_upgrade_db:password": "${pg_password}"
+      "app:prepared_upgrade_db:options.sslmode": disable
       "app:db:kind": db.sql.postgres
       "app:db:host": "${pg_host}"
       "app:db:port": "${pg_port}"

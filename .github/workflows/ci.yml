@@ -334,17 +334,20 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
             createdb "$database"
             databases+=("$database")
-            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
-            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_1"
+            createdb "$database"
+            databases+=("$database")
+            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
+            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
             cd ../live-test
             mkdir -p .wippy
-            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_repair_live"
-            createdb "$database"
-            databases+=("$database")
+            repair_live_database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_repair_live"
+            createdb "$repair_live_database"
+            databases+=("$repair_live_database")
             wippy install
-            wippy test --profile postgres --set "vars.pg_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
+            wippy test --profile postgres --set "vars.pg_database=$repair_live_database" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
             awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
             cd "$source_root"
