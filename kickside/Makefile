@@ -177,10 +177,12 @@ compat: compat-unit compat-integration
 LEGAL_ROOT ?= $(CURDIR)
 LEGAL_CACHE ?= $(if $(TMPDIR),$(TMPDIR)/kickside-legal-cache,)
 LEGAL_PYTHON ?= python3
+LEGAL_TOOLS ?=
 .PHONY: legal-notices legal-check legal-cache
 legal-cache:
 	@test -n "$(LEGAL_CACHE)" || { echo "Set LEGAL_CACHE to a lane cache directory" >&2; exit 1; }
+	@test -f "$(LEGAL_TOOLS)/notices.py" || { echo "Set LEGAL_TOOLS to actions/legal-check in a kicksideai/.github checkout" >&2; exit 1; }
 legal-notices: legal-cache
-	$(LEGAL_PYTHON) $(CURDIR)/ops/legal/notices.py --root "$(LEGAL_ROOT)" --cache "$(LEGAL_CACHE)"
+	$(LEGAL_PYTHON) $(LEGAL_TOOLS)/notices.py --root "$(LEGAL_ROOT)" --cache "$(LEGAL_CACHE)"
 legal-check: legal-cache
-	$(LEGAL_PYTHON) $(CURDIR)/ops/legal/notices.py --root "$(LEGAL_ROOT)" --cache "$(LEGAL_CACHE)" --check $(if $(LEGAL_BASE),--base "$(LEGAL_BASE)",)
+	$(LEGAL_PYTHON) $(LEGAL_TOOLS)/notices.py --root "$(LEGAL_ROOT)" --cache "$(LEGAL_CACHE)" --check $(if $(LEGAL_BASE),--base "$(LEGAL_BASE)",)
