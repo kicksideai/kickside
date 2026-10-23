@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.42](https://github.com/kicksideai/kickside/compare/identity-v0.1.41...identity-v0.1.42) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** delegate repair checkpoints to migration framework ([#114](https://github.com/kicksideai/kickside/issues/114)) ([de7b929](https://github.com/kicksideai/kickside/commit/de7b929b98da72bacf5d63ce031d6c628ae40c3f))
+
 ## 0.1.41 (2026-10-17)
 
 - Refresh packaged frontend assets and documentation.

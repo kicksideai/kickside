@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1](https://github.com/kicksideai/kickside/compare/automation-v0.2.0...automation-v0.2.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** delegate repair checkpoints to migration framework ([#114](https://github.com/kicksideai/kickside/issues/114)) ([de7b929](https://github.com/kicksideai/kickside/commit/de7b929b98da72bacf5d63ce031d6c628ae40c3f))
+* **automation:** require the published tool-action contract ([#117](https://github.com/kicksideai/kickside/issues/117)) ([aa4589c](https://github.com/kicksideai/kickside/commit/aa4589cc2873628ba2bf9494bce90b38755c261c))
+* **automation:** revalidate resync operator WRITE before applying ([#85](https://github.com/kicksideai/kickside/issues/85)) ([bdca99f](https://github.com/kicksideai/kickside/commit/bdca99ff5a3d5664000927fe54a444f097a43b00))
+
 ## [0.2.0](https://github.com/kicksideai/kickside/compare/automation-v0.1.133...automation-v0.2.0) (2026-10-22)
 
 

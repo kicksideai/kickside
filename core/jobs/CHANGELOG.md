@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.61](https://github.com/kicksideai/kickside/compare/jobs-v0.1.60...jobs-v0.1.61) (2026-10-23)
+
+
+### Bug Fixes
+
+* **core:** order projection output wakes with job completion ([#82](https://github.com/kicksideai/kickside/issues/82)) ([5550708](https://github.com/kicksideai/kickside/commit/5550708a2c80ee064cd5a6bab6fa48de0f73e313))
+
 ## [0.1.60](https://github.com/kicksideai/kickside/compare/jobs-v0.1.59...jobs-v0.1.60) (2026-10-22)
 
 

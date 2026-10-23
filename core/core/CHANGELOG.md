@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.4](https://github.com/kicksideai/kickside/compare/core-v0.3.3...core-v0.3.4) (2026-10-23)
+
+
+### Bug Fixes
+
+* **core:** order projection output wakes with job completion ([#82](https://github.com/kicksideai/kickside/issues/82)) ([5550708](https://github.com/kicksideai/kickside/commit/5550708a2c80ee064cd5a6bab6fa48de0f73e313))
+* **core:** require Jobs lock ordering for projection completion ([#116](https://github.com/kicksideai/kickside/issues/116)) ([80d8ce9](https://github.com/kicksideai/kickside/commit/80d8ce992efe2dc435c0364ef40ce10a75489a41))
+
 ## [0.3.3](https://github.com/kicksideai/kickside/compare/core-v0.3.2...core-v0.3.3) (2026-10-22)
 
 
