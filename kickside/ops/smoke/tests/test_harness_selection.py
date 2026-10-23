@@ -7,6 +7,33 @@ import yaml
 
 
 class HarnessSelectionTests(unittest.TestCase):
+    def test_null_metadata_on_an_ordinary_entry_does_not_break_test_discovery(self):
+        from module_harness import _focus_tests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'fixture', 'entries': [
+                {'name': 'ordinary', 'kind': 'function.lua', 'meta': None},
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            config = {}
+            _focus_tests(root, config, 'case', available={'fixture:case'})
+            self.assertEqual(config['override'], {})
+
+    def test_loaded_registry_focus_does_not_parse_unrelated_source_directories(self):
+        from module_harness import _focus_tests
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'harness'
+            root.mkdir()
+            (root / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'fixture', 'entries': [
+                {'name': 'case', 'meta': {'type': 'test', 'suite': 'behavior'}},
+            ]}))
+            unrelated = Path(directory) / 'unloaded'
+            unrelated.mkdir()
+            (unrelated / 'not_loaded.yaml').write_text('invalid: [yaml')
+            config = {'workspace': {'replacements': {'example/unloaded': str(unrelated)}}}
+            _focus_tests(root, config, 'case', available={'fixture:case', 'loaded:foreign_test'})
+            self.assertEqual(config['override'], {'loaded:foreign_test:meta.type': 'test_focus_excluded'})
+
     def test_resolved_catalog_excludes_only_loaded_replacement_tests(self):
         from module_harness import _focus_tests
         with tempfile.TemporaryDirectory() as directory:

@@ -214,7 +214,7 @@ def test_entries(root):
         if not isinstance(document, dict) or not document.get('namespace'):
             continue
         for entry in document.get('entries', []):
-            if entry.get('meta', {}).get('type') == 'test':
+            if (entry.get('meta') or {}).get('type') == 'test':
                 entries[document['namespace'] + ':' + entry['name']] = entry
     return entries
 
@@ -259,9 +259,9 @@ def _focus_tests(root, config, selection=None, *, available=None):
         selected.update(identifier for identifier, entry in entries.items()
                         if str(entry.get('meta', {}).get('suite', '')).startswith('00_'))
     overrides = config.setdefault('override', {})
-    excluded = (entries.keys() - selected) | replacement_test_entries(root, config).keys()
-    if available is not None:
-        excluded.intersection_update(available)
+    foreign = (replacement_test_entries(root, config).keys() if available is None
+               else set(available) - entries.keys())
+    excluded = (entries.keys() - selected) | foreign
     for identifier in excluded:
         overrides[identifier + ':meta.type'] = 'test_focus_excluded'
 
