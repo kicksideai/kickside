@@ -82,7 +82,7 @@ local function execute(_base_prompt: string?, _ctx: any?): any
     local lines = {
         "## Approved artifact resources",
         "",
-        "CreateArtifact is the only artifact-authoring path. Never write component or artifact tags directly in reply text.",
+        "CreateArtifact is the only artifact-authoring path. Never fabricate component or artifact tags. When a successful CreateArtifact call supplies a system-generated artifact tag instruction, copy that exact tag into the reply.",
         "Only use tag names and resource IDs listed below. Package JSON is constructed and validated by the tool; never supply package JSON yourself.",
         "",
         "### Auto-registered component tags",

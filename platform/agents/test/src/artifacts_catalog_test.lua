@@ -48,6 +48,8 @@ return { run = test.run_cases(function()
             test.is_nil(err)
             test.contains(result.prompt, "fixture-card")
             test.contains(result.prompt, "fixture:page")
+            test.contains(result.prompt, "Never fabricate component or artifact tags")
+            test.contains(result.prompt, "copy that exact tag")
         end)
     end)
 end) }
