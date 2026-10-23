@@ -139,15 +139,9 @@ local function verify(request: any): (any?, error?)
     local owner = staging and "kickside.automation:declaration_writer_create_selected"
         or (pending.kind == "install" and "kickside.automation:declaration_writer_create"
             or "kickside.automation:declaration_writer_apply")
-    local previous_declaration: any = {}
     local operator_refs: { any } = {}
     for _, ref in ipairs(current_refs) do operator_refs[#operator_refs + 1] = ref end
     if pending.kind == "reconfigure" then
-        -- Only the writer's live component context is a trusted baseline.
-        local context, context_err = component.get_private_context(pending.automation_id)
-        if context_err then return nil, context_err end
-        if not context then return nil, invalid("automation declaration context is unavailable") end
-        previous_declaration = type(context._portable_input) == "table" and context._portable_input or {}
         operator_refs[#operator_refs + 1] = { kind = "component", id = pending.automation_id, access = "WRITE" }
     end
     local operator_valid, operator_err = authority.check(input.operator_identity,
@@ -160,6 +154,15 @@ local function verify(request: any): (any?, error?)
         subject_id, current_refs, owner)
     if subject_err then return nil, subject_err end
     if not subject_valid then return nil, denied("execution subject lacks a declared resource grant") end
+    local previous_declaration: any = {}
+    if pending.kind == "reconfigure" then
+        -- Read the live baseline only after both principals' grants are checked.
+        -- The writer never returns this private context or trusts a caller copy.
+        local context, context_err = component.get_private_context(pending.automation_id)
+        if context_err then return nil, context_err end
+        if not context then return nil, invalid("automation declaration context is unavailable") end
+        previous_declaration = type(context._portable_input) == "table" and context._portable_input or {}
+    end
     local edit_err = references.validate_edit(input.schema, previous_declaration, input.declaration,
         input.operator_id, subject_id)
     if edit_err then return nil, edit_err end
