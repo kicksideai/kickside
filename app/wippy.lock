@@ -27,8 +27,8 @@ modules:
       version: 0.3.0
       hash: deb481c66c70ff94fc36175bf8e9a37adcee4455719ef8f18754df46cf76b434
     - name: kickside/contract
-      version: 0.3.0
-      hash: 14e3911a3c3fb80c2c3fcf8f15392fca2c5889a085d20b243d1ca7c24e11f1d5
+      version: 0.3.1
+      hash: 6c5dfc2c588c7dde21827f8cdd9d2ac1607306584582629d9ed06b68c57b6479
     - name: kickside/core
       version: 0.3.2
       hash: 47eba16c4584779996b6c2c6c2b197463f27bcd319d1f161c92f9f39e8386efd
