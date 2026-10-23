@@ -65,6 +65,32 @@ class DispatchWorkflowFixtureTests(unittest.TestCase):
             },
         })
 
+    def test_code_assist_bounds_its_catalog_without_allowing_sdk_calls(self):
+        ctx = Mock()
+        ctx.inst.request.return_value = {
+            'validated': True,
+            'code': 'local total = 0; for _, order in ipairs(__cx_args.orders) do total = total + order.crates end; return {crates = total}',
+        }
+        with patch.object(scenarios_automation, 'member_identity', return_value={'token': 'member-token'}), \
+             patch.object(scenarios_automation, 'mint', return_value={'token': 'run-code-token'}), \
+             patch.object(scenarios_automation, 'call', return_value={'success': True, 'result': {'crates': 48}}):
+            scenarios_automation.code_assist(ctx)
+        body = ctx.inst.request.call_args.args[2]
+        self.assertEqual(body['tool_ids'], ['kickside.blocks:list'])
+
+    def test_code_assist_rejects_sdk_calls_in_a_pure_lua_fixture(self):
+        ctx = Mock()
+        ctx.inst.request.return_value = {
+            'validated': True,
+            'code': 'return sdk.tools["kickside.blocks:list"]({})',
+        }
+        with patch.object(scenarios_automation, 'member_identity', return_value={'token': 'member-token'}), \
+             patch.object(scenarios_automation, 'mint', return_value={'token': 'run-code-token'}), \
+             patch.object(scenarios_automation, 'call') as call:
+            with self.assertRaisesRegex(Failure, 'unexpectedly calls the SDK'):
+                scenarios_automation.code_assist(ctx)
+        call.assert_not_called()
+
     def test_workflow_import_uses_the_portable_artifact_from_the_reader_result(self):
         artifact = {
             'api_version': 'kickside.flow/v1', 'kind': 'flow', 'key': 'dispatch', 'title': 'Dispatch',

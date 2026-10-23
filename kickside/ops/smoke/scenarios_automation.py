@@ -745,8 +745,12 @@ def code_assist(ctx):
     credential = mint(inst, traits=('kickside.code_execution.traits:code_execution',), active=('kickside.code_execution.traits:code_execution',), auth=member['token'])
     token = credential['token']
     proposed = inst.request('POST', '/api/v1/code-execution/assist', {'intent': 'Sum __cx_args.orders crates and return {crates=total}. Fictional Northwind orders. Do not call tools.',
-        'tool_ids': [], 'sample': {'orders': [{'crates': 36}, {'crates': 12}]}}, label='code-assist', auth=member['token'], timeout=120)
+        # [] means ambient-all for the Code Execution contract, rather than no tools.
+        # This pure-Lua case needs one stable bounded catalog entry, not every tool in
+        # the installed application.
+        'tool_ids': ['kickside.blocks:list'], 'sample': {'orders': [{'crates': 36}, {'crates': 12}]}}, label='code-assist', auth=member['token'], timeout=120)
     require(proposed['validated'] and proposed['code'], 'Gemma code proposal fails validation: ' + str(proposed))
+    require('sdk.tools' not in proposed['code'], 'Pure-Lua assist unexpectedly calls the SDK: ' + str(proposed))
     verified = call(inst, token, 'RunCode', {'code': proposed['code'], 'args': {'orders': [{'crates': 36}, {'crates': 12}]}})
     require(verified['success'] and verified['result']['crates'] == 48, 'Generated code changes Northwind total')
 

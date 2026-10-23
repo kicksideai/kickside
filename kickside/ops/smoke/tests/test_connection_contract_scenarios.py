@@ -207,6 +207,28 @@ class ConnectionContractScenarios(unittest.TestCase):
         with patch.object(access, 'renew'), patch.object(access, 'request', side_effect=request):
             access.regression_member_code_authoring(ctx)
 
+    def test_member_code_assist_bounds_its_catalog_without_allowing_sdk_calls(self):
+        ctx = Mock()
+        ctx.state = {'model': 'fixture-model'}
+        response = {'ok': True, 'validated': True,
+                    'code': 'return {company = "Northwind", total = 42}'}
+        with patch.object(access, 'install_package'), patch.object(access, 'renew'), \
+             patch.object(access, 'request', return_value=response) as request:
+            access.regression_member_code_assist(ctx)
+        body = request.call_args.args[4]
+        self.assertEqual(body['tool_ids'], ['kickside.blocks:list'])
+        self.assertEqual(body['model'], 'fixture-model')
+
+    def test_member_code_assist_rejects_sdk_calls_in_a_pure_lua_fixture(self):
+        ctx = Mock()
+        ctx.state = {'model': 'fixture-model'}
+        response = {'ok': True, 'validated': True,
+                    'code': 'return {company = "Northwind", action = sdk.tools["kickside.blocks:list"]({})}'}
+        with patch.object(access, 'install_package'), patch.object(access, 'renew'), \
+             patch.object(access, 'request', return_value=response):
+            with self.assertRaisesRegex(Failure, 'unexpectedly calls the SDK'):
+                access.regression_member_code_assist(ctx)
+
     def test_mcp_profile_explicit_search_has_a_tool_grant(self):
         ctx = Mock()
         ctx.inst.redactor = Mock()

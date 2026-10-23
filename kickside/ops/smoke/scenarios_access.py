@@ -2123,9 +2123,14 @@ def regression_member_code_assist(ctx):
     renew(ctx)
     value = request(ctx, 'write', 'POST', '/code-execution/assist',
                     {'intent': 'Return a Lua table with fictional Northwind company and total 42. No tool calls.',
+                     # An empty tool_ids list means the entire ambient catalog, not no
+                     # tools. Keep this pure-Lua request bounded to a stable installed
+                     # capability so it tests generation rather than catalog overflow.
+                     'tool_ids': ['kickside.blocks:list'],
                      'model': ctx.state['model']}, timeout=120)
     require(value.get('ok') is True and value.get('validated') is True and 'Northwind' in str(value.get('code')),
             'Member code assist returns no validated Northwind Lua: ' + str(value))
+    require('sdk.tools' not in str(value.get('code')), 'Pure-Lua assist unexpectedly calls the SDK: ' + str(value))
 
 
 def regression_member_renderer_catalog(ctx):
