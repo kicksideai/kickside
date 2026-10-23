@@ -377,6 +377,7 @@ entries:
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: app:drive_repair_slot_boundary
+      slot_repair: kickside.automation.engine:slot_repair
 
 
   - name: drive_repair_races_test

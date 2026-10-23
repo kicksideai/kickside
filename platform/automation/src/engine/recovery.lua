@@ -23,6 +23,7 @@
 
 local automation_types = require("types")
 local support = require("engine_support")
+local slot_repair = require("engine_slot_repair")
 local errors = require("errors")
 
 type Map = { [string]: any }
@@ -147,6 +148,17 @@ function part.attach(M: any, dependencies: any, P: any): ()
         for _, d in ipairs(demand :: { Map }) do
             if type(d.job_id) == "string" and d.job_id ~= "" then
                 local wake, wake_err = slot.wake(d.job_id)
+                if not wake_err and type(wake) == "table" and wake.woken == false
+                    and d.source_kind ~= drive.SOURCE_KIND.NONE and d.pending_command_id == nil then
+                    local replacement, repair_err = with_automation_db(function(db: any): (any?, any)
+                        return slot_repair.repair_drive(dependencies, db, d.automation_id, d.drive_key)
+                    end)
+                    if repair_err then wake_err = repair_err
+                    elseif replacement then
+                        counts.provisioned = counts.provisioned + 1
+                        wake, wake_err = slot.wake(replacement)
+                    end
+                end
                 if wake_err then
                     local retry_err = repair_deadline(d, true)
                     if retry_err then return nil, retry_err end
