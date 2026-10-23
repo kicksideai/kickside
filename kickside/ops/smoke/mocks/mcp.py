@@ -1,5 +1,9 @@
 """Streamable HTTP MCP fixture with a writable Northwind tool."""
+import base64
+import hashlib
 import json
+import secrets
+from urllib.parse import urlencode
 from .fixture import Fixture
 
 class MCP(Fixture):
@@ -7,9 +11,70 @@ class MCP(Fixture):
     def __init__(self, *args):
         super().__init__(*args)
         self.note = 'Northwind ready for packing'
+        self.oauth_codes = {}
+        self.oauth_clients = set()
+        self.oauth_tokens = set()
+
+    @staticmethod
+    def _pkce_challenge(verifier):
+        return base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
+
+    def _oauth_resource_metadata(self):
+        resource = self.base + '/mcp/oauth'
+        return {'resource': resource, 'authorization_servers': [self.base]}
+
+    def _oauth_server_metadata(self):
+        return {
+            'issuer': self.base,
+            'authorization_endpoint': self.base + '/authorize',
+            'token_endpoint': self.base + '/token',
+            'registration_endpoint': self.base + '/register',
+            'code_challenge_methods_supported': ['S256'],
+            'token_endpoint_auth_methods_supported': ['none'],
+        }
+
+    def _oauth_dispatch(self, method, path, query, body, headers):
+        if method == 'GET' and path == '/.well-known/oauth-protected-resource/mcp/oauth':
+            return 200, {}, self._oauth_resource_metadata()
+        if method == 'GET' and path == '/.well-known/oauth-authorization-server':
+            return 200, {}, self._oauth_server_metadata()
+        if method == 'POST' and path == '/register':
+            client_id = 'northwind-mcp-client-' + secrets.token_urlsafe(9)
+            self.oauth_clients.add(client_id)
+            return 201, {}, {'client_id': client_id, 'token_endpoint_auth_method': 'none'}
+        if method == 'GET' and path == '/authorize':
+            fields = {key: value[0] for key, value in query.items()}
+            required = ('client_id', 'redirect_uri', 'state', 'code_challenge')
+            if (not all(fields.get(key) for key in required) or fields.get('client_id') not in self.oauth_clients
+                    or fields.get('code_challenge_method') != 'S256'):
+                return 400, {}, {'error': 'invalid_request'}
+            code = secrets.token_urlsafe(24)
+            self.oauth_codes[code] = fields
+            return 302, {'Location': fields['redirect_uri'] + '?' + urlencode({'code': code, 'state': fields['state']})}, None
+        if method == 'POST' and path == '/token':
+            fields = self.oauth_codes.pop(body.get('code'), None)
+            if (not fields or body.get('grant_type') != 'authorization_code'
+                    or body.get('client_id') != fields['client_id'] or body.get('redirect_uri') != fields['redirect_uri']
+                    or self._pkce_challenge(body.get('code_verifier', '')) != fields['code_challenge']):
+                return 400, {}, {'error': 'invalid_grant'}
+            token = 'northwind-mcp-access-' + secrets.token_urlsafe(24)
+            self.oauth_tokens.add(token)
+            return 200, {}, {'access_token': token, 'token_type': 'Bearer', 'expires_in': 3600,
+                             'refresh_token': 'northwind-mcp-refresh-' + secrets.token_urlsafe(24)}
+        return None
+
     def dispatch(self, method, path, query, body, headers):
-        if path not in ('/mcp', '/mcp/limits'):
+        oauth = self._oauth_dispatch(method, path, query, body, headers)
+        if oauth is not None:
+            return oauth
+        if path not in ('/mcp', '/mcp/oauth', '/mcp/limits'):
             return 404, {}, {'error': 'unknown MCP route'}
+        if path == '/mcp/oauth':
+            token = headers.get('Authorization', '').removeprefix('Bearer ')
+            if token not in self.oauth_tokens:
+                resource = self.base + '/.well-known/oauth-protected-resource/mcp/oauth'
+                return 401, {'WWW-Authenticate': 'Bearer resource_metadata="' + resource + '"'}, {
+                    'error': 'fictional OAuth bearer token required'}
         if method == 'DELETE':
             return 204, {}, None
         method_name = body.get('method')

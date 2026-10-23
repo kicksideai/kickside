@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import nullcontext
 from pathlib import Path
 import tempfile
 import unittest
@@ -78,6 +79,51 @@ class ConnectionContractScenarios(unittest.TestCase):
         flow.assert_called_once()
         self.assertEqual(fixture.id, 'northwind-oauth')
         self.assertTrue(fixture.data['oauth'])
+
+    def test_remote_mcp_oauth_access_uses_its_owning_flow_and_authenticated_discovery(self):
+        ctx = Mock()
+        kind = access.Kind('binding_kickside_mcp_client_oauth_connection', 'kickside/mcp-client',
+                           'kickside.mcp_client.oauth:connection')
+        declaration = {'meta': {'class': ['connection', 'oauth_connection', 'mcp']},
+                       'data': {'contracts': [{'contract': 'kickside.contract:component'}]}}
+        ctx.state = {'access_declarations': {kind.binding: declaration}}
+        with patch.object(access, 'renew'), patch.object(access, 'registry'), \
+             patch.object(access, 'create_remote_mcp_oauth_access_fixture', return_value='northwind-mcp-oauth') as flow:
+            fixture = access.create(ctx, kind)
+        flow.assert_called_once()
+        self.assertEqual(fixture.id, 'northwind-mcp-oauth')
+        self.assertTrue(fixture.data['oauth'])
+        with patch.object(access, 'request', return_value={'success': True, 'items': [], 'resources': [
+                {'id': 'northwind_order', 'name': 'northwind_order'}]}) as request:
+            access.primary(ctx, fixture, 'write')
+        request.assert_called_once_with(ctx, 'write', 'POST', '/connections/northwind-mcp-oauth/discover_resources', {})
+
+    def test_remote_mcp_oauth_fixture_initializes_the_protected_endpoint_and_preserves_the_app_page(self):
+        page, browser = Mock(), Mock()
+        page.wait_for_timeout = Mock()
+        callback = Mock()
+        callback.status = 200
+        page.expect_response.return_value = nullcontext(Mock(value=callback))
+        browser.page.url = 'http://app.example/'
+        browser.open_page.return_value = page
+        browser.frame.locator.return_value.wait_for = Mock()
+        ctx = Mock()
+        ctx.state = {'access_connection_bases': {'mcp': 'http://127.0.0.1:731'}}
+        kind = access.Kind('binding_kickside_mcp_client_oauth_connection', 'kickside/mcp-client',
+                           'kickside.mcp_client.oauth:connection')
+        ctx.inst.wait.side_effect = lambda predicate, *_args, **_kwargs: predicate()
+        with patch.object(access, 'setup_access_connection_fixtures'), \
+             patch.object(access, 'component_rows', side_effect=[[], [{'component_id': 'northwind-mcp-oauth'}]]), \
+             patch.object(access, 'request', return_value={'authorization_url': 'http://127.0.0.1:731/authorize'}) as request, \
+             patch.object(access, 'actor_browser', return_value=browser):
+            connection_id = access.create_remote_mcp_oauth_access_fixture(ctx, kind, 'Northwind MCP', 'owner')
+        self.assertEqual(connection_id, 'northwind-mcp-oauth')
+        request.assert_called_once_with(ctx, 'owner', 'POST', '/oauth/providers/mcp_remote/init', {
+            'name': 'Northwind MCP', 'scopes': [],
+            'provider_options': {'endpoint_url': 'http://127.0.0.1:731/mcp/oauth'},
+        })
+        page.goto.assert_called_once_with('http://127.0.0.1:731/authorize', wait_until='load')
+        page.close.assert_called_once()
 
     def test_connection_mutation_checks_its_persisted_metadata(self):
         ctx = Mock()

@@ -251,6 +251,16 @@ class CoreAccessContractsTests(unittest.TestCase):
             ('kickside/google|mcp_tool|kickside.google.traits:gmail_read_tool',
              'kickside/oauth|workspace_kind|kickside.oauth:oauth_connection')))
 
+    def test_remote_mcp_oauth_kind_declares_the_oauth_and_authenticated_discovery_paths(self):
+        kind = access.Kind('binding_kickside_mcp_client_oauth_connection', 'kickside/mcp-client',
+                           'kickside.mcp_client.oauth:connection')
+        self.assertIn(kind.binding, {candidate.binding for candidate in access.KINDS})
+        features = access.matrix_features(kind)
+        self.assertIn('kickside/oauth|http|POST /api/v1/oauth/providers/{provider_name}/init', features)
+        self.assertIn('kickside/oauth|http|GET /api/v1/oauth/connections/{component_id}', features)
+        self.assertIn('kickside/connection|http|POST /api/v1/connections/{id}/discover_resources', features)
+        self.assertIn('kickside/mcp-client|workspace_kind|kickside.mcp_client.oauth:connection', features)
+
     def test_oauth_audit_reads_full_registry_contract_data(self):
         binding = 'kickside.oauth:oauth_connection'
         kind = access.Kind('binding_oauth', 'kickside/oauth', binding)

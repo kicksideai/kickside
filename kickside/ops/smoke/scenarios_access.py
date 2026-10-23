@@ -70,6 +70,7 @@ KINDS = (
     Kind('lifecycle', 'kickside/core', 'kickside.core.lifecycle:system_lifecycle'),
     Kind('dashboard', 'kickside/dashboard', ''),
     Kind('remote_mcp', 'kickside/mcp-client', 'kickside.mcp_client:remote_connection'),
+    Kind('binding_kickside_mcp_client_oauth_connection', 'kickside/mcp-client', 'kickside.mcp_client.oauth:connection'),
     Kind('binding_kickside_dm_dm_kind', 'kickside/dm', 'kickside.dm:dm_kind', features=
          http('kickside/identity', 'POST /api/v1/identity/link-codes', 'POST /api/v1/identity/unlink')),
 )
@@ -361,9 +362,9 @@ def setup_access_connection_fixtures(ctx):
     import yaml
     from mocks import Fixtures
     from scenarios_providers import configure_provider_endpoints, ORIGIN_ROUTES
-    names = ('jira', 'confluence', 'github', 'slack', 'discord', 'hubspot', 'telegram', 'fireflies', 'phantombuster', 'simplefin', 'google')
+    names = ('jira', 'confluence', 'github', 'slack', 'discord', 'hubspot', 'telegram', 'fireflies', 'phantombuster', 'simplefin', 'google', 'mcp')
     for name in names:
-        if name not in ('jira', 'confluence'):
+        if name not in ('jira', 'confluence', 'mcp'):
             install_package(ctx, 'kickside/' + name)
     fixtures = Fixtures()
     setup_cleanup = Cleanup()
@@ -440,6 +441,38 @@ def create_oauth_access_fixture(ctx, kind, title, role):
         require(len(ids) <= 1, 'One OAuth callback creates multiple connection components')
         return next(iter(ids)) if ids else None
     return ctx.inst.wait(created, 'OAuth owning flow persists its connection', pump=browser.page.wait_for_timeout)
+
+
+def create_remote_mcp_oauth_access_fixture(ctx, kind, title, role):
+    """Create the OAuth-only Remote MCP binding through its real browser callback."""
+    setup_access_connection_fixtures(ctx)
+    before = {row['component_id'] for row in component_rows(ctx, kind.binding)}
+    endpoint = ctx.state['access_connection_bases']['mcp'] + '/mcp/oauth'
+    initialized = request(ctx, role, 'POST', '/oauth/providers/mcp_remote/init', {
+        'name': title, 'scopes': [], 'provider_options': {'endpoint_url': endpoint},
+    })
+    require(initialized['authorization_url'].startswith(ctx.state['access_connection_bases']['mcp']),
+            'Remote MCP OAuth authorization does not use its declared endpoint')
+    browser = actor_browser(ctx, role)
+    browser.settle()
+    application_url = browser.page.url
+    page = browser.open_page()
+    try:
+        with page.expect_response(lambda response: '/api/public/oauth/callback' in response.url
+                                  and response.request.method == 'GET', timeout=30000) as callback:
+            page.goto(initialized['authorization_url'], wait_until='load')
+        callback_response = callback.value
+        require(callback_response.status == 200,
+                'Remote MCP OAuth callback returns HTTP ' + str(callback_response.status))
+        def created():
+            ids = {row['component_id'] for row in component_rows(ctx, kind.binding)} - before
+            require(len(ids) <= 1, 'One Remote MCP OAuth callback creates multiple connection components')
+            return next(iter(ids)) if ids else None
+        return ctx.inst.wait(created, 'Remote MCP OAuth flow persists its connection', pump=page.wait_for_timeout)
+    finally:
+        page.close()
+        require(browser.page.url == application_url, 'Remote MCP OAuth fixture navigates away from the application')
+        browser.frame.locator('.sidebar').wait_for(timeout=30000)
 
 
 def workflow_target_schema(schema):
@@ -672,6 +705,9 @@ def create(ctx, kind, role='owner', *, connection_context=None):
         if 'connection' in classes:
             if kind.binding == 'kickside.oauth:oauth_connection':
                 fid = create_oauth_access_fixture(ctx, kind, title, role)
+                return Fixture(kind, fid, title, {'oauth': True, 'declaration': declaration})
+            if kind.binding == 'kickside.mcp_client.oauth:connection':
+                fid = create_remote_mcp_oauth_access_fixture(ctx, kind, title, role)
                 return Fixture(kind, fid, title, {'oauth': True, 'declaration': declaration})
             if kind.binding in ACCESS_PROVIDER_CREDENTIALS or kind.package == 'kickside/simplefin':
                 setup_access_connection_fixtures(ctx)
@@ -1096,6 +1132,15 @@ def primary(ctx, f, role, *, denied=False, readonly=False):
         require('NW-ACCESS-731' in content, 'Workspace file viewer omits the original uploaded content')
         return content
     if f.data.get('connection'): name = 'connection'
+    if f.data.get('oauth') and f.kind.binding == 'kickside.mcp_client.oauth:connection':
+        if denied:
+            return read(ctx, f, role, hidden=True)
+        if readonly:
+            return read(ctx, f, role)
+        result = request(ctx, role, 'POST', '/connections/' + f.id + '/discover_resources', {})
+        require(result.get('success') is True and 'northwind_order' in json.dumps(result),
+                'Granted Remote MCP OAuth connection exposes no authenticated Northwind tool: ' + str(result))
+        return result
     if f.data.get('oauth'):
         if denied:
             return read(ctx, f, role, hidden=True)
@@ -1691,6 +1736,17 @@ def new_kinds(ctx, role):
 
 def matrix_features(kind):
     name = kind.name
+    if kind.binding == 'kickside.mcp_client.oauth:connection':
+        features = SHARE_FEATURES + http('chestor/workspace', 'POST /api/v1/workspace/entries',
+                    'GET /api/v1/workspace/entries/{id}', 'POST /api/v1/workspace/entries/{id}/move',
+                    'DELETE /api/v1/workspace/entries/{id}') + http('kickside/oauth',
+                    'POST /api/v1/oauth/providers/{provider_name}/init',
+                    'GET /api/v1/oauth/connections/{component_id}',
+                    'PUT /api/v1/oauth/connections/{component_id}') + http('kickside/connection',
+                    'POST /api/v1/connections/{id}/discover_resources', 'DELETE /api/v1/connections/{id}') + (
+                    kind.package + '|workspace_kind|' + kind.binding,)
+        require(not (set(features) - INVENTORY_IDS), 'Unknown exercised access features: ' + str(set(features) - INVENTORY_IDS))
+        return tuple(sorted(set(features)))
     if kind.binding == 'kickside.oauth:oauth_connection':
         return SHARE_FEATURES + http('chestor/workspace', 'POST /api/v1/workspace/entries',
                     'GET /api/v1/workspace/entries/{id}', 'POST /api/v1/workspace/entries/{id}/move',
@@ -2461,7 +2517,7 @@ def regression_mcp_setup_mounted(ctx):
     dialog = browser.frame.get_by_role('dialog')
     dialog.get_by_label('Connection name', exact=True).wait_for(timeout=30000)
     dialog.get_by_label('Streamable HTTP endpoint', exact=False).wait_for(timeout=30000)
-    dialog.get_by_role('button', name='Verify and connect', exact=False).wait_for(timeout=30000)
+    dialog.get_by_role('button', name='Sign in with OAuth', exact=False).wait_for(timeout=30000)
     require(dialog.locator('.kx-engine-host').evaluate('el => el.children.length') > 0, 'Remote MCP configure host is empty')
     browser.clean(ctx.state['access_browser_error_start'])
 

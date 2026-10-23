@@ -818,6 +818,78 @@
       "issues": [],
       "tier": "full"
     },
+    "access_binding_kickside_mcp_client_oauth_connection_owner": {
+      "features": [
+        "chestor/workspace|http|DELETE /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|GET /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|POST /api/v1/workspace/entries",
+        "chestor/workspace|http|POST /api/v1/workspace/entries/{id}/move",
+        "kickside/component|http|GET /api/v1/component-access/grants/{id}",
+        "kickside/component|http|POST /api/v1/component-access/share/{id}",
+        "kickside/connection|http|DELETE /api/v1/connections/{id}",
+        "kickside/connection|http|POST /api/v1/connections/{id}/discover_resources",
+        "kickside/mcp-client|workspace_kind|kickside.mcp_client.oauth:connection",
+        "kickside/oauth|http|GET /api/v1/oauth/connections/{component_id}",
+        "kickside/oauth|http|POST /api/v1/oauth/providers/{provider_name}/init",
+        "kickside/oauth|http|PUT /api/v1/oauth/connections/{component_id}"
+      ],
+      "issues": [],
+      "tier": "full"
+    },
+    "access_binding_kickside_mcp_client_oauth_connection_read": {
+      "features": [
+        "chestor/workspace|http|DELETE /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|GET /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|POST /api/v1/workspace/entries",
+        "chestor/workspace|http|POST /api/v1/workspace/entries/{id}/move",
+        "kickside/component|http|GET /api/v1/component-access/grants/{id}",
+        "kickside/component|http|POST /api/v1/component-access/share/{id}",
+        "kickside/connection|http|DELETE /api/v1/connections/{id}",
+        "kickside/connection|http|POST /api/v1/connections/{id}/discover_resources",
+        "kickside/mcp-client|workspace_kind|kickside.mcp_client.oauth:connection",
+        "kickside/oauth|http|GET /api/v1/oauth/connections/{component_id}",
+        "kickside/oauth|http|POST /api/v1/oauth/providers/{provider_name}/init",
+        "kickside/oauth|http|PUT /api/v1/oauth/connections/{component_id}"
+      ],
+      "issues": [],
+      "tier": "full"
+    },
+    "access_binding_kickside_mcp_client_oauth_connection_stranger": {
+      "features": [
+        "chestor/workspace|http|DELETE /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|GET /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|POST /api/v1/workspace/entries",
+        "chestor/workspace|http|POST /api/v1/workspace/entries/{id}/move",
+        "kickside/component|http|GET /api/v1/component-access/grants/{id}",
+        "kickside/component|http|POST /api/v1/component-access/share/{id}",
+        "kickside/connection|http|DELETE /api/v1/connections/{id}",
+        "kickside/connection|http|POST /api/v1/connections/{id}/discover_resources",
+        "kickside/mcp-client|workspace_kind|kickside.mcp_client.oauth:connection",
+        "kickside/oauth|http|GET /api/v1/oauth/connections/{component_id}",
+        "kickside/oauth|http|POST /api/v1/oauth/providers/{provider_name}/init",
+        "kickside/oauth|http|PUT /api/v1/oauth/connections/{component_id}"
+      ],
+      "issues": [],
+      "tier": "full"
+    },
+    "access_binding_kickside_mcp_client_oauth_connection_write": {
+      "features": [
+        "chestor/workspace|http|DELETE /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|GET /api/v1/workspace/entries/{id}",
+        "chestor/workspace|http|POST /api/v1/workspace/entries",
+        "chestor/workspace|http|POST /api/v1/workspace/entries/{id}/move",
+        "kickside/component|http|GET /api/v1/component-access/grants/{id}",
+        "kickside/component|http|POST /api/v1/component-access/share/{id}",
+        "kickside/connection|http|DELETE /api/v1/connections/{id}",
+        "kickside/connection|http|POST /api/v1/connections/{id}/discover_resources",
+        "kickside/mcp-client|workspace_kind|kickside.mcp_client.oauth:connection",
+        "kickside/oauth|http|GET /api/v1/oauth/connections/{component_id}",
+        "kickside/oauth|http|POST /api/v1/oauth/providers/{provider_name}/init",
+        "kickside/oauth|http|PUT /api/v1/oauth/connections/{component_id}"
+      ],
+      "issues": [],
+      "tier": "full"
+    },
     "access_binding_kickside_oauth_oauth_connection_owner": {
       "features": [
         "kickside/component|http|POST /api/v1/component-access/share/{id}",

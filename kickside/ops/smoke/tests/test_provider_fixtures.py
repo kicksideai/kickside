@@ -1,7 +1,9 @@
 import base64
+import hashlib
 import json
 import unittest
-from urllib.request import Request, urlopen
+from urllib.parse import parse_qs, urlencode, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 from urllib.error import HTTPError
 import mocks
 
@@ -60,6 +62,62 @@ class ProviderFixtures(unittest.TestCase):
         fixture = MCP('http://127.0.0.1:731')
         _, _, response = fixture.dispatch('POST', '/mcp', {}, {'id': 1, 'method': 'tools/call', 'params': {'name': 'northwind_order', 'arguments': []}}, {})
         self.assertEqual(response['error']['code'], -32602)
+
+    def test_mcp_oauth_discovery_authorization_code_and_protected_tools(self):
+        base = self.fixtures.start('mcp')
+        def call(path, body=None, headers=None, method=None):
+            return self.call(base, path, body, headers, method)
+
+        status, headers, _ = call('/mcp/oauth', json.dumps({
+            'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {'protocolVersion': '2025-11-25'},
+        }).encode(), {'Content-Type': 'application/json'})
+        self.assertEqual(status, 401)
+        resource_metadata = next(value for key, value in headers.items() if key.lower() == 'www-authenticate')
+        resource_metadata = resource_metadata.split('resource_metadata="', 1)[1].removesuffix('"')
+        metadata_path = urlsplit(resource_metadata).path
+        status, _, raw = call(metadata_path)
+        self.assertEqual(status, 200)
+        protected = json.loads(raw)
+        self.assertEqual(protected['resource'], base + '/mcp/oauth')
+        authorization_server = protected['authorization_servers'][0]
+        status, _, raw = call(urlsplit(authorization_server).path + '/.well-known/oauth-authorization-server')
+        self.assertEqual(status, 200)
+        server = json.loads(raw)
+        self.assertEqual(server['token_endpoint_auth_methods_supported'], ['none'])
+
+        registration = json.dumps({'redirect_uris': ['http://127.0.0.1:731/callback']}).encode()
+        status, _, raw = call('/register', registration, {'Content-Type': 'application/json'})
+        self.assertEqual(status, 201)
+        client_id = json.loads(raw)['client_id']
+        verifier = 'northwind-mcp-verifier-' * 4
+        challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
+        query = urlencode({'client_id': client_id, 'redirect_uri': 'http://127.0.0.1:731/callback',
+                           'state': 'northwind-state', 'code_challenge_method': 'S256', 'code_challenge': challenge})
+        class NoRedirect(HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+        try:
+            response = build_opener(NoRedirect).open(Request(base + '/authorize?' + query), timeout=5)
+        except HTTPError as error:
+            response = error
+        with response:
+            status, headers = response.status, dict(response.headers)
+        self.assertEqual(status, 302)
+        callback = parse_qs(urlsplit(headers['Location']).query)
+        self.assertEqual(callback['state'], ['northwind-state'])
+        token_body = urlencode({'grant_type': 'authorization_code', 'client_id': client_id,
+                                'redirect_uri': 'http://127.0.0.1:731/callback', 'code': callback['code'][0],
+                                'code_verifier': verifier}).encode()
+        status, _, raw = call('/token', token_body, {'Content-Type': 'application/x-www-form-urlencoded'})
+        self.assertEqual(status, 200)
+        token = json.loads(raw)['access_token']
+        self.assertEqual(call('/token', token_body, {'Content-Type': 'application/x-www-form-urlencoded'})[0], 400)
+
+        status, _, raw = call('/mcp/oauth', json.dumps({
+            'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list', 'params': {},
+        }).encode(), {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(raw)['result']['tools'][0]['name'], 'northwind_order')
 
     def test_mcp_limits_fixture_covers_catalog_sse_and_oversized_results(self):
         from mocks.mcp import MCP

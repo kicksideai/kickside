@@ -3494,6 +3494,13 @@
           "entry_kind": "connection",
           "id": "kickside/mcp-client|workspace_kind|kickside.mcp_client:remote_connection",
           "label": "connection"
+        },
+        {
+          "category": "workspace_kind",
+          "entry": "kickside.mcp_client.oauth:connection",
+          "entry_kind": "connection",
+          "id": "kickside/mcp-client|workspace_kind|kickside.mcp_client.oauth:connection",
+          "label": "connection"
         }
       ]
     },
