@@ -56,6 +56,7 @@ entries:
     meta:
       comment: Pure kickside.flow/v1 artifact validation, checksums, reference binding, and materialization for headless or visual consumers.
     source: file://flow_contract.lua
+    modules: [json]
     imports:
       canonical_json: kickside.contract:canonical_json
 
@@ -64,7 +65,7 @@ entries:
     meta:
       comment: Block execution lowering with public tool authority validation.
     source: file://lower.lua
-    modules: [registry]
+    modules: [registry, json]
     imports:
       contract: kickside.blocks:contract
       tool_adapter: kickside.blocks:tool_adapter
