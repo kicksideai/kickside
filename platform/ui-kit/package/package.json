@@ -17,7 +17,10 @@
     "./kx-tag.css": "./kx-tag.css",
     "./kx-tokens.css": "./kx-tokens.css",
     "./kx-tone.css": "./kx-tone.css",
-    "./spin.css": "./spin.css"
+    "./spin.css": "./spin.css",
+    "./kx-shell.css": "./kx-shell.css",
+    "./kx-controls.css": "./kx-controls.css",
+    "./kx-overlay.css": "./kx-overlay.css"
   },
   "files": [
     "focus.css",
@@ -28,6 +31,9 @@
     "kx-tag.css",
     "kx-tokens.css",
     "kx-tone.css",
-    "spin.css"
+    "spin.css",
+    "kx-shell.css",
+    "kx-controls.css",
+    "kx-overlay.css"
   ]
 }
