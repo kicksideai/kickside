@@ -51,8 +51,8 @@ modules:
       version: 0.1.63
       hash: 02384aeda6c641fda99153a0085a296e9ca2ed38c9b4ad4b700b24c0e56252b4
     - name: kickside/jobs
-      version: 0.1.59
-      hash: c30cc32a694136c453dae80172283077652b3e36c7756deedf04174d25ae212b
+      version: 0.1.61
+      hash: 57e1176282d8961ebbffb4325b2fc9a5e18c40e7288eb9dd27cf1cddf7365b0f
     - name: kickside/mcp-client
       version: 0.2.1
       hash: 7a1cecc81e10e4d94146497ef68e5fb83e5ae6ec045d1df04ae12a6ba20e65db
