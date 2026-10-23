@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.85](https://github.com/kicksideai/kickside/compare/sync-v0.1.84...sync-v0.1.85) (2026-10-22)
+
+
+### Bug Fixes
+
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## [0.1.84](https://github.com/kicksideai/kickside/compare/sync-v0.1.83...sync-v0.1.84) (2026-10-20)
 
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.4](https://github.com/kicksideai/kickside/compare/agents-v0.2.3...agents-v0.2.4) (2026-10-22)
+
+
+### Bug Fixes
+
+* **agents:** return invalid trait context as a typed resolver error ([b9851b1](https://github.com/kicksideai/kickside/commit/b9851b11b7c1fd46f6ba0e18262fdb427999700b))
+* declare plain object roots for agent tool input schemas ([75fd0fe](https://github.com/kicksideai/kickside/commit/75fd0fed2a0c71206ae914c6ee497e1b37301a54))
+* preserve typed LLM errors in agents and knowledge ([f56ef7f](https://github.com/kicksideai/kickside/commit/f56ef7fefcf00e51278751304fa88597382634b4))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## [0.2.3](https://github.com/kicksideai/kickside/compare/agents-v0.2.2...agents-v0.2.3) (2026-10-20)
 
 

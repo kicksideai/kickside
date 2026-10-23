@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.8](https://github.com/kicksideai/kickside/compare/users-v0.2.7...users-v0.2.8) (2026-10-22)
+
+
+### Bug Fixes
+
+* preserve execution failure and session acquisition semantics ([#76](https://github.com/kicksideai/kickside/issues/76)) ([2df07e3](https://github.com/kicksideai/kickside/commit/2df07e32a36bb5cf2f20a2eaf030c7d12a4ccb08))
+* return typed execution construction failures ([#73](https://github.com/kicksideai/kickside/issues/73)) ([1219db2](https://github.com/kicksideai/kickside/commit/1219db2e21623b8e578c2fb4bafe2bc199ea1968))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+* **users:** restore modal account dialogs and align Users with system pages ([2d40caf](https://github.com/kicksideai/kickside/commit/2d40cafff8b6f677fe50f2939cf02af24059da9c))
+
 ## 0.2.7 (2026-10-17)
 
 - Refresh packaged frontend assets and documentation.

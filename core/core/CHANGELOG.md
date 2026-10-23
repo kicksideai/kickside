@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.3](https://github.com/kicksideai/kickside/compare/core-v0.3.2...core-v0.3.3) (2026-10-22)
+
+
+### Bug Fixes
+
+* **core:** accept event type on pull requests ([#70](https://github.com/kicksideai/kickside/issues/70)) ([51b1fe4](https://github.com/kicksideai/kickside/commit/51b1fe4429c6d7d5365794406561498fafe9e911))
+* **core:** pin retained input for projections already blocked ([8cda891](https://github.com/kicksideai/kickside/commit/8cda891d18782217af915c38c73516ab3f001e11))
+* **core:** retain unread projection input through deterministic blocks ([9a58fd5](https://github.com/kicksideai/kickside/commit/9a58fd56507ada47e6b29adb2f9a6823bb917a38))
+* **core:** serialize projection failures with removal ([94d940e](https://github.com/kicksideai/kickside/commit/94d940e1bdab5bc78d3a2e3664a1512ab5562d11))
+* **jobs:** park deterministic projection failures without wake demand ([#83](https://github.com/kicksideai/kickside/issues/83)) ([2351ec4](https://github.com/kicksideai/kickside/commit/2351ec43eb07c6667393a5bd6dadc7eb3e6cdfa2))
+* **uploads:** preserve completion checkpoints and redact structured diagnostics ([518920e](https://github.com/kicksideai/kickside/commit/518920e63ef6f512949da0d0b79cf9cd7a03a161))
+
 ## 0.3.2 (2026-10-17)
 
 - Remove retired retention metadata and refresh packaged documentation.

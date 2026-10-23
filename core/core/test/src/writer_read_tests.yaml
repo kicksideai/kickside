@@ -28,7 +28,7 @@ entries:
     core_types: kickside.core:types
     retention_notifier: kickside.core.retention:notifier
     jobs_wake: kickside.core.jobs.persist:wake
-    threads_append: kickside.core.threads.persist:append
+    threads_append: app:writer_read_append
     sql: app:writer_read_sql
     sql_boundary: kickside.core.jobs.persist:sql_boundary
     error_envelope: kickside.contract:error_envelope
@@ -47,3 +47,9 @@ entries:
     fixture: app:writer_read_fixture
     api: app:writer_read_source
     canonical_json: kickside.contract:canonical_json
+
+- name: writer_read_append
+  kind: library.lua
+  source: file://writer_read_append.lua
+  imports:
+    fixture: app:writer_read_fixture

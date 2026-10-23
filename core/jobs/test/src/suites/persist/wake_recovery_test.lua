@@ -36,6 +36,60 @@ end
 
 local function define_tests()
     test.describe("jobs wake continuation recovery", function()
+        for _, key_count in ipairs({1, 2}) do
+            for _, fanout in ipairs({false, true}) do
+                test.it("orders completion with fanout without redundant solo locks/" .. tostring(fanout) .. "/" .. tostring(key_count), function()
+                    local db = assert(sql.get("app:db"))
+                    local dbtype = tostring(db:type())
+                    local key = "a:" .. uuid.v7()
+                    local own = assert(job_fixture.enqueue_leased(db, dbtype, {job_type = "test.completing", slot = true,
+                        job_identity = {namespace = "test", scope = uuid.v7(), key = "completion"}}))
+                    if fanout then
+                        assert(lifecycle.enqueue_job(db, dbtype, {owner_locator = {kind = "test", id = key},
+                            job_identity = {namespace = "test", scope = key, key = "watcher"},
+                            job_type = "test.watcher", wake_key = key, parked = true}))
+                    end
+                    local tx = assert(db:begin())
+                    local prelocks = 0
+                    local probe = fanout and tx or job_fixture.observe_tx(tx, function(statement)
+                        if string.find(statement, "SELECT * FROM kickside_job WHERE id IN", 1, true) then prelocks = prelocks + 1 end
+                    end)
+                    local ok, outcome = pcall(function()
+                        local keys = key_count == 1 and {key} or {key, "b:" .. uuid.v7()}
+                        local result, err = wake.wake_multi(probe, keys, dbtype, own.id)
+                        local lock_err: error? = nil
+                        if fanout and dbtype == sql.type.POSTGRES then
+                            local other = assert(sql.get("app:db"))
+                            local _, held_err = other:query("SELECT id FROM kickside_job WHERE id=$1 FOR UPDATE NOWAIT", {own.id})
+                            lock_err = held_err
+                            other:release()
+                        end
+                        local rows = assert(tx:query("SELECT status,wake_generation FROM kickside_job WHERE id=$1", {own.id}))
+                        local done, completion_err = jobs.complete_tx(tx, own.id,
+                            {token = own.lease_token, execution_seq = tonumber(own.execution_seq)}, {})
+                        return {result = result, err = err, rows = rows, done = done, completion_err = completion_err, lock_err = lock_err}
+                    end)
+                    tx:rollback()
+                    db:release()
+                    if not ok then error(outcome) end
+                    test.is_nil(outcome.err)
+                    test.not_nil(outcome.result)
+                    test.is_nil(outcome.completion_err)
+                    test.not_nil(outcome.done)
+                    if not fanout then test.eq(prelocks, 0)
+                    else
+                        test.eq(outcome.result[key].touched_count, 1)
+                        if dbtype == sql.type.POSTGRES then
+                            test.not_nil(outcome.lock_err)
+                            test.contains(tostring(outcome.lock_err), "55P03")
+                        end
+                    end
+                    test.eq(outcome.rows[1].status, "running")
+                    test.eq(tonumber(outcome.rows[1].wake_generation), 0)
+                end)
+        end
+        end
+
         test.it("publishes and acknowledges an empty fanout without separate continuation and candidate reads", function()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())
