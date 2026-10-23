@@ -1,7 +1,7 @@
 version: "1.0"
 namespace: app.deps
 entries:
-  - version: "*"
+  - version: ">=0.1.20"
     name: kickside_dashboard
     kind: ns.dependency
     meta: {}
@@ -13,7 +13,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_hub
-  - version: "*"
+  - version: ">=0.1.63"
     name: kickside_hub
     kind: ns.dependency
     meta: {}
@@ -27,7 +27,7 @@ entries:
         value: app.security:admin
 
   # app.deps:kickside_identity
-  - version: '*'
+  - version: ">=0.1.41"
     name: kickside_identity
     kind: ns.dependency
     meta: {}
@@ -42,7 +42,7 @@ entries:
     - name: kickside.identity:ui_server
       value: app:gateway
 
-  - version: '*'
+  - version: ">=0.1.64"
     name: kickside_inbox
     kind: ns.dependency
     meta: {}
@@ -55,7 +55,7 @@ entries:
     - name: kickside.inbox:ui_server
       value: app:gateway
 
-  - version: '*'
+  - version: ">=0.1.68"
     name: kickside_models
     kind: ns.dependency
     meta: {}
@@ -70,7 +70,7 @@ entries:
     - name: kickside.models:process_host
       value: app:processes
 
-  - version: "*"
+  - version: ">=0.2.2"
     name: kickside_mcp_client
     kind: ns.dependency
     meta: {}
@@ -86,7 +86,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_oauth
-  - version: '*'
+  - version: ">=0.1.39"
     name: kickside_oauth
     kind: ns.dependency
     meta: {}
@@ -101,14 +101,14 @@ entries:
     - name: process_host
       value: app:processes
 
-  - version: "*"
+  - version: ">=0.1.32"
     name: kickside_realtime
     kind: ns.dependency
     meta: {}
     component: kickside/realtime
 
   # app.deps:kickside_security
-  - version: "*"
+  - version: ">=0.2.9"
     name: kickside_security
     kind: ns.dependency
     meta: {}
@@ -128,7 +128,7 @@ entries:
         value: app:processes
 
   # app.deps:kickside_sessions
-  - version: '*'
+  - version: ">=0.1.40"
     name: kickside_sessions
     kind: ns.dependency
     meta: {}
@@ -139,7 +139,7 @@ entries:
     - name: kickside.sessions:ui_server
       value: app:gateway
 
-  - version: "*"
+  - version: ">=0.2.0"
     name: kickside_settings
     kind: ns.dependency
     meta: {}
@@ -153,7 +153,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_sync
-  - version: "*"
+  - version: ">=0.1.84"
     name: kickside_sync
     kind: ns.dependency
     meta: {}
@@ -163,7 +163,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_transform
-  - version: "*"
+  - version: ">=0.1.51"
     name: kickside_transform
     kind: ns.dependency
     meta: {}
@@ -176,7 +176,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_ui
-  - version: '*'
+  - version: ">=0.2.3"
     name: kickside_ui
     kind: ns.dependency
     meta: {}
@@ -193,7 +193,7 @@ entries:
     - name: kickside.ui.security:admin_scope
       value: app.security:admin
 
-  - version: "*"
+  - version: ">=0.2.7"
     name: kickside_users
     kind: ns.dependency
     meta: {}
@@ -250,7 +250,7 @@ entries:
         value: "*"
 
   # app.deps:kickside_widgets
-  - version: "*"
+  - version: ">=0.1.49"
     name: kickside_widgets
     kind: ns.dependency
     meta: {}

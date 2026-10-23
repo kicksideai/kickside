@@ -20,7 +20,11 @@ Dependencies are `ns.dependency` entries in source with `component:
 organization/module` and `version: "*"` or a `>=` compatibility range.
 The root module lock is generated and untracked. Only the application lock
 pins resolved versions; module dependency declarations use `*` or `>=` ranges,
-never exact pins. One root `ns.definition` owns the namespace.
+never exact pins. The application declares explicit `>=` minimums from its verified
+published dependency baseline, so fresh installs can select newer compatible Hub
+versions without waiting for another app release. The installed lock records that
+resolved graph; restarting an existing installation does not update it implicitly.
+One root `ns.definition` owns the namespace.
 A `ns.requirement` states a resource the host must supply and rewrites exact
 target fields such as `.meta.target_db`, `.meta.router`, `.meta.server`, or
 policy `.groups +=`. Do not set a host-owned resource default in the module.

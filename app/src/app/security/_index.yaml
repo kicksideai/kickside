@@ -8,7 +8,7 @@ entries:
       type: test_dependency
       comment: Test runner dependency for the app security suite; excluded from application publishing.
     component: wippy/test
-    version: "*"
+    version: ">=0.4.23"
 
   - name: compact_user_runtime_policy_test
     kind: function.lua
