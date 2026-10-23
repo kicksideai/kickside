@@ -88,6 +88,48 @@ uses isolated provider fixture declarations for the full tier. `--source` copies
 applies only explicit `--replace` entries. Runtime, framework, facade, web host,
 and theme replacements are prohibited.
 
+## Source gates on the tower
+
+Use the same prepared source checkouts locally or on the tower. Create separate
+lane checkouts at the desired `main` commits or PR branches and restore private
+paths as described in the development checkout README. Keep model credentials,
+PostgreSQL settings and the evidence parent in the machine's private environment
+profile using the variables above. The suite does not require a particular host
+address; on the tower itself, `SMOKE_HOST=127.0.0.1` keeps disposable listeners local.
+Run container gates with the UID/GID that owns the checkouts and run directory.
+Chromium's child processes need access to their scratch paths under that identity;
+keep the evidence directory's private permissions intact. Keep the machine profile
+outside Git and load it through the container's environment-file option.
+
+One command builds and runs the selected source tree without publishing it:
+
+```sh
+make -C "$KICKSIDE_ROOT/ops/smoke" source \
+  PYTHON="$SMOKE_PYTHON" SOURCE="$KICKSIDE_ROOT" WORKERS=4 \
+  TIER=regression ARGS='--scenario boot,branding_shell,branding_logo_types' \
+  REPLACEMENTS="kickside/core=$KICKSIDE_ROOT/core/core kickside/automation=$KICKSIDE_ROOT/platform/automation kickside/knowledge=$KICKSIDE_ROOT/platform/knowledge kickside/kb10=$PROVIDERS_ROOT/kb10"
+```
+
+`source` defaults to the full tier, both database engines, and four scenario
+workers per engine. Set `TIER=quick`, `TIER=regression` or `TIER=chat` for another
+gate; use `ARGS='--scenario name'` for a focused run. `REPLACEMENTS` is a
+whitespace-separated list of `org/module=absolute-directory` pairs with no
+whitespace in those paths. Different modules may point at separate branch
+checkouts. Include every changed module explicitly; the app's implicit workspace
+replacements are stripped. Unchanged dependencies still download from Hub.
+Full and regression tiers include focused native guards that require a local
+replacement for every module they exercise. For a full source run, prepare all
+selected repositories and use their `.github/modules.json` catalogs to supply
+the complete replacement list. A focused PR run selects its relevant scenarios.
+
+The target builds the app and each replacement with a `ui/package.json` through
+its existing `make build` target before starting the suite. A failed build stops
+the run instead of testing stale bundles. It does not fetch, switch or reset Git
+branches, edit release locks, or publish packages. Prepare the checkouts and
+tooling once; the same command then rebuilds and tests subsequent edits. The
+existing `quick`, `full` and `chat` targets retain published mode by default and
+also accept `SOURCE`, `REPLACEMENTS` and `WORKERS` for already-built sources.
+
 `quick` covers boot, platform onboarding, the live first-agent capability catalog,
 chat streaming, PDF attach/send, grounded KB answers with citations, CRM record
 creation, and continuation in the same session after restart. Its target is about
