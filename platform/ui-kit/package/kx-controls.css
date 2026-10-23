@@ -1,0 +1,71 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* Native controls for library chrome. Does not implement events or PrimeVue defaults. Import kx-tokens.css first. */
+
+/* Square icon button — the rail/toolbar/sheet glyph button. */
+.kx-iconbtn {
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid transparent; border-radius: var(--kx-radius-8); background: transparent;
+  color: var(--p-text-muted-color); transition: color .14s, background .14s, border-color .14s;
+}
+.kx-iconbtn:hover:not(:disabled) { color: var(--p-text-color); background: var(--kx-surface-2); }
+.kx-iconbtn.on { color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); }
+.kx-iconbtn:disabled { opacity: .55; cursor: default; }
+.kx-iconbtn svg { width: 16px; height: 16px; }
+.kx-iconbtn.lg { width: var(--kx-control-height); height: var(--kx-control-height); }
+.kx-iconbtn.sm { width: var(--kx-control-height-sm); height: var(--kx-control-height-sm); }
+.kx-iconbtn.bordered { border-color: var(--p-content-border-color); background: var(--kx-surface-1); color: var(--p-text-muted-color); }
+.kx-iconbtn.bordered:hover:not(:disabled) { border-color: color-mix(in srgb, var(--p-text-color) 18%, transparent); }
+.kx-iconbtn.danger:hover:not(:disabled), .kx-iconbtn.danger.on {
+  background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-500);
+}
+
+/* Text button — primary / ghost / soft / danger, one base. */
+.kx-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: var(--kx-control-height); padding: 0 14px; border-radius: var(--kx-radius-8); cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  border: 1px solid transparent;
+  transition: filter .15s, transform .15s, background .14s, border-color .14s, color .14s;
+}
+.kx-btn svg { width: 15px; height: 15px; }
+.kx-btn:disabled { opacity: .5; cursor: not-allowed; }
+.kx-btn.sm { height: var(--kx-control-height-sm); padding: 0 12px; }
+.kx-btn-primary { background: var(--p-primary-color); color: var(--p-primary-contrast-color); border-color: var(--p-primary-color); }
+.kx-btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
+.kx-btn-ghost { background: transparent; color: var(--p-text-color); border-color: var(--p-content-border-color); }
+.kx-btn-ghost:hover:not(:disabled) { background: var(--kx-surface-2); border-color: color-mix(in srgb, var(--p-text-color) 18%, transparent); }
+.kx-btn-soft { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color); border-color: color-mix(in srgb, var(--p-primary-color) 30%, transparent); }
+.kx-btn-soft:hover:not(:disabled) { background: color-mix(in srgb, var(--p-primary-color) 18%, transparent); }
+.kx-btn-danger { background: var(--p-danger-500); color: var(--p-danger-contrast-color); border-color: var(--p-danger-500); }
+.kx-btn-danger:hover:not(:disabled) { filter: brightness(1.07); }
+
+/* Search field — icon + input + clear, used by every search shell. */
+.kx-search { position: relative; display: flex; align-items: center; }
+.kx-search-ico { position: absolute; left: 10px; width: 15px; height: 15px; color: var(--p-text-muted-color); pointer-events: none; }
+.kx-search-input {
+  width: 100%; height: var(--kx-control-height); padding: 0 30px 0 31px;
+  font: inherit; font-size: 13px; color: var(--p-text-color);
+  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-8);
+  transition: border-color .14s, box-shadow .14s;
+}
+.kx-search-input::placeholder { color: var(--p-text-muted-color); }
+.kx-search-input:focus { outline: none; border-color: var(--p-focus-ring-color); box-shadow: var(--p-focus-ring-shadow); }
+.kx-search-clear {
+  position: absolute; right: 6px; width: 22px; height: 22px; border-radius: var(--kx-radius-8);
+  display: grid; place-items: center; cursor: pointer; background: transparent; border: none; color: var(--p-text-muted-color);
+}
+.kx-search-clear:hover { color: var(--p-text-color); background: var(--kx-surface-2); }
+.kx-search-clear svg { width: 14px; height: 14px; }
+
+/* Chip (uppercase kind tag) + count pill. */
+.kx-chip {
+  font-size: 9.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: var(--kx-radius-6);
+  background: var(--kx-surface-2); color: var(--p-text-muted-color); border: 1px solid var(--p-content-border-color);
+}
+.kx-count {
+  min-width: 18px; height: 16px; padding: 0 5px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color);
+}

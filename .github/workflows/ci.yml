@@ -1328,6 +1328,7 @@ jobs:
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
             cd platform/ui-kit
+            make test
             wippy update
             wippy lint
             cd "$source_root"
