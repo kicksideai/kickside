@@ -75,3 +75,13 @@ entries:
     round_ledger: kickside.automation:round_ledger
     drive: kickside.automation:drive
     round_harness: kickside.automation:round_harness
+- name: round_reference_payload_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+  source: file://../round/reference_payload_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness
