@@ -13,7 +13,9 @@ def existing_projection_block_retention(ctx):
 
 
 def existing_drive_repair(ctx):
-    run_focused_module_test(ctx, "kickside/automation", "drive_repair_test")
+    for entry in ("drive_repair_test", "drive_repair_deep_test", "drive_repair_alias_test",
+                  "drive_repair_races_test", "drive_repair_forward_test"):
+        run_focused_module_test(ctx, "kickside/automation", entry, lint=entry == "drive_repair_test")
     run_focused_module_test(ctx, "kickside/jobs", "lifecycle_helpers_test")
 
 

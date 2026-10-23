@@ -49,7 +49,8 @@ class UpgradeFixtureTests(unittest.TestCase):
                 self.assertEqual(roots[dependency['component']]['parameters'], dependency['parameters'])
                 self.assertEqual(roots[dependency['component']]['version'], '*')
             self.assertEqual(locked.read_bytes(), b'modules: []\n')
-            inst.resolve_dependencies.assert_called_once_with()
+            inst.resolve_dependencies.assert_not_called()
+            self.assertTrue(inst.dependencies_pending)
             inst.evidence.save.assert_called_once_with('restart-dependency-roots', dependencies)
 
     def test_published_fixture_forwards_baseline_preparation_before_boot(self):
@@ -157,14 +158,47 @@ class UpgradeFixtureTests(unittest.TestCase):
                 {'name': 'provider', 'kind': 'ns.dependency', 'component': 'kickside/provider',
                  'version': '*', 'parameters': [{'name': 'api_router', 'value': 'app:api'}]}]}])
             self.assertEqual(yaml.safe_load(fixture.read_text())['entries'][0]['data']['marker'], 'retained')
-            inst.resolve_dependencies.assert_called_once_with()
+            inst.resolve_dependencies.assert_not_called()
+            self.assertTrue(inst.dependencies_pending)
             inst.resolve_dependencies.reset_mock()
             Instance.preserve_dependencies(inst)
             inst.resolve_dependencies.assert_not_called()
             inst.request.return_value = {'dependencies': []}
             Instance.preserve_dependencies(inst)
             self.assertEqual(list((inst.app / 'src').rglob('_index.yaml')), [fixture])
-            inst.resolve_dependencies.assert_called_once_with()
+            inst.resolve_dependencies.assert_not_called()
+            self.assertTrue(inst.dependencies_pending)
+
+    def test_start_resolves_preserved_roots_before_launch_and_keeps_failed_resolution_pending(self):
+        from runtime import Instance
+        from types import SimpleNamespace
+        from io import BytesIO
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            inst = Instance({'host': '127.0.0.1', 'email': 'member', 'password': 'secret',
+                             'model': {}}, 'sqlite', Path(directory))
+            inst.app.mkdir()
+            inst.dependencies_pending = True
+            inst.command = Mock(return_value=['wippy', 'run'])
+            inst.login = Mock()
+            events = []
+            child = Mock(stdout=BytesIO(), pid=123)
+            child.poll.return_value = None
+            def launch(*args, **kwargs):
+                self.assertFalse(inst.dependencies_pending)
+                events.append('run')
+                return child
+            with patch('runtime._dependency_action', side_effect=lambda *args: events.append(args[1])), \
+                 patch('runtime.subprocess.Popen', side_effect=launch):
+                inst.start()
+                inst.log_thread.join(timeout=5)
+            self.assertEqual(events, ['update', 'install', 'run'])
+            inst.dependencies_pending = True
+            with patch('runtime._dependency_action', side_effect=RuntimeError('resolution fails')), \
+                 patch('runtime.subprocess.Popen') as popen:
+                with self.assertRaisesRegex(RuntimeError, 'resolution fails'):
+                    inst.start()
+                popen.assert_not_called()
+            self.assertTrue(inst.dependencies_pending)
 
     def test_pause_exports_live_roots_before_stopping_and_keeps_export_failures_visible(self):
         from browser import Browser

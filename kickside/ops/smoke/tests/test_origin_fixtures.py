@@ -44,7 +44,8 @@ class OriginFixtures(unittest.TestCase):
             self.assertEqual([{'name': 'github', 'kind': 'ns.dependency',
                                'component': 'kickside/github', 'version': '*',
                                'parameters': dependency['parameters']}], declarations)
-            inst.resolve_dependencies.assert_called_once_with()
+            inst.resolve_dependencies.assert_not_called()
+            self.assertTrue(inst.dependencies_pending)
 
     def setUp(self):
         self.fixtures = mocks.Fixtures()

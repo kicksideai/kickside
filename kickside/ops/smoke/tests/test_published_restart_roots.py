@@ -58,7 +58,8 @@ class RestartRootsTests(unittest.TestCase):
                 self.assertEqual(declarations, [{'version': '1.0', 'namespace': 'installed', 'entries': [
                     {'name': 'provider', 'kind': 'ns.dependency', 'component': 'example/provider',
                      'version': '*', 'parameters': dependencies[0]['parameters']}]}])
-                inst.resolve_dependencies.assert_called_once_with()
+                inst.resolve_dependencies.assert_not_called()
+                self.assertTrue(inst.dependencies_pending)
                 inst.resolve_dependencies.reset_mock()
                 Instance.preserve_dependencies(inst)
                 inst.resolve_dependencies.assert_not_called()

@@ -98,7 +98,15 @@ def settled_mapping(ctx):
         finally:
             inst.evidence.save('settled-event-mapping-retention', {
                 'before': before, 'remaining': database_rows(inst, query),
-                'items': inbox(inst, title), 'drives': drives(inst, aid), 'effects': gate.snapshot()})
+                'items': inbox(inst, title), 'drives': drives(inst, aid), 'effects': gate.snapshot(),
+                'drive_guards': database_rows(inst, "SELECT drive_key,round_until,admission_json,repair_next_at,"
+                    "pending_command_id FROM kickside_automation_drive WHERE automation_id='" + aid + "'"),
+                'prepared': database_rows(inst, "SELECT idempotency_key,created_at FROM kickside_automation_prepared "
+                    "WHERE automation_id='" + aid + "'"),
+                'ledger': database_rows(inst, "SELECT item_key,state FROM kickside_trigger_item_ledger "
+                    "WHERE owner_id='" + aid + "'"),
+                'jobs': database_rows(inst, "SELECT id,job_type,status,scheduled_at,lease_until FROM kickside_job "
+                    "WHERE owner_id='" + aid + "' OR job_type='kickside.automation:command_dispatcher'")})
 
 
 REGISTRY = [

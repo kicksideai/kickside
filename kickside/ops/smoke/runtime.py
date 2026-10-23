@@ -196,6 +196,7 @@ class Instance:
         self.db = prefix + '_' + uuid.uuid4().hex
         self.db_created = False
         self.prepared = False
+        self.dependencies_pending = False
         self.process = None
         self.log_thread = None
         self.keeper_token = ''
@@ -274,7 +275,7 @@ class Instance:
         dependencies = self.request('GET', '/api/v1/keeper/hub/dependencies?entries=0')['dependencies']
         self.evidence.save('restart-dependency-roots', dependencies)
         if write_dependency_roots(self.app, dependencies):
-            self.resolve_dependencies()
+            self.dependencies_pending = True
 
     def _resolve_source_dependencies(self):
         cache = Path(self.config['resolution_cache'])
@@ -306,6 +307,7 @@ class Instance:
     def resolve_dependencies(self, *, modules=()):
         for action in ('update', 'install'):
             _dependency_action(self, action, modules)
+        self.dependencies_pending = False
 
     def pg(self, sql):
         return psql(self.config['pg'], self.env, sql)
@@ -358,6 +360,9 @@ class Instance:
         return command
 
     def start(self):
+        # CLI resolution replaces vendor files and requires a stopped runtime.
+        if self.dependencies_pending:
+            self.resolve_dependencies()
         log_path = self.root / 'runtime.log'
         self.boot_log_offset = log_path.stat().st_size if log_path.exists() else 0
         self.process = subprocess.Popen(self.command(), cwd=self.app, env=self.env,
