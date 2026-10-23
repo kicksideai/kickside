@@ -91,6 +91,7 @@ class Browser:
         self.frame_sockets = []
         self.pending = {}
         self.expected_http = []
+        self.expected_document_navigations = []
         self.navigation_urls = {}
         self.session = session or BrowserSession()
         self.owns_session = session is None
@@ -241,6 +242,7 @@ class Browser:
     def watch(self, page):
         page.on('crash', self.page_crashed)
         def navigated(frame):
+            self.document_navigated(page, frame)
             if frame == page.main_frame and frame.url != 'about:blank':
                 self.navigation_urls[page] = frame.url
         page.on('framenavigated', navigated)
@@ -257,6 +259,11 @@ class Browser:
                 frame(raw)
             ws.on('framereceived', received)
         page.on('websocket', socket)
+
+    def document_navigated(self, page, frame):
+        for navigation in tuple(self.expected_document_navigations):
+            if page is navigation['page'] and frame is navigation['frame']:
+                navigation['main_frame_urls'].append(frame.url)
 
     def watch_requests(self, context):
         context.on('request', lambda request: self.pending.update({request: self.inst.redactor.text(request.url)}))
@@ -386,13 +393,46 @@ class Browser:
 
     def request_failed(self, request):
         self.pending.pop(request, None)
+        error = self.inst.redactor.text(f'{request.method} {request.url}: {request.failure}')
+        navigations = getattr(self, 'expected_document_navigations', ())
+        if navigations:
+            try:
+                is_main_frame = request.frame == self.page.main_frame
+            except Exception:
+                is_main_frame = False
+            for navigation in reversed(navigations):
+                if (request.method == 'GET' and request.resource_type == 'script' and
+                        request.failure == 'net::ERR_ABORTED' and is_main_frame and
+                        self.page is navigation['page'] and self.page.url == navigation['source'] and
+                        navigation['source'] != navigation['target']):
+                    navigation['aborts'].append(error)
+                    return
         if request.failure == 'net::ERR_ABORTED' and urlparse(request.url).hostname in ICONIFY_MIRRORS:
             return
         for item in self.frame_refusals:
             if request.method == 'GET' and request.url == item['url'] and request.failure == 'net::ERR_BLOCKED_BY_RESPONSE':
                 item['requests'].append({'url': request.url, 'error': request.failure})
                 return
-        self.errors.append(self.inst.redactor.text(f'{request.method} {request.url}: {request.failure}'))
+        self.errors.append(error)
+
+    @contextmanager
+    def document_navigation(self, path):
+        """Allow only main-document script cleanup caused by one verified navigation."""
+        target = self.inst.base + path
+        navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': self.page.url,
+                      'target': target, 'main_frame_urls': [], 'aborts': []}
+        self.expected_document_navigations.append(navigation)
+        try:
+            yield
+        finally:
+            self.expected_document_navigations.remove(navigation)
+            transitioned = navigation['source'] != target and target in navigation['main_frame_urls']
+            if not transitioned:
+                self.errors.extend(navigation['aborts'])
+            elif navigation['aborts']:
+                self.inst.evidence.save('document-navigation-aborts', {
+                    'source': navigation['source'], 'target': target, 'aborts': navigation['aborts'],
+                })
 
     @contextmanager
     def embedding_refusal(self, path):

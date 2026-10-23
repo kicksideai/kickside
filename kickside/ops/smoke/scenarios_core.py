@@ -28,10 +28,14 @@ def system(ctx, tab):
     ctx.browser.frame.get_by_role('tab', name=tab, exact=True).click()
 
 
-def account(ctx, label):
+def account_menu(ctx, label):
     ctx.browser.frame.locator('.sidebar [aria-haspopup="menu"]').click()
     ctx.browser.settle()
-    ctx.browser.frame.get_by_role('menuitem', name=label, exact=True).click()
+    return ctx.browser.frame.get_by_role('menuitem', name=label, exact=True)
+
+
+def account(ctx, label):
+    account_menu(ctx, label).click()
 
 
 def binary_request(inst, method, path, body=None, auth=None):
@@ -776,9 +780,11 @@ def core_restart(ctx):
 def core_logout(ctx):
     inst, browser = ctx.inst, ctx.browser
     request_phases = {'before_logout': list(browser.errors)}
-    account(ctx, 'Sign out')
-    browser.page.get_by_role('button', name='Sign In', exact=True).wait_for(timeout=30000)
-    require('/login' in browser.page.url, 'UI logout does not return to login')
+    sign_out = account_menu(ctx, 'Sign out')
+    with browser.document_navigation('/login'):
+        sign_out.click()
+        browser.page.get_by_role('button', name='Sign In', exact=True).wait_for(timeout=30000)
+        require('/login' in browser.page.url, 'UI logout does not return to login')
     ctx.browser.screenshot('northwind-branded-login', full_page=False, mask_color='#e5e7eb')
     request_phases['login_visible'] = list(browser.errors)
     browser.settle()

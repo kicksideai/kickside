@@ -163,8 +163,9 @@ class CoreAccessContractsTests(unittest.TestCase):
         ctx.browser.page.url = 'http://smoke/login'
         ctx.browser.login.side_effect = AssertionError('Reload cancels the login page module request')
         ctx.browser.page.expect_response.return_value = nullcontext(SimpleNamespace(value=SimpleNamespace(status=200)))
+        ctx.browser.document_navigation.return_value = nullcontext()
         ctx.inst.request.side_effect = [{'success': True}, {'error': 'Unauthorized'}]
-        with patch.object(core, 'account'), patch.object(core, 'member_token', return_value='member-token'):
+        with patch.object(core, 'account_menu', return_value=Mock()), patch.object(core, 'member_token', return_value='member-token'):
             core.core_logout(ctx)
         ctx.browser.login.assert_not_called()
         ctx.browser.page.get_by_label.assert_any_call('Email')
@@ -178,7 +179,8 @@ class CoreAccessContractsTests(unittest.TestCase):
         ctx.browser.errors = []
         ctx.browser.page.url = 'http://smoke/login'
         ctx.browser.page.expect_response.return_value = nullcontext(SimpleNamespace(value=SimpleNamespace(status=403)))
-        with patch.object(core, 'account'), self.assertRaises(Failure):
+        ctx.browser.document_navigation.return_value = nullcontext()
+        with patch.object(core, 'account_menu', return_value=Mock()), self.assertRaises(Failure):
             core.core_logout(ctx)
         ctx.inst.request.assert_not_called()
 
