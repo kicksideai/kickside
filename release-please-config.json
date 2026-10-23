@@ -367,7 +367,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "platform/ui-kit/package/package.json",
+          "path": "package/package.json",
           "jsonpath": "$.version"
         }
       ],
