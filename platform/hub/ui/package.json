@@ -53,7 +53,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "type-check": "vue-tsc --build --force"
+    "type-check": "vue-tsc --build --force",
+    "test": "vitest run"
   },
   "workspaces": [
     "./.wippy/npm/@*/*"
