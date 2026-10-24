@@ -90,6 +90,8 @@ local function define_tests()
             test.not_nil(run)
             test.eq(run.value, "user_agent:agent-1")
             test.eq(run.cfg.arena.max_iterations, 5)
+            test.eq(run.cfg.arena.tool_calling, "auto")
+            test.is_nil(run.cfg.arena.exit_schema)
             test.eq(input_call(calls).value.message, "Summarize yesterday.")
         end)
 
