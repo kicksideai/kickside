@@ -348,6 +348,18 @@ local function define_tests()
             test.is_nil(assigned)
         end)
 
+        test.it("does not reveal cross-user assignee existence before assignment authorization", function()
+            provision_inbox("reviewer")
+            local executor = scoped_executor("owner", "app:self_only")
+            local existing, existing_err = executor:call(ARM_ID, args("reviewer", "cross-user-existing-assignee"))
+            local phantom, phantom_err = executor:call(ARM_ID, args("missing-inbox-review-principal", "cross-user-phantom-assignee"))
+
+            test.is_nil(existing)
+            test.is_nil(phantom)
+            test.eq(tostring(existing_err), "Inbox assignment access denied")
+            test.eq(tostring(phantom_err), "Inbox assignment access denied")
+        end)
+
         test.it("published producer assignment delivers a review without recipient component WRITE", function()
             provision_inbox("reviewer")
             local review = args("reviewer", "assigned-without-write")
