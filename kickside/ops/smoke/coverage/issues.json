@@ -10195,6 +10195,16 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/automation/test/src/suites/recurring/manual_task_test.lua"
+    },
+    "hub/readable-license-labels": {
+      "engines": [
+        "independent"
+      ],
+      "issues": [
+        "HUB-READABLE-LICENSE-LABELS"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/hub/ui/src/license.test.ts"
     }
   },
   "issues": [
@@ -11465,7 +11475,8 @@
     "SECURITY-ADMIN-TAB-STRUCTURE",
     "APPEARANCE-SAVE-DIRTY-STATE",
     "APPEARANCE-CONSECUTIVE-NAV-UPDATES",
-    "WORKFLOW-SCHEMA-COPY-SHAPE"
+    "WORKFLOW-SCHEMA-COPY-SHAPE",
+    "HUB-READABLE-LICENSE-LABELS"
   ],
   "schema_version": 1
 }

@@ -5387,7 +5387,9 @@
         "kickside/automation|http|GET /api/v1/automations",
         "kickside/automation|http|DELETE /api/v1/automations/{id}"
       ],
-      "issues": [],
+      "issues": [
+        "AUTOMATION-SCHEDULED-DRIVE-STATUS"
+      ],
       "tier": "full"
     },
     "automation_scheduled_drive_status": {
@@ -7566,7 +7568,9 @@
         "kickside/kickside|http|GET /llms.txt",
         "kickside/kickside|http|GET /robots.txt"
       ],
-      "issues": [],
+      "issues": [
+        "APP-UI-LOGIN-ROUTE-GUARD"
+      ],
       "tier": "full"
     },
     "core_replay_setup": {
@@ -8087,6 +8091,14 @@
       ],
       "tier": "regression"
     },
+    "discovered_generation_reasoning_browser": {
+      "features": [],
+      "issues": [
+        "MODELS-REASONING-GENERATIONS",
+        "MODELS-GENERATION-CAPABILITIES"
+      ],
+      "tier": "regression"
+    },
     "execution_authorizer_constructor_grant": {
       "features": [],
       "issues": [
@@ -8535,6 +8547,15 @@
       ],
       "tier": "full"
     },
+    "hub_license_labels": {
+      "features": [
+        "kickside/hub|navigation|kickside.hub:tab.modules"
+      ],
+      "issues": [
+        "HUB-READABLE-LICENSE-LABELS"
+      ],
+      "tier": "regression"
+    },
     "hub_module_uninstall_live": {
       "features": [
         "kickside/sync|automation|kickside.sync:sync",
@@ -8899,6 +8920,13 @@
         "KEEPER-HUB-README-ERROR"
       ],
       "tier": "full"
+    },
+    "keeper_ui_issued_mcp_session_context": {
+      "features": [],
+      "issues": [
+        "KEEPER-MCP-TRANSPORT-CONTEXT"
+      ],
+      "tier": "regression"
     },
     "knowledge_addressed_ingest": {
       "features": [
@@ -13235,6 +13263,15 @@
       ],
       "tier": "regression"
     },
+    "published_facade_shell": {
+      "features": [
+        "kickside/kickside|http|GET /api/public/facade/config"
+      ],
+      "issues": [
+        "APP-UI-PUBLISHED-FACADE-GUARD"
+      ],
+      "tier": "regression"
+    },
     "published_registry_contract": {
       "features": [],
       "issues": [
@@ -15598,6 +15635,13 @@
       ],
       "tier": "regression"
     },
+    "settings_notices_theme_radius_browser": {
+      "features": [],
+      "issues": [
+        "SETTINGS-NOTICES-THEME-RADIUS"
+      ],
+      "tier": "regression"
+    },
     "settings_object_json_browser": {
       "features": [],
       "issues": [
@@ -16319,6 +16363,13 @@
       ],
       "tier": "regression"
     },
+    "workflow_provider_diagnostic_browser": {
+      "features": [],
+      "issues": [
+        "UPSTREAM-PROVIDER-ERROR-CAUSE"
+      ],
+      "tier": "regression"
+    },
     "workflow_provider_payment_cause": {
       "features": [
         "kickside/agents|workflow_block|kickside.agents:block.agent",
@@ -16371,6 +16422,13 @@
       "features": [],
       "issues": [
         "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER"
+      ],
+      "tier": "regression"
+    },
+    "workflow_tool_argument_diagnostic_browser": {
+      "features": [],
+      "issues": [
+        "UPSTREAM-TOOL-ARGUMENT-DIAGNOSTIC"
       ],
       "tier": "regression"
     },
