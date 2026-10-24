@@ -928,7 +928,7 @@ def artifact_chat(kind):
         instructions = {
             'document': 'Create a Markdown document with headings, a returns policy of 17 days, a dispatch checklist, and the warehouse marker NW-AI-731.',
             'table': 'Create a Markdown table with Product, Units, and Revenue columns. Include Harbor tea 120 2400, Orchard coffee 80 3200, and Meadow cocoa 95 2850.',
-            'chart': 'Create a complete self-contained HTML document with an inline SVG bar chart, axes, data labels, and a legend. Plot Harbor tea 120, Orchard coffee 80, and Meadow cocoa 95. Use SVG directly.',
+            'chart': 'Use CreateArtifact with content_type: text/html, instructions: true, and render: inline. Create a complete self-contained HTML document with an inline SVG bar chart, axes, data labels, and a legend. Plot Harbor tea 120, Orchard coffee 80, and Meadow cocoa 95. Use SVG directly.',
         }[kind]
         browser.stream('Use CreateArtifact, with title "' + title + '", instructions true and inline render. ' + instructions + ' Include the resulting embed instruction in your reply. Explain ten useful observations in short paragraphs and end with NW-ARTIFACT-' + kind.upper() + '.', 'NW-ARTIFACT-' + kind.upper(), 'gemma-artifact-' + kind)
         persisted = messages(ctx, sid)
