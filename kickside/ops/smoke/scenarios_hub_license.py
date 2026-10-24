@@ -7,7 +7,9 @@ from scenarios_core import navigation, system
 from scenarios_hub_ai_review import hub_surface
 
 
-LICENSE_FIXTURE = 'kickside/atlassian'
+def available_custom_license_fixture(candidates):
+    """Use a rendered catalog card, never a package publication assumption."""
+    return candidates[0] if candidates else None
 
 
 def license_labels(ctx):
@@ -80,8 +82,8 @@ def license_labels(ctx):
         hub.locator('.inst-row').first.scroll_into_view_if_needed()
         browser.screenshot('hub-license-installed-' + theme, full_page=False)
 
-        fixture = next((candidate for candidate in candidates if candidate[0] == LICENSE_FIXTURE), None)
-        require(fixture, 'Hub license fixture is unavailable: ' + LICENSE_FIXTURE)
+        fixture = available_custom_license_fixture(candidates)
+        require(fixture, 'Hub catalog has no custom license reference to inspect')
         component, raw = fixture
         card = hub.locator('.mod-card').filter(has=browser.page.locator('.mod-org').filter(
             has_text=re.compile('^' + re.escape(component) + '$')))
