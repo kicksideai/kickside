@@ -123,13 +123,18 @@ function M.normalize_request(value: any): (any?, string?)
     }, nil
 end
 
-function M.intersect_ids(value: any, candidates: { any }): { string }
+local function candidate_ids(candidates: { any }): { [string]: boolean }
     local allowed: { [string]: boolean } = {}
     for _, candidate in ipairs(candidates or {}) do
         if type(candidate) == "table" and type((candidate :: any).component) == "string" then
             allowed[(candidate :: any).component] = true
         end
     end
+    return allowed
+end
+
+function M.intersect_ids(value: any, candidates: { any }): { string }
+    local allowed = candidate_ids(candidates)
     local out: { string } = {}
     local seen: { [string]: boolean } = {}
     if type(value) ~= "table" then return out end
@@ -145,6 +150,50 @@ end
 
 local function failure(kind: string, code: string, message: string): any
     return { kind = kind, code = code, message = message }
+end
+
+local function recommendation_schema(candidates: { any }): any
+    local ids: { string } = {}
+    for _, candidate in ipairs(candidates) do
+        ids[#ids + 1] = (candidate :: any).component
+    end
+    return {
+        type = "object",
+        additionalProperties = false,
+        required = { "component_ids" },
+        properties = {
+            component_ids = {
+                type = "array",
+                items = { type = "string", enum = ids },
+                maxItems = MAX_RECOMMENDATIONS,
+            },
+        },
+    }
+end
+
+local function strict_ids(value: any, allowed: { [string]: boolean }): { string }?
+    if type(value) ~= "table" then return nil end
+    local count, highest = 0, 0
+    for key, item in pairs(value :: { [any]: any }) do
+        if type(key) ~= "number" or key < 1 or key % 1 ~= 0 or type(item) ~= "string" or not allowed[item] then return nil end
+        count = count + 1
+        if key > highest then highest = key end
+    end
+    if highest ~= count or count > MAX_RECOMMENDATIONS then return nil end
+    return value :: { string }
+end
+
+-- `agent_invoke` puts a finish-tool result in `structured`. This is accepted
+-- only when it has exactly the schema Hub requested; text is deliberately not
+-- repaired or interpreted here.
+local function structured_ids(result: any, candidates: { any }): ({ string }?, boolean)
+    if type(result) ~= "table" or (result :: any).structured == nil then return nil, false end
+    local structured = (result :: any).structured
+    if type(structured) ~= "table" then return nil, true end
+    for key, _ in pairs(structured :: { [any]: any }) do
+        if key ~= "component_ids" then return nil, true end
+    end
+    return strict_ids((structured :: any).component_ids, candidate_ids(candidates)), true
 end
 
 function M.recommend(value: any, deps: any?): (any?, any?)
@@ -164,6 +213,7 @@ function M.recommend(value: any, deps: any?): (any?, any?)
         config = {
             agent_id = RECOMMENDER_ID,
             max_iterations = 1,
+            exit_schema = recommendation_schema(request.candidates),
         },
         input = { content = prompt_content },
         metadata = { surface = "system_onboarding" },
@@ -172,13 +222,21 @@ function M.recommend(value: any, deps: any?): (any?, any?)
         return nil, failure("unavailable", "RECOMMENDER_UNAVAILABLE", "module recommendations are temporarily unavailable")
     end
 
-    local content = trim((result :: any).content)
-    if content:sub(1, 1) ~= "[" or content:sub(-1) ~= "]" then
-        return nil, failure("error", "INVALID_RECOMMENDER_RESPONSE", "module recommender returned an invalid response")
-    end
-    local decoded, decode_err = json_mod.decode(content)
-    if decode_err or type(decoded) ~= "table" then
-        return nil, failure("error", "INVALID_RECOMMENDER_RESPONSE", "module recommender returned invalid JSON")
+    local decoded, has_structured = structured_ids(result, request.candidates)
+    if has_structured then
+        if not decoded then
+            return nil, failure("error", "INVALID_RECOMMENDER_RESPONSE", "module recommender returned an invalid structured response")
+        end
+    else
+        local content = trim((result :: any).content)
+        if content:sub(1, 1) ~= "[" or content:sub(-1) ~= "]" then
+            return nil, failure("error", "INVALID_RECOMMENDER_RESPONSE", "module recommender returned an invalid response")
+        end
+        local decode_err: any = nil
+        decoded, decode_err = json_mod.decode(content)
+        if decode_err or type(decoded) ~= "table" then
+            return nil, failure("error", "INVALID_RECOMMENDER_RESPONSE", "module recommender returned invalid JSON")
+        end
     end
 
     return {
