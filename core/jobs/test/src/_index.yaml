@@ -609,6 +609,7 @@ entries:
       lease: kickside.core.jobs.persist:lease_heartbeat
       lifecycle: kickside.core.jobs.persist:lifecycle
       job_fixture: app:job_fixture
+      config: kickside.core.jobs:config
   - name: worker_pulse_test
     kind: function.lua
     meta:
