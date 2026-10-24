@@ -384,29 +384,68 @@ class ScenarioPrerequisiteTests(unittest.TestCase):
 
 
 class ChatComposerTests(unittest.TestCase):
-    def test_first_agent_session_uses_open_composer(self):
+    def test_stream_uses_websocket_progress_when_dom_snapshots_coalesce(self):
         from browser import Browser
         browser = Browser.__new__(Browser)
         browser.page = Mock()
         browser.inst = Mock()
-        browser.frames = [{'data': {'type': 'chunk'}}]
+        browser.frames, browser.frame_sockets = [], []
+        socket = object()
         frame = Mock()
         chat = frame.locator.return_value
         chat.evaluate.side_effect = [
+            {'text': '', 'busy': True, 'enabled': False},
             {'text': 'one', 'busy': True, 'enabled': False},
-            {'text': 'one two', 'busy': True, 'enabled': False},
-            {'text': 'one two READY', 'busy': False, 'enabled': True},
+            {'text': 'one READY', 'busy': False, 'enabled': True},
         ]
         chat.locator.return_value.all_text_contents.return_value = []
+        chat.get_attribute.return_value = 'unit'
         browser.page.frame_locator.return_value = frame
-        # Stream frames arrive while Chromium pumps events.
+        def record(data):
+            browser.frames.append({'topic': 'session:unit:message:reply', 'data': data})
+            browser.frame_sockets.append(socket)
+
+        pumps = 0
         def pump(ms):
-            browser.frames.append({'data': {'type': 'chunk'}})
+            nonlocal pumps
+            pumps += 1
+            if pumps == 1:
+                record({'type': 'received', 'session_id': 'unit', 'message_id': 'prompt',
+                        'text': 'Fictional prompt'})
+                record({'type': 'response_started', 'session_id': 'unit', 'message_id': 'prompt',
+                        'response_id': 'reply'})
+            record({'type': 'chunk', 'content': str(pumps)})
+            if pumps == 3:
+                record({'type': 'content', 'content': 'one READY'})
         browser.page.wait_for_timeout.side_effect = pump
-        browser.stream('Fictional prompt', 'READY', 'test')
+        self.assertEqual(browser.stream('Fictional prompt', 'READY', 'test'),
+                         {'updates': 3, 'marker': 'READY'})
         chat.get_by_placeholder.assert_any_call('Type a message', exact=True)
         chat.get_by_label.assert_not_called()
         chat.get_by_placeholder.return_value.press.assert_called_once_with('Enter')
+
+    def test_stream_events_ignore_stale_and_other_session_frames(self):
+        from browser import Browser
+        browser = Browser.__new__(Browser)
+        socket = object()
+        def frame(session, kind, **data):
+            return {'topic': 'session:' + session + ':message:' + data.pop('response', 'reply'),
+                    'data': {'session_id': session, 'type': kind, **data}}
+        browser.frames = [frame('stale', 'chunk', content='old')]
+        browser.frames += [
+            {'topic': 'control', 'data': None}, {'topic': 'control', 'data': 'keepalive'},
+            frame('other', 'received', message_id='other-prompt', text='Prompt'),
+            frame('other', 'response_started', message_id='other-prompt', response_id='other-reply'),
+            *[frame('other', 'chunk', response='other-reply', content=str(index)) for index in range(4)],
+            frame('other', 'content', response='other-reply', content='READY'),
+            frame('unit', 'received', message_id='prompt', text='Prompt'),
+            frame('unit', 'response_started', message_id='prompt', response_id='reply'),
+            frame('unit', 'chunk', content=''), frame('unit', 'chunk', content='one'),
+            frame('unit', 'chunk', content='two'),
+        ]
+        browser.frame_sockets = [socket] * len(browser.frames)
+        self.assertEqual(browser.chat_stream_events(1, 'unit', 'Prompt', 'READY'),
+                         {'updates': 2, 'completed': False})
 
 
 class StructuredLogRedactionTests(unittest.TestCase):

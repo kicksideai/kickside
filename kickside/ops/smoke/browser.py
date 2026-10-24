@@ -936,6 +936,45 @@ class Browser:
         self.inst.evidence.paths.append(str(path))
         return str(path)
 
+    def chat_stream_events(self, start, session_id, prompt, marker):
+        """Observe this prompt's assistant stream, not unrelated socket traffic."""
+        frames = self.frames[start:]
+        sockets = self.frame_sockets[start:]
+        def payload(frame):
+            value = frame.get('data')
+            return value if isinstance(value, dict) else {}
+
+        request = next((payload(frame) for frame in frames
+                        if payload(frame).get('type') == 'received'
+                        and payload(frame).get('text') == prompt
+                        and payload(frame).get('session_id') == session_id), None)
+        if not request:
+            return {'updates': 0, 'completed': False}
+        message_id = request.get('message_id')
+        responses = {payload(frame).get('response_id') for frame in frames
+                     if payload(frame).get('type') == 'response_started'
+                     and payload(frame).get('session_id') == session_id
+                     and payload(frame).get('message_id') == message_id}
+        responses.discard(None)
+
+        def response(frame):
+            data, topic = payload(frame), frame.get('topic', '')
+            topic = topic if isinstance(topic, str) else ''
+            if data.get('response_id') in responses:
+                return data['response_id']
+            prefix = 'session:' + session_id + ':message:'
+            return topic.removeprefix(prefix) if topic.startswith(prefix) else None
+
+        matched = [(frame, sockets[index] if index < len(sockets) else index)
+                   for index, frame in enumerate(frames) if response(frame) in responses]
+        chunks = {}
+        for frame, socket in matched:
+            if payload(frame).get('type') == 'chunk' and payload(frame).get('content'):
+                chunks[socket] = chunks.get(socket, 0) + 1
+        return {'updates': max(chunks.values(), default=0), 'completed': any(
+            payload(frame).get('type') == 'content' and isinstance(payload(frame).get('content'), str)
+            and marker in payload(frame)['content'] for frame, _ in matched)}
+
     def stream(self, prompt, marker, label):
         from harness import Failure
         chat = self.frame.locator('wippy-chat')
@@ -944,6 +983,8 @@ class Browser:
         box.fill(prompt)
         box.press('Enter')
         chat.get_by_placeholder('Type a message', exact=True).wait_for(timeout=30000)
+        session_id = chat.get_attribute('session-id')
+        require(session_id, 'Chat does not expose its durable session ID')
         samples = []
         deadline = time.monotonic() + 180
         while time.monotonic() < deadline:
@@ -951,18 +992,20 @@ class Browser:
             state = chat.evaluate(CHAT_STATE)
             if not samples or samples[-1]['text'] != state['text']:
                 samples.append({'at': round(time.monotonic(), 3), **state})
-            updates = len({s['text'] for s in samples if s['text']})
-            if state['enabled'] and not state['busy'] and marker in state['text'] and updates >= 3:
+            stream = self.chat_stream_events(before, session_id, prompt, marker)
+            updates = stream['updates']
+            if (state['enabled'] and not state['busy'] and marker in state['text']
+                    and (updates >= 3 or stream['completed'])):
                 break
         else:
             self.inst.evidence.save(label + '-samples', samples)
             self.inst.evidence.save(label + '-websocket', self.frames[before:])
-            raise Failure(f'{label}: stream lacks three incremental assistant updates or completion within 180 seconds; observed {updates} updates')
+            raise Failure(f'{label}: stream lacks three incremental assistant websocket updates or terminal completion within 180 seconds; observed {updates} updates')
         frames = self.frames[before:]
         self.inst.evidence.save(label + '-samples', samples)
         self.inst.evidence.save(label + '-websocket', frames)
-        require(any((f.get('data') or {}).get('type') in ('chunk', 'content') for f in frames if isinstance(f.get('data'), dict)),
-                label + ': no websocket chunk/content events')
+        require(updates >= 3 or stream['completed'],
+                label + ': no three incremental websocket updates or terminal completion')
         require(not chat.locator('[role=alert]').all_text_contents(), label + ': chat reports an error')
         return {'updates': updates, 'marker': marker}
 
