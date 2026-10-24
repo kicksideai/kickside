@@ -1031,8 +1031,8 @@ def workflow_launch(ctx, event=False):
         aid = inst.request('POST', '/api/v1/automations', {'type': 'kickside.automation.recurring:task', 'input': {
             'title': 'Northwind dispatch schedule', 'enabled': True, 'schedule': {'type': 'interval', 'expression': '2s'},
             'target': {'kind': 'workflow', 'flow_ref': {'kind': 'flow', 'id': wid, 'version': version}, 'input': {'marker': marker, 'crates': 48}}}}, label='dispatch-schedule')['id']
-    from cleanup_evidence import own_automation
-    cleanup = own_automation(inst, aid)
+    from cleanup_evidence import own_visible_automation
+    cleanup = own_visible_automation(ctx, aid)
     if event:
         inst.request('POST', '/api/public/hooks/' + hook['webhook_id'], {'marker': marker, 'crates': 48}, auth=hook['secret'], expect=(202,), label='dispatch-trigger')
     def completed():

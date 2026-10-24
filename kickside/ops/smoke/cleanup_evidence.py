@@ -64,6 +64,17 @@ def own_automation(inst, automation_id):
     return inst.cleanup.add('Automation ' + automation_id, cleanup, scope='scenario')
 
 
+def own_visible_automation(ctx, automation_id):
+    delete = own_automation(ctx.inst, automation_id)
+    ctx.inst.cleanup.remove(delete)
+
+    def cleanup():
+        delete_visible_resource(ctx, delete)
+        ctx.inst.cleanup.remove(cleanup)
+
+    return ctx.inst.cleanup.add('Visible automation ' + automation_id, cleanup, scope='scenario')
+
+
 def cleanup_rows(inst, identifier, *, knowledge=False):
     tables = {'kickside_components': 'component_id', 'kickside_thread': 'id',
               'kickside_projection': 'thread_id', 'kickside_projection_cursor': 'thread_id',

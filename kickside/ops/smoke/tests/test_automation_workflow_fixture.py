@@ -9,7 +9,8 @@ from unittest.mock import patch
 
 import scenarios_automation
 import workflow_failure_contract
-from harness import Failure
+from cleanup_evidence import own_visible_automation
+from harness import Cleanup, Failure
 
 
 class DispatchWorkflowFixtureTests(unittest.TestCase):
@@ -265,6 +266,69 @@ class DispatchWorkflowFixtureTests(unittest.TestCase):
         with patch.object(workflow_failure_contract, 'delete_workflow') as delete_workflow:
             cleanup()
         delete_workflow.assert_called_once_with(ctx, 'workflow-1')
+
+    def test_schedule_releases_its_viewed_automation_before_owned_cleanup_deletes_it(self):
+        inst = Mock(cleanup=Cleanup())
+        ctx = SimpleNamespace(inst=inst, browser=Mock())
+        calls = []
+
+        def request(method, path, body=None, **kwargs):
+            if method == 'POST' and path == '/api/v1/automations':
+                return {'id': 'schedule-1'}
+            if method == 'GET' and path == '/api/v1/workflows/workflow-1/runs':
+                return {'runs': [{'status': 'completed', 'run_id': 'run-1'}]}
+            if method == 'GET' and path == '/api/v1/workflows/workflow-1/runs/run-1':
+                return {'run': {'output': {'result': {'marker': 'NW-SCHEDULE-DISPATCH', 'crates': 48}}}}
+            if method == 'DELETE' and path == '/api/v1/automations/schedule-1':
+                self.assertIsNone(ctx.browser, 'Automation deletion leaves the viewed status poller alive')
+                calls.append('delete')
+                return {'success': True, 'id': 'schedule-1', 'deleted': True}
+            if method == 'GET' and path == '/api/v1/automations':
+                return {'automations': []}
+            raise AssertionError((method, path, body))
+
+        def release(context):
+            self.assertIs(context, ctx)
+            calls.append('release')
+            context.browser = None
+
+        inst.request.side_effect = request
+        inst.wait.side_effect = lambda predicate, *args, **kwargs: predicate()
+        ctx.browser.clean.side_effect = lambda start: calls.append('clean')
+        with patch.object(scenarios_automation, 'dispatch_workflow', return_value=('workflow-1', 1)), \
+             patch.object(scenarios_automation, 'nav') as nav, \
+             patch.object(scenarios_automation, 'screen') as screen, \
+             patch('cleanup_evidence.Browser.release', side_effect=release):
+            scenarios_automation.workflow_launch(ctx)
+
+        nav.assert_called_once_with(ctx, 'Automations')
+        screen.assert_called_once_with(ctx, 'northwind-workflow-schedule')
+        self.assertEqual(inst.cleanup.run(scope='scenario'), [])
+        self.assertEqual(calls, ['clean', 'release', 'delete'])
+
+    def test_visible_automation_cleanup_stays_registered_after_a_delete_failure(self):
+        inst = Mock(cleanup=Cleanup())
+        ctx = SimpleNamespace(inst=inst, browser=None)
+        deletes = []
+
+        def request(method, path, body=None, **kwargs):
+            if method == 'DELETE' and path == '/api/v1/automations/schedule-1':
+                deletes.append(path)
+                if len(deletes) == 1:
+                    raise RuntimeError('delete retry')
+                return {'success': True, 'id': 'schedule-1', 'deleted': True}
+            if method == 'GET' and path == '/api/v1/automations':
+                return {'automations': []}
+            raise AssertionError((method, path, body))
+
+        inst.request.side_effect = request
+        inst.wait.side_effect = lambda predicate, *args, **kwargs: predicate()
+        cleanup = own_visible_automation(ctx, 'schedule-1')
+
+        with self.assertRaisesRegex(RuntimeError, 'delete retry'):
+            cleanup()
+        self.assertEqual(inst.cleanup.run(scope='scenario'), [])
+        self.assertEqual(deletes, ['/api/v1/automations/schedule-1'] * 2)
 
 
 if __name__ == '__main__':
