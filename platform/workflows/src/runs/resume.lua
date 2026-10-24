@@ -64,16 +64,16 @@ function M.resume(args: any): (any?, error?)
     -- identity's component root can be a separate automation, or absent.
     -- Do this before consuming the signal so restoring the grant can retry
     -- the same decision safely.
-    local resolved, resolve_err = execution_identity.resolve(identity, {
+    local authorized, authorize_err = execution_identity.authorize(identity, {
         deferred_owner = "kickside.workflows.runs:resume",
         execution_root = identity.component_id,
     })
-    if resolve_err or not resolved then return nil, resolve_err end
-    local meta = type(resolved.meta) == "table" and resolved.meta or {}
+    if authorize_err or not authorized then return nil, authorize_err end
+    local meta = type(authorized.meta) == "table" and authorized.meta or {}
     local allowed, access_err = component.validate_principal_access(
         run.workflow_id,
         component.ACCESS.READ,
-        resolved.principal,
+        authorized.principal,
         meta.security_groups,
         meta.access_filter
     )
