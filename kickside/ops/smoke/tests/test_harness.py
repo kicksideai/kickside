@@ -156,8 +156,16 @@ class CLITests(unittest.TestCase):
             validate_args(parser().parse_args(['--published', 'latest', '--replace', 'org/module=path']))
 
     def test_repository_output_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, 'outside a git repository'):
-            validate_run_root(Path(__file__).resolve().parent)
+        # Keep this focused on the repository boundary.  A real test-file path
+        # lives under the system temporary directory in disposable checkouts,
+        # where the earlier safety boundary correctly takes precedence.
+        repository = Mock(returncode=0, stderr='', stdout='/worktree\n')
+        with patch('harness.subprocess.run', return_value=repository) as run:
+            with self.assertRaisesRegex(ValueError, 'outside a git repository'):
+                validate_run_root(Path('/safe-smoke-output'))
+        run.assert_called_once_with(
+            ['git', '-C', '/', 'rev-parse', '--show-toplevel'],
+            capture_output=True, text=True, timeout=10)
 
     def test_system_temp_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'system temporary'):

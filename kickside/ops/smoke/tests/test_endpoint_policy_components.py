@@ -50,6 +50,15 @@ def declared_module_roots():
     return sorted({path.resolve() for path in module_sources(module_repositories()).values()})
 
 
+def endpoint_free_runtime_policy_catalog():
+    fixture = Path(__file__).resolve().parents[1] / 'mocks/security_model/endpoint_free_runtime_policies.json'
+    return json.loads(fixture.read_text())
+
+
+def expected_endpoint_free_runtime_policies(sources, catalog):
+    return {policy for module in sources for policy in catalog.get(module, [])}
+
+
 def module_root(identity):
     sources = module_sources(module_repositories())
     if identity not in sources:
@@ -105,6 +114,16 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                 self.assertEqual(declared_module_roots(),[repository.resolve()])
                 self.assertEqual(module_root('example/product'), repository)
 
+    def test_endpoint_free_runtime_policy_catalog_scopes_direct_replacements_by_module_identity(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            repository = Path(directory)
+            (repository / 'wippy.yaml').write_text('organization: kickside\nmodule: box\n')
+            sources = module_sources([repository])
+        catalog = endpoint_free_runtime_policy_catalog()
+        self.assertEqual(expected_endpoint_free_runtime_policies(sources, catalog), {
+            'kickside.box.security:module_access',
+        })
+
     def test_realtime_dispatch_has_no_member_surface(self):
         registry = entries(module_root('kickside/realtime-dispatch') / 'src')
         self.assertFalse(any(entry['kind'] == 'http.endpoint' for entry in registry.values()))
@@ -150,9 +169,9 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
         self.assertEqual(len(seen), 266)
 
     def test_endpoint_free_member_policies_retain_included_runtime_grants(self):
-        modules = declared_module_roots()
+        modules = module_sources(module_repositories())
         seen = set()
-        for module in modules:
+        for module_identity, module in modules.items():
             registry = entries(module / 'src')
             for identity, entry in registry.items():
                 if (entry.get('meta') or {}).get('intent') != 'module_access':
@@ -170,14 +189,13 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                 self.assertEqual(len(runtimes), 1, identity)
                 if entry['policy']['actions'] != 'access' and entry['policy'] != runtimes[0]['policy']:
                     continue
-                with self.subTest(policy=identity):
+                with self.subTest(module=module_identity, policy=identity):
                     self.assertTrue(resources, identity)
                     self.assertEqual(entry['policy'], runtimes[0]['policy'], identity)
                     self.assertEqual(list(pattern_conditions(entry['policy'].get('conditions', []))), [], identity)
                 seen.add(identity)
-        expected = json.loads((Path(__file__).resolve().parents[1] /
-            'mocks/security_model/endpoint_free_runtime_policies.json').read_text())
-        self.assertEqual(seen, set(expected))
+        expected = expected_endpoint_free_runtime_policies(modules, endpoint_free_runtime_policy_catalog())
+        self.assertEqual(seen, expected)
 
     def test_endpoint_grants_list_exact_declared_identities(self):
         for module in ('kickside/mcp', 'kickside/jobs'):

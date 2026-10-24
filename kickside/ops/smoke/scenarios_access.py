@@ -355,6 +355,15 @@ ACCESS_PROVIDER_CREDENTIALS = {
 }
 
 
+# Keep the fixture inventory declarative: lifecycle tests must verify that every
+# declared service survived setup, rather than relying on a count that becomes
+# stale whenever a real provider fixture is added.
+ACCESS_CONNECTION_FIXTURE_NAMES = (
+    'jira', 'confluence', 'github', 'slack', 'discord', 'hubspot', 'telegram',
+    'fireflies', 'phantombuster', 'simplefin', 'google', 'mcp',
+)
+
+
 def setup_access_connection_fixtures(ctx):
     if ctx.inst.fixture_state.get('access_connection_bases'):
         ctx.state['access_connection_bases'] = ctx.inst.fixture_state['access_connection_bases']
@@ -362,7 +371,7 @@ def setup_access_connection_fixtures(ctx):
     import yaml
     from mocks import Fixtures
     from scenarios_providers import configure_provider_endpoints, ORIGIN_ROUTES
-    names = ('jira', 'confluence', 'github', 'slack', 'discord', 'hubspot', 'telegram', 'fireflies', 'phantombuster', 'simplefin', 'google', 'mcp')
+    names = ACCESS_CONNECTION_FIXTURE_NAMES
     for name in names:
         if name not in ('jira', 'confluence', 'mcp'):
             install_package(ctx, 'kickside/' + name)

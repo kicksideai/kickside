@@ -26,13 +26,14 @@ class PublishedBindings(unittest.TestCase):
             if kwargs['label'].endswith('-host-plan'):
                 requirements = []
                 for identifier, entry in entries(modules[module] / 'src').items():
-                    if entry['kind'] != 'ns.requirement' or entry.get('default') is not None:
+                    if entry['kind'] != 'ns.requirement':
                         continue
                     kind = entry.get('meta', {}).get('value_kind')
                     if kind in host_values:
+                        default = entry.get('default', host_values[kind])
                         requirements.append({'module': module, 'name': identifier.split(':')[1],
-                            'full_id': identifier, 'expected_kind': kind, 'default': None,
-                            'value': host_values[kind], 'value_source': 'registry',
+                            'full_id': identifier, 'expected_kind': kind, 'default': default,
+                            'value': default, 'value_source': 'default',
                             'missing': False, 'invalid': False})
                 return {'requirements': requirements}
             identifier = module.replace('/', '.') + '.security:user_security_scope'

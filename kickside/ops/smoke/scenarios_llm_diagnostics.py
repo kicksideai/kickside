@@ -44,9 +44,9 @@ def model_fixture(ctx, response, *, models=None, provider='kickside.models:opena
         ctx.fixtures.stop('openai-tools')
 
 
-def agent_workflow(ctx, model, *, temperature=None):
+def agent_workflow(ctx, model, *, temperature=None, title='Provider diagnostic workflow', run=True):
     ctx.inst.install('kickside/agents')
-    wid, _ = dispatch_workflow(ctx, 'Provider diagnostic workflow')
+    wid, _ = dispatch_workflow(ctx, title)
     config = {'name': 'Provider diagnostic agent', 'model': model, 'tool_calling': 'auto',
               'instructions': 'Call finish with the complete answer object.',
               'exit_schema': {'type': 'object', 'required': ['answer'],
@@ -63,6 +63,9 @@ def agent_workflow(ctx, model, *, temperature=None):
                            port_map={'error': 'failed'}, transforms={'result': '', 'error': ''})
     version = ctx.inst.request('POST', '/api/v1/workflows/' + wid + '/publish', {},
                                label='diagnostic-publish')['version']
+    ctx.state['last_diagnostic_workflow'] = {'workflow_id': wid, 'title': title, 'version': version}
+    if not run:
+        return None
     rid = ctx.inst.request('POST', '/api/v1/workflows/' + wid + '/run',
                            {'version': version, 'input': {'task': 'Return the complete answer.'}},
                            label='diagnostic-run')['run_id']
@@ -72,7 +75,11 @@ def agent_workflow(ctx, model, *, temperature=None):
         detail = ctx.inst.request('GET', base, label='diagnostic-run-status')
         return detail if detail['run']['status'] in ('completed', 'failed') else None
 
-    return ctx.inst.wait(terminal, 'Provider diagnostic workflow reaches a terminal result', seconds=90)
+    done = ctx.inst.wait(terminal, 'Provider diagnostic workflow reaches a terminal result', seconds=90)
+    # Browser guards reopen this exact durable Workflow after the provider fixture
+    # settles; retaining the local identifiers avoids a title/query approximation.
+    ctx.state['last_diagnostic_workflow']['run_id'] = rid
+    return done
 
 
 def finish_response(body, arguments, call_id):

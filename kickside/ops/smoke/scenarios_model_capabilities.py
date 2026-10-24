@@ -75,3 +75,49 @@ def picker_capabilities_browser(ctx):
 
 REGISTRY.append(Scenario('model_picker_capabilities_browser', 'regression', picker_capabilities_browser,
                          ('boot',), instance_setup=True, issues=('WIDGETS-CLASS-CAPABILITY',)))
+
+
+def discovered_generation_reasoning_browser(ctx):
+    from playwright.sync_api import expect
+    from runtime_fixtures import complete_splashes, isolated_fixture
+    from scenarios import nav
+    from scenarios_core import system
+    from scenarios_llm_diagnostics import model_fixture
+    from scenarios_model_discovery_requests import model_rows, response
+
+    with isolated_fixture(ctx) as fixture:
+        with model_fixture(fixture, response, models=model_rows(), provider='wippy.llm.openai:provider') as (_, profile):
+            discovered = fixture.inst.request('POST', '/api/v1/models/provider-profiles/' + profile + '/discover', {}, label='browser-first-party-discovery')['models']
+            card = next(row for row in discovered if row['provider_model'] == 'gpt-6-luna')
+            require({'generate', 'reasoning'}.issubset(card['capabilities']) and card['options'].get('reasoning_model_request') is True,
+                    'Browser fixture did not discover the generation/reasoning contract: ' + str(card))
+            complete_splashes(fixture, 'welcome', 'first_agent')
+            browser = fixture.browser_check()
+            browser.login()
+            system(fixture, 'Models')
+            models = browser.frame.locator('kickside-models')
+            row = models.locator('.km-mrow').filter(has_text=card['name'])
+            expect(row).to_be_visible(timeout=30000)
+            expect(row).to_contain_text('generate')
+            expect(row).to_contain_text('reasoning')
+            row.get_by_role('button', name='Edit model', exact=True).click()
+            expect(models.get_by_label('Thinking effort', exact=True)).to_be_visible(timeout=30000)
+            models.get_by_role('button', name='Cancel', exact=True).click()
+            card_text = row.inner_text()
+            nav(fixture, 'Agents')
+            agents = browser.frame.locator('kickside-agents')
+            agents.get_by_role('button', name='New agent', exact=True).first.click()
+            dialog = agents.get_by_role('dialog', name='New agent', exact=True)
+            dialog.get_by_role('tab', name='Model', exact=True).click()
+            picker = dialog.locator('wc-model-picker')
+            picker.get_by_role('combobox', name='Choose model', exact=True).click()
+            option = picker.get_by_role('option').filter(has_text=card['title'])
+            expect(option).to_be_visible(timeout=30000)
+            option.click()
+            expect(picker.get_by_role('combobox', name='Choose model', exact=True)).to_contain_text(card['title'])
+            fixture.inst.evidence.save('discovered-generation-reasoning-browser', {'card': {key: card.get(key) for key in ('name', 'title', 'capabilities', 'options', 'class')}, 'models_card': card_text, 'picker_option': option.inner_text()})
+            browser.screenshot('discovered-generation-reasoning-card-and-picker')
+
+
+REGISTRY.append(Scenario('discovered_generation_reasoning_browser', 'regression', discovered_generation_reasoning_browser,
+                         ('boot',), instance_setup=True, issues=('MODELS-REASONING-GENERATIONS', 'MODELS-GENERATION-CAPABILITIES')))

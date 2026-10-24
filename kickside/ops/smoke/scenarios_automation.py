@@ -1307,7 +1307,7 @@ def automation_row_schedule(ctx):
 
 
 REGISTRY += [Scenario('automation_row_schedule', 'full', automation_row_schedule,
-    ('automation_evidence',), features=features('automation', 'http',
+    ('automation_evidence',), issues=('AUTOMATION-SCHEDULED-DRIVE-STATUS',), features=features('automation', 'http',
         'POST /api/v1/automations', 'PUT /api/v1/automations/{id}',
         'GET /api/v1/automations/{id}/status', 'GET /api/v1/automations', 'DELETE /api/v1/automations/{id}'))]
 

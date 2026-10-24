@@ -92,8 +92,11 @@ class RegressionSelectionTests(unittest.TestCase):
         catalog = json.loads((suite / 'coverage/issues.json').read_text())
         guard = next(row for row in load_registry(suite) if row.name == 'regression_EE2_2572_direct_result_chat')
         self.assertIn('EE2-2572', catalog['issues'])
-        self.assertEqual(guard.issues, ('EE2-2572', 'SMOKE-CHAT-RELAY-WELCOME-HANDSHAKE',
-                                      'UPSTREAM-SESSION-PREDISPATCH-INVALIDATE',
-                                      'SMOKE-MODEL-STREAM-RESPONSE', 'SMOKE-NATIVE-TOOL-TRANSCRIPT',
-                                      'SMOKE-MODEL-TOKEN-ACCOUNTING'))
+        # This regression must retain its direct chat-result contract.  Extra
+        # related guards may be added as the scenario's responsibility grows.
+        required = {'EE2-2572', 'SMOKE-CHAT-RELAY-WELCOME-HANDSHAKE',
+                    'UPSTREAM-SESSION-PREDISPATCH-INVALIDATE',
+                    'SMOKE-MODEL-STREAM-RESPONSE', 'SMOKE-NATIVE-TOOL-TRANSCRIPT',
+                    'SMOKE-MODEL-TOKEN-ACCOUNTING'}
+        self.assertTrue(required <= set(guard.issues))
         self.assertFalse(guard.model)

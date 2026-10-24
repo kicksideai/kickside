@@ -4,7 +4,8 @@ import uuid
 
 from harness import Scenario, require
 from live_work_gate import work_gate
-from runtime_fixtures import isolated_fixture
+from runtime_fixtures import complete_splashes, isolated_fixture
+from scenarios import nav
 from scenarios_hot_update_work import install_work_fixture, active_automation, database_rows
 
 
@@ -43,6 +44,30 @@ def send(inst, hook, marker):
                  auth=hook['secret'], expect=(202,), headers={'Idempotency-Key': marker}, label='next-source-event')
 
 
+def delivered_inbox_is_visible(fixture, title, items, label):
+    """Verify the repaired delivery through the same Inbox surface users see."""
+    from playwright.sync_api import expect
+    expected_ids = {row['id'] for row in items}
+    require(len(expected_ids) == len(items) == 2,
+            'Browser delivery proof requires exactly two distinct API Inbox destinations: ' + str(items))
+    complete_splashes(fixture, 'welcome', 'first_agent')
+    browser = fixture.browser_check()
+    browser.login()
+    nav(fixture, 'Inbox')
+    # The selected item's detail header repeats its title.  Count only manager
+    # list rows so this remains a strict assertion about two rendered Inbox
+    # destinations, rather than accidentally counting that detail presentation.
+    rows = browser.frame.locator('.kx-item').filter(has=browser.frame.get_by_text(title, exact=True))
+    expect(rows).to_have_count(len(expected_ids), timeout=30000)
+    detail = browser.frame.locator('.kx-detail-title').filter(has_text=title)
+    expect(detail).to_have_count(1, timeout=30000)
+    fixture.inst.evidence.save(label + '-visible-inbox', {
+        'title': title, 'item_ids': sorted(expected_ids), 'row_count': rows.count(),
+        'detail_header_count': detail.count(), 'url': browser.page.url,
+    })
+    browser.screenshot(label + '-visible-inbox', full_page=False)
+
+
 def missing_slot(ctx):
     with delivery_fixture(ctx) as (fixture, gate, hook, aid, title):
         inst = fixture.inst
@@ -67,6 +92,7 @@ def missing_slot(ctx):
                     and after[0]['event_seq'] > original['event_seq'], 'Dispatcher does not provision and advance its slot')
             require(first_item in {row['id'] for row in items} and gate.snapshot()['automation']['effects'] == 2,
                     'Slot provisioning replays an already delivered event')
+            delivered_inbox_is_visible(fixture, title, items, 'missing-slot-recovery')
         finally:
             inst.evidence.save('missing-slot-after-dispatch', {
                 'drives': drives(inst, aid), 'items': inbox(inst, title), 'effects': gate.snapshot(),
@@ -95,6 +121,7 @@ def settled_mapping(ctx):
                     'Receipt retention removes the recent delivery mapping')
             require(original_item in {row['id'] for row in inbox(inst, title)},
                     'Receipt retirement removes its remote destination')
+            delivered_inbox_is_visible(fixture, title, inbox(inst, title), 'settled-receipt-retention')
         finally:
             inst.evidence.save('settled-event-mapping-retention', {
                 'before': before, 'remaining': database_rows(inst, query),

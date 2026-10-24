@@ -92,6 +92,24 @@ def core_ready(ctx: Context):
     require(ctx.inst.password.encode() not in public_env, 'Public environment exposes administrator password')
 
 
+def published_facade_shell(ctx: Context):
+    """The real login route must hand an authenticated browser to the published facade shell."""
+    from playwright.sync_api import expect
+    browser = ctx.browser_check(viewport={'width': 1600, 'height': 1000})
+    with browser.page.expect_response(lambda response: response.request.method == 'GET'
+                                      and response.url.endswith('/api/public/facade/config')) as config:
+        browser.login()
+    require(config.value.status == 200, 'Published facade configuration is unavailable: HTTP ' + str(config.value.status))
+    browser.frame.locator('.sidebar').wait_for(timeout=30000)
+    expect(browser.frame.locator('.sidebar')).to_be_visible()
+    browser.screenshot('published-facade-shell', full_page=False, mask_color='#e5e7eb')
+    ctx.inst.evidence.save('published-facade-shell', {
+        'status': config.value.status,
+        'url': config.value.url,
+        'title': browser.page.title(),
+    })
+
+
 def core_platform(ctx):
     platform_onboarding(ctx)
     ctx.browser.screenshot('northwind-first-agent-welcome', full_page=False, mask_color='#e5e7eb')
@@ -840,7 +858,11 @@ def core_replay_setup(ctx):
 
 BASE = ('core_ready',)
 REGISTRY = [
-    Scenario('core_ready', 'full', core_ready, features=http('kickside', 'GET /login', 'GET /api/public/health', 'GET /api/public/env/public.js', 'GET /llms.txt', 'GET /robots.txt')),
+    Scenario('core_ready', 'full', core_ready, issues=('APP-UI-LOGIN-ROUTE-GUARD',),
+             features=http('kickside', 'GET /login', 'GET /api/public/health', 'GET /api/public/env/public.js', 'GET /llms.txt', 'GET /robots.txt')),
+    Scenario('published_facade_shell', 'regression', published_facade_shell, ('core_ready',),
+             issues=('APP-UI-PUBLISHED-FACADE-GUARD',),
+             features=http('kickside', 'GET /api/public/facade/config')),
     Scenario('core_platform', 'full', core_platform, ('core_ready',), True, issues=('ONBOARDING-DEPENDENCY-INSTALL-CONFLICT', 'COMPONENTS-UI-STATIC-METADATA'),
              features=navigation('ui', 'kickside.ui:splash.welcome', 'kickside.ui:splash.welcome.step.workspace', 'kickside.ui:splash.welcome.step.logo', 'kickside.ui:splash.welcome.step.models', 'kickside.ui:splash.welcome.step.mcp', 'kickside.ui:splash.welcome.step.done')
              + navigation('hub', 'kickside.hub:splash.welcome.step.modules') + http('users', 'POST /api/public/user/token') + http('ui', 'POST /api/v1/ui/splash/{id}/seen', 'GET /api/v1/nav/list'), instance_setup=True),

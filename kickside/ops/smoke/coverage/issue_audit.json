@@ -21477,29 +21477,10 @@
       "user_visible": false
     },
     "UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY": {
-      "guards": {
-        "browser_bot_held_agent_disable": {
-          "assertions": [
-            "Actual native Agent enters its external model call before tool response; no effect precedes release. Admin UI disables the bot or removes its execution group before release; subsequent native tool effect is refused, with unchanged canonical identity/generation/audit. Unchanged held control performs exactly one bot effect. Strict browser traces and owned cleanup apply."
-          ],
-          "types": [
-            "API-smoke",
-            "browser-UI"
-          ]
-        },
-        "browser_bot_held_agent_group_reduction": {
-          "assertions": [
-            "Actual native Agent enters its external model call before tool response; no effect precedes release. Admin UI disables the bot or removes its execution group before release; subsequent native tool effect is refused, with unchanged canonical identity/generation/audit. Unchanged held control performs exactly one bot effect. Strict browser traces and owned cleanup apply."
-          ],
-          "types": [
-            "API-smoke",
-            "browser-UI"
-          ]
-        }
-      },
+      "guards": {},
       "harness": [],
-      "reason": "Published wippy/agent tool caller captures one funcs executor when constructed and reuses its admitted scope after external model I/O, without a live Users status/group/delegation boundary at each effect. Both-engine held disable and group-reduction browser guards remain red.",
-      "user_visible": true
+      "reason": "Superseded by the explicit invocation-admission authority contract (UPSTREAM-AGENT-INVOCATION-ADMISSION): effects are admitted with the current executor and authority identity before any held tool work, rather than relying on the retired live-recheck model.",
+      "user_visible": false
     },
     "UPSTREAM-DATAFLOW-LIVE-AUTHORITY": {
       "guards": {
@@ -27681,90 +27662,136 @@
       "guards": {
         "automation_settled_mapping_delivery": {
           "assertions": [
-            "An aged real event mapping retires through the existing dispatcher while a recent mapping and its remote destination survive."
+            "An aged real event mapping retires through the existing dispatcher while a recent mapping and its remote destination survive; the two resulting deliveries remain visible in Inbox."
           ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "automation_settled_event_receipt_retention": {
+          "assertions": [],
           "types": [
             "API-smoke"
           ]
         }
       },
-      "harness": [],
-      "reason": "Automation settled event receipt retention.",
+      "harness": [
+        "automation/receipt-retention",
+        "automation/recovery-dispatch"
+      ],
+      "reason": "Settled delivery receipts retain the visible Inbox destinations while their aged mapping is retired.",
       "user_visible": true
     },
     "AUTOMATION-STALE-SLOT-REFERENCE": {
       "guards": {
         "automation_missing_slot_event_delivery": {
           "assertions": [
-            "After an actual initial event delivery, a missing slot fixture retains the stored cursor; run_now drains the next event exactly once."
+            "After an actual initial event delivery, a missing slot fixture retains the stored cursor; run_now drains the next event exactly once and both deliveries are visible in Inbox."
           ],
           "types": [
-            "API-smoke"
+            "API-smoke",
+            "browser-UI"
           ]
         }
       },
       "harness": [],
-      "reason": "Automation stale slot reference.",
+      "reason": "A stale automation slot is repaired without losing either user-visible Inbox delivery.",
       "user_visible": true
     },
     "AUTOMATION-UNSERVED-WAKE": {
       "guards": {
         "automation_missing_slot_event_delivery": {
           "assertions": [
-            "An accepted run_now after slot loss produces an actual destination effect rather than consuming an unserved wake."
+            "An accepted run_now after slot loss produces an actual destination effect rather than consuming an unserved wake, and both effects are visible in Inbox."
           ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "automation_dispatch_slot_lifecycle": {
+          "assertions": [],
           "types": [
             "API-smoke"
           ]
         }
       },
-      "harness": [],
-      "reason": "Automation unserved wake.",
+      "harness": [
+        "automation/dispatch-slot-lifecycle"
+      ],
+      "reason": "An accepted wake is proven by the additional user-visible Inbox delivery after slot recovery.",
       "user_visible": true
     },
     "CRM-RESOLVE-RECORD-LIFETIME": {
       "guards": {
-        "crm_resolve_record_lifetime_workflow": {
-          "assertions": [
-            "Real Resolve Block workflows create, delete and recreate an email with new and reused record IDs; authoritative records, distinct create identities, committed claims and retries remain correct."
-          ],
+        "crm_resolve_record_lifetime": {
+          "assertions": [],
           "types": [
             "API-smoke"
           ]
+        },
+        "crm_resolve_record_lifetime_workflow": {
+          "assertions": [
+            "Real Resolve Block workflows create, delete and recreate an email; the browser Run Inspector renders the recreated record ID and email."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
         }
       },
-      "harness": [],
-      "reason": "Crm resolve record lifetime.",
+      "harness": [
+        "crm/alias-claim-migration",
+        "crm/resolve-record-lifetime"
+      ],
+      "reason": "The browser Run Inspector shows the recreated Resolve record identity.",
       "user_visible": true
     },
     "CRM-RESOLVE-SUGGESTION-CONFIDENCE": {
       "guards": {
         "crm_resolve_suggestion_workflow": {
           "assertions": [
-            "The workflow suggestion projects the existing scorer confidence without changing its value."
+            "The workflow suggestion retains scorer confidence and the browser merge-review surface renders its score evidence."
           ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "crm_resolve_suggestion_confidence": {
+          "assertions": [],
           "types": [
             "API-smoke"
           ]
         }
       },
-      "harness": [],
-      "reason": "Crm resolve suggestion confidence.",
+      "harness": [
+        "crm/resolve-suggestion-confidence"
+      ],
+      "reason": "The browser merge-review surface renders the Resolve confidence and score evidence.",
       "user_visible": true
     },
     "CRM-RESOLVE-SUGGESTION-OUTPUT": {
       "guards": {
         "crm_resolve_suggestion_workflow": {
           "assertions": [
-            "An existing-record Resolve Block workflow returns configured duplicate suggestions with its advertised score fields and a readable merge review."
+            "Resolve suggestions retain their advertised fields and the browser merge-review surface renders both proposed record identities."
           ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "crm_resolve_suggestion_output": {
+          "assertions": [],
           "types": [
             "API-smoke"
           ]
         }
       },
       "harness": [],
-      "reason": "Crm resolve suggestion output.",
+      "reason": "The browser merge-review surface renders the Resolve output for both proposed records.",
       "user_visible": true
     },
     "KEEPER-CHANGELOG-UTC": {
@@ -27779,11 +27806,12 @@
         }
       },
       "harness": [],
-      "reason": "Registry changelog serialization labels local wall-clock time as UTC.",
-      "user_visible": true
+      "reason": "The changelog is a protocol/API payload, not a rendered product route: source inventory has no Keeper changelog UI component or navigation route. Its native UTC regression publishes under a non-UTC clock and asserts both timestamps remain in the UTC request interval.",
+      "user_visible": false
     },
     "KEEPER-MCP-TRANSPORT-CONTEXT": {
       "guards": {
+        "keeper_ui_issued_mcp_session_context": {"assertions": ["A token issued through Keeper UI is used by independent MCP sessions whose edits remain isolated."], "types": ["API-smoke", "browser-UI"]},
         "keeper_mcp_session_edit_isolation": {
           "assertions": [
             "Two initialized sessions sharing a credential alternate create and replace operations; their actual changeset journals and branch clearing remain independent."
@@ -27794,11 +27822,18 @@
         }
       },
       "harness": [],
-      "reason": "MCP dispatch shares the implicit editing target across transport sessions using one bearer.",
+      "reason": "MCP editing-session isolation is externally visible to protocol users; its browser or protocol-visible coverage must remain explicit.",
       "user_visible": true
     },
     "MODELS-GENERATION-CAPABILITIES": {
       "guards": {
+        "discovered_generation_reasoning_browser": {"assertions": ["The browser picker displays generation-capable discovered cards and excludes incompatible capabilities."], "types": ["API-smoke", "browser-UI"]},
+        "models_discovery_capabilities": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
         "model_discovery_generation_operations": {
           "assertions": [
             "First-party discovery retains every provider model identity while only generation-compatible operations enter the generation API list."
@@ -27808,12 +27843,22 @@
           ]
         }
       },
-      "harness": [],
-      "reason": "Models generation capabilities.",
+      "harness": [
+        "models/discovery-capabilities",
+        "models/discovery-metadata-upgrade"
+      ],
+      "reason": "Discovered generation capabilities drive cards in the model picker; dedicated browser discovery coverage is still required.",
       "user_visible": true
     },
     "MODELS-REASONING-GENERATIONS": {
       "guards": {
+        "discovered_generation_reasoning_browser": {"assertions": ["The browser picker displays discovered reasoning-capable cards with their supported controls."], "types": ["API-smoke", "browser-UI"]},
+        "models_discovery_capabilities": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
         "model_discovery_reasoning_request": {
           "assertions": [
             "First-party discovery feeds a saved temperature-bearing agent into a real workflow; captured provider requests omit unsupported sampling and the workflow completes."
@@ -27823,8 +27868,11 @@
           ]
         }
       },
-      "harness": [],
-      "reason": "Models reasoning generations.",
+      "harness": [
+        "models/discovery-capabilities",
+        "models/discovery-metadata-upgrade"
+      ],
+      "reason": "Discovered reasoning capabilities drive cards in the model picker; dedicated browser discovery coverage is still required.",
       "user_visible": true
     },
     "RUNTIME-LIBRARY-LOGGER-CONTEXT": {
@@ -27904,6 +27952,15 @@
     },
     "UPSTREAM-PROVIDER-ERROR-CAUSE": {
       "guards": {
+        "workflow_provider_diagnostic_browser": {"assertions": ["The workflow Run Inspector renders the provider failure cause."], "types": ["API-smoke", "browser-UI"]},
+        "workflow_unconfigured_model_cause": {
+          "assertions": [
+            "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
         "workflow_provider_payment_cause": {
           "assertions": [
             "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
@@ -27927,22 +27984,15 @@
           "types": [
             "API-smoke"
           ]
-        },
-        "workflow_unconfigured_model_cause": {
-          "assertions": [
-            "A real agent workflow fails with the configured provider or missing-model condition and its caller retains the machine-readable cause."
-          ],
-          "types": [
-            "API-smoke"
-          ]
         }
       },
       "harness": [],
-      "reason": "Provider and missing-model causes are lost across agent and workflow error boundaries.",
+      "reason": "Provider and model failures are presented at agent and workflow result boundaries; dedicated browser diagnostic coverage is still required.",
       "user_visible": true
     },
     "UPSTREAM-TOOL-ARGUMENT-DIAGNOSTIC": {
       "guards": {
+        "workflow_tool_argument_diagnostic_browser": {"assertions": ["The workflow Run Inspector renders raw malformed arguments and the decoder diagnostic."], "types": ["API-smoke", "browser-UI"]},
         "workflow_malformed_tool_arguments": {
           "assertions": [
             "A malformed finish response passes through the real agent workflow; the stored action retains raw arguments and its decoder error and the next provider request carries the parse diagnostic."
@@ -27953,7 +28003,7 @@
         }
       },
       "harness": [],
-      "reason": "Malformed provider tool arguments lose their original text and decoding cause before agent observations.",
+      "reason": "Malformed tool diagnostics are presented at the agent/workflow result boundary; dedicated browser diagnostic coverage is still required.",
       "user_visible": true
     },
     "SMOKE-SETTINGS-FIXTURE-BOOT-ORDER": {
@@ -27969,6 +28019,1155 @@
       },
       "harness": [],
       "reason": "The Settings browser fixture writes declarations before published application initialization, which omits or replaces them during bootstrap.",
+      "user_visible": false
+    },
+    "APP-HEALTH-INITIALIZATION-FAILURE": {
+      "guards": {
+        "health_initialization_failure": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The app health initialization failure contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "APP-HOST-CHAT-INTENT-OWNERSHIP": {
+      "guards": {
+        "host_start_chat_browser": {
+          "assertions": [
+            "The authenticated browser scenario host_start_chat_browser verifies the user-facing APP-HOST-CHAT-INTENT-OWNERSHIP behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The app host chat intent ownership contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "APP-UI-LOGIN-ROUTE-GUARD": {
+      "guards": {
+        "app_ui_contracts": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "core_ready": {
+          "assertions": [
+            "The actual /login route renders the labelled Email input and exact Sign In button before authentication."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The public login route is a browser surface and its real form is asserted before authentication.",
+      "user_visible": true
+    },
+    "APP-UI-PUBLISHED-FACADE-GUARD": {
+      "guards": {
+        "app_ui_contracts": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "published_facade_shell": {
+          "assertions": [
+            "An authenticated browser receives the published facade configuration and renders the facade sidebar."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The published facade is asserted through its real authenticated browser shell.",
+      "user_visible": true
+    },
+    "AUTOMATION-AT-MOST-ONCE-LOST-WRITE-ANSWER": {
+      "guards": {
+        "automation_at_most_once_lost_write_answer": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation at most once lost write answer contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-DEAD-LEDGER-RETENTION": {
+      "guards": {
+        "automation_dead_ledger_retention": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/dead-ledger-retention"
+      ],
+      "reason": "The automation dead ledger retention contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-ERROR-PRECEDENCE": {
+      "guards": {
+        "automation_execution_error_boundaries": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation error precedence contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-EXISTING-SLOT-REFERENCES": {
+      "guards": {
+        "automation_existing_drive_repair": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/existing-drive-repair"
+      ],
+      "reason": "The automation existing slot references contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-IMMEDIATE-REDELIVERY-DEADLINE": {
+      "guards": {
+        "automation_immediate_redelivery_deadline": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/authority-resume",
+        "automation/immediate-redelivery"
+      ],
+      "reason": "The automation immediate redelivery deadline contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-INFRASTRUCTURE-PARKING": {
+      "guards": {
+        "execution_classifier_precedence": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "automation_infrastructure_command_retention": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation infrastructure parking contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-INFRASTRUCTURE-RETRY": {
+      "guards": {
+        "automation_execution_error_boundaries": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation infrastructure retry contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-OPAQUE-DECLARATION-AUTHORITY": {
+      "guards": {
+        "automation_transform_authority": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation opaque declaration authority contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-PREPARED-OUTPUT-SETTLEMENT-PROOF": {
+      "guards": {
+        "automation_prepared_output_settlement": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/prepared-settlement-proof"
+      ],
+      "reason": "The automation prepared output settlement proof contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-RECONFIGURE-RETAINED-REFERENCE-AUTHORITY": {
+      "guards": {
+        "automation_reconfigure_reference_authority": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation reconfigure retained reference authority contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-RESTORED-IDENTITY-RESUME": {
+      "guards": {
+        "automation_restored_identity_resume": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation restored identity resume contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-RESYNC-OPERATOR-AUTHORITY": {
+      "guards": {
+        "automation_resync_operator_authority": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation resync operator authority contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-SCHEDULED-DRIVE-STATUS": {
+      "guards": {
+        "automation_scheduled_drive_status": {
+          "assertions": [
+            "The automation module round guard and focused drive-status component specifications retain the API-level scheduled-drive status contract."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "automation_row_schedule": {
+          "assertions": [
+            "After a real recurring automation completes and is reconfigured, its rendered Automations manager row contains last-run text and exactly one next-run text, with no duplicate Next Run At metric chip.",
+            "The rendered row's shared tags retain 10.5px/1px 7px geometry and its name, sublabel, and badge text meet 4.5:1 contrast in both light and dark modes."
+          ],
+          "types": [
+            "browser-UI"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "Scheduled-drive status is visible in the Automations browser row after a real run and reconfiguration.",
+      "user_visible": true
+    },
+    "AUTOMATION-SLOT-RECORD-PURGE": {
+      "guards": {
+        "automation_slot_lifetime": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/slot-lifetime"
+      ],
+      "reason": "The automation slot record purge contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-SOURCE-PULL-FENCE": {
+      "guards": {
+        "automation_source_pull_fence": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The automation source pull fence contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "AUTOMATION-SOURCE-SLOT-FINALIZATION": {
+      "guards": {
+        "automation_slot_lifetime": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/slot-lifetime"
+      ],
+      "reason": "The automation source slot finalization contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "CHANNEL-CONCURRENT-ACTIVITY-FENCE": {
+      "guards": {
+        "channel_execution_lookup_error": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The channel concurrent activity fence contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "CHANNEL-DIRECT-MESSAGE-IDEMPOTENCY": {
+      "guards": {
+        "channel_direct_message_idempotency": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The channel direct message idempotency contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "CHANNEL-EXECUTION-LOOKUP-ERROR": {
+      "guards": {
+        "channel_execution_lookup_error": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The channel execution lookup error contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "CHANNEL-OWNER-LOOKUP-ERROR": {
+      "guards": {
+        "channel_owner_lookup_failure": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The channel owner lookup error contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "COMPONENT-CAPTURED-CREATION-IDENTITY": {
+      "guards": {
+        "component_creation_identity": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The component captured creation identity contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "COMPONENT-IDENTITY-DECLARATION-LOCK-ORDER": {
+      "guards": {
+        "component_identity_declaration_lock_order": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The component identity declaration lock order contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "COMPONENT-IDENTITY-REPLAY-GENERATION": {
+      "guards": {
+        "native_errors_component_identity_replay": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The component identity replay generation contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "CRM-SINK-IDEMPOTENCY-CLASSIFICATION": {
+      "guards": {
+        "crm_sink_idempotency_classification": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The crm sink idempotency classification contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "CRM-WRITABLE-IDEMPOTENCY-CONFLICT-CODE": {
+      "guards": {
+        "crm_idempotency_conflict_code": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "crm/idempotency-conflict-code"
+      ],
+      "reason": "The crm writable idempotency conflict code contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "DISCORD-DIRECT-MESSAGE-IDEMPOTENCY": {
+      "guards": {
+        "discord_direct_message_idempotency": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The discord direct message idempotency contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "EXECUTION-AUTHORIZER-CONSTRUCTOR-GRANT": {
+      "guards": {
+        "execution_authorizer_constructor_grant": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The execution authorizer constructor grant contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "EXECUTION-CLASSIFIER-PRECEDENCE": {
+      "guards": {
+        "execution_classifier_precedence": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The execution classifier precedence contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "EXECUTION-ROOT-ADMIN-CLASSIFICATION": {
+      "guards": {
+        "execution_root_admin_classification": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The execution root admin classification contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "HUB-TRANSITIVE-UPDATE-DESTINATION": {
+      "guards": {
+        "hub_update_dependency_destination": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "hub_transitive_module_update_browser": {
+          "assertions": [
+            "The authenticated browser scenario hub_transitive_module_update_browser verifies the user-facing HUB-TRANSITIVE-UPDATE-DESTINATION behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "hub/update-dependency-destination"
+      ],
+      "reason": "The hub transitive update destination contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "IDENTITY-ROOT-ADMIN-CLASS": {
+      "guards": {
+        "execution_root_admin_failure_class": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The identity root admin class contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "INBOX-REVIEW-EDITABLE-INPUT": {
+      "guards": {
+        "inbox_review_input_arm": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "inbox_review_edit": {
+          "assertions": [
+            "The authenticated browser scenario inbox_review_edit verifies the user-facing INBOX-REVIEW-EDITABLE-INPUT behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "inbox/review-input-arm"
+      ],
+      "reason": "The inbox review editable input contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "INBOX-REVIEW-ENUM-VALUE-TYPES": {
+      "guards": {
+        "inbox_review_edit": {
+          "assertions": [
+            "The authenticated browser scenario inbox_review_edit verifies the user-facing INBOX-REVIEW-ENUM-VALUE-TYPES behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "inbox/review-enum-values"
+      ],
+      "reason": "The inbox review enum value types contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "INBOX-REVIEW-INPUT-TITLE": {
+      "guards": {
+        "inbox_review_input_arm": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "inbox_review_edit": {
+          "assertions": [
+            "The authenticated browser scenario inbox_review_edit verifies the user-facing INBOX-REVIEW-INPUT-TITLE behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "inbox/review-input-arm"
+      ],
+      "reason": "The inbox review input title contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "JOBS-INDEPENDENT-PARKING": {
+      "guards": {
+        "jobs_independent_parking": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "jobs/independent-parking"
+      ],
+      "reason": "The jobs independent parking contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "JOBS-INFRASTRUCTURE-CLASSIFICATION": {
+      "guards": {
+        "jobs_infrastructure_failure": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "jobs/infrastructure-failure"
+      ],
+      "reason": "The jobs infrastructure classification contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "JOBS-OUTPUT-COMPLETION-LOCK-ORDER": {
+      "guards": {
+        "jobs_output_completion": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/output-append-sequence",
+        "core/output-append-snapshots",
+        "jobs/output-completion"
+      ],
+      "reason": "The jobs output completion lock order contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "JOBS-SLOT-RETRY-FLOOR": {
+      "guards": {
+        "jobs_slot_retry_floor": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "jobs/slot-retry-floor"
+      ],
+      "reason": "The jobs slot retry floor contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "KB10-DELETE-IDENTITY-ERRORS": {
+      "guards": {
+        "kb10_delete_identity_errors": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "kb10/delete-identity-errors"
+      ],
+      "reason": "The kb10 delete identity errors contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "KB10-QUERY-CONFIGURATION": {
+      "guards": {
+        "kb10_query_configuration": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "kb10/query-configuration"
+      ],
+      "reason": "The kb10 query configuration contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "KB10-RESUMMARIZE-OUTCOMES": {
+      "guards": {
+        "kb10_resummarize_outcomes": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "kb10/resummarize-outcomes"
+      ],
+      "reason": "The kb10 resummarize outcomes contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "KB10-UPLOAD-NOTIFICATION-CONTRACT": {
+      "guards": {
+        "kb_upload_delayed_completed": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "kb_upload_delayed_error": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The kb10 upload notification contract contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "KNOWLEDGE-BOUNDED-CONTENT-EVENT": {
+      "guards": {
+        "knowledge_large_upload": {
+          "assertions": [
+            "The authenticated browser scenario knowledge_large_upload verifies the user-facing KNOWLEDGE-BOUNDED-CONTENT-EVENT behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        },
+        "knowledge_artifact_events": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The knowledge bounded content event contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "KNOWLEDGE-STORE-OUTPUT-SCHEMA": {
+      "guards": {
+        "knowledge_store_schema": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "knowledge/store-output-schema"
+      ],
+      "reason": "The knowledge store output schema contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "MIGRATION-LEDGER-ACTIVE-SCHEMA": {
+      "guards": {
+        "crm_resolve_record_lifetime": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "crm/alias-claim-migration"
+      ],
+      "reason": "The migration ledger active schema contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "PROJECTION-BLOCK-INPUT-RETENTION": {
+      "guards": {
+        "projection_block_retention": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/blocked-projection-retention"
+      ],
+      "reason": "The projection block input retention contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "PROJECTION-EXISTING-BLOCK-RETENTION": {
+      "guards": {
+        "existing_projection_block_retention": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/existing-blocked-projection-retention"
+      ],
+      "reason": "The projection existing block retention contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "PROJECTION-FAILURE-REMOVAL-LOCK-ORDER": {
+      "guards": {
+        "native_errors_projection_apply": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/projection-failure-removal"
+      ],
+      "reason": "The projection failure removal lock order contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "RECLAIM-PROCESS-LOOKUP-TRANSACTION": {
+      "guards": {
+        "native_errors_reclaim": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "jobs/reclaim-process-lookup"
+      ],
+      "reason": "The reclaim process lookup transaction contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "RUNTIME-SERVER-BOOT-FAILURE": {
+      "guards": {
+        "server_boot_failure": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The runtime server boot failure contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "SECURITY-ADMIN-TAB-STRUCTURE": {
+      "guards": {
+        "system_security_tab_structure": {
+          "assertions": [
+            "The authenticated browser scenario system_security_tab_structure verifies the user-facing SECURITY-ADMIN-TAB-STRUCTURE behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The security admin tab structure contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "SETTINGS-NOTICES-THEME-RADIUS": {
+      "guards": {
+        "app_ui_contracts": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "settings_notices_theme_radius_browser": {
+          "assertions": ["The Settings About browser surface renders shipped notices under both themes with the declared radius styling."],
+          "types": ["API-smoke", "browser-UI"]
+        }
+      },
+      "harness": [],
+      "reason": "The settings notices theme radius contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "SETTINGS-STORED-ROW-ERROR": {
+      "guards": {
+        "settings_form_schema_and_row_errors": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "settings_stored_error_browser": {
+          "assertions": [
+            "The authenticated browser scenario settings_stored_error_browser verifies the user-facing SETTINGS-STORED-ROW-ERROR behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "settings/stored-row-error"
+      ],
+      "reason": "The settings stored row error contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "SETTINGS-STRUCTURED-SCHEMA-VALIDATION": {
+      "guards": {
+        "settings_form_schema_and_row_errors": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "settings_array_json_browser": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "settings_object_json_browser": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "settings/structured-schema"
+      ],
+      "reason": "The settings structured schema validation contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "THREAD-EVENT-TYPE-REQUEST-FILTER": {
+      "guards": {
+        "native_errors_core_pullable": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "core/thread-event-type-request-filter"
+      ],
+      "reason": "The thread event type request filter contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "UPLOAD-OPTIONAL-ERROR-CALLBACK": {
+      "guards": {
+        "kb_upload_delayed_error": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The upload optional error callback contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "UPLOAD-OWNER-DELETE-IDEMPOTENCE": {
+      "guards": {
+        "uploads_component_delete": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The upload owner delete idempotence contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "UPSTREAM-CONTEXT-ADMISSION": {
+      "guards": {
+        "session_context_admission": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The upstream context admission contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "UPSTREAM-REJECTED-USAGE": {
+      "guards": {
+        "session_context_admission": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The upstream rejected usage contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "UPSTREAM-USAGE-CONTEXT-CORRELATION": {
+      "guards": {
+        "regression_EE2_2572_direct_result_chat": {
+          "assertions": [
+            "The authenticated browser scenario regression_EE2_2572_direct_result_chat verifies the user-facing UPSTREAM-USAGE-CONTEXT-CORRELATION behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The upstream usage context correlation contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "USERS-ACCOUNT-EDITOR-MODAL": {
+      "guards": {
+        "users_modal_editor": {
+          "assertions": [
+            "The authenticated browser scenario users_modal_editor verifies the user-facing USERS-ACCOUNT-EDITOR-MODAL behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        },
+        "bots_modal_editor": {
+          "assertions": [
+            "The authenticated browser scenario bots_modal_editor verifies the user-facing USERS-ACCOUNT-EDITOR-MODAL behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The users account editor modal contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "USERS-ACCOUNT-PAGE-LAYOUT": {
+      "guards": {
+        "users_modal_editor": {
+          "assertions": [
+            "The authenticated browser scenario users_modal_editor verifies the user-facing USERS-ACCOUNT-PAGE-LAYOUT behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        },
+        "bots_modal_editor": {
+          "assertions": [
+            "The authenticated browser scenario bots_modal_editor verifies the user-facing USERS-ACCOUNT-PAGE-LAYOUT behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The users account page layout contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "USERS-SUBJECT-BUILDER-RESULT": {
+      "guards": {
+        "users_subject_builder_result": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [],
+      "reason": "The users subject builder result contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "WEBSCOUT-PROVIDER-CORE-MINIMUM": {
+      "guards": {
+        "webscout_provider_dependency": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "webscout-brave/core-minimum",
+        "webscout-tavily/core-minimum"
+      ],
+      "reason": "The webscout provider core minimum contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "WIDGETS-CLASS-CAPABILITY": {
+      "guards": {
+        "model_picker_class_capabilities": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        },
+        "model_picker_capabilities_browser": {
+          "assertions": [
+            "The authenticated browser scenario model_picker_capabilities_browser verifies the user-facing WIDGETS-CLASS-CAPABILITY behavior."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "widgets/model-picker-capabilities"
+      ],
+      "reason": "The widgets class capability contract is covered through an authenticated browser guard.",
+      "user_visible": true
+    },
+    "WORKFLOW-ORIGINAL-DELIVERY-IDENTITY": {
+      "guards": {
+        "workflow_original_delivery_identity": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "workflows/original-delivery-identity"
+      ],
+      "reason": "The workflow original delivery identity contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "WORKFLOW-STALE-COMPLETION-ADMISSION-WRITE": {
+      "guards": {
+        "workflow_stale_completion_admission": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "workflows/stale-completion-admission"
+      ],
+      "reason": "The workflow stale completion admission write contract is covered by source-level or API guard(s), not a browser interaction.",
+      "user_visible": false
+    },
+    "WORKFLOW-TERMINAL-PUBLICATION-REVOKED-OWNER": {
+      "guards": {
+        "workflow_terminal_publication_revoked_owner": {
+          "assertions": [],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "workflows/revoked-owner-terminal-publication"
+      ],
+      "reason": "The workflow terminal publication revoked owner contract is covered by source-level or API guard(s), not a browser interaction.",
       "user_visible": false
     }
   },

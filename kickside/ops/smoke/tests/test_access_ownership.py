@@ -433,7 +433,11 @@ class OwnershipTests(unittest.TestCase):
                 configure.side_effect = None
                 access.setup_access_connection_fixtures(ctx)
             ctx.fixtures.start.assert_not_called()
-            self.assertEqual(len(ctx.inst.fixture_state['access_connection_bases']), 11)
+            # The setup contract is the declared inventory, not its historical
+            # cardinality.  A new provider fixture must be retained and later
+            # stopped just like every existing one.
+            self.assertEqual(set(ctx.inst.fixture_state['access_connection_bases']),
+                             set(access.ACCESS_CONNECTION_FIXTURE_NAMES))
             self.assertEqual(ctx.inst.cleanup.run(scope='scenario'), [])
             services.stop.assert_called_once_with()
             self.assertEqual(ctx.inst.cleanup.run(), [])

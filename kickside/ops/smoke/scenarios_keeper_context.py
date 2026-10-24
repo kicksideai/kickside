@@ -1,5 +1,6 @@
 """Keeper edits retain their transport session and UTC publication time."""
 from datetime import datetime, timezone
+import hashlib
 import yaml
 import uuid
 from urllib.parse import urlencode
@@ -81,6 +82,54 @@ def session_isolation(ctx):
                 'Second session loses its edited entry after the first clears')
 
 
+def session_isolation_from_keeper_ui(ctx):
+    from playwright.sync_api import expect
+    from mcp_contracts import keeper_ui
+    from scenarios_access import request
+
+    browser, frame = keeper_ui(ctx, 'owner')
+    label = 'UI transport context ' + uuid.uuid4().hex[:8]
+    frame.get_by_role('button', name='New Token', exact=True).click()
+    dialog = frame.locator('.dialog-box')
+    dialog.get_by_placeholder('e.g. Claude Code Dev', exact=True).fill(label)
+    scopes = request(ctx, 'owner', 'GET', '/keeper/mcp/scopes')['scopes']
+    root = next(scope for scope in scopes if scope['id'] == 'mcp.root')
+    dialog.locator('.scope-item').filter(has_text=root['label']).get_by_role('checkbox').check()
+    with browser.page.expect_response(lambda response: response.request.method == 'POST'
+                                      and response.url.endswith('/keeper/mcp/tokens')) as created:
+        dialog.get_by_role('button', name='Create', exact=True).click()
+    issued = created.value.json().get('token', {})
+    token = issued.get('token', '')
+    require(created.value.status == 200 and token and issued.get('scopes') == ['mcp.root'],
+            'Keeper UI does not issue a root token for transport context: ' + str(issued))
+    require(created.value.request.post_data_json.get('scopes') == ['mcp.root'],
+            'Keeper UI submits a different root scope for transport context')
+    ctx.inst.redactor.add(token)
+    ctx.inst.cleanup.add('UI transport context token', lambda: ctx.inst.request(
+        'POST', '/api/v1/keeper/mcp/tokens/revoke',
+        {'token': hashlib.sha256(token.encode()).hexdigest()}, label='ui-transport-token-revoke'))
+    dialog.get_by_role('button', name='Done', exact=True).click()
+    first, second = MCPClient(ctx.inst, token, '/keeper-mcp/'), MCPClient(ctx.inst, token, '/keeper-mcp/')
+    first.initialize()
+    second.initialize()
+    require(first.session != second.session, 'UI-issued bearer reuses an MCP transport session')
+    first.call('use_trait', {'ids': ['keeper.agents.traits.wippy:operator']})
+    second.call('use_trait', {'ids': ['keeper.agents.traits.wippy:operator']})
+    suffix = uuid.uuid4().hex[:12]
+    left, right = open_branch(ctx.inst, first, 'ui-transport-left-' + suffix), open_branch(ctx.inst, second, 'ui-transport-right-' + suffix)
+    require(left != right and tool(first, 'branch', {'action': 'get'}).get('changeset_id') == left
+            and tool(second, 'branch', {'action': 'get'}).get('changeset_id') == right,
+            'Independent UI-issued MCP sessions share active branch context')
+    tool(first, 'branch', {'action': 'clear'})
+    require(tool(second, 'branch', {'action': 'get'}).get('changeset_id') == right,
+            'Clearing one UI-issued MCP session clears the other session context')
+    tool(second, 'branch', {'action': 'clear'})
+    expect(frame.get_by_role('button', name='New Token', exact=True)).to_be_visible()
+    browser.screenshot('keeper-ui-issued-mcp-session-context')
+    ctx.inst.evidence.save('keeper-ui-issued-mcp-session-context', {'first_session': first.session,
+        'second_session': second.session, 'first_changeset': left, 'second_changeset': right})
+
+
 def changelog_utc(ctx):
     def non_utc(fixture):
         fixture.inst.env['TZ'] = 'Etc/GMT-4'
@@ -115,6 +164,8 @@ def changelog_utc(ctx):
 REGISTRY = [
     Scenario('keeper_mcp_session_edit_isolation', 'regression', session_isolation,
              issues=('KEEPER-MCP-TRANSPORT-CONTEXT',), features=()),
+    Scenario('keeper_ui_issued_mcp_session_context', 'regression', session_isolation_from_keeper_ui,
+             ('access_users',), instance_setup=True, issues=('KEEPER-MCP-TRANSPORT-CONTEXT',), features=()),
     Scenario('keeper_changelog_publication_utc', 'regression', changelog_utc,
              issues=('KEEPER-CHANGELOG-UTC',), features=()),
 ]
