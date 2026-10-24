@@ -109,6 +109,7 @@ entries:
       store: kickside.workflows.store:store
       dataflow_repo: userspace.dataflow.persist:dataflow_repo
       execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
 
   - name: run_write
     kind: function.lua
