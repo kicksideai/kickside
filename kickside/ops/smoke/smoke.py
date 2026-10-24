@@ -275,10 +275,17 @@ class EngineRunner:
         self.config, self.engine, self.root = config, engine, root
         self.pool = RuntimePool(config, engine, root / ('instances-' + uuid.uuid4().hex[:8]))
         self.outcomes, self.executors, self.sessions, self.contexts = {}, {}, {}, {}
+        self.native_root_contexts = set()
         self.setup_attempts = set()
         self.restart_reasons = []
         self.context_lock = threading.RLock()
         self.snapshot = SourceSnapshot(config, engine)
+
+    @staticmethod
+    def native_root_only(scenario):
+        """Focused native guards need scheduler capacity, not browser affinity."""
+        claims = parallel_resources(scenario)
+        return bool(claims) and all(claim.startswith('native-root:') for claim in claims)
 
     def context(self, scenario):
         with self.context_lock:
@@ -293,7 +300,10 @@ class EngineRunner:
                 ctx.restart_runtime = self.restart_instance
                 ctx.pause_runtime = self.pause_instance
                 self.contexts[key] = ctx
-                self.executors[key] = ThreadPoolExecutor(max_workers=1)
+                if self.native_root_only(scenario):
+                    self.native_root_contexts.add(key)
+                else:
+                    self.executors[key] = ThreadPoolExecutor(max_workers=1)
                 if ctx is not owner:
                     ctx.inst.cleanup.add(key + ' fixtures', ctx.fixtures.stop)
             ctx = self.contexts[key]
@@ -312,6 +322,8 @@ class EngineRunner:
             if context is ctx:
                 return operation(context)
             key = next(key for key, candidate in contexts if candidate is context)
+            if key in getattr(self, 'native_root_contexts', ()):
+                return operation(context)
             return self.executors[key].submit(operation, context).result()
         return Browser.paused(ctx.inst, [context for _, context in contexts], dispatch, hard=hard)
 
@@ -357,7 +369,7 @@ class EngineRunner:
                     # activation browser. Focused native guards explicitly
                     # claim only native module roots and require no browser.
                     claims = parallel_resources(scenario)
-                    if (claims and not all(claim.startswith('native-root:') for claim in claims)
+                    if (claims and not self.native_root_only(scenario)
                             and ctx.browser is None):
                         ctx.browser_check()
                 result = execute_scenario(self.config, self.engine, scenario, ctx, self.outcomes, activate)
@@ -368,6 +380,8 @@ class EngineRunner:
                         for name in before.keys() - ctx.state.keys():
                             owner.state.pop(name, None)
                 return result
+            if self.native_root_only(scenario):
+                return execute()
             return self.executors[key].submit(execute).result()
         try:
             return schedule(selected, run_one, self.outcomes, workers, completed)
@@ -432,9 +446,14 @@ class EngineRunner:
                 except Exception as failure:
                     failures.append(ctx.inst.redactor.text(f'{key} session: {failure}'))
                 return failures
-            errors.extend(self.executors[key].submit(close_context).result())
-            self.executors[key].shutdown(wait=True)
-            del self.contexts[key], self.executors[key], self.sessions[key]
+            if key in getattr(self, 'native_root_contexts', ()):
+                errors.extend(close_context())
+                self.native_root_contexts.remove(key)
+            else:
+                executor = self.executors.pop(key)
+                errors.extend(executor.submit(close_context).result())
+                executor.shutdown(wait=True)
+            del self.contexts[key], self.sessions[key]
         errors.extend(self.pool.cleanup() if areas is None else self.pool.cleanup(areas))
         temporary = self.root / 'temp'
         if areas is None and temporary.exists():

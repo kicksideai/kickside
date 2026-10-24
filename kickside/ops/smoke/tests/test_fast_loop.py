@@ -322,6 +322,44 @@ class AttachedStateTests(unittest.TestCase):
                     self.assertEqual(owner.state, {'a': 'new-a', 'b': 'new-b'})
                 self.assertEqual(runner.close().status, 'passed')
 
+    def test_native_root_guards_use_only_bounded_scheduler_workers(self):
+        from scenarios import Context
+        inst = Mock(cleanup=Cleanup())
+        inst.evidence.paths = []
+        inst.redactor.text.side_effect = str
+        owner = Context(inst)
+        owner.state['preserved'] = 'owner-state'
+        pool = Mock(contexts={'scenarios': owner}, browser_areas=set())
+        pool.context.return_value = owner
+        pool.cleanup.return_value = []
+        barrier = threading.Barrier(3)
+        threads, calls = set(), []
+        def guard(name):
+            def run(ctx):
+                barrier.wait(timeout=3)
+                threads.add(threading.get_ident())
+                calls.append(name)
+                ctx.state[name] = 'completed'
+            return run
+        registry = [Scenario('native-' + str(index), 'full', guard('native-' + str(index)),
+                             parallel=('native-root:module-' + str(index),))
+                    for index in range(3)]
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'RuntimePool', return_value=pool):
+                runner = smoke.EngineRunner({'model': {}, 'source': '', 'binary': '/bin/true', 'replace': {}}, 'sqlite', Path(directory))
+                baseline = set(threading.enumerate())
+                for _ in range(2):
+                    threads.clear()
+                    rows = runner.run('full', [], 3)
+                    self.assertEqual([row.status for row in rows], ['passed'] * 3, [row.error for row in rows])
+                    self.assertEqual(runner.executors, {})
+                    self.assertLessEqual(len(threads), 3)
+                    self.assertFalse(set(threading.enumerate()) - baseline)
+                self.assertEqual(owner.state, {'preserved': 'owner-state', **{name: 'completed' for name in calls}})
+                self.assertEqual(len(calls), 6)
+                self.assertEqual(runner.close().status, 'passed')
+                self.assertFalse(set(threading.enumerate()) - baseline)
+
     def test_future_areas_do_not_allocate_ports_before_their_scenarios(self):
         from scenarios import Context
         pool = Mock()
