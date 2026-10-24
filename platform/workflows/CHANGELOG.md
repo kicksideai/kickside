@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/kicksideai/kickside/compare/workflows-v0.2.1...workflows-v0.2.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **workflows:** recheck workflow access before resuming Await ([#132](https://github.com/kicksideai/kickside/issues/132)) ([43bd575](https://github.com/kicksideai/kickside/commit/43bd5758c8c42200875fe39c6b2f61bf4a0ecd89))
+
 ## [0.2.1](https://github.com/kicksideai/kickside/compare/workflows-v0.2.0...workflows-v0.2.1) (2026-10-23)
 
 

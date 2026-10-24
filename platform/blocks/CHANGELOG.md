@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.40](https://github.com/kicksideai/kickside/compare/blocks-v0.1.39...blocks-v0.1.40) (2026-10-24)
+
+
+### Bug Fixes
+
+* **blocks:** include Await execution in module access ([#135](https://github.com/kicksideai/kickside/issues/135)) ([6b8b2e4](https://github.com/kicksideai/kickside/commit/6b8b2e401676b9cf259431d99ebd7911e45f2692))
+
 ## [0.1.39](https://github.com/kicksideai/kickside/compare/blocks-v0.1.38...blocks-v0.1.39) (2026-10-23)
 
 

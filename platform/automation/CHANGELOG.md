@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/kicksideai/kickside/compare/automation-v0.2.2...automation-v0.2.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* **automation:** preserve legacy recurring agent inputs ([#134](https://github.com/kicksideai/kickside/issues/134)) ([c71eea2](https://github.com/kicksideai/kickside/commit/c71eea238abc29abe01b2b872e600557cbd7965d))
+
 ## [0.2.2](https://github.com/kicksideai/kickside/compare/automation-v0.2.1...automation-v0.2.2) (2026-10-23)
 
 

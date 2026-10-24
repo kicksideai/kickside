@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/inbox-v0.1.65...inbox-v0.1.66) (2026-10-24)
+
+
+### Bug Fixes
+
+* **inbox:** hide assignee existence before authorization ([#137](https://github.com/kicksideai/kickside/issues/137)) ([7caf6e5](https://github.com/kicksideai/kickside/commit/7caf6e57ebf509b9690dc4eb7530a1065b31cc1f))
+* **inbox:** scope review assignee lookup to arm ([#136](https://github.com/kicksideai/kickside/issues/136)) ([9f2dc35](https://github.com/kicksideai/kickside/commit/9f2dc35ebb4c21be98e7f7e238478133be42c34c))
+
 ## [0.1.65](https://github.com/kicksideai/kickside/compare/inbox-v0.1.64...inbox-v0.1.65) (2026-10-22)
 
 
