@@ -151,7 +151,7 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
     end
     local native, native_err = native_group_policies(snap)
     if not native then return nil, native_err end
-    local effective, native_sets, direct_sets, slug_sets = {}, {}, {}, {}
+    local effective, slug_sets = {}, {}
     local affected = {}
     for _, group in ipairs(fence_groups or {}) do affected[group] = true end
     local completed, visiting = {}, {}
@@ -160,19 +160,17 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
         if visiting[group] then return (errors.new({kind = errors.INVALID, retryable = false,
             message = "group composition cycle at " .. group}) :: error) end
         visiting[group] = true
-        effective[group], native_sets[group], direct_sets[group], slug_sets[group] = {}, {}, {}, {}
+        effective[group], slug_sets[group] = {}, {}
         if native[group] then
-            native_sets[group][group] = true
             for id in pairs(native[group]) do effective[group][id] = true end
         end
         for _, id in ipairs(group_policies[group] or {}) do effective[group][id] = true end
-        for _, id in ipairs(direct_policies[group] or {}) do direct_sets[group][id] = true end
         for slug, source in pairs(scope_sources[group] or {}) do slug_sets[group][slug] = source end
         for _, source in ipairs(group_sources[group] or {}) do
             local source_err = include_groups(source)
             if source_err then return source_err end
             if affected[source] then affected[group] = true end
-            for _, sets in ipairs({effective, native_sets, direct_sets, slug_sets}) do
+            for _, sets in ipairs({effective, slug_sets}) do
                 for id, value in pairs(sets[source]) do sets[group][id] = value end
             end
         end
@@ -204,23 +202,10 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
             groups = ordered(group_sources[group]), scope_sources = sources,
             direct_policies = ordered(direct_policies[group])}
     end
-    local native_groups_by_id = {}
     for group in pairs(group_policies) do
         local source_err = include_groups(group)
         if source_err then return nil, source_err end
         group_policies[group] = ids(effective[group])
-        native_groups_by_id[group] = ids(native_sets[group])
-        scope_sources[group] = {}
-        for slug, source in pairs(slug_sets[group]) do
-            scope_sources[group][#scope_sources[group] + 1] = {slug = slug, group_id = source}
-        end
-        table.sort(scope_sources[group], function(left, right) return left.slug < right.slug end)
-        -- Keep native group policies in their groups; only other declaration
-        -- selections travel as individual IDs during live validation.
-        for native_group in pairs(native_sets[group]) do
-            for id in pairs(native[native_group]) do direct_sets[group][id] = nil end
-        end
-        direct_policies[group] = ids(direct_sets[group])
     end
     for id in pairs(group_policies) do
         group_rows[id] = group_rows[id] or {label = id, internal = false}

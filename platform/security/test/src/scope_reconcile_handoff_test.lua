@@ -146,6 +146,9 @@ local function define_tests()
 
         test.it("acknowledges admin writes only after their registry projection", function()
             local pid = spawn()
+            local ready, ready_err = request(pid)
+            test.is_nil(ready_err)
+            test.is_true(ready.success)
             local slug = "handoff_projection"
             local row, write_err = store.upsert({ slug = slug, policies = {}, enabled = true }, "test-actor")
             test.is_nil(write_err)
