@@ -36,6 +36,8 @@ entries:
     - kickside.blocks:await
     actions:
     - process.spawn
+    - process.spawn.monitored
+    - process.spawn.linked
     effect: allow
 - name: module_runtime
   kind: security.policy
