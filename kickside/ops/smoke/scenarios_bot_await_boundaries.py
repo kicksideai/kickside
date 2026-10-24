@@ -75,6 +75,20 @@ def _browser_await_boundary(ctx, reduction):
                 and changed['result']['membership_effect'] == 'reduction'
                 and current == ['app.security:user'] and rows == [{'group_id': 'app.security:user'}],
                 'Group reduction does not remove execution membership while retaining the ordinary baseline')
+            control_email = 'await-groups-current-' + uuid.uuid4().hex[:12] + '@smoke.example'
+            control = inst.request('POST', '/api/v1/users', {
+                'email': control_email, 'password': inst.password,
+                'full_name': 'Current reduced Workflow access control', 'groups': current,
+            }, expect=(201,), label='await-groups-current-user')['user']
+            inst.cleanup.add('current reduced Workflow access control', lambda: inst.request(
+                'DELETE', '/api/v1/users/' + control['user_id'], expect=(202,)))
+            control_token = inst.request('POST', '/api/public/user/token', {
+                'email': control_email, 'password': inst.password,
+            }, auth='', label='await-groups-current-login')['token']
+            inst.redactor.add(control_token)
+            inst.request('POST', '/api/v1/workflows/' + fixture['workflow'] + '/run', {
+                'version': fixture['version'], 'input': {'text': 'reduced group control'},
+            }, auth=control_token, expect=(403,), label='await-groups-current-workflow-access')
         elif reduction == 'delegation':
             inst.request('DELETE','/api/v1/security/delegations',{'principal':grant['principal'],'root':grant['root'],'operation_id':uuid.uuid4().hex})
         else: raise ValueError('Unknown Await reduction')
