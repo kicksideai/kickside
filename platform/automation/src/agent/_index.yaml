@@ -364,7 +364,7 @@ entries:
       llm_alias: RecurringTasks
       llm_description: 'Schedule and manage component-shared recurring tasks. create takes schedule
         {type: interval|cron, expression} and target: workflow {flow_ref: {kind: flow,id,version},
-        input}, or action {port,config,input} from the writable
+        input}, legacy agent {agent_id,prompt}, or action {port,config,input} from the writable
         catalog. Before selecting an action target, call AutomationsRead action=catalog
         and inspect the sink port config_schema and input_schema. Set target.port to
         its declared port id, target.config to its configuration and target.input to
@@ -441,6 +441,7 @@ entries:
                   "type": "string",
                   "enum": [
                     "workflow",
+                    "agent",
                     "action"
                   ]
                 },
@@ -470,6 +471,17 @@ entries:
                     }
                   }
                 },
+                "agent_id": {
+                  "type": "string",
+                  "x-reference": {
+                    "kind": "agent",
+                    "access": "READ"
+                  }
+                },
+                "prompt": {
+                  "type": "string",
+                  "minLength": 1
+                },
                 "port": {
                   "type": "string",
                   "minLength": 1,
@@ -484,7 +496,7 @@ entries:
                   "description": "Per-run payload matching the selected port input_schema. Include all required fields and every user-requested field, even when optional. Task metadata does not configure action output. Required for action targets, including an empty object when the port needs no input fields."
                 }
               },
-              "description": "Required on create. Omit on update to preserve the existing target. Workflow requires flow_ref; action requires port and input. The server validates each selected target before saving."
+              "description": "Required on create. Omit on update to preserve the existing target. Workflow requires flow_ref; legacy agent requires agent_id and prompt; action requires port and input. The server validates each selected target before saving."
             },
             "enabled": {
               "type": "boolean",

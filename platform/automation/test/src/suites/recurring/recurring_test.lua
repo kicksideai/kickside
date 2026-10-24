@@ -32,6 +32,16 @@ return { run = test.run_cases(function()
         local function call(args, caller)
             return (caller or env.caller):call(TOOL, args)
         end
+        local function assert_published_schema_accepts(args)
+            local entry, entry_err = registry.get(TOOL)
+            test.is_nil(entry_err, tostring(entry_err))
+            test.not_nil(entry)
+            local schema, schema_err = json.decode(entry.meta.input_schema)
+            test.is_nil(schema_err, tostring(schema_err))
+            test.not_nil(schema)
+            local valid, validation_err = json.validate(schema, args)
+            test.is_true(valid, tostring(validation_err))
+        end
         local function create(input)
             local result, err = call(input or { action = "create", title = "Recurring check",
                 schedule = { type = "interval", expression = "1h" },
@@ -116,6 +126,39 @@ return { run = test.run_cases(function()
             test.is_nil(update_err, tostring(update_err))
             test.not_nil(unchanged)
             test.eq(canonical_json.encode(component.get_private_context(id)), original)
+        end)
+        test.it("preserves legacy agent create and update payloads in the published tool schema", function()
+            local schedule = { type = "interval", expression = "1h" }
+            local legacy = { kind = "agent", agent_id = "kickside.automation.recurring.fixture:legacy_agent",
+                prompt = "Prepare the daily summary." }
+            local create_args = { action = "create", schedule = schedule, target = legacy }
+            assert_published_schema_accepts(create_args)
+            local created, create_err = call(create_args)
+            test.is_nil(create_err, tostring(create_err))
+            test.not_nil(created)
+            ids[#ids + 1] = created.id
+            test.eq(created.task.target.kind, "agent")
+            test.eq(created.task.target.agent_id, legacy.agent_id)
+            test.eq(created.task.target.prompt, legacy.prompt)
+
+            local updated_target = { kind = "agent", agent_id = "kickside.automation.recurring.fixture:legacy_agent",
+                prompt = "Prepare the revised summary." }
+            local update_args = { action = "update", id = created.id, target = updated_target }
+            assert_published_schema_accepts(update_args)
+            local updated, update_err = call(update_args)
+            test.is_nil(update_err, tostring(update_err))
+            test.not_nil(updated)
+            local stored = component.get_private_context(created.id)
+            test.eq(stored.target.kind, "agent")
+            test.eq(stored.target.agent_id, updated_target.agent_id)
+            test.eq(stored.target.prompt, updated_target.prompt)
+
+            assert_published_schema_accepts({ action = "create", schedule = schedule, target = {
+                kind = "agent", agent_id = legacy.agent_id, prompt = legacy.prompt,
+                flow_ref = { kind = "flow", id = "ignored-flow", version = 1 } } })
+            assert_published_schema_accepts({ action = "create", schedule = schedule, target = {
+                kind = "workflow", agent_id = legacy.agent_id,
+                flow_ref = { kind = "flow", id = "published-flow", version = 1 } } })
         end)
         test.it("preserves explicit enabled values in portable declarations across partial edits", function()
             for _, enabled in ipairs({ true, false }) do
