@@ -24,8 +24,7 @@ modules:
     - name: kickside/security
       version: 0.0.0
     - name: kickside/settings
-      version: 0.1.48
-      hash: 15df8f25d410aabb1cabe2ee905f65fad6631481ea4f1e151bea6e02f52da0fb
+      version: 0.0.0
     - name: kickside/uploads
       version: 0.0.0
     - name: kickside/users

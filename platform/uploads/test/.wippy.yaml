@@ -14,6 +14,7 @@ workspace:
     kickside/users: ../../users
     kickside/security: ../../security
     kickside/realtime: ../../realtime
+    kickside/settings: ../../settings
     kickside/pdf2image: ../../../../converters/pdf2image
 vars:
   sqlite_path: ':memory:'
