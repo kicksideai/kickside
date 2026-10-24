@@ -122,32 +122,31 @@ local function define_tests()
                     job_type = "test.cleanup_slot", slot = true, parked = true,
                 })
                 test.is_nil(enqueue_err)
-                local assignment, run = nil, nil
                 local worker_id = "cleanup-worker-" .. thread_id
+                local compete = function(): (any, error?) return slot_purge.purge_slot(identity) end
                 if operation == "unstarted assignment release" then
-                    local lease_err
-                    assignment, lease_err = job_fixture.lease_own(db, dbtype, job_id)
+                    local assignment, lease_err = job_fixture.lease_own(db, dbtype, job_id)
                     test.is_nil(lease_err)
-                    local run_err
-                    run, run_err = lifecycle.start_job_run(db, dbtype, assignment, worker_id, 1)
+                    if not assignment then error("cleanup race requires a leased assignment") end
+                    local run, run_err = lifecycle.start_job_run(db, dbtype, assignment, worker_id, 1)
                     test.is_nil(run_err)
-                end
-                if operation == "age retention" then
+                    if not run then error("cleanup race requires an unstarted run") end
+                    compete = function(): (any, error?)
+                        local other = open_db()
+                        local value, release_err = claim_execution.release_unstarted(other, assignment, worker_id, run.id)
+                        other:release()
+                        return value, release_err
+                    end
+                elseif operation == "age retention" then
                     local _, age_err = db:execute("UPDATE kickside_job SET status='done', finished_at=$1 WHERE id=$2",
                         { "2000-01-01T00:00:00Z", job_id })
                     test.is_nil(age_err)
-                end
-                local function compete(): (any, error?)
-                    if operation == "slot purge" then return slot_purge.purge_slot(identity) end
-                    local other = open_db()
-                    local value, release_err
-                    if operation == "age retention" then
-                        value, release_err = retention.prune_jobs(other, thread_id, "2001-01-01T00:00:00Z", 10)
-                    else
-                        value, release_err = claim_execution.release_unstarted(other, assignment, worker_id, run.id)
+                    compete = function(): (any, error?)
+                        local other = open_db()
+                        local value, prune_err = retention.prune_jobs(other, thread_id, "2001-01-01T00:00:00Z", 10)
+                        other:release()
+                        return value, prune_err
                     end
-                    other:release()
-                    return value, release_err
                 end
                 local candidate_prefix = operation == "unstarted assignment release"
                     and "SELECT id,status,owner_kind,owner_id,job_id FROM kickside_job_run WHERE owner_kind="
