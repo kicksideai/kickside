@@ -4,6 +4,8 @@
 local store = require("store")
 local dataflow_repo = require("dataflow_repo")
 local execution_identity = require("execution_identity")
+local component = require("component")
+local funcs = require("funcs")
 
 local M = {}
 
@@ -54,13 +56,41 @@ function M.resume(args: any): (any?, error?)
         run.execution_identity_json)
     if identity_err or not identity then return nil, identity_err end
 
-    return execution_identity.run_as(identity, "kickside.blocks:resume_under_identity", {
+    -- An Await callback is a durable authorization boundary: resolve the
+    -- captured identity against the current directory, then require that the
+    -- principal may still read the component root that admitted this run.
+    -- Do this before consuming the signal so restoring the grant can retry
+    -- the same decision safely.
+    local resolved, resolve_err = execution_identity.resolve(identity, {
+        deferred_owner = "kickside.workflows.runs:resume",
+        execution_root = identity.component_id,
+    })
+    if resolve_err or not resolved then return nil, resolve_err end
+    if identity.component_id ~= nil then
+        local meta = type(resolved.meta) == "table" and resolved.meta or {}
+        local allowed, access_err = component.validate_principal_access(
+            identity.component_id,
+            component.ACCESS.READ,
+            resolved.principal,
+            meta.security_groups,
+            meta.access_filter
+        )
+        if access_err then return nil, access_err end
+        if allowed ~= true then
+            return nil, failure("workflow execution principal no longer has root READ", errors.PERMISSION_DENIED)
+        end
+    end
+
+    local executor, executor_err = funcs.new()
+    if executor_err or not executor then return nil, executor_err end
+    local actor_bound, actor_err = executor:with_actor(resolved.actor)
+    if actor_err or not actor_bound then return nil, actor_err end
+    local scope_bound, scope_err = actor_bound:with_scope(resolved.scope)
+    if scope_err or not scope_bound then return nil, scope_err end
+    return scope_bound:call("kickside.blocks:resume_under_identity", {
         dataflow_id = a.dataflow_id,
         signal_id = a.signal_id,
         payload = a.payload or {},
-    }, {
-        deferred_owner = "kickside.workflows.runs:resume",
-        execution_root = identity.component_id,
     })
 end
 
