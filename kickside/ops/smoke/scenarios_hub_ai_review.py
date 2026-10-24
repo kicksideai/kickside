@@ -3,8 +3,6 @@ from contextlib import contextmanager
 from pathlib import Path
 import shutil
 import uuid
-import os
-import subprocess
 import re
 from urllib.parse import quote
 
@@ -245,12 +243,9 @@ def backend(ctx):
 
 
 def frontend(ctx):
-    source = Path(ctx.inst.config['replace']['kickside/hub']).parents[1]
-    command = ['make', 'test', 'MOD=hub', 'TEST_ARGS=src/app/InstallDialog_ai_review.spec.ts']
-    env = {**ctx.inst.env, 'PATH': str(Path(ctx.inst.config['binary']).parent) + os.pathsep + os.environ['PATH']}
-    result = subprocess.run(command, cwd=source, env=env, capture_output=True, text=True, timeout=900)
-    ctx.inst.evidence.save('hub-ai-frontend-guards', {'command': command, 'code': result.returncode,
-        'output': result.stdout, 'error': result.stderr})
+    from scenarios_automation_task_forms import frontend_specs
+    result = frontend_specs(ctx, 'hub', ('src/app/InstallDialog_ai_review.spec.ts',),
+                            'hub-ai-frontend-guards')
     plain = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', result.stdout)
     summaries = re.findall(r'^\s*Tests\s+(.+)$', plain, re.M)
     passing = bool(summaries) and all(re.fullmatch(r'([1-9][0-9]*) passed\s+\(\1\)', summary.strip())

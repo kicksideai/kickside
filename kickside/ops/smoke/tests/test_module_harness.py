@@ -333,9 +333,10 @@ class FrontendTestToolingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
             workspace = Path(directory)
             source = workspace / 'public'
-            component = source / 'platform/hub/ui/src/app/modules.vue'
-            component.parent.mkdir(parents=True)
-            component.write_text('selected public component')
+            for name in ('modules.vue', 'InstallDialog.vue'):
+                component = source / 'platform/hub/ui/src/app' / name
+                component.parent.mkdir(parents=True, exist_ok=True)
+                component.write_text('selected public component')
             ctx = Context(Instance(workspace / 'run', source))
 
             def verify_setup(command, **kwargs):
@@ -352,6 +353,34 @@ class FrontendTestToolingTests(unittest.TestCase):
                 frontend_specs(ctx, 'hub', ('src/app/modules_updates_and_planning.spec.ts',), 'hub')
             self.assertEqual(invoke.call_count, 2)
 
+    def test_hub_ai_review_overlay_uses_the_selected_install_dialog(self):
+        from scenarios_automation_task_forms import frontend_specs
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            selected = workspace / 'selected-hub'
+            for root, marker in ((source / 'platform/hub', 'base'), (selected, 'selected')):
+                for name in ('modules.vue', 'InstallDialog.vue'):
+                    component = root / 'ui/src/app' / name
+                    component.parent.mkdir(parents=True, exist_ok=True)
+                    component.write_text(marker + ' ' + name)
+            ctx = Context(Instance(workspace / 'run', source))
+            ctx.inst.config['replace']['kickside/hub'] = str(selected)
+
+            def verify_selected(command, **kwargs):
+                ui = Path(kwargs['cwd']) / 'platform/hub/ui/src/app'
+                self.assertEqual((ui / 'InstallDialog.vue').read_text(), 'selected InstallDialog.vue')
+                self.assertEqual((ui / 'modules.vue').read_text(), 'selected modules.vue')
+                return Completed()
+
+            with patch('subprocess.run', side_effect=verify_selected) as invoke:
+                result = frontend_specs(ctx, 'hub', ('src/app/InstallDialog_ai_review.spec.ts',),
+                                        'hub-ai-frontend-guards')
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(invoke.call_count, 2)
+            self.assertEqual(invoke.call_args_list[-1].args[0][:4],
+                             ['make', '-f', '.smoke/private-frontend-tests.mk', 'test'])
+
     def test_public_component_map_covers_every_frontend_spec_caller(self):
         import ast
         import scenarios_automation_task_forms as forms
@@ -364,7 +393,10 @@ class FrontendTestToolingTests(unittest.TestCase):
                     callers.add(node.args[1].value)
         self.assertSetEqual(callers, set(forms.PUBLIC_COMPONENTS))
         self.assertEqual(forms.PUBLIC_COMPONENTS['settings'], ('platform/settings/ui/src/app/SettingsForm.vue',))
-        self.assertEqual(forms.PUBLIC_COMPONENTS['hub'], ('platform/hub/ui/src/app/modules.vue',))
+        self.assertEqual(forms.PUBLIC_COMPONENTS['hub'], (
+            'platform/hub/ui/src/app/modules.vue',
+            'platform/hub/ui/src/app/InstallDialog.vue',
+        ))
 
     def test_automation_test_packages_use_the_tracked_private_fixture(self):
         from scenarios_automation_task_forms import PRIVATE_FRONTEND_TEST_TOOLING_LOCK, pinned_test_packages

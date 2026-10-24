@@ -23,6 +23,7 @@ PUBLIC_COMPONENTS = {
     ),
     'hub': (
         'platform/hub/ui/src/app/modules.vue',
+        'platform/hub/ui/src/app/InstallDialog.vue',
     ),
 }
 
@@ -85,6 +86,7 @@ def frontend_specs(ctx, module, files, label):
             'command': command, 'code': result.returncode, 'output': result.stdout, 'error': result.stderr,
         })
         require(result.returncode == 0, module + ' frontend guards fail: ' + result.stdout + result.stderr)
+        return result
 
 
 def task_forms(ctx):
