@@ -684,22 +684,23 @@ def sso_oidc_login(ctx, *, restore_login=True):
     browser.settle()
     browser.page.goto(ctx.inst.base+'/login',wait_until='domcontentloaded')
     browser.page.evaluate('document.fonts.ready')
-    with browser.page.expect_response(lambda response: urlsplit(response.url).path == '/api/public/sso/oidc/callback') as response:
-        browser.page.get_by_role('link',name='Continue with Generic OIDC',exact=True).click()
-    callback = response.value
-    outcome = parse_qs(urlsplit(callback.header_value('location') or '').fragment)
-    token = outcome.get('sso_token', [''])[0]
-    if token:
-        ctx.inst.redactor.add(token)
-    error = outcome.get('sso_error', [''])[0]
-    ctx.inst.evidence.save('oidc-callback', {'status': callback.status, 'session_minted': bool(token), 'error': error})
-    require(callback.status == 302 and token, 'OIDC callback does not mint a session: ' + error)
-    profile = ctx.inst.request('GET', '/api/v1/user/me', auth=token, label='oidc-session-profile')['user']
-    require(profile['email'] == 'operator@northwind.example.invalid' and profile['metadata']['auth_method'] == 'sso',
-            'OIDC callback session has no authenticated provider identity')
-    browser.page.wait_for_url(ctx.inst.base+'/**',timeout=30000)
-    browser.page.locator('iframe[name="wippy:page:app.views:main"]').wait_for(timeout=30000)
-    browser.frame.locator('.sidebar').wait_for(timeout=30000)
+    with browser.document_navigation('/', stylesheet_cleanup=(ctx.inst.base + '/api/public/facade/variables.css',)):
+        with browser.page.expect_response(lambda response: urlsplit(response.url).path == '/api/public/sso/oidc/callback') as response:
+            browser.page.get_by_role('link',name='Continue with Generic OIDC',exact=True).click()
+        callback = response.value
+        outcome = parse_qs(urlsplit(callback.header_value('location') or '').fragment)
+        token = outcome.get('sso_token', [''])[0]
+        if token:
+            ctx.inst.redactor.add(token)
+        error = outcome.get('sso_error', [''])[0]
+        ctx.inst.evidence.save('oidc-callback', {'status': callback.status, 'session_minted': bool(token), 'error': error})
+        require(callback.status == 302 and token, 'OIDC callback does not mint a session: ' + error)
+        profile = ctx.inst.request('GET', '/api/v1/user/me', auth=token, label='oidc-session-profile')['user']
+        require(profile['email'] == 'operator@northwind.example.invalid' and profile['metadata']['auth_method'] == 'sso',
+                'OIDC callback session has no authenticated provider identity')
+        browser.page.wait_for_url(ctx.inst.base+'/**',timeout=30000)
+        browser.page.locator('iframe[name="wippy:page:app.views:main"]').wait_for(timeout=30000)
+        browser.frame.locator('.sidebar').wait_for(timeout=30000)
     require(any(row['path']=='/token' and row['status']==200 for row in ctx.fixtures.requests('oidc')),'OIDC login never exchanges its code')
     require(any(row['path']=='/jwks' and row['status']==200 for row in ctx.fixtures.requests('oidc')),'OIDC login never fetches signing keys')
     browser.screenshot('northwind-oidc-login', full_page=False, mask_color='#e2e8f0')

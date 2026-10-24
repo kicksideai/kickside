@@ -89,6 +89,42 @@ class DocumentNavigationTests(unittest.TestCase):
             'GET https://web-host.example/core.js: net::ERR_ABORTED',
         ])
 
+    def test_verified_navigation_accepts_only_its_declared_stylesheet_after_fragment_return(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'http://app/login'
+        stylesheet = 'http://app/api/public/facade/variables.css'
+        with browser.document_navigation('/', stylesheet_cleanup=(stylesheet,)):
+            browser.page.url = 'http://app/login#sso_token=redacted'
+            browser.request_failed(self.request(browser, url=stylesheet, resource_type='stylesheet'))
+            browser.page.main_frame.url = 'http://app/'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = 'http://app/'
+        self.assertEqual(browser.errors, [])
+        browser.inst.evidence.save.assert_called_once_with('document-navigation-aborts', {
+            'source': 'http://app/login',
+            'target': 'http://app/',
+            'aborts': ['GET http://app/api/public/facade/variables.css: net::ERR_ABORTED'],
+        })
+
+    def test_declared_stylesheet_remains_an_error_without_the_verified_transition(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'http://app/login'
+        stylesheet = 'http://app/api/public/facade/variables.css'
+        with browser.document_navigation('/', stylesheet_cleanup=(stylesheet,)):
+            browser.page.url = 'http://app/login#sso_token=redacted'
+            browser.request_failed(self.request(browser, url=stylesheet, resource_type='stylesheet'))
+        self.assertEqual(browser.errors, ['GET http://app/api/public/facade/variables.css: net::ERR_ABORTED'])
+
+    def test_other_stylesheet_remains_an_error_during_verified_navigation(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'http://app/login'
+        with browser.document_navigation('/', stylesheet_cleanup=('http://app/api/public/facade/variables.css',)):
+            browser.request_failed(self.request(browser, url='http://app/unexpected.css', resource_type='stylesheet'))
+            browser.page.main_frame.url = 'http://app/'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = 'http://app/'
+        self.assertEqual(browser.errors, ['GET http://app/unexpected.css: net::ERR_ABORTED'])
+
 
 if __name__ == '__main__':
     unittest.main()

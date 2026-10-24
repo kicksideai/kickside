@@ -1,6 +1,7 @@
 from scenarios import Context
 from runtime import RuntimePool
 from pathlib import Path
+from contextlib import nullcontext
 from harness import Cleanup
 import unittest
 from unittest.mock import MagicMock, Mock
@@ -275,6 +276,7 @@ class ProviderSetup(unittest.TestCase):
         response = MagicMock()
         response.__enter__.return_value.value = callback
         browser.page.expect_response.return_value = response
+        browser.document_navigation.return_value = nullcontext()
         pending = [True]
         browser.settle.side_effect = lambda: pending.__setitem__(0, False)
         def navigate(*args, **kwargs):
@@ -288,6 +290,9 @@ class ProviderSetup(unittest.TestCase):
         records = [{'path':'/token','status':200},{'path':'/jwks','status':200}]
         with patch.object(scenarios_providers,'provider_browser',return_value=browser),patch.object(ctx.fixtures,'requests',return_value=records):
             scenarios_providers.sso_oidc_login(ctx)
+        self.assertEqual(browser.page.expect_response.call_count, 1)
+        browser.document_navigation.assert_called_once_with(
+            '/', stylesheet_cleanup=('http://127.0.0.1:731/api/public/facade/variables.css',))
         ctx.inst.request.assert_called_once_with('GET', '/api/v1/user/me', auth='oidc-session', label='oidc-session-profile')
         ctx.inst.redactor.add.assert_called_once_with('oidc-session')
         ctx.inst.evidence.save.assert_called_once_with('oidc-callback', {'status': 302, 'session_minted': True, 'error': ''})
@@ -305,6 +310,7 @@ class ProviderSetup(unittest.TestCase):
         response = MagicMock()
         response.__enter__.return_value.value = callback
         browser.page.expect_response.return_value = response
+        browser.document_navigation.return_value = nullcontext()
         records = [{'path': '/token', 'status': 200}, {'path': '/jwks', 'status': 200}]
         with patch.object(scenarios_providers, 'provider_browser', return_value=browser), \
              patch.object(ctx.fixtures, 'requests', return_value=records):

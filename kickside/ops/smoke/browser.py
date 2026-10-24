@@ -797,9 +797,14 @@ class Browser:
                 is_main_frame = request.frame == self.page.main_frame
             except Exception:
                 is_main_frame = False
-            if (request.method == 'GET' and request.resource_type == 'script' and
+            expected_cleanup = (request.resource_type == 'script' or
+                                (request.resource_type == 'stylesheet' and
+                                 request.url in navigation['stylesheet_cleanup']))
+            source = urlparse(navigation['source'])._replace(fragment='').geturl()
+            current = urlparse(self.page.url)._replace(fragment='').geturl()
+            if (request.method == 'GET' and expected_cleanup and
                     request.failure == 'net::ERR_ABORTED' and is_main_frame and
-                    self.page is navigation['page'] and self.page.url == navigation['source'] and
+                    self.page is navigation['page'] and current == source and
                     navigation['source'] != navigation['target']):
                 navigation['aborts'].append(error)
                 return
@@ -812,11 +817,12 @@ class Browser:
         self.errors.append(error)
 
     @contextmanager
-    def document_navigation(self, path):
-        """Allow only main-document script cleanup caused by one verified navigation."""
+    def document_navigation(self, path, *, stylesheet_cleanup=()):
+        """Allow verified main-document cleanup while retaining all unrelated failures."""
         target = self.inst.base + path
         navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': self.page.url,
-                      'target': target, 'main_frame_urls': [], 'aborts': []}
+                      'target': target, 'main_frame_urls': [], 'aborts': [],
+                      'stylesheet_cleanup': frozenset(stylesheet_cleanup)}
         self.expected_document_navigations.append(navigation)
         try:
             yield
