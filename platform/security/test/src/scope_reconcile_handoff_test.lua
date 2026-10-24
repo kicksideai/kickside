@@ -150,7 +150,11 @@ local function define_tests()
             local row, write_err = store.upsert({ slug = slug, policies = {}, enabled = true }, "test-actor")
             test.is_nil(write_err)
             test.not_nil(row)
-            local reply, err = request(pid)
+            -- A receipt from any source other than the two internal
+            -- registry-only callers never suppresses a DB-backed pass.
+            local version = assert(registry.current_version()):id()
+            local reply, err = request(pid, {source = "untrusted.fixture",
+                observed_registry_version = tostring(version)})
             test.is_nil(err)
             test.is_true(reply.success)
             local entry, read_err = registry.get(consts.CUSTOM_SCOPE_NS .. ":" .. slug)
@@ -163,6 +167,93 @@ local function define_tests()
             test.is_nil(err)
             test.is_true(reply.success)
             test.is_nil((registry.get(consts.CUSTOM_SCOPE_NS .. ":" .. slug)))
+        end)
+
+        test.it("acknowledges a committed registry observer after its event-driven projection", function()
+            local original = assert(registry.current_version())
+            local ok, failure = pcall(function()
+                local pid = spawn()
+                local ready, ready_err = request(pid)
+                test.is_nil(ready_err)
+                test.is_true(ready.success)
+                local changes = assert(registry.snapshot()):changes()
+                for index = 1, 12000 do
+                    changes:create({id = "app:observer_barrier_" .. index, kind = "security.policy",
+                        meta = {intent = "module_access"}, data = {
+                            groups = {"app:observer_barrier_group_" .. (index % 12)}, policy = {
+                                actions = {"access", "registry.get"},
+                                resources = {"app:observer_barrier_endpoint_" .. index,
+                                    "app:observer_barrier_view_" .. index}, effect = "allow"}}})
+                end
+                test.is_nil(select(2, changes:apply()))
+                -- Let the registry subscription establish current authority.
+                -- The observer receipt then arrives after that event-driven
+                -- pass, just as it does after a governance changeset.
+                local deadline = time.now():add(30 * time.SECOND)
+                local projected = false
+                while time.now():before(deadline) do
+                    local scope = security.named_scope("app:declared_members")
+                    if scope and scope:evaluate(security.new_actor("member"), "access",
+                        "app:observer_barrier_endpoint_12000") == "allow" then
+                        projected = true
+                        break
+                    end
+                    time.sleep("25ms")
+                end
+                test.is_true(projected, "the registry event did not project the committed policy")
+                local version = assert(registry.current_version()):id()
+                local stats, observer_err = funcs.call("kickside.security.binding:registry_observer", {
+                    request_id = "observer-barrier", result = {success = true, version = tostring(version)}})
+                test.is_nil(observer_err, tostring(observer_err))
+                test.is_true(stats and stats.success)
+                test.eq(stats.created + stats.updated + stats.deleted, 0)
+            end)
+            local restored, restore_err = registry.apply_version(original)
+            test.is_nil(restore_err)
+            test.is_true(restored)
+            if not ok then error(failure) end
+        end)
+
+        test.it("propagates a delegation fence failure from a covered registry receipt", function()
+            local original = assert(registry.current_version())
+            local ok, failure = pcall(function()
+                local pid = spawn()
+                local ready, ready_err = request(pid)
+                test.is_nil(ready_err)
+                test.is_true(ready.success)
+                local config = assert(registry.get("kickside.security:composition_config"))
+                local meta = {}
+                for key, value in pairs(config.meta or {}) do meta[key] = value end
+                meta.delegation_fencer = ""
+                local changes = assert(registry.snapshot()):changes()
+                changes:update({id = tostring(config.id), kind = config.kind, meta = meta, data = config.data})
+                changes:create({id = "app:delegation_fence_barrier", kind = "security.policy",
+                    meta = {intent = "module_access"}, data = {
+                        policy = {actions = "access", resources = "app:delegation_fence_barrier", effect = "allow"}}})
+                test.is_nil(select(2, changes:apply()))
+                local deadline = time.now():add(5 * time.SECOND)
+                local projected = false
+                while time.now():before(deadline) do
+                    local scope = security.named_scope("app:declared_members")
+                    if scope and scope:evaluate(security.new_actor("member"), "access",
+                        "app:delegation_fence_barrier") == "allow" then
+                        projected = true
+                        break
+                    end
+                    time.sleep("25ms")
+                end
+                test.is_true(projected, "the registry event did not establish the delegation barrier")
+                local version = assert(registry.current_version()):id()
+                local reply, reply_err = request(pid, {source = "security.delegation",
+                    observed_registry_version = tostring(version), fence_groups = {"app:delegation_fence_barrier"}})
+                test.is_nil(reply_err)
+                test.is_false(reply.success)
+                test.contains(tostring(reply.error), "host delegation fencer is unconfigured")
+            end)
+            local restored, restore_err = registry.apply_version(original)
+            test.is_nil(restore_err)
+            test.is_true(restored)
+            if not ok then error(failure) end
         end)
 
         for _, fixture in ipairs({
@@ -320,11 +411,20 @@ local function define_tests()
             test.is_nil(open_err)
             execute(db, "ALTER TABLE kickside_security_scopes RENAME COLUMN target TO fixture_target")
             local reply, err = request(pid)
+            -- The failed same-version pass must clear the successful
+            -- watermark: a covered observer receipt has to retry it, not
+            -- acknowledge stale success.
+            local version = assert(registry.current_version()):id()
+            local barrier, barrier_err = request(pid, {source = "registry.observer",
+                observed_registry_version = tostring(version)})
             execute(db, "ALTER TABLE kickside_security_scopes RENAME COLUMN fixture_target TO target")
             db:release()
             test.is_nil(err)
             test.is_false(reply.success)
             test.contains(tostring(reply.error), "target")
+            test.is_nil(barrier_err)
+            test.is_false(barrier.success)
+            test.contains(tostring(barrier.error), "target")
         end)
     end)
 end

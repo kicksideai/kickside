@@ -96,7 +96,14 @@ local function mutate(args, operation)
     if current then changes:update(desired) else changes:create(desired) end
     local _, apply_err = changes:apply()
     if apply_err then return nil, apply_err end
-    local reconciled, reconcile_err = reconcile.trigger({fence_groups = fence_groups})
+    local version, version_err = registry.current_version()
+    if version_err then return nil, version_err end
+    if not version then
+        return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
+            message = "delegation registry commit has no current version"}) :: error)
+    end
+    local reconciled, reconcile_err = reconcile.trigger({source = "security.delegation",
+        observed_registry_version = tostring(version:id()), fence_groups = fence_groups})
     if reconcile_err or not reconciled then return nil, reconcile_err end
     return {success = true, policy_id = policy_id, resource = resource}, nil
 end
