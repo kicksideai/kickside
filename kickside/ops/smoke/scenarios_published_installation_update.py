@@ -270,6 +270,7 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                     dict(plan['install_payload'], run_migrations=True), label='installation-application-install', timeout=300)
                 require(not [row for row in applied.get('execution', []) if row['status'] in ('failed', 'rollback_failed')],
                         'Published application update fails')
+                inst.await_keeper()
                 after = token_payloads(inst)
                 require(all(after.get(key) == value for key, value in payloads.items()),
                         'Application Hub update rewrites saved session payloads')
