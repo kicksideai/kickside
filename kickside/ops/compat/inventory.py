@@ -1,5 +1,6 @@
 """Discover owned modules from repository delivery inventories."""
 import json
+import os
 from pathlib import Path
 import sys
 import yaml
@@ -7,6 +8,21 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / '.github/scripts'))
 from release_content import build_pack, content_digest
+
+
+def source_roots():
+    """Return the authoritative current-module roots for compatibility proofs.
+
+    The private suite supplies harnesses and compatibility recipes, while a
+    source run supplies product modules one-by-one through ``--replace``.
+    Never rediscover product modules from the private suite in that case: its
+    platform/core placeholders deliberately are not a checkout of product
+    sources.
+    """
+    configured = [Path(value).resolve()
+                  for value in os.environ.get('COMPAT_MODULE_ROOTS', '').split(os.pathsep)
+                  if value]
+    return configured or [ROOT, ROOT.parent / 'components']
 
 
 def module_identity(directory):

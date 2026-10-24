@@ -12,7 +12,9 @@ def fixture_selection(ctx):
     scratch = ctx.inst.root / 'temp/compat-fixture-selection'
     scratch.mkdir(parents=True, exist_ok=True)
     command = [sys.executable, '-m', 'unittest', 'ops.compat.tests.test_focused_fixtures']
-    result = subprocess.run(command, cwd=root, env=dict(os.environ, TMPDIR=str(scratch)),
+    module_roots = sorted(set(ctx.inst.config['replace'].values()))
+    result = subprocess.run(command, cwd=root, env=dict(
+        os.environ, TMPDIR=str(scratch), COMPAT_MODULE_ROOTS=os.pathsep.join(module_roots)),
                             capture_output=True, text=True, timeout=60)
     ctx.inst.evidence.save('compat-fixture-selection', {'command': command,
         'code': result.returncode, 'output': result.stdout, 'error': result.stderr})

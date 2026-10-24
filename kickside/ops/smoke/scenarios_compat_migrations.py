@@ -16,7 +16,9 @@ def migration_fixtures(ctx):
          'ops.compat.integration.test_delegation_upgrade',
          'ops.compat.integration.test_retired_data_upgrade'],
         cwd=Path(__file__).resolve().parents[2],
-        env=dict(os.environ, TMPDIR=str(scratch)), capture_output=True, text=True, timeout=600,
+        env=dict(os.environ, TMPDIR=str(scratch),
+                 COMPAT_MODULE_ROOTS=os.pathsep.join(sorted(set(ctx.inst.config['replace'].values())))),
+        capture_output=True, text=True, timeout=600,
     )
     ctx.inst.evidence.save('compat-migration-fixtures', {
         'exit_code': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr,

@@ -1,5 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -35,7 +36,9 @@ class NaturalKeyFixtureTests(unittest.TestCase):
                 raise Configured
 
             baseline = {'version': '0.2.6', 'sha256': 'a' * 64, 'entries': {}}
-            with patch('runtime_fixtures.isolated_fixture', isolated), \
+            smoke = Path(__file__).resolve().parents[2] / 'smoke'
+            with patch.object(sys, 'path', [str(smoke), *sys.path]), \
+                 patch('runtime_fixtures.isolated_fixture', isolated), \
                  patch('ops.compat.fetch_baselines.Hub.fetch', return_value=baseline):
                 with self.assertRaises(Configured):
                     verify(ctx)

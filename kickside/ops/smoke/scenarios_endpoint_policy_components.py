@@ -25,10 +25,12 @@ REGISTRY = [Scenario('regression_endpoint_policy_components', 'regression', endp
 
 def endpoint_policy_architecture(ctx):
     environment = dict(ctx.inst.env)
-    environment['SECURITY_MODULE_ROOTS'] = os.pathsep.join(sorted(set(ctx.inst.config['replace'].values())))
-    result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
-                             '-p', 'test_endpoint_policy_components.py'],
-                            cwd=Path(__file__).parent, env=environment, capture_output=True, text=True, timeout=60)
+    source_roots = [ctx.inst.config.get('source'), *ctx.inst.config['replace'].values()]
+    environment['SECURITY_MODULE_ROOTS'] = os.pathsep.join(sorted({root for root in source_roots if root}))
+    root = Path(__file__).resolve().parents[2]
+    result = subprocess.run([sys.executable, '-m', 'unittest',
+                             'ops.smoke.tests.test_endpoint_policy_components'],
+                            cwd=root, env=environment, capture_output=True, text=True, timeout=60)
     ctx.inst.evidence.save('endpoint-policy-architecture', {'code': result.returncode,
                                                          'output': result.stdout, 'error': result.stderr})
     require(result.returncode == 0, 'Historical endpoint grant ownership fails: ' + result.stdout + result.stderr)

@@ -43,16 +43,23 @@ def checkpoint_entries(entries, identity):
     return subset(before), subset(through)
 
 
-def upgrade_checkpoint(published, current, identities):
-    """Rehearse selected migrations from the published schema before their checkpoint."""
+def upgrade_checkpoint(published, current, identities, fixture_registry=()):
+    """Rehearse selected migrations from the published schema before their checkpoint.
+
+    ``fixture_registry`` is the deliberately small set of host configuration
+    entries which can be resolved dynamically rather than imported by a
+    migration.  Read each from its own raw inventory: the published bytes build
+    the baseline and the current bytes build the update.
+    """
     ordered = migration_plan(published, published)['baseline']
     boundary = min(ordered.index(identity) for identity in identities)
     baseline_ids = ordered[:boundary]
-    baseline = closure(published, baseline_ids)
+    fixture_registry = list(fixture_registry)
+    baseline = closure(published, baseline_ids + fixture_registry)
     if set(identities) & baseline.keys():
         raise ValueError('published checkpoint depends on a selected upgrade migration')
     baseline.update({key: row for key, row in published.items() if row['Kind'] == 'env.variable'})
-    update = dict(baseline, **closure(current, identities))
+    update = dict(baseline, **closure(current, list(identities) + fixture_registry))
     update.update({key: row for key, row in current.items() if row['Kind'] == 'env.variable'})
     return baseline, update
 
@@ -140,6 +147,31 @@ def closure(entries, identities):
     return result
 
 
+def bind_fixture_registry(entries, bindings):
+    """Bind declared harness values without replacing an inventory entry.
+
+    Runtime configuration entries are intentionally not imports of every caller:
+    a module can resolve one dynamically with ``registry.get``.  A migration
+    fixture therefore names each required host binding explicitly.  Keep the
+    row from its own phase inventory, then apply only that declarative binding;
+    in particular, never use the current row while constructing a published
+    baseline.
+    """
+    configured = copy.deepcopy(entries)
+    for identity, binding in bindings.items():
+        row = configured.get(identity)
+        if row is None:
+            raise ValueError(f'{identity}: fixture registry binding is absent from this phase inventory')
+        if row['Kind'] != 'registry.entry':
+            raise ValueError(f'{identity}: fixture registry binding must target a registry entry')
+        if not isinstance(binding, dict) or any(key not in ('Meta', 'Data') or not isinstance(value, dict)
+                                                for key, value in binding.items()):
+            raise ValueError(f'{identity}: fixture registry binding must contain Meta and/or Data objects')
+        for key, value in binding.items():
+            row.setdefault(key, {}).update(value)
+    return configured
+
+
 def write_entries(work, entries):
     grouped = {}
     for identity, row in sorted(entries.items()):
@@ -182,12 +214,8 @@ def rehearse(old, new, work, fixture, engines=('sqlite', 'postgres')):
     current_rows = closure(new, plan['added'] + list(fixture['registry']))
     baseline_rows.update({i: row for i, row in old.items() if row['Kind'] == 'env.variable'})
     current_rows.update({i: row for i, row in new.items() if row['Kind'] == 'env.variable'})
-    for rows in (baseline_rows, current_rows):
-        for identity, config in fixture['registry'].items():
-            if identity in rows:
-                rows[identity] = copy.deepcopy(rows[identity])
-                for key, value in config.items():
-                    rows[identity].setdefault(key, {}).update(value)
+    baseline_rows = bind_fixture_registry(baseline_rows, fixture['registry'])
+    current_rows = bind_fixture_registry(current_rows, fixture['registry'])
     work.mkdir(parents=True)
     sources = work / 'src'
     sources.mkdir()

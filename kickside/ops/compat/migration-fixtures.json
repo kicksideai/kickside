@@ -1025,6 +1025,13 @@
         ]
       }
     ],
+    "registry": {
+      "kickside.core.jobs:db_config": {
+        "Meta": {
+          "db_id": "app:db"
+        }
+      }
+    },
     "seed": [
       "INSERT INTO app_users (user_id, email, full_name, password_hash, status, created_at, updated_at) VALUES ('compat-delegated-user', 'delegated@example.test', 'Published user', 'fixture-hash', 'active', '2026-10-01T00:00:00Z', '2026-10-01T00:00:00Z')",
       "INSERT INTO app_user_groups (user_id, group_id, source, created_at) VALUES ('compat-delegated-user', 'app:members', 'manual', '2026-10-01T00:00:00Z')"

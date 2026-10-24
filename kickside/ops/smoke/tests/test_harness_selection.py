@@ -7,6 +7,12 @@ import yaml
 
 
 class HarnessSelectionTests(unittest.TestCase):
+    def test_native_selection_accepts_a_fully_qualified_test_identity(self):
+        from module_harness import valid_focused_selection
+        self.assertTrue(valid_focused_selection('kickside.automation.recurring.fixture:test'))
+        self.assertTrue(valid_focused_selection('recurring_test'))
+        self.assertFalse(valid_focused_selection('recurring_test; unsafe'))
+
     def test_null_metadata_on_an_ordinary_entry_does_not_break_test_discovery(self):
         from module_harness import _focus_tests
         with tempfile.TemporaryDirectory() as directory:

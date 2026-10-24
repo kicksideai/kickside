@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from ops.compat.fetch_baselines import Hub
-from ops.compat.inventory import ROOT, discover, local_entries
+from ops.compat.inventory import ROOT, discover, local_entries, source_roots
 from ops.compat.migrations import checkpoint_entries, rehearse
 
 
@@ -19,7 +19,7 @@ class ThreadNaturalKeyMigrationTests(unittest.TestCase):
             (Path(os.environ['TMPDIR']) / 'natural-key-published-baseline.json').write_text(
                 json.dumps({'version': baseline['version'], 'sha256': baseline['sha256']}))
             published = baseline['entries']
-            current = local_entries(discover([ROOT])['kickside/core'], work / 'pack')
+            current = local_entries(discover(source_roots())['kickside/core'], work / 'pack')
             identity = 'kickside.core.migrations:10_thread_natural_keys'
             old, _ = checkpoint_entries(dict(published, **{identity: current[identity]}), identity)
             self.assertNotIn(identity, old)

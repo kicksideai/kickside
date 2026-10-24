@@ -8,10 +8,17 @@ from unittest.mock import patch
 
 import yaml
 
-from ops.compat.integration.test_run_as_upgrade import make_runtime, remove_test_entries
+from ops.compat.integration.test_run_as_upgrade import make_runtime, module_source_roots, remove_test_entries
 
 
 class FocusedFixtureTests(unittest.TestCase):
+    def test_compatibility_proof_uses_configured_source_roots(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            source = Path(directory) / 'replacement'
+            source.mkdir()
+            with patch.dict(os.environ, {'COMPAT_MODULE_ROOTS': str(source)}):
+                self.assertEqual(module_source_roots(), [source.resolve()])
+
     def test_tracked_harness_materializes_source_files_and_excludes_module_mounts(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             root = Path(directory)
@@ -19,12 +26,20 @@ class FocusedFixtureTests(unittest.TestCase):
             harness.mkdir(parents=True)
             production = root / 'module/src'
             production.mkdir()
-            (root / 'module/wippy.yaml').write_text('directories: {src: src}\n')
+            (root / 'module/wippy.yaml').write_text('organization: example\nmodule: module\ndirectories: {src: src}\n')
             (production / 'implementation.lua').write_text('return {run = function() end}\n')
+            (production / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'example.module', 'entries': [
+                {'name': 'implementation', 'kind': 'library.lua', 'source': 'file://implementation.lua'}]}))
+            published = root / 'published/example_module/src'
+            published.mkdir(parents=True)
+            (published / 'implementation.lua').write_text('return {run = function() return "published" end}\n')
+            (published / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'example.module', 'entries': [
+                {'name': 'implementation', 'kind': 'library.lua', 'source': 'file://implementation.lua'}]}))
             (harness / 'selected.lua').symlink_to('../src/implementation.lua')
             (harness / 'src_link').symlink_to('../src', target_is_directory=True)
             (harness / '_index.yaml').write_text(yaml.safe_dump({'namespace': 'proof', 'entries': [
-                {'name': 'selected', 'kind': 'library.lua', 'source': 'file://selected.lua'}]}))
+                {'name': 'selected', 'kind': 'library.lua', 'source': 'file://selected.lua'},
+                {'name': 'linked', 'kind': 'library.lua', 'source': 'file://src_link/implementation.lua'}]}))
             (harness / '.wippy.yaml').write_text('vars: {}\n')
             integration = root / 'ops/compat/integration'
             integration.mkdir(parents=True)
@@ -34,16 +49,24 @@ class FocusedFixtureTests(unittest.TestCase):
             subprocess.run(['git', 'init', '-q', str(root)], check=True)
             subprocess.run(['git', '-C', str(root), 'add', '.'], check=True)
             (harness / 'untracked.lua').write_text('error("scratch source")\n')
-            with patch('ops.compat.integration.test_run_as_upgrade.ROOT', root), patch(
-                    'ops.compat.integration.test_run_as_upgrade.discover',
-                    return_value={'example/module': {'directory': root / 'module'}}):
+            with patch.dict(os.environ, {'COMPAT_MODULE_ROOTS': str(root / 'module')}), \
+                    patch('ops.compat.integration.test_run_as_upgrade.ROOT', root), \
+                    patch('ops.compat.integration.test_run_as_upgrade.discover',
+                          return_value={'example/module': {'directory': root / 'module'}}) as discover:
                 _, source, _ = make_runtime(root, Path('module/test'), Path('module/test'),
-                                            'proof.lua', 'proof-runtime', {'selected': 'proof:selected'}, [])
+                                            'proof.lua', 'proof-runtime',
+                                            {'selected': 'proof:selected', 'linked': 'proof:linked'}, [])
+            discover.assert_called_once_with([root / 'module'])
             self.assertEqual((source / 'selected.lua').read_text(),
                              (production / 'implementation.lua').read_text())
             self.assertFalse((source / 'selected.lua').is_symlink())
             self.assertFalse((source / 'src_link').exists())
             self.assertFalse((source / 'untracked.lua').exists())
+            linked = next(entry for entry in yaml.safe_load((source / '_index.yaml').read_text())['entries']
+                          if entry['name'] == 'linked')
+            self.assertNotEqual(linked['source'], 'file://src_link/implementation.lua')
+            self.assertEqual((source / linked['source'][7:]).resolve().read_text(),
+                             (published / 'implementation.lua').read_text())
 
     def test_selected_proof_retains_declared_dynamic_call_targets(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
@@ -154,6 +177,13 @@ class FocusedFixtureTests(unittest.TestCase):
 
     def test_published_automation_host_does_not_mount_current_module_source(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            published = Path(directory) / 'published/kickside_automation/src'
+            published.mkdir(parents=True)
+            published_code = 'return {run = function() return "published round write" end}\n'
+            (published / 'round_write.lua').write_text(published_code)
+            (published / '_index.yaml').write_text(yaml.safe_dump({
+                'namespace': 'kickside.automation', 'entries': [{
+                    'name': 'round_write', 'kind': 'library.lua', 'source': 'file://round_write.lua'}]}))
             _, source, _ = make_runtime(
                 Path(directory), Path('platform/automation/test/src'), Path('platform/automation/test'),
                 'run_as_automation_upgrade.lua', 'automation-proof', {}, ['sql'],
@@ -168,6 +198,10 @@ class FocusedFixtureTests(unittest.TestCase):
                     location = entry.get('source', '')
                     if location.startswith('file://'):
                         self.assertTrue((index.parent / location[7:]).is_file(), (index, entry['name']))
+            fixture = yaml.safe_load((source / 'suites/round/fixture/_index.yaml').read_text())
+            round_write = next(entry for entry in fixture['entries'] if entry['name'] == 'round_write')
+            self.assertEqual((source / 'suites/round/fixture' / round_write['source'][7:]).resolve().read_text(),
+                             published_code)
 
     def test_users_upgrade_host_does_not_mount_the_bot_installation_suite(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:

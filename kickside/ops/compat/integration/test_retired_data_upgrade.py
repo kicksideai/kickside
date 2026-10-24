@@ -7,13 +7,13 @@ import unittest
 
 from ops.compat.integration.test_run_as_upgrade import evidence_directory
 from ops.compat.fetch_baselines import Hub
-from ops.compat.inventory import ROOT, discover, local_entries
+from ops.compat.inventory import ROOT, discover, local_entries, source_roots
 from ops.compat.migrations import closure, rehearse, select_fixtures, upgrade_checkpoint
 
 
 class RetiredDataUpgradeTests(unittest.TestCase):
     def test_published_data_survives_added_migrations_on_both_engines(self):
-        modules = discover([ROOT])
+        modules = discover(source_roots())
         recipes = json.loads((ROOT / 'ops/compat/migration-fixtures.json').read_text())
         with evidence_directory(Path(os.environ['TMPDIR'])) as directory:
             work = Path(directory)

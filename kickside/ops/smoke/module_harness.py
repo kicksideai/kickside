@@ -74,9 +74,14 @@ def run_focused_app_test(ctx, app_root, entry, *, timeout=DEFAULT_TIMEOUT):
                 label=app_root.name.replace('_', '-'))
 
 
+def valid_focused_selection(entry):
+    """Allow a native test name, suite, or fully-qualified test identity."""
+    return isinstance(entry, str) and re.fullmatch(
+        r'[A-Za-z0-9_.]+(?::[A-Za-z0-9_]+)?', entry) is not None
+
+
 def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False, lint=False):
-    pattern = r'[A-Za-z0-9_.]+(?::[A-Za-z0-9_]+)?' if repository_gate else r'[A-Za-z0-9_]+'
-    require(isinstance(entry, str) and re.fullmatch(pattern, entry),
+    require(valid_focused_selection(entry),
             'Focused test entry is invalid: ' + str(entry))
     inst = ctx.inst
     root = Path(root).resolve()

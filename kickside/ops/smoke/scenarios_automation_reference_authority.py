@@ -5,7 +5,7 @@ from module_harness import run_focused_module_test
 
 def reference_authority(ctx):
     run_focused_module_test(ctx, 'kickside/automation', 'declaration_writer_test')
-    run_focused_module_test(ctx, 'kickside/automation', 'recurring_test')
+    run_focused_module_test(ctx, 'kickside/automation', 'kickside.automation.recurring.fixture:test')
     run_focused_module_test(ctx, 'kickside/component', 'trusted_read_guard_test')
 
 

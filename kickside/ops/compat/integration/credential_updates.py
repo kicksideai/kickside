@@ -9,7 +9,7 @@ import yaml
 from ops.compat.integration.test_run_as_upgrade import (
     evidence_directory, make_runtime, materialize_published_modules, runtime_config,
 )
-from ops.compat.inventory import ROOT, discover
+from ops.compat.inventory import ROOT, discover, source_roots
 from ops.compat.migrations import command
 
 
@@ -49,7 +49,7 @@ def verify_credential_update(case, module, harness_path, suite, imports, modules
                 index["entries"].append(host_dependency)
             host_parameters = [row for row in host_dependency.get("parameters", [])
                                if row["name"] != host_capability["requirement"]]
-        current = {name: str(item["directory"]) for name, item in discover([ROOT, ROOT.parent / "components"]).items()}
+        current = {name: str(item["directory"]) for name, item in discover(source_roots()).items()}
         baseline = dict(published)
         consumer_phases = {
             consumer.split("/")[-1].replace("-", "_") + "_first": dict(baseline, **{consumer: current[consumer]})

@@ -17,10 +17,10 @@ from ops.smoke.coverage.inventory import router_binding
 
 ROOT = Path(__file__).resolve().parents[3]
 MODULES = {
-    **{'platform/' + name: (name, 'kickside.' + name) for name in
+    **{'kickside/' + name: (name, 'kickside.' + name) for name in
        ('agents', 'automation', 'connection', 'identity', 'inbox', 'models', 'oauth', 'transform', 'ui')},
-    **{'core/' + name: (name, 'kickside.' + name) for name in ('component', 'core')},
-    'core/jobs': ('jobs', 'kickside.core.jobs'),
+    **{'kickside/' + name: (name, 'kickside.' + name) for name in ('component', 'core')},
+    'kickside/jobs': ('jobs', 'kickside.core.jobs'),
 }
 
 
@@ -48,6 +48,13 @@ def module_sources(repositories):
 
 def declared_module_roots():
     return sorted({path.resolve() for path in module_sources(module_repositories()).values()})
+
+
+def module_root(identity):
+    sources = module_sources(module_repositories())
+    if identity not in sources:
+        raise ValueError('Module source is not declared: ' + identity)
+    return sources[identity]
 
 
 def entries(root):
@@ -96,9 +103,10 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
             (repository/'test/wippy.yaml').write_text('organization: example\nmodule: harness\n')
             with patch(__name__+'.module_repositories',return_value=[repository]):
                 self.assertEqual(declared_module_roots(),[repository.resolve()])
+                self.assertEqual(module_root('example/product'), repository)
 
     def test_realtime_dispatch_has_no_member_surface(self):
-        registry = entries(ROOT / 'core/realtime-dispatch/src')
+        registry = entries(module_root('kickside/realtime-dispatch') / 'src')
         self.assertFalse(any(entry['kind'] == 'http.endpoint' for entry in registry.values()))
         self.assertFalse(any((entry.get('meta') or {}).get('intent') == 'module_access'
                              for entry in registry.values()))
@@ -143,7 +151,7 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
 
     def test_endpoint_free_member_policies_retain_included_runtime_grants(self):
         modules = declared_module_roots()
-        count = 0
+        seen = set()
         for module in modules:
             registry = entries(module / 'src')
             for identity, entry in registry.items():
@@ -166,13 +174,15 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                     self.assertTrue(resources, identity)
                     self.assertEqual(entry['policy'], runtimes[0]['policy'], identity)
                     self.assertEqual(list(pattern_conditions(entry['policy'].get('conditions', []))), [], identity)
-                count += 1
-        self.assertEqual(count, 36)
+                seen.add(identity)
+        expected = json.loads((Path(__file__).resolve().parents[1] /
+            'mocks/security_model/endpoint_free_runtime_policies.json').read_text())
+        self.assertEqual(seen, set(expected))
 
     def test_endpoint_grants_list_exact_declared_identities(self):
-        for path in ('platform/mcp', 'core/jobs'):
-            with self.subTest(module=path):
-                registry = entries(ROOT / path / 'src')
+        for module in ('kickside/mcp', 'kickside/jobs'):
+            with self.subTest(module=module):
+                registry = entries(module_root(module) / 'src')
                 endpoint_ids = {id for id, entry in registry.items() if entry['kind'] == 'http.endpoint'}
                 for id, entry in registry.items():
                     if entry['kind'] != 'security.policy':
@@ -194,9 +204,9 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                             self.assertFalse(admits(entry, endpoint + '.unlisted'), id)
 
     def test_each_historical_component_owns_the_endpoint_grant_once(self):
-        for path, (name, namespace) in MODULES.items():
-            with self.subTest(module=path):
-                registry = entries(ROOT / path / 'src')
+        for module, (name, namespace) in MODULES.items():
+            with self.subTest(module=module):
+                registry = entries(module_root(module) / 'src')
                 historical = namespace + '.security:' + name + '_endpoint_access'
                 component = registry[historical]
                 bundle = registry[namespace + '.security:module_access']
@@ -214,7 +224,7 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                     self.assertEqual(grants, [historical], endpoint)
 
     def test_additional_historical_component_retains_native_meaning_and_composes_once(self):
-        registry = entries(ROOT / 'platform/mcp/src')
+        registry = entries(module_root('kickside/mcp') / 'src')
         historical = 'kickside.mcp.security:mcp_endpoint_access'
         published = json.loads((Path(__file__).resolve().parents[1] /
             'mocks/security_model/published_endpoint_components.json').read_text())
@@ -233,7 +243,7 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                 self.assertIn(grants[0], bundle['meta']['includes'], endpoint)
 
     def test_users_components_keep_separate_original_meanings(self):
-        registry = entries(ROOT / 'platform/users/src')
+        registry = entries(module_root('kickside/users') / 'src')
         expected = {
             'kickside.users.security:users_endpoint_access': ('me', 'update_me', 'logout'),
             'kickside.users.profile:profile_endpoint_access': ('get_profile', 'put_profile'),
@@ -248,7 +258,7 @@ class EndpointPolicyComponentsTests(unittest.TestCase):
                 self.assertEqual(admits(component, endpoint), endpoint in permitted, historical + ' ' + endpoint)
 
     def test_contract_binding_admits_only_core_member_endpoints(self):
-        policy = entries(ROOT / 'core/contract/src')['kickside.contract.http:user_endpoint_access']
+        policy = entries(module_root('kickside/contract') / 'src')['kickside.contract.http:user_endpoint_access']
         for endpoint in ('kickside.core.threads.api:list_threads.endpoint', 'kickside.core.retention.api:get_thread_retention.endpoint'):
             self.assertTrue(admits(policy, endpoint), endpoint)
         for endpoint in ('kickside.agents.api:list.endpoint', 'kickside.core.jobs.api:list.endpoint',
