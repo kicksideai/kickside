@@ -1,10 +1,27 @@
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 import urllib.request
 from ops.compat.fetch_baselines import HubOnly, app_lock
 
 class FetchTests(unittest.TestCase):
+    def test_direct_module_load_resolves_shared_wapp_reader(self):
+        module = Path(__file__).resolve().parents[1] / 'fetch_baselines.py'
+        program = '''
+import importlib.util
+import sys
+spec = importlib.util.spec_from_file_location('isolated_fetch_baselines', sys.argv[1])
+loaded = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(loaded)
+assert callable(loaded.read_pack)
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run([sys.executable, '-c', program, str(module)],
+                                    cwd=directory, capture_output=True, text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_hub_artifact_redirect_strips_credentials(self):
         handler = HubOnly(artifact=True)
         req = urllib.request.Request('https://hub.wippy.ai/api/v1/modules/a/b/versions/1/download', headers={'Authorization': 'Bearer secret'})

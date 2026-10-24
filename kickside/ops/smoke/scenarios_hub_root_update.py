@@ -1,8 +1,12 @@
 """An installed application receives a usable Hub update plan."""
 import json
 from pathlib import Path
+import re
 import sqlite3
+import subprocess
+import yaml
 
+from candidate_hub_registry import CandidateHubRegistry
 from harness import Scenario, require
 from module_lifecycle_contract import dependency, install_latest, published_fixture, versions
 from mcp_contracts import open_keeper_application
@@ -84,6 +88,171 @@ def provider_update_dependency_capability(ctx):
                      dict(plan['install_payload'], run_migrations=True),
                      label='provider-update-install', timeout=300)
         inst.await_keeper()
+
+
+def _at_least(version, floor):
+    def parsed(value):
+        match = re.fullmatch(r'v?(\d+)\.(\d+)\.(\d+)', str(value))
+        require(match is not None, 'Hub selected a non-semver provider dependency: ' + str(value))
+        return tuple(map(int, match.groups()))
+    return parsed(version) >= parsed(floor)
+
+
+def _connection_contract(index):
+    entries = yaml.safe_load(index.read_text()).get('entries', [])
+    dependencies = [entry for entry in entries
+                    if entry.get('kind') == 'ns.dependency'
+                    and entry.get('component') == 'kickside/connection']
+    require(len(dependencies) == 1 and dependencies[0].get('version') == '>=0.3.0',
+            'Candidate source does not declare the capacity Connection contract: '
+            + json.dumps(dependencies))
+
+
+def _pack_candidate(inst, source, module, version):
+    """Use the native packer; do not invent a catalog artifact from source text."""
+    source = Path(source)
+    test_root = source / 'test'
+    config = test_root / '.wippy.yaml'
+    require(config.is_file(), 'Candidate provider has no native package test config')
+    artifact = inst.root / (module.replace('/', '-') + '-' + version + '.wapp')
+    packed = subprocess.run([inst.config['binary'], '--config', str(config), 'pack',
+                             '--module', module, str(artifact)], cwd=test_root,
+                            env=inst.env, capture_output=True, text=True, timeout=180)
+    inst.evidence.save('candidate-provider-pack', {
+        'artifact': str(artifact), 'exit_code': packed.returncode,
+        'stdout': packed.stdout, 'stderr': packed.stderr})
+    require(packed.returncode == 0 and artifact.is_file(),
+            'Native candidate pack fails: ' + packed.stderr)
+    return artifact
+
+
+def provider_candidate_dependency_capability(ctx):
+    """Prove a real unpublished package through Keeper's Hub transport."""
+    components = ('kickside/connection', 'kickside/atlassian')
+    missing = [module for module in components if module not in ctx.inst.config['replace']]
+    require(not missing, 'Candidate provider gate requires local sources: ' + ', '.join(missing))
+    candidates = {module: ctx.inst.config['replace'][module] for module in components}
+    _connection_contract(Path(candidates['kickside/atlassian']) / 'src/_index.yaml')
+    candidate_version = '0.1.28'
+    artifact = _pack_candidate(ctx.inst, candidates['kickside/atlassian'],
+                               'kickside/atlassian', candidate_version)
+
+    with CandidateHubRegistry(artifact, 'kickside/atlassian', candidate_version) as catalog:
+        def prepare(fixture):
+            # This is the supported runtime registry configuration.  The proxy
+            # forwards every non-candidate RPC to the published Hub.
+            fixture.inst.env['WIPPY_REGISTRY'] = catalog.url
+
+        with published_fixture(ctx, published_app=True, prepare=prepare) as fixture:
+            inst = fixture.inst
+            arguments = {
+                'component': 'kickside/atlassian',
+                'version': '>=' + candidate_version,
+                'parameters': [
+                    {'name': 'kickside.atlassian:env_storage', 'value': 'app.env:store'},
+                    {'name': 'kickside.atlassian:ui_server', 'value': 'app:gateway'},
+                ],
+                'run_migrations': True,
+            }
+            historical = install_historical_module(inst, 'kickside/connection', '>=0.1.0 <0.1.49')
+            historical_versions = {row['module_version'] for row in historical['entries']
+                                   if row['module'] == 'kickside/connection'}
+            pinned_rejection = inst.request('POST', '/api/v1/keeper/hub/dependencies/plan', arguments,
+                                            expect=(409,), label='candidate-provider-pinned-connection-rejection',
+                                            timeout=120)
+            require(pinned_rejection.get('success') is False
+                    and '>=0.3.0' in json.dumps(pinned_rejection)
+                    and '<0.1.49' in json.dumps(pinned_rejection),
+                    'Candidate planner does not reject the incompatible explicit historical Connection root: '
+                    + json.dumps(pinned_rejection))
+            # The historical installation is an explicit root requirement.  A
+            # real update must first release that obsolete upper bound, just as
+            # the published provider-upgrade fixture does; otherwise no solver
+            # can satisfy both '<0.1.49' and this candidate's '>=0.3.0'.
+            connection_plan = inst.request(
+                'POST', '/api/v1/keeper/hub/dependencies/plan',
+                {'component': 'kickside/connection', 'version': '*',
+                 'parameters': historical['parameters'], 'run_migrations': True},
+                label='candidate-provider-unrestricted-connection-plan', timeout=120)
+            require(not [row for row in connection_plan.get('requirements', [])
+                         if row.get('missing') or row.get('invalid')],
+                    'Candidate pre-upgrade cannot release the historical Connection bound: '
+                    + json.dumps(connection_plan))
+            inst.request('POST', '/api/v1/keeper/hub/dependencies/install',
+                         dict(connection_plan['install_payload'], run_migrations=True),
+                         label='candidate-provider-unrestricted-connection-install', timeout=300)
+            inst.await_keeper()
+            from scenarios_issue_guards import registry_versions
+            database_before = registry_versions(inst)
+            try:
+                plan = inst.request('POST', '/api/v1/keeper/hub/dependencies/plan', arguments,
+                                    label='candidate-provider-plan', timeout=120)
+            except Exception:
+                # Preserve the real catalog exchange for a rejected live plan;
+                # it distinguishes a planner rejection from an unused overlay.
+                inst.evidence.save('candidate-provider-catalog-traffic', {
+                    'registry': catalog.url, 'artifact_sha256': catalog.digest,
+                    'candidate_version': candidate_version,
+                    'catalog_requests': catalog.requests,
+                })
+                raise
+            require(not [row for row in plan.get('requirements', []) if row.get('missing') or row.get('invalid')],
+                    'Candidate provider plan has unresolved requirements: ' + json.dumps(plan))
+            selected = {row['module']: row for row in plan.get('graph', [])
+                        if row.get('module') in components}
+            require(set(selected) == set(components),
+                    'Candidate provider plan omits its Connection closure: ' + json.dumps(plan.get('graph', [])))
+            require(selected['kickside/atlassian'].get('version') == candidate_version,
+                    'Hub does not select the candidate provider artifact: '
+                    + json.dumps(selected['kickside/atlassian']))
+            provider_dependencies = selected['kickside/atlassian'].get('dependencies', [])
+            connection_requirement = [row for row in provider_dependencies
+                                      if row.get('org') == 'kickside' and row.get('name') == 'connection']
+            require(len(connection_requirement) == 1
+                    and connection_requirement[0].get('version_constraint') == '>=0.3.0',
+                    'Candidate provider does not declare the capacity Connection contract: '
+                    + json.dumps(connection_requirement))
+            require(_at_least(selected['kickside/connection'].get('version'), '0.3.0'),
+                    'Hub selects an incompatible Connection artifact: ' + json.dumps(selected['kickside/connection']))
+            result = inst.request('POST', '/api/v1/keeper/hub/dependencies/install',
+                                  dict(plan['install_payload'], run_migrations=True),
+                                  label='candidate-provider-install', timeout=300)
+            require(not [row for row in result.get('execution', [])
+                         if row.get('status') in ('failed', 'rollback_failed')],
+                    'Candidate provider install rolls back: ' + json.dumps(result))
+            inst.await_keeper()
+            current = dependency(inst, 'kickside/connection')
+            installed = {row['module_version'] for row in current['entries']
+                         if row['module'] == 'kickside/connection'}
+            require(len(installed) == 1 and all(_at_least(version, '0.3.0') for version in installed),
+                    'Candidate provider leaves the historical Connection artifact installed: '
+                    + json.dumps({'before': sorted(historical_versions), 'after': sorted(installed)}))
+            rejected = inst.request('POST', '/api/v1/keeper/hub/dependencies/plan',
+                                    dict(arguments, version='>=9.9.9'), expect=(409,),
+                                    label='candidate-provider-unsupported-version', timeout=120)
+            require(rejected.get('code') == 'CONFLICT',
+                    'Unsupported candidate version does not reject at the real planner: ' + json.dumps(rejected))
+            database_after = registry_versions(inst)
+            require(database_after[0] > database_before[0],
+                    'Candidate install does not persist a registry history version: '
+                    + json.dumps({'before': database_before, 'after': database_after}))
+            kinds = [row['kind'] for row in catalog.requests]
+            # The current native client uses the DownloadInfo URL embedded in
+            # GetManifest, then fetches the WAPP directly; it does not make a
+            # redundant GetDownloadURL RPC.  Assert every real leg instead of
+            # a protocol call this runtime deliberately omits.
+            require(all(kind in kinds for kind in ('candidate-version', 'candidate-get-version',
+                                                   'candidate-manifest', 'artifact')),
+                    'Candidate registry did not serve native catalog metadata and the packed artifact: '
+                    + json.dumps(catalog.requests))
+            inst.evidence.save('candidate-provider-connection-contract', {
+                'registry': catalog.url, 'artifact_sha256': catalog.digest,
+                'candidate_version': candidate_version,
+                'historical_connection': sorted(historical_versions),
+                'installed_connection': sorted(installed),
+                'registry_history': {'before': database_before, 'after': database_after},
+                'catalog_requests': catalog.requests,
+            })
 
 
 def package_default_update(ctx, module, constraint, parameter):
@@ -208,6 +377,9 @@ REGISTRY = [Scenario('hub_update_dependency_destination', 'regression', hub_upda
                      issues=('HUB-ROOT-DESCRIPTOR-LITERAL-TYPES',)),
             Scenario('regression_hub_provider_update_dependency_capability', 'regression',
                      provider_update_dependency_capability, ('boot',), instance_setup=True,
+                     issues=('HUB-PROVIDER-UPDATE-DEPENDENCY-CAPABILITY',)),
+            Scenario('regression_hub_candidate_provider_dependency_capability', 'regression',
+                     provider_candidate_dependency_capability, ('boot',), instance_setup=True,
                      issues=('HUB-PROVIDER-UPDATE-DEPENDENCY-CAPABILITY',)),
             Scenario('regression_hub_ui_update_package_default', 'regression', ui_update_package_default,
                      ('boot',), instance_setup=True, issues=('HUB-UPDATE-PACKAGE-DEFAULT',)),

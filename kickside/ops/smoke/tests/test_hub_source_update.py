@@ -1,3 +1,4 @@
+import http.client
 import os
 from pathlib import Path
 import tempfile
@@ -11,6 +12,126 @@ from module_lifecycle_contract import update_source
 
 
 class HubSourceUpdateTests(unittest.TestCase):
+    @staticmethod
+    def _module_request(org, name, *, version=None, version_id=None):
+        from candidate_hub_registry import _field, _text
+        module = _field(2, _text(1, org) + _text(2, name))
+        request = _field(1, module)
+        if version_id is not None:
+            request += _field(2, _text(1, version_id))
+        elif version is not None:
+            request += _field(2, _text(2, version))
+        return request
+
+    @staticmethod
+    def _native_package(path, dependencies):
+        """Build the smallest genuine WIPPYPACK layout needed by this test."""
+        import hashlib
+        import msgpack
+        import struct
+        import zstandard
+
+        entries = [{'ID': {'ns': 'fixture', 'name': 'dependency-' + str(index)},
+                    'Kind': 'ns.dependency',
+                    'Data': {'component': component, 'version': constraint}}
+                   for index, (component, constraint) in enumerate(dependencies)]
+        entries_raw = msgpack.packb(entries, use_bin_type=True)
+        compressor = zstandard.ZstdCompressor()
+        entries_frame = compressor.compress(entries_raw)
+        offset = 268
+        toc = {'Entries': {'Offset': offset, 'Size': len(entries_frame),
+                           'UncompressedSize': len(entries_raw)}}
+        toc_frame = compressor.compress(msgpack.packb(toc, use_bin_type=True))
+        header = bytearray(268)
+        header[:9] = b'WIPPYPACK'
+        header[9] = 1
+        struct.pack_into('<QQ', header, 12, offset, len(entries_frame))
+        header[28:60] = hashlib.sha256(entries_frame).digest()
+        path.write_bytes(bytes(header) + entries_frame + toc_frame +
+                         struct.pack('<QQ', offset + len(entries_frame), len(toc_frame)))
+
+    def test_candidate_registry_serves_packed_bytes_and_overlays_only_candidate_versions(self):
+        from candidate_hub_registry import CandidateHubRegistry, GET_VERSION, LIST_VERSIONS, _field, _text
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifact = root / 'candidate.wapp'
+            artifact.write_bytes(b'real-packed-bytes')
+            with CandidateHubRegistry(artifact, 'kickside/atlassian', '0.1.28') as registry:
+                published = _field(1, _text(2, 'published-atlassian-module-id'))
+                with patch.object(registry, '_forward', return_value=(200, published, {})):
+                    parsed = registry.url.removeprefix('http://').split(':')
+                    client = http.client.HTTPConnection(parsed[0], int(parsed[1]))
+                    client.request('GET', '/candidate/' + registry.digest + '.wapp')
+                    artifact_response = client.getresponse()
+                    self.assertEqual(artifact_response.status, 200)
+                    self.assertEqual(artifact_response.read(), b'real-packed-bytes')
+                    client.request('POST', LIST_VERSIONS, self._module_request('kickside', 'atlassian'),
+                                   {'Content-Type': 'application/proto'})
+                    catalog_response = client.getresponse()
+                    self.assertEqual(catalog_response.status, 200)
+                    payload = catalog_response.read()
+                    self.assertTrue(payload.startswith(published))
+                    self.assertIn(b'0.1.28', payload)
+                    self.assertIn(b'candidate-kickside-atlassian', payload)
+                    self.assertIn(b'published-atlassian-module-id', payload)
+                    client.request('POST', GET_VERSION,
+                                   self._module_request('kickside', 'atlassian',
+                                                        version_id='candidate-kickside-atlassian'),
+                                   {'Content-Type': 'application/proto'})
+                    version_response = client.getresponse()
+                    self.assertEqual(version_response.status, 200)
+                    self.assertIn(b'0.1.28', version_response.read())
+                    client.request('POST', GET_VERSION,
+                                   self._module_request('kickside', 'atlassian', version='0.1.27'),
+                                   {'Content-Type': 'application/proto'})
+                    historical_response = client.getresponse()
+                    self.assertEqual(historical_response.status, 200)
+                    self.assertEqual(historical_response.read(), published)
+                    client.request('POST', LIST_VERSIONS,
+                                   self._module_request('evil-kickside', 'atlassian-shadow'),
+                                   {'Content-Type': 'application/proto'})
+                    other_module_response = client.getresponse()
+                    self.assertEqual(other_module_response.status, 200)
+                    self.assertEqual(other_module_response.read(), published)
+                    self.assertEqual([request['kind'] for request in registry.requests],
+                                     ['artifact', 'candidate-version', 'candidate-get-version', 'upstream',
+                                      'upstream'])
+
+    def test_candidate_manifest_uses_dependency_ranges_from_native_package(self):
+        from candidate_hub_registry import CandidateHubRegistry, MANIFEST, _wire_fields
+        with tempfile.TemporaryDirectory() as directory:
+            artifact = Path(directory) / 'candidate.wapp'
+            self._native_package(artifact, [
+                ('kickside/component', '*'),
+                ('kickside/connection', '>=0.3.0'),
+            ])
+            with CandidateHubRegistry(artifact, 'kickside/atlassian', '0.1.28') as registry:
+                parsed = registry.url.removeprefix('http://').split(':')
+                client = http.client.HTTPConnection(parsed[0], int(parsed[1]))
+                client.request('POST', MANIFEST,
+                               self._module_request('kickside', 'atlassian', version='0.1.28'),
+                               {'Content-Type': 'application/proto'})
+                response = client.getresponse()
+                self.assertEqual(response.status, 200)
+                top = dict((number, value) for number, wire, value in _wire_fields(response.read())
+                           if wire == 2)
+                manifest = list(_wire_fields(top[1]))
+                fields = {number: value for number, wire, value in manifest if wire == 2}
+                self.assertEqual({field: fields[field] for field in (2, 3)},
+                                 {2: b'kickside', 3: b'atlassian'})
+                self.assertEqual(fields[5], b'0.1.28')
+                dependencies = []
+                for number, wire, value in manifest:
+                    if number == 9 and wire == 2:
+                        dependency = {field: item for field, item_wire, item in _wire_fields(value)
+                                      if item_wire == 2}
+                        dependencies.append((dependency[1], dependency[2], dependency[9]))
+                self.assertEqual(dependencies, [
+                    (b'kickside', b'component', b'*'),
+                    (b'kickside', b'connection', b'>=0.3.0'),
+                ])
+                self.assertEqual([request['kind'] for request in registry.requests], ['candidate-manifest'])
+
     def test_published_bot_accounts_capability_retains_the_current_endpoint_and_empty_candidate_set(self):
         from scenarios_published_run_as import published_bot_accounts_capability
 

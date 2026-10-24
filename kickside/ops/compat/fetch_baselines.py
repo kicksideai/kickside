@@ -2,17 +2,18 @@
 import hashlib
 import json
 from pathlib import Path
-import struct
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 
-import msgpack
 import yaml
-import zstandard
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from ops.compat.wapp import read_pack
+
 sys.path.insert(0, str(ROOT / '.github/scripts'))
 from release_content import credentials, content_digest, module_url
 
@@ -93,22 +94,6 @@ class Hub:
         path.write_bytes(raw)
         content_digest(path)
         return {'version': version, 'sha256': digest, 'entries': read_pack(path)}
-
-
-def read_pack(path):
-    raw = path.read_bytes()
-    offset, size = struct.unpack('<QQ', raw[-16:])
-    decoder = zstandard.ZstdDecompressor()
-    index = msgpack.unpackb(decoder.decompress(raw[offset:offset + size]), raw=False)
-    frame = index['Entries']
-    entries = msgpack.unpackb(decoder.decompress(raw[frame['Offset']:frame['Offset'] + frame['Size']], max_output_size=frame['UncompressedSize']), raw=False, strict_map_key=False)
-    result = {}
-    for row in entries:
-        identity = row['ID']['ns'] + ':' + row['ID']['name']
-        if identity in result:
-            raise ValueError(f'{identity}: duplicate packed entry')
-        result[identity] = {key: row.get(key) or {} for key in ('Kind', 'Meta', 'Data')}
-    return result
 
 
 def app_lock(path, identities):

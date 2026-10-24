@@ -4038,6 +4038,14 @@
     },
     "HUB-PROVIDER-UPDATE-DEPENDENCY-CAPABILITY": {
       "guards": {
+        "regression_hub_candidate_provider_dependency_capability": {
+          "assertions": [
+            "A native-packed unpublished provider candidate is resolved through the loopback Hub catalog and installed through the real Keeper plan/install APIs after a separate native unpin/upgrade of an incompatible historical Connection root; the install records the compatible Connection and registry history."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        },
         "regression_hub_provider_update_dependency_capability": {
           "assertions": [],
           "types": [
