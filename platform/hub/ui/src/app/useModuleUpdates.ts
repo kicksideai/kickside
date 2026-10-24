@@ -254,14 +254,19 @@ async function updateAllAvailable() {
       `Failed ${failed.length}${failed.length ? `: ${failed.join('; ')}` : ''}`,
       `Skipped ${skipped.length}${skipped.length ? `: ${skipped.join('; ')}` : ''}`,
     ].join('. '))
-    await refreshAll()
-    await refreshSelectedDetail()
   } catch (e: unknown) {
     const message = errorMessage(e, 'update failed')
     for (const dep of pending) setUpdateInfo(dep.component, { status: 'failed', message })
     showToast('error', message)
   } finally {
-    updateAllRunning.value = false
+    try {
+      await refreshAll()
+      await refreshSelectedDetail()
+    } catch (e: unknown) {
+      showToast('error', `Module status could not be refreshed: ${errorMessage(e, 'refresh failed')}`)
+    } finally {
+      updateAllRunning.value = false
+    }
   }
 }
 
