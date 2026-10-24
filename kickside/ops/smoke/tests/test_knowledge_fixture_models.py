@@ -174,6 +174,57 @@ class KnowledgeFixtureModelsTests(unittest.TestCase):
         with patch.object(access.uuid, 'uuid4', return_value=SimpleNamespace(hex='not-ready')):
             access.produce_event(ctx, fixture, 'owner')
 
+    def test_member_sync_delivery_waits_for_its_durable_materialization_without_search(self):
+        calls, markers = [], []
+        scoped_external_id = 'inbox:member:notice:621'
+        ctx = SimpleNamespace(state={'access_declarations': {
+            'kickside.inbox:inbox_binding': {'meta': {'class': ['kickside.inbox']}}}}, inst=Mock())
+        fixture = access.Fixture(access.kind_named('kb_document'), 'library', 'Member library')
+
+        def api(_ctx, _role, method, path, body=None, **kwargs):
+            calls.append((_role, method, path, body))
+            if method == 'POST' and path == '/automations':
+                self.assertEqual(body['input']['sink_config'], {'kb_id': 'library'})
+                return {'id': 'sync'}
+            if method == 'GET' and path == '/automations/sync/config':
+                return {'id': 'sync'}
+            if method == 'POST' and path == '/inbox':
+                markers.append(body['content'])
+                return {'item': {'id': 'notice'}}
+            marker = markers[0] if markers else ''
+            if method == 'GET' and path == '/threads/library/events?ascending=true&limit=200':
+                return {'events': [{'type': 'kickside.knowledge.events:content.upserted',
+                                    'external_id': scoped_external_id, 'body': {'content': marker}}]}
+            if method == 'GET' and path == '/kb10/library/browse?node_type=document&include_content=true&limit=100':
+                return {'nodes': [{'id': 'document', 'content': marker,
+                                   'metadata': {'external_id': scoped_external_id, 'status': 'completed'}}]}
+            if method == 'GET' and path == '/kb10/library/browse?parent_id=document&include_content=true&limit=100':
+                return {'nodes': [{'id': 'summary', 'node_type': 'summary', 'parent_id': 'document',
+                                   'content': 'materialized summary', 'metadata': {'external_id': scoped_external_id}}]}
+            if method == 'GET' and path == '/automations/sync/status':
+                return {'drives': [{'phase': 'running'}]}
+            self.fail('Unexpected member-sync request: ' + repr((method, path, body)))
+
+        def wait(predicate, label, *, seconds):
+            self.assertEqual(label, 'Member sync materializes its exact durable KB content')
+            self.assertEqual(seconds, 120)
+            self.assertEqual(predicate()['id'], 'document')
+
+        ctx.inst.wait.side_effect = wait
+        with patch.object(access, 'install_package'), patch.object(access, 'renew'), \
+             patch.object(access, 'create', return_value=fixture), \
+             patch.object(access, 'actor_id', return_value='member'), \
+             patch.object(access, 'provision_id', return_value='inbox'), \
+             patch.object(access, 'request', side_effect=api), \
+             patch.object(access.uuid, 'uuid4', return_value=SimpleNamespace(hex='syncmarker')):
+            access.regression_member_sync_create(ctx, delivery=True)
+
+        self.assertEqual(markers, ['NW-SYNC-621-MEMBER-syncma'])
+        self.assertTrue(calls and all(role == 'write' for role, *_ in calls), calls)
+        self.assertFalse(any(path == '/knowledge/library/search' for _, _, path, _ in calls))
+        self.assertIn(('write', 'GET', '/threads/library/events?ascending=true&limit=200', None), calls)
+        self.assertIn(('write', 'GET', '/kb10/library/browse?node_type=document&include_content=true&limit=100', None), calls)
+
     def test_denied_access_kb_producer_creates_no_matching_event_or_node(self):
         marker = 'NW-PRODUCER-denied'
         calls = []

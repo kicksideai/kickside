@@ -1357,6 +1357,57 @@ def primary(ctx, f, role, *, denied=False, readonly=False):
     return result
 
 
+def knowledge_upsert_event(ctx, kb_id, external_id, *, role='owner'):
+    events = request(ctx, role, 'GET', '/threads/' + kb_id + '/events?ascending=true&limit=200')['events']
+    return next((row for row in events if row.get('type') == 'kickside.knowledge.events:content.upserted'
+                 and row.get('external_id') == external_id), None)
+
+
+def knowledge_upsert_event_by_content(ctx, kb_id, marker, *, role='owner'):
+    events = request(ctx, role, 'GET', '/threads/' + kb_id + '/events?ascending=true&limit=200')['events']
+    for row in events:
+        if row.get('type') != 'kickside.knowledge.events:content.upserted':
+            continue
+        body = row.get('body', {})
+        if isinstance(body, str):
+            body = json.loads(body)
+        if isinstance(body, dict) and body.get('content') == marker:
+            external_id = row.get('external_id')
+            require(isinstance(external_id, str) and external_id,
+                    'Knowledge upsert event with the producer marker has no source identity: ' + str(row))
+            return row
+    return None
+
+
+def knowledge_materialized_documents(ctx, kb_id, external_id, marker, *, role='owner'):
+    documents = request(ctx, role, 'GET', '/kb10/' + kb_id +
+                        '/browse?node_type=document&include_content=true&limit=100')['nodes']
+    return [node for node in documents if node.get('metadata', {}).get('external_id') == external_id
+            and marker in str(node.get('content', ''))]
+
+
+def knowledge_materialized(ctx, kb_id, external_id, marker, *, role='owner'):
+    """Return the exact completed durable upsert materialization, or None while pending."""
+    event = knowledge_upsert_event(ctx, kb_id, external_id, role=role)
+    if not event:
+        return None
+    body = event.get('body', {})
+    if isinstance(body, str):
+        body = json.loads(body)
+    require(isinstance(body, dict) and body.get('content') == marker,
+            'Knowledge upsert event loses its exact producer marker: ' + str(event))
+    matches = knowledge_materialized_documents(ctx, kb_id, external_id, marker, role=role)
+    require(len(matches) <= 1, 'One producer event materializes multiple documents: ' + str(matches))
+    if not matches or matches[0].get('metadata', {}).get('status') != 'completed':
+        return None
+    children = request(ctx, role, 'GET', '/kb10/' + kb_id + '/browse?parent_id=' + matches[0]['id'] +
+                       '&include_content=true&limit=100')['nodes']
+    return matches[0] if any(child.get('node_type') in ('summary', 'chunk')
+                             and child.get('parent_id') == matches[0]['id']
+                             and child.get('metadata', {}).get('external_id') == external_id
+                             and str(child.get('content', '')).strip() for child in children) else None
+
+
 def produce_event(ctx, f, role, *, denied=False):
     if f.data.get('generic'):
         marker = 'NW-FORGED-' + uuid.uuid4().hex
@@ -1403,44 +1454,14 @@ def produce_event(ctx, f, role, *, denied=False):
         result = request(ctx, role, 'POST', '/knowledge/' + f.id + '/ingest',
                          {'title': marker, 'content': marker, 'external_id': external_id, 'external_version': '1'}, denied=denied)
 
-        def matching_event():
-            events = request(ctx, 'owner', 'GET', '/threads/' + f.id + '/events?ascending=true&limit=200')['events']
-            return next((row for row in events if row.get('type') == 'kickside.knowledge.events:content.upserted'
-                        and row.get('external_id') == external_id), None)
-
-        def matching_documents():
-            documents = request(ctx, 'owner', 'GET', '/kb10/' + f.id +
-                                '/browse?node_type=document&include_content=true&limit=100')['nodes']
-            return [node for node in documents if node.get('metadata', {}).get('external_id') == external_id
-                    and marker in str(node.get('content', ''))]
-
-        def event_and_document():
-            event = matching_event()
-            if not event:
-                return None
-            body = event.get('body', {})
-            if isinstance(body, str):
-                body = json.loads(body)
-            require(isinstance(body, dict) and body.get('content') == marker,
-                    'Knowledge upsert event loses its exact producer marker: ' + str(event))
-            matches = matching_documents()
-            require(len(matches) <= 1, 'One producer event materializes multiple documents: ' + str(matches))
-            if not matches or matches[0].get('metadata', {}).get('status') != 'completed':
-                return None
-            children = request(ctx, 'owner', 'GET', '/kb10/' + f.id + '/browse?parent_id=' + matches[0]['id'] +
-                               '&include_content=true&limit=100')['nodes']
-            return matches[0] if any(child.get('node_type') in ('summary', 'chunk')
-                                     and child.get('parent_id') == matches[0]['id']
-                                     and child.get('metadata', {}).get('external_id') == external_id
-                                     and str(child.get('content', '')).strip() for child in children) else None
-
         if denied:
-            require(not matching_event(), 'Denied ingestion creates a durable upsert event')
-            require(not matching_documents(), 'Denied ingestion materializes content')
+            require(not knowledge_upsert_event(ctx, f.id, external_id), 'Denied ingestion creates a durable upsert event')
+            require(not knowledge_materialized_documents(ctx, f.id, external_id, marker), 'Denied ingestion materializes content')
         else:
             require(result.get('thread_id') == f.id and result.get('projection_id') and result.get('external_id') == external_id,
                     'Granted ingestion supplies no matching durable receipt: ' + str(result))
-            ctx.inst.wait(event_and_document, 'Granted ingestion materializes its exact durable content', seconds=120)
+            ctx.inst.wait(lambda: knowledge_materialized(ctx, f.id, external_id, marker),
+                          'Granted ingestion materializes its exact durable content', seconds=120)
         return result
     if name == 'uploads':
         marker = 'NW-PRODUCER-' + uuid.uuid4().hex
@@ -2259,8 +2280,10 @@ def regression_member_sync_create(ctx, *, delivery=False):
     require(aid in json.dumps(request(ctx, 'write', 'GET', '/automations/' + aid + '/config')), 'Member Data Sync creation does not persist')
     if delivery:
         request(ctx, 'write', 'POST', '/inbox', {'item_type': 'notice', 'title': marker, 'content': marker})
-        ctx.inst.wait(lambda: marker in json.dumps(request(ctx, 'write', 'POST', '/knowledge/' + f.id + '/search',
-                      {'query': marker, 'limit': 5})), 'Member sync produces searchable KB content', seconds=120)
+        def delivered():
+            event = knowledge_upsert_event_by_content(ctx, f.id, marker, role='write')
+            return knowledge_materialized(ctx, f.id, event['external_id'], marker, role='write') if event else None
+        ctx.inst.wait(delivered, 'Member sync materializes its exact durable KB content', seconds=120)
         status = request(ctx, 'write', 'GET', '/automations/' + aid + '/status')
         require('retry' not in json.dumps(status).lower(), 'Delivered member sync still retries: ' + str(status))
 
@@ -2316,7 +2339,7 @@ REGRESSION_CASES = (
     ('QA-P06', lambda ctx: delete(ctx, create(ctx, kind_named('remote_mcp')), 'stranger', denied=True), True, http('kickside/connection', 'POST /api/v1/connections', 'DELETE /api/v1/connections/{id}'), True),
     ('R2-001', regression_member_upload_delete, True, http('kickside/uploads', 'POST /api/v1/uploads', 'DELETE /api/v1/uploads/{uuid}', 'GET /api/v1/uploads/{uuid}', 'GET /api/v1/uploads/list'), False),
     ('R2-002', regression_png_ingest, True, http('kickside/knowledge', 'POST /api/v1/knowledge/{id}/ingest-upload', 'POST /api/v1/knowledge/{id}/search') + http('kickside/uploads', 'POST /api/v1/uploads'), True),
-    ('R2-003', lambda ctx: regression_member_sync_create(ctx, delivery=True), True, http('kickside/automation', 'POST /api/v1/automations', 'GET /api/v1/automations/{id}/status') + http('kickside/knowledge', 'POST /api/v1/knowledge/{id}/search'), True),
+    ('R2-003', lambda ctx: regression_member_sync_create(ctx, delivery=True), True, http('kickside/automation', 'POST /api/v1/automations', 'GET /api/v1/automations/{id}/status') + http('kickside/core', 'GET /api/v1/threads/{id}/events') + http('kickside/kb10', 'GET /api/v1/kb10/{id}/browse'), True),
     ('R2-005', regression_mcp_profile_context, True, http('kickside/mcp', 'POST /api/v1/mcp/credentials', 'POST /api/public/mcp'), True),
     ('R2-015', regression_member_renderer_catalog, False, http('kickside/renderers', 'GET /api/v1/renderers'), False),
     ('R2-002_apps', regression_workspace_granted_parent, False, SHARE_FEATURES + http('chestor/workspace', 'POST /api/v1/workspace/entries', 'GET /api/v1/workspace/entries/{id}') + http('chestor/graph', 'GET /api/v1/workspace/graphs/{id}', 'POST /api/v1/workspace/graphs/{id}/apply'), True),
