@@ -1,5 +1,6 @@
 """Focused, fresh module and application harness execution for smoke guards."""
 import copy
+from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
@@ -19,6 +20,139 @@ from runtime import drop_database, source_directory
 
 
 DEFAULT_TIMEOUT = 900
+SOURCE_COPY_IGNORED = frozenset(('.git', '.wippy', 'node_modules', '__pycache__'))
+
+
+def _private_suite_root():
+    """Return the checkout that owns smoke-only checks and harness tooling."""
+    return Path(__file__).resolve().parents[2]
+
+
+def _owned_overlay_path(path, owner):
+    """Validate a private fixture name before it is copied into an overlay."""
+    relative = Path(path)
+    require(relative.parts and not relative.is_absolute() and '..' not in relative.parts,
+            'Private overlay fixture must be a relative non-traversing path: ' + str(path))
+    fixture = owner / relative
+    candidate = fixture.resolve()
+    require(candidate.is_relative_to(owner),
+            'Private overlay fixture escapes its owning checkout: ' + str(path))
+    require(candidate.exists(), 'Private overlay fixture is absent: ' + str(relative))
+    return relative, fixture
+
+
+def _overlay_destination_path(path):
+    relative = Path(path)
+    require(relative.parts and not relative.is_absolute() and '..' not in relative.parts,
+            'Private overlay destination must be a relative non-traversing path: ' + str(path))
+    return relative
+
+
+def _planned_symlink_target(link, destination):
+    raw = Path(os.readlink(link))
+    return raw.resolve() if raw.is_absolute() else (destination.parent / raw).resolve()
+
+
+def _validate_copied_links(source, destination, source_root, overlay_root, label):
+    """Refuse links which would point outside their source or disposable copy."""
+    def copied_links():
+        if source.is_symlink():
+            yield source
+            return
+        for directory, directories, files in os.walk(source, followlinks=False):
+            directories[:] = [name for name in directories if name not in SOURCE_COPY_IGNORED]
+            for name in (*directories, *files):
+                path = Path(directory) / name
+                if name not in SOURCE_COPY_IGNORED and path.is_symlink():
+                    yield path
+    for link in copied_links():
+        planned = destination if link == source else destination / link.relative_to(source)
+        require(link.resolve().is_relative_to(source_root),
+                label + ' source symlink escapes its owned tree: ' + str(link))
+        require(_planned_symlink_target(link, planned).is_relative_to(overlay_root),
+                label + ' symlink escapes the disposable source: ' + str(link))
+
+
+def _overlay_module_overrides(overlay, overrides):
+    """Apply explicitly selected product modules to an otherwise public copy."""
+    resolved_overlay = overlay.resolve()
+    for relative, source in (overrides or {}).items():
+        destination = overlay / _overlay_destination_path(relative)
+        selected = Path(source).resolve()
+        require(selected.is_dir(), 'Public overlay module source is absent: ' + str(selected))
+        require(destination.resolve().is_relative_to(resolved_overlay),
+                'Public overlay module escapes the disposable source: ' + str(relative))
+        _validate_copied_links(selected, destination, selected, resolved_overlay,
+                               'Public overlay module')
+        if destination.is_symlink() or destination.is_file():
+            destination.unlink()
+        elif destination.is_dir():
+            shutil.rmtree(destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(selected, destination, symlinks=True,
+                        ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+
+
+def selected_module_overrides(ctx, modules):
+    """Map explicit product module replacements onto their public tree paths."""
+    replacements = ctx.inst.config.get('replace', {})
+    return {relative: Path(replacements[component]).resolve()
+            for relative, component in modules if replacements.get(component)}
+
+
+def selected_module_file(source, overrides, relative):
+    """Resolve a product file from its selected module replacement, if any."""
+    candidate = Path(relative)
+    for module, selected in overrides.items():
+        module_path = Path(module)
+        if candidate.is_relative_to(module_path):
+            return selected / candidate.relative_to(module_path)
+    return Path(source) / candidate
+
+
+@contextmanager
+def public_source_overlay(ctx, owned_paths, *, owner=None, module_overrides=None):
+    """Copy public product source and add named private-only harness files.
+
+    The product source is never changed. Private paths are deliberately
+    constrained to files absent from that source, so this helper cannot replace
+    public implementation code with a similarly named private file.
+    """
+    source = Path(ctx.inst.config['source']).resolve()
+    require(source.is_dir(), 'Public source overlay requires a source directory: ' + str(source))
+    owner = Path(owner).resolve() if owner else _private_suite_root()
+    require(owner.is_dir(), 'Private overlay owner is absent: ' + str(owner))
+    fixtures = []
+    for path in owned_paths:
+        source_path, destination_path = path if isinstance(path, tuple) else (path, path)
+        relative, fixture = _owned_overlay_path(source_path, owner)
+        fixtures.append((_overlay_destination_path(destination_path), fixture))
+    temporary = Path(ctx.inst.root) / 'temp'
+    temporary.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='public-source-overlay-', dir=temporary) as directory:
+        overlay = Path(directory) / source.name
+        _validate_copied_links(source, overlay, source, overlay.resolve(), 'Public source')
+        shutil.copytree(source, overlay, symlinks=True,
+                        ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+        _overlay_module_overrides(overlay, module_overrides)
+        resolved_overlay = overlay.resolve()
+        for relative, fixture in fixtures:
+            destination = overlay / relative
+            require(destination.resolve().is_relative_to(resolved_overlay),
+                    'Private overlay fixture escapes the disposable source: ' + str(relative))
+            require(not destination.exists() and not destination.is_symlink(),
+                    'Private overlay fixture would replace public source: ' + str(relative))
+            _validate_copied_links(fixture, destination, owner, resolved_overlay,
+                                   'Private overlay fixture')
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if fixture.is_symlink():
+                destination.symlink_to(os.readlink(fixture), target_is_directory=fixture.is_dir())
+            elif fixture.is_dir():
+                shutil.copytree(fixture, destination, symlinks=True, dirs_exist_ok=True,
+                                ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+            else:
+                shutil.copy2(fixture, destination)
+        yield overlay
 
 
 def copy_harness(original,repository,scratch):

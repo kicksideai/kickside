@@ -1,6 +1,27 @@
 """Bot-account credential exclusion at the native Users boundaries."""
 from harness import Scenario, require
-from module_harness import run_focused_module_test
+from module_harness import public_source_overlay, run_focused_module_test
+
+
+COMPAT_UPGRADE_TOOLING = (
+    '.github/scripts/release_content.py',
+    'ops/compat/fetch_baselines.py',
+    'ops/compat/wapp.py',
+    'ops/compat/inventory.py',
+    'ops/compat/migrations.py',
+    'ops/compat/harness/_index.yaml',
+    'ops/compat/harness/suite.lua',
+    'ops/compat/integration/credential_updates.py',
+    'ops/compat/integration/test_run_as_upgrade.py',
+    'ops/compat/integration/http_readiness.lua',
+    'ops/compat/integration/run_as_sso_upgrade.lua',
+    'ops/compat/integration/run_as_mcp_upgrade.lua',
+    'ops/compat/integration/run_as_identity_upgrade.lua',
+    'ops/compat/integration/test_sso_bot_accounts_upgrade.py',
+    'ops/compat/integration/test_mcp_bot_accounts_upgrade.py',
+    'ops/compat/integration/test_identity_bot_accounts_upgrade.py',
+    'ops/compat/integration/test_migration_repeat.py',
+)
 
 
 def bot_accounts_users_auth_exclusion(ctx):
@@ -72,16 +93,17 @@ def _bot_accounts_update(ctx, suite, label):
     from pathlib import Path
     import subprocess
     import sys
-    root = Path(ctx.inst.config['source']).resolve()
     evidence = ctx.inst.root / (label + '-upgrade')
     evidence.mkdir(parents=True, exist_ok=True)
     environment = dict(ctx.inst.env, PATH=str(Path(ctx.inst.config['binary']).parent)
-                       + os.pathsep + ctx.inst.env.get('PATH', ''), TMPDIR=str(evidence))
+                       + os.pathsep + ctx.inst.env.get('PATH', ''), TMPDIR=str(evidence),
+                       COMPAT_MODULE_ROOTS=os.pathsep.join(sorted(set(ctx.inst.config['replace'].values()))))
     log = evidence / 'result.log'
-    with log.open('w') as output:
-        result = subprocess.run([sys.executable, '-m', suite,
-                                 '--engine', ctx.inst.engine, '--evidence', str(evidence)],
-                                cwd=root, env=environment, stdout=output, stderr=subprocess.STDOUT, timeout=900)
+    with public_source_overlay(ctx, COMPAT_UPGRADE_TOOLING) as root:
+        with log.open('w') as output:
+            result = subprocess.run([sys.executable, '-m', suite,
+                                     '--engine', ctx.inst.engine, '--evidence', str(evidence)],
+                                    cwd=root, env=environment, stdout=output, stderr=subprocess.STDOUT, timeout=900)
     require(result.returncode == 0, 'Published ' + label + ' update fails; see ' + str(log))
     ctx.inst.evidence.save(label + '-update', {'engine': ctx.inst.engine, 'status': 'pass', 'log': str(log)})
 

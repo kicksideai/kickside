@@ -3,14 +3,14 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from reportlab.pdfgen import canvas
 from pypdf.errors import PdfReadError
 
 from harness import Cleanup, Failure
 from scenarios import Context
-from scenarios_converters import html2pdf_sdk, inspect_pdf
+from scenarios_converters import html2pdf_sdk, inspect_pdf, shipped_wasm_artifacts, wasm_artifact_paths
 from scenarios_converters import MARKERS
 import base64
 import json
@@ -27,6 +27,64 @@ def document(pages):
 
 
 class ConverterPDFTests(unittest.TestCase):
+    def test_wasm_artifacts_use_git_filter_when_source_has_metadata(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            source = Path(directory)
+            (source / '.git').mkdir()
+            wasm = source / 'src' / 'shipped.wasm'
+            wasm.parent.mkdir()
+            wasm.write_bytes(b'shipped')
+            untracked = source / 'src' / 'generated.wasm'
+            untracked.write_bytes(b'generated')
+            with patch('scenarios_converters.subprocess.check_output',
+                       side_effect=lambda command, **kwargs: 'src/shipped.wasm\n'
+                       if command[-1] == 'src/shipped.wasm' else '') as listed:
+                self.assertEqual(shipped_wasm_artifacts(source), [(wasm, 'tracked')])
+            self.assertEqual(listed.call_count, 2)
+
+    def test_wasm_artifacts_inspect_every_file_in_a_git_free_archive(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            source = Path(directory)
+            first = source / 'src' / 'first.wasm'
+            first.parent.mkdir()
+            first.write_bytes(b'first')
+            second = source / 'src' / 'nested' / 'second.wasm'
+            second.parent.mkdir()
+            second.write_bytes(b'second')
+            with patch('scenarios_converters.subprocess.check_output') as listed:
+                self.assertEqual(shipped_wasm_artifacts(source), [(first, 'archived'), (second, 'archived')])
+            listed.assert_not_called()
+
+    def test_wasm_artifact_git_errors_propagate_when_metadata_is_present(self):
+        import subprocess
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            source = Path(directory)
+            (source / '.git').mkdir()
+            artifact = source / 'src' / 'shipped.wasm'
+            artifact.parent.mkdir()
+            artifact.write_bytes(b'shipped')
+            with patch('scenarios_converters.subprocess.check_output',
+                       side_effect=subprocess.CalledProcessError(1, ['git'])):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    shipped_wasm_artifacts(source)
+
+    def test_wasm_path_guard_rejects_nonportable_artifacts_in_a_git_free_archive(self):
+        from types import SimpleNamespace
+        from harness import Failure
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            source = Path(directory)
+            artifact = source / 'src' / 'shipped.wasm'
+            artifact.parent.mkdir()
+            artifact.write_bytes(b'/home/builder/private/source')
+            evidence = Mock()
+            ctx = SimpleNamespace(inst=SimpleNamespace(
+                config={'replace': {'kickside/converter': str(source)}}, evidence=evidence))
+            with self.assertRaisesRegex(Failure, 'Wasm artifacts contain local source paths'):
+                wasm_artifact_paths(ctx)
+            rows = evidence.save.call_args.args[1]
+            self.assertEqual(rows[0]['ownership'], 'archived')
+            self.assertFalse(rows[0]['portable_paths'])
+
     def test_pdf_probe_reads_a_direct_result_before_inspection(self):
         pdf = document([' '.join(MARKERS)])
         payload = {'pdf_base64': base64.b64encode(pdf).decode(), 'byte_count': len(pdf)}

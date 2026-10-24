@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -48,6 +50,349 @@ class Completed:
     returncode = 0
     stdout = 'PASSED 1 tests\n'
     stderr = ''
+
+
+class PublicSourceOverlayTests(unittest.TestCase):
+    def setUp(self):
+        self.scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
+        self.scratch.mkdir(exist_ok=True)
+
+    def _context(self, workspace, source):
+        return Context(Instance(workspace / 'run', source))
+
+    def test_upgrade_commands_load_from_their_staged_private_tooling(self):
+        from module_harness import public_source_overlay
+        from scenarios_bot_accounts import COMPAT_UPGRADE_TOOLING
+        environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            source.mkdir()
+            with public_source_overlay(self._context(workspace, source), COMPAT_UPGRADE_TOOLING) as overlay:
+                for module in ('test_sso_bot_accounts_upgrade', 'test_mcp_bot_accounts_upgrade',
+                               'test_identity_bot_accounts_upgrade', 'test_migration_repeat'):
+                    with self.subTest(module=module):
+                        result = subprocess.run(
+                            [sys.executable, '-m', 'ops.compat.integration.' + module, '--help'],
+                            cwd=overlay, env=environment, capture_output=True, text=True, timeout=20)
+                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_selected_module_ignores_external_links_in_excluded_caches(self):
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source, selected, private = (workspace / name for name in ('public', 'selected', 'private'))
+            source.mkdir()
+            selected.mkdir()
+            private.mkdir()
+            (selected / 'component.lua').write_text('selected implementation')
+            outside = workspace / 'outside'
+            outside.mkdir()
+            for name in ('.git', '.wippy', 'node_modules', '__pycache__'):
+                cache = selected / name
+                cache.mkdir()
+                (cache / 'external').symlink_to(outside, target_is_directory=True)
+            with public_source_overlay(self._context(workspace, source), (), owner=private,
+                                       module_overrides={'platform/agents': selected}) as overlay:
+                copied = overlay / 'platform/agents'
+                self.assertEqual((copied / 'component.lua').read_text(), 'selected implementation')
+                self.assertTrue(all(not (copied / name).exists() for name in
+                                    ('.git', '.wippy', 'node_modules', '__pycache__')))
+
+    def test_refuses_external_base_source_links_before_running_any_private_check(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source, private, outside = (workspace / name for name in ('public', 'private', 'outside'))
+            source.mkdir()
+            private.mkdir()
+            outside.write_text('outside implementation')
+            (source / 'component.lua').symlink_to(outside)
+            with self.assertRaisesRegex(Failure, 'Public source source symlink escapes its owned tree'):
+                with public_source_overlay(self._context(workspace, source), (), owner=private):
+                    self.fail('external source link reached an executable overlay')
+
+    def test_stages_named_private_checks_without_changing_public_source(self):
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            public_component = source / 'platform/agents/ui/src/app/AgentBlockConfig.vue'
+            public_component.parent.mkdir(parents=True)
+            public_component.write_text('public component\n')
+            check = private / 'tests/check_agent.py'
+            check.parent.mkdir(parents=True)
+            check.write_text('private check\n')
+            original = public_component.read_bytes()
+            with public_source_overlay(self._context(workspace, source), ('tests/check_agent.py',), owner=private) as overlay:
+                self.assertEqual((overlay / 'tests/check_agent.py').read_text(), 'private check\n')
+                self.assertEqual((overlay / public_component.relative_to(source)).read_bytes(), original)
+                (overlay / public_component.relative_to(source)).write_text('overlay-only change\n')
+            self.assertEqual(public_component.read_bytes(), original)
+            self.assertFalse((source / 'tests/check_agent.py').exists())
+
+    def test_requires_each_named_private_fixture_before_copying(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            private.mkdir()
+            with self.assertRaisesRegex(Failure, 'fixture is absent'):
+                with public_source_overlay(self._context(workspace, source), ('tests/missing.py',), owner=private):
+                    pass
+            self.assertEqual(list(source.iterdir()), [])
+
+    def test_refuses_absolute_and_traversing_private_fixture_names(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            private.mkdir()
+            for name in ('/tmp/not-a-fixture', '../outside.py'):
+                with self.subTest(name=name), self.assertRaisesRegex(Failure, 'relative non-traversing'):
+                    with public_source_overlay(self._context(workspace, source), (name,), owner=private):
+                        pass
+
+    def test_refuses_private_fixtures_that_would_replace_public_code(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            private.mkdir()
+            (source / 'Makefile').write_text('public gate\n')
+            (private / 'Makefile').write_text('private gate\n')
+            with self.assertRaisesRegex(Failure, 'would replace public source'):
+                with public_source_overlay(self._context(workspace, source), ('Makefile',), owner=private):
+                    pass
+            self.assertEqual((source / 'Makefile').read_text(), 'public gate\n')
+
+    def test_refuses_private_fixture_collision_with_a_dangling_public_symlink(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            private.mkdir()
+            product_link = source / 'product-entry.py'
+            product_link.symlink_to('missing-product-entry.py')
+            fixture = private / 'product-entry.py'
+            fixture.write_text('private fixture\n')
+            with self.assertRaisesRegex(Failure, 'would replace public source'):
+                with public_source_overlay(self._context(workspace, source), ('product-entry.py',), owner=private):
+                    pass
+            self.assertTrue(product_link.is_symlink())
+            self.assertEqual(os.readlink(product_link), 'missing-product-entry.py')
+            self.assertFalse((source / 'missing-product-entry.py').exists())
+
+    def test_preserves_a_safe_public_symlink_beside_private_tooling(self):
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            private.mkdir()
+            (source / 'product-entry.py').write_text('public product\n')
+            (source / 'product-link.py').symlink_to('product-entry.py')
+            (private / 'checks/check.py').parent.mkdir(parents=True)
+            (private / 'checks/check.py').write_text('private fixture\n')
+            with public_source_overlay(self._context(workspace, source), ('checks/check.py',), owner=private) as overlay:
+                copied_link = overlay / 'product-link.py'
+                self.assertTrue(copied_link.is_symlink())
+                self.assertEqual(copied_link.read_text(), 'public product\n')
+                self.assertEqual((overlay / 'checks/check.py').read_text(), 'private fixture\n')
+
+    def test_stages_private_tooling_at_a_distinct_smoke_only_destination(self):
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            private.mkdir()
+            (source / 'Makefile').write_text('public gate\n')
+            (private / 'Makefile').write_text('private gate\n')
+            with public_source_overlay(self._context(workspace, source),
+                                       (('Makefile', '.smoke/private-gate.mk'),), owner=private) as overlay:
+                self.assertEqual((overlay / 'Makefile').read_text(), 'public gate\n')
+                self.assertEqual((overlay / '.smoke/private-gate.mk').read_text(), 'private gate\n')
+
+    def test_refuses_a_public_source_symlink_that_escapes_the_overlay(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            outside = workspace / 'outside'
+            source.mkdir()
+            private.mkdir()
+            outside.mkdir()
+            (source / 'linked').symlink_to(outside, target_is_directory=True)
+            fixture = private / 'linked/check.py'
+            fixture.parent.mkdir()
+            fixture.write_text('private check\n')
+            with self.assertRaisesRegex(Failure, 'source symlink escapes its owned tree'):
+                with public_source_overlay(self._context(workspace, source), ('linked/check.py',), owner=private):
+                    pass
+            self.assertFalse((outside / 'check.py').exists())
+
+    def test_preserves_a_named_private_fixture_symlink(self):
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            fixture = private / 'checks/check.py'
+            fixture.parent.mkdir(parents=True)
+            fixture.write_text('private check\n')
+            link = private / 'checks/check-link.py'
+            link.symlink_to('check.py')
+            with public_source_overlay(self._context(workspace, source),
+                                       ('checks/check.py', 'checks/check-link.py'), owner=private) as overlay:
+                staged = overlay / 'checks/check-link.py'
+                self.assertTrue(staged.is_symlink())
+                self.assertEqual(os.readlink(staged), 'check.py')
+
+    def test_refuses_private_symlinks_that_escape_after_destination_remapping(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            source.mkdir()
+            (private / 'safe.py').parent.mkdir(parents=True)
+            (private / 'safe.py').write_text('private check\n')
+            link = private / 'deep/nested/check.py'
+            link.parent.mkdir(parents=True)
+            link.symlink_to('../../safe.py')
+            with self.assertRaisesRegex(Failure, 'symlink escapes the disposable source'):
+                with public_source_overlay(self._context(workspace, source),
+                                           (('deep/nested/check.py', '.smoke/check.py'),), owner=private):
+                    pass
+
+    def test_refuses_selected_module_symlinks_to_external_sources(self):
+        from harness import Failure
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            selected = workspace / 'selected-agents'
+            outside = workspace / 'outside.lua'
+            source.mkdir()
+            private.mkdir()
+            (selected / 'src').mkdir(parents=True)
+            outside.write_text('outside\n')
+            (selected / 'src/external.lua').symlink_to(outside)
+            with self.assertRaisesRegex(Failure, 'module source symlink escapes its owned tree'):
+                with public_source_overlay(self._context(workspace, source), (), owner=private,
+                                           module_overrides={'platform/agents': selected}):
+                    pass
+
+    def test_uses_selected_module_bytes_without_changing_any_source(self):
+        from module_harness import public_source_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            private = workspace / 'private'
+            selected = workspace / 'selected-agents'
+            base_file = source / 'platform/agents/src/entry.lua'
+            selected_file = selected / 'src/entry.lua'
+            base_file.parent.mkdir(parents=True)
+            selected_file.parent.mkdir(parents=True)
+            private.mkdir()
+            base_file.write_text('base module\n')
+            selected_file.write_text('selected module\n')
+            with public_source_overlay(self._context(workspace, source), (), owner=private,
+                                       module_overrides={'platform/agents': selected}) as overlay:
+                self.assertEqual((overlay / 'platform/agents/src/entry.lua').read_text(), 'selected module\n')
+            self.assertEqual(base_file.read_text(), 'base module\n')
+            self.assertEqual(selected_file.read_text(), 'selected module\n')
+
+
+class FrontendTestToolingTests(unittest.TestCase):
+    def test_hub_overlay_includes_every_declared_vitest_setup_file(self):
+        import re
+        from scenarios_automation_task_forms import frontend_specs
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            component = source / 'platform/hub/ui/src/app/modules.vue'
+            component.parent.mkdir(parents=True)
+            component.write_text('selected public component')
+            ctx = Context(Instance(workspace / 'run', source))
+
+            def verify_setup(command, **kwargs):
+                ui = Path(kwargs['cwd']) / 'platform/hub/ui'
+                config = (ui / 'vitest.config.ts').read_text()
+                setup = re.search(r'setupFiles:\s*\[([^]]+)\]', config).group(1)
+                paths = re.findall(r"['\"]([^'\"]+)['\"]", setup)
+                self.assertTrue(paths, 'Hub Vitest config must declare its setup files')
+                for path in paths:
+                    self.assertTrue((ui / path).is_file(), 'Missing Hub setup file: ' + path)
+                return Completed()
+
+            with patch('subprocess.run', side_effect=verify_setup) as invoke:
+                frontend_specs(ctx, 'hub', ('src/app/modules_updates_and_planning.spec.ts',), 'hub')
+            self.assertEqual(invoke.call_count, 2)
+
+    def test_public_component_map_covers_every_frontend_spec_caller(self):
+        import ast
+        import scenarios_automation_task_forms as forms
+        callers = set()
+        for scenario in Path(forms.__file__).parent.glob('scenarios_*.py'):
+            for node in ast.walk(ast.parse(scenario.read_text())):
+                if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                        and node.func.id == 'frontend_specs' and len(node.args) > 1
+                        and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str)):
+                    callers.add(node.args[1].value)
+        self.assertSetEqual(callers, set(forms.PUBLIC_COMPONENTS))
+        self.assertEqual(forms.PUBLIC_COMPONENTS['settings'], ('platform/settings/ui/src/app/SettingsForm.vue',))
+        self.assertEqual(forms.PUBLIC_COMPONENTS['hub'], ('platform/hub/ui/src/app/modules.vue',))
+
+    def test_automation_test_packages_use_the_tracked_private_fixture(self):
+        from scenarios_automation_task_forms import PRIVATE_FRONTEND_TEST_TOOLING_LOCK, pinned_test_packages
+        self.assertEqual(pinned_test_packages(PRIVATE_FRONTEND_TEST_TOOLING_LOCK), 'js-yaml@5.5.0 ajv@8.20.0')
+
+    def test_automation_test_packages_are_pinned_by_the_private_lockfile(self):
+        from scenarios_automation_task_forms import pinned_test_packages
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            lock = Path(directory) / 'package-lock.json'
+            lock.write_text('{"packages":{"node_modules/js-yaml":{"version":"5.5.0"},'
+                            '"node_modules/ajv":{"version":"8.20.0"}}}')
+            self.assertEqual(pinned_test_packages(lock), 'js-yaml@5.5.0 ajv@8.20.0')
+
+    def test_automation_test_packages_require_every_lockfile_pin(self):
+        from harness import Failure
+        from scenarios_automation_task_forms import pinned_test_packages
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            lock = Path(directory) / 'package-lock.json'
+            lock.write_text('{"packages":{"node_modules/js-yaml":{"version":"5.5.0"}}}')
+            with self.assertRaisesRegex(Failure, 'must pin ajv'):
+                pinned_test_packages(lock)
+
+    def test_automation_test_packages_require_the_private_lockfile(self):
+        from harness import Failure
+        from scenarios_automation_task_forms import pinned_test_packages
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            with self.assertRaisesRegex(Failure, 'tooling lockfile is absent'):
+                pinned_test_packages(Path(directory) / 'package-lock.json')
 
 
 class TestTypeHarnessTests(unittest.TestCase):

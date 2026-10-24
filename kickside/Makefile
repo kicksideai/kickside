@@ -13,6 +13,8 @@
 
 WIPPY_BIN ?= wippy
 TEST_ARGS ?= --maxWorkers=2
+FE_TEST_COMMAND ?= npm test $(TEST_IF_PRESENT) --
+FE_TEST_PACKAGES ?=
 
 # Resolve a module name to its FE package dir; app-main is the page app.
 define fe_dir
@@ -98,7 +100,7 @@ typecheck-shared:
 test:
 	@test -n "$(MOD)" || { echo "test needs MOD=<module>"; exit 1; }
 	@case " $(UI_KIT_CONSUMERS) " in *" $(MOD) "*) $(MAKE) ui-kit MOD=$(MOD) || exit 1;; esac
-	cd $(call fe_dir,$(MOD)) && { [ -d node_modules ] || npm ci --no-audit --no-fund; } && npm test $(TEST_IF_PRESENT) -- $(TEST_ARGS)
+	cd $(call fe_dir,$(MOD)) && { [ -d node_modules ] || npm ci --no-audit --no-fund; } && { [ -z "$(FE_TEST_PACKAGES)" ] || npm install --no-save --package-lock=false --no-audit --no-fund $(FE_TEST_PACKAGES); } && $(FE_TEST_COMMAND) $(TEST_ARGS)
 
 # Shared FE vocabulary. @kickside/ui-kit is its own module publishing a
 # build-time artifact, not a path alias, so a consumer resolves it from

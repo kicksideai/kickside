@@ -1,0 +1,9 @@
+{
+  "name": "@kickside/smoke-frontend-test-tools",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "js-yaml": "5.5.0"
+  }
+}

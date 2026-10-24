@@ -56,7 +56,8 @@ def verify_credential_update(case, module, harness_path, suite, imports, modules
             for consumer in (module, *related_consumers)
         }
         env = dict(environment, ENCRYPTION_KEY="12" * 32, KICKSIDE_USERS_ADMIN_INIT_ENABLED="false",
-                   PGHOST="127.0.0.1", PGPORT="5433", PGUSER="kickside", PGPASSWORD="kickside")
+                   PGHOST="127.0.0.1", PGPORT=environment.get("PGPORT", "5433"),
+                   PGUSER="kickside", PGPASSWORD="kickside")
         for engine in engines:
             with case.subTest(engine=engine):
                 database = "bot_" + label + "_compat_" + uuid.uuid4().hex[:20]

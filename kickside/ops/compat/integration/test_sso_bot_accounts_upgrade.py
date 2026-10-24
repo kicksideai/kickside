@@ -11,7 +11,7 @@ class SsoBotAccountsUpgradeTests(unittest.TestCase):
         self.verify(("sqlite", "postgres"), Path(os.environ["TMPDIR"]), os.environ)
 
     def verify(self, engines, evidence_root, environment):
-        verify_credential_update(self, "kickside/sso", Path("../components/sso/test"), "run_as_sso_upgrade.lua",
+        verify_credential_update(self, "kickside/sso", Path("components/sso/test"), "run_as_sso_upgrade.lua",
             {"provisioner": "kickside.sso.persist:provisioner", "session": "kickside.sso:session",
              "user_repo": "kickside.users.persist:user_repo", "identities_repo": "kickside.sso.persist:identities_repo",
              "session_index": "kickside.users.persist:session_index"},

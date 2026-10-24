@@ -4,6 +4,8 @@ Install tooling with: python3 -m pip install -r ops/smoke/requirements-converter
 """
 import base64
 from io import BytesIO
+from pathlib import Path
+import subprocess
 
 from harness import Scenario, require
 from scenarios_providers import load_fixture
@@ -102,26 +104,39 @@ REGISTRY = [Scenario(
     features=('kickside/html2pdf|converter|kickside.convert.html2pdf:render',), issues=('R5-T07',), instance_setup=True)]
 
 
+def shipped_wasm_artifacts(source):
+    """Return source-owned Wasm files from a checkout or immutable archive."""
+    source = Path(source)
+    artifacts = sorted((source / 'src').rglob('*.wasm'))
+    has_git_metadata = any((parent / '.git').exists() for parent in (source, *source.parents))
+    if not has_git_metadata:
+        # A source cohort is mounted as a verified archive, so its complete
+        # source tree is the ownership boundary when Git metadata is absent.
+        return [(artifact, 'archived') for artifact in artifacts]
+    shipped = []
+    for artifact in artifacts:
+        tracked = subprocess.check_output(['git', '-C', str(source), 'ls-files', '--',
+                                           str(artifact.relative_to(source))], text=True).strip()
+        if tracked:
+            shipped.append((artifact, 'tracked'))
+    return shipped
+
+
 def wasm_artifact_paths(ctx):
-    from pathlib import Path
     import hashlib
     import re
-    import subprocess
 
     rows = []
     for module, directory in sorted(ctx.inst.config['replace'].items()):
         source = Path(directory)
-        for artifact in sorted((source / 'src').rglob('*.wasm')):
-            tracked = subprocess.check_output(['git', '-C', str(source), 'ls-files', '--',
-                                               str(artifact.relative_to(source))], text=True).strip()
-            if not tracked:
-                continue
+        for artifact, ownership in shipped_wasm_artifacts(source):
             raw = artifact.read_bytes()
             local_paths = any(marker in raw for marker in (b'/home/', b'/Users/'))
             local_paths = local_paths or re.search(rb'[A-Za-z]:[\\/]+Users[\\/]', raw) is not None
             local_paths = local_paths or str(source.resolve()).encode() in raw
             rows.append({'module': module, 'artifact': str(artifact.relative_to(source)),
-                         'sha256': hashlib.sha256(raw).hexdigest(), 'portable_paths': not local_paths})
+                         'sha256': hashlib.sha256(raw).hexdigest(), 'ownership': ownership,
+                         'portable_paths': not local_paths})
     ctx.inst.evidence.save('wasm-artifact-paths', rows)
     require(rows, 'Wasm artifact guard requires declared component sources')
     require(all(row['portable_paths'] for row in rows),
