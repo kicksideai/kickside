@@ -12,6 +12,19 @@ class Request:
     url = 'http://asset/preview.worker.js'
     method = 'GET'
     failure = 'net::ERR_FAILED'
+    # Ordinary application work uses a real Playwright resource type too; this
+    # double must not masquerade as a worker bootstrap merely because its URL
+    # happens to resemble one.
+    resource_type = 'fetch'
+
+
+class WorkerRequest(Request):
+    resource_type = 'script'
+
+    @property
+    def frame(self):
+        # Playwright refuses Request.frame for a worker-owned script.
+        raise RuntimeError('Request.frame: Cannot access frame for worker request')
 
 
 class RequestTrackingTests(unittest.TestCase):
@@ -56,14 +69,17 @@ class RequestTrackingTests(unittest.TestCase):
         with patch('browser.time.monotonic', side_effect=[0, 31]):
             with self.assertRaises(Failure) as failure:
                 self.browser.settle()
-        self.assertEqual(str(failure.exception),
-                         "Browser requests do not settle within 30 seconds: ['redacted-worker-url']")
+        message = str(failure.exception)
+        self.assertIn('Browser requests do not settle within 30 seconds:', message)
+        self.assertIn('redacted-worker-url', message)
+        self.assertNotIn(request.url, message)
 
     def test_worker_requests_finish_through_the_browser_context(self):
         handlers = self.browser.context.handlers
-        request = Request()
+        request = WorkerRequest()
         handlers['request'](request)
         self.assertEqual(list(self.browser.pending.values()), [request.url])
+        self.assertNotIn(request, self.browser.request_groups)
         handlers['requestfinished'](request)
         self.assertFalse(self.browser.pending)
         self.assertNotIn('request', self.page_handlers, 'Page and context track the same request twice')

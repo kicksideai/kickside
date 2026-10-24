@@ -9,6 +9,7 @@ class Request:
     url = 'http://app/api/v1/automations/a1/status'
     method = 'GET'
     failure = None
+    resource_type = 'fetch'
 
 
 class ReloadTests(unittest.TestCase):

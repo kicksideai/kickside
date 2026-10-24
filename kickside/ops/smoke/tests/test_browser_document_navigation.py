@@ -51,6 +51,25 @@ class DocumentNavigationTests(unittest.TestCase):
         self.assertEqual(browser.errors, ['GET https://web-host.example/core.js: net::ERR_ABORTED'])
         browser.inst.evidence.save.assert_not_called()
 
+    def test_navigation_abort_clears_worker_tracking_without_settling_the_group(self):
+        browser = self.browser()
+        request = self.request(browser)
+        key = (1, request.method, request.url)
+        browser.pending[request] = request.url
+        browser.request_groups = {request: key}
+        browser.unbound_worker_requests = {request: {'scope': 1}}
+        browser.worker_groups = {key: Browser.new_group()}
+        with browser.document_navigation('/login'):
+            browser.request_failed(request)
+            browser.page.main_frame.url = 'http://app/login'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = 'http://app/login'
+        self.assertFalse(browser.pending)
+        self.assertFalse(browser.request_groups)
+        self.assertFalse(browser.unbound_worker_requests)
+        self.assertTrue(browser.worker_groups[key]['failed'])
+        self.assertFalse(browser.errors)
+
     def test_abort_remains_an_error_when_the_page_already_has_the_target_url(self):
         browser = self.browser()
         browser.page.url = 'http://app/login'

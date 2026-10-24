@@ -20,8 +20,8 @@ class Pages:
         handlers = {}
         page.on.side_effect = lambda event, callback: handlers.update({event: callback})
         page.handlers = handlers
-        page.context = Mock()
         context = Mock()
+        page.context = context
         context.handlers = {}
         context.on.side_effect = lambda event, callback: context.handlers.update({event: callback})
         context.new_page.return_value = page
