@@ -78,7 +78,8 @@ def update_source(ctx, source, module=MODULE, *, live=False, refresh_session=Fal
         config.setdefault('workspace', {}).setdefault('replacements', {}).update(selected_sources)
         config_path.write_text(yaml.safe_dump(config, sort_keys=False))
         inst.config['replace'] = dict(inst.config['replace'], **selected_sources)
-        inst.resolve_dependencies(modules=tuple(selected_sources))
+        if not live:
+            inst.resolve_dependencies(modules=tuple(selected_sources))
     install = install_latest if installer is None else installer
     dep = install(inst, module=module, replacement=True, refresh_session=refresh_session)
     resolved = {row['module_version'] for row in dep['entries'] if row['module'] == module}

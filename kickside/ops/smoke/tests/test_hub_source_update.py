@@ -87,7 +87,7 @@ class HubSourceUpdateTests(unittest.TestCase):
             self.assertEqual(configuration['workspace']['replacements'], fixture.state['published_sources'])
             self.assertEqual(set(configuration['workspace']['replacements']), set(candidates))
 
-    def test_live_update_resolves_candidate_closure_before_planning_without_restarting(self):
+    def test_live_update_uses_keeper_planning_without_cli_resolution(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             root = Path(directory)
             candidate = root / 'candidate'
@@ -103,7 +103,7 @@ class HubSourceUpdateTests(unittest.TestCase):
                 expected = {'vendor/retained': '/retained', **replacement}
                 self.assertEqual(inst.config['replace'], expected)
                 self.assertEqual(yaml.safe_load(config.read_text())['workspace']['replacements'], expected)
-                inst.resolve_dependencies.assert_called_once_with(modules=tuple(replacement))
+                inst.resolve_dependencies.assert_not_called()
                 return {'entries': [{'module': 'example/app', 'module_version': 'local'}]}
             with patch('module_lifecycle_contract.install_latest', side_effect=install):
                 update_source(ctx, str(candidate), 'example/app', live=True, replacements=replacement)
@@ -140,7 +140,7 @@ class HubSourceUpdateTests(unittest.TestCase):
                 self.assertIs(instance, inst)
                 self.assertEqual(kwargs, {'module': 'example/app', 'replacement': True, 'refresh_session': False})
                 self.assertEqual(inst.config['replace'], {'example/app': str(candidate)})
-                inst.resolve_dependencies.assert_called_once_with(modules=('example/app',))
+                inst.resolve_dependencies.assert_not_called()
                 return {'entries': [{'module': 'example/app', 'module_version': 'local'}]}
             with patch('module_lifecycle_contract.install_latest') as native:
                 update_source(ctx, str(candidate), 'example/app', live=True, installer=install)

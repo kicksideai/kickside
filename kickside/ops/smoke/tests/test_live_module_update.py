@@ -55,14 +55,15 @@ class LiveModuleUpdateTest(unittest.TestCase):
             (root / 'wippy.lock').write_text(yaml.safe_dump({'modules': boot_modules}))
             process = SimpleNamespace(pid=731, poll=lambda: None)
             inst = SimpleNamespace(app=root, config={'replace': {}}, process=process,
-                evidence=MagicMock(), manifest=MagicMock(), resolve_dependencies=MagicMock())
+                evidence=MagicMock(), manifest=MagicMock(),
+                resolve_dependencies=MagicMock(side_effect=AssertionError('CLI resolution locks the live workspace')))
             ctx = SimpleNamespace(inst=inst)
             dependency = {'entries': [{'module': 'kickside/uploads', 'module_version': '1.0.0'}]}
             with patch('browser.Browser.paused', side_effect=AssertionError('runtime stops')), patch(
                     'module_lifecycle_contract.install_latest', return_value=dependency):
                 update_source(ctx, str(root), 'kickside/uploads', live=True)
             self.assertEqual(inst.process.pid, 731)
-            inst.resolve_dependencies.assert_called_once_with(modules=('kickside/uploads',))
+            inst.resolve_dependencies.assert_not_called()
             self.assertEqual(inst.config['replace']['kickside/uploads'], str(root))
 
 
