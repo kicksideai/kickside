@@ -28,8 +28,7 @@ def features(component, category, *keys):
 def ui(ctx, viewport=None):
     browser = ctx.browser_check()
     browser.settle()
-    storage = browser.context.storage_state()
-    browser.reset_context(storage_state=storage, viewport=viewport or {'width': 1440, 'height': 1000})
+    browser.page.set_viewport_size(viewport or {'width': 1440, 'height': 1000})
     browser.page.goto(ctx.inst.base + '/', wait_until='domcontentloaded', timeout=30000)
     browser.frame.locator('.sidebar').wait_for(timeout=30000)
     browser.settle()
