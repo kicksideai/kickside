@@ -5511,7 +5511,7 @@
       ]
     }
   },
-  "feature_count": 752,
+  "feature_count": 753,
   "provenance": {
     "basis": "published registry with optional modules",
     "local_module_updates": {

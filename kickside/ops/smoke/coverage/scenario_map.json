@@ -3097,7 +3097,6 @@
     "agent_background_identity_boundaries": {
       "features": [],
       "issues": [
-        "BOT-AGENT-BACKGROUND-RUN",
         "RA-B05",
         "RA-H50",
         "RA-H51"
@@ -6206,34 +6205,12 @@
       ],
       "tier": "full"
     },
-    "browser_agent_background_run": {
+    "browser_agents_entry_points": {
       "features": [
         "kickside/agents|navigation|kickside.agents:nav_item"
       ],
       "issues": [
-        "USERS-DECLARED-MEMBER-ENDPOINT-COVERAGE",
-        "BOT-AGENT-BACKGROUND-RUN",
-        "BOT-AGENT-LAUNCH-ERROR-RECOVERY",
-        "RA-B05",
-        "RA-B09",
-        "RA-H50",
-        "RA-H51",
-        "SMOKE-SHARED-SOURCE-FIXTURE-REENTRY"
-      ],
-      "tier": "regression"
-    },
-    "browser_agent_scoped_bot_run": {
-      "features": [
-        "kickside/agents|navigation|kickside.agents:nav_item"
-      ],
-      "issues": [
-        "EXECUTION-BASELINE-IDENTITY-RESOLUTION",
-        "SMOKE-SCOPED-EXECUTOR-FIXTURE",
-        "RA-H54",
-        "RA-B05",
-        "RA-B09",
-        "RA-H50",
-        "RA-H51"
+        "AGENTS-ENTRYPOINT-STORED-TASK-COMPATIBILITY"
       ],
       "tier": "regression"
     },

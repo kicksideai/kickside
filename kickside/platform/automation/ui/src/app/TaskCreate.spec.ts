@@ -13,7 +13,7 @@ const { load } = require('js-yaml')
 const Ajv = require('ajv')
 const host = vi.hoisted(() => ({ props: null as any, emit: vi.fn() }))
 vi.mock('@wippy-fe/webcomponent-vue', () => ({ useProps: () => ({ value: host.props }), useEvents: () => host.emit }))
-for (const tag of ['wc-agent-picker', 'wc-schema-form', 'wc-component-picker', 'wc-workflow-picker']) {
+for (const tag of ['wc-schema-form', 'wc-component-picker', 'wc-workflow-picker']) {
   if (!customElements.get(tag)) customElements.define(tag, class extends HTMLElement {})
 }
 const sink = { id: 'example.actions:write', title: 'Write a note', class: 'notes',
@@ -27,7 +27,7 @@ beforeEach(() => {
   host.emit.mockReset(); vi.mocked(api.post).mockReset(); vi.mocked(api.put).mockReset()
   vi.mocked(api.get).mockReset().mockImplementation(async (url: string) => ({ data:
     url.includes('/versions/') ? { success: true, version: { version: 3, interface: workflow.published_interface } } : url.includes('/sinks') ? { sinks: [sink] } : url.includes('/workflows') ? { success: true, workflows: [workflow] } :
-    { success: true, config: { enabled: false, _portable_input: { title: 'Digest', enabled: false, schedule: { type: 'cron', expression: '0 8 * * 1-5' }, target: { kind: 'agent', agent_id: 'example.agent:assistant', prompt: 'Prepare digest' } } } } }) as any)
+    { success: true, config: { enabled: false, _portable_input: { title: 'Digest', enabled: false, schedule: { type: 'cron', expression: '0 8 * * 1-5' }, target: { kind: 'workflow', flow_ref: { kind: 'flow', id: workflow.id, version: 3 }, input: { topic: 'News' } } } } } }) as any)
   vi.mocked(api.post).mockResolvedValue({ data: { success: true, id: 'task' } } as any)
   vi.mocked(api.put).mockResolvedValue({ data: { success: true } } as any)
 })
@@ -40,9 +40,9 @@ async function submit() { host.props.submitNonce = String(Number(host.props.subm
 async function config(w: Form, selector: string, value: object) {
   w.get(selector).element.dispatchEvent(new CustomEvent('config-changed', { detail: value, bubbles: true, composed: true })); await flushPromises()
 }
-async function agent(w: Form) {
-  await config(w, 'wc-agent-picker', { agent_id: 'example.agent:assistant' })
-  await w.get('[aria-label="Prompt"]').setValue('Prepare digest')
+async function chooseWorkflow(w: Form) {
+  await config(w, 'wc-workflow-picker', { flow_ref: { kind: 'flow', id: workflow.id, version: 3 } })
+  await config(w, '[data-test="task-target-input"] wc-schema-form', { topic: 'News' })
 }
 async function cadence(w: Form, preset: string) {
   await w.get('[data-test="tc-cron-preset"]').setValue(preset)
@@ -60,6 +60,16 @@ function payload(recurring: boolean) {
 }
 
 describe('AUTOMATION-TASK-CREATE-FORMS', () => {
+  it.each([true, false])('preserves stored agent schemas and offers supported new targets (%s)', async recurring => {
+    const doc = load(readFileSync(resolve(__dirname, `../../../src/${recurring ? 'recurring' : 'manual'}/_index.yaml`), 'utf8'))
+    const binding = doc.entries.find((entry: any) => entry.name === 'task')
+    const validate = new Ajv({ strict: false }).compile(binding.meta.inputs.properties.target)
+    expect(validate({ kind: 'agent', agent_id: 'example.agent:assistant', prompt: 'Prepare digest' })).toBe(true)
+    const w = await create(recurring)
+    expect(w.findAll('[aria-label="Target kind"] option').map(option => option.attributes('value'))).toEqual(['workflow', 'action'])
+    expect(w.find('wc-agent-picker').exists()).toBe(false)
+    w.unmount()
+  })
   it('opens a new schedule in operator words without inventing a time', async () => {
     const w = await create()
     expect((w.get('[aria-label="Cadence"]').element as HTMLSelectElement).value).toBe('daily')
@@ -68,20 +78,20 @@ describe('AUTOMATION-TASK-CREATE-FORMS', () => {
   it.each([
     ['daily', '0 8 * * *'], ['weekdays', '0 8 * * 1-5'], ['weekly', '0 8 * * 3'], ['custom', '15 6 * * 1,3,5'],
   ])('builds %s from the shared schedule editor', async (preset, expression) => {
-    const w = await create(); await agent(w); await cadence(w, preset)
+    const w = await create(); await chooseWorkflow(w); await cadence(w, preset)
     if (preset === 'weekly') await w.get('[data-test="tc-cron-weekday"]').setValue('3')
     if (preset === 'custom') await w.get('[data-test="tc-custom-cron"]').setValue(expression)
     await submit(); expect(payload(true).schedule).toEqual({ type: 'cron', expression })
   })
   it.each([['m', '15m'], ['h', '15h']])('builds an every-N %s interval accepted by the binding', async (unit, expression) => {
-    const w = await create(); await agent(w)
+    const w = await create(); await chooseWorkflow(w)
     await w.get('[data-test="tc-specific-toggle"]').setValue(false)
     await w.get('[data-test="tc-periodic-n"]').setValue(15)
     await w.get('[data-test="tc-periodic-unit"]').setValue(unit)
     await submit(); expect(payload(true).schedule).toEqual({ type: 'interval', expression })
   })
   it('rejects an empty schedule, a missing time, a missing weekly day, and an empty interval', async () => {
-    const w = await create(); await agent(w); await submit()
+    const w = await create(); await chooseWorkflow(w); await submit()
     await w.get('[data-test="tc-cron-preset"]').setValue('daily'); await submit()
     await cadence(w, 'weekly'); await submit()
     await w.get('[data-test="tc-specific-toggle"]').setValue(false); await submit()
@@ -89,15 +99,11 @@ describe('AUTOMATION-TASK-CREATE-FORMS', () => {
   })
   for (const recurring of [true, false]) {
     describe(recurring ? 'recurring' : 'manual', () => {
-      it('uses config + keyed schema for the shared agent picker and posts an agent prompt', async () => {
+      it('offers workflow and action targets only', async () => {
         const w = await create(recurring)
-        expect(JSON.parse(w.get('wc-agent-picker').attributes('schema')!).properties.agent_id).toMatchObject({ picker: 'wc-agent-picker' })
-        expect(JSON.parse(w.get('wc-agent-picker').attributes('config')!)).toEqual({})
-        await agent(w); if (recurring) await cadence(w, 'weekdays')
-        await submit(); expect(payload(recurring).target).toEqual({ kind: 'agent', agent_id: 'example.agent:assistant', prompt: 'Prepare digest' })
-        expect(host.emit).toHaveBeenCalledWith('submit-state', { saving: true })
-        expect(host.emit).toHaveBeenCalledWith('automation-installed', { success: true, id: 'task' })
-        expect(host.emit).toHaveBeenCalledWith('created', { id: 'task' })
+        expect(w.findAll('[aria-label="Target kind"] option').map(option => option.attributes('value'))).toEqual(['workflow', 'action'])
+        expect(w.find('wc-agent-picker').exists()).toBe(false)
+        expect(w.find('[aria-label="Prompt"]').exists()).toBe(false)
       })
       it('selects the existing published workflow picker and pins its published version', async () => {
         const w = await create(recurring); await w.get('[aria-label="Target kind"]').setValue('workflow'); await flushPromises()
@@ -126,15 +132,14 @@ describe('AUTOMATION-TASK-CREATE-FORMS', () => {
       })
       it('refuses incomplete targets in every kind and clears a target on kind changes', async () => {
         const w = await create(recurring); if (recurring) await cadence(w, 'daily')
-        await submit(); await config(w, 'wc-agent-picker', { agent_id: 'example.agent:assistant' }); await submit()
-        await w.get('[aria-label="Prompt"]').setValue('   '); await submit()
+        await submit()
         await w.get('[aria-label="Target kind"]').setValue('workflow'); await submit()
         await w.get('[aria-label="Target kind"]').setValue('action'); await submit()
-        await w.get('[aria-label="Target kind"]').setValue('agent'); await submit()
+        await w.get('[aria-label="Target kind"]').setValue('workflow'); await submit()
         expect(api.post).not.toHaveBeenCalled()
       })
       it('surfaces server rejection without a success event', async () => {
-        const w = await create(recurring); await agent(w); if (recurring) await cadence(w, 'daily')
+        const w = await create(recurring); await chooseWorkflow(w); if (recurring) await cadence(w, 'daily')
         vi.mocked(api.post).mockResolvedValueOnce({ data: { success: false, error: { message: 'Target is unavailable' } } } as any)
         await submit(); expect(host.emit).toHaveBeenCalledWith('automation-installed', { success: false, error: 'Target is unavailable' })
         expect(host.emit).not.toHaveBeenCalledWith('created', expect.anything())
@@ -150,7 +155,7 @@ describe('AUTOMATION-TASK-CREATE-FORMS', () => {
     let finish: (value: any) => void = () => {}
     vi.mocked(api.get).mockReturnValueOnce(new Promise(resolve => { finish = resolve }) as any)
     await config(w, 'wc-workflow-picker', { flow_ref: { kind: 'flow', id: 'second', version: 1 } })
-    await w.get('[aria-label="Target kind"]').setValue('agent')
+    await w.get('[aria-label="Target kind"]').setValue('action')
     await w.get('[aria-label="Target kind"]').setValue('workflow')
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, version: { version: 1, interface: { input_schema: { type: 'object' } } } } } as any)
     await config(w, 'wc-workflow-picker', first)
@@ -175,20 +180,20 @@ describe('AUTOMATION-TASK-CREATE-FORMS', () => {
     await w.get('[data-test="tc-cron-time"]').setValue('09:30')
     await w.get('form').trigger('submit'); await flushPromises()
     expect(api.put).toHaveBeenCalledWith('/api/v1/automations/task', { input: { title: 'Digest', enabled: false,
-      schedule: { type: 'cron', expression: '30 9 * * 1-5' }, target: { kind: 'agent', agent_id: 'example.agent:assistant', prompt: 'Prepare digest' } } })
+      schedule: { type: 'cron', expression: '30 9 * * 1-5' }, target: { kind: 'workflow', flow_ref: { kind: 'flow', id: workflow.id, version: 3 }, input: { topic: 'News' } } } })
     expect(api.post).not.toHaveBeenCalled(); expect(host.emit).toHaveBeenCalledWith('change', { id: 'task' }); expect(host.emit).toHaveBeenCalledWith('close', {})
   })
   it('opens and saves an existing interval unchanged through the cadence model', async () => {
     host.props.config = JSON.stringify({ id: 'task' })
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, config: { enabled: true,
-      _portable_input: { schedule: { type: 'interval', expression: '15m' }, target: { kind: 'agent', agent_id: 'assistant', prompt: 'Digest' } } } } } as any)
+      _portable_input: { schedule: { type: 'interval', expression: '15m' }, target: { kind: 'workflow', flow_ref: { kind: 'flow', id: workflow.id, version: 3 }, input: { topic: 'News' } } } } } } as any)
     const w = await create()
     expect(w.get('[data-test="tc-periodic-n"]').element).toHaveProperty('value', '15')
     expect(w.get('[data-test="tc-periodic-unit"]').element).toHaveProperty('value', 'm')
     expect(w.get('[data-test="tc-specific-toggle"]').element).toHaveProperty('checked', false)
     await w.get('form').trigger('submit'); await flushPromises()
     expect(api.put).toHaveBeenCalledWith('/api/v1/automations/task', { input: { title: '', enabled: true,
-      schedule: { type: 'interval', expression: '15m' }, target: { kind: 'agent', agent_id: 'assistant', prompt: 'Digest' } } })
+      schedule: { type: 'interval', expression: '15m' }, target: { kind: 'workflow', flow_ref: { kind: 'flow', id: workflow.id, version: 3 }, input: { topic: 'News' } } } })
   })
   it('withholds editing if the stored declaration cannot load', async () => {
     host.props.config = JSON.stringify({ id: 'task' }); vi.mocked(api.get).mockRejectedValue(new Error('Read denied'))

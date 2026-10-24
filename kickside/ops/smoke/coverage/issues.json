@@ -6,7 +6,6 @@
         "postgres"
       ],
       "issues": [
-        "BOT-AGENT-BACKGROUND-RUN",
         "RA-B05",
         "RA-H50",
         "RA-H51"
@@ -19,10 +18,7 @@
         "independent"
       ],
       "issues": [
-        "BOT-AGENT-BACKGROUND-RUN",
-        "RA-B05",
-        "RA-B09",
-        "BOT-AGENT-LAUNCH-ERROR-RECOVERY"
+        "AGENTS-ENTRYPOINT-STORED-TASK-COMPATIBILITY"
       ],
       "repository": "kickside/kickside",
       "test": "platform/agents/ui/src/app/agents.background-run.spec.ts"
@@ -54,7 +50,6 @@
         "postgres"
       ],
       "issues": [
-        "BOT-AGENT-BACKGROUND-RUN",
         "RA-B05",
         "RA-H50",
         "RA-H51"
@@ -9336,7 +9331,6 @@
         "independent"
       ],
       "issues": [
-        "BOT-AGENT-BACKGROUND-RUN",
         "BOT-CHANNEL-PROVIDER-EXECUTION"
       ],
       "repository": "kickside/kickside",
@@ -10190,6 +10184,17 @@
       ],
       "repository": "kickside/kickside",
       "test": "platform/workflows/test/src/suites/block_schema_publish_test.lua"
+    },
+    "automation/stored-agent-target-compatibility": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "AGENTS-ENTRYPOINT-STORED-TASK-COMPATIBILITY"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/automation/test/src/suites/recurring/manual_task_test.lua"
     }
   },
   "issues": [
@@ -10732,9 +10737,7 @@
     "SMOKE-MCP-CONSENT-PAGE-OWNERSHIP",
     "NE-148",
     "NE-149",
-    "BOT-AGENT-BACKGROUND-RUN",
     "RA-B05",
-    "BOT-AGENT-LAUNCH-ERROR-RECOVERY",
     "SMOKE-INDEPENDENT-BROWSER-DRIVER-LIFETIME",
     "BOT-CHANNEL-PROVIDER-EXECUTION",
     "RA-B06",
@@ -10990,7 +10993,6 @@
     "NE-268",
     "USERS-EDITOR-CONTENT-OVERLAP",
     "USERS-RESOLVER-OWNED-READER",
-    "SMOKE-SCOPED-EXECUTOR-FIXTURE",
     "EXECUTION-BASELINE-IDENTITY-RESOLUTION",
     "SMOKE-PERSONAL-ONBOARDING-FIXTURE-LIFETIME",
     "NE-269",
@@ -11444,6 +11446,7 @@
     "KB10-QUERY-CONFIGURATION",
     "KB10-RESUMMARIZE-OUTCOMES",
     "KB10-DELETE-IDENTITY-ERRORS",
+    "AGENTS-ENTRYPOINT-STORED-TASK-COMPATIBILITY",
     "PROJECTION-EXISTING-BLOCK-RETENTION",
     "AUTOMATION-EXISTING-SLOT-REFERENCES",
     "KEEPER-MCP-TRANSPORT-CONTEXT",
@@ -11460,9 +11463,9 @@
     "USERS-ACCOUNT-EDITOR-MODAL",
     "USERS-ACCOUNT-PAGE-LAYOUT",
     "SECURITY-ADMIN-TAB-STRUCTURE",
-    "WORKFLOW-SCHEMA-COPY-SHAPE",
     "APPEARANCE-SAVE-DIRTY-STATE",
-    "APPEARANCE-CONSECUTIVE-NAV-UPDATES"
+    "APPEARANCE-CONSECUTIVE-NAV-UPDATES",
+    "WORKFLOW-SCHEMA-COPY-SHAPE"
   ],
   "schema_version": 1
 }
