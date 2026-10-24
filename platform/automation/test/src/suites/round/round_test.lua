@@ -28,6 +28,22 @@ local db, exec, query = h.db, h.exec, h.query
 local read_drive, new_drive, set_drive = h.read_drive, h.new_drive, h.set_drive
 local log_rows, ledger_row = h.log_rows, h.ledger_row
 
+-- Jobs store timestamps in each database's native representation, so compare
+-- against its clock rather than attempting to parse the driver's result.
+local function dispatcher_state(dispatcher_id: string): Map?
+    local opened = db()
+    local dialect = tostring(opened:type())
+    opened:release()
+    local due = dialect == "sqlite"
+        and "CASE WHEN scheduled_at IS NOT NULL AND julianday(scheduled_at) <= julianday('now') THEN 1 ELSE 0 END"
+        or "CASE WHEN scheduled_at IS NOT NULL AND scheduled_at <= CURRENT_TIMESTAMP THEN TRUE ELSE FALSE END"
+    return query("SELECT status,scheduled_at," .. due .. " AS is_due FROM kickside_job WHERE id=$1", { dispatcher_id })[1]
+end
+
+local function dispatcher_is_due(dispatcher: Map): boolean
+    return dispatcher.is_due == true or dispatcher.is_due == 1 or dispatcher.is_due == "1" or dispatcher.is_due == "t"
+end
+
 local function define_tests()
     test.describe("automation round", function()
         local env: Map = {}
@@ -111,10 +127,10 @@ local function define_tests()
 
             local _, round_err = run(automation_id, key)
             test.is_nil(round_err, tostring(round_err))
-            local dispatcher = query("SELECT status,scheduled_at FROM kickside_job WHERE id=$1", { dispatcher_id })[1]
+            local dispatcher = dispatcher_state(dispatcher_id)
             test.not_nil(dispatcher)
             test.is_true(dispatcher.status == "running" or
-                (type(dispatcher.scheduled_at) == "string" and not drive.after(dispatcher.scheduled_at, drive.utc_now())),
+                (type(dispatcher.scheduled_at) == "string" and dispatcher_is_due(dispatcher)),
                 "releasing a retention blocker must demand a fresh dispatcher pass")
         end)
 
@@ -135,9 +151,10 @@ local function define_tests()
             test.eq(err, expected)
             test.eq(read_drive(automation_id, key).phase, "active")
             test.eq(#env.completions, before)
-            local dispatcher = query("SELECT status,scheduled_at FROM kickside_job WHERE id=$1", { dispatcher_id })[1]
+            local dispatcher = dispatcher_state(dispatcher_id)
+            test.not_nil(dispatcher)
             test.is_true(dispatcher.status == "running" or
-                (type(dispatcher.scheduled_at) == "string" and not drive.after(dispatcher.scheduled_at, drive.utc_now())),
+                (type(dispatcher.scheduled_at) == "string" and dispatcher_is_due(dispatcher)),
                 "the committed release must wake maintenance before notification can fail")
         end)
 
