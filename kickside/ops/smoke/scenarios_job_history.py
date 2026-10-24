@@ -10,6 +10,17 @@ from harness import Scenario, require
 from scenarios_core import mcp_call
 
 
+JOB_FIXTURE = Path('test/src/job_fixture.lua')
+
+
+def job_fixture_source(ctx):
+    jobs = ctx.inst.config.get('replace', {}).get('kickside/jobs')
+    require(jobs, 'Job history guard requires the selected kickside/jobs source')
+    fixture = Path(jobs) / JOB_FIXTURE
+    require(fixture.is_file(), 'Selected jobs fixture is absent: ' + str(fixture))
+    return fixture.read_text()
+
+
 def core_job_history_pagination(ctx):
     inst = ctx.inst
     # Installing a module changes group policy composition and revokes member sessions.
@@ -40,8 +51,7 @@ def core_job_history_pagination(ctx):
         fixture.mkdir()
         source = Path(__file__).resolve().parent / 'fixtures' / 'job_history.lua'
         (fixture / 'seed.lua').write_text(source.read_text())
-        (fixture / 'job_fixture.lua').write_text((Path(__file__).resolve().parents[2] /
-            'core/jobs/test/src/job_fixture.lua').read_text())
+        (fixture / 'job_fixture.lua').write_text(job_fixture_source(ctx))
         (fixture / '_index.yaml').write_text(yaml.safe_dump({
             'version': '1.0', 'namespace': 'app.smoke.job_history', 'entries': [
                 {'name': 'seed', 'kind': 'function.lua', 'source': 'file://seed.lua', 'method': 'handler',

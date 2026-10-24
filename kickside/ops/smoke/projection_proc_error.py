@@ -5,6 +5,17 @@ from browser import Browser
 from harness import require
 
 
+REFUSING_PROC_WORKER = Path('test/src/test_refusing_proc_worker.lua')
+
+
+def refusing_proc_worker_source(ctx):
+    core = ctx.inst.config.get('replace', {}).get('kickside/core')
+    require(core, 'Projection process guard requires the selected kickside/core source')
+    worker = Path(core) / REFUSING_PROC_WORKER
+    require(worker.is_file(), 'Selected core refusing process worker fixture is absent: ' + str(worker))
+    return worker.read_text()
+
+
 def verify_projection_proc_error(ctx, *, thread_id=None, thread_factory=None, append_event=None):
     import yaml
     from scenarios_core import create_thread
@@ -12,8 +23,7 @@ def verify_projection_proc_error(ctx, *, thread_id=None, thread_factory=None, ap
     inst = ctx.inst
     fixture = inst.app / 'src' / 'projection-error-smoke'
     fixture.mkdir(exist_ok=True)
-    (fixture / 'worker.lua').write_text((Path(__file__).resolve().parents[2] /
-        'core/core/test/src/test_refusing_proc_worker.lua').read_text())
+    (fixture / 'worker.lua').write_text(refusing_proc_worker_source(ctx))
     (fixture / '_index.yaml').write_text(yaml.safe_dump({
         'version': '1.0', 'namespace': 'app.smoke.projection_error', 'entries': [{
             'name': 'worker', 'kind': 'process.lua', 'meta': {'type': 'projection.worker'},

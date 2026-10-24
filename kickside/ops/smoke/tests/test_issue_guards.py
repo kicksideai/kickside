@@ -1,5 +1,7 @@
+import os
 from pathlib import Path
 from types import SimpleNamespace
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -59,6 +61,16 @@ class InstallSessionGuardTests(unittest.TestCase):
 
 
 class JobHistorySessionOrderTests(unittest.TestCase):
+    def test_job_history_fixture_uses_the_selected_jobs_source(self):
+        import scenarios_job_history as history
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            jobs = Path(directory) / 'selected-jobs'
+            fixture = jobs / 'test/src/job_fixture.lua'
+            fixture.parent.mkdir(parents=True)
+            fixture.write_text('return { private_queue = function() end }\n')
+            ctx = SimpleNamespace(inst=SimpleNamespace(config={'replace': {'kickside/jobs': str(jobs)}}))
+            self.assertEqual(history.job_fixture_source(ctx), fixture.read_text())
+
     def test_member_sessions_are_minted_after_the_module_install_that_revokes_them(self):
         import scenarios_job_history as history
         events = []
