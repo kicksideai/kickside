@@ -67,7 +67,6 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | Requirement | Declared default |
 | --- | --- |
 | [`kickside.blocks:process_host`](src/_index.yaml) | Host supplies the value |
-| [`kickside.blocks.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 
 ## Links
 

@@ -91,22 +91,6 @@ local function define_tests()
             test.eq(scope:evaluate(actor, "process.spawn", "unrelated.module:process"), "undefined")
             test.eq(scope:evaluate(actor, "registry.apply", "*"), "undefined")
         end)
-        test.it("binds every Blocks member policy through the stable member scope requirement", function()
-            local requirement, requirement_err = registry.get("kickside.blocks.security:user_security_scope")
-            test.is_nil(requirement_err)
-            test.not_nil(requirement)
-            test.eq(requirement.meta.value_kind, "security.scope")
-            test.eq(requirement.data.default, "kickside.security.groups:members")
-            local targets = {}
-            for _, target in ipairs(requirement.data.targets) do targets[target.entry] = target.path end
-            for _, id in ipairs({
-                "kickside.blocks.security:module_access",
-                "kickside.blocks.security:module_runtime",
-                "kickside.blocks.security:await_execution",
-            }) do
-                test.eq(targets[id], ".groups +=", id)
-            end
-        end)
         test.it("admits owned member endpoints and rejects other modules", function()
             local policy, err = security.policy("kickside.blocks.security:module_access")
             test.is_nil(err)

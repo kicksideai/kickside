@@ -37,19 +37,6 @@ entries:
     actions:
     - process.spawn
     effect: allow
-- name: user_security_scope
-  kind: ns.requirement
-  default: kickside.security.groups:members
-  meta:
-    value_kind: security.scope
-    description: Application group with member access to this module.
-  targets:
-  - entry: kickside.blocks.security:module_access
-    path: .groups +=
-  - entry: kickside.blocks.security:module_runtime
-    path: .groups +=
-  - entry: kickside.blocks.security:await_execution
-    path: .groups +=
 - name: module_runtime
   kind: security.policy
   meta:
