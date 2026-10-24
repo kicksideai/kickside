@@ -3,6 +3,7 @@ local sql = require("sql")
 local cfg = require("config")
 local lifecycle = require("lifecycle")
 local sql_boundary = require("sql_boundary")
+local thread_fence = require("thread_fence")
 
 local M = {}
 
@@ -79,7 +80,7 @@ function M.purge_slot(params: table): (integer?, error?)
         local tx, begin_err = sql_boundary.begin(db, "slot owner purge begin failed", "transaction", response_error)
         if begin_err or not tx then return nil, begin_err or response_error("transaction") end
         local lock = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
-        local rows, read_err = tx:query("SELECT id FROM kickside_job WHERE job_identity=$1 AND slot"
+        local rows, read_err = tx:query("SELECT id,owner_kind,owner_id FROM kickside_job WHERE job_identity=$1 AND slot"
             .. " ORDER BY id LIMIT 1", { identity })
         local row_err = rows_error(rows, read_err, "slot owner purge lock failed", "slot.rows")
         if row_err then return nil, sql_boundary.rollback(tx, row_err, "slot purge rollback failed") end
@@ -89,6 +90,19 @@ function M.purge_slot(params: table): (integer?, error?)
             return 0, nil
         end
         local job_id = rows[1].id
+        if rows[1].owner_kind == "thread" then
+            -- Use the same fence-before-job order as enqueue, claim and thread
+            -- cleanup. A purge must not remove a page's discovered rows.
+            local owner_id = rows[1].owner_id
+            if type(owner_id) ~= "string" or owner_id == "" then
+                return nil, sql_boundary.rollback(tx, response_error("slot.owner_id"), "slot purge rollback failed")
+            end
+            local fence, fence_err = thread_fence.lock(tx, owner_id)
+            if fence_err then return nil, sql_boundary.rollback(tx, fence_err, "slot purge rollback failed") end
+            if type(fence) ~= "table" then
+                return nil, sql_boundary.rollback(tx, response_error("fence"), "slot purge rollback failed")
+            end
+        end
         local locked, job_lock_err = tx:query("SELECT id,status FROM kickside_job WHERE id=$1" .. lock, { job_id })
         local lock_err = rows_error(locked, job_lock_err, "slot owner purge job lock failed", "job.rows")
         if lock_err then return nil, sql_boundary.rollback(tx, lock_err, "slot purge rollback failed") end

@@ -4,6 +4,7 @@ function M.reset(stage, source, dialect)
     M.primary, M.missing, M.value = nil, false, nil
     M.queries, M.writes, M.rollbacks, M.commits, M.releases = 0, 0, 0, 0, 0
     M.empty, M.running, M.remaining, M.continuation = false, false, false, false
+    M.thread_owned, M.fences, M.fence_id, M.queries_at_fence = false, 0, nil, nil
 end
 function M.result(stage, value)
     if stage == M.stage then
@@ -12,6 +13,11 @@ function M.result(stage, value)
     end
     if stage == "slot" and M.primary then return nil, M.primary end
     return value, nil
+end
+function M.lock(tx, thread_id)
+    M.fences = M.fences + 1
+    M.fence_id, M.queries_at_fence = thread_id, M.queries
+    return M.result("fence", {started = true})
 end
 function M.database(): any
     local db: any = {}
@@ -25,7 +31,8 @@ function M.database(): any
         local stages = M.dialect == "postgres" and {"slot", "job", "runs", "run_lock", "remaining", "next"}
             or {"slot", "job", "runs", "remaining", "next"}
         local stage = stages[M.queries]
-        local value = {{id = "job", status = M.running and "running" or "parked"}}
+        local value = {{id = "job", status = M.running and "running" or "parked",
+            owner_kind = M.thread_owned and "thread" or "external", owner_id = "owner"}}
         if (stage == "slot" or stage == "job") and M.empty == stage then value = {} end
         if stage == "remaining" then value = M.remaining and {{id = "run"}} or {} end
         if stage == "next" then value = M.continuation and {{id = "job"}} or {} end

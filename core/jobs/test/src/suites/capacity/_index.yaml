@@ -55,13 +55,15 @@ entries:
       comment: Exercises the public bounded thread-cleanup operation and durable A48 receipts.
     source: file://thread_teardown_test.lua
     method: run
-    modules: [sql, uuid]
+    modules: [sql, uuid, time, channel]
     imports:
       test: wippy.test:test
       jobs: kickside.core.jobs:jobs
       thread_fence: kickside.core.jobs.persist:thread_fence
       thread_teardown: kickside.core.jobs.persist:thread_teardown
       job_fixture: app:job_fixture
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      slot_purge: kickside.core.jobs.persist:slot_purge
 
   - name: enqueue_notification_test
     kind: function.lua
