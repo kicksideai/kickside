@@ -133,6 +133,30 @@ class PublicSourceOverlayTests(unittest.TestCase):
             self.assertEqual(public_component.read_bytes(), original)
             self.assertFalse((source / 'tests/check_agent.py').exists())
 
+    def test_selected_module_overlay_uses_selected_bytes_and_private_checks(self):
+        from module_harness import selected_module_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            selected = workspace / 'selected-kb10'
+            private = workspace / 'private'
+            source.mkdir()
+            styles = selected / 'ui/src/styles.css'
+            styles.parent.mkdir(parents=True)
+            styles.write_text('selected styles\n')
+            check = private / 'checks/layout.py'
+            check.parent.mkdir(parents=True)
+            check.write_text('private layout check\n')
+            ctx = self._context(workspace, source)
+            ctx.inst.config['replace']['kickside/kb10'] = str(selected)
+            with selected_module_overlay(ctx, 'kickside/kb10',
+                                         (('checks/layout.py', 'ui/tests/layout.py'),), owner=private) as overlay:
+                self.assertEqual((overlay / 'ui/src/styles.css').read_text(), 'selected styles\n')
+                self.assertEqual((overlay / 'ui/tests/layout.py').read_text(), 'private layout check\n')
+                (overlay / 'ui/src/styles.css').write_text('overlay only\n')
+            self.assertEqual(styles.read_text(), 'selected styles\n')
+            self.assertFalse((selected / 'ui/tests/layout.py').exists())
+
     def test_requires_each_named_private_fixture_before_copying(self):
         from harness import Failure
         from module_harness import public_source_overlay

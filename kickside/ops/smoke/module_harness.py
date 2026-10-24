@@ -155,6 +155,53 @@ def public_source_overlay(ctx, owned_paths, *, owner=None, module_overrides=None
         yield overlay
 
 
+@contextmanager
+def selected_module_overlay(ctx, component, owned_paths, *, owner=None):
+    """Stage private checks beside a disposable copy of one selected module.
+
+    Provider modules are selected independently from the application source
+    tree.  Their smoke-only checks therefore need the same ownership boundary
+    as application frontend checks: selected product bytes are copied first,
+    and private fixtures may only fill paths absent from those bytes.
+    """
+    selected = ctx.inst.config.get('replace', {}).get(component)
+    require(selected, 'Selected module overlay requires a local replacement for ' + component)
+    source = Path(selected).resolve()
+    require(source.is_dir(), 'Selected module source is absent: ' + str(source))
+    owner = Path(owner).resolve() if owner else _private_suite_root()
+    require(owner.is_dir(), 'Private overlay owner is absent: ' + str(owner))
+    fixtures = []
+    for path in owned_paths:
+        source_path, destination_path = path if isinstance(path, tuple) else (path, path)
+        relative, fixture = _owned_overlay_path(source_path, owner)
+        fixtures.append((_overlay_destination_path(destination_path), fixture))
+    temporary = Path(ctx.inst.root) / 'temp'
+    temporary.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='selected-module-overlay-', dir=temporary) as directory:
+        overlay = Path(directory) / source.name
+        _validate_copied_links(source, overlay, source, overlay.resolve(), 'Selected module')
+        shutil.copytree(source, overlay, symlinks=True,
+                        ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+        resolved_overlay = overlay.resolve()
+        for relative, fixture in fixtures:
+            destination = overlay / relative
+            require(destination.resolve().is_relative_to(resolved_overlay),
+                    'Private overlay fixture escapes the disposable module: ' + str(relative))
+            require(not destination.exists() and not destination.is_symlink(),
+                    'Private overlay fixture would replace selected module source: ' + str(relative))
+            _validate_copied_links(fixture, destination, owner, resolved_overlay,
+                                   'Private overlay fixture')
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if fixture.is_symlink():
+                destination.symlink_to(os.readlink(fixture), target_is_directory=fixture.is_dir())
+            elif fixture.is_dir():
+                shutil.copytree(fixture, destination, symlinks=True, dirs_exist_ok=True,
+                                ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+            else:
+                shutil.copy2(fixture, destination)
+        yield overlay
+
+
 def copy_harness(original,repository,scratch):
     container=scratch/'repository'
     container.mkdir(parents=True)

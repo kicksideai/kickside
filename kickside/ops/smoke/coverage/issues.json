@@ -5615,8 +5615,8 @@
       "issues": [
         "KB10-BROWSER-TRANSPORT-DEADLINE"
       ],
-      "repository": "kickside/providers",
-      "test": "kb10/ui/tests/test_drawer_deadline.py"
+      "repository": "kickside/kickside-internal",
+      "test": "ops/smoke/mocks/kb10-browser-layout/test_drawer_deadline.py"
     },
     "kb10/compact-list-detail": {
       "engines": [
