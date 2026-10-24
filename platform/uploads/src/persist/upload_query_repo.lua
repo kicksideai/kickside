@@ -300,10 +300,6 @@ function upload_query_repo.list_with_filters(options)
         query = query:where("actor_id = ?", options.actor_id)
     end
 
-    if options.after_id then
-        query = query:where("uuid > ?", options.after_id)
-    end
-
     if options.filters and options.filters.content_types and #options.filters.content_types > 0 then
         local content_conditions = {}
         for _, content_type in ipairs(options.filters.content_types) do
@@ -340,6 +336,27 @@ function upload_query_repo.list_with_filters(options)
     local order = "DESC"
     if options.sort_order == "asc" then
         order = "ASC"
+    end
+
+    if options.after_id then
+        -- The cursor must use the same compound order as the result. Its
+        -- timestamp/size comes from the stored row, within the caller's scope.
+        local anchor = "(SELECT " .. sort_column .. " FROM kickside_uploads WHERE uuid = ?"
+        local anchor_params = { options.after_id }
+        if options.actor_id then
+            anchor = anchor .. " AND actor_id = ?"
+            anchor_params[#anchor_params + 1] = options.actor_id
+        end
+        anchor = anchor .. ")"
+        local cursor_params = {}
+        for _ = 1, 2 do
+            for _, value in ipairs(anchor_params) do cursor_params[#cursor_params + 1] = value end
+        end
+        cursor_params[#cursor_params + 1] = options.after_id
+        local comparison = order == "ASC" and ">" or "<"
+        query = query:where("(" .. sort_column .. " " .. comparison .. " " .. anchor
+            .. " OR (" .. sort_column .. " = " .. anchor .. " AND uuid > ?))",
+            table.unpack(cursor_params))
     end
 
     query = query:order_by(sort_column .. " " .. order .. ", uuid ASC")
