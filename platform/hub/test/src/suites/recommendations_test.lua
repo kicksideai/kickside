@@ -147,7 +147,7 @@ local function define_tests()
             test.eq(result.component_ids[1], "acme/alpha")
             local entry = assert(registry.get("kickside.hub.instruments:recommender"))
             test.is_true(entry.meta.palette_hidden)
-            test.is_nil((entry :: any).tools)
+            test.is_nil(((entry.data or {}) :: any).tools)
         end)
 
         test.it("hard-codes the recommender and returns only its grounded ids", function()
