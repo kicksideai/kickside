@@ -55,6 +55,7 @@ entries:
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: worker_marker
     kind: library.lua

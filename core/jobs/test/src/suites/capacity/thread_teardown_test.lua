@@ -1,5 +1,9 @@
 local test = require("test")
 local sql = require("sql")
+local time = require("time")
+local channel = require("channel")
+local lifecycle = require("lifecycle")
+local slot_purge = require("slot_purge")
 local uuid = require("uuid")
 local jobs = require("jobs")
 local thread_fence = require("thread_fence")
@@ -99,6 +103,77 @@ local function define_tests()
             test.is_nil(delete_job_err, tostring(delete_job_err))
             local _, delete_thread_err = db:execute("DELETE FROM kickside_thread WHERE id=$1", { thread_id })
             test.is_nil(delete_thread_err, tostring(delete_thread_err))
+            db:release()
+        end)
+
+        test.it("serializes thread-owned slot purge with a discovered cleanup page", function()
+            local db = open_db()
+            local dbtype = tostring(db:type())
+            local thread_id = uuid.v7()
+            local _, thread_err = db:execute([[INSERT INTO kickside_thread
+                (id,thread_class,component_id,event_count) VALUES ($1,'jobs-cleanup',$2,0)]], { thread_id, thread_id })
+            test.is_nil(thread_err)
+            local identity = { namespace = "test", scope = thread_id, key = "cleanup-slot" }
+            local job_id, enqueue_err = lifecycle.enqueue_job(db, dbtype, {
+                owner_locator = { kind = "thread", id = thread_id }, job_identity = identity,
+                job_type = "test.cleanup_slot", slot = true, parked = true,
+            })
+            test.is_nil(enqueue_err)
+            local done = channel.new(1)
+            local started, finished, waiting = false, false, false
+            local observed: any = { begin = function()
+                local tx, begin_err = db:begin()
+                if begin_err or not tx then return tx, begin_err end
+                local backend_id = 0
+                if dbtype == sql.type.POSTGRES then
+                    local rows, pid_err = tx:query("SELECT pg_backend_pid() AS pid")
+                    test.is_nil(pid_err)
+                    backend_id = tonumber(rows[1].pid)
+                end
+                return job_fixture.observe_tx(tx, function(statement)
+                    if started or dbtype ~= sql.type.POSTGRES
+                        or statement:find("SELECT id,status,owner_kind,owner_id FROM kickside_job WHERE owner_kind=", 1, true) ~= 1 then return end
+                    started = true
+                    coroutine.spawn(function()
+                        local removed, purge_err = slot_purge.purge_slot(identity)
+                        finished = true
+                        done:send({ removed = removed, err = purge_err })
+                    end)
+                    for _ = 1, 500 do
+                        if finished then break end
+                        local rows, wait_err = db:query([[SELECT count(*) AS n FROM pg_stat_activity
+                            WHERE datname=current_database() AND $1::integer=ANY(pg_blocking_pids(pid))]], { backend_id })
+                        test.is_nil(wait_err)
+                        if tonumber(rows[1].n) > 0 then waiting = true; break end
+                        time.sleep("10ms")
+                    end
+                end), nil
+            end }
+            local page, page_err = thread_teardown.page(observed, dbtype, thread_id, 0)
+            local purged
+            if started then purged = done:receive()
+            else
+                local removed, purge_err = slot_purge.purge_slot(identity)
+                purged = { removed = removed, err = purge_err }
+            end
+            test.is_nil(page_err, tostring(page_err))
+            test.not_nil(page)
+            test.eq(page.processed, 1)
+            test.eq(page.discarded.kickside_job, 1)
+            test.is_true(page.done)
+            if dbtype == sql.type.POSTGRES then test.is_true(waiting, "slot purge waits for the cleanup fence") end
+            test.is_nil(purged.err, tostring(purged.err))
+            test.eq(purged.removed, 0)
+            local receipt, receipt_err = db:query([[SELECT processed FROM kickside_job_thread_cleanup_receipt
+                WHERE thread_id=$1 AND page_seq=0]], { thread_id })
+            test.is_nil(receipt_err)
+            test.eq(tonumber(receipt[1].processed), 1)
+            for _, name in ipairs({ "kickside_job_thread_cleanup_receipt", "kickside_job_thread_cleanup" }) do
+                local _, cleanup_err = db:execute("DELETE FROM " .. name .. " WHERE thread_id=$1", { thread_id })
+                test.is_nil(cleanup_err)
+            end
+            local _, delete_err = db:execute("DELETE FROM kickside_thread WHERE id=$1", { thread_id })
+            test.is_nil(delete_err)
             db:release()
         end)
 

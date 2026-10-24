@@ -1736,6 +1736,7 @@ entries:
       lifecycle: kickside.core.jobs.persist:lifecycle
       run_status: kickside.core.jobs:run_status
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: app:slot_purge_native_fixture
 
   - name: slot_purge_native_test
     kind: function.lua
