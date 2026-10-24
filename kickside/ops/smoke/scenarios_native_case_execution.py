@@ -33,6 +33,8 @@ def jobs_cases(ctx):
 def workflows_cases(ctx):
     executed(run_focused_module_test(ctx, 'kickside/workflows', 'block_catalog_test'), 2,
              'projects tools with exact identity and preserves non-public compiler descriptors')
+    executed(run_focused_module_test(ctx, 'kickside/workflows', 'block_schema_publish_test'), 8,
+             'publishes an empty-properties Block through the management tool')
 
 
 def research_cases(ctx):
@@ -69,7 +71,8 @@ REGISTRY = [
     Scenario('jobs_declared_cases', 'regression', jobs_cases, ('boot',),
              issues=('NATIVE-DECLARED-CASE-EXECUTION',), parallel=('native:jobs',)),
     Scenario('workflows_declared_cases', 'regression', workflows_cases, ('boot',),
-             issues=('NATIVE-DECLARED-CASE-EXECUTION', 'WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA'), parallel=('native:workflows',)),
+             issues=('NATIVE-DECLARED-CASE-EXECUTION', 'WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA',
+                     'WORKFLOW-SCHEMA-COPY-SHAPE'), parallel=('native:workflows',)),
     Scenario('research_declared_cases', 'regression', research_cases, ('boot',),
              issues=('NATIVE-DECLARED-CASE-EXECUTION',), parallel=('native:research',)),
     Scenario('app_declared_cases', 'regression', app_cases, ('boot',),

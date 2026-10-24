@@ -10178,6 +10178,18 @@
       ],
       "repository": "kickside/chestor",
       "test": "workspace/test/src/workspace_upload_stage_test.lua"
+    },
+    "workflows/empty-object-schema-publish": {
+      "engines": [
+        "sqlite",
+        "postgres"
+      ],
+      "issues": [
+        "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
+        "WORKFLOW-SCHEMA-COPY-SHAPE"
+      ],
+      "repository": "kickside/kickside",
+      "test": "platform/workflows/test/src/suites/block_schema_publish_test.lua"
     }
   },
   "issues": [
@@ -11448,6 +11460,7 @@
     "USERS-ACCOUNT-EDITOR-MODAL",
     "USERS-ACCOUNT-PAGE-LAYOUT",
     "SECURITY-ADMIN-TAB-STRUCTURE",
+    "WORKFLOW-SCHEMA-COPY-SHAPE",
     "APPEARANCE-SAVE-DIRTY-STATE",
     "APPEARANCE-CONSECUTIVE-NAV-UPDATES"
   ],

@@ -4987,6 +4987,11 @@
       ],
       "tier": "full"
     },
+    "automation_config_access": {
+      "features": [],
+      "issues": [],
+      "tier": "regression"
+    },
     "automation_connections": {
       "features": [
         "kickside/connection|http|POST /api/v1/connections",
@@ -6378,8 +6383,7 @@
         "RA-S04",
         "BOT-HELD-AGENT-AUTHORITY",
         "RA-B11",
-        "RA-H40",
-        "UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY"
+        "RA-H40"
       ],
       "tier": "regression"
     },
@@ -6387,8 +6391,7 @@
       "features": [],
       "issues": [
         "BOT-HELD-AGENT-AUTHORITY",
-        "RA-H40",
-        "UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY"
+        "RA-H40"
       ],
       "tier": "regression"
     },
@@ -16441,7 +16444,8 @@
       "features": [],
       "issues": [
         "NATIVE-DECLARED-CASE-EXECUTION",
-        "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA"
+        "WORKFLOW-CATALOG-EMPTY-OBJECT-SCHEMA",
+        "WORKFLOW-SCHEMA-COPY-SHAPE"
       ],
       "tier": "regression"
     },
