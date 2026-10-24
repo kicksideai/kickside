@@ -115,11 +115,16 @@ class ShellVendorNetworkTests(unittest.TestCase):
         (source / 'node_modules').mkdir()
         (source / 'app/scripts').mkdir()
         (source / 'app/scripts/check.mjs').write_text('script')
+        Path(self.run_root).mkdir()
+        fixture = Path(self.run_root) / 'owned-shell-vendor.test.mjs'
+        fixture.write_text('private shell contract')
         ran = []
         def run(command, cwd, **kwargs):
             cwd = Path(cwd)
             self.assertNotEqual(cwd, source)
             self.assertTrue((cwd / 'app/scripts/check.mjs').is_file())
+            self.assertEqual((cwd / 'app/scripts/check-shell-vendor.test.mjs').read_text(),
+                             'private shell contract')
             self.assertFalse((cwd / 'node_modules').exists())
             self.assertEqual((cwd / 'app/static/app').exists(), bool(ran))
             (cwd / 'app/static/app').mkdir(parents=True, exist_ok=True)
@@ -128,12 +133,22 @@ class ShellVendorNetworkTests(unittest.TestCase):
             return SimpleNamespace(returncode=0, stdout='', stderr='')
         root = Path(self.run_root)
         ctx = SimpleNamespace(inst=SimpleNamespace(config={'source': str(source)}, root=str(root), env={}, evidence=Mock()))
-        with patch('shell_vendor.subprocess.run', side_effect=run):
+        with patch('shell_vendor.PRIVATE_SHELL_VENDOR_TEST', fixture), patch('shell_vendor.subprocess.run', side_effect=run):
             shell_vendor_build(ctx)
         self.assertEqual(len(ran), 3)
         self.assertEqual((source / 'app/static/app/main/index.js').read_text(), 'built')
         self.assertFalse((source / 'app/static/app/main.js').exists())
+        self.assertFalse((source / 'app/scripts/check-shell-vendor.test.mjs').exists())
         self.assertEqual(list((root / 'temp').iterdir()), [])
+
+    def test_vendor_check_refuses_to_run_without_its_private_owned_fixture(self):
+        evidence = Mock()
+        ctx = SimpleNamespace(inst=SimpleNamespace(config={'source': str(self.source)}, root=self.run_root, env={}, evidence=evidence))
+        missing = Path(self.run_root) / 'missing-shell-vendor.test.mjs'
+        with patch('shell_vendor.PRIVATE_SHELL_VENDOR_TEST', missing), self.assertRaisesRegex(
+                Failure, 'Private shell vendor contract fixture is absent'):
+            shell_vendor_build(ctx)
+        evidence.save.assert_called_once_with('shell-vendor-build', {'commands': []})
 
     def test_vendor_check_builds_the_locked_shell_bundle_before_validation(self):
         completed = SimpleNamespace(returncode=0, stdout='completed', stderr='')

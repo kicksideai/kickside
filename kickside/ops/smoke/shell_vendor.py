@@ -11,6 +11,12 @@ from urllib.parse import urljoin, urlsplit
 from harness import require
 
 
+# This release-contract test is intentionally private. Source runs exercise a
+# public product checkout, so stage the owned test into the disposable build
+# copy rather than asking the product source to carry smoke-only fixtures.
+PRIVATE_SHELL_VENDOR_TEST = Path(__file__).resolve().parents[2] / 'app/scripts/check-shell-vendor.test.mjs'
+
+
 def _origin(url):
     target = urlsplit(url)
     return {'ws': 'http', 'wss': 'https'}.get(target.scheme, target.scheme), target.netloc
@@ -61,6 +67,15 @@ def _build_copy(source, destination):
     return destination
 
 
+def _stage_private_shell_vendor_test(build):
+    require(PRIVATE_SHELL_VENDOR_TEST.is_file(),
+            'Private shell vendor contract fixture is absent: ' + str(PRIVATE_SHELL_VENDOR_TEST))
+    target = build / 'app/scripts/check-shell-vendor.test.mjs'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(PRIVATE_SHELL_VENDOR_TEST, target)
+    return target
+
+
 def shell_vendor_build(ctx):
     source = Path(ctx.inst.config['source'])
     scratch = Path(ctx.inst.root) / 'temp'
@@ -69,6 +84,7 @@ def shell_vendor_build(ctx):
     with tempfile.TemporaryDirectory(prefix='shell-build-', dir=scratch) as directory:
         build = _build_copy(source, Path(directory) / source.name)
         try:
+            _stage_private_shell_vendor_test(build)
             for command in (['make', 'install', 'MOD=app-main'],
                             ['make', 'build', 'MOD=app-main'],
                             ['node', '--test', 'app/scripts/check-shell-vendor.test.mjs']):
