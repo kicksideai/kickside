@@ -7,6 +7,16 @@ import yaml
 from harness import Scenario, require
 
 
+def declared_workspaces(workflow, job):
+    defaults = dict(workflow.get('defaults', {}).get('run', {}))
+    defaults.update(job.get('defaults', {}).get('run', {}))
+    if defaults.get('working-directory'):
+        yield defaults['working-directory']
+    for step in job.get('steps', []):
+        if step.get('working-directory'):
+            yield step['working-directory']
+
+
 def workflow_checkout_paths(root):
     repository = json.loads((root / '.github/modules.json').read_text())['repository']
     internal = root.parent / 'kickside-internal'
@@ -18,13 +28,16 @@ def workflow_checkout_paths(root):
             continue
         workflow = yaml.safe_load(path.read_text())
         for job_name, job in workflow['jobs'].items():
+            workspaces = set(declared_workspaces(workflow, job))
             for step in job.get('steps', []):
                 if not step.get('uses', '').startswith('actions/checkout@'):
                     continue
                 checkout = step.get('with', {})
                 target = checkout.get('repository', '').removeprefix('kicksideai/')
-                expected = 'source' if target == repository else target or own_path
                 actual = checkout.get('path', '')
+                expected = (own_path if not target and not actual and own_path in workspaces else
+                            '' if not target and not actual else
+                            'source' if target == repository else target or own_path)
                 if actual != expected:
                     findings.append({'workflow': str(path), 'job': job_name,
                                      'expected': expected, 'actual': actual})
