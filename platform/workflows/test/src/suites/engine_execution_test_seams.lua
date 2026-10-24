@@ -44,7 +44,30 @@ local C = sc.C
 local restore_real_engine = sc.restore_real_engine
 local function seam(args: any): any
     local a = type(args) == "table" and (args :: Map) or {}
-    if a.op == "agent_tool_create" or a.op == "workflow_trait_create" then
+    if a.op == "workflow_component_create" then
+        local created, create_err = workflow_repo.create(a.title)
+        if create_err or not created then return { success = false, error = tostring(create_err or "create failed") } end
+        return { success = true, workflow_id = tostring((created :: Map).id or "") }
+    elseif a.op == "workflow_component_grant" or a.op == "workflow_component_revoke" then
+        local service, service_err = component.get_service()
+        if service_err or not service then return { success = false, error = tostring(service_err or "component service unavailable") } end
+        local subject = {
+            subject_id = tostring(a.subject_id or ""),
+            subject_type = tostring(a.subject_type or "user"),
+        }
+        local request = { root_component_id = tostring(a.workflow_id or ""), subject = subject }
+        local result, access_err
+        if a.op == "workflow_component_grant" then
+            request.access_mask = tonumber(a.access_mask) or component.ACCESS.READ
+            result, access_err = (service :: any):grant_subtree(request)
+        else
+            result, access_err = (service :: any):revoke_subtree(request)
+        end
+        return {
+            success = access_err == nil and type(result) == "table" and (result :: Map).success == true,
+            error = access_err or (type(result) == "table" and (result :: Map).error or nil),
+        }
+    elseif a.op == "agent_tool_create" or a.op == "workflow_trait_create" then
         local created, create_err = workflow_repo.create(a.title)
         if create_err or not created then return { success = false, error = tostring(create_err or "create failed") } end
         local id = tostring((created :: Map).id or "")
