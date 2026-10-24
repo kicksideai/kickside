@@ -10,6 +10,7 @@ import jsonschema
 
 from harness import Scenario, require
 from scenarios import Context, nav as suite_nav, workflow, workflow_inbox_restart, member_identity
+from cleanup_evidence import delete_component
 from workflow_failure_contract import verify_failure_cause
 from mcp_client import MCPClient
 
@@ -1379,7 +1380,8 @@ def inbox_event_delivery(ctx, resolved=False):
     ctx.inst.cleanup.add('Inbox event primer', lambda: inst.request('DELETE', '/api/v1/inbox/' + seed['id']), scope='scenario')
     marker = ('inbox-resolved-' if resolved else 'inbox-created-') + uuid.uuid4().hex[:8]
     cid, destination = crm_destination(ctx, marker)
-    ctx.inst.cleanup.add('Inbox event destination', lambda: inst.request('DELETE', '/api/v1/threads/' + cid), scope='scenario')
+    ctx.inst.cleanup.add('Inbox event destination', lambda: delete_component(
+        inst, cid, '/api/v1/threads/' + cid), scope='scenario')
     sync_trigger(ctx, 'kickside.inbox:' + ('item_resolved' if resolved else 'item_created'), None, cid, marker, scope='scenario')
     item = inst.request('POST', '/api/v1/inbox', {'item_type': 'notice', 'title': marker, 'content': '48 fictional crates'})['item']
     ctx.inst.cleanup.add('Inbox event item', lambda: inst.request('DELETE', '/api/v1/inbox/' + item['id']), scope='scenario')

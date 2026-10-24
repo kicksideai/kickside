@@ -1,6 +1,7 @@
 import json
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import yaml
 from unittest.mock import Mock
@@ -15,6 +16,56 @@ class DispatchWorkflowFixtureTests(unittest.TestCase):
     @staticmethod
     def summary(identifier):
         return {'id': identifier, 'title': identifier, 'source_kind': 'tool', 'tool': True}
+
+    def test_inbox_event_destination_cleanup_uses_durable_component_delete(self):
+        for resolved in (False, True):
+            with self.subTest(resolved=resolved):
+                registered = []
+
+                class Cleanup:
+                    def add(self, name, callback, *, scope):
+                        registered.append((name, callback, scope))
+
+                created = iter(('primer', 'event-item'))
+                pending = {'kickside_components': 1, 'kickside_thread': 1,
+                           'kickside_projection': 0, 'kickside_projection_cursor': 0,
+                           'kickside_component_thread_reap': 0}
+                completed = {table: 0 for table in pending}
+
+                def request(method, path, *args, **kwargs):
+                    if method == 'POST' and path == '/api/v1/inbox':
+                        return {'item': {'id': next(created)}}
+                    if method == 'GET' and path == '/api/v1/inbox?status=pending&limit=200':
+                        return {'items': [{'id': 'event-item'}]}
+                    if method == 'POST' and path == '/api/v1/inbox/event-item/dismiss':
+                        return {}
+                    if method == 'DELETE' and path == '/api/v1/threads/destination':
+                        return {'success': True, 'cleanup_pending': True, 'in_progress': True,
+                                'retryable': True, 'details': {'wait_for': 'lease_release'}}
+                    self.fail('Unexpected request: ' + repr((method, path, args, kwargs)))
+
+                def wait(predicate, message, **kwargs):
+                    if message == 'Inbox event item projects before resolution':
+                        return predicate()
+                    self.assertEqual(message, 'Durable bounded cleanup completes')
+                    self.assertIsNone(predicate())
+                    return predicate()
+
+                inst = SimpleNamespace(cleanup=Cleanup(), request=Mock(side_effect=request),
+                                       wait=Mock(side_effect=wait), evidence=Mock())
+                ctx = SimpleNamespace(inst=inst)
+                with patch('scenarios_crm_chestor.crm_destination', return_value=('destination', {})), \
+                     patch('scenarios_crm_chestor.sync_trigger'), \
+                     patch('scenarios_crm_chestor.delivered'), \
+                     patch('cleanup_evidence.cleanup_rows', side_effect=[
+                         {'kickside_components': 1}, pending, completed]):
+                    scenarios_automation.inbox_event_delivery(ctx, resolved=resolved)
+                    destination_cleanup = next(callback for name, callback, scope in registered
+                                               if name == 'Inbox event destination')
+                    destination_cleanup()
+
+                inst.request.assert_any_call('DELETE', '/api/v1/threads/destination', expect=(200, 202))
+                inst.evidence.save.assert_called_once_with('cleanup-completed-destination', completed)
 
     def test_sdk_block_catalog_pages_summaries_by_cursor_before_asserting_membership(self):
         ctx = Mock()
