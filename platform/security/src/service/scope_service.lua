@@ -1,5 +1,5 @@
 -- Supervised service that projects DB-backed custom scopes into security.scope
--- descriptors and native policy groups. The DB is authoritative. Registry commits
+-- descriptors. The DB is authoritative. Registry commits
 -- reconcile module updates; admin save/delete requests acknowledge their projection.
 
 local logger = require("logger"):named("kickside.security.scope_service")
@@ -7,7 +7,6 @@ local channel = require("channel")
 local time = require("time")
 local consts = require("security_consts")
 local projection = require("scope_projection")
-local group_sets = require("group_sets")
 local registry = require("registry")
 local events = require("events")
 local error_envelope = require("error_envelope")
@@ -107,15 +106,8 @@ function M.main()
                     local set, set_err = projection.group_set(message.groups)
                     if not set then
                         reply_to(message, failed_reply(set_err))
-                    elseif set.current then
-                        reply_to(message, { success = true, created = 0, updated = 0, deleted = 0, scope_name = set.scope_name })
                     else
-                        local _, save_err = group_sets.save(message.groups)
-                        if save_err then
-                            reply_to(message, failed_reply(save_err))
-                        else
-                            answered[#answered + 1] = { message = message, scope_name = set.scope_name }
-                        end
+                        answered[#answered + 1] = {message = message, scope_name = set.scope_name}
                     end
                 else
                     for _, group in ipairs(message.fence_groups or {}) do fences[#fences + 1] = group end
@@ -129,12 +121,8 @@ function M.main()
                 needs_pass = version_err ~= nil or current:id() ~= projected:id()
             end
             if needs_pass then
-                local stats, rerr, applied = projection.reconcile()
+                local stats, rerr, applied = projection.reconcile(fences)
                 projected = applied
-                if not rerr then
-                    local _, fence_err = projection.fence(fences)
-                    rerr = fence_err
-                end
                 if rerr then logger:error("reconcile failed", { error = rerr }) end
                 for _, pending in ipairs(answered) do
                     if rerr then

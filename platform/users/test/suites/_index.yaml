@@ -96,7 +96,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_delegation_effects_test
     kind: function.lua
@@ -115,7 +114,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_execution_capabilities_test
     kind: function.lua
@@ -134,7 +132,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_execution_process_test
     kind: function.lua
@@ -153,7 +150,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_delegation_host_test
     kind: function.lua
@@ -172,7 +168,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_selection_test
     kind: function.lua
@@ -191,7 +186,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_lifecycle_test
     kind: function.lua
@@ -203,6 +197,7 @@ entries:
       policies: [app:test_runtime]
     modules: [sql, crypto, json, funcs, security]
     imports:
+      execution_identity: kickside.execution:execution_identity
       test: wippy.test:test
       user_repo: kickside.users.persist:user_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
@@ -222,6 +217,7 @@ entries:
       policies: [app:test_runtime]
     modules: [registry, funcs, sql, crypto, security]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
       test: wippy.test:test
       user_repo: kickside.users.persist:user_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
@@ -372,6 +368,47 @@ entries:
       delete_principal: kickside.users.persist:delete_principal
       profile_writer: kickside.users.persist:profile_writer
 
+  - name: source_scope_test_tokens
+    kind: security.token_store
+    default_expiration: 1h
+    store: kickside.users.security:token_storage
+    subject_lookup: kickside.users:source_scope_live_lookup
+    token_key: ""
+    token_key_env: ""
+    token_length: 32
+
+  - name: source_scope_live_lookup
+    kind: function.lua
+    source: file://source_scope_live_lookup.lua
+    method: lookup
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    imports:
+      scope_store: kickside.security.persist:scope_store
+
+  - name: source_scope_epoch_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: users
+    source: file://source_scope_epoch_test.lua
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    method: run
+    modules: [registry, security, funcs]
+    imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_store: kickside.security.persist:scope_store
+      session: kickside.users:session
+      session_index: kickside.users.persist:session_index
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+
   - name: login_scope_test
     kind: function.lua
     meta:
@@ -518,7 +555,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_identity_command_test
     kind: function.lua
@@ -537,7 +573,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_run_as_candidates_test
     kind: function.lua
@@ -556,7 +591,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: bot_admin_creation_test
     kind: function.lua
@@ -593,7 +627,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
-      group_sets: kickside.security.persist:group_sets
 
   - name: delegation_fencing_failure
     kind: library.lua
@@ -670,6 +703,7 @@ entries:
     source: file://session_subject.lua
     modules: [security, contract, logger]
     imports:
+      execution_identity: kickside.execution:execution_identity
       time: kickside.users:expiry_time
       credential_eligibility: kickside.users.persist:credential_eligibility
       user_consts: kickside.users:consts

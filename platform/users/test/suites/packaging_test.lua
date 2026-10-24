@@ -63,12 +63,12 @@ local function define_tests()
             test.eq(dependency.data.component, "wippy/test")
             test.eq(dependency.data.version, "*")
         end)
-        test.it("resolves the named group projector through its latest Security dependency", function()
+        test.it("requires the Security version that provides the public live resolver", function()
             local dependency, err = registry.get("kickside.users:dep.kickside.security")
             test.is_nil(err)
             test.not_nil(dependency)
             test.eq(dependency.data.component, "kickside/security")
-            test.eq(dependency.data.version, "*")
+            test.eq(dependency.data.version, ">=0.2.11")
         end)
         test.it("routes one target_db through every persistence surface", function()
             local requirement = registry.get("kickside.users:target_db")
@@ -266,12 +266,13 @@ local function define_tests()
             local has_compose = false
             for _, policy_id in ipairs(policies) do
                 if policy_id == "kickside.users.security:login_scope_compose" then has_compose = true end
-                test.is_true(policy_id:sub(1, #"kickside.users.security:") == "kickside.users.security:")
+                test.is_true(policy_id:sub(1, #"kickside.users.security:") == "kickside.users.security:"
+                    or policy_id == "kickside.users.security:resolve_scope_groups")
                 test.is_true(policy_id:sub(1, #"app.security:login.") ~= "app.security:login.")
             end
             test.is_true(has_compose)
             for _, required in ipairs({"kickside.users.security:session_group_policy_read",
-                "kickside.users.security:session_group_set_projection"}) do
+                "kickside.users.security:resolve_scope_groups"}) do
                 local found = false
                 for _, id in ipairs(policies) do if id == required then found = true end end
                 test.is_true(found, required)

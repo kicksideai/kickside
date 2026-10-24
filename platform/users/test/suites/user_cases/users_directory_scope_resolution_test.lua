@@ -256,7 +256,7 @@ local function define_tests()
                 end
             end)
 
-            test.it("evaluates native delegation policies under the authorizer's materialized scope", function()
+            test.it("evaluates native delegation policies under the authorizer's native scope", function()
                 local authorizer = { kind = "user", id = sid }
                 local meta = { user_id = sid, status = "active" }
                 local descriptor = { principal = authorizer, actor_id = sid,
@@ -274,6 +274,24 @@ local function define_tests()
                     { "native-delegation-missing-resource" })
                 test.is_nil(missing_err)
                 test.eq(missing, "undefined")
+            end)
+
+            test.it("retains selected source policy IDs while evaluating live delegation", function()
+                local source = "app:selected_delegation"
+                with_overrides({ _security = self_security(sid),
+                    _funcs = {new = function() return {call = function(_builder, _id, args)
+                        return {subject_id = args.subject_id, groups = {}, scope_name = "app:custom_scope",
+                            scope_groups = {}, scope_policy_ids = {source}, meta = {}}, nil
+                    end}, nil end},
+                    _evaluate_live_scope = function(descriptor)
+                        test.eq(descriptor.scope_policy_ids[1], source)
+                        return "allow", nil
+                    end,
+                }, function()
+                    local result, err = scope_resolver.resolve({principal = {kind = "user", id = other}})
+                    test.is_nil(err)
+                    test.eq(result.scope_policy_ids[1], source)
+                end)
             end)
 
             test.it("rejects group authorizers", function()

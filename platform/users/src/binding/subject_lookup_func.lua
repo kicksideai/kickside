@@ -52,12 +52,12 @@ function M.lookup(args: any): any
     if authority_err then return failure(subject_id, tostring(authority_err), errors.UNAVAILABLE, "infrastructure", true) end
     local config = consts.get_config()
     local authority_only = type(args) == "table" and args.authority_only == true
-    local scope_name, _, effective_groups, scope_err = consts.resolve_scope(config, user.security_groups, authority_only)
+    local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, authority_only)
     if scope_err then return failure(subject_id, tostring(scope_err), errors.UNAVAILABLE, "infrastructure", true) end
 
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
     local live_groups = user.security_groups or {}
-    local metadata = session_metadata.actor(user, authority_epochs, stored_meta.scope_id or scope_name,
+    local metadata = session_metadata.actor(user, authority_epochs, scope_name,
         live_groups, stored_meta.login_time, stored_meta)
 
     return {
@@ -66,7 +66,8 @@ function M.lookup(args: any): any
         subject_id = subject_id,
         groups = live_groups,
         scope_name = scope_name,
-        scope_groups = authority_only and effective_groups or {scope_name},
+        scope_groups = resolved.groups,
+        scope_policy_ids = resolved.policy_ids,
         meta = metadata,
     }
 end
@@ -80,7 +81,14 @@ function M.lookup_credential(args: any): (any?, error?)
         return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
             message = "credential eligibility lookup returns no decision"}) :: error)
     end
-    return M.lookup(args), nil
+    local result = M.lookup(args)
+    if result.success ~= false then
+        -- Runtime's trusted subject lookup consumes groups and policies.
+        -- Keep the scope descriptor used by KickSide's resolver separate.
+        result.groups = result.scope_groups
+        result.policies = result.scope_policy_ids
+    end
+    return result, nil
 end
 
 return M

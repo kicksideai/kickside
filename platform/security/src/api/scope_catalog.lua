@@ -12,6 +12,7 @@ local registry = require("registry")
 local consts = require("security_consts")
 local store = require("scope_store")
 local stypes = require("security_types")
+local scope_key = require("scope_key")
 
 local M = {}
 
@@ -27,6 +28,7 @@ local function policy_index(): (any?, error?)
     if read_err then return nil, read_err end
     local by_id: { [string]: stypes.PolicySummary } = {}
     local list: { stypes.PolicySummary } = {}
+    local group_policies = {}
     for _, entry in ipairs(entries :: { any }) do
         local data = entry.data
         local meta = meta_of(entry)
@@ -42,11 +44,15 @@ local function policy_index(): (any?, error?)
             resources = policy.resources,
             private = meta.private == true,
         }
+        for _, group in ipairs(data.groups or {}) do
+            group_policies[group] = group_policies[group] or {}
+            group_policies[group][#group_policies[group] + 1] = tostring(entry.id)
+        end
         by_id[tostring(entry.id)] = summary
         list[#list + 1] = summary
     end
     table.sort(list, function(a, b) return tostring(a.id) < tostring(b.id) end)
-    return {by_id = by_id, list = list, entries = entries}, nil
+    return {by_id = by_id, list = list, entries = entries, groups = group_policies}, nil
 end
 
 -- policies returns the policy catalog (the grants). include_internal defaults false.
@@ -104,12 +110,37 @@ local function default_label(id: string): string
     return id:match("([^:%.]+)$") or id
 end
 
+local function descriptor_policies(entry, index, projection)
+    local data, selected, out = entry.data or {}, {}, {}
+    local function include(ids)
+        for _, id in ipairs(ids or {}) do
+            if not selected[id] then selected[id] = true; out[#out + 1] = id end
+        end
+    end
+    include(data.policies)
+    include(data.direct_policies)
+    if projection then include((projection.data or {}).policies) end
+    for _, group in ipairs(data.groups or {}) do include(index.groups[group]) end
+    table.sort(out)
+    return out
+end
+
 -- scopes returns the merged scope/role catalog. include_internal defaults false.
 function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     opts = opts or {}
     local include_internal = opts.include_internal == true
     local index, policies_err = policy_index()
     if policies_err then return nil, policies_err end
+    local projections, projection_err = registry.find({[".kind"] = "registry.entry", ["meta.type"] = scope_key.META_TYPE})
+    if projection_err then return nil, projection_err end
+    local by_target = {}
+    for _, entry in ipairs(projections or {}) do
+        local meta = entry.meta or {}
+        if entry.kind == "registry.entry" and meta.type == scope_key.META_TYPE
+            and meta.managed_by == consts.MANAGED_BY and type(meta.target) == "string" then
+            by_target[meta.target] = entry
+        end
+    end
     local descriptors, roles_err = role_descriptors()
     if roles_err then return nil, roles_err end
     local by_id = index.by_id
@@ -160,8 +191,18 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
     -- 2. Host-declared roles referenced by policies. Role descriptors are the
     -- ownership boundary; package code never assumes the host's namespace.
     local group_policies: { [string]: { string } } = {}
+    local declared_scopes, declared_err = registry.find({[".kind"] = consts.SCOPE_KIND})
+    if declared_err then return nil, declared_err end
+    for _, entry in ipairs(declared_scopes or {}) do
+        local id = tostring(entry.id)
+        if descriptors[id] then group_policies[id] = descriptor_policies(entry, index, by_target[tostring(entry.id)]) end
+    end
+    for id, projection in pairs(by_target) do
+        if descriptors[id] and not group_policies[id] then group_policies[id] = projection.data.policies or {} end
+    end
     local group_internal: { [string]: boolean } = {}
     local group_order: { string } = {}
+    for group in pairs(group_policies) do group_order[#group_order + 1] = group end
     local policy_entries = index.entries
     for _, entry in ipairs(policy_entries :: { any }) do
         local groups = entry.data.groups
@@ -173,7 +214,9 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
                     -- A group is internal when any policy carrying it is marked
                     -- meta.internal in the registry (the canonical signal).
                     if entry_internal then group_internal[g] = true end
-                    group_policies[g][#group_policies[g] + 1] = tostring(entry.id)
+                    local exists = false
+                    for _, id in ipairs(group_policies[g]) do if id == tostring(entry.id) then exists = true; break end end
+                    if not exists then group_policies[g][#group_policies[g] + 1] = tostring(entry.id) end
                 end
             end
         end
@@ -211,7 +254,7 @@ function M.scopes(opts: any?): ({ stypes.CatalogScope }?, error?)
                 internal = meta.internal == true,
                 built_in = false,
                 enabled = true,
-                policies = entry.data.policies,
+                policies = descriptor_policies(entry, index, by_target[tostring(entry.id)]),
             })
             if emit_err then return nil, emit_err end
         end

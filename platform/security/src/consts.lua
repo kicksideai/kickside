@@ -1,9 +1,8 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Stable vocabulary for the kickside.security scopes/roles admin.
 --
--- Policies carry grants through their native `groups` bindings. Custom scopes
--- retain security.scope catalog descriptors; the projector applies their selected
--- policies to native groups, which security.named_scope resolves.
+-- Native groups carry module-owned policies. Custom scopes retain DB selections
+-- of source policy IDs and security.scope catalog descriptors.
 
 local registry = require("registry")
 

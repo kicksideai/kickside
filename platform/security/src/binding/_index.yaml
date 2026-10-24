@@ -2,23 +2,6 @@ version: "1.0"
 namespace: kickside.security.binding
 
 entries:
-  - name: materialize_group_set
-    kind: function.lua
-    meta:
-      private: true
-    source: file://materialize_group_set.lua
-    method: materialize
-    security:
-      policies:
-      - kickside.security.service:reconcile_request_access
-      - kickside.security.service:group_set_registry_read
-      - kickside.security.service:group_set_db
-    modules:
-    - security
-    imports:
-      error_envelope: kickside.contract:error_envelope
-      trigger_reconcile: kickside.security:trigger_reconcile
-      scope_projection: kickside.security.service:scope_projection
   - name: registry_observer
     kind: function.lua
     meta:
@@ -32,6 +15,7 @@ entries:
       policies: [kickside.security.service:reconcile_request_access]
     imports:
       trigger_reconcile: kickside.security:trigger_reconcile
+
   - name: list_scopes_func
     kind: function.lua
     meta: { comment: "kickside.contract:security_scopes — list." }
@@ -61,6 +45,7 @@ entries:
     method: classify
     modules: [security, registry]
     imports:
-      policy_groups: kickside.security.service:policy_groups
       error_envelope: kickside.contract:error_envelope
+      policy_coverage: kickside.security:policy_coverage
+      scope_key: kickside.security.projection:scope_key
 

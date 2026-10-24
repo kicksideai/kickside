@@ -87,14 +87,7 @@ local function define_tests()
             local policies, read_err = registry.find({[".kind"] = "security.policy",
                 ["meta.scope_projection_policy"] = tostring(entry.id)})
             test.is_nil(read_err)
-            for _, policy in ipairs(policies) do
-                test.is_true(policy.meta.private)
-                test.eq(policy.meta.managed_by, "kickside.security.scopes")
-                for _, group in ipairs(policy.data.groups) do
-                    local composed = assert(security.named_scope(group))
-                    test.eq(composed:evaluate(actor, "env.get", KEY), "allow")
-                end
-            end
+            test.eq(#policies, 0, "member scopes keep source IDs without generated bindings")
         end)
     end)
 end
