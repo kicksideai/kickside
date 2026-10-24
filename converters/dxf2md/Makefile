@@ -6,6 +6,8 @@ ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/' -e 's/
 WIPPY ?= wippy
 FIXTURE_DIR ?= $(CURDIR)/.local/fixtures
 WIPPY_BIN := $(RUNTIME_DIR)/dist/wippy-$(OS)-$(ARCH)
+RUST_TOOLCHAIN ?= 1.96.0
+RUST_SYSROOT = $(shell rustup run $(RUST_TOOLCHAIN) rustc --print sysroot)
 
 WASM_SRC := component/target/wasm32-wasip2/release/dxf2md.wasm
 WASM_DST := src/dxf2md/assets/dxf2md.wasm
@@ -27,8 +29,8 @@ wippy:
 	@./wippy version
 
 build-component:
-	rustup target add wasm32-wasip2
-	cd component && RUSTFLAGS="$(RUSTFLAGS) --remap-path-prefix=$(CURDIR)=/source --remap-path-prefix=$(or $(CARGO_HOME),$(HOME)/.cargo)=/cargo" cargo build --release --target wasm32-wasip2
+	rustup target add --toolchain $(RUST_TOOLCHAIN) wasm32-wasip2
+	cd component && RUSTFLAGS="$(RUSTFLAGS) --remap-path-prefix=$(CURDIR)=/source --remap-path-prefix=$(or $(CARGO_HOME),$(HOME)/.cargo)=/cargo --remap-path-prefix=$(RUST_SYSROOT)=/rust" cargo +$(RUST_TOOLCHAIN) build --release --target wasm32-wasip2
 	@mkdir -p $(dir $(WASM_DST))
 	cp $(WASM_SRC) $(WASM_DST)
 	@HASH=$$(shasum -a 256 $(WASM_DST) | cut -d' ' -f1); \

@@ -21,7 +21,7 @@ entries:
       comment: Rust WebAssembly component method converting a DXF drawing to Markdown.
     fs: kickside.convert.dxf2md:assets
     path: dxf2md.wasm
-    hash: sha256:9aff74a5b50acd2f5f71361cf9de94b800c4185e2a5554e92c4177b353d9ada0
+    hash: sha256:fbbcf80b669160c31d96267acfd12569ba6e7ca8d12c7ee40a27d9cc7fca6925
     method: to-markdown
     imports:
       - wasi:io
@@ -40,7 +40,7 @@ entries:
       comment: Rust WebAssembly component method returning structured DXF metadata.
     fs: kickside.convert.dxf2md:assets
     path: dxf2md.wasm
-    hash: sha256:9aff74a5b50acd2f5f71361cf9de94b800c4185e2a5554e92c4177b353d9ada0
+    hash: sha256:fbbcf80b669160c31d96267acfd12569ba6e7ca8d12c7ee40a27d9cc7fca6925
     method: metadata
     imports:
       - wasi:io
@@ -59,7 +59,7 @@ entries:
       comment: Rust WebAssembly component method rendering a DXF drawing to a PNG.
     fs: kickside.convert.dxf2md:assets
     path: dxf2md.wasm
-    hash: sha256:9aff74a5b50acd2f5f71361cf9de94b800c4185e2a5554e92c4177b353d9ada0
+    hash: sha256:fbbcf80b669160c31d96267acfd12569ba6e7ca8d12c7ee40a27d9cc7fca6925
     method: to-image
     imports:
       - wasi:io
