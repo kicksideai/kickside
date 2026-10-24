@@ -79,7 +79,7 @@ class RequestTrackingTests(unittest.TestCase):
         request = WorkerRequest()
         handlers['request'](request)
         self.assertEqual(list(self.browser.pending.values()), [request.url])
-        self.assertNotIn(request, self.browser.request_groups)
+        self.assertFalse(hasattr(self.browser, 'request_groups'))
         handlers['requestfinished'](request)
         self.assertFalse(self.browser.pending)
         self.assertNotIn('request', self.page_handlers, 'Page and context track the same request twice')

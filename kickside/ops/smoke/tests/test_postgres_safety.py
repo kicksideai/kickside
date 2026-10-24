@@ -94,6 +94,19 @@ class OrphanReaperTests(unittest.TestCase):
             self.assertTrue((root / 'live' / 'database.json').exists())
             self.assertFalse((root / 'dead' / 'database.json').exists())
 
+    def test_concurrent_owner_cleanup_can_remove_a_globbed_descriptor(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory)
+            self.record(root, 'racing', 2 ** 22 + 1, '1')
+            record = root / 'racing' / 'database.json'
+            def raced_glob(_path, pattern):
+                def entries():
+                    record.unlink()
+                    yield record
+                return entries()
+            with patch.object(Path, 'glob', raced_glob):
+                self.assertEqual(runtime.reap_orphan_databases(root, Mock()), [])
+
 
 if __name__ == '__main__':
     unittest.main()

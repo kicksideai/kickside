@@ -31,6 +31,18 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if self.path == '/cross-origin-iframe':
+            body = ('<!doctype html><iframe src="' + self.cross_origin_base +
+                    '/cross-origin-fetch"></iframe>').encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if self.path == '/cross-origin-fetch':
+            self.html("fetch('/stalled-fetch')")
+            return
         if self.path == '/crossframe-child':
             body = ("<!doctype html><iframe srcdoc=\"<script>new Worker('/parent-worker.js',{type:'module'})</script>\"></iframe>"
                     "<iframe srcdoc=\"<script>new Worker('/parent-worker.js',{type:'module'})</script>\"></iframe>").encode()
@@ -192,14 +204,20 @@ class WorkerSettleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server = _Server(('127.0.0.1', 0), _Handler)
+        cls.cross_origin_server = _Server(('127.0.0.1', 0), _Handler)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
+        cls.cross_origin_thread = threading.Thread(target=cls.cross_origin_server.serve_forever, daemon=True)
         cls.thread.start()
+        cls.cross_origin_thread.start()
         cls.base = 'http://127.0.0.1:' + str(cls.server.server_address[1])
+        _Handler.cross_origin_base = 'http://localhost:' + str(cls.cross_origin_server.server_address[1])
 
     @classmethod
     def tearDownClass(cls):
         cls.server.shutdown()
         cls.server.server_close()
+        cls.cross_origin_server.shutdown()
+        cls.cross_origin_server.server_close()
 
     def setUp(self):
         self.session = BrowserSession()
@@ -222,7 +240,6 @@ class WorkerSettleTests(unittest.TestCase):
     def _assert_pending_blocks_settle(self, url_part):
         pending = [request for request, url in self.browser.pending.items() if url_part in url]
         self.assertTrue(pending, 'negative control does not start ' + url_part)
-        self.assertTrue(all(not self.browser.group_closed(request) for request in pending))
         self.browser.settle_seconds = .5
         with self.assertRaisesRegex(Failure, 'Browser requests do not settle'):
             self.browser.settle()
@@ -259,7 +276,7 @@ class WorkerSettleTests(unittest.TestCase):
         self._open('/complete-child')
         self.browser.settle()
         self.assertFalse(self.browser.pending)
-        self.assertTrue(any(event['kind'] == 'worker-network-bound' and event['url'].endswith('/fast-child.js')
+        self.assertTrue(any(event['kind'] == 'worker-network-loadingFinished' and event['url'].endswith('/fast-child.js')
                             for event in self.browser.worker_events))
 
     def test_worker_progress_message_does_not_settle_a_stalled_child(self):
@@ -292,6 +309,21 @@ class WorkerSettleTests(unittest.TestCase):
         self.browser.page.evaluate("fetch('/stalled-fetch')")
         self.browser.page.wait_for_timeout(100)
         self.assertTrue(any('/stalled-fetch' in url for url in self.browser.pending.values()))
+        self._assert_pending_blocks_settle('/stalled-fetch')
+
+    def test_cross_origin_oopif_fetch_stall_is_not_pruned_as_page_idle(self):
+        self.browser.close()
+        self.session.browser.close()
+        self.session.browser = self.session.playwright.chromium.launch(
+            headless=True, args=['--no-sandbox', '--site-per-process'],
+            ignore_default_args=['--disable-site-isolation-trials'])
+        self.browser = Browser(_Instance(), session=self.session)
+        self._open('/cross-origin-iframe')
+        self.browser.page.wait_for_timeout(200)
+        targets = self.browser.browser_cdp.send('Target.getTargets')['targetInfos']
+        self.assertTrue(any(target['type'] == 'iframe' and
+                            target['url'] == _Handler.cross_origin_base + '/cross-origin-fetch'
+                            for target in targets), 'negative control requires an out-of-process iframe')
         self._assert_pending_blocks_settle('/stalled-fetch')
 
     def test_real_failures_are_not_swallowed(self):
@@ -329,39 +361,100 @@ class WorkerSettleTests(unittest.TestCase):
     def test_context_reset_discards_old_worker_accounting(self):
         self._open('/terminated1')
         self.browser.settle()
-        self.assertTrue(self.browser.worker_groups)
+        self.assertTrue(self.browser.worker_events)
         self.browser.reset_context()
-        self.assertFalse(self.browser.worker_groups)
-        self.assertFalse(self.browser.worker_phases)
         self.assertFalse(self.browser.worker_targets)
+        self.assertFalse(self.browser.native_network)
+
+    def test_closing_a_sibling_page_does_not_drop_a_bound_worker_stall(self):
+        first = self.browser.page
+        second = self.browser.open_page()
+        second.goto(self.base + '/slow-child', wait_until='domcontentloaded')
+        second.wait_for_timeout(200)
+        self.browser.page = second
+        self.assertTrue(any('/slow-child.js' in url for url in self.browser.pending.values()))
+        first.close()
+        self._assert_pending_blocks_settle('/slow-child.js')
 
 
 class WorkerGroupUnitTests(unittest.TestCase):
+    def test_unbound_worker_keeps_its_remaining_page_candidate_until_all_close(self):
+        browser = Browser.__new__(Browser)
+        browser.page_cdps, browser.pending, browser.page_scopes = {}, {}, {}
+        browser.browser_context_scopes = {}
+        browser.worker_targets = {'worker': {'scope': None, 'candidate_scopes': {1, 2},
+                                             'destroyed': False, 'url': None}}
+        browser.worker_sessions, browser.worker_session_cdps = {'session': 'worker'}, {'session': Mock()}
+        browser.worker_network_urls = {('worker', 'child'): 'http://asset/child.js'}
+        browser.worker_parsed_urls = {'worker': {'http://asset/root.js'}}
+        browser.native_unscoped_workers = {'worker': {1, 2}}
+        browser.native_network = {(2, 'worker', 'child'): {'method': 'GET',
+                                  'url': 'http://asset/child.js', 'failed': False}}
+
+        browser.forget_page(1)
+        self.assertIn('worker', browser.worker_targets)
+        self.assertEqual(browser.worker_targets['worker']['candidate_scopes'], {2})
+        self.assertEqual(browser.native_unscoped_workers, {'worker': {2}})
+        self.assertIn('session', browser.worker_sessions)
+        self.assertIn((2, 'worker', 'child'), browser.native_network)
+
+        browser.forget_page(2)
+        self.assertFalse(browser.worker_targets)
+        self.assertFalse(browser.native_unscoped_workers)
+        self.assertFalse(browser.worker_sessions)
+        self.assertFalse(browser.worker_session_cdps)
+        self.assertFalse(browser.worker_network_urls)
+        self.assertFalse(browser.worker_parsed_urls)
+        self.assertFalse(browser.native_network)
+
+    def test_native_ledger_uses_target_identity_not_url_or_playwright_request(self):
+        browser = Browser.__new__(Browser)
+        browser.inst, browser.worker_events = _Instance(), []
+        browser.native_network, browser.native_unscoped_workers = {}, {}
+        first = {'requestId': 'same', 'request': {'method': 'GET', 'url': 'http://asset/child.js'}}
+        browser.native_started(1, 'worker-one', first)
+        browser.native_started(1, 'worker-two', first)
+        self.assertFalse(browser.native_scope_idle(1))
+        browser.native_finished(1, 'worker-one', {'requestId': 'same'})
+        self.assertFalse(browser.native_scope_idle(1))
+        browser.native_finished(1, 'worker-two', {'requestId': 'same'})
+        self.assertTrue(browser.native_scope_idle(1))
+
+    def test_worker_bootstrap_terminal_closes_its_page_target_ledger_entry(self):
+        browser = Browser.__new__(Browser)
+        browser.inst, browser.worker_events = _Instance(), []
+        browser.native_network, browser.native_unscoped_workers = {}, {}
+        browser.worker_network_urls = {}
+        browser.worker_sessions = {'session': 'worker'}
+        browser.worker_targets = {'worker': {'scope': 1, 'destroyed': False, 'url': None}}
+        browser.native_started(1, 'page:1', {'requestId': 'worker',
+                                             'request': {'method': 'GET', 'url': 'http://asset/worker.js'}})
+        browser.worker_message_received({'sessionId': 'session', 'message':
+            '{"method":"Network.loadingFinished","params":{"requestId":"worker"}}'})
+        self.assertTrue(browser.native_scope_idle(1))
+
     def test_finished_requests_are_not_retained(self):
         browser = Browser.__new__(Browser)
         request = object()
         browser.pending = {request: 'asset'}
-        browser.request_groups = {request: ('scope', 'GET', 'asset')}
         browser.request_finished(request)
         self.assertFalse(browser.pending)
-        self.assertFalse(browser.request_groups)
 
     def test_target_destruction_requires_a_known_dedicated_worker(self):
         browser = Browser.__new__(Browser)
         browser.worker_targets = {}
-        browser.worker_phases = {}
-        browser.worker_groups = {}
         browser.worker_target_destroyed({'targetId': 'page-target'})
-        self.assertFalse(browser.worker_groups)
+        self.assertFalse(browser.worker_targets)
 
-    def test_cdp_non_success_response_latches_a_worker_phase_failure(self):
+    def test_native_worker_failure_is_not_silently_erased(self):
         browser = Browser.__new__(Browser)
-        key, phase = (1, 'GET', 'http://asset/worker.js'), (1, 'worker-target')
-        browser.worker_groups = {key: Browser.new_group()}
-        browser.worker_groups[key]['phases'].add(phase)
-        browser.worker_phases = {phase: (key, phase)}
-        browser.cdp_response(1, {'requestId': 'worker-target', 'response': {'status': 404}})
-        self.assertTrue(browser.worker_groups[key]['failed'])
+        browser.inst, browser.worker_events, browser.errors = _Instance(), [], []
+        browser.native_network = {}
+        browser.native_started(1, 'worker-target', {'requestId': 'child',
+                              'request': {'method': 'GET', 'url': 'http://asset/child.js'}})
+        browser.native_response(1, 'worker-target', {'requestId': 'child', 'response': {'status': 404}})
+        browser.native_finished(1, 'worker-target', {'requestId': 'child'})
+        self.assertTrue(any('Worker network failure' in error for error in browser.errors))
 
     def test_page_watch_failure_detaches_the_half_registered_cdp_session(self):
         browser = Browser.__new__(Browser)
@@ -372,68 +465,67 @@ class WorkerGroupUnitTests(unittest.TestCase):
         browser.context = context
         browser.next_page_scope = 0
         browser.page_scopes, browser.context_scopes, browser.page_cdps = {}, {}, {}
-        browser.worker_groups, browser.worker_targets, browser.worker_phases = {}, {}, {}
-        browser.pending, browser.request_groups = {}, {}
+        browser.browser_context_scopes, browser.worker_targets = {}, {}
+        browser.pending = {}
         with self.assertRaisesRegex(RuntimeError, 'listener failure'):
             browser.watch(page)
         cdp.detach.assert_called_once_with()
         self.assertFalse(browser.page_scopes)
         self.assertFalse(browser.page_cdps)
 
-    def test_reused_cdp_request_id_marks_both_redirect_phases_uncertain(self):
+    def test_debugger_parse_must_match_the_root_bootstrap_url(self):
         browser = Browser.__new__(Browser)
-        browser.worker_groups, browser.worker_phases = {}, {}
-        browser.worker_targets = {'worker-target': {'destroyed': False, 'phase': None, 'url': None}}
-        first = {'type': 'Script', 'requestId': 'worker-target',
-                 'request': {'method': 'GET', 'url': 'http://asset/first.js'}}
-        browser.cdp_request(1, first)
-        first_key = (1, 'GET', 'http://asset/first.js')
-        browser.worker_groups[first_key]['high'] = 1
-        browser.cdp_request(1, {**first, 'request': {'method': 'GET', 'url': 'http://asset/second.js'}})
-        self.assertTrue(browser.worker_groups[first_key]['uncertain'])
-        self.assertTrue(browser.worker_groups[(1, 'GET', 'http://asset/second.js')]['uncertain'])
+        browser.inst, browser.worker_events, browser.errors = _Instance(), [], []
+        browser.native_network, browser.native_unscoped_workers = {}, {}
+        browser.worker_network_urls, browser.worker_parsed_urls = {}, {}
+        browser.worker_sessions = {'session': 'worker'}
+        browser.worker_targets = {'worker': {'scope': 1, 'bootstrap_url': 'http://asset/root.js',
+                                              'destroyed': False, 'url': 'http://asset/root.js'}}
+        browser.native_started(1, 'page:1', {'requestId': 'worker',
+                                             'request': {'method': 'GET', 'url': 'http://asset/root.js'}})
+        browser.worker_message_received({'sessionId': 'session', 'message':
+            '{"method":"Debugger.scriptParsed","params":{"url":"http://asset/child.js"}}'})
+        self.assertFalse(browser.native_scope_idle(1))
+        browser.worker_message_received({'sessionId': 'session', 'message':
+            '{"method":"Debugger.scriptParsed","params":{"url":"http://asset/root.js"}}'})
+        self.assertTrue(browser.native_scope_idle(1))
 
-    def test_native_worker_network_finishes_only_its_bound_request(self):
+    def test_autoattached_non_worker_is_resumed(self):
         browser = Browser.__new__(Browser)
-        request = object()
-        key = (1, 'GET', 'http://asset/child.js')
-        browser.worker_groups, browser.request_groups = {}, {}
-        browser.unbound_worker_requests = {request: {'scope': 1, 'method': 'GET', 'url': key[2]}}
-        browser.worker_network = {('worker', 'native'): {
-            'scope': 1, 'target': 'worker', 'request_id': 'native', 'method': 'GET', 'url': key[2],
-            'terminal': True, 'failed': False, 'request': None}}
-        browser.page_script_starts = {}
-        browser.bind_worker_network()
-        self.assertTrue(browser.group_closed(request))
+        browser.worker_cdp_send = Mock()
+        browser.page_worker_attached(1, Mock(), {'sessionId': 'frame-session',
+                                                   'targetInfo': {'type': 'iframe', 'targetId': 'frame'}})
+        browser.worker_cdp_send.assert_called_once_with('frame-session', 'Runtime.runIfWaitingForDebugger', cdp=unittest.mock.ANY)
 
-    def test_same_url_native_workers_remain_unbound(self):
+    def test_foreign_browser_context_worker_is_ignored(self):
         browser = Browser.__new__(Browser)
-        request = object()
-        browser.worker_groups, browser.request_groups = {}, {}
-        browser.unbound_worker_requests = {request: {'scope': 1, 'method': 'GET', 'url': 'http://asset/child.js'}}
-        browser.worker_network = {
-            ('one', 'native'): {'scope': 1, 'target': 'one', 'request_id': 'native', 'method': 'GET',
-                                'url': 'http://asset/child.js', 'terminal': True, 'failed': False, 'request': None},
-            ('two', 'native'): {'scope': 1, 'target': 'two', 'request_id': 'native', 'method': 'GET',
-                                'url': 'http://asset/child.js', 'terminal': True, 'failed': False, 'request': None},
-        }
-        browser.page_script_starts = {}
-        browser.bind_worker_network()
-        self.assertNotIn(request, browser.request_groups)
+        browser.browser_context_scopes, browser.worker_targets = {'ours': {1}}, {}
+        browser.native_unscoped_workers = {}
+        browser.worker_event = Mock()
+        browser.worker_target_created({'targetInfo': {'type': 'worker', 'targetId': 'foreign',
+                                                       'browserContextId': 'theirs', 'url': 'http://asset/a.js'}})
+        self.assertFalse(browser.worker_targets)
+        self.assertFalse(browser.native_unscoped_workers)
 
-    def test_page_cdp_script_start_after_native_binding_keeps_the_group_pending(self):
+    def test_delayed_cdp_start_cannot_drop_an_ordinary_playwright_request(self):
         browser = Browser.__new__(Browser)
-        request = object()
-        key = (1, 'GET', 'http://asset/child.js')
-        browser.inst, browser.worker_events = _Instance(), []
-        browser.worker_groups, browser.request_groups, browser.worker_targets = {}, {}, {}
-        browser.unbound_worker_requests = {request: {'scope': 1, 'method': 'GET', 'url': key[2]}}
-        browser.worker_network = {('worker', 'native'): {
-            'scope': 1, 'target': 'worker', 'request_id': 'native', 'method': 'GET', 'url': key[2],
-            'terminal': True, 'failed': False, 'request': None}}
-        browser.worker_phases, browser.page_script_starts = {}, {}
-        browser.bind_worker_network()
-        browser.cdp_request(1, {'type': 'Script', 'requestId': 'page-script',
-                                'request': {'method': 'GET', 'url': key[2]}})
-        self.assertTrue(browser.worker_groups[key]['uncertain'])
-        self.assertFalse(browser.group_closed(request))
+        page, request = Mock(), Mock()
+        request.frame.page = page
+        browser.inst, browser.worker_events, browser.errors = _Instance(), [], []
+        browser.pending = {request: 'http://asset/ordinary.js'}
+        browser.page_scopes = {id(page): 1}
+        browser.native_network, browser.native_unscoped_workers = {}, {}
+        browser.worker_targets, browser.worker_parsed_urls = {}, {}
+        browser.crashes, browser.settle_seconds, browser.page = (), .25, page
+        calls = 0
+        def pump(_):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                browser.cdp_request(1, {'requestId': 'ordinary', 'type': 'Script',
+                                        'request': {'method': 'GET', 'url': 'http://asset/ordinary.js'}})
+            time.sleep(.1)
+        page.wait_for_timeout.side_effect = pump
+        with self.assertRaisesRegex(Failure, 'Browser requests do not settle'):
+            browser.settle()
+        self.assertIn(request, browser.pending)

@@ -91,13 +91,20 @@ class Browser:
         self.errors, self.frames, self.uploads = [], [], []
         self.frame_sockets = []
         self.pending = {}
-        self.request_groups = {}
-        self.worker_groups, self.worker_targets = {}, {}
+        self.worker_targets = {}
         self.worker_sessions = {}
-        self.worker_network, self.unbound_worker_requests = {}, {}
-        self.page_script_starts = {}
-        self.worker_phases = {}
+        self.worker_session_cdps = {}
+        self.worker_parsed_urls = {}
+        self.worker_network_urls = {}
+        # CDP is the completion authority. Playwright is deliberately not a
+        # key in this ledger: the two protocols have independent request ids.
+        self.native_network = {}
+        # target id -> candidate page scopes.  This is deliberately scoped to
+        # Browser contexts that this Browser owns; the browser-wide Target
+        # session also sees other Playwright contexts.
+        self.native_unscoped_workers = {}
         self.page_scopes, self.context_scopes, self.page_cdps = {}, {}, {}
+        self.browser_context_scopes = {}
         self.next_page_scope = 0
         self.worker_events = []
         self.expected_http = []
@@ -276,7 +283,22 @@ class Browser:
             cdp.on('Network.responseReceived', lambda data: self.cdp_response(scope, data))
             cdp.on('Network.loadingFinished', lambda data: self.cdp_finished(scope, data))
             cdp.on('Network.loadingFailed', lambda data: self.cdp_failed(scope, data))
+            cdp.on('Target.attachedToTarget', lambda data: self.page_worker_attached(scope, cdp, data))
+            cdp.on('Target.receivedMessageFromTarget', self.worker_message_received)
             cdp.send('Network.enable')
+            # The browser-level Target session receives every Chromium
+            # context.  Learn this page's owning browserContextId so its
+            # worker notifications cannot make an unrelated scenario busy.
+            info = cdp.send('Target.getTargetInfo').get('targetInfo', {})
+            browser_context_id = info.get('browserContextId')
+            if browser_context_id:
+                self.browser_context_scopes.setdefault(browser_context_id, set()).add(scope)
+            # This page session is already subscribed before its first
+            # navigation. Pausing related workers here lets us subscribe to
+            # their Network domain before their bootstrap or child traffic.
+            cdp.send('Target.setAutoAttach', {
+                'autoAttach': True, 'waitForDebuggerOnStart': True, 'flatten': False,
+            })
         except Exception:
             # open_page has not returned yet, so its caller cannot clean this
             # half-watched page.  Detach the CDP session before propagating.
@@ -314,13 +336,6 @@ class Browser:
         context.on('requestfailed', self.request_failed)
         context.on('response', self.response_received)
 
-    def group_key(self, scope, method, url):
-        return (scope, method, url)
-
-    @staticmethod
-    def new_group():
-        return {'high': 0, 'phases': set(), 'terminal': set(), 'failed': False, 'uncertain': False}
-
     def worker_event(self, kind, **data):
         """Keep a bounded, redacted event trail for a failed settle receipt."""
         events = getattr(self, 'worker_events', None)
@@ -333,60 +348,81 @@ class Browser:
             del events[:-160]
 
     def pending_accounting(self):
-        keys = {key for request, key in self.request_groups.items() if request in self.pending}
-        groups = []
-        for scope, method, url in sorted(keys):
-            group = self.worker_groups.get((scope, method, url))
-            if group is not None:
-                groups.append({'scope': scope, 'method': method, 'url': self.inst.redactor.text(url),
-                               'high': group['high'], 'cdp': len(group['phases']),
-                               'terminal': len(group['terminal']), 'failed': group['failed'],
-                               'uncertain': group['uncertain']})
         targets = []
         for target_id, target in self.worker_targets.items():
-            phase = target['phase']
-            targets.append({'target': target_id, 'scope': phase[0] if phase else None,
-                            'phase': phase[1] if phase else None, 'destroyed': target['destroyed'],
+            targets.append({'target': target_id, 'scope': target.get('scope'),
+                            'browser_context': target.get('browser_context'), 'destroyed': target['destroyed'],
                             'url': self.inst.redactor.text(target['url']) if target['url'] else None})
-        return {'pending': list(self.pending.values()), 'groups': groups, 'targets': targets,
-                'events': list(self.worker_events)}
+        return {'pending': list(self.pending.values()), 'targets': targets,
+                'native_pending': [
+                    {'scope': scope, 'target': target, 'request': request,
+                     'url': self.inst.redactor.text(item.get('url') or ''), 'failed': item['failed']}
+                    for (scope, target, request), item in self.native_network.items()],
+                'unscoped_workers': sorted(self.native_unscoped_workers), 'events': list(self.worker_events)}
 
     def request_started(self, request):
         self.pending[request] = self.inst.redactor.text(request.url)
-        # A script is a worker candidate only after one native worker-target
-        # Network request proves ownership.  Until then it stays pending; URL
-        # or activity timing is not an ownership signal.
-        if request.resource_type != 'script':
+
+    def native_identity(self, scope, target_id, request_id):
+        return (scope, target_id, request_id)
+
+    def native_started(self, scope, target_id, data):
+        if not hasattr(self, 'native_network'):
             return
-        try:
-            headers = request.headers
-        except Exception:
-            headers = {}
-        fingerprint = {'origin': headers.get('origin'), 'referer': headers.get('referer')}
-        try:
-            scope = self.page_scopes.get(id(request.frame.page))
-            method, url = request.method, request.url
-        except Exception:
-            self.unbound_worker_requests[request] = {
-                'scope': None, 'method': request.method, 'url': request.url, **fingerprint}
-            self.bind_worker_network()
+        request_id = data.get('requestId')
+        request = data.get('request', {})
+        if not request_id:
             return
+        # Redirects reuse request ids; their final loading event remains the
+        # terminal authority for the target-owned operation.
+        self.native_network[self.native_identity(scope, target_id, request_id)] = {
+            'method': request.get('method'), 'url': request.get('url'), 'failed': False,
+        }
+        self.worker_event('native-start', scope=scope, target=target_id, request=request_id,
+                          method=request.get('method'), url=request.get('url') or '')
+
+    def native_response(self, scope, target_id, data):
+        if not hasattr(self, 'native_network'):
+            return
+        entry = self.native_network.get(self.native_identity(scope, target_id, data.get('requestId')))
+        if entry is None:
+            return
+        status = data.get('response', {}).get('status')
+        if not isinstance(status, (int, float)) or not 200 <= status < 300:
+            entry['failed'] = True
+        self.worker_event('native-response', scope=scope, target=target_id,
+                          request=data.get('requestId'), url=entry.get('url') or '', status=status)
+
+    def native_finished(self, scope, target_id, data, *, failed=False):
+        if not hasattr(self, 'native_network'):
+            return
+        identity = self.native_identity(scope, target_id, data.get('requestId'))
+        entry = self.native_network.pop(identity, None)
+        if entry is None:
+            return
+        self.worker_event('native-failed' if failed else 'native-finished', scope=scope,
+                          target=target_id, request=data.get('requestId'), url=entry.get('url') or '')
+        # A worker's child requests can fail before Playwright exposes a
+        # matching failure event.  Do not let native completion erase that
+        # diagnostic merely because it is terminal.
+        if (failed or entry['failed']) and not str(target_id).startswith('page:'):
+            self.errors.append(self.inst.redactor.text(
+                'Worker network failure: ' + str(entry.get('method') or '?') + ' ' +
+                str(entry.get('url') or '')))
+
+    def native_scope_idle(self, scope):
         if scope is None:
-            return
-        key = self.group_key(scope, method, url)
-        self.request_groups[request] = key
-        group = self.worker_groups.setdefault(key, self.new_group())
-        group['high'] += 1
-        if self.page_script_starts.get(key, 0):
-            group['uncertain'] = True
-        self.worker_event('high-start', scope=scope, method=method, url=url, high=group['high'])
-        self.unbound_worker_requests[request] = {'scope': scope, 'method': method, 'url': url, **fingerprint}
-        self.bind_worker_network()
+            return False
+        unscoped = getattr(self, 'native_unscoped_workers', {})
+        if any(scope in scopes for scopes in unscoped.values()):
+            return False
+        return not any(identity[0] == scope for identity in self.native_network)
+
+    def native_idle(self):
+        return not getattr(self, 'native_network', {}) and not getattr(self, 'native_unscoped_workers', {})
 
     def request_finished(self, request):
         self.pending.pop(request, None)
-        self.request_groups.pop(request, None)
-        getattr(self, 'unbound_worker_requests', {}).pop(request, None)
 
     def worker_target_created(self, data):
         target = data.get('targetInfo', {})
@@ -395,39 +431,80 @@ class Browser:
         # request merely because Chrome reused an opaque target identifier.
         if target.get('type') == 'worker' and target.get('targetId'):
             target_id = target['targetId']
-            self.worker_targets[target_id] = {
-                'destroyed': False, 'phase': None, 'url': target.get('url') or None}
+            browser_context = target.get('browserContextId')
+            scopes = self.browser_context_scopes.get(browser_context, set())
+            if not scopes:
+                return
+            worker = self.worker_targets.setdefault(target_id, {
+                'destroyed': False, 'scope': None, 'url': target.get('url') or None,
+                'browser_context': browser_context, 'bootstrap_url': None})
+            worker.setdefault('candidate_scopes', set()).update(scopes)
+            self.native_unscoped_workers[target_id] = set(worker['candidate_scopes'])
             self.worker_event('target-created', target=target_id, url=target.get('url') or '')
-            # The page CDP session proves the bootstrap request.  Attach to the
-            # worker's own target as well: its Network events are the sole
-            # authority for imports and fetches initiated by that worker.
+            # Target creation precedes script evaluation. Attach immediately;
+            # Debugger.scriptParsed is the native proof that an already-started
+            # bootstrap source was completely received and compiled.
             try:
                 attached = self.browser_cdp.send('Target.attachToTarget', {'targetId': target_id, 'flatten': False})
-            except Exception:
-                # A very short worker can be destroyed between target discovery
-                # and attachment.  Destruction remains its native terminal
-                # signal; never turn that race into a browser callback error.
-                self.worker_event('target-attach-missed', target=target_id)
-                return
-            session_id = attached.get('sessionId')
-            if not session_id:
-                self.worker_targets.pop(target_id, None)
-                self.errors.append('Worker target does not expose a CDP session')
-                return
-            self.worker_sessions[session_id] = target_id
-            try:
+                session_id = attached.get('sessionId')
+                if not session_id:
+                    raise RuntimeError('Worker target does not expose a CDP session')
+                self.worker_sessions[session_id] = target_id
+                self.worker_session_cdps[session_id] = self.browser_cdp
                 self.worker_cdp_send(session_id, 'Network.enable')
+                self.worker_cdp_send(session_id, 'Debugger.enable')
+                self.worker_event('target-network-enabled', target=target_id)
             except Exception:
-                # Attachment may succeed just before a short-lived worker
-                # vanishes.  It has no observable child network lifetime.
-                self.worker_sessions.pop(session_id, None)
                 self.worker_event('target-network-missed', target=target_id)
 
-    def worker_cdp_send(self, session_id, method, params=None):
-        self.browser_cdp.send('Target.sendMessageToTarget', {
+    def page_worker_attached(self, scope, cdp, data):
+        target = data.get('targetInfo', {})
+        target_id, session_id = target.get('targetId'), data.get('sessionId')
+        if not session_id:
+            return
+        # setAutoAttach pauses *every* related target, including OOPIFs.
+        # Always resume a non-worker before returning; otherwise an embedded
+        # frame can be frozen indefinitely by our observer.
+        if target.get('type') != 'worker' or not target_id:
+            try:
+                self.worker_cdp_send(session_id, 'Runtime.runIfWaitingForDebugger', cdp=cdp)
+            except Exception:
+                self.worker_event('target-resume-missed', target=target_id or '?', scope=scope)
+            return
+        worker = self.worker_targets.setdefault(target_id, {
+            'destroyed': False, 'scope': None, 'url': target.get('url') or None,
+            'browser_context': target.get('browserContextId'), 'bootstrap_url': None,
+            'candidate_scopes': set()})
+        worker['candidate_scopes'].add(scope)
+        if worker.get('scope') is None:
+            self.native_unscoped_workers[target_id] = set(worker['candidate_scopes'])
+        self.worker_sessions[session_id] = target_id
+        self.worker_session_cdps[session_id] = cdp
+        try:
+            self.worker_cdp_send(session_id, 'Network.enable', cdp=cdp)
+            self.worker_cdp_send(session_id, 'Debugger.enable', cdp=cdp)
+            self.worker_cdp_send(session_id, 'Runtime.runIfWaitingForDebugger', cdp=cdp)
+            self.worker_event('target-network-enabled', target=target_id, scope=scope)
+        except Exception:
+            self.worker_sessions.pop(session_id, None)
+            self.worker_session_cdps.pop(session_id, None)
+            self.worker_event('target-network-missed', target=target_id, scope=scope)
+
+    def worker_cdp_send(self, session_id, method, params=None, cdp=None):
+        (cdp or self.worker_session_cdps.get(session_id) or self.browser_cdp).send('Target.sendMessageToTarget', {
             'sessionId': session_id,
             'message': json.dumps({'id': 1, 'method': method, 'params': params or {}}),
         })
+
+    def worker_target_changed(self, data):
+        info = data.get('targetInfo', {})
+        target = self.worker_targets.get(info.get('targetId'))
+        url = info.get('url')
+        if target is None or not url:
+            return
+        target['url'] = url
+        self.worker_event('target-changed', target=info.get('targetId'), url=url,
+                          scope=target.get('scope'))
 
     def worker_message_received(self, data):
         target_id = self.worker_sessions.get(data.get('sessionId'))
@@ -439,95 +516,56 @@ class Browser:
             self.errors.append('Invalid worker CDP message')
             return
         method, params = message.get('method'), message.get('params', {})
-        if not method or not method.startswith('Network.'):
+        if not method:
+            return
+        if method == 'Debugger.scriptParsed':
+            target = self.worker_targets.get(target_id)
+            parsed_url = params.get('url')
+            if not target or not parsed_url:
+                return
+            self.worker_parsed_urls.setdefault(target_id, set()).add(parsed_url)
+            if target.get('scope') is not None and parsed_url == target.get('bootstrap_url'):
+                scope = target['scope']
+                self.native_finished(scope, 'page:' + str(scope), {'requestId': target_id})
+                self.worker_event('worker-bootstrap-parsed', scope=scope, target=target_id, url=parsed_url)
+            return
+        if not method.startswith('Network.'):
             return
         request_id = params.get('requestId')
         request = params.get('request', {})
-        self.worker_event('worker-network-' + method.removeprefix('Network.'), target=target_id,
-                          request=request_id, url=request.get('url') or '')
-        if method == 'Network.requestWillBeSent':
+        if method == 'Network.requestWillBeSent' and request_id:
+            self.worker_network_urls[(target_id, request_id)] = request.get('url') or ''
             target = self.worker_targets.get(target_id)
-            phase = target and target['phase']
-            request_method, url = request.get('method'), request.get('url')
-            if phase is not None and request_id and request_method and url:
-                headers = request.get('headers', {})
-                self.worker_network[(target_id, request_id)] = {
-                    'scope': phase[0], 'target': target_id, 'request_id': request_id,
-                    'method': request_method, 'url': url, 'terminal': False,
-                    'failed': False, 'request': None,
-                    'origin': headers.get('Origin') or headers.get('origin'),
-                    'referer': headers.get('Referer') or headers.get('referer'),
-                }
-                self.bind_worker_network()
-            return
-        network = self.worker_network.get((target_id, request_id))
-        if network is None:
-            return
-        if method == 'Network.responseReceived':
-            status = params.get('response', {}).get('status')
-            network['failed'] = not isinstance(status, (int, float)) or not 200 <= status < 300
-        elif method == 'Network.loadingFailed':
-            network['failed'], network['terminal'] = True, True
-        elif method == 'Network.loadingFinished':
-            network['terminal'] = True
-        self.settle_worker_network(network)
-
-    def bind_worker_network(self):
-        """Pair one Playwright script with one native worker Network request."""
-        for network in self.worker_network.values():
-            if network['request'] is not None:
-                continue
-            candidates = [request for request, detail in self.unbound_worker_requests.items()
-                          if detail['scope'] == network['scope'] and detail['method'] == network['method'] and
-                          detail['url'] == network['url'] and detail.get('origin') == network.get('origin') and
-                          detail.get('referer') == network.get('referer')]
-            peers = [item for item in self.worker_network.values()
-                     if item['request'] is None and item['method'] == network['method'] and
-                     item['url'] == network['url'] and item.get('origin') == network.get('origin') and
-                     item.get('referer') == network.get('referer')]
-            if len(candidates) != 1 or len(peers) != 1:
-                continue
-            request = candidates[0]
-            key = self.group_key(network['scope'], network['method'], network['url'])
-            group = self.worker_groups.setdefault(key, self.new_group())
-            if self.page_script_starts.get(key, 0):
-                group['uncertain'] = True
-            group['high'] += 1
-            phase = (network['scope'], network['target'], 'network', network['request_id'])
-            group['phases'].add(phase)
-            self.request_groups[request] = key
-            self.unbound_worker_requests.pop(request, None)
-            network['request'], network['phase'] = request, phase
-            self.worker_event('worker-network-bound', scope=network['scope'], target=network['target'],
-                              request=network['request_id'], method=network['method'], url=network['url'])
-            self.settle_worker_network(network)
-
-    def settle_worker_network(self, network):
-        if network.get('request') is None or not network['terminal']:
-            return
-        group = self.worker_groups.get(self.request_groups.get(network['request']))
-        if group is None:
-            return
-        if network['failed']:
-            group['failed'] = True
-        group['terminal'].add(network['phase'])
-
-    def worker_target_changed(self, data):
-        info = data.get('targetInfo', {})
-        target = self.worker_targets.get(info.get('targetId'))
-        url = info.get('url')
-        if target is None or not url:
-            return
-        phase = target['phase']
-        if phase is not None and target['url'] is not None and target['url'] != url:
-            active = self.worker_phases.get(phase)
-            if active is not None:
-                self.worker_groups[active[0]]['uncertain'] = True
-        target['url'] = url
-        self.worker_event('target-changed', target=info.get('targetId'), url=url,
-                          scope=phase[0] if phase else None)
+            scope = target and target.get('scope')
+            if scope is not None:
+                self.native_started(scope, target_id, params)
+        url = request.get('url') or self.worker_network_urls.get((target_id, request_id), '')
+        self.worker_event('worker-network-' + method.removeprefix('Network.'), target=target_id,
+                          request=request_id, url=url)
+        target = self.worker_targets.get(target_id)
+        scope = target and target.get('scope')
+        if scope is not None:
+            if method == 'Network.responseReceived':
+                self.native_response(scope, target_id, params)
+                # The page session starts a dedicated-worker bootstrap under
+                # the target id, but Chrome may deliver its terminal events
+                # only through that worker's session. This is a native
+                # target-id relation, not a URL or Playwright correlation.
+                if request_id == target_id:
+                    self.native_response(scope, 'page:' + str(scope), params)
+            elif method == 'Network.loadingFinished':
+                self.native_finished(scope, target_id, params)
+                if request_id == target_id:
+                    self.native_finished(scope, 'page:' + str(scope), params)
+            elif method == 'Network.loadingFailed':
+                self.native_finished(scope, target_id, params, failed=True)
+                if request_id == target_id:
+                    self.native_finished(scope, 'page:' + str(scope), params, failed=True)
+        if method in ('Network.loadingFinished', 'Network.loadingFailed'):
+            self.worker_network_urls.pop((target_id, request_id), None)
 
     def cdp_request(self, scope, data):
+        self.native_started(scope, 'page:' + str(scope), data)
         if data.get('type') != 'Script':
             return
         request_id = data.get('requestId')
@@ -536,58 +574,30 @@ class Browser:
         self.worker_event('cdp-start', scope=scope, target=request_id, url=request.get('url') or '',
                           known=target is not None, destroyed=target['destroyed'] if target else None)
         if target is None or target['destroyed']:
-            method, url = request.get('method'), request.get('url')
-            if method and url:
-                key = self.group_key(scope, method, url)
-                self.page_script_starts[key] = self.page_script_starts.get(key, 0) + 1
-                group = self.worker_groups.get(key)
-                if group is not None:
-                    group['uncertain'] = True
             return
         method, url = request.get('method'), request.get('url')
         if not method or not url:
             return
-        active = self.worker_phases.get((scope, request_id))
-        if active is not None:
-            # Network reuses requestId for redirects.  The old and new URL phases
-            # cannot be matched to Playwright Requests, so retaining either would
-            # turn an ambiguous redirect into a blanket ignore.
-            self.worker_groups[active[0]]['uncertain'] = True
-            key = self.group_key(scope, method, url)
-            self.worker_groups.setdefault(key, self.new_group())['uncertain'] = True
+        if scope not in target.get('candidate_scopes', set()):
             return
-        key = self.group_key(scope, method, url)
-        group = self.worker_groups.setdefault(key, self.new_group())
-        phase = (scope, request_id)
-        group['phases'].add(phase)
-        self.worker_phases[phase] = (key, phase)
-        target['phase'] = phase
+        target['scope'] = scope
+        target['bootstrap_url'] = url
+        self.native_unscoped_workers.pop(request_id, None)
+        if url in self.worker_parsed_urls.get(request_id, set()):
+            self.native_finished(scope, 'page:' + str(scope), {'requestId': request_id})
+            self.worker_event('worker-bootstrap-parsed', scope=scope, target=request_id)
         target['url'] = url
         self.worker_event('cdp-bound', scope=scope, target=request_id, method=method, url=url,
-                          cdp=len(group['phases']))
+                          cdp=True)
 
     def cdp_finished(self, scope, data):
-        active = self.worker_phases.get((scope, data.get('requestId')))
-        if active is not None:
-            self.worker_groups[active[0]]['terminal'].add(active[1])
-            self.worker_event('cdp-finished', scope=scope, target=data.get('requestId'))
+        self.native_finished(scope, 'page:' + str(scope), data)
 
     def cdp_response(self, scope, data):
-        active = self.worker_phases.get((scope, data.get('requestId')))
-        if active is None:
-            return
-        status = data.get('response', {}).get('status')
-        if not isinstance(status, (int, float)) or not 200 <= status < 300:
-            self.worker_groups[active[0]]['failed'] = True
-        self.worker_event('cdp-response', scope=scope, target=data.get('requestId'), status=status)
+        self.native_response(scope, 'page:' + str(scope), data)
 
     def cdp_failed(self, scope, data):
-        active = self.worker_phases.get((scope, data.get('requestId')))
-        if active is not None:
-            group = self.worker_groups[active[0]]
-            group['failed'] = True
-            group['terminal'].add(active[1])
-            self.worker_event('cdp-failed', scope=scope, target=data.get('requestId'))
+        self.native_finished(scope, 'page:' + str(scope), data, failed=True)
 
     def worker_target_destroyed(self, data):
         target_id = data.get('targetId')
@@ -595,31 +605,20 @@ class Browser:
         if target is None:
             return
         target['destroyed'] = True
+        self.worker_parsed_urls.pop(target_id, None)
+        self.native_unscoped_workers.pop(target_id, None)
         for session_id, session_target in list(self.worker_sessions.items()):
             if session_target == target_id:
                 self.worker_sessions.pop(session_id, None)
+                self.worker_session_cdps.pop(session_id, None)
+        for identity in [identity for identity in self.worker_network_urls if identity[0] == target_id]:
+            self.worker_network_urls.pop(identity, None)
+        for identity in [identity for identity in getattr(self, 'native_network', {}) if identity[1] == target_id]:
+            self.native_network.pop(identity, None)
         self.worker_event('target-destroyed', target=target_id)
-        phase = target['phase']
-        if phase is not None:
-            active = self.worker_phases.get(phase)
-            if active is not None:
-                self.worker_groups[active[0]]['terminal'].add(active[1])
-
-    def group_closed(self, request):
-        key = getattr(self, 'request_groups', {}).get(request)
-        group = getattr(self, 'worker_groups', {}).get(key)
-        if group is not None:
-            try:
-                if request.redirected_from or request.redirected_to:
-                    # Playwright and the page CDP session expose different
-                    # redirect lifecycles.  A requestId reused for either leg is
-                    # not safely attributable to one high-level Request.
-                    group['uncertain'] = True
-            except Exception:
-                pass
-        return bool(group and not group['failed'] and not group['uncertain'] and
-                    group['high'] == len(group['phases']) and
-                    group['terminal'] == group['phases'])
+        scope = target.get('scope')
+        if scope is not None:
+            self.native_finished(scope, 'page:' + str(scope), {'requestId': target_id})
 
     def forget_page(self, scope):
         cdp = self.page_cdps.pop(scope, None)
@@ -628,29 +627,43 @@ class Browser:
                 cdp.detach()
             except Exception:
                 pass
-        keys = {key for key in self.worker_groups if key[0] == scope}
-        for request, key in list(self.request_groups.items()):
-            if key in keys:
-                self.request_groups.pop(request, None)
+        for request in list(self.pending):
+            try:
+                request_scope = self.page_scopes.get(id(request.frame.page))
+            except Exception:
+                request_scope = None
+            if request_scope == scope:
                 self.pending.pop(request, None)
-        for key in keys:
-            self.worker_groups.pop(key, None)
-            self.page_script_starts.pop(key, None)
-        for identity, network in list(getattr(self, 'worker_network', {}).items()):
-            if network['scope'] == scope:
-                self.worker_network.pop(identity, None)
-        for phase in [phase for phase in self.worker_phases if phase[0] == scope]:
-            self.worker_phases.pop(phase, None)
         for target_id, target in list(self.worker_targets.items()):
-            phase = target['phase']
-            if phase is not None and phase[0] == scope:
-                self.worker_targets.pop(target_id, None)
-                for session_id, session_target in list(self.worker_sessions.items()):
-                    if session_target == target_id:
-                        self.worker_sessions.pop(session_id, None)
+            owner = target.get('scope')
+            if owner is not None and owner != scope:
+                continue
+            if owner is None:
+                candidates = target.get('candidate_scopes', set())
+                candidates.discard(scope)
+                if candidates:
+                    self.native_unscoped_workers[target_id] = set(candidates)
+                    continue
+            self.worker_targets.pop(target_id, None)
+            for session_id, session_target in list(self.worker_sessions.items()):
+                if session_target == target_id:
+                    self.worker_sessions.pop(session_id, None)
+                    self.worker_session_cdps.pop(session_id, None)
+            for identity in [identity for identity in self.worker_network_urls if identity[0] == target_id]:
+                self.worker_network_urls.pop(identity, None)
+            self.native_unscoped_workers.pop(target_id, None)
+            self.worker_parsed_urls.pop(target_id, None)
+            for identity in [identity for identity in getattr(self, 'native_network', {}) if identity[1] == target_id]:
+                self.native_network.pop(identity, None)
+        for identity in [identity for identity in getattr(self, 'native_network', {}) if identity[0] == scope]:
+            self.native_network.pop(identity, None)
         for page_id, page_scope in list(self.page_scopes.items()):
             if page_scope == scope:
                 self.page_scopes.pop(page_id, None)
+        for browser_context, scopes in list(getattr(self, 'browser_context_scopes', {}).items()):
+            scopes.discard(scope)
+            if not scopes:
+                self.browser_context_scopes.pop(browser_context, None)
 
     def forget_context(self, context):
         for scope in getattr(self, 'context_scopes', {}).pop(id(context), set()):
@@ -677,9 +690,6 @@ class Browser:
         require(not self.crashes, 'Browser page crashed: ' + json.dumps(self.crashes))
 
     def response_received(self, response):
-        key = getattr(self, 'request_groups', {}).get(response.request)
-        if (not 200 <= response.status < 300 and key in getattr(self, 'worker_groups', {})):
-            self.worker_groups[key]['failed'] = True
         matched = [item for item in self.expected_http if item['method'] == response.request.method
                    and item['url'] == response.url and item['status'] == response.status
                    and ('fulfilled' not in item or item['fulfilled'] > item['observed'])]
@@ -780,25 +790,19 @@ class Browser:
             self.page.unroute(item['url'], fulfill)
 
     def request_failed(self, request):
-        key = getattr(self, 'request_groups', {}).pop(request, None)
-        if key in getattr(self, 'worker_groups', {}):
-            self.worker_groups[key]['failed'] = True
         self.pending.pop(request, None)
-        getattr(self, 'unbound_worker_requests', {}).pop(request, None)
         error = self.inst.redactor.text(f'{request.method} {request.url}: {request.failure}')
-        navigations = getattr(self, 'expected_document_navigations', ())
-        if navigations:
+        for navigation in reversed(getattr(self, 'expected_document_navigations', ())):
             try:
                 is_main_frame = request.frame == self.page.main_frame
             except Exception:
                 is_main_frame = False
-            for navigation in reversed(navigations):
-                if (request.method == 'GET' and request.resource_type == 'script' and
-                        request.failure == 'net::ERR_ABORTED' and is_main_frame and
-                        self.page is navigation['page'] and self.page.url == navigation['source'] and
-                        navigation['source'] != navigation['target']):
-                    navigation['aborts'].append(error)
-                    return
+            if (request.method == 'GET' and request.resource_type == 'script' and
+                    request.failure == 'net::ERR_ABORTED' and is_main_frame and
+                    self.page is navigation['page'] and self.page.url == navigation['source'] and
+                    navigation['source'] != navigation['target']):
+                navigation['aborts'].append(error)
+                return
         if request.failure == 'net::ERR_ABORTED' and urlparse(request.url).hostname in ICONIFY_MIRRORS:
             return
         for item in self.frame_refusals:
@@ -855,12 +859,19 @@ class Browser:
         quiet_since = None
         while time.monotonic() < deadline:
             self.ensure_alive()
-            for request in list(self.pending):
-                if self.group_closed(request):
-                    self.pending.pop(request, None)
-                    self.request_groups.pop(request, None)
+            # Let CDP deliver Network events before treating a Playwright
+            # request as stranded.  Playwright request-start can otherwise
+            # precede the authoritative CDP request-start by one event turn.
             self.page.wait_for_timeout(100)
-            if self.pending:
+            for request in list(self.pending):
+                scope = None
+                try:
+                    scope = self.page_scopes.get(id(request.frame.page))
+                except Exception:
+                    pass
+                if self.native_scope_idle(scope):
+                    self.pending.pop(request, None)
+            if self.pending or not self.native_idle():
                 quiet_since = None
             elif quiet_since is None:
                 quiet_since = time.monotonic()
@@ -868,7 +879,8 @@ class Browser:
                 return
         receipt = self.pending_accounting()
         self.inst.evidence.save('browser-pending-accounting', receipt)
-        require(False, 'Browser requests do not settle within 30 seconds: ' + str(receipt))
+        require(False, 'Browser requests do not settle within ' + str(getattr(self, 'settle_seconds', 30)) +
+                ' seconds: ' + str(receipt))
 
     def clean(self, start):
         errors = self.errors[start:]
@@ -1010,14 +1022,15 @@ class Browser:
             except Exception as error:
                 errors.append(str(error))
         self.navigation_urls = {}
-        self.worker_groups.clear()
         self.worker_targets.clear()
         self.worker_sessions.clear()
-        self.worker_network.clear()
-        self.unbound_worker_requests.clear()
-        self.page_script_starts.clear()
-        self.worker_phases.clear()
+        self.worker_session_cdps.clear()
+        self.worker_parsed_urls.clear()
+        self.worker_network_urls.clear()
+        self.native_network.clear()
+        self.native_unscoped_workers.clear()
         self.page_scopes.clear()
         self.context_scopes.clear()
+        self.browser_context_scopes.clear()
         self.page_cdps.clear()
         require(not errors, 'Browser cleanup: ' + '; '.join(errors))

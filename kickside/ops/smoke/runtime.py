@@ -48,7 +48,13 @@ def reap_orphan_databases(run_root, execute):
     """Drop scratch databases recorded under run_root by processes that no longer exist."""
     reaped = []
     for record in sorted(Path(run_root).glob('**/database.json')):
-        owner = json.loads(record.read_text())
+        try:
+            owner = json.loads(record.read_text())
+        except FileNotFoundError:
+            # Another runner can finish its own cleanup after glob has yielded
+            # this descriptor. Only that vanished descriptor is benign; all
+            # ownership and database checks below stay strict.
+            continue
         if process_identity(owner['pid']) == owner['identity']:
             continue
         drop_database(owner['db'], execute)
