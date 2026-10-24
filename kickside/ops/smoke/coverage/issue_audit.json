@@ -113,6 +113,25 @@
       "reason": "Agent title queries preserve their declared authority contract when callers restrict independent query methods.",
       "user_visible": false
     },
+    "AGENTS-ENTRYPOINT-STORED-TASK-COMPATIBILITY": {
+      "guards": {
+        "browser_agents_entry_points": {
+          "assertions": [
+            "The served Agents page keeps editing and Chat entry points available for a stored agent while exposing neither the retired background-run control nor a manual-task launcher."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "automation/stored-agent-target-compatibility",
+        "agents/background-run-ui"
+      ],
+      "reason": "Stored agent tasks remain compatible after the retired background-run entry point is removed from the served Agents surface.",
+      "user_visible": true
+    },
     "APP-STORAGE-UPDATE-DEFAULTS": {
       "guards": {
         "deployment_storage_defaults": {
@@ -794,61 +813,6 @@
       "reason": "Admin creates and manages ordinary User bots through the served Users interface.",
       "user_visible": true
     },
-    "BOT-AGENT-BACKGROUND-RUN": {
-      "guards": {
-        "agent_background_identity_boundaries": {
-          "assertions": [
-            "Native admitted-invoke preserves executor/authorizer/root/credential/link; owning invoke suite refuses unreadable/private agents, unauthorized/private/configured-authority tool overrides before flow creation; authorization suite preserves typed infrastructure failures"
-          ],
-          "types": [
-            "API-smoke"
-          ]
-        },
-        "browser_agent_background_run": {
-          "assertions": [
-            "Actual Agents UI prepares a fixed prompt/agent reference and mounts the single shared manual launcher and Users picker",
-            "Ungrant operator cannot see the bot; explicit live group all-roots grant exposes it without creating an effect",
-            "Selected task executes the actual Agents resolver/dataflow/model/tool caller; native tool effect actor/carrier is the ordinary bot with the original human authorizer and new protected task root",
-            "External Chat Completions fixture receives actual offered tools and native tool result; it does not replace the agent resolver, flow or tool execution",
-            "Crafted ungranted selected-install request returns403 with no component, operation or drive and no effect",
-            "Real UI Me selection runs the native model/tool turn, reports effect permission refusal, preserves the human executor/authorizer and leaves the bot-only durable effects unchanged",
-            "Revoked selection returns403 and a visible alert with no success or protected root; restoring delegation retries the identical fixed request",
-            "The selected bot refuses the configuring-human-only tool with no effect; Me produces that real effect under the original human identity while refusing bot-only access",
-            "Native selected installation retains exactly generations0/1; the set audit names old human, new bot and original authorizer, and contains no bearer"
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        }
-      },
-      "harness": [
-        "agents/background-run-ui",
-        "smoke/openai-tool-provider",
-        "agents/admitted-invoke",
-        "agents/invoke-authorization"
-      ],
-      "reason": "Agents exposes the shared selected manual task without changing ordinary Chat or creating another run-as path.",
-      "user_visible": true
-    },
-    "BOT-AGENT-LAUNCH-ERROR-RECOVERY": {
-      "guards": {
-        "browser_agent_background_run": {
-          "assertions": [
-            "Revoked selection shows a failure; successful identical retry has Run queued and no stale alert anywhere in the Agent run panel"
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        }
-      },
-      "harness": [
-        "agents/background-run-ui"
-      ],
-      "reason": "The Agent form retains a forwarded permission failure after its shared launcher confirms the same retry.",
-      "user_visible": true
-    },
     "BOT-AUTHORIZER-UI-ADOPTION": {
       "guards": {
         "browser_bot_authorizer_adoption": {
@@ -1203,6 +1167,18 @@
           "types": [
             "API-smoke"
           ]
+        },
+        "browser_workflow_selected_restricted_baseline": {
+          "assertions": [
+            "The served Workflow Run published panel selects an ordinary User bot whose memberships are exactly User plus a custom scope selecting the canonical Automation, Workflows, Blocks and Inbox module capabilities, with fixture-local effect and fixed-reviewer assignment grants; Administrator and Members remain absent.",
+            "Ungrant selection is absent, crafted ungranted installation creates no root, revoked selection shows a 403 alert with no success or root, and restored delegation retries the identical staged request.",
+            "The real Workflow reaches Await, resumes after human approval, and records exactly one native function effect with the bot executor, original human authorizer and protected task root unchanged.",
+            "The native effect has an active security scope, explicit declared function access and Await spawn access, while direct principal-directory access, assignment to other recipients, unrelated retention process spawning, registry mutation and Users management remain denied; browser console and network checks stay strict."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
         }
       },
       "harness": [
@@ -1546,6 +1522,18 @@
             "Published input remains valid after a mutable draft schema change; installation produces no run and command replay produces no second run or occurrence"
           ],
           "types": [
+            "API-smoke"
+          ]
+        },
+        "browser_workflow_selected_restricted_baseline": {
+          "assertions": [
+            "The served Workflow Run published panel selects an ordinary User bot whose memberships are exactly User plus a custom scope selecting the canonical Automation, Workflows, Blocks and Inbox module capabilities, with fixture-local effect and fixed-reviewer assignment grants; Administrator and Members remain absent.",
+            "Ungrant selection is absent, crafted ungranted installation creates no root, revoked selection shows a 403 alert with no success or root, and restored delegation retries the identical staged request.",
+            "The real Workflow reaches Await, resumes after human approval, and records exactly one native function effect with the bot executor, original human authorizer and protected task root unchanged.",
+            "The native effect has an active security scope, explicit declared function access and Await spawn access, while direct principal-directory access, assignment to other recipients, unrelated retention process spawning, registry mutation and Users management remain denied; browser console and network checks stay strict."
+          ],
+          "types": [
+            "browser-UI",
             "API-smoke"
           ]
         }
@@ -3648,15 +3636,6 @@
     },
     "EXECUTION-BASELINE-IDENTITY-RESOLUTION": {
       "guards": {
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual native Agent model/tool execution succeeds with only baseline plus explicit Automation/Models/effect group; bot identity and human authorizer remain exact; Administrator/Members and unrelated privileges stay absent."
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
         "execution_baseline_identity_resolution": {
           "assertions": [
             "Signed-in baseline opens only the canonical resolver, while private subject/credential/directory calls, Users management, registry mutation and arbitrary actor/scope construction remain unavailable."
@@ -3672,13 +3651,25 @@
           "types": [
             "API-smoke"
           ]
+        },
+        "browser_workflow_selected_restricted_baseline": {
+          "assertions": [
+            "The served Workflow Run published panel selects an ordinary User bot whose memberships are exactly User plus a custom scope selecting the canonical Automation, Workflows, Blocks and Inbox module capabilities, with fixture-local effect and fixed-reviewer assignment grants; Administrator and Members remain absent.",
+            "Ungrant selection is absent, crafted ungranted installation creates no root, revoked selection shows a 403 alert with no success or root, and restored delegation retries the identical staged request.",
+            "The real Workflow reaches Await, resumes after human approval, and records exactly one native function effect with the bot executor, original human authorizer and protected task root unchanged.",
+            "The native effect has an active security scope, explicit declared function access and Await spawn access, while direct principal-directory access, assignment to other recipients, unrelated retention process spawning, registry mutation and Users management remain denied; browser console and network checks stay strict."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
         }
       },
       "harness": [
         "app/baseline-identity-resolution",
         "app/resolver-private-read"
       ],
-      "reason": "An executor with baseline and explicit module access cannot open the canonical live Users identity resolver; native Agent admission stops before model/tool I/O. Directory membership must not supply execution identity resolution.",
+      "reason": "An executor with baseline and explicit module access resolves its canonical live Users identity through selected Workflow execution and Await/resume, without directory membership or unrelated management privileges.",
       "user_visible": true
     },
     "EXECUTION-CORRELATION-ROUNDTRIP": {
@@ -4056,6 +4047,24 @@
       "harness": [],
       "reason": "The Hub control plane accepts a provider plan whose retained shared dependency lacks a newly imported registry entry.",
       "user_visible": false
+    },
+    "HUB-READABLE-LICENSE-LABELS": {
+      "guards": {
+        "hub_license_labels": {
+          "assertions": [
+            "The served Hub catalog, detail, and install surfaces render custom LicenseRef values as readable labels while retaining the exact SPDX value in their tooltips across light and dark themes."
+          ],
+          "types": [
+            "browser-UI",
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "hub/readable-license-labels"
+      ],
+      "reason": "Custom Hub license references must remain readable without losing their exact SPDX value.",
+      "user_visible": true
     },
     "HUB-REBOOT-AFTER-FAILED-INSTALL": {
       "guards": {
@@ -13418,26 +13427,12 @@
             "API-smoke"
           ]
         },
-        "browser_agent_background_run": {
+        "browser_workflow_selected_restricted_baseline": {
           "assertions": [
-            "Actual Agents UI prepares a fixed prompt/agent reference and mounts the single shared manual launcher and Users picker",
-            "Ungrant operator cannot see the bot; explicit live group all-roots grant exposes it without creating an effect",
-            "Selected task executes the actual Agents resolver/dataflow/model/tool caller; native tool effect actor/carrier is the ordinary bot with the original human authorizer and new protected task root",
-            "External Chat Completions fixture receives actual offered tools and native tool result; it does not replace the agent resolver, flow or tool execution",
-            "Crafted ungranted selected-install request returns403 with no component, operation or drive and no effect",
-            "Real UI Me selection runs the native model/tool turn, reports effect permission refusal, preserves the human executor/authorizer and leaves the bot-only durable effects unchanged",
-            "Revoked selection returns403 and a visible alert with no success or protected root; restoring delegation retries the identical fixed request",
-            "The selected bot refuses the configuring-human-only tool with no effect; Me produces that real effect under the original human identity while refusing bot-only access",
-            "Native selected installation retains exactly generations0/1; the set audit names old human, new bot and original authorizer, and contains no bearer"
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual Agent background-run browser uses the shared picker, native model/session/tool turns and ordinary bot/human/root identity. A bot with only signed-in baseline and explicit Automation/Models/effect group executes its allowed tool; no Administrator or Members membership or registry mutation/Users-management authority appears. Ungrant, live-revoke, exact retry, audit and human-only-tool controls remain strict."
+            "The served Workflow Run published panel selects an ordinary User bot whose memberships are exactly User plus a custom scope selecting the canonical Automation, Workflows, Blocks and Inbox module capabilities, with fixture-local effect and fixed-reviewer assignment grants; Administrator and Members remain absent.",
+            "Ungrant selection is absent, crafted ungranted installation creates no root, revoked selection shows a 403 alert with no success or root, and restored delegation retries the identical staged request.",
+            "The real Workflow reaches Await, resumes after human approval, and records exactly one native function effect with the bot executor, original human authorizer and protected task root unchanged.",
+            "The native effect has an active security scope, explicit declared function access and Await spawn access, while direct principal-directory access, assignment to other recipients, unrelated retention process spawning, registry mutation and Users management remain denied; browser console and network checks stay strict."
           ],
           "types": [
             "browser-UI",
@@ -13446,11 +13441,10 @@
         }
       },
       "harness": [
-        "agents/background-run-ui",
         "agents/admitted-invoke",
         "agents/invoke-authorization"
       ],
-      "reason": "Agents exposes the shared selected manual task without changing ordinary Chat or creating another run-as path.",
+      "reason": "Selected execution retains its admitted executor, original human authorizer and protected task root through native Workflow effects and human review; the restricted browser proof complements the native Agent admission boundaries.",
       "user_visible": true
     },
     "RA-B06": {
@@ -13516,31 +13510,6 @@
     },
     "RA-B09": {
       "guards": {
-        "browser_agent_background_run": {
-          "assertions": [
-            "Actual Agents UI prepares a fixed prompt/agent reference and mounts the single shared manual launcher and Users picker",
-            "Ungrant operator cannot see the bot; explicit live group all-roots grant exposes it without creating an effect",
-            "Selected task executes the actual Agents resolver/dataflow/model/tool caller; native tool effect actor/carrier is the ordinary bot with the original human authorizer and new protected task root",
-            "External Chat Completions fixture receives actual offered tools and native tool result; it does not replace the agent resolver, flow or tool execution",
-            "Crafted ungranted selected-install request returns403 with no component, operation or drive and no effect",
-            "Real UI Me selection runs the native model/tool turn, reports effect permission refusal, preserves the human executor/authorizer and leaves the bot-only durable effects unchanged",
-            "Revoked selection returns403 and a visible alert with no success or protected root; restoring delegation retries the identical fixed request",
-            "The selected bot refuses the configuring-human-only tool with no effect; Me produces that real effect under the original human identity while refusing bot-only access"
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual Agent background-run browser uses the shared picker, native model/session/tool turns and ordinary bot/human/root identity. A bot with only signed-in baseline and explicit Automation/Models/effect group executes its allowed tool; no Administrator or Members membership or registry mutation/Users-management authority appears. Ungrant, live-revoke, exact retry, audit and human-only-tool controls remain strict."
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
         "browser_bot_group_root_isolation": {
           "assertions": [
             "Two distinct native bots, human authorizers, operator groups and roots expose only matching candidates in real Config pickers. Unshared identity reads, foreign bot/root/group substitutions and forged genuine UI saves refuse without identity/audit/declaration/source/effect writes. Root ADMIN does not create act-as permission. Each matching UI selection/run produces one exact bot/authorizer/root fixed effect."
@@ -13590,7 +13559,6 @@
         }
       },
       "harness": [
-        "agents/background-run-ui"
       ],
       "reason": "The actual Workflow picker hides ungranted bots and a crafted selected submission returns403 with no protected root. Other domain surfaces remain separate acceptance rows.",
       "user_visible": true
@@ -16357,32 +16325,6 @@
             "API-smoke"
           ]
         },
-        "browser_agent_background_run": {
-          "assertions": [
-            "Actual Agents UI prepares a fixed prompt/agent reference and mounts the single shared manual launcher and Users picker",
-            "Ungrant operator cannot see the bot; explicit live group all-roots grant exposes it without creating an effect",
-            "Selected task executes the actual Agents resolver/dataflow/model/tool caller; native tool effect actor/carrier is the ordinary bot with the original human authorizer and new protected task root",
-            "External Chat Completions fixture receives actual offered tools and native tool result; it does not replace the agent resolver, flow or tool execution",
-            "Crafted ungranted selected-install request returns403 with no component, operation or drive and no effect",
-            "Real UI Me selection runs the native model/tool turn, reports effect permission refusal, preserves the human executor/authorizer and leaves the bot-only durable effects unchanged",
-            "Revoked selection returns403 and a visible alert with no success or protected root; restoring delegation retries the identical fixed request",
-            "The selected bot refuses the configuring-human-only tool with no effect; Me produces that real effect under the original human identity while refusing bot-only access",
-            "Native selected installation retains exactly generations0/1; the set audit names old human, new bot and original authorizer, and contains no bearer"
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual Agent background-run browser uses the shared picker, native model/session/tool turns and ordinary bot/human/root identity. A bot with only signed-in baseline and explicit Automation/Models/effect group executes its allowed tool; no Administrator or Members membership or registry mutation/Users-management authority appears. Ungrant, live-revoke, exact retry, audit and human-only-tool controls remain strict."
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
         "browser_automation_identity_editor": {
           "assertions": [
             "The served Automation Config editor initially offers only Me, discovers a newly authorized bot through the shared Users picker, saves the bot and restores the human with unchanged authorizer and exact generation/audit increments.",
@@ -16595,32 +16537,6 @@
             "API-smoke"
           ]
         },
-        "browser_agent_background_run": {
-          "assertions": [
-            "Actual Agents UI prepares a fixed prompt/agent reference and mounts the single shared manual launcher and Users picker",
-            "Ungrant operator cannot see the bot; explicit live group all-roots grant exposes it without creating an effect",
-            "Selected task executes the actual Agents resolver/dataflow/model/tool caller; native tool effect actor/carrier is the ordinary bot with the original human authorizer and new protected task root",
-            "External Chat Completions fixture receives actual offered tools and native tool result; it does not replace the agent resolver, flow or tool execution",
-            "Crafted ungranted selected-install request returns403 with no component, operation or drive and no effect",
-            "Real UI Me selection runs the native model/tool turn, reports effect permission refusal, preserves the human executor/authorizer and leaves the bot-only durable effects unchanged",
-            "Revoked selection returns403 and a visible alert with no success or protected root; restoring delegation retries the identical fixed request",
-            "The selected bot refuses the configuring-human-only tool with no effect; Me produces that real effect under the original human identity while refusing bot-only access",
-            "Native selected installation retains exactly generations0/1; the set audit names old human, new bot and original authorizer, and contains no bearer"
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual Agent background-run browser uses the shared picker, native model/session/tool turns and ordinary bot/human/root identity. A bot with only signed-in baseline and explicit Automation/Models/effect group executes its allowed tool; no Administrator or Members membership or registry mutation/Users-management authority appears. Ungrant, live-revoke, exact retry, audit and human-only-tool controls remain strict."
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
         "browser_automation_identity_editor": {
           "assertions": [
             "The served Automation Config editor initially offers only Me, discovers a newly authorized bot through the shared Users picker, saves the bot and restores the human with unchanged authorizer and exact generation/audit increments.",
@@ -16813,15 +16729,6 @@
             "scenarios_bot_accounts.py:bot_accounts_lifecycle runs the declared native or published bot-account compatibility guard"
           ],
           "types": [
-            "API-smoke"
-          ]
-        },
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual Agent background-run browser uses the shared picker, native model/session/tool turns and ordinary bot/human/root identity. A bot with only signed-in baseline and explicit Automation/Models/effect group executes its allowed tool; no Administrator or Members membership or registry mutation/Users-management authority appears. Ungrant, live-revoke, exact retry, audit and human-only-tool controls remain strict."
-          ],
-          "types": [
-            "browser-UI",
             "API-smoke"
           ]
         }
@@ -20708,22 +20615,6 @@
       "reason": "The saved-token fixture pauses the runtime before changing registry sources and proves live group authority after reconciliation.",
       "user_visible": false
     },
-    "SMOKE-SCOPED-EXECUTOR-FIXTURE": {
-      "guards": {
-        "browser_agent_scoped_bot_run": {
-          "assertions": [
-            "Actual Agent background-run browser uses the shared picker, native model/session/tool turns and ordinary bot/human/root identity. A bot with only signed-in baseline and explicit Automation/Models/effect group executes its allowed tool; no Administrator or Members membership or registry mutation/Users-management authority appears. Ungrant, live-revoke, exact retry, audit and human-only-tool controls remain strict."
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        }
-      },
-      "harness": [],
-      "reason": "Existing Agent execution fixtures assign Administrator and cannot qualify explicit module-group execution without it. The shared fixture accepts explicit executor policies and records native scope checks.",
-      "user_visible": false
-    },
     "SMOKE-SCREENSHOT-DOM-CHURN": {
       "guards": {
         "regression_browser_screenshot_dom_churn": {
@@ -20839,15 +20730,6 @@
           ],
           "types": [
             "API-smoke"
-          ]
-        },
-        "browser_agent_background_run": {
-          "assertions": [
-            "Each mutating browser guard owns an isolated runtime, executes its existing native effect and authority assertions, and cleans its owned provider services and database without duplicate baseline entry ids when scenarios run together"
-          ],
-          "types": [
-            "API-smoke",
-            "browser-UI"
           ]
         },
         "browser_automation_identity_editor": {
@@ -21566,15 +21448,6 @@
     },
     "USERS-DECLARED-MEMBER-ENDPOINT-COVERAGE": {
       "guards": {
-        "browser_agent_background_run": {
-          "assertions": [
-            "Native module_access retains existing assertions and discovers every declared Users member endpoint, requiring directory capability access while rejecting unmarked, administrative and unrelated endpoints; existing actual member picker flows retain self/authorized-bot options and all denial/execution assertions."
-          ],
-          "types": [
-            "browser-UI",
-            "API-smoke"
-          ]
-        },
         "browser_automation_identity_editor": {
           "assertions": [
             "Native module_access retains existing assertions and discovers every declared Users member endpoint, requiring directory capability access while rejecting unmarked, administrative and unrelated endpoints; existing actual member picker flows retain self/authorized-bot options and all denial/execution assertions."
@@ -27567,9 +27440,27 @@
         }
       },
       "harness": [
-        "workflows/empty-object-schema"
+        "workflows/empty-object-schema",
+        "workflows/empty-object-schema-publish"
       ],
       "reason": "The Workflow catalog preserves empty object schema fields through native execution. This is a source, API or native contract check without a rendered browser operation.",
+      "user_visible": false
+    },
+    "WORKFLOW-SCHEMA-COPY-SHAPE": {
+      "guards": {
+        "workflows_declared_cases": {
+          "assertions": [
+            "The native block-schema publication suite runs all eight regression cases, preserving published empty-object schema shape through catalog and artifact boundaries."
+          ],
+          "types": [
+            "API-smoke"
+          ]
+        }
+      },
+      "harness": [
+        "workflows/empty-object-schema-publish"
+      ],
+      "reason": "Workflow schema publication must retain copied object shape across catalog and packed-artifact boundaries.",
       "user_visible": false
     },
     "DATAFLOW-SCALAR-ITERATION-ITEM-TYPE": {

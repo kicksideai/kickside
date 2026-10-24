@@ -14,7 +14,8 @@ from runtime import psql
 KIND = 'kickside.automation.manual:task'
 
 
-def _fixture(ctx, *, install_auth=None, cleanup_auth=None, bot_id=None, title='Picker root'):
+def _fixture(ctx, *, install_auth=None, cleanup_auth=None, bot_id=None, title='Picker root',
+             effect_groups=None, execution_group='app.security:admin'):
     inst = ctx.inst
     inst.install('kickside/automation')
     suffix = uuid.uuid4().hex[:12]
@@ -69,12 +70,13 @@ return M
             {'name': 'action', 'kind': 'registry.entry', 'meta': {'type': 'kickside.automation.port', 'title': 'Manual effect'},
              'binding': ns + ':sink', 'input_schema': '{"type":"object","properties":{"text":{"type":"string"}},"required":["text"],"additionalProperties":false}',
              'operations': {'upsert': {}}},
-            {'name': 'fixture_access', 'kind': 'security.policy', 'groups': ['kickside.security.groups:members', 'app.security:user'],
+            {'name': 'fixture_access', 'kind': 'security.policy',
+             'groups': effect_groups or ['kickside.security.groups:members', 'app.security:user'],
              'policy': {'actions': ['access', 'registry.get', 'funcs.call', 'contract.open', 'contract.call'],
                         'resources': [ns + ':*', 'write'], 'effect': 'allow'}},
         ]
         (directory / '_index.yaml').write_text(yaml.safe_dump({'version': '1.0', 'namespace': ns, 'entries': entries}, sort_keys=False))
-    ddl = 'CREATE TABLE ' + table + ' (root TEXT NOT NULL,identity_key TEXT PRIMARY KEY,actor_id TEXT NOT NULL,identity_json TEXT NOT NULL,input_json TEXT NOT NULL)'
+    ddl = 'CREATE TABLE ' + table + " (root TEXT NOT NULL,identity_key TEXT PRIMARY KEY,actor_id TEXT NOT NULL,identity_json TEXT NOT NULL,input_json TEXT NOT NULL,scope_checks_json TEXT NOT NULL DEFAULT '{}')"
     if inst.engine == 'postgres':
         psql(dict(inst.config['pg'], maintenance=inst.db), inst.env, ddl)
     else:
@@ -82,17 +84,17 @@ return M
     fixture = _candidate_fixture(ctx, automation_type=KIND, install_auth=install_auth, cleanup_auth=cleanup_auth, bot_id=bot_id, install_input={
         'title': title, 'target': {'kind': 'action', 'port': port, 'input': {'text': 'fixed declaration'}}})
     fixture.update(table=table, port=port)
-    _execution_access(inst, fixture)
+    _execution_access(inst, fixture, execution_group)
     return fixture
 
 
-def _execution_access(inst, fixture):
+def _execution_access(inst, fixture, group='app.security:admin'):
     inst.request('POST', '/api/v1/component-access/share/' + fixture['root'],
-        {'subject_type': 'group', 'subject_id': 'app.security:admin', 'access_mask': 3}, auth=fixture['token'])
+        {'subject_type': 'group', 'subject_id': group, 'access_mask': 3}, auth=fixture['token'])
 
 
 def _effects(inst, fixture):
-    return database_rows(inst, 'SELECT identity_key,actor_id,identity_json,input_json FROM ' + fixture['table']
+    return database_rows(inst, 'SELECT identity_key,actor_id,identity_json,input_json,scope_checks_json FROM ' + fixture['table']
                          + " WHERE root='" + fixture['root'] + "' ORDER BY identity_key")
 
 

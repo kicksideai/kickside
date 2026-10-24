@@ -60,6 +60,12 @@ class RegressionSelectionTests(unittest.TestCase):
                      if row.name == 'regression_projection_retry_ui')
         self.assertIn('core_personal_agent', guard.requires)
 
+    def test_restricted_workflow_browser_guard_covers_the_current_identity_baseline(self):
+        guard = next(row for row in load_registry(Path(__file__).resolve().parents[1])
+                     if row.name == 'browser_workflow_selected_restricted_baseline')
+        self.assertEqual(guard.tier, 'regression')
+        self.assertTrue({'EXECUTION-BASELINE-IDENTITY-RESOLUTION', 'RA-B05'} <= set(guard.issues))
+
     def test_release_packaging_checks_require_the_built_shell_bundle(self):
         scenarios = {row.name: row for row in load_registry(Path(__file__).resolve().parents[1])}
         self.assertIn('shell_vendor_build', scenarios['release_runtime_profiles'].requires)

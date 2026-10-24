@@ -4,17 +4,21 @@ import uuid
 
 import yaml
 
-from harness import Scenario, require
+from harness import Failure, Scenario, require
 from scenarios import nav
 from scenarios_hot_update_work import database_rows
 from scenarios_manual_task import KIND, _fixture, _effects, _drive
+from scenarios_run_as_browser import _bot_fixture
 from scenarios_security_ui import login_member
 from scenarios_selected_install import _identity
 
 
-def _workflow_fixture(ctx, *, review=False, review_assignee=None, review_token=None):
+def _workflow_fixture(ctx, *, review=False, review_assignee=None, review_token=None,
+                      bot_id=None, execution_group=None):
     inst = ctx.inst
-    fixture = _fixture(ctx)
+    fixture = _fixture(ctx, bot_id=bot_id,
+                       effect_groups=['kickside.security.groups:members', execution_group] if execution_group else None,
+                       execution_group=execution_group or 'app.security:admin')
     inst.install('kickside/workflows')
     if review:
         inst.install('kickside/inbox')
@@ -23,6 +27,35 @@ def _workflow_fixture(ctx, *, review=False, review_assignee=None, review_token=N
     with ctx.paused():
         directory = inst.app / ('src/workflow-selected-' + uuid.uuid4().hex[:12])
         directory.mkdir()
+        restricted_spawn_guard = '''local await_spawn = security.can("process.spawn", "kickside.blocks:await")
+    if not await_spawn then
+        error("declared Await process access is required")
+    end
+    local unrelated_spawn = security.can("process.spawn", "kickside.core.retention.service:sweeper_process")
+    if unrelated_spawn then
+        error("restricted executor can spawn an unrelated retention process")
+    end
+    local directory_binding = security.can("contract.open", "kickside.users.directory:directory_binding")
+    if directory_binding then
+        error("restricted executor can open the principal directory binding")
+    end'''
+        restricted_spawn_checks = '''        await_spawn = await_spawn,
+        unrelated_spawn = unrelated_spawn,
+        directory_binding = directory_binding,'''
+        restricted_assignment_guard = ''
+        restricted_assignment_checks = ''
+        if execution_group and review:
+            recipient = fixture['member']['user_id']
+            restricted_assignment_guard = '''local assigned_recipient = security.can("inbox.assign", "RECIPIENT")
+    if not assigned_recipient then
+        error("declared Inbox assignment access is required")
+    end
+    local other_recipient = security.can("inbox.assign", "user:00000000-0000-0000-0000-000000000000")
+    if other_recipient then
+        error("restricted executor can assign an unrelated Inbox recipient")
+    end'''.replace('RECIPIENT', 'user:' + recipient)
+            restricted_assignment_checks = '''        assigned_recipient = assigned_recipient,
+        other_recipient = other_recipient,'''
         source = '''local security = require("security")
 local sql = require("sql")
 local json = require("json")
@@ -33,6 +66,12 @@ function M.effect(request)
     if not security.can("manual.effect", "RESOURCE") then
         error("effect authority is required")
     end
+    if not security.scope() then error("native execution scope is required") end
+    if not security.can("funcs.call", "FUNCTION") then
+        error("declared workflow function access is required")
+    end
+    RESTRICTED_SPAWN_GUARD
+    RESTRICTED_ASSIGNMENT_GUARD
     local identity, identity_err = execution_identity.capture()
     if identity_err or not identity then error(identity_err) end
     local carried = (security.actor():meta() or {}).execution_identity
@@ -45,16 +84,23 @@ function M.effect(request)
     if encode_err then error(encode_err) end
     local input_json, input_err = json.encode(request.input)
     if input_err then error(input_err) end
+    local scope_checks, checks_err = json.encode({
+        registry_write = security.can("registry.apply", "*"),
+        users_management = security.can("access", "kickside.users.api:list_users.endpoint"),
+RESTRICTED_SPAWN_CHECKS
+RESTRICTED_ASSIGNMENT_CHECKS
+    })
+    if checks_err then error(checks_err) end
     local db, db_err = sql.get("app:db")
     if db_err or not db then error(db_err) end
-    local _, write_err = db:execute("INSERT INTO TABLE (root,identity_key,actor_id,identity_json,input_json) VALUES ($1,$2,$3,$4,$5)",
-        {identity.component_id,uuid.v4(),security.actor():id(),encoded,input_json})
+    local _, write_err = db:execute("INSERT INTO TABLE (root,identity_key,actor_id,identity_json,input_json,scope_checks_json) VALUES ($1,$2,$3,$4,$5,$6)",
+        {identity.component_id,uuid.v4(),security.actor():id(),encoded,input_json,scope_checks})
     db:release()
     if write_err then error(write_err) end
     return request.input
 end
 return M
-'''.replace('RESOURCE', ns + ':effect').replace('TABLE', fixture['table'])
+'''.replace('RESOURCE', ns + ':effect').replace('FUNCTION', ns + ':workflow_effect').replace('RESTRICTED_SPAWN_GUARD', restricted_spawn_guard if execution_group else '').replace('RESTRICTED_ASSIGNMENT_GUARD', restricted_assignment_guard).replace('RESTRICTED_SPAWN_CHECKS', restricted_spawn_checks if execution_group else '').replace('RESTRICTED_ASSIGNMENT_CHECKS', restricted_assignment_checks).replace('TABLE', fixture['table'])
         (directory / 'effect.lua').write_text(source)
         schema = {'type': 'object', 'additionalProperties': True}
         entries = [
@@ -67,6 +113,16 @@ return M
                       'ports': [{'id': 'out', 'direction': 'out'}, {'id': 'failed', 'direction': 'out'}], 'presentation': {'category': 'Utilities', 'icon': 'tabler:check'},
                       'execution': {'kind': 'function', 'function_id': ns + ':workflow_effect'}}}},
         ]
+        if execution_group:
+            entries.append({'name': 'restricted_workflow_effect_access', 'kind': 'security.policy',
+                            'groups': [execution_group],
+                            'policy': {'actions': ['manual.effect'],
+                                       'resources': [ns + ':effect'], 'effect': 'allow'}})
+        if execution_group and review:
+            entries.append({'name': 'restricted_inbox_assignment', 'kind': 'security.policy',
+                            'groups': [execution_group],
+                            'policy': {'actions': ['inbox.assign'],
+                                       'resources': ['user:' + fixture['member']['user_id']], 'effect': 'allow'}})
         (directory / '_index.yaml').write_text(yaml.safe_dump({'version': '1.0', 'namespace': ns, 'entries': entries}, sort_keys=False))
     title = 'Published identity flow ' + uuid.uuid4().hex[:8]
     token = fixture['token']
@@ -74,6 +130,9 @@ return M
     fixture.update(workflow=wid, workflow_title=title)
     inst.request('POST', '/api/v1/component-access/share/' + wid,
         {'subject_type': 'group', 'subject_id': 'app.security:admin', 'access_mask': 3}, auth=token)
+    if execution_group:
+        inst.request('POST', '/api/v1/component-access/share/' + wid,
+            {'subject_type': 'group', 'subject_id': execution_group, 'access_mask': 3}, auth=token)
     schema = {'type': 'object', 'properties': {'text': {'type': 'string'}}, 'required': ['text'], 'additionalProperties': True}
     nodes = [{'type': 'node.add', 'body': {'id': 'start', 'kind': 'start', 'config': {'input_schema': schema}}},
              {'type': 'node.add', 'body': {'id': 'effect', 'kind': 'block', 'ref': ns + ':block.effect', 'config': {}}},
@@ -128,8 +187,14 @@ def _review_decision(inst, fixture, run_id, *, reviewer_token=None):
     return inst.wait(item, 'Human receives selected Workflow decision', seconds=35)
 
 
-def _run_proof(inst, fixture, *, review=False):
-    rows = inst.wait(lambda: value if len(value := _runs(inst, fixture)) == 1 else None, 'Selected Workflow creates one run', seconds=60)
+def _run_proof(inst, fixture, *, review=False, restricted_baseline=False):
+    try:
+        rows = inst.wait(lambda: value if len(value := _runs(inst, fixture)) == 1 else None,
+                         'Selected Workflow creates one run', seconds=60)
+    except Failure:
+        inst.evidence.save('selected-workflow-run-timeout', {
+            'root': fixture['root'], 'drive': _drive(inst, fixture['root']), 'runs': _runs(inst, fixture)})
+        raise
     stored, generation = _identity(inst, fixture['root'])
     identity = json.loads(rows[0]['execution_identity_json'])
     require(identity == stored and generation == 1 and identity['principal'] == {'kind': 'user', 'id': fixture['bot']}
@@ -148,8 +213,42 @@ def _run_proof(inst, fixture, *, review=False):
     expected = 'human decision' if review else 'published input'
     require(expected in json.dumps(done['run']['output']) and expected in effects[0]['input_json'], 'Published input/decision does not reach actual effect')
     require(_runs(inst, fixture)[0]['execution_identity_json'] == rows[0]['execution_identity_json'], 'Await/resume rewrites identity')
+    if restricted_baseline:
+        require(json.loads(effects[0]['scope_checks_json']) == {
+                    'await_spawn': True, 'unrelated_spawn': False,
+                    'directory_binding': False, 'assigned_recipient': True, 'other_recipient': False,
+                    'registry_write': False, 'users_management': False},
+                'Restricted Workflow executor gains principal-directory, unrelated recipient/process, registry, or Users-management authority')
     inst.evidence.save('selected-workflow-proof', {'root': fixture['root'], 'workflow': fixture['workflow'], 'identity': identity, 'run': done, 'effects': effects, 'review': review})
     return done
+
+
+def _restricted_baseline_bot(ctx):
+    inst = ctx.inst
+    inst.install('kickside/automation')
+    inst.install('kickside/workflows')
+    inst.install('kickside/blocks')
+    inst.install('kickside/inbox')
+    catalog = inst.request('GET', '/api/v1/security/policies', label='restricted-workflow-module-policies')['policies']
+    module_policies = []
+    for surface in ('kickside.automation', 'kickside.workflows', 'kickside.blocks', 'kickside.inbox'):
+        matches = [row['id'] for row in catalog
+                   if row.get('intent') == 'module_access' and row.get('surface') == surface]
+        require(len(matches) == 1, 'Restricted Workflow executor lacks one canonical module-access policy: ' + surface)
+        module_policies.append(matches[0])
+    slug = 'workflow-executor-' + uuid.uuid4().hex[:12]
+    execution_group = 'kickside.security.scopes:' + slug
+    inst.request('POST', '/api/v1/security/scopes', {
+        'slug': slug, 'label': 'Restricted Workflow executor', 'policies': module_policies, 'enabled': True})
+    inst.cleanup.add('restricted Workflow executor scope', lambda: inst.request(
+        'DELETE', '/api/v1/security/scopes?slug=' + slug))
+    groups = ['app.security:user', execution_group]
+    bot = _bot_fixture(inst, 'workflow-restricted-bot-' + uuid.uuid4().hex[:12] + '@smoke.example', groups=groups)
+    actual_groups = {row['group_id'] for row in database_rows(
+        inst, "SELECT group_id FROM app_user_groups WHERE user_id='" + bot + "'")}
+    require(actual_groups == set(groups) and not any('admin' in group or 'members' in group for group in actual_groups),
+            'Restricted Workflow executor has Admin, Members, or an undeclared baseline group')
+    return bot, execution_group, module_policies
 
 
 def workflow_selected_identity(ctx):
@@ -186,13 +285,13 @@ def workflow_selected_identity(ctx):
         require(len(_runs(inst, fixture)) == 1 and _drive(inst, root)['event_seq'] == 1, 'Workflow command replay duplicates work')
 
 
-def browser_workflow_selected(ctx):
+def _browser_workflow_selected(ctx, fixture, *, restricted_baseline=False):
     from playwright.sync_api import expect
     inst = ctx.inst
-    fixture = _workflow_fixture(ctx, review=True)
     browser = ctx.browser_check()
     login_member(ctx, {**fixture['member'], 'email': fixture['email']})
-    trace = inst.root / inst.evidence.label / 'workflow-selected-trace.zip'
+    trace_name = 'workflow-selected-restricted-trace.zip' if restricted_baseline else 'workflow-selected-trace.zip'
+    trace = inst.root / inst.evidence.label / trace_name
     trace.parent.mkdir(parents=True, exist_ok=True)
     browser.context.tracing.start(screenshots=True, snapshots=True, sources=True)
     trace_active = True
@@ -248,7 +347,7 @@ def browser_workflow_selected(ctx):
         fixture['root'] = response.value.json()['id']
         inst.cleanup.add('browser selected workflow root', lambda: inst.request('DELETE', '/api/v1/automations/' + fixture['root'], auth=fixture['token']))
         expect(launcher.get_by_role('status')).to_contain_text('Run queued', timeout=30000)
-        _run_proof(inst, fixture, review=True)
+        _run_proof(inst, fixture, review=True, restricted_baseline=restricted_baseline)
         browser.screenshot('published-workflow-bot-effect')
         browser.clean(0)
     finally:
@@ -257,7 +356,31 @@ def browser_workflow_selected(ctx):
             inst.evidence.paths.append(str(trace))
 
 
+def browser_workflow_selected(ctx):
+    _browser_workflow_selected(ctx, _workflow_fixture(ctx, review=True))
+
+
+def browser_workflow_selected_restricted_baseline(ctx):
+    bot, execution_group, module_policies = _restricted_baseline_bot(ctx)
+    fixture = _workflow_fixture(ctx, review=True, bot_id=bot, execution_group=execution_group)
+    fixture['restricted_baseline'] = {'groups': ['app.security:user', execution_group],
+                                      'module_policies': module_policies,
+                                      'fixture_effect_policy': {
+                                          'id': fixture['port'].split(':')[0] + ':restricted_workflow_effect_access',
+                                          'actions': ['manual.effect'],
+                                          'resources': [fixture['port'].split(':')[0] + ':effect']},
+                                      'fixed_recipient_policy': {
+                                          'id': fixture['port'].split(':')[0] + ':restricted_inbox_assignment',
+                                          'actions': ['inbox.assign'],
+                                          'resources': ['user:' + fixture['member']['user_id']]}}
+    ctx.inst.evidence.save('selected-workflow-restricted-baseline', {
+        'bot': bot, **fixture['restricted_baseline']})
+    _browser_workflow_selected(ctx, fixture, restricted_baseline=True)
+
+
 REGISTRY = [Scenario('workflow_selected_identity', 'regression', workflow_selected_identity,
                      issues=('BOT-WORKFLOW-PUBLISHED-LAUNCH', 'BOT-MANUAL-TASK-LAUNCHER', 'RA-H39', 'WORKFLOW-SELECTED-READ-INTERMITTENT', 'DATAFLOW-EXECUTION-FRAME-POLICY-CAP')),
             Scenario('browser_workflow_selected', 'regression', browser_workflow_selected, ('boot',), instance_setup=True,
-                     issues=('USERS-DECLARED-MEMBER-ENDPOINT-COVERAGE', 'BOT-WORKFLOW-PUBLISHED-LAUNCH', 'BOT-MANUAL-TASK-LAUNCHER', 'RA-B08', 'RA-B09', 'RA-B10', 'RA-H39', 'AUTOMATION-SELECTED-INSTALL-PREFLIGHT', 'WORKFLOW-SELECTED-READ-INTERMITTENT', 'WORKFLOW-UNADMITTED-RUN-READ-PROJECTION'))]
+                     issues=('USERS-DECLARED-MEMBER-ENDPOINT-COVERAGE', 'BOT-WORKFLOW-PUBLISHED-LAUNCH', 'BOT-MANUAL-TASK-LAUNCHER', 'RA-B08', 'RA-B09', 'RA-B10', 'RA-H39', 'AUTOMATION-SELECTED-INSTALL-PREFLIGHT', 'WORKFLOW-SELECTED-READ-INTERMITTENT', 'WORKFLOW-UNADMITTED-RUN-READ-PROJECTION')),
+            Scenario('browser_workflow_selected_restricted_baseline', 'regression', browser_workflow_selected_restricted_baseline, ('boot',), instance_setup=True,
+                     issues=('EXECUTION-BASELINE-IDENTITY-RESOLUTION', 'RA-B05', 'BOT-WORKFLOW-PUBLISHED-LAUNCH', 'BOT-MANUAL-TASK-LAUNCHER'))]

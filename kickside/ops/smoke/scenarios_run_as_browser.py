@@ -6,10 +6,11 @@ from scenarios_hot_update_work import database_rows
 from scenarios_token_continuity import token_payloads
 
 
-def _bot_fixture(inst, email):
+def _bot_fixture(inst, email, *, groups=None):
+    declared_groups = ['app.security:admin'] if groups is None else list(groups)
     user = inst.request('POST', '/api/v1/users', {
         'email': email, 'password': inst.password, 'full_name': 'Browser account fixture',
-        'groups': ['app.security:admin']}, expect=(201,), label='browser-bot-fixture')['user']
+        'groups': declared_groups}, expect=(201,), label='browser-bot-fixture')['user']
     user_id = user['user_id']
     require(str(uuid.UUID(user_id)) == user_id, 'Fixture does not use an ordinary Users UUID')
     def cleanup():
@@ -20,8 +21,9 @@ def _bot_fixture(inst, email):
     marked = database_rows(inst, "INSERT INTO app_user_bot_accounts (user_id, created_by, created_at) VALUES ('"
         + user_id + "', 'browser-fixture', '2026-10-09T00:00:00Z') RETURNING user_id", write=True)
     require(marked == [{'user_id': user_id}], 'Bot marker does not commit')
-    groups = database_rows(inst, "SELECT group_id FROM app_user_groups WHERE user_id = '" + user_id + "'")
-    require(any(row['group_id'] == 'app.security:admin' for row in groups), 'Bot fixture lacks admin membership')
+    memberships = database_rows(inst, "SELECT group_id FROM app_user_groups WHERE user_id = '" + user_id + "'")
+    actual_groups = {row['group_id'] for row in memberships}
+    require(set(declared_groups).issubset(actual_groups), 'Bot fixture lacks a declared membership')
     return user_id
 
 
