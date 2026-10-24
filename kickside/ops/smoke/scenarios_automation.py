@@ -328,6 +328,7 @@ def recurring_lifecycle(ctx):
     cleanup_copy = own_automation(inst, copied)
     require(copied != aid and inst.request('GET', '/api/v1/automations/' + copied + '/config')['config']['target'] == spec['target'], 'Automation import loses target')
     inst.request('PATCH', base, {'title': 'Northwind morning fulfillment brief'}, label='recurring-final-name')
+    ctx.browser.reload()
     nav(ctx, 'Automations')
     ctx.browser.frame.get_by_text('Northwind morning fulfillment brief', exact=True).first.wait_for(timeout=30000)
     screen(ctx, 'northwind-automations-light')
