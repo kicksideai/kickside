@@ -177,10 +177,9 @@ entries:
           type: string
           description: Deep-link sub-path under /knowledge ("" = the KB list, "kbId" or "kbId/nodeId" for a KB or in-KB node).
 
-  # KB trait config web component (wc-kb-picker), referenced by the kb_reader and
-  # kb_writer traits' meta.web_component. The agent editor mounts it by tag to
-  # select which knowledge bases the trait's tools are scoped to. Own bundle
-  # (picker.js), served from the same static mount as the surface.
+  # KB config web component (wc-kb-picker), used by traits and the embed sink.
+  # Traits select many kb_ids; a sink field schema declaring kb_id selects one
+  # durable destination. Own bundle (picker.js), served with the surface.
   - name: kb_picker_view
     kind: registry.entry
     meta:
@@ -188,10 +187,10 @@ entries:
       name: kb_picker_view
       title: KB Picker
       description: >-
-        The kb_reader/kb_writer trait config element (tag wc-kb-picker): the
-        agent editor mounts it by tag to pick which knowledge bases the trait's
-        tools are scoped to. Receives trait context via the config prop ({
-        kb_ids }) and emits config-changed { kb_ids } when the selection changes.
+        The reusable Knowledge config element (tag wc-kb-picker): trait hosts
+        pass config { kb_ids } to select multiple scoped bases, while a host
+        whose schema declares kb_id selects one embed-sink destination. It emits
+        config-changed with the matching declared key.
       tag_name: wc-kb-picker
       base_path: kickside-knowledge
       entry_point: picker.js
