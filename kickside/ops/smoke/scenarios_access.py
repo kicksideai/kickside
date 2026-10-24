@@ -780,12 +780,13 @@ def create(ctx, kind, role='owner', *, connection_context=None):
                           'kb_type': 'wiki' if kind.name == 'kb_wiki' else 'document',
                           'embedding_model': ctx.state['embed']})
         fid = result['id']
-        request(ctx, role, 'PUT', '/knowledge/' + fid, {'config': {'analysis_model': ctx.state['model']}})
-        request(ctx, role, 'POST', '/knowledge/' + fid + '/ingest', {'title': title,
+        receipt = request(ctx, role, 'POST', '/knowledge/' + fid + '/ingest', {'title': title,
                  'content': 'Fictional Northwind access marker NW-ACCESS-731. The return window is 17 days.',
                  'external_id': title, 'external_version': '1'})
+        require(receipt.get('thread_id') and receipt.get('projection_id'), 'KB access fixture ingest supplies no durable projection receipt')
         inst.wait(lambda: 'NW-ACCESS-731' in json.dumps(request(ctx, role, 'POST', '/knowledge/' + fid + '/search',
                   {'query': 'NW-ACCESS-731', 'limit': 5})), 'KB access fixture index', seconds=120)
+        request(ctx, role, 'PUT', '/knowledge/' + fid, {'config': {'analysis_model': ctx.state['model']}})
     elif kind.name == 'workflow':
         install_package(ctx, 'kickside/code-execution')
         renew(ctx)
@@ -1398,15 +1399,48 @@ def produce_event(ctx, f, role, *, denied=False):
         return after
     if name.startswith('kb_'):
         marker = 'NW-PRODUCER-' + uuid.uuid4().hex
+        external_id = marker
         result = request(ctx, role, 'POST', '/knowledge/' + f.id + '/ingest',
-                         {'title': marker, 'content': marker, 'external_id': marker, 'external_version': '1'}, denied=denied)
-        def indexed():
-            value = request(ctx, 'owner', 'POST', '/knowledge/' + f.id + '/search', {'query': marker, 'limit': 5})
-            present = marker in json.dumps(value)
-            require(not present, 'Denied ingestion creates indexed content') if denied else None
-            return value if present or denied else None
-        if denied: indexed()
-        else: ctx.inst.wait(indexed, 'Granted ingestion produces new indexed content', seconds=120)
+                         {'title': marker, 'content': marker, 'external_id': external_id, 'external_version': '1'}, denied=denied)
+
+        def matching_event():
+            events = request(ctx, 'owner', 'GET', '/threads/' + f.id + '/events?ascending=true&limit=200')['events']
+            return next((row for row in events if row.get('type') == 'kickside.knowledge.events:content.upserted'
+                        and row.get('external_id') == external_id), None)
+
+        def matching_documents():
+            documents = request(ctx, 'owner', 'GET', '/kb10/' + f.id +
+                                '/browse?node_type=document&include_content=true&limit=100')['nodes']
+            return [node for node in documents if node.get('metadata', {}).get('external_id') == external_id
+                    and marker in str(node.get('content', ''))]
+
+        def event_and_document():
+            event = matching_event()
+            if not event:
+                return None
+            body = event.get('body', {})
+            if isinstance(body, str):
+                body = json.loads(body)
+            require(isinstance(body, dict) and body.get('content') == marker,
+                    'Knowledge upsert event loses its exact producer marker: ' + str(event))
+            matches = matching_documents()
+            require(len(matches) <= 1, 'One producer event materializes multiple documents: ' + str(matches))
+            if not matches or matches[0].get('metadata', {}).get('status') != 'completed':
+                return None
+            children = request(ctx, 'owner', 'GET', '/kb10/' + f.id + '/browse?parent_id=' + matches[0]['id'] +
+                               '&include_content=true&limit=100')['nodes']
+            return matches[0] if any(child.get('node_type') in ('summary', 'chunk')
+                                     and child.get('parent_id') == matches[0]['id']
+                                     and child.get('metadata', {}).get('external_id') == external_id
+                                     and str(child.get('content', '')).strip() for child in children) else None
+
+        if denied:
+            require(not matching_event(), 'Denied ingestion creates a durable upsert event')
+            require(not matching_documents(), 'Denied ingestion materializes content')
+        else:
+            require(result.get('thread_id') == f.id and result.get('projection_id') and result.get('external_id') == external_id,
+                    'Granted ingestion supplies no matching durable receipt: ' + str(result))
+            ctx.inst.wait(event_and_document, 'Granted ingestion materializes its exact durable content', seconds=120)
         return result
     if name == 'uploads':
         marker = 'NW-PRODUCER-' + uuid.uuid4().hex
@@ -1829,6 +1863,9 @@ def matrix_features(kind):
     if name in ('folder', 'file', 'link', 'graph', 'journal', 'roadmap', 'database', 'workflow', 'crm', 'research'):
         features += list(http('chestor/workspace', 'PUT /api/v1/workspace/entries/{id}'))
     if name == 'kb_wiki': name = 'kb_document'
+    if name == 'kb_document':
+        features += list(http('kickside/core', 'GET /api/v1/threads/{id}/events'))
+        features += list(http('kickside/kb10', 'GET /api/v1/kb10/{id}/browse'))
     if name == 'data_sync': name = 'recurring'
     if name in routes:
         package, paths = routes[name]
