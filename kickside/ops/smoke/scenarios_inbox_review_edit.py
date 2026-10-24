@@ -10,11 +10,20 @@ def review_arm(ctx):
     run_focused_module_test(ctx, 'kickside/inbox', 'resume_decision_test')
 
 
-def review_edit(ctx):
+def open_review_inbox(ctx):
+    """Enter Inbox as the provisioned owner without assuming a first-agent splash."""
     from scenarios import nav
+    from scenarios_access import actor_browser
+
+    browser = actor_browser(ctx, 'owner')
+    nav(ctx, 'Inbox')
+    return browser
+
+
+def review_edit(ctx):
     from scenarios_automation import flow_detail
 
-    inst, browser = ctx.inst, ctx.browser_check()
+    inst = ctx.inst
     inst.install('kickside/workflows')
     wid = inst.request('POST', '/api/v1/workflows', {'title': 'Review follow-up drafts'})['flow_id']
     base = '/api/v1/workflows/' + wid
@@ -51,9 +60,7 @@ def review_edit(ctx):
     rows = inst.wait(pending, 'Each item reaches its own review', seconds=60)
     by_title = {row['title']: row for row in rows}
     require(set(by_title) == {'Follow-up: ' + item['name'] for item in items}, 'Review titles do not distinguish inputs')
-    browser.login()
-    browser.frame.locator('kickside-agent-onboarding').get_by_role('button', name='Skip for now', exact=True).click()
-    nav(ctx, 'Inbox')
+    browser = open_review_inbox(ctx)
     expected = []
     for index, item in enumerate(items):
         title = 'Follow-up: ' + item['name']
