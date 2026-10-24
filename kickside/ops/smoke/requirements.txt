@@ -11,3 +11,4 @@ ezdxf
 websockets
 msgpack
 zstandard
+pypdf
