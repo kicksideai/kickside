@@ -1,9 +1,11 @@
 """Endpoint access follows exact policy resources."""
+import os
 from pathlib import Path
 
 import yaml
 
 from harness import Scenario, require
+from module_harness import _private_suite_root
 from runtime import source_directory
 
 
@@ -87,10 +89,24 @@ REGISTRY.append(Scenario('security_empty_endpoint_policy', 'regression', empty_e
 def release_build_source_selection(ctx):
     import subprocess
     import sys
-    repository = Path(ctx.inst.config['replace']['kickside/html2pdf']).parent
+    source = ctx.inst.config.get('source')
+    require(source, 'Release build source selection requires the selected public source')
+    repository = Path(source).resolve()
+    require(repository.is_dir(), 'Release build source selection has no selected public source: ' + str(repository))
+    component = ctx.inst.config.get('replace', {}).get('kickside/html2pdf')
+    require(component, 'Release build source selection requires the selected html2pdf source')
+    tooling = _private_suite_root()
+    require(tooling.is_dir(), 'Release build source selection has no private repository tooling: ' + str(tooling))
+    environment = dict(ctx.inst.env)
+    environment['KICKSIDE_SOURCE_ROOT'] = str(repository)
+    environment['KICKSIDE_COMPONENT_SOURCE'] = str(Path(component).resolve())
+    smoke_path = str(tooling / 'ops/smoke')
+    environment['PYTHONPATH'] = smoke_path + (os.pathsep + environment['PYTHONPATH']
+                                               if environment.get('PYTHONPATH') else '')
     result = subprocess.run([sys.executable, '-m', 'unittest',
-        'test_delivery.PublicationTest.test_component_source_selection_materializes_only_the_requested_tree'],
-        cwd=repository / '.github/scripts', env=ctx.inst.env, capture_output=True, text=True, timeout=60)
+        'ops.smoke.tests.test_module_harness.PublicSourceOverlayTests.'
+        'test_selected_build_sources_materialize_only_the_requested_tree'],
+        cwd=tooling, env=environment, capture_output=True, text=True, timeout=60)
     ctx.inst.evidence.save('release-build-source-selection', {'code': result.returncode,
         'output': result.stdout, 'error': result.stderr})
     require(result.returncode == 0, 'Release build source selection fails: ' + result.stdout + result.stderr)

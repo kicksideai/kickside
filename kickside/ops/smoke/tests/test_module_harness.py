@@ -1,3 +1,4 @@
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -59,6 +60,57 @@ class PublicSourceOverlayTests(unittest.TestCase):
 
     def _context(self, workspace, source):
         return Context(Instance(workspace / 'run', source))
+
+    @staticmethod
+    def _materialized_tree(root):
+        """Return the source files the overlay is expected to copy."""
+        from module_harness import SOURCE_COPY_IGNORED
+
+        files = []
+        for directory, directories, names in os.walk(root, followlinks=False):
+            directories[:] = sorted(name for name in directories if name not in SOURCE_COPY_IGNORED)
+            directory = Path(directory)
+            for name in sorted(names):
+                if name in SOURCE_COPY_IGNORED:
+                    continue
+                path = directory / name
+                relative = path.relative_to(root).as_posix()
+                if path.is_symlink():
+                    files.append((relative, 'symlink', os.readlink(path)))
+                else:
+                    files.append((relative, 'file', hashlib.sha256(path.read_bytes()).hexdigest()))
+        return files
+
+    def test_selected_build_sources_materialize_only_the_requested_tree(self):
+        """Exercise the real overlay with the source pair selected by the smoke run."""
+        from module_harness import public_source_overlay
+
+        source_value = os.environ.get('KICKSIDE_SOURCE_ROOT')
+        component_value = os.environ.get('KICKSIDE_COMPONENT_SOURCE')
+        if not source_value or not component_value:
+            raise unittest.SkipTest('selected source inputs are provided by the smoke source-layout guard')
+        source = Path(source_value).resolve()
+        component = Path(component_value).resolve()
+        private_root = Path(__file__).resolve().parents[3]
+        destination = Path('.smoke/selected-html2pdf')
+        self.assertTrue((source / 'app').is_dir(), 'selected product source has no application tree')
+        self.assertTrue((component / 'wippy.yaml').is_file(), 'selected component source has no manifest')
+        self.assertNotEqual(source, private_root)
+        self.assertNotEqual(component, private_root)
+        self.assertFalse((source / destination).exists(), 'selected destination must be an overlay-only path')
+        source_before = self._materialized_tree(source)
+        component_before = self._materialized_tree(component)
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            with public_source_overlay(self._context(workspace, source), (), owner=private_root,
+                                       module_overrides={str(destination): component}) as overlay:
+                self.assertEqual(self._materialized_tree(overlay / destination), component_before)
+                copied_source = [entry for entry in self._materialized_tree(overlay)
+                                 if not Path(entry[0]).is_relative_to(destination)]
+                self.assertEqual(copied_source, source_before)
+                self.assertTrue((overlay / 'app').is_dir())
+        self.assertEqual(self._materialized_tree(source), source_before)
+        self.assertEqual(self._materialized_tree(component), component_before)
 
     def test_upgrade_commands_load_from_their_staged_private_tooling(self):
         from module_harness import public_source_overlay

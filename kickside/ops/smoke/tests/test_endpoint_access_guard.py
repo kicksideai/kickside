@@ -4,14 +4,14 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import yaml
 
 SUITE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SUITE))
 from scenarios_endpoint_access import pattern_conditions, policy_pattern_findings, classify_policy_patterns
-from scenarios_endpoint_access import endpoint_access_policies
+from scenarios_endpoint_access import endpoint_access_policies, release_build_source_selection
 from harness import Failure
 
 
@@ -39,6 +39,31 @@ class EndpointAccessGuardTests(unittest.TestCase):
             self.policy(ctx.inst.app / 'src/probe', 'fixture', pattern=True)
             endpoint_access_policies(ctx)
             self.assertEqual(ctx.inst.evidence.save.call_args.args[1]['unexpected'], [])
+
+    def test_release_build_uses_the_private_source_materializer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'selected-product'
+            source.mkdir()
+            replacement = root / 'converters/html2pdf'
+            replacement.mkdir(parents=True)
+            inst = SimpleNamespace(config={
+                'source': str(source), 'replace': {'kickside/html2pdf': str(replacement)}},
+                env={'PATH': '/bin'}, evidence=Mock())
+            completed = SimpleNamespace(returncode=0, stdout='ok', stderr='')
+            with patch('subprocess.run', return_value=completed) as run:
+                release_build_source_selection(SimpleNamespace(inst=inst))
+            tooling = SUITE.parents[1]
+            command = [sys.executable, '-m', 'unittest',
+                       'ops.smoke.tests.test_module_harness.PublicSourceOverlayTests.'
+                       'test_selected_build_sources_materialize_only_the_requested_tree']
+            self.assertEqual(run.call_args.args[0], command)
+            self.assertEqual(run.call_args.kwargs['cwd'], tooling)
+            self.assertEqual(run.call_args.kwargs['env']['KICKSIDE_SOURCE_ROOT'], str(source.resolve()))
+            self.assertEqual(run.call_args.kwargs['env']['KICKSIDE_COMPONENT_SOURCE'], str(replacement.resolve()))
+            self.assertEqual(run.call_args.kwargs['env']['PYTHONPATH'], str(tooling / 'ops/smoke'))
+            self.assertEqual(run.call_args.kwargs['env']['PATH'], '/bin')
+            self.assertNotEqual(run.call_args.kwargs['cwd'], source)
 
     def test_policy_inventory_still_rejects_patterns_in_the_configured_application(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:

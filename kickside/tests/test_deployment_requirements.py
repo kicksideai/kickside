@@ -1,13 +1,39 @@
 import json
+import os
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 import yaml
+
+
+def source_root():
+    configured = os.environ.get('KICKSIDE_SOURCE_ROOT')
+    return Path(configured).resolve() if configured else Path(__file__).resolve().parents[1]
+
+
+def private_fixture(path):
+    return Path(__file__).resolve().parent / path
+
+
+class DeploymentRequirementsSourceSelectionTest(unittest.TestCase):
+    def test_selected_product_source_overrides_the_private_suite_location(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict(os.environ, {'KICKSIDE_SOURCE_ROOT': directory}):
+            self.assertEqual(source_root(), Path(directory).resolve())
+
+    def test_runtime_release_fixture_stays_with_the_private_suite(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict(os.environ, {'KICKSIDE_SOURCE_ROOT': directory}):
+            fixture = private_fixture('fixtures/runtime-release.json')
+            self.assertTrue(fixture.is_file())
+            self.assertNotEqual(fixture, source_root() / 'tests/fixtures/runtime-release.json')
 
 
 class DeploymentRequirementsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        path = Path(__file__).resolve().parents[1] / 'app/src/deployment/_index.yaml'
+        path = source_root() / 'app/src/deployment/_index.yaml'
         cls.entries = [entry for entry in yaml.safe_load(path.read_text())['entries']
                        if entry['kind'] == 'ns.requirement' and entry.get('meta', {}).get('value_kind', '').startswith('cloud.')]
         cls.requirements = {value['name']: value for entry in cls.entries for value in [json.loads(entry['default'])]}
@@ -31,7 +57,7 @@ class DeploymentRequirementsTest(unittest.TestCase):
         for binding in resources["application"]["environment"]:
             self.assertIn(binding["secret_name"], resources)
             self.assertNotIn("value", binding)
-        root = Path(__file__).resolve().parents[1]
+        root = source_root()
         manifest = yaml.safe_load((root / "app/wippy.yaml").read_text())
         self.assertIn("postgres", manifest["publish"]["profiles"]["include"])
 
@@ -43,7 +69,7 @@ class DeploymentRequirementsTest(unittest.TestCase):
             self.assertTrue(value['name'])
 
     def test_requirements_retain_typed_targets_and_input_entries_have_no_json_default(self):
-        path = Path(__file__).resolve().parents[1] / 'app/src/deployment/_index.yaml'
+        path = source_root() / 'app/src/deployment/_index.yaml'
         entries = yaml.safe_load(path.read_text())['entries']
         catalog = {entry['name']: entry for entry in entries}
         self.assertEqual(len(self.entries), 15)
@@ -69,8 +95,7 @@ class DeploymentRequirementsTest(unittest.TestCase):
             self.assertTrue(source['public_key'])
 
     def test_runtime_sources_match_the_certified_release(self):
-        root = Path(__file__).resolve().parents[1]
-        release = json.loads((root / 'tests/fixtures/runtime-release.json').read_text())
+        release = json.loads(private_fixture('fixtures/runtime-release.json').read_text())
         image = self.requirements['runtime-image']
         sources = {image['platform'].split('/')[1]: {
             'url': image['runtime_url'],
@@ -128,7 +153,7 @@ class DeploymentRequirementsTest(unittest.TestCase):
 
 class InstanceStorageTest(unittest.TestCase):
     def test_branding_uses_the_application_instance_storage_contract(self):
-        root = Path(__file__).resolve().parents[1]
+        root = source_root()
         storage = yaml.safe_load((root / 'app/src/app/registry/storage/_index.yaml').read_text())
         entries = {entry['name']: entry for entry in storage['entries']}
         self.assertEqual(entries['branding_fs']['directory'], './.wippy/branding/')
@@ -142,7 +167,7 @@ class InstanceStorageTest(unittest.TestCase):
         self.assertIn({'name': 'kickside.ui:branding_fs', 'value': 'app:branding_fs'}, ui['parameters'])
 
     def test_deployments_and_container_resolve_the_same_persistent_data_root(self):
-        root = Path(__file__).resolve().parents[1]
+        root = source_root()
         entries = yaml.safe_load((root / 'app/src/deployment/_index.yaml').read_text())['entries']
         app = next(json.loads(entry['default']) for entry in entries
                    if entry['kind'] == 'ns.requirement' and entry['meta']['value_kind'] == 'cloud.application')

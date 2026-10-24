@@ -2,13 +2,15 @@ from pathlib import Path
 import sys
 
 from harness import Scenario
-from module_harness import _command, run_focused_module_test
+from module_harness import _command, _private_suite_root, run_focused_module_test
 
 
 def deployment_runtime_release(ctx):
+    environment = dict(ctx.inst.env)
+    environment['KICKSIDE_SOURCE_ROOT'] = str(Path(ctx.inst.config['source']).resolve())
     _command(ctx.inst, 'deployment-runtime-release',
              [sys.executable, '-m', 'unittest', 'tests.test_deployment_requirements'],
-             Path(ctx.inst.config['source']), ctx.inst.env, 60)
+             _private_suite_root(), environment, 60)
 
 
 def deployment_storage_defaults(ctx):
