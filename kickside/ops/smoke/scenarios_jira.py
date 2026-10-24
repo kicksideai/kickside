@@ -217,6 +217,13 @@ def sync_form(ctx):
     return form
 
 
+def select_fireflies_poll_minutes(form):
+    """Schedule Fireflies polling through its native interval-unit select."""
+    unit = form.get_by_label('Interval unit', exact=True)
+    unit.select_option('m')
+    require(unit.input_value() == 'm', 'Fireflies sync interval does not retain minutes')
+
+
 def regression_2459(ctx):
     browser = ui(ctx)
     kid = kb(ctx, 'EE2-2459 transcripts')
@@ -229,15 +236,17 @@ def regression_2459(ctx):
     instance.get_by_role('option').filter(has_text='EE2 Fireflies 1').click()
     form.get_by_role('checkbox', name='At specific times', exact=True).uncheck()
     form.locator('[data-test=tc-periodic-n]').fill('30')
-    form.locator('[data-test=tc-periodic-unit]').click()
-    form.get_by_role('option', name='minutes', exact=True).click()
+    select_fireflies_poll_minutes(form)
     form.locator('[data-test=tc-history-kind]').click()
     form.get_by_role('option', name='Only new', exact=True).click()
     form.locator('.kx-stage').filter(has_text='Destination').get_by_role('combobox').first.click()
     form.get_by_role('option').filter(has_text='Add to Knowledge Base').click()
     destination = form.locator('.kx-stage').filter(has_text='Destination')
-    destination.get_by_role('textbox', name='Search knowledge bases…', exact=True).fill('EE2-2459 transcripts')
-    destination.locator('.ms-row').filter(has_text='EE2-2459 transcripts').click()
+    picker = destination.locator('wc-kb-picker')
+    picker.wait_for(timeout=30000)
+    picker.get_by_role('textbox', name='Search knowledge bases…', exact=True).fill('EE2-2459 transcripts')
+    picker.locator('.ms-row').filter(has_text='EE2-2459 transcripts').click()
+    picker.locator('.ms-chip').filter(has_text='EE2-2459 transcripts').wait_for(timeout=30000)
     transform = form.locator('kickside-transform-assist')
     transform.get_by_role('combobox', name='Transform strategy').click()
     transform.get_by_role('option', name='Expression', exact=True).click()
@@ -250,7 +259,7 @@ def regression_2459(ctx):
     require(body['input'].get('enabled') is True, 'Data Sync UI omits enabled=true')
     require(response.value.status == 200 and result.get('success'), 'Data Sync Create fails: ' + str(result))
     browser.frame.get_by_role('button', name='Open EE2-2459 Fireflies sync details', exact=True).wait_for(timeout=30000)
-    require(body['input'].get('sink_config') == {'kb_ids': [kid]}, 'UI saves another destination')
+    require(body['input'].get('sink_config') == {'kb_id': kid}, 'UI saves another destination')
     config = ctx.inst.request('GET', '/api/v1/automations/' + result['id'] + '/config', label='persisted-sync-config')
     status = ctx.inst.request('GET', '/api/v1/automations/' + result['id'] + '/status', label='persisted-sync-drive')
     assert_sync_config(config, status, kid)

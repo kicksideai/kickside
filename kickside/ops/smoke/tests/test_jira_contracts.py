@@ -1,10 +1,23 @@
 import unittest
+from unittest.mock import Mock
 from harness import Failure
 from jira_contracts import assert_tool_turn, assert_documents, assert_paused_drive, assert_discord_reply, assert_sync_config, assert_responder_failure, assert_responder_tool_failure
 from mocks.jira_network import jira_endpoints
 
 
 class JiraRegressionContracts(unittest.TestCase):
+    def test_fireflies_poll_interval_uses_the_native_select_value(self):
+        from scenarios_jira import select_fireflies_poll_minutes
+
+        form, unit = Mock(), Mock()
+        form.get_by_label.return_value = unit
+        unit.input_value.return_value = 'm'
+
+        select_fireflies_poll_minutes(form)
+
+        form.get_by_label.assert_called_once_with('Interval unit', exact=True)
+        unit.select_option.assert_called_once_with('m')
+
     def test_capability_actions_keep_selected_and_managed_capabilities_disabled(self):
         from jira_contracts import assert_capability_action
         states = (
@@ -89,12 +102,12 @@ class JiraRegressionContracts(unittest.TestCase):
                 assert_responder_tool_failure({**result, **changed})
 
     def test_sync_requires_enabled_canonical_drive_and_exact_stored_destination(self):
-        declaration = {'enabled': True, 'sink_port': 'kickside.knowledge.sink:kb_embed', 'sink_config': {'kb_ids': ['kb-1']}}
+        declaration = {'enabled': True, 'sink_port': 'kickside.knowledge.sink:kb_embed', 'sink_config': {'kb_id': 'kb-1'}}
         config = {'success': True, 'config': {'enabled': True, '_portable_input': declaration}}
         status = {'success': True, 'drives': [{'drive_key': 'main', 'enabled': True}]}
         assert_sync_config(config, status, 'kb-1')
         for invalid in ({**config, 'success': False}, {'success': True, 'config': {'enabled': False, '_portable_input': declaration}},
-                        {'success': True, 'config': {'enabled': True, '_portable_input': {**declaration, 'sink_config': {'kb_ids': ['other']}}}}):
+                        {'success': True, 'config': {'enabled': True, '_portable_input': {**declaration, 'sink_config': {'kb_id': 'other'}}}}):
             with self.assertRaises(Failure):
                 assert_sync_config(invalid, status, 'kb-1')
         with self.assertRaises(Failure):

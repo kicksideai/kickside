@@ -55,7 +55,7 @@ def assert_sync_config(config, status, kid):
     declaration = live.get('_portable_input', {})
     require(live.get('enabled') is True and declaration.get('enabled') is True, 'Sync enabled choice does not persist')
     require(declaration.get('sink_port') == 'kickside.knowledge.sink:kb_embed', 'Sync stores another destination port')
-    require(declaration.get('sink_config') == {'kb_ids': [kid]}, 'Sync stores another selected knowledge base')
+    require(declaration.get('sink_config') == {'kb_id': kid}, 'Sync stores another selected knowledge base')
     require(status.get('success') is True, 'Sync drive status read fails')
     main = next((drive for drive in status.get('drives', []) if drive.get('drive_key') == 'main'), None)
     require(main and main.get('enabled') is True, 'Sync canonical main drive is disabled')
