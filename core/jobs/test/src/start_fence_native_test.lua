@@ -91,6 +91,54 @@ local function cleanup()
     end
 end
 local function proofs()
+    test.it("release fences the stored thread owner before requeueing a partial assignment", function()
+        fixture.reset("release", "", nil, sql.type.POSTGRES)
+        fixture.owner_rows = {{owner_kind = "thread", owner_id = "stored-thread"}}
+        local value, err = call("release")
+        test.is_nil(err)
+        test.is_true(value)
+        test.eq(fixture.fence_calls, 1)
+        test.eq(fixture.fence_id, "stored-thread")
+        test.eq(fixture.writes_at_fence, 0)
+    end)
+    for _, stage in ipairs({"owner", "fence"}) do
+        test.it("release preserves " .. stage .. " errors without mutating the job", function()
+            local source = errors.new({kind = errors.UNAVAILABLE, retryable = true, message = "owner boundary unavailable",
+                details = {code = "owner_boundary", nested = {stage = stage}}})
+            fixture.reset("release", stage, source, sql.type.POSTGRES)
+            fixture.owner_rows = {{owner_kind = "thread", owner_id = "stored-thread"}}
+            local value, err = call("release")
+            test.is_false(value)
+            test.eq(err:kind(), source:kind())
+            test.is_true(err:retryable())
+            test.eq(err:details().code, "owner_boundary")
+            test.eq(err:details().nested.stage, stage)
+            test.eq(fixture.writes, 0)
+            test.eq(fixture.rollbacks, stage == "owner" and 0 or 1)
+        end)
+        test.it("release refuses a missing " .. stage .. " proof", function()
+            fixture.reset("release", stage, nil, sql.type.POSTGRES)
+            fixture.owner_rows = {{owner_kind = "thread", owner_id = "stored-thread"}}
+            fixture.missing = true
+            local value, err = call("release")
+            test.is_false(value)
+            test.not_nil(err)
+            test.eq(err:details().field, stage == "owner" and "release.owner.rows" or "release.fence")
+            test.eq(fixture.writes, 0)
+            test.eq(fixture.rollbacks, stage == "owner" and 0 or 1)
+        end)
+    end
+    test.it("release treats a deleted assignment as stale without recreating work", function()
+        fixture.reset("release", "", nil, sql.type.POSTGRES)
+        fixture.owner_rows = {}
+        local value, err = call("release")
+        test.is_false(value)
+        test.is_nil(err)
+        test.eq(fixture.fence_calls, 0)
+        test.eq(fixture.writes, 0)
+        test.eq(fixture.rollbacks, 0)
+    end)
+
     local fields = {mark = {begin = "start.transaction", lock = "start.lock", update = "start.update"},
         release = {begin = "release.transaction", dialect = "database.type", update = "release.update", delete = "release.delete"}}
     for _, dialect in ipairs({sql.type.SQLITE, sql.type.POSTGRES}) do

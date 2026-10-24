@@ -1436,6 +1436,7 @@ entries:
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: app:start_fence_native_marker_adapter
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: app:start_fence_native_fixture
 
   - name: start_fence_native_test
     kind: function.lua
@@ -1792,6 +1793,7 @@ entries:
       clock: kickside.core.jobs:clock
       thread_teardown: app:retention_native_fixture
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: retention_native_test
     kind: function.lua

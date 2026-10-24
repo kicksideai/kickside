@@ -4,6 +4,7 @@ local job_types = require("job_types")
 local lifecycle = require("lifecycle")
 local worker_marker = require("worker_marker")
 local sql_boundary = require("sql_boundary")
+local thread_fence = require("thread_fence")
 
 local claim_execution = {}
 
@@ -46,12 +47,29 @@ end
 -- crossed mark_started retains the lease for ordinary completion/recovery.
 function claim_execution.release_unstarted(db: sql.DB, job: table, worker_id: string,
         run_id: string): (boolean, error?)
+    -- Like claim, read the immutable owner before opening the transaction.
+    -- This also avoids upgrading a SQLite read transaction to a writer.
+    local owners, owner_err = db:query("SELECT owner_kind,owner_id FROM kickside_job WHERE id=$1", { job.id })
+    if owner_err then return false, errors.wrap(owner_err, "unstarted release owner read failed") end
+    if type(owners) ~= "table" then return false, response_error("release.owner.rows") end
+    if not owners[1] then return false, nil end
+    local owner = owners[1]
+    if type(owner) ~= "table" or type(owner.owner_kind) ~= "string" or owner.owner_kind == ""
+        or type(owner.owner_id) ~= "string" or owner.owner_id == "" then
+        return false, response_error("release.owner")
+    end
     local tx, begin_err = sql_boundary.begin(db, "unstarted release begin failed", "release.transaction", response_error)
     if begin_err or not tx then return false, begin_err or response_error("release.transaction") end
     local raw_type, type_err = db:type()
     if type_err then return false, sql_boundary.rollback(tx, errors.wrap(type_err, "unstarted release dialect failed"), "job start fence rollback failed") end
     if type(raw_type) ~= "string" or raw_type == "" then return false, sql_boundary.rollback(tx, response_error("database.type"), "job start fence rollback failed") end
     local dbtype = raw_type :: string
+    if owner.owner_kind == "thread" then
+        local fence, fence_err = thread_fence.lock(tx, owner.owner_id)
+        if fence_err then return false, sql_boundary.rollback(tx, fence_err, "job start fence rollback failed") end
+        if type(fence) ~= "table" then return false, sql_boundary.rollback(tx,
+            response_error("release.fence"), "job start fence rollback failed") end
+    end
     local now = lifecycle.now_string(dbtype)
     local ts = dbtype == sql.type.POSTGRES and "CAST(? AS TIMESTAMPTZ)" or "?"
     local released, update_err = sql.builder.update("kickside_job")
