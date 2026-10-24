@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/kicksideai/kickside/compare/ui-kit-v1.5.7...ui-kit-v1.6.0) (2026-10-23)
+
+
+### Features
+
+* **ui-kit:** share rail and library chrome ([#109](https://github.com/kicksideai/kickside/issues/109)) ([b7e0106](https://github.com/kicksideai/kickside/commit/b7e0106ab4b4c6b2a961e81724751666c469155b))
+
 ## 1.5.7 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

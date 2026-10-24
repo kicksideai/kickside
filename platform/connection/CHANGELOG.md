@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/kicksideai/kickside/compare/connection-v0.5.0...connection-v0.5.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **connection:** type provider client fixtures ([#131](https://github.com/kicksideai/kickside/issues/131)) ([34a503c](https://github.com/kicksideai/kickside/commit/34a503ce98550881b86120b96e860bb3ee027807))
+
 ## [0.5.0](https://github.com/kicksideai/kickside/compare/connection-v0.4.0...connection-v0.5.0) (2026-10-22)
 
 
