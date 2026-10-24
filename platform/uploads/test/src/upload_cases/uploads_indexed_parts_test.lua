@@ -388,6 +388,73 @@ local function define_tests()
             test.is_true(names["second.txt"])
         end)
 
+        for _, column in ipairs({ "created_at", "size" }) do
+            for _, direction in ipairs({ "asc", "desc" }) do
+                test.it("ListFiles pages by " .. column .. " " .. direction .. " with tied values", function()
+                    local prefix = "ordered-files-" .. uuid_v4()
+                    local user_id = prefix .. "-user"
+                    local ids = { prefix .. "-a", prefix .. "-b", prefix .. "-c", prefix .. "-d" }
+                    local values = { 20, 30, 10, 20 }
+                    local db, db_err = sql.get("app:db")
+                    test.is_nil(db_err)
+                    for index, id in ipairs(ids) do
+                        create_completed_upload(id, user_id, "text/plain", tostring(index) .. ".txt", values[index])
+                        local _, update_err = db:execute("UPDATE kickside_uploads SET created_at=$1 WHERE uuid=$2",
+                            { "2026-01-01T00:00:" .. tostring(values[index]) .. "Z", id })
+                        test.is_nil(update_err)
+                    end
+                    db:release()
+                    local expected = direction == "asc" and { ids[3], ids[1], ids[4], ids[2] }
+                        or { ids[2], ids[1], ids[4], ids[3] }
+                    local after_id = nil
+                    for index, id in ipairs(expected) do
+                        local page, page_err = executor(user_id):call("kickside.uploads.traits:list_files", {
+                            limit = 1, sort = column, sort_order = direction, after_file_id = after_id,
+                        })
+                        test.is_nil(page_err)
+                        test.eq(page.count, 1, "page " .. tostring(index))
+                        test.eq(page.files[1].id, id)
+                        test.eq(page.has_more, index < #expected)
+                        after_id = page.next_after_file_id
+                    end
+                end)
+            end
+        end
+
+        test.it("ListFiles refuses missing and other-account cursors without exposing files", function()
+            local prefix = "scoped-files-" .. uuid_v4()
+            create_completed_upload(prefix .. "-a", prefix .. "-owner", "text/plain", "owned.txt", 1)
+            create_completed_upload(prefix .. "-b", prefix .. "-other", "text/plain", "other.txt", 2)
+            for _, cursor in ipairs({ prefix .. "-missing", prefix .. "-b" }) do
+                local page, page_err = executor(prefix .. "-owner"):call("kickside.uploads.traits:list_files", {
+                    limit = 1, after_file_id = cursor,
+                })
+                test.is_nil(page_err)
+                test.eq(page.count, 0)
+                test.is_false(page.has_more)
+                test.is_nil(page.next_after_file_id)
+            end
+        end)
+
+        test.it("unrestricted upload queries keep pagination across accounts and retain filters", function()
+            local prefix = "admin-files-" .. uuid_v4()
+            local mime = "application/x-" .. prefix
+            create_completed_upload(prefix .. "-a", prefix .. "-one", mime, "large.txt", 20)
+            create_completed_upload(prefix .. "-b", prefix .. "-two", mime, "small.txt", 10)
+            local first, first_err = upload_query_repo.list_with_filters({
+                limit = 1, sort = "size", filters = { content_types = { mime } },
+            })
+            test.is_nil(first_err)
+            test.eq(#first, 1)
+            test.eq(first[1].uuid, prefix .. "-a")
+            local second, second_err = upload_query_repo.list_with_filters({
+                limit = 1, sort = "size", after_id = first[1].uuid, filters = { content_types = { mime } },
+            })
+            test.is_nil(second_err)
+            test.eq(#second, 1)
+            test.eq(second[1].uuid, prefix .. "-b")
+        end)
+
         test.it("ViewFiles returns the whole text content of a long document", function()
             local upload_id = "view-whole-" .. uuid_v4()
             local content = string.rep("A", 40000) .. "TAIL"
