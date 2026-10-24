@@ -5,6 +5,17 @@ from harness import Scenario, require
 from scenarios_core import http, navigation, system
 
 
+def preserve_navigation_config(inst):
+    original = inst.request('GET', '/api/v1/nav/list?manage=1', label='appearance-original-nav-config')['config']
+
+    def restore():
+        restored = inst.request('PUT', '/api/v1/nav/config', original, label='appearance-restore-nav-config')
+        require(restored.get('success') is True, 'Appearance fixture does not restore the original navigation configuration')
+
+    inst.cleanup.add('appearance navigation configuration', restore, scope='scenario')
+    return original
+
+
 def appearance_save_state(ctx):
     from playwright.sync_api import expect
 
@@ -18,6 +29,7 @@ def appearance_save_state(ctx):
         seen.add(splash['id'])
         inst.request('POST', '/api/v1/ui/splash/' + quote(splash['id'], safe='') + '/seen', {})
 
+    preserve_navigation_config(inst)
     browser = ctx.browser_check(viewport={'width': 1600, 'height': 1000})
     browser.login()
     system(ctx, 'Appearance')
