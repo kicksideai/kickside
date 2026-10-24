@@ -105,7 +105,6 @@ entries:
       comment: Resume a parked workflow under its immutable, live-resolved v2 run identity.
     source: file://resume.lua
     method: resume
-    modules: [funcs]
     imports:
       store: kickside.workflows.store:store
       dataflow_repo: userspace.dataflow.persist:dataflow_repo
