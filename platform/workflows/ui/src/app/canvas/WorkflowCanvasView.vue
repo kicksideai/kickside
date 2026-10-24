@@ -125,7 +125,7 @@ const emit = defineEmits<{ (event: 'back'): void; (event: 'open-workflow', id: s
 
     <Message v-if="model.viewingRun" class="wf-banner wf-banner--run" severity="info" :closable="false">
       <Tag class="wf-run-version-tag" :severity="runVersionBadge(model.viewingRun.flow_ref?.version ?? 0).kind === 'published' ? 'secondary' : 'warn'" :value="runVersionBadge(model.viewingRun.flow_ref?.version ?? 0).label" :title="runVersionBadge(model.viewingRun.flow_ref?.version ?? 0).title" />
-      <span>Viewing run {{ shortRunId(model.viewingRun.run_id) }} · {{ runStatusLabel(runStatus(model.viewingRun)) }} · started {{ relativeTime(model.viewingRun.started_at) }} — read-only.</span>
+      <span class="wf-run-notice-text">Viewing run {{ shortRunId(model.viewingRun.run_id) }} · {{ runStatusLabel(runStatus(model.viewingRun)) }} · started {{ relativeTime(model.viewingRun.started_at) }} — read-only.</span>
       <Button @click="model.stopRun">Back to editing</Button>
     </Message>
 
