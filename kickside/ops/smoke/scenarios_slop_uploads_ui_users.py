@@ -1,11 +1,35 @@
 """Upload, navigation, credential, and dependency ownership regressions."""
 from pathlib import Path
 import os
+import re
 import subprocess
 
 import yaml
 from harness import Scenario, require
-from module_harness import run_focused_module_test, run_focused_app_test
+from module_harness import public_source_overlay, run_focused_module_test, run_focused_app_test
+
+
+APP_MAIN_PRIVATE_CHECKS = (
+    ('Makefile', '.smoke/private-frontend-tests.mk'),
+    'app/frontend/applications/main/src/facade-preauth.test.ts',
+    'app/frontend/applications/main/src/login-route-contract.test.ts',
+    'app/frontend/applications/main/src/theme-vocabulary.test.ts',
+)
+
+# These are public app inputs read directly by the staged specs.  Keep the
+# source assertion at the app boundary: platform modules remain product source
+# copied by the isolated overlay, not private test fixtures.
+APP_MAIN_PUBLIC_FILES = (
+    'app/frontend/applications/main/vite.config.ts',
+    'app/frontend/applications/main/src/test-setup.ts',
+    'app/wippy.lock',
+    'app/src/app/_index.yaml',
+    'app/src/app/deps/_index.yaml',
+    'app/src/app/login/_index.yaml',
+    'app/src/app/login/login.jet',
+    'app/src/app/seo/serve.lua',
+    'app/static/css-variables.facade.json',
+)
 
 
 def upload_json(ctx):
@@ -79,18 +103,30 @@ def user_harness_storage(ctx):
 
 
 def app_ui_contracts(ctx):
-    root = Path(ctx.inst.config['source'])
-    command = ['make', 'test', 'MOD=app-main',
+    source = Path(ctx.inst.config['source']).resolve()
+    command = ['make', '-f', '.smoke/private-frontend-tests.mk', 'test', 'MOD=app-main',
+               'FE_TEST_COMMAND=./node_modules/.bin/vitest run',
                'TEST_ARGS=src/facade-preauth.test.ts src/login-route-contract.test.ts '
                'src/theme-vocabulary.test.ts --maxWorkers=2']
     environment = dict(ctx.inst.env, PATH=str(Path(ctx.inst.config['binary']).parent) + os.pathsep + os.environ['PATH'])
-    result = subprocess.run(command, cwd=root, env=environment,
-                            capture_output=True, text=True, timeout=900)
-    ctx.inst.evidence.save('app-ui-contracts', {
-        'command': command, 'code': result.returncode,
-        'output': result.stdout, 'error': result.stderr,
-    })
-    require(result.returncode == 0, 'App UI contracts fail: ' + result.stdout + result.stderr)
+    with public_source_overlay(ctx, APP_MAIN_PRIVATE_CHECKS) as root:
+        for relative in APP_MAIN_PUBLIC_FILES:
+            selected = source / relative
+            exercised = root / relative
+            require(selected.is_file() and exercised.is_file() and selected.read_bytes() == exercised.read_bytes(),
+                    'App UI guard must exercise the selected public app source: ' + relative)
+        result = subprocess.run(command, cwd=root, env=environment,
+                                capture_output=True, text=True, timeout=900)
+        ctx.inst.evidence.save('app-ui-contracts', {
+            'command': command, 'code': result.returncode,
+            'output': result.stdout, 'error': result.stderr,
+        })
+        plain = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', result.stdout)
+        summaries = re.findall(r'^\s*Tests\s+(.+)$', plain, re.M)
+        passing = bool(summaries) and all(re.fullmatch(r'([1-9][0-9]*) passed\s+\(\1\)', summary.strip())
+                                          for summary in summaries)
+        require(result.returncode == 0 and passing,
+                'App UI contracts fail: ' + result.stdout + result.stderr)
 
 
 REGISTRY = [

@@ -457,9 +457,72 @@ class FrontendTestToolingTests(unittest.TestCase):
             self.assertEqual(invoke.call_args_list[-1].args[0][:4],
                              ['make', '-f', '.smoke/private-frontend-tests.mk', 'test'])
 
+    def test_model_picker_overlay_uses_the_selected_widgets_component(self):
+        from scenarios_automation_task_forms import frontend_specs
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            selected = workspace / 'selected-widgets'
+            for root, marker in ((source / 'platform/widgets', 'base'), (selected, 'selected')):
+                for relative in ('src/model-picker/app/ModelPicker.vue',
+                                 'src/component-picker/app/ComponentPicker.vue'):
+                    component = root / 'ui' / relative
+                    component.parent.mkdir(parents=True, exist_ok=True)
+                    component.write_text(marker + ' ' + component.name)
+            ctx = Context(Instance(workspace / 'run', source))
+            ctx.inst.config['replace']['kickside/widgets'] = str(selected)
+
+            def verify_selected(command, **kwargs):
+                ui = Path(kwargs['cwd']) / 'platform/widgets/ui'
+                self.assertEqual((ui / 'src/model-picker/app/ModelPicker.vue').read_text(),
+                                 'selected ModelPicker.vue')
+                self.assertEqual((ui / 'src/component-picker/app/ComponentPicker.vue').read_text(),
+                                 'selected ComponentPicker.vue')
+                self.assertTrue((ui / 'vitest.config.ts').is_file())
+                self.assertTrue((ui / 'src/test-setup.ts').is_file())
+                return Completed()
+
+            with patch('subprocess.run', side_effect=verify_selected) as invoke:
+                result = frontend_specs(ctx, 'widgets',
+                                        ('src/model-picker/app/model-picker-capabilities.spec.ts',),
+                                        'model-picker-capabilities')
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(invoke.call_count, 2)
+            self.assertEqual(invoke.call_args_list[-1].args[0][:4],
+                             ['make', '-f', '.smoke/private-frontend-tests.mk', 'test'])
+
+    def test_app_ui_contracts_stage_private_specs_against_public_app_source(self):
+        from types import SimpleNamespace
+        from scenarios_slop_uploads_ui_users import APP_MAIN_PUBLIC_FILES, app_ui_contracts
+        with tempfile.TemporaryDirectory(dir=Path(os.environ['TMPDIR'])) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            for relative in APP_MAIN_PUBLIC_FILES:
+                public = source / relative
+                public.parent.mkdir(parents=True, exist_ok=True)
+                public.write_text('selected ' + relative)
+            ctx = Context(Instance(workspace / 'run', source))
+
+            def verify_staged(command, **kwargs):
+                root = Path(kwargs['cwd'])
+                self.assertEqual(command[:4], ['make', '-f', '.smoke/private-frontend-tests.mk', 'test'])
+                self.assertIn('FE_TEST_COMMAND=./node_modules/.bin/vitest run', command)
+                for relative in APP_MAIN_PUBLIC_FILES:
+                    self.assertEqual((root / relative).read_text(), 'selected ' + relative)
+                for relative in ('app/frontend/applications/main/src/facade-preauth.test.ts',
+                                 'app/frontend/applications/main/src/login-route-contract.test.ts',
+                                 'app/frontend/applications/main/src/theme-vocabulary.test.ts'):
+                    self.assertTrue((root / relative).is_file(), 'private app spec is staged: ' + relative)
+                return SimpleNamespace(returncode=0, stdout='Tests 3 passed (3)\n', stderr='')
+
+            with patch('subprocess.run', side_effect=verify_staged) as invoke:
+                app_ui_contracts(ctx)
+            self.assertEqual(invoke.call_count, 1)
+
     def test_public_component_map_covers_every_frontend_spec_caller(self):
         import ast
         import scenarios_automation_task_forms as forms
+        from scenarios_paging import PAGING_FRONTEND_SPECS
         callers = set()
         for scenario in Path(forms.__file__).parent.glob('scenarios_*.py'):
             for node in ast.walk(ast.parse(scenario.read_text())):
@@ -467,11 +530,24 @@ class FrontendTestToolingTests(unittest.TestCase):
                         and node.func.id == 'frontend_specs' and len(node.args) > 1
                         and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str)):
                     callers.add(node.args[1].value)
+        callers.update(module for module, _ in PAGING_FRONTEND_SPECS)
         self.assertSetEqual(callers, set(forms.PUBLIC_COMPONENTS))
         self.assertEqual(forms.PUBLIC_COMPONENTS['settings'], ('platform/settings/ui/src/app/SettingsForm.vue',))
         self.assertEqual(forms.PUBLIC_COMPONENTS['hub'], (
             'platform/hub/ui/src/app/modules.vue',
             'platform/hub/ui/src/app/InstallDialog.vue',
+        ))
+        self.assertEqual(forms.PUBLIC_COMPONENTS['widgets'], (
+            'platform/widgets/ui/src/model-picker/app/ModelPicker.vue',
+            'platform/widgets/ui/src/component-picker/app/ComponentPicker.vue',
+        ))
+        self.assertEqual(forms.PUBLIC_COMPONENTS['webhooks'], (
+            'platform/webhooks/ui/src/api.ts',
+        ))
+        self.assertEqual(forms.PUBLIC_COMPONENTS['workflows'], (
+            'platform/workflows/ui/src/app/embed/WorkflowPicker.vue',
+            'platform/workflows/ui/src/app/embed/EmbedWorkflow.vue',
+            'platform/workflows/ui/src/app/api/api.ts',
         ))
 
     def test_automation_test_packages_use_the_tracked_private_fixture(self):

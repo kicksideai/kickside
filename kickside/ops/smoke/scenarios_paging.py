@@ -1,11 +1,15 @@
 """Native paging and caller continuation regressions."""
-import os
-from pathlib import Path
 import re
-import subprocess
 
 from harness import Scenario, require
 from module_harness import run_focused_module_test
+
+
+PAGING_FRONTEND_SPECS = (
+    ('workflows', 'src/app/api/api.test.ts'),
+    ('widgets', 'src/component-picker/app/componentPicker.spec.ts'),
+    ('webhooks', 'src/app/api.paging.spec.ts'),
+)
 
 
 def focused(module, entries):
@@ -16,15 +20,9 @@ def focused(module, entries):
 
 
 def frontend(ctx):
-    root = Path(ctx.inst.config['replace']['kickside/workflows']).parents[1]
-    env = {**ctx.inst.env, 'PATH': str(Path(ctx.inst.config['binary']).parent) + os.pathsep + os.environ['PATH']}
-    for module, entry in (('workflows', 'src/app/api/api.test.ts'),
-                          ('widgets', 'src/component-picker/app/componentPicker.spec.ts'),
-                          ('webhooks', 'src/app/api.paging.spec.ts')):
-        command = ['make', 'test', 'MOD=' + module, 'TEST_ARGS=' + entry + ' --maxWorkers=2']
-        result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True, timeout=900)
-        ctx.inst.evidence.save('paging-ui-' + module, {'command': command, 'code': result.returncode,
-            'output': result.stdout, 'error': result.stderr})
+    from scenarios_automation_task_forms import frontend_specs
+    for module, entry in PAGING_FRONTEND_SPECS:
+        result = frontend_specs(ctx, module, (entry,), 'paging-ui-' + module)
         plain = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', result.stdout)
         summaries = re.findall(r'^\s*Tests\s+(.+)$', plain, re.M)
         passing = bool(summaries) and all(re.fullmatch(r'([1-9][0-9]*) passed\s+\(\1\)', summary.strip())

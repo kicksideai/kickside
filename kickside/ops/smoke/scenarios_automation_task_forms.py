@@ -17,6 +17,7 @@ PUBLIC_COMPONENTS = {
     'workflows': (
         'platform/workflows/ui/src/app/embed/WorkflowPicker.vue',
         'platform/workflows/ui/src/app/embed/EmbedWorkflow.vue',
+        'platform/workflows/ui/src/app/api/api.ts',
     ),
     'settings': (
         'platform/settings/ui/src/app/SettingsForm.vue',
@@ -24,6 +25,13 @@ PUBLIC_COMPONENTS = {
     'hub': (
         'platform/hub/ui/src/app/modules.vue',
         'platform/hub/ui/src/app/InstallDialog.vue',
+    ),
+    'widgets': (
+        'platform/widgets/ui/src/model-picker/app/ModelPicker.vue',
+        'platform/widgets/ui/src/component-picker/app/ComponentPicker.vue',
+    ),
+    'webhooks': (
+        'platform/webhooks/ui/src/api.ts',
     ),
 }
 
