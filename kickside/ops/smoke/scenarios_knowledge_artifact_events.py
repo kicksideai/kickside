@@ -38,7 +38,8 @@ def large_upload(ctx):
             and body['source_ref'].get('artifact_id'), 'Large event loses its artifact identity or byte count')
     nav(ctx, 'Knowledge')
     ctx.browser.frame.get_by_text(title, exact=True).first.click()
-    ctx.browser.frame.get_by_text(path.name, exact=False).first.wait_for(timeout=30000)
+    ctx.browser.frame.get_by_role('navigation', name='Documents', exact=True).get_by_text(
+        path.name, exact=True).wait_for(timeout=30000)
     shot(ctx, 'large-document-library')
 
 
