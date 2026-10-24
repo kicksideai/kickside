@@ -1,12 +1,13 @@
 """Regression coverage for native function-result failures."""
-from harness import Scenario
+from harness import Scenario, require
 
 
 def cyclic_function_result(ctx):
-    from pathlib import Path
-    from module_harness import run_focused_app_test
-    run_focused_app_test(ctx, Path(ctx.inst.config['source']) / 'ops/smoke/fixtures/runtime-cyclic-result',
-                         'cyclic_result_test')
+    from module_harness import _private_suite_root, run_focused_app_test
+
+    fixture = _private_suite_root() / 'ops/smoke/fixtures/runtime-cyclic-result'
+    require(fixture.is_dir(), 'Private cyclic-result fixture is absent: ' + str(fixture))
+    run_focused_app_test(ctx, fixture, 'cyclic_result_test')
 
 
 REGISTRY = [Scenario('upstream_funcs_cyclic_result', 'regression', cyclic_function_result,

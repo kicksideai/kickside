@@ -8,7 +8,10 @@ from harness import Scenario, require
 
 
 def publication_boundary(ctx):
-    root = Path(__file__).resolve().parents[2]
+    source = ctx.inst.config.get('source')
+    require(source, 'Public source boundary guard requires the configured public source checkout')
+    root = Path(source).resolve()
+    require(root.is_dir(), 'Public source boundary guard requires the configured public source checkout')
     result = subprocess.run(
         [sys.executable, '-m', 'unittest', 'tests.test_public_source_hygiene'],
         cwd=root, text=True, capture_output=True, timeout=120,

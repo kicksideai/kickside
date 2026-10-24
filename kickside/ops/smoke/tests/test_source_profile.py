@@ -68,7 +68,7 @@ class SourceProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / 'kickside'
             source.mkdir()
-            with self.assertRaisesRegex(ValueError, 'spiralscout/meetings.*module-template'):
+            with self.assertRaisesRegex(ValueError, 'spiralscout/meetings.*declared checkout identities'):
                 build(source, {}, [self.scenario()])
 
     def test_ignores_nested_fixture_manifest(self):
@@ -94,6 +94,40 @@ class SourceProfileTests(unittest.TestCase):
                 sibling.mkdir()
                 (sibling / 'wippy.yaml').write_text('organization: other\nmodule: duplicate\n')
             self.assertEqual(build(source, {}, []), {'replacements': {}, 'checkouts': {}})
+
+    def test_requires_declared_docs_checkout_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            docs = root / 'docs'
+            docs.mkdir()
+            scenario = Scenario('docs', 'regression', lambda ctx: None,
+                                source_checkout_roots=('docs',))
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: docs'):
+                build(source, {}, [scenario])
+            (docs / 'kickside-development').mkdir()
+            (docs / 'kickside-development/developer-handbook.md').write_text('handbook\n')
+            (docs / 'operations').mkdir()
+            (docs / 'operations/configuration.md').write_text('configuration\n')
+            self.assertEqual(build(source, {}, [scenario])['checkouts'], {'docs': str(docs)})
+
+    def test_requires_declared_docs_site_checkout_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            site = root / 'docs-site'
+            site.mkdir()
+            scenario = Scenario('docs-site', 'regression', lambda ctx: None,
+                                source_checkout_roots=('docs-site',))
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: docs-site'):
+                build(source, {}, [scenario])
+            (site / 'scripts').mkdir()
+            (site / 'tests').mkdir()
+            for path in ('mkdocs.yml', 'scripts/sync_sources.py', 'tests/test_workflows.py'):
+                (site / path).write_text('present\n')
+            self.assertEqual(build(source, {}, [scenario])['checkouts'], {'docs-site': str(site)})
 
 
 if __name__ == '__main__':

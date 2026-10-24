@@ -3,6 +3,16 @@ from harness import Scenario, require
 from data_contracts import data_contracts
 
 
+def public_source_root(ctx):
+    from pathlib import Path
+
+    source = ctx.inst.config.get('source')
+    require(source, 'Release source guard requires the configured public source checkout')
+    root = Path(source).resolve()
+    require(root.is_dir(), 'Release source guard requires the configured public source checkout')
+    return root
+
+
 def chestor_package_composition(ctx):
     inst = ctx.inst
     if inst.process is None:
@@ -31,7 +41,8 @@ def brave_package_readme(ctx):
     require('# kickside/webscout-brave' in readme and 'kickside.webscout:search_provider' in readme and 'api_key' in readme,
             'Installed Brave module definition lacks usable documentation')
     dependency = inst.request('GET', '/api/v1/keeper/registry/entry?id=kickside.webscout.providers.brave:dep.kickside.webscout', label='brave-core-dependency')['entry']
-    require(dependency['data']['version'] == '*', 'Brave constrains the shared WebScout dependency')
+    require(dependency['data']['version'] == '>=0.1.32',
+            'Brave shared WebScout dependency declared floor differs')
 
 
 REGISTRY += [Scenario('brave_package_readme', 'full', brave_package_readme, ('boot',), issues=('WEBSCOUT-PROVIDER-HOST-BINDINGS',))]
@@ -40,11 +51,10 @@ REGISTRY += [Scenario('data_contracts', 'full', data_contracts, ('boot',))]
 
 
 def release_harness_configuration(ctx):
-    from pathlib import Path
     import subprocess
     import sys
 
-    root = Path(__file__).resolve().parents[2]
+    root = public_source_root(ctx)
     checks = {script: [sys.executable, script] for script in
              ['scripts/test-release-hygiene.py', 'tests/test_source_conventions.py',
               'scripts/check-source-conventions.py',
@@ -68,11 +78,10 @@ REGISTRY += [Scenario('release_harness_configuration', 'full', release_harness_c
 
 
 def release_contract_invokers(ctx):
-    from pathlib import Path
     import subprocess
     import sys
 
-    root = Path(__file__).resolve().parents[2]
+    root = public_source_root(ctx)
     result = subprocess.run([sys.executable, 'scripts/check-contract-surface.py'], cwd=root,
                             capture_output=True, text=True, timeout=60)
     require(result.returncode == 0, result.stdout + result.stderr)
@@ -84,10 +93,9 @@ REGISTRY += [Scenario('release_contract_invokers', 'full', release_contract_invo
 
 
 def release_documentation_mirrors(ctx):
-    from pathlib import Path
     import subprocess
 
-    root = Path(__file__).resolve().parents[2]
+    root = public_source_root(ctx)
     result = subprocess.run(['node', 'scripts/check-wiki-sources.mjs'], cwd=root / 'app',
                             capture_output=True, text=True, timeout=60)
     require(result.returncode == 0, result.stdout + result.stderr)
@@ -103,11 +111,10 @@ REGISTRY += [Scenario('release_documentation_mirrors', 'full', release_documenta
 
 
 def release_runtime_profiles(ctx):
-    from pathlib import Path
     import subprocess
     import sys
 
-    root = Path(__file__).resolve().parents[2]
+    root = public_source_root(ctx)
     result = subprocess.run([sys.executable, '.github/scripts/test_packaging.py', '--module', 'app', '--embed'],
                             cwd=root, capture_output=True, text=True, timeout=60)
     require(result.returncode == 0, result.stdout + result.stderr)
@@ -177,11 +184,10 @@ REGISTRY += [Scenario('hubspot_capacity_boundary', 'regression', hubspot_capacit
 
 
 def release_source_boundaries(ctx):
-    from pathlib import Path
     import subprocess
     import sys
 
-    root = Path(__file__).resolve().parents[2]
+    root = public_source_root(ctx)
     result = subprocess.run([sys.executable, '.github/scripts/test_packaging.py',
                              'PackagingTest.test_all_release_source_boundaries'],
                             cwd=root, capture_output=True, text=True, timeout=60)
@@ -194,11 +200,10 @@ REGISTRY += [Scenario('release_source_boundaries', 'regression', release_source_
 
 
 def release_explicit_publication(ctx):
-    from pathlib import Path
     import subprocess
     import sys
 
-    root = Path(__file__).resolve().parents[2]
+    root = public_source_root(ctx)
     output = {}
     for script in ('.github/scripts/test_delivery.py', '.github/scripts/test_release_content.py'):
         result = subprocess.run([sys.executable, script], cwd=root, capture_output=True, text=True, timeout=60)
