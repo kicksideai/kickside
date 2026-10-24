@@ -94,7 +94,11 @@ def submit_install(ctx, browser, frame, dialog, component):
         dialog.get_by_role('button', name='Install', exact=True).click()
     require(response.value.status == 200 and response.value.json().get('success'),
             'Hub UI installation fails: ' + str(response.value.json()))
-    expect(frame.get_by_text('Installed ' + component, exact=True)).to_be_visible(timeout=30000)
+    expect(dialog).to_have_count(0, timeout=30000)
+    details = frame.locator('.mod-hero').filter(has_text=component)
+    expect(details.locator('.mod-hero-org')).to_have_text(component, timeout=30000)
+    expect(details.get_by_text('installed', exact=True)).to_be_visible()
+    expect(details.get_by_role('button', name='Reinstall / update')).to_be_visible()
     browser.screenshot('hub-installed-' + component.replace('/', '-'))
 
 
