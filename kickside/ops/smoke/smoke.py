@@ -711,6 +711,11 @@ def main(argv=None):
             config = target_configuration(args)
         else:
             config = configuration(args)
+        if config.get('source'):
+            from source_profile import build as build_source_profile
+            profile = build_source_profile(config['source'], config['replace'], selected)
+            config['replace'] = profile['replacements']
+            config['source_checkouts'] = profile['checkouts']
         if any(scenario.tier == 'chat' for scenario in selected) and not config.get('model') and not args.shutdown:
             raise ValueError('Explicit chat scenarios require real model configuration')
     except (ValueError, subprocess.SubprocessError) as error:

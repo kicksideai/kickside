@@ -17,9 +17,13 @@ def meetings_shared_access(ctx):
 
 
 REGISTRY = [Scenario('regression_meetings_engagement_skip', 'regression',
-                     meetings_engagement_skip, issues=('MEETINGS-EXPLICIT-SKIP',)),
+                     meetings_engagement_skip, issues=('MEETINGS-EXPLICIT-SKIP',),
+                     source_components=('spiralscout/meetings',)),
             Scenario('regression_meetings_nested_library_injection', 'regression',
                      meetings_nested_library_injection,
-                     issues=('MEETINGS-HARNESS-NESTED-INJECTION',)),
+                     issues=('MEETINGS-HARNESS-NESTED-INJECTION',),
+                     source_components=('spiralscout/meetings',)),
             Scenario('regression_meetings_shared_access', 'regression',
-                     meetings_shared_access, issues=('MEETINGS-SHARED-IMPLEMENTATION-ACCESS',))]
+                     meetings_shared_access,
+                     issues=('MEETINGS-SHARED-IMPLEMENTATION-ACCESS',),
+                     source_components=('spiralscout/meetings',))]

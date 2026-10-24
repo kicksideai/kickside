@@ -598,7 +598,7 @@ class TestTypeHarnessTests(unittest.TestCase):
 
 def command_harness(command, kwargs):
     cwd = Path(kwargs['cwd'])
-    return cwd / 'test' if command[0] == 'make' else cwd
+    return cwd / 'test' if command[0] == 'make' or (command[0] == '/bin/wippy' and command[3] == 'update' and (cwd / 'test' / '.wippy.yaml').exists()) else cwd
 
 
 class LoadedTestCatalogTests(unittest.TestCase):

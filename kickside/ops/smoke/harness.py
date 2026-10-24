@@ -35,6 +35,8 @@ class Scenario:
     navigation: tuple = ()
     capture_navigation: tuple = ()
     issues: tuple = ()
+    source_components: tuple = ()
+    source_checkout_roots: tuple = ()
 
     def __post_init__(self):
         if (not isinstance(self.issues, (tuple, list)) or
@@ -42,6 +44,17 @@ class Scenario:
                 len(set(self.issues)) != len(self.issues)):
             raise ValueError('Scenario issues must be unique nonempty issue IDs: ' + self.name)
 
+
+        if (not isinstance(self.source_components, (tuple, list)) or
+                any(not isinstance(component, str) or component.count("/") != 1 or
+                    not all(component.split("/")) for component in self.source_components) or
+                len(set(self.source_components)) != len(self.source_components)):
+            raise ValueError("Scenario source components must be unique org/module identities: " + self.name)
+        if (not isinstance(self.source_checkout_roots, (tuple, list)) or
+                any(not isinstance(root, str) or not root or Path(root).is_absolute() or
+                    "/" in root or root in (".", "..") for root in self.source_checkout_roots) or
+                len(set(self.source_checkout_roots)) != len(self.source_checkout_roots)):
+            raise ValueError("Scenario source checkout roots must be unique sibling names: " + self.name)
 
 def instance_area(owner):
     return owner.removeprefix('scenarios_') if owner in ISOLATED_AREAS else 'main'

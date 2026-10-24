@@ -202,6 +202,24 @@ def selected_module_overlay(ctx, component, owned_paths, *, owner=None):
         yield overlay
 
 
+@contextmanager
+def source_checkout_overlay(ctx, name):
+    """Copy one named non-module source checkout for a disposable native gate."""
+    checkout = ctx.inst.config.get('source_checkouts', {}).get(name)
+    require(checkout, 'Selected source checkout is absent: ' + name)
+    source = Path(checkout).resolve()
+    require(source.is_dir(), 'Selected source checkout is absent: ' + str(source))
+    temporary = Path(ctx.inst.root) / 'temp'
+    temporary.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='source-checkout-overlay-', dir=temporary) as directory:
+        overlay = Path(directory) / source.name
+        _validate_copied_links(source, overlay, source, overlay.resolve(),
+                               'Selected source checkout')
+        shutil.copytree(source, overlay, symlinks=True,
+                        ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+        yield overlay
+
+
 def copy_harness(original,repository,scratch):
     container=scratch/'repository'
     container.mkdir(parents=True)
@@ -285,6 +303,7 @@ def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False
                     for _ in root.relative_to(Path(module_root).resolve()).parts:
                         copied_module=copied_module.parent
                 replace = dict(inst.config.get('replace', {}))
+                verify_source_profile = bool(source and module_root and not root.is_relative_to(source))
                 if repository_gate:
                     copied_repository = copied
                     for _ in root.relative_to(repository).parts:
@@ -293,17 +312,27 @@ def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False
                         if Path(path).resolve().is_relative_to(repository):
                             replace[name] = str(copied_repository / Path(path).resolve().relative_to(repository))
                 return _run_locked(ctx, copied, entry, timeout=timeout, module_root=copied_module,
-                                   label=label, repository_gate=repository_gate, lint=lint, replace=replace)
+                                   label=label, repository_gate=repository_gate, lint=lint, replace=replace,
+                                   verify_source_profile=verify_source_profile)
         finally:
             fcntl.flock(lock, fcntl.LOCK_UN)
 
 
-def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repository_gate=False, lint=False):
+def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repository_gate=False, lint=False,
+                verify_source_profile=False):
     inst = ctx.inst
     identifier = re.sub(r'[^a-z0-9_]+', '_', label.lower()).strip('_')[-20:] or 'app'
     database = 'smoke_focused_' + identifier + '_' + uuid.uuid4().hex[:12]
     created = []
     config_path, _ = _write_config(inst, root, database, replace)
+    if verify_source_profile:
+        configured = yaml.safe_load(config_path.read_text())
+        actual = configured.get('workspace', {}).get('replacements', {})
+        expected = {name: str(Path(path).resolve()) for name, path in replace.items()}
+        require(actual == expected, 'Focused module replacement profile differs from the selected source profile')
+        require(all(Path(path).is_dir() for path in actual.values()),
+                'Focused module replacement profile contains an absent source')
+        inst.evidence.save('focused-' + label + '-source-profile', {'replacements': actual})
     environment = dict(inst.env)
     environment['PATH'] = str(Path(inst.config['binary']).parent) + os.pathsep + environment.get('PATH', '')
     preparation = root / 'prepare.sh'
@@ -316,7 +345,8 @@ def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repos
         _discard_harness_lock(root)
         if module_root is None and preparation.is_file():
             _command(inst, label + '-prepare', ['bash', preparation.name], root, environment, timeout)
-        _command(inst, label + '-refresh', refresh, module_root or root, environment, timeout)
+        refresh_root = root if refresh[0] == inst.config['binary'] else module_root or root
+        _command(inst, label + '-refresh', refresh, refresh_root, environment, timeout)
         available = _loaded_test_ids(inst, root, environment, timeout, label)
         if lint:
             command = [inst.config['binary'], '--config', config_path.name, 'lint']
@@ -515,7 +545,12 @@ def _refresh_command(inst, root, config_path, module_root):
     target = 'lockrefresh-' + root.name
     makefile = Path(module_root) / 'Makefile'
     if not makefile.is_file() or not re.search(r'^' + re.escape(target) + r'\s*:', makefile.read_text(), re.MULTILINE):
-        target = 'lockrefresh'
+        if makefile.is_file() and re.search(r'^lockrefresh\s*:', makefile.read_text(), re.MULTILINE):
+            target = 'lockrefresh'
+        elif root.name == 'test' and root.parent == Path(module_root):
+            return [inst.config['binary'], '--config', config_path.name, 'update', '--src-dir', str(src_dir)]
+        else:
+            target = 'lockrefresh'
     command = ['make', target, 'WIPPY_UPDATE_ARGS=--src-dir ' + str(src_dir)]
     if inst.config.get('source'):
         command.append('KICKSIDE_ROOT=' + str(Path(inst.config['source']).resolve()))

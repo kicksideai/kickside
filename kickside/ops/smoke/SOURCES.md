@@ -26,3 +26,21 @@ coverage. Smoke consolidates their product API, failure, browser and cleanup
 mechanisms and uses shipped product blocks/ports. `product`, `crm_sync`,
 `inbox_restart`, `full_flow`, and `first_agent` map to the maintained scenarios
 above. Runtime framework testing remains with its existing owner.
+
+## Source-profile proof inputs
+
+The source-profile regression uses declarations rather than a published lock: the
+Meetings scenarios select `spiralscout/meetings`, and `starter_page_refresh`
+selects the required sibling `module` template checkout.  Record the exact
+Meetings branch/commit and every selected root in the proof cohort manifest; do
+not substitute a published fixture lock or discard unrelated replacement roots.
+
+Run a profile with the normal smoke entry point, for example:
+
+```sh
+make --silent full ENGINE=both SOURCE="$SOURCE_ROOT" REPLACEMENTS="$REPLACEMENTS" ARGS="--scenario regression_meetings_shared_access,starter_page_refresh"
+```
+
+The caller supplies the verified binary and environment through its protected
+profile.  This document intentionally contains neither credentials nor machine
+paths.
