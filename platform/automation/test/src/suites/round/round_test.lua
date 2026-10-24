@@ -113,7 +113,8 @@ local function define_tests()
             test.is_nil(round_err, tostring(round_err))
             local dispatcher = query("SELECT status,scheduled_at FROM kickside_job WHERE id=$1", { dispatcher_id })[1]
             test.not_nil(dispatcher)
-            test.is_true(dispatcher.status == "running" or dispatcher.scheduled_at ~= future,
+            test.is_true(dispatcher.status == "running" or
+                (type(dispatcher.scheduled_at) == "string" and not drive.after(dispatcher.scheduled_at, drive.utc_now())),
                 "releasing a retention blocker must demand a fresh dispatcher pass")
         end)
 
@@ -135,7 +136,8 @@ local function define_tests()
             test.eq(read_drive(automation_id, key).phase, "active")
             test.eq(#env.completions, before)
             local dispatcher = query("SELECT status,scheduled_at FROM kickside_job WHERE id=$1", { dispatcher_id })[1]
-            test.is_true(dispatcher.status == "running" or dispatcher.scheduled_at ~= future,
+            test.is_true(dispatcher.status == "running" or
+                (type(dispatcher.scheduled_at) == "string" and not drive.after(dispatcher.scheduled_at, drive.utc_now())),
                 "the committed release must wake maintenance before notification can fail")
         end)
 
