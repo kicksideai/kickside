@@ -223,7 +223,8 @@ local function define_tests()
 
             local mixed, mixed_err = recommendations.recommend(request_body(), {
                 agent_invoke = { invoke = function(): (any, any?)
-                    return { structured = { component_ids = { "acme/alpha", "invented/module" } } }, nil
+                    return { content = '["acme/alpha"]',
+                        structured = { component_ids = { "acme/alpha", "invented/module" } } }, nil
                 end },
             })
             test.is_nil(mixed)
