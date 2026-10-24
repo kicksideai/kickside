@@ -498,6 +498,49 @@ class AttachedStateTests(unittest.TestCase):
                 self.assertEqual([r['scenario'] for r in json.loads(Path(result_path).read_text())['results']], ['engine', 'cleanup'])
         runner.close.assert_called_once_with()
 
+    def test_one_shot_stops_an_isolated_runtime_after_its_last_terminal_result(self):
+        events = []
+        def instance(name):
+            value = Mock(boot_seconds=0)
+            value.stop.side_effect = lambda: events.append(name)
+            return value
+        main, ai, core, providers = (instance(name) for name in ('main', 'ai', 'core', 'providers'))
+        runner = Mock()
+        runner.pool.instances = {'main': main, 'ai': ai, 'core': core, 'providers': providers}
+        runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+        registry = [
+            Scenario('main-first', 'full', lambda ctx: None),
+            Scenario('ai-first', 'full', lambda ctx: None, owner='scenarios_ai'),
+            Scenario('core-failure', 'full', lambda ctx: None, owner='scenarios_core'),
+            Scenario('provider-skip', 'full', lambda ctx: None, owner='scenarios_providers', model=True),
+            Scenario('ai-last', 'full', lambda ctx: None, owner='scenarios_ai'),
+            Scenario('main-last', 'full', lambda ctx: None),
+        ]
+        rows = [
+            Result('main-first', 'sqlite', 'passed', 0),
+            Result('ai-first', 'sqlite', 'passed', 0),
+            Result('core-failure', 'sqlite', 'failed', 0),
+            Result('provider-skip', 'sqlite', 'skipped: no model configured', 0),
+            Result('ai-last', 'sqlite', 'passed', 0),
+            Result('main-last', 'sqlite', 'passed', 0),
+        ]
+        def run(_tier, _names, _workers, completed):
+            for row in rows:
+                completed(row)
+                if row.scenario == 'ai-first':
+                    self.assertFalse(ai.stop.called)
+                if row.scenario == 'main-last':
+                    self.assertFalse(main.stop.called)
+        runner.run.side_effect = run
+        connection = Mock()
+        config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 2, connection)
+        self.assertEqual(events, ['core', 'providers', 'ai'])
+        self.assertFalse(main.stop.called)
+        runner.close.assert_called_once_with()
+
     def test_gate_constructor_failure_returns_owned_engine_receipt(self):
         for engine in ('sqlite', 'postgres'):
             with self.subTest(engine=engine), tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:

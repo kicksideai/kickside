@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run maintained KickSide smoke scenarios against published or source deployments."""
 import argparse
+from collections import Counter
 import re
 from datetime import datetime, timezone
 import json
@@ -653,8 +654,18 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
     try:
         root.mkdir(parents=True, exist_ok=True)
         runner = EngineRunner(config, engine, root)
+        areas = {scenario.name: instance_area(scenario.owner)
+                 for scenario in select_scenarios(REGISTRY, tier, selected_names)}
+        remaining = Counter(areas.values())
+        isolated = {instance_area(owner) for owner in RuntimePool.isolated}
         def completed(result):
             results.append(result)
+            area = areas[result.scenario]
+            remaining[area] -= 1
+            if area in isolated and remaining[area] == 0:
+                instance = runner.pool.instances.get(area)
+                if instance is not None:
+                    instance.stop()
             print(f'{engine} {result.scenario}: {result.status} ({result.duration:.1f}s)', flush=True)
             write_results(root, results, tier, config)
         runner.run(tier, selected_names, workers, completed)
