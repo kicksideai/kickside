@@ -8,4 +8,4 @@ def teardown_causes(ctx):
     run_focused_module_test(ctx, "kickside/component", "teardown_purge_retry_test")
 
 
-REGISTRY = [Scenario("native_errors_component_teardown_causes", "regression", teardown_causes, issues=("NE-190",))]
+REGISTRY = [Scenario("native_errors_component_teardown_causes", "regression", teardown_causes, issues=("NE-190",), parallel=('native-root:kickside/component',))]

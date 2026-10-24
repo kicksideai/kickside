@@ -8,4 +8,4 @@ def catalog(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "worker_pool_claim_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_awaited_catalog", "regression", catalog, issues=("NE-143",))]
+REGISTRY = [Scenario("native_errors_jobs_awaited_catalog", "regression", catalog, issues=("NE-143",), parallel=('native-root:kickside/jobs',))]

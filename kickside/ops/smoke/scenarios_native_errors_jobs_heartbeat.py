@@ -9,4 +9,4 @@ def heartbeat(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "start_fence_native_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_heartbeat", "regression", heartbeat, issues=("NE-144",))]
+REGISTRY = [Scenario("native_errors_jobs_heartbeat", "regression", heartbeat, issues=("NE-144",), parallel=('native-root:kickside/jobs',))]

@@ -9,4 +9,4 @@ def cursor_waiter(ctx):
     run_focused_module_test(ctx, "kickside/core", "cursor_waiter_upgrade_test")
 
 
-REGISTRY = [Scenario("native_errors_cursor_waiter", "regression", cursor_waiter, issues=("NE-153",))]
+REGISTRY = [Scenario("native_errors_cursor_waiter", "regression", cursor_waiter, issues=("NE-153",), parallel=('native-root:kickside/core',))]

@@ -9,4 +9,4 @@ def transient(ctx):
     run_focused_module_test(ctx, "kickside/core", "natural_key_integrity_test")
 
 
-REGISTRY = [Scenario("native_errors_core_natural_transient", "regression", transient, issues=("NE-284",))]
+REGISTRY = [Scenario("native_errors_core_natural_transient", "regression", transient, issues=("NE-284",), parallel=('native-root:kickside/core',))]

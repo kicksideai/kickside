@@ -8,4 +8,4 @@ def placement_storage(ctx):
         run_focused_module_test(ctx, "kickside/component", pattern)
 
 
-REGISTRY = [Scenario("native_errors_component_placement_storage", "regression", placement_storage, issues=("NE-226",))]
+REGISTRY = [Scenario("native_errors_component_placement_storage", "regression", placement_storage, issues=("NE-226",), parallel=('native-root:kickside/component',))]

@@ -8,4 +8,4 @@ def transition(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "transitions_revocation_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_transition", "regression", transition, issues=("NE-172",))]
+REGISTRY = [Scenario("native_errors_jobs_transition", "regression", transition, issues=("NE-172",), parallel=('native-root:kickside/jobs',))]

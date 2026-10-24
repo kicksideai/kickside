@@ -11,4 +11,4 @@ def input_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_automation_input_validation', 'regression', input_errors,
-                     issues=('NE-57', 'NE-58'))]
+                     issues=('NE-57', 'NE-58'), parallel=('native-root:kickside/automation',))]

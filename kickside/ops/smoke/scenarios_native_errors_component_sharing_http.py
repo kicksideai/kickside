@@ -9,4 +9,4 @@ def boundary(ctx):
     run_focused_module_test(ctx, "kickside/component", "trusted_read_guard_test")
 
 
-REGISTRY = [Scenario("native_errors_component_sharing_http", "regression", boundary, issues=("NE-270",))]
+REGISTRY = [Scenario("native_errors_component_sharing_http", "regression", boundary, issues=("NE-270",), parallel=('native-root:kickside/component',))]

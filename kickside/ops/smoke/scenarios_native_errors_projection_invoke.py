@@ -9,4 +9,4 @@ def invoke_fields(ctx):
     run_focused_module_test(ctx, "kickside/core", "slot_test")
 
 
-REGISTRY = [Scenario("native_errors_projection_invoke", "regression", invoke_fields, issues=("NE-128",))]
+REGISTRY = [Scenario("native_errors_projection_invoke", "regression", invoke_fields, issues=("NE-128",), parallel=('native-root:kickside/core',))]

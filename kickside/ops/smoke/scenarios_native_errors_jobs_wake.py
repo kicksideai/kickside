@@ -9,4 +9,4 @@ def wake(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "recovery_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_wake", "regression", wake, issues=("NE-174",))]
+REGISTRY = [Scenario("native_errors_jobs_wake", "regression", wake, issues=("NE-174",), parallel=('native-root:kickside/jobs',))]

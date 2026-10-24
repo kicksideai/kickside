@@ -9,4 +9,4 @@ def cause(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "dispatch_context_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_dispatch_cause", "regression", cause, issues=("NE-187",))]
+REGISTRY = [Scenario("native_errors_jobs_dispatch_cause", "regression", cause, issues=("NE-187",), parallel=('native-root:kickside/jobs',))]

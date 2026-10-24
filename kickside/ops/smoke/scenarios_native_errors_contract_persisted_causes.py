@@ -8,4 +8,4 @@ def causes(ctx):
     run_focused_module_test(ctx, "kickside/contract", "persisted_json_test")
 
 
-REGISTRY = [Scenario("native_errors_contract_persisted_causes", "regression", causes, issues=("NE-141",))]
+REGISTRY = [Scenario("native_errors_contract_persisted_causes", "regression", causes, issues=("NE-141",), parallel=('native-root:kickside/contract',))]

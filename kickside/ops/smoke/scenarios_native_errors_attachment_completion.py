@@ -8,4 +8,4 @@ def completion(ctx):
     run_focused_module_test(ctx, "kickside/core", "resource_cleanup_test")
     run_focused_module_test(ctx, "kickside/core", "thread_event_declarations_test")
 
-REGISTRY = [Scenario("native_errors_core_attachment_completion", "regression", completion, issues=("NE-290",))]
+REGISTRY = [Scenario("native_errors_core_attachment_completion", "regression", completion, issues=("NE-290",), parallel=('native-root:kickside/core',))]

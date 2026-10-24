@@ -8,4 +8,4 @@ def event_reads(ctx):
     run_focused_module_test(ctx, "kickside/core", "events_pullable_test")
 
 
-REGISTRY = [Scenario("native_errors_core_event_read_release", "regression", event_reads, issues=("NE-237",))]
+REGISTRY = [Scenario("native_errors_core_event_read_release", "regression", event_reads, issues=("NE-237",), parallel=('native-root:kickside/core',))]

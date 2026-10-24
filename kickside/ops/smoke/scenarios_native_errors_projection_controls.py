@@ -10,5 +10,5 @@ def projection_control_native_errors(ctx):
 
 REGISTRY = [
     Scenario('native_errors_projection_controls', 'regression', projection_control_native_errors,
-             issues=('NE-24', 'NE-25')),
+             issues=('NE-24', 'NE-25'), parallel=('native-root:kickside/core',)),
 ]

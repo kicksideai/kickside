@@ -8,4 +8,4 @@ def boundary(ctx):
     run_focused_module_test(ctx, "kickside/core", "access_diagnostics_test")
 
 
-REGISTRY = [Scenario("native_errors_core_operation_http", "regression", boundary, issues=("NE-269",))]
+REGISTRY = [Scenario("native_errors_core_operation_http", "regression", boundary, issues=("NE-269",), parallel=('native-root:kickside/core',))]

@@ -9,4 +9,4 @@ def sync_normalization_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_sync_normalization', 'regression', sync_normalization_errors,
-                     issues=('NE-42',))]
+                     issues=('NE-42',), parallel=('native-root:kickside/sync',))]

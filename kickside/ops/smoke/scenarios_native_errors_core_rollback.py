@@ -9,4 +9,4 @@ def rollback(ctx):
     run_focused_module_test(ctx, "kickside/core", "control_error_test")
 
 
-REGISTRY = [Scenario("native_errors_core_rollback", "regression", rollback, issues=("NE-107",))]
+REGISTRY = [Scenario("native_errors_core_rollback", "regression", rollback, issues=("NE-107",), parallel=('native-root:kickside/contract', 'native-root:kickside/core'))]

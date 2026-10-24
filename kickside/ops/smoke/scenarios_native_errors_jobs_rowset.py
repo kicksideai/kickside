@@ -8,4 +8,4 @@ def rowset(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "execute_job_routing_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_rowset", "regression", rowset, issues=("NE-173",))]
+REGISTRY = [Scenario("native_errors_jobs_rowset", "regression", rowset, issues=("NE-173",), parallel=('native-root:kickside/jobs',))]

@@ -9,4 +9,4 @@ def subjects(ctx):
 
 
 REGISTRY = [Scenario('native_errors_component_share_subject', 'regression', subjects,
-                     issues=('NE-62',))]
+                     issues=('NE-62',), parallel=('native-root:kickside/component',))]

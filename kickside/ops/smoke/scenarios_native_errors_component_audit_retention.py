@@ -9,4 +9,4 @@ def audit_retention(ctx):
     run_focused_module_test(ctx, "kickside/component", "owner_gc_test")
 
 
-REGISTRY = [Scenario("native_errors_component_audit_retention", "regression", audit_retention, issues=("NE-209",))]
+REGISTRY = [Scenario("native_errors_component_audit_retention", "regression", audit_retention, issues=("NE-209",), parallel=('native-root:kickside/component',))]

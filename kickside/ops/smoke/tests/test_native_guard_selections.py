@@ -9,6 +9,100 @@ from tests.test_endpoint_policy_components import module_repositories, module_so
 
 
 class NativeGuardSelectionTests(unittest.TestCase):
+    def test_pure_native_guards_claim_each_focused_module_root(self):
+        import scenarios_native_errors_component_command_causes as component
+        import scenarios_native_errors_core_retention_notifier as core
+        import scenarios_native_errors_execution as shared_runtime
+        import scenarios_native_errors_jobs_harness_dependency as looped
+        def claims(module):
+            scenario, = module.REGISTRY
+            return scenario.parallel
+
+        self.assertEqual(claims(core), ('native-root:kickside/core',))
+        self.assertEqual(claims(component), ('native-root:kickside/component',
+                                             'native-root:kickside/contract'))
+        self.assertEqual(claims(looped), ('native-root:kickside/component',
+                                          'native-root:kickside/core',
+                                          'native-root:kickside/jobs'))
+        # This guard pauses and changes the common runtime after its native
+        # checks, so it must retain the scheduler's exclusive default.
+        self.assertEqual(claims(shared_runtime), ())
+
+    def test_native_root_claims_are_declared_only_for_strict_focused_guards(self):
+        """A native-root claim may only cover direct, runtime-free harness calls."""
+        root = Path(__file__).resolve().parents[1]
+        failures, declared = [], 0
+
+        def roots_for(function, constants):
+            loops, calls = {}, []
+            for statement in function.body:
+                if (isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Constant)
+                        and isinstance(statement.value.value, str)):
+                    continue
+                statements = [statement]
+                if (isinstance(statement, ast.For) and isinstance(statement.target, ast.Name)
+                        and isinstance(statement.iter, (ast.Tuple, ast.List)) and all(
+                            isinstance(value, ast.Constant) and isinstance(value.value, str)
+                            for value in statement.iter.elts)):
+                    if statement.orelse:
+                        return None
+                    loops[statement.target.id] = tuple(value.value for value in statement.iter.elts)
+                    statements = statement.body
+                for item in statements:
+                    call = item.value if isinstance(item, ast.Expr) and isinstance(item.value, ast.Call) else None
+                    if not (call and isinstance(call.func, ast.Name)
+                            and call.func.id == 'run_focused_module_test' and len(call.args) >= 3):
+                        return None
+                    if any(isinstance(node, ast.Call) for value in (*call.args, *(keyword.value for keyword in call.keywords))
+                           for node in ast.walk(value)):
+                        return None
+                    calls.append(call)
+            if not calls:
+                return None
+            roots = []
+            for call in calls:
+                component = call.args[1]
+                if isinstance(component, ast.Constant) and isinstance(component.value, str):
+                    values = (component.value,)
+                elif isinstance(component, ast.Name) and component.id in constants:
+                    values = (constants[component.id],)
+                elif isinstance(component, ast.Name) and component.id in loops:
+                    values = loops[component.id]
+                else:
+                    return None
+                if not all(value.startswith('kickside/') for value in values):
+                    return None
+                roots.extend(values)
+            return tuple('native-root:' + value for value in sorted(set(roots)))
+
+        for path in sorted(root.glob('scenarios_native_errors*.py')):
+            tree = ast.parse(path.read_text())
+            constants = {statement.targets[0].id: statement.value.value for statement in tree.body
+                         if isinstance(statement, ast.Assign) and len(statement.targets) == 1
+                         and isinstance(statement.targets[0], ast.Name)
+                         and isinstance(statement.value, ast.Constant)
+                         and isinstance(statement.value.value, str)}
+            functions = {statement.name: statement for statement in tree.body
+                         if isinstance(statement, ast.FunctionDef)}
+            for scenario in (node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                             and isinstance(node.func, ast.Name) and node.func.id == 'Scenario'):
+                run = scenario.args[2] if len(scenario.args) >= 3 else None
+                function = functions.get(run.id) if isinstance(run, ast.Name) else None
+                expected = roots_for(function, constants) if function else None
+                parallel = next((keyword.value for keyword in scenario.keywords
+                                 if keyword.arg == 'parallel'), None)
+                actual = tuple(value.value for value in parallel.elts) if isinstance(parallel, ast.Tuple) and all(
+                    isinstance(value, ast.Constant) and isinstance(value.value, str) for value in parallel.elts) else ()
+                native = tuple(value for value in actual if value.startswith('native-root:'))
+                if expected:
+                    declared += 1
+                    if actual != expected:
+                        failures.append(f'{path.name}:{scenario.lineno}: expected {expected}, got {actual}')
+                elif native:
+                    failures.append(f'{path.name}:{scenario.lineno}: runtime-touching guard claims {native}')
+        self.assertGreater(declared, 0)
+        self.assertEqual(failures, [], '\n'.join(failures))
+
     def test_literal_native_guards_select_registered_tests_or_suites(self):
         root = Path(__file__).resolve().parents[3]
         modules = {name: path/'test' for name,path in module_sources(module_repositories()).items()}

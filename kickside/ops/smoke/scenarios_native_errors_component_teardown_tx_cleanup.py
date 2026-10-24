@@ -8,4 +8,4 @@ def teardown_tx_cleanup(ctx):
     run_focused_module_test(ctx, "kickside/component", "fence_test")
 
 
-REGISTRY = [Scenario("native_errors_component_teardown_tx_cleanup", "regression", teardown_tx_cleanup, issues=("NE-203",))]
+REGISTRY = [Scenario("native_errors_component_teardown_tx_cleanup", "regression", teardown_tx_cleanup, issues=("NE-203",), parallel=('native-root:kickside/component',))]

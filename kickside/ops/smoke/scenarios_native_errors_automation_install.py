@@ -9,4 +9,4 @@ def install_preflight(ctx):
 
 
 REGISTRY = [Scenario('native_errors_automation_install_preflight', 'regression', install_preflight,
-                     issues=('NE-59', 'NE-60'))]
+                     issues=('NE-59', 'NE-60'), parallel=('native-root:kickside/automation',))]

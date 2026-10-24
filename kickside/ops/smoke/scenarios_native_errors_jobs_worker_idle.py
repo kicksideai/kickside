@@ -8,4 +8,4 @@ def boundary(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "worker_process_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_idle", "regression", boundary, issues=("NE-271",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_idle", "regression", boundary, issues=("NE-271",), parallel=('native-root:kickside/jobs',))]

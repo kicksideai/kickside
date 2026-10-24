@@ -8,4 +8,4 @@ def wake_proof(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "wake_demand_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_wake_proof", "regression", wake_proof, issues=("NE-175",))]
+REGISTRY = [Scenario("native_errors_jobs_wake_proof", "regression", wake_proof, issues=("NE-175",), parallel=('native-root:kickside/jobs',))]

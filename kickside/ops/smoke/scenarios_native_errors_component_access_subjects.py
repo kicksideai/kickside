@@ -8,4 +8,4 @@ def access_subjects(ctx):
     run_focused_module_test(ctx, "kickside/component", "access_subjects_test")
 
 
-REGISTRY = [Scenario("native_errors_component_access_subjects", "regression", access_subjects, issues=("NE-212",))]
+REGISTRY = [Scenario("native_errors_component_access_subjects", "regression", access_subjects, issues=("NE-212",), parallel=('native-root:kickside/component',))]

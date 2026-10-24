@@ -12,4 +12,4 @@ def worker_fields(ctx):
     run_focused_module_test(ctx, "kickside/core", "slot_failure_test")
 
 
-REGISTRY = [Scenario("native_errors_projection_worker_fields", "regression", worker_fields, issues=("NE-121",))]
+REGISTRY = [Scenario("native_errors_projection_worker_fields", "regression", worker_fields, issues=("NE-121",), parallel=('native-root:kickside/contract', 'native-root:kickside/core'))]

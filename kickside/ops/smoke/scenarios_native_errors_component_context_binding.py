@@ -9,4 +9,4 @@ def context_binding(ctx):
     run_focused_module_test(ctx, "kickside/component", "context_revision_test")
 
 
-REGISTRY = [Scenario("native_errors_component_context_binding", "regression", context_binding, issues=("NE-198",))]
+REGISTRY = [Scenario("native_errors_component_context_binding", "regression", context_binding, issues=("NE-198",), parallel=('native-root:kickside/component',))]

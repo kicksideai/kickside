@@ -9,4 +9,4 @@ def scope(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_test")
 
 
-REGISTRY = [Scenario("native_errors_core_readable_scope", "regression", scope, issues=("NE-254",))]
+REGISTRY = [Scenario("native_errors_core_readable_scope", "regression", scope, issues=("NE-254",), parallel=('native-root:kickside/core',))]

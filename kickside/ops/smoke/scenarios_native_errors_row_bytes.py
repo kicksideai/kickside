@@ -8,4 +8,4 @@ def row_bytes(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "row_limit_test")
 
 
-REGISTRY = [Scenario("native_errors_row_bytes", "regression", row_bytes, issues=("NE-163",))]
+REGISTRY = [Scenario("native_errors_row_bytes", "regression", row_bytes, issues=("NE-163",), parallel=('native-root:kickside/jobs',))]

@@ -8,4 +8,4 @@ def scope(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "scope_native_retry_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_scope", "regression", scope, issues=("NE-167",))]
+REGISTRY = [Scenario("native_errors_jobs_scope", "regression", scope, issues=("NE-167",), parallel=('native-root:kickside/jobs',))]

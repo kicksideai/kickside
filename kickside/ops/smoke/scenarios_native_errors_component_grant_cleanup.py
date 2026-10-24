@@ -8,4 +8,4 @@ def grant_cleanup(ctx):
     run_focused_module_test(ctx, "kickside/component", "access_cause_test")
 
 
-REGISTRY = [Scenario("native_errors_component_grant_cleanup", "regression", grant_cleanup, issues=("NE-201",))]
+REGISTRY = [Scenario("native_errors_component_grant_cleanup", "regression", grant_cleanup, issues=("NE-201",), parallel=('native-root:kickside/component',))]

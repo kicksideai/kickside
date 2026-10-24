@@ -9,4 +9,4 @@ def access_causes(ctx):
     run_focused_module_test(ctx, "kickside/component", "effective_access_test")
 
 
-REGISTRY = [Scenario("native_errors_component_access_causes", "regression", access_causes, issues=("NE-191",))]
+REGISTRY = [Scenario("native_errors_component_access_causes", "regression", access_causes, issues=("NE-191",), parallel=('native-root:kickside/component',))]

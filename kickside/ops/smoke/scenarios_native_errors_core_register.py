@@ -17,6 +17,6 @@ def rollback(ctx):
 
 
 REGISTRY = [
-    Scenario("native_errors_core_registration", "regression", registration, issues=("NE-119",)),
-    Scenario("native_errors_core_registration_rollback", "regression", rollback, issues=("NE-120",)),
+    Scenario("native_errors_core_registration", "regression", registration, issues=("NE-119",), parallel=('native-root:kickside/core',)),
+    Scenario("native_errors_core_registration_rollback", "regression", rollback, issues=("NE-120",), parallel=('native-root:kickside/core',)),
 ]

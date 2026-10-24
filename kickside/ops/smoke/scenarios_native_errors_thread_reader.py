@@ -9,4 +9,4 @@ def reader_fields(ctx):
     run_focused_module_test(ctx, "kickside/core", "subject_test")
 
 
-REGISTRY = [Scenario("native_errors_thread_reader", "regression", reader_fields, issues=("NE-129",))]
+REGISTRY = [Scenario("native_errors_thread_reader", "regression", reader_fields, issues=("NE-129",), parallel=('native-root:kickside/core',))]

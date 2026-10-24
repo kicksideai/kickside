@@ -9,4 +9,4 @@ def teardown(ctx):
     run_focused_module_test(ctx, "kickside/core", "cleanup_wake_test")
 
 
-REGISTRY = [Scenario("native_errors_thread_teardown", "regression", teardown, issues=("NE-136",))]
+REGISTRY = [Scenario("native_errors_thread_teardown", "regression", teardown, issues=("NE-136",), parallel=('native-root:kickside/core',))]

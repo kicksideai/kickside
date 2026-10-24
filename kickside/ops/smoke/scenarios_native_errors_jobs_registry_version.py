@@ -9,4 +9,4 @@ def registry_version(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "worker_pool_version_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_registry_version", "regression", registry_version, issues=("NE-189",))]
+REGISTRY = [Scenario("native_errors_jobs_registry_version", "regression", registry_version, issues=("NE-189",), parallel=('native-root:kickside/jobs',))]

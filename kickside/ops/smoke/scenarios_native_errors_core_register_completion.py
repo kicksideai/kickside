@@ -10,4 +10,4 @@ def completion(ctx):
     run_focused_module_test(ctx, "kickside/core", "projection_register_rollback_test")
 
 
-REGISTRY = [Scenario("native_errors_core_register_completion", "regression", completion, issues=("NE-267",))]
+REGISTRY = [Scenario("native_errors_core_register_completion", "regression", completion, issues=("NE-267",), parallel=('native-root:kickside/core',))]

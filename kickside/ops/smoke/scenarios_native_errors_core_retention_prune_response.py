@@ -8,4 +8,4 @@ def proofs(ctx):
     run_focused_module_test(ctx, "kickside/core", "sweeper_missing_result_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_prune_response", "regression", proofs, issues=("NE-102",))]
+REGISTRY = [Scenario("native_errors_core_retention_prune_response", "regression", proofs, issues=("NE-102",), parallel=('native-root:kickside/core',))]

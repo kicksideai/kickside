@@ -10,4 +10,4 @@ def singleton_emit(ctx):
     run_focused_module_test(ctx, "kickside/component", "cleanup_setup_test")
 
 
-REGISTRY = [Scenario("native_errors_component_singleton_emit", "regression", singleton_emit, issues=("NE-197",))]
+REGISTRY = [Scenario("native_errors_component_singleton_emit", "regression", singleton_emit, issues=("NE-197",), parallel=('native-root:kickside/component', 'native-root:kickside/contract'))]

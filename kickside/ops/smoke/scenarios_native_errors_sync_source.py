@@ -10,4 +10,4 @@ def sync_source_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_sync_source', 'regression', sync_source_errors,
-                     issues=('NE-48', 'NE-49'))]
+                     issues=('NE-48', 'NE-49'), parallel=('native-root:kickside/sync',))]

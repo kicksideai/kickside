@@ -9,4 +9,4 @@ def options(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "loop_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_options", "regression", options, issues=("NE-277",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_options", "regression", options, issues=("NE-277",), parallel=('native-root:kickside/jobs',))]

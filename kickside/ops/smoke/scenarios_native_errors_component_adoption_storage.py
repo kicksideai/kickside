@@ -8,4 +8,4 @@ def adoption_storage(ctx):
         run_focused_module_test(ctx, "kickside/component", pattern)
 
 
-REGISTRY = [Scenario("native_errors_component_adoption_storage", "regression", adoption_storage, issues=("NE-227",))]
+REGISTRY = [Scenario("native_errors_component_adoption_storage", "regression", adoption_storage, issues=("NE-227",), parallel=('native-root:kickside/component',))]

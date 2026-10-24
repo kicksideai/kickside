@@ -8,4 +8,4 @@ def thread_row(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_lifecycle_test")
 
 
-REGISTRY = [Scenario("native_errors_thread_row", "regression", thread_row, issues=("NE-127",))]
+REGISTRY = [Scenario("native_errors_thread_row", "regression", thread_row, issues=("NE-127",), parallel=('native-root:kickside/core',))]

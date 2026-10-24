@@ -8,4 +8,4 @@ def identities(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_test")
 
 
-REGISTRY = [Scenario("native_errors_core_component_identity", "regression", identities, issues=("NE-246",))]
+REGISTRY = [Scenario("native_errors_core_component_identity", "regression", identities, issues=("NE-246",), parallel=('native-root:kickside/core',))]

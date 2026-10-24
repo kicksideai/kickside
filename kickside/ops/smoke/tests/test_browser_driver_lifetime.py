@@ -12,7 +12,7 @@ import smoke
 
 
 class DriverLifetimeTests(unittest.TestCase):
-    def run_scenarios(self, *, fail_run=False, fail_close=False, workers=1):
+    def run_scenarios(self, *, fail_run=False, fail_close=False, workers=1, pure_native=False):
         active, peaks, restored, threads = set(), [], [], []
         barrier = threading.Barrier(workers)
         lock = threading.Lock()
@@ -47,7 +47,9 @@ class DriverLifetimeTests(unittest.TestCase):
             if fail_run:
                 raise Failure('scenario fails')
 
-        registry = [Scenario(name, 'regression', operation, parallel=(name,), issues=('DRIVER-LIFETIME',))
+        registry = [Scenario(name, 'regression', operation,
+                             parallel=(f'native-root:kickside/{name}',) if pure_native else (name,),
+                             issues=('DRIVER-LIFETIME',))
                     for name in ('first', 'second')]
         inst = Mock(cleanup=Cleanup())
         inst.evidence.paths = []
@@ -72,10 +74,11 @@ class DriverLifetimeTests(unittest.TestCase):
                     self.assertEqual(owner.state['receipt'], 'saved')
                     rerun = runner.run('regression', [], workers)
                     self.assertTrue(all(row.status == 'passed' for row in rerun))
-                    self.assertEqual(len(restored), 2, 'saved navigation is lost on attached rerun')
+                    self.assertEqual(len(restored), 0 if pure_native else 2,
+                                     'saved navigation is lost on attached rerun')
             finally:
                 self.assertEqual(runner.close().status, 'passed')
-        self.assertLessEqual(max(peaks), workers)
+        self.assertLessEqual(max(peaks, default=0), workers)
         self.assertTrue(all(start == close for start, close in threads), 'driver closes on another thread')
         return results, completions
 
@@ -86,6 +89,10 @@ class DriverLifetimeTests(unittest.TestCase):
 
     def test_parallel_drivers_release_after_their_own_scenario(self):
         results, _ = self.run_scenarios(workers=2)
+        self.assertEqual([row.status for row in results], ['passed', 'passed'])
+
+    def test_parallel_native_claims_do_not_launch_a_browser(self):
+        results, _ = self.run_scenarios(workers=2, pure_native=True)
         self.assertEqual([row.status for row in results], ['passed', 'passed'])
 
     def test_scenario_and_driver_cleanup_failures_both_reach_the_result(self):

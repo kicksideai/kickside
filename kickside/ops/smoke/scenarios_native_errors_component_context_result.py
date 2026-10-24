@@ -9,4 +9,4 @@ def context_result(ctx):
     run_focused_module_test(ctx, "kickside/component", "failure_classification_test")
 
 
-REGISTRY = [Scenario("native_errors_component_context_result", "regression", context_result, issues=("NE-194",))]
+REGISTRY = [Scenario("native_errors_component_context_result", "regression", context_result, issues=("NE-194",), parallel=('native-root:kickside/component',))]

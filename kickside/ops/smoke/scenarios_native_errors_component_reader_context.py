@@ -8,4 +8,4 @@ def reader_context(ctx):
     run_focused_module_test(ctx, "kickside/component", "component_reader_test")
 
 
-REGISTRY = [Scenario("native_errors_component_reader_context", "regression", reader_context, issues=("NE-219",))]
+REGISTRY = [Scenario("native_errors_component_reader_context", "regression", reader_context, issues=("NE-219",), parallel=('native-root:kickside/component',))]

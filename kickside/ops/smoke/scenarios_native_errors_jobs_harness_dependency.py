@@ -8,4 +8,4 @@ def packaging(ctx):
         run_focused_module_test(ctx, component, "packaging_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_harness_dependency", "regression", packaging, issues=("NE-111",))]
+REGISTRY = [Scenario("native_errors_jobs_harness_dependency", "regression", packaging, issues=("NE-111",), parallel=('native-root:kickside/component', 'native-root:kickside/core', 'native-root:kickside/jobs'))]

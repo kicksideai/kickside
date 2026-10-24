@@ -8,4 +8,4 @@ def portable_io(ctx):
     run_focused_module_test(ctx, "kickside/component", "base_portable_test")
 
 
-REGISTRY = [Scenario("native_errors_portable_io", "regression", portable_io, issues=("NE-154",))]
+REGISTRY = [Scenario("native_errors_portable_io", "regression", portable_io, issues=("NE-154",), parallel=('native-root:kickside/component',))]

@@ -11,4 +11,4 @@ def pool_boundary(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "pool_registration_and_timers_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_pool_boundary", "regression", pool_boundary, issues=("NE-147",))]
+REGISTRY = [Scenario("native_errors_jobs_pool_boundary", "regression", pool_boundary, issues=("NE-147",), parallel=('native-root:kickside/jobs',))]

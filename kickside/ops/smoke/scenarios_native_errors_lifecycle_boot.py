@@ -8,4 +8,4 @@ def boot(ctx):
     run_focused_module_test(ctx, "kickside/core", "provision_test")
 
 
-REGISTRY = [Scenario("native_errors_core_lifecycle_boot", "regression", boot, issues=("NE-282",))]
+REGISTRY = [Scenario("native_errors_core_lifecycle_boot", "regression", boot, issues=("NE-282",), parallel=('native-root:kickside/core',))]

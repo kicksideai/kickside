@@ -8,4 +8,4 @@ def retry_release(ctx):
     run_focused_module_test(ctx, "kickside/component", 'component_pending_delete_native')
 
 
-REGISTRY = [Scenario("native_errors_component_retry_release", "regression", retry_release, issues=("NE-200",))]
+REGISTRY = [Scenario("native_errors_component_retry_release", "regression", retry_release, issues=("NE-200",), parallel=('native-root:kickside/component',))]

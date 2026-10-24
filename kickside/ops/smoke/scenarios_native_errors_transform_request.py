@@ -9,4 +9,4 @@ def transform_request_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_transform_request', 'regression', transform_request_errors,
-                     issues=('NE-41',))]
+                     issues=('NE-41',), parallel=('native-root:kickside/transform',))]

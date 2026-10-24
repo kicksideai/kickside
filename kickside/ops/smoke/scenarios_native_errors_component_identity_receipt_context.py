@@ -8,4 +8,4 @@ def identity_receipt_context(ctx):
     run_focused_module_test(ctx, "kickside/component", "identity_native_test")
 
 
-REGISTRY = [Scenario("native_errors_component_identity_receipt_context", "regression", identity_receipt_context, issues=("NE-221",))]
+REGISTRY = [Scenario("native_errors_component_identity_receipt_context", "regression", identity_receipt_context, issues=("NE-221",), parallel=('native-root:kickside/component',))]

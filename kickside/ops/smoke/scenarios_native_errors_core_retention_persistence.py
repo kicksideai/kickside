@@ -9,4 +9,4 @@ def persistence(ctx):
     run_focused_module_test(ctx, "kickside/core", "provision_retention_failure_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_persistence", "regression", persistence, issues=("NE-99",))]
+REGISTRY = [Scenario("native_errors_core_retention_persistence", "regression", persistence, issues=("NE-99",), parallel=('native-root:kickside/core',))]

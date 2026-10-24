@@ -12,4 +12,4 @@ def envelope_native(ctx):
     run_focused_module_test(ctx, "kickside/contract", "annotated_error_test")
 
 
-REGISTRY = [Scenario("native_errors_component_envelope_native", "regression", envelope_native, issues=("NE-193",))]
+REGISTRY = [Scenario("native_errors_component_envelope_native", "regression", envelope_native, issues=("NE-193",), parallel=('native-root:kickside/component', 'native-root:kickside/contract'))]

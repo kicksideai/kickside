@@ -8,4 +8,4 @@ def purge(ctx):
     run_focused_module_test(ctx, "kickside/core", "service_test")
 
 
-REGISTRY = [Scenario("native_errors_core_receipt_purge", "regression", purge, issues=("NE-104",))]
+REGISTRY = [Scenario("native_errors_core_receipt_purge", "regression", purge, issues=("NE-104",), parallel=('native-root:kickside/core',))]

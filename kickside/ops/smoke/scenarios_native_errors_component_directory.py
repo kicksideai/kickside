@@ -7,4 +7,4 @@ def directory(ctx):
     run_focused_module_test(ctx, 'kickside/component', 'share_subject_test')
     run_focused_module_test(ctx, 'kickside/component', 'share_subject_native_test')
 
-REGISTRY = [Scenario('native_errors_component_directory', 'regression', directory, issues=('NE-69',))]
+REGISTRY = [Scenario('native_errors_component_directory', 'regression', directory, issues=('NE-69',), parallel=('native-root:kickside/component',))]

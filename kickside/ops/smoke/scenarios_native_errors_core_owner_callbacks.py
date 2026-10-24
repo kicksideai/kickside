@@ -8,4 +8,4 @@ def callbacks(ctx):
     run_focused_module_test(ctx, "kickside/core", "owner_isolation_test")
 
 
-REGISTRY = [Scenario("native_errors_core_owner_callbacks", "regression", callbacks, issues=("NE-93",))]
+REGISTRY = [Scenario("native_errors_core_owner_callbacks", "regression", callbacks, issues=("NE-93",), parallel=('native-root:kickside/core',))]

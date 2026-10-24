@@ -8,4 +8,4 @@ def completion(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "transaction_native_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_sql_transaction", "regression", completion, issues=("NE-263",))]
+REGISTRY = [Scenario("native_errors_jobs_sql_transaction", "regression", completion, issues=("NE-263",), parallel=('native-root:kickside/jobs',))]

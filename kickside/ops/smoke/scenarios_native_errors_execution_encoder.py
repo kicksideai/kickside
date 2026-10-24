@@ -8,4 +8,4 @@ def encoder(ctx):
     run_focused_module_test(ctx, "kickside/execution", "execution_identity_test")
 
 
-REGISTRY = [Scenario("native_errors_execution_encoder", "regression", encoder, issues=("NE-145",))]
+REGISTRY = [Scenario("native_errors_execution_encoder", "regression", encoder, issues=("NE-145",), parallel=('native-root:kickside/execution',))]

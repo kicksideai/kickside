@@ -9,4 +9,4 @@ def reader_causes(ctx):
     run_focused_module_test(ctx, "kickside/component", "failure_classification_test")
 
 
-REGISTRY = [Scenario("native_errors_component_reader_causes", "regression", reader_causes, issues=("NE-218",))]
+REGISTRY = [Scenario("native_errors_component_reader_causes", "regression", reader_causes, issues=("NE-218",), parallel=('native-root:kickside/component',))]

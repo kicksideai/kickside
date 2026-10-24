@@ -11,5 +11,5 @@ def core_component_native_errors(ctx):
 
 REGISTRY = [
     Scenario('native_errors_core_component_port', 'regression', core_component_native_errors,
-             issues=('NE-17', 'NE-19')),
+             issues=('NE-17', 'NE-19'), parallel=('native-root:kickside/component', 'native-root:kickside/core')),
 ]

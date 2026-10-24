@@ -8,4 +8,4 @@ def lease_status(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "transitions_revocation_test")
 
 
-REGISTRY = [Scenario("native_errors_lease_status", "regression", lease_status, issues=("NE-162",))]
+REGISTRY = [Scenario("native_errors_lease_status", "regression", lease_status, issues=("NE-162",), parallel=('native-root:kickside/jobs',))]

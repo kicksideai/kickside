@@ -8,4 +8,4 @@ def receipt_sql(ctx):
     run_focused_module_test(ctx, "kickside/core", "write_receipt_test")
 
 
-REGISTRY = [Scenario("native_errors_receipt_sql", "regression", receipt_sql, issues=("NE-148",))]
+REGISTRY = [Scenario("native_errors_receipt_sql", "regression", receipt_sql, issues=("NE-148",), parallel=('native-root:kickside/core',))]

@@ -10,4 +10,4 @@ def teardown_fence(ctx):
     run_focused_module_test(ctx, "kickside/core", "lifecycle_test")
 
 
-REGISTRY = [Scenario("native_errors_thread_teardown_fence", "regression", teardown_fence, issues=("NE-135",))]
+REGISTRY = [Scenario("native_errors_thread_teardown_fence", "regression", teardown_fence, issues=("NE-135",), parallel=('native-root:kickside/core',))]

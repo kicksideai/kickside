@@ -8,4 +8,4 @@ def release(ctx):
     run_focused_module_test(ctx, "kickside/core", "thread_event_declarations_test")
 
 
-REGISTRY = [Scenario("native_errors_core_authorization_release", "regression", release, issues=("NE-251",))]
+REGISTRY = [Scenario("native_errors_core_authorization_release", "regression", release, issues=("NE-251",), parallel=('native-root:kickside/core',))]

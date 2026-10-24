@@ -10,4 +10,4 @@ def update_transactions(ctx):
     run_focused_module_test(ctx, "kickside/component", "lifecycle_seam_test")
 
 
-REGISTRY = [Scenario("native_errors_component_update_transactions", "regression", update_transactions, issues=("NE-224",))]
+REGISTRY = [Scenario("native_errors_component_update_transactions", "regression", update_transactions, issues=("NE-224",), parallel=('native-root:kickside/component',))]

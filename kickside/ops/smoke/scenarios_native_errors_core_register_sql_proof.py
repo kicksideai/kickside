@@ -9,4 +9,4 @@ def proof(ctx):
     run_focused_module_test(ctx, "kickside/core", "register_completion_test")
 
 
-REGISTRY = [Scenario("native_errors_core_register_sql_proof", "regression", proof, issues=("NE-268",))]
+REGISTRY = [Scenario("native_errors_core_register_sql_proof", "regression", proof, issues=("NE-268",), parallel=('native-root:kickside/core',))]

@@ -10,4 +10,4 @@ def invocation(ctx):
         run_focused_module_test(ctx, "kickside/core", pattern)
 
 
-REGISTRY = [Scenario("native_errors_projection_worker_retry", "regression", invocation, issues=("NE-122", "NE-123"))]
+REGISTRY = [Scenario("native_errors_projection_worker_retry", "regression", invocation, issues=("NE-122", "NE-123"), parallel=('native-root:kickside/core',))]

@@ -8,4 +8,4 @@ def pages(ctx):
     run_focused_module_test(ctx, "kickside/core", "job_scope_pagination_test")
 
 
-REGISTRY = [Scenario("native_errors_core_component_list_proof", "regression", pages, issues=("NE-253",))]
+REGISTRY = [Scenario("native_errors_core_component_list_proof", "regression", pages, issues=("NE-253",), parallel=('native-root:kickside/core',))]

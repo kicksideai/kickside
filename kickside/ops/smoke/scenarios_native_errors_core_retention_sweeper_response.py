@@ -8,4 +8,4 @@ def sweep(ctx):
     run_focused_module_test(ctx, "kickside/core", "service_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_sweeper_response", "regression", sweep, issues=("NE-105",))]
+REGISTRY = [Scenario("native_errors_core_retention_sweeper_response", "regression", sweep, issues=("NE-105",), parallel=('native-root:kickside/core',))]

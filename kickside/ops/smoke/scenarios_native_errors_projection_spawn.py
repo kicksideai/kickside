@@ -8,4 +8,4 @@ def spawn(ctx):
     run_focused_module_test(ctx, "kickside/core", "worker_test")
 
 
-REGISTRY = [Scenario("native_errors_projection_spawn", "regression", spawn, issues=("NE-124",))]
+REGISTRY = [Scenario("native_errors_projection_spawn", "regression", spawn, issues=("NE-124",), parallel=('native-root:kickside/core',))]

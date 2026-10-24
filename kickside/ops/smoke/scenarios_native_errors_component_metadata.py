@@ -9,4 +9,4 @@ def metadata(ctx):
     run_focused_module_test(ctx, "kickside/component", "meta_lock_order_test")
 
 
-REGISTRY = [Scenario("native_errors_component_metadata", "regression", metadata, issues=("NE-142", "NE-232"))]
+REGISTRY = [Scenario("native_errors_component_metadata", "regression", metadata, issues=("NE-142", "NE-232"), parallel=('native-root:kickside/component',))]

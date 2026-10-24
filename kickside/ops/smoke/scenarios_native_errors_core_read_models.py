@@ -8,4 +8,4 @@ def models(ctx):
     run_focused_module_test(ctx, "kickside/core", "provision_test")
 
 
-REGISTRY = [Scenario("native_errors_core_read_models", "regression", models, issues=("NE-113",))]
+REGISTRY = [Scenario("native_errors_core_read_models", "regression", models, issues=("NE-113",), parallel=('native-root:kickside/core',))]

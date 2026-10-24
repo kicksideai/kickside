@@ -10,4 +10,4 @@ def transform_snippet_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_transform_snippets', 'regression', transform_snippet_errors,
-                     issues=('NE-43', 'NE-44', 'NE-45', 'NE-46'))]
+                     issues=('NE-43', 'NE-44', 'NE-45', 'NE-46'), parallel=('native-root:kickside/transform',))]

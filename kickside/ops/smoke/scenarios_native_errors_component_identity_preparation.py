@@ -8,4 +8,4 @@ def identity_preparation(ctx):
     run_focused_module_test(ctx, "kickside/component", 'tsplit_ops_test_set_execution_identity_fence')
 
 
-REGISTRY = [Scenario("native_errors_component_identity_preparation", "regression", identity_preparation, issues=("NE-216",))]
+REGISTRY = [Scenario("native_errors_component_identity_preparation", "regression", identity_preparation, issues=("NE-216",), parallel=('native-root:kickside/component',))]

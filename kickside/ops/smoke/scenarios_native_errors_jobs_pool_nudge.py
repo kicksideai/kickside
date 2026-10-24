@@ -8,4 +8,4 @@ def nudge(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "wake_recovery_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_pool_nudge", "regression", nudge, issues=("NE-87",))]
+REGISTRY = [Scenario("native_errors_jobs_pool_nudge", "regression", nudge, issues=("NE-87",), parallel=('native-root:kickside/jobs',))]

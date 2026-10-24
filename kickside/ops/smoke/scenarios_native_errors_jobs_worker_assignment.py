@@ -9,4 +9,4 @@ def assignment(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "loop_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_assignment", "regression", assignment, issues=("NE-276",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_assignment", "regression", assignment, issues=("NE-276",), parallel=('native-root:kickside/jobs',))]

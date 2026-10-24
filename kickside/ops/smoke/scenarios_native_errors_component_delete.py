@@ -9,4 +9,4 @@ def deletion(ctx):
     run_focused_module_test(ctx, "kickside/component", "teardown_purge_retry_test")
 
 
-REGISTRY = [Scenario("native_errors_component_delete", "regression", deletion, issues=("NE-134",))]
+REGISTRY = [Scenario("native_errors_component_delete", "regression", deletion, issues=("NE-134",), parallel=('native-root:kickside/component',))]

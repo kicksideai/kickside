@@ -11,4 +11,4 @@ def provision(ctx):
     run_focused_module_test(ctx, "kickside/core", "thread_provision_race_test")
 
 
-REGISTRY = [Scenario("native_errors_core_provision", "regression", provision, issues=("NE-118",))]
+REGISTRY = [Scenario("native_errors_core_provision", "regression", provision, issues=("NE-118",), parallel=('native-root:kickside/core',))]

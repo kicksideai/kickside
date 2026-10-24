@@ -8,4 +8,4 @@ def fence(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "thread_teardown_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_thread_fence", "regression", fence, issues=("NE-89",))]
+REGISTRY = [Scenario("native_errors_jobs_thread_fence", "regression", fence, issues=("NE-89",), parallel=('native-root:kickside/jobs',))]

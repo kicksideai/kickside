@@ -33,5 +33,5 @@ def core_endpoint_errors(ctx):
 
 REGISTRY += [
     Scenario('native_errors_core_endpoint', 'regression', core_endpoint_errors,
-             issues=('NE-16',)),
+             issues=('NE-16',), parallel=('native-root:kickside/core',)),
 ]

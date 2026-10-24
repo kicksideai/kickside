@@ -13,4 +13,4 @@ def reclaim(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "termination_recovery_test")
 
 
-REGISTRY = [Scenario("native_errors_reclaim", "regression", reclaim, issues=("NE-166", "RECLAIM-PROCESS-LOOKUP-TRANSACTION"))]
+REGISTRY = [Scenario("native_errors_reclaim", "regression", reclaim, issues=("NE-166", "RECLAIM-PROCESS-LOOKUP-TRANSACTION"), parallel=('native-root:kickside/jobs',))]

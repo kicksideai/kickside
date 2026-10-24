@@ -205,6 +205,7 @@ class Instance:
         self.dependencies_pending = False
         self.process = None
         self.log_thread = None
+        self.boot_lock = threading.RLock()
         self.keeper_token = ''
         self.keeper_session = ''
         self.env = os.environ.copy()
@@ -226,13 +227,16 @@ class Instance:
                 shutil.rmtree(path)
 
     def boot(self):
-        started = time.monotonic()
-        if not self.prepared:
-            self.prepare()
-        if self.process is None or self.process.poll() is not None:
-            self.start()
-            self.manifest()
-            self.boot_seconds = getattr(self, 'boot_seconds', 0) + time.monotonic() - started
+        # Parallel focused native guards share one runtime only after this
+        # lifecycle transition; prepare/start are not themselves concurrent.
+        with self.boot_lock:
+            started = time.monotonic()
+            if not self.prepared:
+                self.prepare()
+            if self.process is None or self.process.poll() is not None:
+                self.start()
+                self.manifest()
+                self.boot_seconds = getattr(self, 'boot_seconds', 0) + time.monotonic() - started
 
     def prepare(self):
         self.root.mkdir(parents=True, exist_ok=True)

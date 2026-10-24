@@ -8,4 +8,4 @@ def database(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_cursor_test")
 
 
-REGISTRY = [Scenario("native_errors_core_thread_database", "regression", database, issues=("NE-90",))]
+REGISTRY = [Scenario("native_errors_core_thread_database", "regression", database, issues=("NE-90",), parallel=('native-root:kickside/core',))]

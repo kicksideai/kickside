@@ -8,4 +8,4 @@ def lease_release(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "service_signal_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_lease_release", "regression", lease_release, issues=("NE-152",))]
+REGISTRY = [Scenario("native_errors_jobs_lease_release", "regression", lease_release, issues=("NE-152",), parallel=('native-root:kickside/jobs',))]

@@ -8,4 +8,4 @@ def lookup(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_test")
 
 
-REGISTRY = [Scenario("native_errors_core_find_release", "regression", lookup, issues=("NE-240",))]
+REGISTRY = [Scenario("native_errors_core_find_release", "regression", lookup, issues=("NE-240",), parallel=('native-root:kickside/core',))]

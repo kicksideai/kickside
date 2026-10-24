@@ -9,4 +9,4 @@ def context_storage(ctx):
     run_focused_module_test(ctx, "kickside/component", "context_revision_test")
 
 
-REGISTRY = [Scenario("native_errors_component_context_storage", "regression", context_storage, issues=("NE-213",))]
+REGISTRY = [Scenario("native_errors_component_context_storage", "regression", context_storage, issues=("NE-213",), parallel=('native-root:kickside/component',))]

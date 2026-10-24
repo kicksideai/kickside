@@ -8,4 +8,4 @@ def placement_transactions(ctx):
         run_focused_module_test(ctx, "kickside/component", pattern)
 
 
-REGISTRY = [Scenario("native_errors_component_placement_transactions", "regression", placement_transactions, issues=("NE-225",))]
+REGISTRY = [Scenario("native_errors_component_placement_transactions", "regression", placement_transactions, issues=("NE-225",), parallel=('native-root:kickside/component',))]

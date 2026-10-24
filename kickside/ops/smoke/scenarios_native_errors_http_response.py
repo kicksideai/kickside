@@ -8,4 +8,4 @@ def http_response(ctx):
     run_focused_module_test(ctx, "kickside/core", "http_error_matrix_test")
 
 
-REGISTRY = [Scenario("native_errors_http_response", "regression", http_response, issues=("NE-233",))]
+REGISTRY = [Scenario("native_errors_http_response", "regression", http_response, issues=("NE-233",), parallel=('native-root:kickside/contract', 'native-root:kickside/core'))]

@@ -8,4 +8,4 @@ def cleanup(ctx):
     run_focused_module_test(ctx, "kickside/core", "component_cleanup_retry_test")
     run_focused_module_test(ctx, "kickside/core", "thread_event_declarations_test")
 
-REGISTRY = [Scenario("native_errors_core_resource_cleanup", "regression", cleanup, issues=("NE-286",))]
+REGISTRY = [Scenario("native_errors_core_resource_cleanup", "regression", cleanup, issues=("NE-286",), parallel=('native-root:kickside/core',))]

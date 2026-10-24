@@ -520,6 +520,30 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(len(results), 3)
         self.assertLess(calls.index('a'), calls.index('c'))
 
+    def test_native_root_claims_overlap_only_when_their_focused_roots_differ(self):
+        started = threading.Barrier(2)
+        release = threading.Barrier(2)
+        calls = []
+        lock = threading.Lock()
+
+        def run(scenario):
+            if scenario.name in ('core-first', 'component'):
+                started.wait(timeout=3)
+                release.wait(timeout=3)
+            with lock:
+                calls.append(scenario.name)
+                if scenario.name == 'core-second':
+                    self.assertIn('core-first', calls)
+            return Result(scenario.name, 'sqlite', 'passed', 0)
+
+        selected = [
+            Scenario('core-first', 'full', None, parallel=('native-root:kickside/core',)),
+            Scenario('component', 'full', None, parallel=('native-root:kickside/component',)),
+            Scenario('core-second', 'full', None, parallel=('native-root:kickside/core',)),
+        ]
+        self.assertEqual([result.status for result in harness.schedule(selected, run, {}, 2)],
+                         ['passed', 'passed', 'passed'])
+
     def test_shared_resources_and_default_cases_serialize(self):
         active, maximum = 0, 0
         lock = threading.Lock()

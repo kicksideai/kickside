@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+import threading
 from unittest.mock import Mock, patch
 
 from harness import load_registry, Scenario
@@ -89,6 +90,7 @@ class LifecycleTests(unittest.TestCase):
 
     def test_boot_prepares_once_and_does_not_restart_a_live_instance(self):
         inst = Instance.__new__(Instance)
+        inst.boot_lock = threading.RLock()
         inst.prepared = False
         inst.process = None
         def prepare():
@@ -101,6 +103,39 @@ class LifecycleTests(unittest.TestCase):
         inst.manifest = Mock()
         inst.boot()
         inst.boot()
+        inst.prepare.assert_called_once_with()
+        inst.start.assert_called_once_with()
+        inst.manifest.assert_called_once_with()
+
+    def test_concurrent_boot_serializes_the_initial_prepare_and_start(self):
+        inst = Instance.__new__(Instance)
+        inst.boot_lock = threading.RLock()
+        inst.prepared = False
+        inst.process = None
+        entered = threading.Event()
+        release = threading.Event()
+
+        def prepare():
+            entered.set()
+            self.assertTrue(release.wait(timeout=3))
+            inst.prepared = True
+
+        def start():
+            inst.process = Mock()
+            inst.process.poll.return_value = None
+
+        inst.prepare = Mock(side_effect=prepare)
+        inst.start = Mock(side_effect=start)
+        inst.manifest = Mock()
+        workers = [threading.Thread(target=inst.boot) for _ in range(2)]
+        workers[0].start()
+        self.assertTrue(entered.wait(timeout=3))
+        workers[1].start()
+        self.assertEqual(inst.prepare.call_count, 1)
+        release.set()
+        for worker in workers:
+            worker.join(timeout=5)
+        self.assertTrue(all(not worker.is_alive() for worker in workers))
         inst.prepare.assert_called_once_with()
         inst.start.assert_called_once_with()
         inst.manifest.assert_called_once_with()

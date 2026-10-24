@@ -8,4 +8,4 @@ def readiness(ctx):
     run_focused_module_test(ctx, "kickside/core", "owner_isolation_test")
 
 
-REGISTRY = [Scenario("native_errors_core_owner_readiness", "regression", readiness, issues=("NE-92",))]
+REGISTRY = [Scenario("native_errors_core_owner_readiness", "regression", readiness, issues=("NE-92",), parallel=('native-root:kickside/core',))]

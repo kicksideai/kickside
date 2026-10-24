@@ -9,4 +9,4 @@ def binding_transactions(ctx):
     run_focused_module_test(ctx, "kickside/component", "command_cause_test")
 
 
-REGISTRY = [Scenario("native_errors_component_binding_transactions", "regression", binding_transactions, issues=("NE-207",))]
+REGISTRY = [Scenario("native_errors_component_binding_transactions", "regression", binding_transactions, issues=("NE-207",), parallel=('native-root:kickside/component',))]

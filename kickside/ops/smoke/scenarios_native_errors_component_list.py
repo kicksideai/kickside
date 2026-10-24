@@ -7,4 +7,4 @@ def listing(ctx):
     run_focused_module_test(ctx, 'kickside/component', 'list_access_level_test')
     run_focused_module_test(ctx, 'kickside/component', 'failure_classification_test')
 
-REGISTRY = [Scenario('native_errors_component_list_validation', 'regression', listing, issues=('NE-66',))]
+REGISTRY = [Scenario('native_errors_component_list_validation', 'regression', listing, issues=('NE-66',), parallel=('native-root:kickside/component',))]

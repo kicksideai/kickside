@@ -8,4 +8,4 @@ def context_access(ctx):
         run_focused_module_test(ctx, "kickside/component", pattern)
 
 
-REGISTRY = [Scenario("native_errors_component_context_access", "regression", context_access, issues=("NE-229",))]
+REGISTRY = [Scenario("native_errors_component_context_access", "regression", context_access, issues=("NE-229",), parallel=('native-root:kickside/component',))]

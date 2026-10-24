@@ -8,4 +8,4 @@ def enqueue(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "job_enqueue_test")
 
 
-REGISTRY = [Scenario("native_errors_enqueue", "regression", enqueue, issues=("NE-164",))]
+REGISTRY = [Scenario("native_errors_enqueue", "regression", enqueue, issues=("NE-164",), parallel=('native-root:kickside/jobs',))]

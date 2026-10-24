@@ -9,4 +9,4 @@ def cancellation(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "job_child_release_native_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_lease_stop", "regression", cancellation, issues=("NE-280",))]
+REGISTRY = [Scenario("native_errors_jobs_lease_stop", "regression", cancellation, issues=("NE-280",), parallel=('native-root:kickside/jobs',))]

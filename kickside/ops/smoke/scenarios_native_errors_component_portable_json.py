@@ -8,4 +8,4 @@ def portable_json(ctx):
     run_focused_module_test(ctx, "kickside/component", "base_portable_test")
 
 
-REGISTRY = [Scenario("native_errors_component_portable_json", "regression", portable_json, issues=("NE-206",))]
+REGISTRY = [Scenario("native_errors_component_portable_json", "regression", portable_json, issues=("NE-206",), parallel=('native-root:kickside/component',))]

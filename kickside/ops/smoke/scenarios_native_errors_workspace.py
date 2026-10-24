@@ -10,5 +10,5 @@ def workspace_native_errors(ctx):
 
 REGISTRY = [
     Scenario('native_errors_workspace_plugin', 'regression', workspace_native_errors,
-             issues=('NE-18',)),
+             issues=('NE-18',), parallel=('native-root:kickside/core',)),
 ]

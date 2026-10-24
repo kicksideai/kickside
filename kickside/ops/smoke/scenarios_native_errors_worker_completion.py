@@ -8,4 +8,4 @@ def worker_completion(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "claim_dispatch_finalize_test")
 
 
-REGISTRY = [Scenario("native_errors_worker_completion", "regression", worker_completion, issues=("NE-155",))]
+REGISTRY = [Scenario("native_errors_worker_completion", "regression", worker_completion, issues=("NE-155",), parallel=('native-root:kickside/jobs',))]

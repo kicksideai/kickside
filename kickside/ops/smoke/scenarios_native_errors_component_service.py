@@ -6,4 +6,4 @@ def service_open(ctx):
     run_focused_module_test(ctx, 'kickside/component', 'service_open_native_test')
     run_focused_module_test(ctx, 'kickside/component', 'context_revision_test')
 
-REGISTRY = [Scenario('native_errors_component_service_open', 'regression', service_open, issues=('NE-63',))]
+REGISTRY = [Scenario('native_errors_component_service_open', 'regression', service_open, issues=('NE-63',), parallel=('native-root:kickside/component',))]

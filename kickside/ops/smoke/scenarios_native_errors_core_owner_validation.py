@@ -8,4 +8,4 @@ def validation(ctx):
     run_focused_module_test(ctx, "kickside/core", "owner_isolation_test")
 
 
-REGISTRY = [Scenario("native_errors_core_owner_validation", "regression", validation, issues=("NE-94",))]
+REGISTRY = [Scenario("native_errors_core_owner_validation", "regression", validation, issues=("NE-94",), parallel=('native-root:kickside/core',))]

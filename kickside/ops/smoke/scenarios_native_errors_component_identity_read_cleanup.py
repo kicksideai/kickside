@@ -8,4 +8,4 @@ def identity_read_cleanup(ctx):
     run_focused_module_test(ctx, "kickside/component", "identity_native_test")
 
 
-REGISTRY = [Scenario("native_errors_component_identity_read_cleanup", "regression", identity_read_cleanup, issues=("NE-220",))]
+REGISTRY = [Scenario("native_errors_component_identity_read_cleanup", "regression", identity_read_cleanup, issues=("NE-220",), parallel=('native-root:kickside/component',))]

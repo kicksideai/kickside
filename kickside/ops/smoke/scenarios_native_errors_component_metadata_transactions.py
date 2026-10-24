@@ -9,4 +9,4 @@ def metadata_transactions(ctx):
     run_focused_module_test(ctx, "kickside/component", "lifecycle_seam_test")
 
 
-REGISTRY = [Scenario("native_errors_component_metadata_transactions", "regression", metadata_transactions, issues=("NE-222",))]
+REGISTRY = [Scenario("native_errors_component_metadata_transactions", "regression", metadata_transactions, issues=("NE-222",), parallel=('native-root:kickside/component',))]

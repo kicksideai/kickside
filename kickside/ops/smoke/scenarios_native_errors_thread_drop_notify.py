@@ -9,4 +9,4 @@ def drop_fields(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_lifecycle_test")
 
 
-REGISTRY = [Scenario("native_errors_thread_drop_notify", "regression", drop_fields, issues=("NE-131",))]
+REGISTRY = [Scenario("native_errors_thread_drop_notify", "regression", drop_fields, issues=("NE-131",), parallel=('native-root:kickside/core',))]

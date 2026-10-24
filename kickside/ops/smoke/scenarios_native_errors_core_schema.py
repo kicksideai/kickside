@@ -6,4 +6,4 @@ def schema(ctx):
     run_focused_module_test(ctx, 'kickside/core', 'schema_native_test')
     run_focused_module_test(ctx, 'kickside/core', 'natural_key_integrity_test')
 
-REGISTRY = [Scenario('native_errors_core_schema_migration', 'regression', schema, issues=('NE-76',))]
+REGISTRY = [Scenario('native_errors_core_schema_migration', 'regression', schema, issues=('NE-76',), parallel=('native-root:kickside/core',))]

@@ -8,4 +8,4 @@ def pruning(ctx):
     run_focused_module_test(ctx, "kickside/core", "prune_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_prune", "regression", pruning, issues=("NE-101",))]
+REGISTRY = [Scenario("native_errors_core_retention_prune", "regression", pruning, issues=("NE-101",), parallel=('native-root:kickside/core',))]

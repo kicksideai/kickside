@@ -8,4 +8,4 @@ def pins(ctx):
     run_focused_module_test(ctx, "kickside/core", "pin_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_pin", "regression", pins, issues=("NE-100",))]
+REGISTRY = [Scenario("native_errors_core_retention_pin", "regression", pins, issues=("NE-100",), parallel=('native-root:kickside/core',))]

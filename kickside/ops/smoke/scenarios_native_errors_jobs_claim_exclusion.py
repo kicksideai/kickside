@@ -8,4 +8,4 @@ def exclusion(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "concurrency_claim_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_claim_exclusion", "regression", exclusion, issues=("NE-177",))]
+REGISTRY = [Scenario("native_errors_jobs_claim_exclusion", "regression", exclusion, issues=("NE-177",), parallel=('native-root:kickside/jobs',))]

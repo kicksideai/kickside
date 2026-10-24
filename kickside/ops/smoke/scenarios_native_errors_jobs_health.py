@@ -8,4 +8,4 @@ def health(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "execute_job_routing_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_health", "regression", health, issues=("NE-169",))]
+REGISTRY = [Scenario("native_errors_jobs_health", "regression", health, issues=("NE-169",), parallel=('native-root:kickside/jobs',))]

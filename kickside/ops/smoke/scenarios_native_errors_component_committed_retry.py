@@ -8,4 +8,4 @@ def committed_retry(ctx):
         run_focused_module_test(ctx, "kickside/component", pattern)
 
 
-REGISTRY = [Scenario("native_errors_component_committed_retry", "regression", committed_retry, issues=("NE-211",))]
+REGISTRY = [Scenario("native_errors_component_committed_retry", "regression", committed_retry, issues=("NE-211",), parallel=('native-root:kickside/component',))]

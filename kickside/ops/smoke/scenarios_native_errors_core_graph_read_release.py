@@ -8,4 +8,4 @@ def topology(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_test")
 
 
-REGISTRY = [Scenario("native_errors_core_graph_read_release", "regression", topology, issues=("NE-238",))]
+REGISTRY = [Scenario("native_errors_core_graph_read_release", "regression", topology, issues=("NE-238",), parallel=('native-root:kickside/core',))]

@@ -7,4 +7,4 @@ def notification(ctx):
     run_focused_module_test(ctx, "kickside/core", "retention_notifier_native_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_notifier", "regression", notification, issues=("NE-96",))]
+REGISTRY = [Scenario("native_errors_core_retention_notifier", "regression", notification, issues=("NE-96",), parallel=('native-root:kickside/core',))]

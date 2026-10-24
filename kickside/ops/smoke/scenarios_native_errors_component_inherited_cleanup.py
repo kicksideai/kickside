@@ -9,4 +9,4 @@ def inherited_cleanup(ctx):
     run_focused_module_test(ctx, "kickside/component", "fence_test")
 
 
-REGISTRY = [Scenario("native_errors_component_inherited_cleanup", "regression", inherited_cleanup, issues=("NE-204",))]
+REGISTRY = [Scenario("native_errors_component_inherited_cleanup", "regression", inherited_cleanup, issues=("NE-204",), parallel=('native-root:kickside/component',))]

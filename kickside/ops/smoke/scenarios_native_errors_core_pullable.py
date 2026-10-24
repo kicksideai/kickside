@@ -8,4 +8,4 @@ def pullable(ctx):
     run_focused_module_test(ctx, "kickside/core", "events_pullable_test")
 
 
-REGISTRY = [Scenario("native_errors_core_pullable", "regression", pullable, issues=("NE-117", "THREAD-EVENT-TYPE-REQUEST-FILTER"))]
+REGISTRY = [Scenario("native_errors_core_pullable", "regression", pullable, issues=("NE-117", "THREAD-EVENT-TYPE-REQUEST-FILTER"), parallel=('native-root:kickside/core',))]

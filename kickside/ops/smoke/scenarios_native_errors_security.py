@@ -35,15 +35,15 @@ def scope_projection_liveness(ctx):
 
 REGISTRY = [
     Scenario('regression_scope_projection_liveness', 'regression', scope_projection_liveness,
-             issues=('SECURITY-SCOPE-PROJECTION-LIVENESS',)),
+             issues=('SECURITY-SCOPE-PROJECTION-LIVENESS',), parallel=('native-root:kickside/security',)),
     Scenario('security_policy_authority_coverage', 'regression', policy_authority_coverage,
-             issues=('SECURITY-POLICY-EXPANSION-FENCE', 'USERS-UNCHANGED-AUTHORITY-DELEGATION-REVOCATION')),
+             issues=('SECURITY-POLICY-EXPANSION-FENCE', 'USERS-UNCHANGED-AUTHORITY-DELEGATION-REVOCATION'), parallel=('native-root:kickside/security',)),
     Scenario('native_errors_security_policy_persistence', 'regression', security_policy_persistence_errors,
-             issues=('NE-26', 'NE-27', 'NE-28', 'NE-38')),
+             issues=('NE-26', 'NE-27', 'NE-28', 'NE-38'), parallel=('native-root:kickside/security',)),
     Scenario('native_errors_security_transport', 'regression', security_transport_errors,
-             issues=('NE-29', 'NE-30', 'NE-31', 'SMOKE-SECURITY-REGISTRY-FIXTURE-CONFLICT', 'SMOKE-SECURITY-FIXTURE-ENTRY-TYPING', 'SMOKE-SECURITY-FENCE-OBSERVATION', 'SECURITY-SCOPE-PROJECTION-LIVENESS')),
+             issues=('NE-29', 'NE-30', 'NE-31', 'SMOKE-SECURITY-REGISTRY-FIXTURE-CONFLICT', 'SMOKE-SECURITY-FIXTURE-ENTRY-TYPING', 'SMOKE-SECURITY-FENCE-OBSERVATION', 'SECURITY-SCOPE-PROJECTION-LIVENESS'), parallel=('native-root:kickside/security',)),
     Scenario('native_errors_security_authority', 'regression', security_authority_errors,
-             issues=('NE-32', 'SMOKE-NATIVE-GUARD-SELECTIONS')),
+             issues=('NE-32', 'SMOKE-NATIVE-GUARD-SELECTIONS'), parallel=('native-root:kickside/security',)),
     Scenario('regression_scope_projector_native_upgrade', 'regression', scope_projector_upgrade,
-             issues=('SECURITY-SCOPE-PROJECTOR-HOT-UPGRADE', 'SECURITY-NEW-MEMBER-HOT-LOGIN', 'SMOKE-SECURITY-REGISTRY-FIXTURE-CONFLICT')),
+             issues=('SECURITY-SCOPE-PROJECTOR-HOT-UPGRADE', 'SECURITY-NEW-MEMBER-HOT-LOGIN', 'SMOKE-SECURITY-REGISTRY-FIXTURE-CONFLICT'), parallel=('native-root:kickside/security',)),
 ]

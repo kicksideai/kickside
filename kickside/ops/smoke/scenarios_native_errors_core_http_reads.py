@@ -8,4 +8,4 @@ def http_reads(ctx):
     run_focused_module_test(ctx, "kickside/core", "job_history_pagination_test")
 
 
-REGISTRY = [Scenario("native_errors_core_http_reads", "regression", http_reads, issues=("NE-234",))]
+REGISTRY = [Scenario("native_errors_core_http_reads", "regression", http_reads, issues=("NE-234",), parallel=('native-root:kickside/core',))]

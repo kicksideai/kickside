@@ -9,4 +9,4 @@ def release(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "loop_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_release", "regression", release, issues=("NE-275",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_release", "regression", release, issues=("NE-275",), parallel=('native-root:kickside/jobs',))]

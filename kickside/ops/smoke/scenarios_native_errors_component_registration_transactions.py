@@ -8,4 +8,4 @@ def registration_transactions(ctx):
     run_focused_module_test(ctx, "kickside/component", "failure_classification_test")
 
 
-REGISTRY = [Scenario("native_errors_component_registration_transactions", "regression", registration_transactions, issues=("NE-208",))]
+REGISTRY = [Scenario("native_errors_component_registration_transactions", "regression", registration_transactions, issues=("NE-208",), parallel=('native-root:kickside/component',))]

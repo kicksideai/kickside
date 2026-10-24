@@ -8,4 +8,4 @@ def outcomes(ctx):
     run_focused_module_test(ctx, "kickside/core", "contract_test")
 
 
-REGISTRY = [Scenario("native_errors_core_append_response", "regression", outcomes, issues=("NE-260",))]
+REGISTRY = [Scenario("native_errors_core_append_response", "regression", outcomes, issues=("NE-260",), parallel=('native-root:kickside/core',))]

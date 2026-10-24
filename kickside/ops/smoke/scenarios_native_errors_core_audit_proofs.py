@@ -7,4 +7,4 @@ def publication(ctx):
     run_focused_module_test(ctx, "kickside/core", "audit_publication_response_test")
 
 
-REGISTRY = [Scenario("native_errors_core_audit_proofs", "regression", publication, issues=("NE-116",))]
+REGISTRY = [Scenario("native_errors_core_audit_proofs", "regression", publication, issues=("NE-116",), parallel=('native-root:kickside/core',))]

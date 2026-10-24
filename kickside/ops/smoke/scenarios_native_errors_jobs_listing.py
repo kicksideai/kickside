@@ -9,4 +9,4 @@ def listing(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "owner_listing_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_listing", "regression", listing, issues=("NE-140",))]
+REGISTRY = [Scenario("native_errors_jobs_listing", "regression", listing, issues=("NE-140",), parallel=('native-root:kickside/jobs',))]

@@ -9,4 +9,4 @@ def contract_open(ctx):
 
 
 REGISTRY = [Scenario('native_errors_component_contract_open', 'regression', contract_open,
-                     issues=('NE-61',))]
+                     issues=('NE-61',), parallel=('native-root:kickside/component',))]

@@ -9,4 +9,4 @@ def command_causes(ctx):
     run_focused_module_test(ctx, "kickside/contract", "cleanup_error_test")
 
 
-REGISTRY = [Scenario("native_errors_component_command_causes", "regression", command_causes, issues=("NE-195",))]
+REGISTRY = [Scenario("native_errors_component_command_causes", "regression", command_causes, issues=("NE-195",), parallel=('native-root:kickside/component', 'native-root:kickside/contract'))]

@@ -10,4 +10,4 @@ def registry_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_automation_registry', 'regression', registry_errors,
-                     issues=('NE-52', 'NE-53', 'NE-54'))]
+                     issues=('NE-52', 'NE-53', 'NE-54'), parallel=('native-root:kickside/automation', 'native-root:kickside/sync'))]

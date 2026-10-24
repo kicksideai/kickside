@@ -9,4 +9,4 @@ def actor_identity_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_automation_actor_identity', 'regression', actor_identity_errors,
-                     issues=('NE-47',))]
+                     issues=('NE-47',), parallel=('native-root:kickside/automation', 'native-root:kickside/sync'))]

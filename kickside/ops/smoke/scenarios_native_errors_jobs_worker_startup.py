@@ -10,4 +10,4 @@ def startup(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "registry_version_native_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_startup", "regression", startup, issues=("NE-273",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_startup", "regression", startup, issues=("NE-273",), parallel=('native-root:kickside/jobs',))]

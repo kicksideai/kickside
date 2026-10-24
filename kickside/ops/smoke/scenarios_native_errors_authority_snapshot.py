@@ -8,4 +8,4 @@ def authority(ctx):
     run_focused_module_test(ctx, "kickside/execution", "execution_identity_test")
 
 
-REGISTRY = [Scenario("native_errors_authority_snapshot", "regression", authority, issues=("NE-150",))]
+REGISTRY = [Scenario("native_errors_authority_snapshot", "regression", authority, issues=("NE-150",), parallel=('native-root:kickside/execution',))]

@@ -10,4 +10,4 @@ def cleanup(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "heartbeat_native_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_cleanup", "regression", cleanup, issues=("NE-274",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_cleanup", "regression", cleanup, issues=("NE-274",), parallel=('native-root:kickside/jobs',))]

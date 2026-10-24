@@ -7,4 +7,4 @@ def bodies(ctx):
     run_focused_module_test(ctx, 'kickside/core', 'reaper_native_test')
     run_focused_module_test(ctx, 'kickside/core', 'reaper_test')
 
-REGISTRY = [Scenario('native_errors_core_reaper_body', 'regression', bodies, issues=('NE-70',))]
+REGISTRY = [Scenario('native_errors_core_reaper_body', 'regression', bodies, issues=('NE-70',), parallel=('native-root:kickside/core',))]

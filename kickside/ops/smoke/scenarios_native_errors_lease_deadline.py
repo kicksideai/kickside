@@ -9,4 +9,4 @@ def deadline(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "builtin_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_lease_deadline", "regression", deadline, issues=("NE-283",))]
+REGISTRY = [Scenario("native_errors_jobs_lease_deadline", "regression", deadline, issues=("NE-283",), parallel=('native-root:kickside/jobs',))]

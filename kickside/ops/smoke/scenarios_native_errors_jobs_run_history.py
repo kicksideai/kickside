@@ -8,4 +8,4 @@ def history(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "run_history_reclaim_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_run_history", "regression", history, issues=("NE-171",))]
+REGISTRY = [Scenario("native_errors_jobs_run_history", "regression", history, issues=("NE-171",), parallel=('native-root:kickside/jobs',))]

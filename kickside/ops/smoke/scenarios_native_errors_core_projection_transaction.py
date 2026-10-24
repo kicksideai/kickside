@@ -10,4 +10,4 @@ def completion(ctx):
     run_focused_module_test(ctx, "kickside/core", "append_native_test")
 
 
-REGISTRY = [Scenario("native_errors_core_projection_transaction", "regression", completion, issues=("NE-264",))]
+REGISTRY = [Scenario("native_errors_core_projection_transaction", "regression", completion, issues=("NE-264",), parallel=('native-root:kickside/core',))]

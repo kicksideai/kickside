@@ -8,4 +8,4 @@ def policy(ctx):
     run_focused_module_test(ctx, "kickside/core", "policy_test")
 
 
-REGISTRY = [Scenario("native_errors_core_retention_policy", "regression", policy, issues=("NE-86",))]
+REGISTRY = [Scenario("native_errors_core_retention_policy", "regression", policy, issues=("NE-86",), parallel=('native-root:kickside/core',))]

@@ -9,4 +9,4 @@ def child(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "child_termination_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_child", "regression", child, issues=("NE-179",))]
+REGISTRY = [Scenario("native_errors_jobs_child", "regression", child, issues=("NE-179",), parallel=('native-root:kickside/jobs',))]

@@ -8,4 +8,4 @@ def discovery(ctx):
     run_focused_module_test(ctx, "kickside/core", "owner_isolation_test")
 
 
-REGISTRY = [Scenario("native_errors_core_owner_discovery", "regression", discovery, issues=("NE-91",))]
+REGISTRY = [Scenario("native_errors_core_owner_discovery", "regression", discovery, issues=("NE-91",), parallel=('native-root:kickside/core',))]

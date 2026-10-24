@@ -353,7 +353,12 @@ class EngineRunner:
                 def activate():
                     if scenario.owner in self.pool.browser_areas and ctx.browser is None:
                         ctx.browser_check().login()
-                    if parallel_resources(scenario) and ctx.browser is None:
+                    # Existing declared parallel scenarios retain their
+                    # activation browser. Focused native guards explicitly
+                    # claim only native module roots and require no browser.
+                    claims = parallel_resources(scenario)
+                    if (claims and not all(claim.startswith('native-root:') for claim in claims)
+                            and ctx.browser is None):
                         ctx.browser_check()
                 result = execute_scenario(self.config, self.engine, scenario, ctx, self.outcomes, activate)
                 if ctx is not owner and result.status == 'passed':

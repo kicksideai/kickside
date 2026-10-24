@@ -8,4 +8,4 @@ def marker(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "transitions_completion_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_worker_marker", "regression", marker, issues=("NE-88",))]
+REGISTRY = [Scenario("native_errors_jobs_worker_marker", "regression", marker, issues=("NE-88",), parallel=('native-root:kickside/jobs',))]

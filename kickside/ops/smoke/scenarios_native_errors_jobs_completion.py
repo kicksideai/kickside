@@ -9,4 +9,4 @@ def completion_fields(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "completion_contract_test")
 
 
-REGISTRY = [Scenario("native_errors_jobs_completion", "regression", completion_fields, issues=("NE-133",))]
+REGISTRY = [Scenario("native_errors_jobs_completion", "regression", completion_fields, issues=("NE-133",), parallel=('native-root:kickside/jobs',))]

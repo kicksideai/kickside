@@ -10,4 +10,4 @@ def action_errors(ctx):
 
 
 REGISTRY = [Scenario('native_errors_automation_action_validation', 'regression', action_errors,
-                     issues=('NE-55', 'NE-56'))]
+                     issues=('NE-55', 'NE-56'), parallel=('native-root:kickside/automation',))]

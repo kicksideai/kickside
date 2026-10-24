@@ -8,4 +8,4 @@ def reap_cleanup(ctx):
     run_focused_module_test(ctx, "kickside/component", "teardown_cause_test")
 
 
-REGISTRY = [Scenario("native_errors_component_reap_cleanup", "regression", reap_cleanup, issues=("NE-202",))]
+REGISTRY = [Scenario("native_errors_component_reap_cleanup", "regression", reap_cleanup, issues=("NE-202",), parallel=('native-root:kickside/component',))]

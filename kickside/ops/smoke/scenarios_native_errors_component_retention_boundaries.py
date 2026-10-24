@@ -8,4 +8,4 @@ def retention_boundaries(ctx):
     run_focused_module_test(ctx, "kickside/component", "owner_gc_test")
 
 
-REGISTRY = [Scenario("native_errors_component_retention_boundaries", "regression", retention_boundaries, issues=("NE-210",))]
+REGISTRY = [Scenario("native_errors_component_retention_boundaries", "regression", retention_boundaries, issues=("NE-210",), parallel=('native-root:kickside/component',))]

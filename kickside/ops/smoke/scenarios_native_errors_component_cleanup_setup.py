@@ -8,4 +8,4 @@ def cleanup_setup(ctx):
     run_focused_module_test(ctx, "kickside/component", "teardown_purge_retry_test")
 
 
-REGISTRY = [Scenario("native_errors_component_cleanup_setup", "regression", cleanup_setup, issues=("NE-192",))]
+REGISTRY = [Scenario("native_errors_component_cleanup_setup", "regression", cleanup_setup, issues=("NE-192",), parallel=('native-root:kickside/component',))]

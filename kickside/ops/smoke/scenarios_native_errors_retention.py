@@ -8,4 +8,4 @@ def retention(ctx):
     run_focused_module_test(ctx, "kickside/jobs", "owner_retention_test")
 
 
-REGISTRY = [Scenario("native_errors_retention", "regression", retention, issues=("NE-159",))]
+REGISTRY = [Scenario("native_errors_retention", "regression", retention, issues=("NE-159",), parallel=('native-root:kickside/jobs',))]

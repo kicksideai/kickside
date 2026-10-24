@@ -8,4 +8,4 @@ def append(ctx):
     run_focused_module_test(ctx, "kickside/core", "append_test")
 
 
-REGISTRY = [Scenario("native_errors_core_append_dependencies", "regression", append, issues=("NE-255", "DESIGN-CORE-EVENT-METADATA-COERCION"))]
+REGISTRY = [Scenario("native_errors_core_append_dependencies", "regression", append, issues=("NE-255", "DESIGN-CORE-EVENT-METADATA-COERCION"), parallel=('native-root:kickside/core',))]

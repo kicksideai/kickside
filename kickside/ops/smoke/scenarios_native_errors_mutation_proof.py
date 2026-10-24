@@ -8,4 +8,4 @@ def proof(ctx):
     run_focused_module_test(ctx, "kickside/core", "resource_mutations_test")
     run_focused_module_test(ctx, "kickside/core", "resource_mutations_retry_test")
 
-REGISTRY = [Scenario("native_errors_core_mutation_proof", "regression", proof, issues=("NE-289",))]
+REGISTRY = [Scenario("native_errors_core_mutation_proof", "regression", proof, issues=("NE-289",), parallel=('native-root:kickside/core',))]
