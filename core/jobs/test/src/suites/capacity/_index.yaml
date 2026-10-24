@@ -64,6 +64,8 @@ entries:
       job_fixture: app:job_fixture
       lifecycle: kickside.core.jobs.persist:lifecycle
       slot_purge: kickside.core.jobs.persist:slot_purge
+      claim_execution: kickside.core.jobs.persist:claim_execution
+      retention: kickside.core.jobs.persist:retention
 
   - name: enqueue_notification_test
     kind: function.lua

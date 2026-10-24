@@ -29,6 +29,40 @@ local modes = {"runs", "jobs", "workers", "wake", "receipts", "fences"}
 local function group(first: integer, last: integer)
     return test.run_cases(function()
     test.describe("native retention failures", function()
+        if first == 1 then
+            test.it("thread-owned retention takes owner fences before deleting rows", function()
+                fixture.reset("runs", "", nil, sql.type.POSTGRES)
+                fixture.thread_owned = true
+                local value, err = invoke()
+                test.is_nil(err)
+                test.eq(value, 1)
+                test.eq(fixture.fence_calls, 1)
+                test.eq(fixture.fenced_ids[1], "thread")
+                test.eq(fixture.writes_at_fence, 0)
+            end)
+            test.it("retention preserves an owner fence error without deleting rows", function()
+                local source = errors.new({kind = errors.UNAVAILABLE, retryable = true, message = "fence unavailable",
+                    details = {code = "retention_dependency", nested = {marker = "kept"}}})
+                fixture.reset("runs", "owner_fences", source, sql.type.POSTGRES)
+                fixture.thread_owned = true
+                local value, err = invoke()
+                test.is_nil(value)
+                retains(required(err), source)
+                test.eq(fixture.writes, 0)
+                test.eq(fixture.rollbacks, 1)
+            end)
+            test.it("retention refuses a missing owner fence proof", function()
+                fixture.reset("runs", "owner_fences", nil, sql.type.POSTGRES)
+                fixture.thread_owned, fixture.missing = true, true
+                local value, err = invoke()
+                test.is_nil(value)
+                test.eq(required(err):details().code, "job_thread_fence_response")
+                test.eq(required(err):details().field, "rows")
+                test.eq(fixture.writes, 0)
+                test.eq(fixture.rollbacks, 1)
+            end)
+        end
+
         for _, dialect in ipairs({sql.type.SQLITE, sql.type.POSTGRES}) do
             for index = first, last do
                 local mode = modes[index]
