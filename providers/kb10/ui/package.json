@@ -14,7 +14,8 @@
   "dependencies": {
     "@wippy-fe/theme": "*",
     "@wippy-fe/webcomponent-core": "*",
-    "@wippy-fe/webcomponent-vue": "*"
+    "@wippy-fe/webcomponent-vue": "*",
+    "@kickside/ui-kit": "*"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
@@ -75,5 +76,8 @@
     "test": "vitest run",
     "harness": "python3 harness/schemas.py && vite --config harness/vite.config.ts",
     "type-check": "vue-tsc --noEmit"
-  }
+  },
+  "workspaces": [
+    "./.wippy/npm/@*/*"
+  ]
 }

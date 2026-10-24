@@ -55,13 +55,13 @@ describe('KbWiki graph view (container)', () => {
     await flushPromises()
     expect(w.text()).toContain('Graph enrichment failed: placement failed: No models found for class: nano')
 
-    const retry = w.get('button.kc-notice-action')
+    const retry = w.get('button.kx-notice-action')
     await retry.trigger('click')
     await flushPromises()
     const { api } = await import('@wippy-fe/proxy')
     expect((api.post as any)).toHaveBeenCalledWith('/api/v1/kb10/kb1/enrichment')
     // The retry clears the standing flag; the banner drops immediately.
-    expect(w.find('button.kc-notice-action').exists()).toBe(false)
+    expect(w.find('button.kx-notice-action').exists()).toBe(false)
     w.unmount()
   })
 
@@ -75,7 +75,7 @@ describe('KbWiki graph view (container)', () => {
     const w = mount(KbWiki)
     await flushPromises()
     expect(w.text()).toContain('configured enrichment agent is unavailable: gone-agent')
-    expect(w.find('button.kc-notice-action').exists()).toBe(false)
+    expect(w.find('button.kx-notice-action').exists()).toBe(false)
     w.unmount()
   })
 })

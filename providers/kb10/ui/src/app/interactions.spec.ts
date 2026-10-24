@@ -323,8 +323,8 @@ describe('KbWiki interactions', () => {
     await flushPromises()
 
     // One nav rail + an open reading area (no second nav column).
-    expect(w.find('.kc-rail').exists()).toBe(true)
-    expect(w.find('.kc-main').exists()).toBe(true)
+    expect(w.find('.kx-rail').exists()).toBe(true)
+    expect(w.find('.kx-main').exists()).toBe(true)
     expect(w.find('.wm').exists()).toBe(false)
 
     // Navigate to the non-root concept (a flat entry in the root folder).
@@ -350,7 +350,7 @@ describe('KbWiki interactions', () => {
     // Add page opens the docked drawer.
     await w.find('[aria-label="Add page"]').trigger('click')
     await flushPromises()
-    expect(w.find('.kc-drawer').exists()).toBe(true)
+    expect(w.find('.kx-drawer').exists()).toBe(true)
     w.unmount()
   })
 

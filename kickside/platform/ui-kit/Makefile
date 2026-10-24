@@ -7,7 +7,10 @@ MODULE  := ui-kit
 TYPE    := library
 VIS     := public
 
-.PHONY: lint publish
+.PHONY: test lint publish
+
+test:
+	node --test test/*.test.mjs
 
 lint:
 	wippy publish --dry-run --version $(shell node -p "require('./package/package.json').version")
