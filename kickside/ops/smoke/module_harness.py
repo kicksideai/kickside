@@ -304,35 +304,84 @@ def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False
                         copied_module=copied_module.parent
                 replace = dict(inst.config.get('replace', {}))
                 verify_source_profile = bool(source and module_root and not root.is_relative_to(source))
+                copied_repository = copied
+                for _ in root.relative_to(repository).parts:
+                    copied_repository = copied_repository.parent
                 if repository_gate:
-                    copied_repository = copied
-                    for _ in root.relative_to(repository).parts:
-                        copied_repository = copied_repository.parent
                     for name, path in replace.items():
                         if Path(path).resolve().is_relative_to(repository):
                             replace[name] = str(copied_repository / Path(path).resolve().relative_to(repository))
                 return _run_locked(ctx, copied, entry, timeout=timeout, module_root=copied_module,
                                    label=label, repository_gate=repository_gate, lint=lint, replace=replace,
-                                   verify_source_profile=verify_source_profile)
+                                   verify_source_profile=verify_source_profile,
+                                   copied_repository=copied_repository)
         finally:
             fcntl.flock(lock, fcntl.LOCK_UN)
 
 
+def _verify_focused_source_profile(config_path, replace, copied_repository, root, original):
+    """Keep selected replacements exact, allowing only owned fixture aliases."""
+    configured = yaml.safe_load(config_path.read_text()) or {}
+    actual = configured.get('workspace', {}).get('replacements', {})
+    require(isinstance(actual, dict),
+            'Focused module replacement profile has invalid replacements')
+    expected = {name: str(Path(path).resolve()) for name, path in replace.items()}
+    missing = sorted(expected.keys() - actual.keys())
+    changed = sorted(name for name in expected.keys() & actual.keys()
+                     if actual[name] != expected[name])
+    require(not missing,
+            'Focused module replacement profile is missing selected mappings: ' + ', '.join(missing))
+    declared = (yaml.safe_load(original) or {}).get('workspace', {}).get('replacements', {}) if original else {}
+    require(isinstance(declared, dict),
+            'Focused module fixture declarations are invalid')
+    boundary = Path(copied_repository).resolve()
+    focused_root = Path(root).resolve()
+    selected_fixture_remaps = []
+    invalid_changed = []
+    for name in changed:
+        declared_path = declared.get(name)
+        path = actual[name]
+        if not (isinstance(declared_path, str) and declared_path and
+                not Path(declared_path).is_absolute() and isinstance(path, str) and path):
+            invalid_changed.append(name)
+            continue
+        candidate = Path(path).resolve()
+        if (candidate != (focused_root / declared_path).resolve() or not candidate.is_dir() or
+                not candidate.is_relative_to(focused_root) or not candidate.is_relative_to(boundary)):
+            invalid_changed.append(name)
+            continue
+        selected_fixture_remaps.append(name)
+    require(not invalid_changed,
+            'Focused module replacement profile changed selected mappings: ' + ', '.join(invalid_changed))
+    extras = sorted(actual.keys() - expected.keys())
+    for name in extras:
+        declared_path = declared.get(name)
+        require(isinstance(declared_path, str) and declared_path and not Path(declared_path).is_absolute(),
+                'Focused module fixture alias is not declared locally: ' + name)
+        path = actual[name]
+        require(isinstance(path, str) and path,
+                'Focused module fixture alias has invalid source: ' + name)
+        candidate = Path(path).resolve()
+        require(candidate == (focused_root / declared_path).resolve(),
+                'Focused module fixture alias does not match its declared path: ' + name)
+        require(candidate.is_dir(),
+                'Focused module fixture alias is absent: ' + name)
+        require(candidate.is_relative_to(boundary),
+                'Focused module fixture alias escapes the owned copy: ' + name)
+    for name, path in actual.items():
+        require(isinstance(path, str) and Path(path).is_dir(),
+                'Focused module replacement profile contains an absent source: ' + str(name))
+    return {'replacements': actual, 'owned_fixture_aliases': extras,
+            'owned_selected_fixture_remaps': selected_fixture_remaps}
+
+
 def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repository_gate=False, lint=False,
-                verify_source_profile=False):
+                verify_source_profile=False, copied_repository=None):
     inst = ctx.inst
     identifier = re.sub(r'[^a-z0-9_]+', '_', label.lower()).strip('_')[-20:] or 'app'
     database = 'smoke_focused_' + identifier + '_' + uuid.uuid4().hex[:12]
     created = []
-    config_path, _ = _write_config(inst, root, database, replace)
-    if verify_source_profile:
-        configured = yaml.safe_load(config_path.read_text())
-        actual = configured.get('workspace', {}).get('replacements', {})
-        expected = {name: str(Path(path).resolve()) for name, path in replace.items()}
-        require(actual == expected, 'Focused module replacement profile differs from the selected source profile')
-        require(all(Path(path).is_dir() for path in actual.values()),
-                'Focused module replacement profile contains an absent source')
-        inst.evidence.save('focused-' + label + '-source-profile', {'replacements': actual})
+    config_path, original = _write_config(inst, root, database, replace)
     environment = dict(inst.env)
     environment['PATH'] = str(Path(inst.config['binary']).parent) + os.pathsep + environment.get('PATH', '')
     preparation = root / 'prepare.sh'
@@ -347,6 +396,10 @@ def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repos
             _command(inst, label + '-prepare', ['bash', preparation.name], root, environment, timeout)
         refresh_root = root if refresh[0] == inst.config['binary'] else module_root or root
         _command(inst, label + '-refresh', refresh, refresh_root, environment, timeout)
+        if verify_source_profile:
+            inst.evidence.save('focused-' + label + '-source-profile',
+                               _verify_focused_source_profile(config_path, replace, copied_repository,
+                                                               root, original))
         available = _loaded_test_ids(inst, root, environment, timeout, label)
         if lint:
             command = [inst.config['binary'], '--config', config_path.name, 'lint']

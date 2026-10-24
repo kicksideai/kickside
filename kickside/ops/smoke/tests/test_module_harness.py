@@ -717,6 +717,97 @@ class FocusedModuleHarnessTests(unittest.TestCase):
                     configured = yaml.safe_load(path.read_text())
                     self.assertEqual(configured['workspace']['replacements']['kickside/core'], str(expected))
 
+    def test_source_profile_allows_only_owned_declared_fixture_aliases(self):
+        import yaml
+        from harness import Failure
+        from module_harness import _verify_focused_source_profile
+
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
+        scratch.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=scratch) as directory:
+            workspace = Path(directory)
+            copied_repository = workspace / 'copy' / 'chestor'
+            focused_root = copied_repository / 'workspace' / 'test'
+            selected_workspace = workspace / 'selected-workspace'
+            fixture_support = copied_repository / 'test' / 'support'
+            fixture_other = copied_repository / 'test' / 'other'
+            fixture_mirror = focused_root / 'module-mirror'
+            fixture_outside_focus = copied_repository / 'fixtures' / 'mirror'
+            outside = workspace / 'copy' / 'outside'
+            for path in (focused_root, selected_workspace, fixture_support, fixture_other,
+                         fixture_mirror, fixture_outside_focus, outside):
+                path.mkdir(parents=True, exist_ok=True)
+            expected = {'chestor/workspace': str(selected_workspace)}
+            config_path = workspace / '.wippy.yaml'
+            declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/test-support': '../../test/support',
+            }}})
+
+            def write(replacements):
+                config_path.write_text(yaml.safe_dump({'workspace': {'replacements': replacements}}))
+
+            # Captured R5 shape: all selected mappings plus a local fixture alias
+            # rebased into the disposable repository copy.
+            write({**expected, 'chestor/test-support': str(fixture_support)})
+            evidence = _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                       focused_root, declared)
+            self.assertEqual(evidence['owned_fixture_aliases'], ['chestor/test-support'])
+            self.assertEqual(evidence['owned_selected_fixture_remaps'], [])
+
+            # Captured CRM shape: native lockrefresh creates an owned mirror
+            # declared by the focused test configuration.
+            remap_declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/workspace': './module-mirror',
+                'chestor/test-support': '../../test/support',
+            }}})
+            write({'chestor/workspace': str(fixture_mirror),
+                   'chestor/test-support': str(fixture_support)})
+            evidence = _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                       focused_root, remap_declared)
+            self.assertEqual(evidence['owned_selected_fixture_remaps'], ['chestor/workspace'])
+
+            for declaration, replacement in (
+                    ({'chestor/test-support': '../../test/support'}, fixture_mirror),
+                    ({'chestor/workspace': str(fixture_mirror)}, fixture_mirror),
+                    ({'chestor/workspace': '../../fixtures/mirror'}, fixture_outside_focus)):
+                with self.subTest(declaration=declaration):
+                    write({'chestor/workspace': str(replacement),
+                           'chestor/test-support': str(fixture_support)})
+                    with self.assertRaisesRegex(Failure, 'changed selected mappings: chestor/workspace'):
+                        _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                       focused_root, yaml.safe_dump({'workspace': {
+                                                           'replacements': declaration}}))
+
+            write({'chestor/test-support': str(fixture_support)})
+            with self.assertRaisesRegex(Failure, 'missing selected mappings: chestor/workspace'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, declared)
+
+            write({'chestor/workspace': str(fixture_support)})
+            with self.assertRaisesRegex(Failure, 'changed selected mappings: chestor/workspace'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, declared)
+
+            write({**expected, 'chestor/test-support': str(fixture_support)})
+            with self.assertRaisesRegex(Failure, 'fixture alias is not declared locally: chestor/test-support'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, yaml.safe_dump({'workspace': {'replacements': {}}}))
+
+            wrong_declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/test-support': '../../test/other',
+            }}})
+            with self.assertRaisesRegex(Failure, 'fixture alias does not match its declared path: chestor/test-support'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, wrong_declared)
+
+            outside_declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/test-support': '../../../outside',
+            }}})
+            write({**expected, 'chestor/test-support': str(outside)})
+            with self.assertRaisesRegex(Failure, 'fixture alias escapes the owned copy: chestor/test-support'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, outside_declared)
+
     def test_refreshes_a_replaced_module_on_a_published_application(self):
         from module_harness import _refresh_command
 
