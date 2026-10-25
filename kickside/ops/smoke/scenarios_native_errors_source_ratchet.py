@@ -14,9 +14,11 @@ def ratchet(ctx):
     suite = _private_suite_root()
     tests = suite / 'ops/smoke/coverage/tests'
     require(tests.is_dir(), 'Private native-error tests are absent: ' + str(tests))
+    conventions = suite / 'scripts/check-source-conventions.py'
+    require(conventions.is_file(), 'Private source-conventions checker is absent: ' + str(conventions))
     for label, cwd, command in [
         ("native-error-private-tests", root, [sys.executable, "-m", "unittest", "discover", "-s", str(tests), "-p", "test_native_error_source.py"]),
-        ("native-error-source-conventions", root, [sys.executable, "scripts/check-source-conventions.py"]),
+        ("native-error-source-conventions", suite, [sys.executable, str(conventions), "--root", str(root)]),
     ]:
         result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=60)
         ctx.inst.evidence.save(label, {"command": command, "exit_code": result.returncode,
