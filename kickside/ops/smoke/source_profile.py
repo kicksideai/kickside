@@ -5,7 +5,7 @@ import yaml
 
 
 CHECKOUT_IDENTITIES = {
-    'docs': ('kickside-development/developer-handbook.md', 'operations/configuration.md'),
+    'docs': ('building-modules/index.md', 'reference/documentation-catalog.md'),
     'docs-site': ('mkdocs.yml', 'scripts/sync_sources.py', 'tests/test_workflows.py'),
 }
 

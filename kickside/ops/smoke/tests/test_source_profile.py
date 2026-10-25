@@ -110,6 +110,12 @@ class SourceProfileTests(unittest.TestCase):
             (docs / 'kickside-development/developer-handbook.md').write_text('handbook\n')
             (docs / 'operations').mkdir()
             (docs / 'operations/configuration.md').write_text('configuration\n')
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: docs'):
+                build(source, {}, [scenario])
+            (docs / 'building-modules').mkdir()
+            (docs / 'building-modules/index.md').write_text('module authoring\n')
+            (docs / 'reference').mkdir()
+            (docs / 'reference/documentation-catalog.md').write_text('public documentation catalog\n')
             self.assertEqual(build(source, {}, [scenario])['checkouts'], {'docs': str(docs)})
 
     def test_requires_declared_docs_site_checkout_identity(self):
