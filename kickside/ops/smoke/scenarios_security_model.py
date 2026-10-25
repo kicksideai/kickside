@@ -165,8 +165,10 @@ def scope_without(ctx, excluded, split_groups=False, deny_module=False):
     if splash.count() and splash.is_visible():
         splash.get_by_label('Agent name', exact=True).fill('Northwind scoped assistant')
         splash.get_by_role('button', name='Create agent', exact=True).click()
-        browser.frame.locator('wippy-chat').wait_for(timeout=30000)
-    browser.reload()
+        # The blank chat tag exists behind the splash; wait for the created
+        # agent's composer, whose one-time start token is held in SPA state.
+        browser.frame.locator('wippy-chat').get_by_placeholder(
+            'Type a message', exact=True).wait_for(timeout=30000)
     expect(browser.frame.locator('.sidebar')).to_be_visible(timeout=30000)
     if excluded == 'kickside.crm':
         expect(browser.frame.locator('.sidebar').get_by_text('CRM', exact=True)).to_have_count(0)

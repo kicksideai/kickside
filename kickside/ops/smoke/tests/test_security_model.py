@@ -3,6 +3,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 import yaml
 
@@ -91,6 +92,74 @@ class PublishedBindings(unittest.TestCase):
             model.scope_without(ctx, 'kickside.crm')
         self.assertEqual(installed, [('kickside/crm', None), ('chestor/workspace', None),
                                     ('kickside/knowledge', None), ('kickside/mcp', None)])
+
+    def test_member_first_agent_waits_for_its_composer_without_reloading_away_start_intent(self):
+        """The shell keeps a just-created agent's start token only in SPA state."""
+        stop = RuntimeError('stream reached')
+        policies = [{'id': 'security.model:crm', 'intent': 'module_access', 'surface': 'kickside.crm'}]
+        policies += [{'id': 'security.model:module_' + str(index), 'intent': 'module_access',
+                      'surface': 'kickside.module_' + str(index)} for index in range(12)]
+        tokens = iter(('initial-token', 'narrow-token'))
+        groups = {'scope-a', 'scope-b', 'app.security:user'}
+
+        def request(method, path, body=None, *, auth=None, expect=None, **kwargs):
+            if path == '/api/v1/security/policies':
+                return {'policies': policies}
+            if method == 'POST' and path == '/api/v1/users':
+                return {'user': {'user_id': 'member'}}
+            if method == 'POST' and path == '/api/public/user/token':
+                return {'token': next(tokens)}
+            if path == '/api/v1/user/me':
+                if expect == (401,):
+                    return {}
+                if auth == 'initial-token':
+                    return {'security': {'groups': ['app.security:members']}}
+                return {'security': {'groups': list(groups)}, 'user': {'metadata': {
+                    'scope_id': 'kickside.security.scopes:set_' + 'a' * 64}}}
+            if path.startswith('/api/v1/security-model/inspect'):
+                return {'excluded_routes': [{'id': 'forbidden', 'method': 'GET', 'path': '/api/v1/forbidden'}],
+                        'excluded_entries': [{'id': 'forbidden.entry'}]}
+            if path == '/api/v1/security-model/visible':
+                return {'entries': []}
+            if path == '/api/v1/agents/traits':
+                return {'traits': []}
+            if method == 'POST' and path == '/api/v1/mcp/credentials':
+                return {'credential': {'token': 'credential-token'}}
+            return {}
+
+        inst = Mock()
+        inst.password = 'password'
+        inst.request.side_effect = request
+        sidebar, splash, chat, composer = Mock(), Mock(), Mock(), Mock()
+        splash.count.return_value = 1
+        splash.is_visible.return_value = True
+        splash.get_by_label.return_value = Mock()
+        splash.get_by_role.return_value = Mock()
+        browser = Mock()
+        browser.frame.locator.side_effect = lambda selector: {
+            '.sidebar': sidebar, 'kickside-agent-onboarding': splash, 'wippy-chat': chat,
+        }[selector]
+        chat.get_by_placeholder.return_value = composer
+        browser.stream.side_effect = stop
+        ctx = SimpleNamespace(inst=inst, state={'security_model_probe': True}, browser_check=Mock(return_value=browser))
+        client = Mock()
+        client.tools.return_value = ['FindKnowledgeBases']
+
+        with patch('scenarios_security_ui.compose_scope', side_effect=['scope-a', 'scope-b']), \
+                patch('scenarios_security_ui.assign_scopes'), \
+                patch.object(model, 'MCPClient', return_value=client), \
+                patch.object(model, 'denied'), \
+                patch.object(model.Browser, 'release'), \
+                patch('playwright.sync_api.expect') as expect:
+            with self.assertRaisesRegex(RuntimeError, 'stream reached'):
+                model.scope_without(ctx, 'kickside.crm', split_groups=True)
+
+        splash.get_by_role.return_value.click.assert_called_once_with()
+        composer.wait_for.assert_called_once_with(timeout=30000)
+        chat.wait_for.assert_not_called()
+        browser.reload.assert_not_called()
+        expect.return_value.to_be_visible.assert_any_call(timeout=30000)
+        browser.stream.assert_called_once()
 
     def test_probe_methods_receive_the_shared_source_dependencies(self):
         with tempfile.TemporaryDirectory() as directory:
