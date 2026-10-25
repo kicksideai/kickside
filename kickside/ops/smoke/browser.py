@@ -787,13 +787,26 @@ class Browser:
                                     + str(item['status']) + r' \([^)]+\)', message.text)]
         if matched:
             self.inst.evidence.save('expected-rejection-console', {'text': message.text, 'url': message.location['url']})
+            return
+        critical = [item for item in self.expected_http
+                    if item.get('critical_console') is not None and item['observed'] == 1
+                    and item['critical_observed'] == 0
+                    and re.fullmatch(item['critical_console'], message.text)]
+        if critical:
+            item = critical[0]
+            item['critical_observed'] += 1
+            self.inst.evidence.save('expected-rejection-critical-console', {
+                'method': item['method'], 'url': item['url'], 'status': item['status'],
+                'text': self.inst.redactor.text(message.text),
+            })
         else:
             self.errors.append(self.inst.redactor.text(message.text))
 
     @contextmanager
-    def rejection(self, method, path, status):
+    def rejection(self, method, path, status, *, critical_console=None):
         require(400 <= status <= 499, 'A deliberate UI rejection must name its client-error status')
-        item = {'method': method, 'url': self.inst.base + path, 'status': status, 'observed': 0}
+        item = {'method': method, 'url': self.inst.base + path, 'status': status, 'observed': 0,
+                'critical_console': critical_console, 'critical_observed': 0}
         with self._expected_response(item) as response:
             yield response
 
@@ -827,7 +840,8 @@ class Browser:
             with self.page.expect_response(lambda r: r.request.method == item['method'] and r.url == item['url']) as response:
                 yield response
             self.settle()
-            require(response.value.status == item['status'] and item['observed'] == 1,
+            require(response.value.status == item['status'] and item['observed'] == 1
+                    and (item.get('critical_console') is None or item.get('critical_observed') == 1),
                     'UI rejection does not return exactly one expected response: ' + str(item))
         finally:
             self.expected_http.remove(item)
@@ -882,19 +896,26 @@ class Browser:
         self.errors.append(error)
 
     @contextmanager
-    def document_navigation(self, path, *, stylesheet_cleanup=(), asset_cleanup=()):
+    def document_navigation(self, path, *, stylesheet_cleanup=(), asset_cleanup=(), source_path=None):
         """Allow verified main-document cleanup while retaining all unrelated failures."""
         target = self.inst.base + path
-        navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': self.page.url,
+        require(source_path is None or source_path.startswith('/'),
+                'A declared document-navigation source must be an absolute path')
+        source = self.inst.base + source_path if source_path is not None else self.page.url
+        navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': source,
                       'target': target, 'main_frame_urls': [], 'aborts': [],
                       'stylesheet_cleanup': frozenset(stylesheet_cleanup),
-                      'asset_cleanup': frozenset(asset_cleanup), 'retired_documents': []}
+                      'asset_cleanup': frozenset(asset_cleanup), 'retired_documents': [],
+                      'declared_source': source_path is not None}
         self.expected_document_navigations.append(navigation)
         try:
             yield
         finally:
             self.expected_document_navigations.remove(navigation)
-            transitioned = navigation['source'] != target and target in navigation['main_frame_urls']
+            if navigation['declared_source']:
+                transitioned = navigation['main_frame_urls'] == [navigation['source'], target]
+            else:
+                transitioned = navigation['source'] != target and target in navigation['main_frame_urls']
             if not transitioned:
                 self.errors.extend(navigation['aborts'])
             else:

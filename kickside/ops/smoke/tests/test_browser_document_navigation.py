@@ -203,6 +203,30 @@ class DocumentNavigationTests(unittest.TestCase):
             browser.request_failed(self.request(browser, url=icon, resource_type='image'))
         self.assertEqual(browser.errors, ['GET http://app/app/kickside-icon.svg: net::ERR_ABORTED'])
 
+    def test_declared_source_requires_the_exact_source_to_target_sequence_from_blank(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'about:blank'
+        with browser.document_navigation('/login', source_path='/'):
+            browser.page.url = browser.page.main_frame.url = 'http://app/'
+            browser.request_failed(self.request(browser))
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = browser.page.main_frame.url = 'http://app/login'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+        self.assertEqual(browser.errors, [])
+
+    def test_declared_source_rejects_an_intermediate_document(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'about:blank'
+        with browser.document_navigation('/login', source_path='/'):
+            browser.page.url = browser.page.main_frame.url = 'http://app/'
+            browser.request_failed(self.request(browser))
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = browser.page.main_frame.url = 'http://app/other'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = browser.page.main_frame.url = 'http://app/login'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+        self.assertEqual(browser.errors, ['GET https://web-host.example/core.js: net::ERR_ABORTED'])
+
 
 if __name__ == '__main__':
     unittest.main()
