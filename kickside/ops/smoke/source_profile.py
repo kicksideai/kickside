@@ -7,6 +7,9 @@ import yaml
 CHECKOUT_IDENTITIES = {
     'docs': ('building-modules/index.md', 'reference/documentation-catalog.md'),
     'docs-site': ('mkdocs.yml', 'scripts/sync_sources.py', 'tests/test_workflows.py'),
+    'public-repositories': ('kickside/.git/HEAD', 'providers/.git/HEAD', 'converters/.git/HEAD',
+                            'crm/.git/HEAD', 'components/.git/HEAD', 'chestor/.git/HEAD',
+                            'module/.git/HEAD', 'docs/.git/HEAD'),
 }
 
 

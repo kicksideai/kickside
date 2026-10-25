@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 from pathlib import Path
+import argparse
 import subprocess
 import json
 import io
 import re
+import sys
 import tarfile
 import unittest
 
@@ -62,14 +64,14 @@ class PublicSourceHygieneTest(unittest.TestCase):
 
     def test_publication_boundary(self):
         prohibited = re.compile(
-            r"spiral.?scout|landingwizard|\bwapps\b|ui[-_ ]?studio|kickside-[a-z]\b|wj\.wippy\.ai|"
+            r"spiral.?scout|landingwizard|\bwapps\b|ui[-_ ]?studio|kickside-(?!v\$\(\s*VERSION\s*\))[a-z]\b|wj\.wippy\.ai|"
             r"git\.wippy\.ai|100\.70\.\d+\.\d+|\btowers\b|"
             r"kickside-gate|wolfy-j|/home/[^/\s]+/kickside", re.IGNORECASE,
         )
         private = re.compile(
             r"(^|/)(ops|scratchpad|helm|evidence|internal|runbooks|handbook)/|"
             r"\.py[co]$|"
-            r"(^|/)(AGENTS|CLAUDE|REPORT|MEMORY|SECURITY-REVIEW)\.md$"
+            r"(^|/)(CLAUDE|REPORT|MEMORY|SECURITY-REVIEW)\.md$"
         )
         roots = [ROOT] + sorted(path for path in ROOT.parent.iterdir()
                                 if path != ROOT and (path / ".github/modules.json").is_file())
@@ -104,14 +106,20 @@ class PublicSourceHygieneTest(unittest.TestCase):
                 source.addfile(member, io.BytesIO(data))
             return stream.getvalue()
 
-        for path in ("test/test_sources.py", "ui/src/app/navigation.spec.ts",
-                     "scripts/check_sources.py"):
+        for path, text in (("test/test_sources.py", "assert True\n"),
+                           ("ui/src/app/navigation.spec.ts", "assert True\n"),
+                           ("scripts/check_sources.py", "assert True\n"),
+                           ("AGENTS.md", "assert True\n"),
+                           ("Makefile", "kickside-v$(VERSION)\n")):
             with self.subTest(path=path), patch("subprocess.check_output",
-                                                return_value=archive_for(path, "assert True\n")):
+                                                return_value=archive_for(path, text)):
                 self.test_publication_boundary()
         for path, text in (("ops/check_sources.py", "assert True\n"),
                            ("test/test_sources.pyc", "compiled fixture\n"),
-                           ("test/test_sources.py", "https://wj.wippy.ai\n")):
+                           ("test/test_sources.py", "https://wj.wippy.ai\n"),
+                           ("AGENTS.md", "https://wj.wippy.ai\n"),
+                           ("MEMORY.md", "public text\n"),
+                           ("Makefile", "https://kickside-v.wippy.ai\n")):
             with self.subTest(path=path), patch("subprocess.check_output",
                                                 return_value=archive_for(path, text)):
                 with self.assertRaises(AssertionError):
@@ -173,3 +181,20 @@ class PublicSourceHygieneTest(unittest.TestCase):
         with patch("subprocess.check_output", return_value=archive_for(legal + "https://wj.wippy.ai\n")):
             with self.assertRaises(AssertionError):
                 self.test_publication_boundary()
+
+
+def main(argv=None):
+    global ROOT
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root', type=Path, default=ROOT,
+                        help='real public Kickside Git checkout whose siblings are public repositories')
+    args, unittest_args = parser.parse_known_args(argv)
+    root = args.root.resolve()
+    if not root.is_dir():
+        parser.error('--root must name a public Kickside checkout directory')
+    ROOT = root
+    unittest.main(argv=[sys.argv[0], *unittest_args])
+
+
+if __name__ == '__main__':
+    main()

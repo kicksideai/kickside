@@ -135,6 +135,24 @@ class SourceProfileTests(unittest.TestCase):
                 (site / path).write_text('present\n')
             self.assertEqual(build(source, {}, [scenario])['checkouts'], {'docs-site': str(site)})
 
+    def test_requires_real_public_repository_bundle_markers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            repositories = root / 'public-repositories'
+            repositories.mkdir()
+            scenario = Scenario('public-source-hygiene', 'regression', lambda ctx: None,
+                                source_checkout_roots=('public-repositories',))
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: public-repositories'):
+                build(source, {}, [scenario])
+            for name in ('kickside', 'providers', 'converters', 'crm', 'components', 'chestor', 'module', 'docs'):
+                marker = repositories / name / '.git'
+                marker.mkdir(parents=True)
+                (marker / 'HEAD').write_text('ref: refs/heads/main\n')
+            self.assertEqual(build(source, {}, [scenario])['checkouts'],
+                             {'public-repositories': str(repositories)})
+
 
 if __name__ == '__main__':
     unittest.main()
