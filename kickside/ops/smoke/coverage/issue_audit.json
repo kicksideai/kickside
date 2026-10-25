@@ -22077,7 +22077,7 @@
       "guards": {
         "workflow_undo_handoff_import_closure": {
           "assertions": [
-            "Fresh Workflows harness lint resolves every authored import before the unchanged native undo suite executes."
+            "Fresh native lint of the Workflow runs maintenance closure resolves its authored proc_supervisor imports before the unchanged undo suite executes."
           ],
           "types": [
             "API-smoke"

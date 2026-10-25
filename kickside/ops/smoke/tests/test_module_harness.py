@@ -1202,11 +1202,16 @@ class FocusedModuleHarnessTests(unittest.TestCase):
             instance = Instance(root / 'run', source)
             failed = type('Failed', (), {'returncode': 1, 'stdout': 'fixture lint fails', 'stderr': ''})()
             with patch('module_harness.subprocess.run', side_effect=[Completed(), failed]) as invoke, \
+                 patch('module_harness._loaded_test_ids', return_value={'kickside.core:guard_test'}), \
                  patch('module_harness.drop_database') as drop:
                 with self.assertRaisesRegex(Failure, "fixture lint fails"):
-                    run_focused_module_test(Context(instance), 'kickside/core', 'guard_test', lint=True)
+                    run_focused_module_test(Context(instance), 'kickside/core', 'guard_test', lint=True,
+                                            lint_namespaces=('kickside.core', 'kickside.core.jobs'))
             self.assertEqual(invoke.call_count, 2)
-            self.assertIn('lint', invoke.call_args_list[1].args[0])
+            self.assertEqual(invoke.call_args_list[1].args[0], [
+                '/bin/wippy', '--config', '.wippy.yaml', 'lint', '--profile', 'postgres',
+                '--ns', 'kickside.core', '--ns', 'kickside.core.jobs',
+            ])
             self.assertEqual(drop.call_count, 2)
             self.assertEqual((harness / '.wippy.yaml').read_text(), original)
 

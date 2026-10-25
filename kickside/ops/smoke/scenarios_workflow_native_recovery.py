@@ -95,7 +95,8 @@ def workflow_native_creation_errors(ctx):
 
 
 def workflow_undo_handoff_import_closure(ctx):
-    run_focused_module_test(ctx, 'kickside/workflows', 'undo_test', lint=True)
+    run_focused_module_test(ctx, 'kickside/workflows', 'undo_test', lint=True,
+                            lint_namespaces=('kickside.workflows.runs',))
 
 
 def workflow_unadmitted_run_reads(ctx):

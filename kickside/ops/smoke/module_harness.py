@@ -253,15 +253,16 @@ def copy_harness(original,repository,scratch):
 
 
 
-def run_focused_module_test(ctx, component, entry, *, timeout=DEFAULT_TIMEOUT, lint=False):
-    """Refresh and run one named test entry, with optional harness lint."""
+def run_focused_module_test(ctx, component, entry, *, timeout=DEFAULT_TIMEOUT, lint=False,
+                            lint_namespaces=()):
+    """Refresh and run one named test entry, with optional scoped harness lint."""
     source = ctx.inst.config['replace'].get(component)
     require(source, 'Focused module test requires a local replacement for ' + component)
     module_root = Path(source)
     test_root = module_root / 'test'
     require(test_root.is_dir(), 'Focused module test has no test directory: ' + str(test_root))
     return _run(ctx, test_root, entry, timeout=timeout, module_root=module_root,
-                label=component.replace('/', '-'), lint=lint)
+                label=component.replace('/', '-'), lint=lint, lint_namespaces=lint_namespaces)
 
 
 def run_focused_module_suite(ctx, component, suite, *, timeout=DEFAULT_TIMEOUT):
@@ -290,7 +291,8 @@ def valid_focused_selection(entry):
         r'[A-Za-z0-9_.]+(?::[A-Za-z0-9_]+)?', entry) is not None
 
 
-def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False, lint=False):
+def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False, lint=False,
+         lint_namespaces=()):
     require(valid_focused_selection(entry),
             'Focused test entry is invalid: ' + str(entry))
     inst = ctx.inst
@@ -323,7 +325,8 @@ def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False
                         if Path(path).resolve().is_relative_to(repository):
                             replace[name] = str(copied_repository / Path(path).resolve().relative_to(repository))
                 return _run_locked(ctx, copied, entry, timeout=timeout, module_root=copied_module,
-                                   label=label, repository_gate=repository_gate, lint=lint, replace=replace,
+                                   label=label, repository_gate=repository_gate, lint=lint,
+                                   lint_namespaces=lint_namespaces, replace=replace,
                                    verify_source_profile=verify_source_profile,
                                    copied_repository=copied_repository)
         finally:
@@ -387,7 +390,7 @@ def _verify_focused_source_profile(config_path, replace, copied_repository, root
 
 
 def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repository_gate=False, lint=False,
-                verify_source_profile=False, copied_repository=None):
+                lint_namespaces=(), verify_source_profile=False, copied_repository=None):
     inst = ctx.inst
     identifier = re.sub(r'[^a-z0-9_]+', '_', label.lower()).strip('_')[-20:] or 'app'
     database = 'smoke_focused_' + identifier + '_' + uuid.uuid4().hex[:12]
@@ -416,6 +419,8 @@ def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repos
             command = [inst.config['binary'], '--config', config_path.name, 'lint']
             if inst.engine == 'postgres':
                 command.extend(('--profile', 'postgres'))
+            for namespace in lint_namespaces:
+                command.extend(('--ns', namespace))
             _command(inst, label + '-lint', command, root, environment, timeout)
         focused_config = yaml.safe_load(config_path.read_text())
         _focus_tests(root, focused_config, None if repository_gate else entry, available=available)
