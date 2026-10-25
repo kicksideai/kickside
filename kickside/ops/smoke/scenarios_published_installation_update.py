@@ -16,6 +16,7 @@ from scenarios import all_checks
 from scenarios_identity_policy_upgrade import published_source
 from scenarios_token_continuity import token_payloads
 from scenarios_hot_update_work import database_rows
+from upgrade_regressions import candidate_dependency_sources
 
 HERE = Path(__file__).parent
 
@@ -71,6 +72,33 @@ def install_credential_probe(directory):
     router = next(row for row in document['entries'] if row['name'] == 'public_router')
     router['targets'].append({'entry': namespace + ':credentials.endpoint', 'path': '.meta.router'})
     index.write_text(yaml.safe_dump(document, sort_keys=False))
+
+
+def application_update_candidates(replacements, source_root):
+    """Select only sources that the updated application actually owns.
+
+    Optional modules can be installed beside the application.  A root
+    application update must not replace their bytes without running their own
+    Hub lifecycle (and therefore their migrations).
+    """
+    require(source_root, 'Published application update requires a candidate source checkout')
+    return candidate_dependency_sources(replacements, ('kickside/kickside',),
+                                        application=Path(source_root) / 'app')
+
+
+def materialize_application_update_sources(published_sources, replacements, source_root):
+    """Overlay only the application-owned candidate sources onto its baseline."""
+    selected = application_update_candidates(replacements, source_root)
+    for module, source in selected.items():
+        directory = published_sources.get(module)
+        if directory is None:
+            continue
+        directory = Path(directory)
+        shutil.rmtree(directory / 'src')
+        shutil.copytree(source, directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns(
+            '.git', '.wippy', 'wippy.lock', 'node_modules', '__pycache__', 'test', 'lint-harness'))
+    return selected
+
 
 def published_installation_update(ctx, *, credentials=False, plan_only=False):
     candidates = ctx.inst.config['replace']
@@ -252,12 +280,18 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                 inst.evidence.save('installation-credentials-before', {
                     'accounts': database_rows(inst, 'SELECT user_id, status, auth_generation FROM app_users'),
                     'memberships': database_rows(inst, 'SELECT user_id, group_id FROM app_user_groups')})
-                for module, directory in sources.items():
-                    directory = Path(directory)
-                    source = Path(candidates[module])
-                    shutil.rmtree(directory / 'src')
-                    shutil.copytree(source, directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns(
-                        '.git', '.wippy', 'wippy.lock', 'node_modules', '__pycache__', 'test', 'lint-harness'))
+                if credentials:
+                    from module_lifecycle_contract import update_source
+                    mcp_source = candidates.get('kickside/mcp')
+                    require(mcp_source, 'Published MCP upgrade requires its candidate source')
+                    update_source(fixture, mcp_source, 'kickside/mcp', live=True)
+                    schema = database_rows(inst,
+                        'SELECT credential_id, oauth_resource FROM kickside_mcp_credentials')
+                    require(any(row['credential_id'] == mcp['credential_id'] for row in schema),
+                            'MCP Hub update omits the oauth resource migration')
+                    inst.evidence.save('installation-mcp-schema-after-direct-update', schema)
+                    mcp_access('direct-update')
+                materialize_application_update_sources(sources, candidates, ctx.inst.config.get('source'))
                 install_credential_probe(Path(sources['kickside/users']))
                 from module_lifecycle_contract import versions
                 latest = versions(inst, 'kickside/kickside')[-1]
