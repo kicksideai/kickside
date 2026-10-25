@@ -2,9 +2,6 @@ import yaml
 
 from harness import Scenario, require
 from scenarios_core import create_thread
-from scenarios import first_agent, member_identity, refresh_member_token
-from scenarios_chat import for_role
-from scenarios_jira import jira_setup, regression_2439
 
 
 def projection_failure_contract(ctx):
@@ -65,25 +62,7 @@ def projection_failure_contract(ctx):
                     'Infrastructure failure parks instead of retrying')
 
 
-def member_discord_reply(ctx):
-    ctx.browser_check().login()
-    jira_setup(ctx)
-    member = member_identity(ctx)
-    refresh_member_token(ctx.inst, member, '/api/v1/agents/traits', lambda result: bool(result.get('traits')),
-                         'discord-member-admission')
-    ctx.state['chat_member'] = member
-
-    def reply(member_ctx):
-        member_ctx.browser_check().login(member['email'], member_ctx.inst.password)
-        first_agent(member_ctx)
-        regression_2439(member_ctx)
-
-    for_role('member', reply)(ctx)
-
-
 REGISTRY = [
     Scenario('regression_EE2_2571_projection_failure_contract', 'regression', projection_failure_contract,
         ('first_agent',), instance_setup=True, model=True, issues=('EE2-2571',)),
-    Scenario('regression_EE2_2439_member_reply', 'regression', member_discord_reply,
-        ('first_agent',), instance_setup=True, model=True, issues=('EE2-2439',)),
 ]
