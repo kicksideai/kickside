@@ -60,6 +60,11 @@ class RegressionSelectionTests(unittest.TestCase):
                      if row.name == 'regression_projection_retry_ui')
         self.assertIn('core_personal_agent', guard.requires)
 
+    def test_system_page_readiness_requires_completed_first_agent(self):
+        ready = next(row for row in load_registry(Path(__file__).resolve().parents[1])
+                     if row.name == 'system_page_structure_ready')
+        self.assertEqual(ready.requires, ('first_agent',))
+
     def test_restricted_workflow_browser_guard_covers_the_current_identity_baseline(self):
         guard = next(row for row in load_registry(Path(__file__).resolve().parents[1])
                      if row.name == 'browser_workflow_selected_restricted_baseline')
