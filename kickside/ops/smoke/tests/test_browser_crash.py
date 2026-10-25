@@ -217,9 +217,19 @@ class CrashedDriverSessionTests(unittest.TestCase):
     def test_real_crashed_page_disposal_starts_a_fresh_driver_on_the_same_thread(self):
         """chrome://crash leaves the page transport unusable; do not touch it again."""
         from playwright.sync_api import Error
+        import resource
         session = BrowserSession()
         try:
-            browser = session.start()
+            # The driver and Chromium inherit this only-at-launch limit.  It
+            # contains this deliberate crash without weakening parent or
+            # production diagnostics after the real driver is running.
+            core_limit = resource.getrlimit(resource.RLIMIT_CORE)
+            try:
+                resource.setrlimit(resource.RLIMIT_CORE, (0, core_limit[1]))
+                browser = session.start()
+            finally:
+                resource.setrlimit(resource.RLIMIT_CORE, core_limit)
+            self.assertEqual(resource.getrlimit(resource.RLIMIT_CORE), core_limit)
             context = browser.new_context()
             page = context.new_page()
             with self.assertRaisesRegex(Error, 'net::ERR_ABORTED'):
