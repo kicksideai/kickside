@@ -15,7 +15,7 @@ def source_root(ctx):
 def immutable_replacement_sources(ctx):
     _command(ctx.inst, 'immutable-replacement-sources', [sys.executable, '-m', 'unittest',
              'discover', '-s', 'ops/smoke/tests', '-p', 'test_module_harness.py'],
-             source_root(ctx), ctx.inst.env, 900)
+             _private_suite_root(), ctx.inst.env, 900)
 
 
 def workflows_published_output_shape(ctx):
