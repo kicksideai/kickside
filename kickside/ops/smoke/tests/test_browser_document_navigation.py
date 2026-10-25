@@ -63,6 +63,53 @@ class DocumentNavigationTests(unittest.TestCase):
         self.assertFalse(browser.pending)
         self.assertFalse(browser.errors)
 
+    def test_verified_navigation_retires_only_its_old_main_document_in_both_ledgers(self):
+        browser = self.browser()
+        source, target = browser.page.url, 'http://app/login'
+        browser.page_scopes = {id(browser.page): 7}
+        browser.page_main_frames = {7: 'main'}
+        old = self.request(browser, url=source, resource_type='document')
+        browser.pending[old] = old.url
+        old_identity = (7, 'page:7', 'old-document')
+        api_identity = (7, 'page:7', 'api')
+        worker_identity = (7, 'worker:7', 'worker-document')
+        new_identity = (7, 'page:7', 'new-document')
+        subframe_identity = (7, 'page:7', 'subframe-document')
+        browser.native_network = {
+            old_identity: {'method': 'GET', 'url': source, 'type': 'Document', 'frame_id': 'main', 'failed': False},
+            api_identity: {'method': 'GET', 'url': 'http://app/api/v1/user/me', 'type': 'Fetch', 'frame_id': 'main', 'failed': False},
+            worker_identity: {'method': 'GET', 'url': source, 'type': 'Document', 'frame_id': 'main', 'failed': False},
+            new_identity: {'method': 'GET', 'url': target, 'type': 'Document', 'frame_id': 'main', 'failed': False},
+            subframe_identity: {'method': 'GET', 'url': source, 'type': 'Document', 'frame_id': 'child', 'failed': False},
+        }
+        with browser.document_navigation('/login'):
+            browser.page.main_frame.url = target
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = target
+        self.assertFalse(browser.pending)
+        self.assertNotIn(old_identity, browser.native_network)
+        self.assertEqual(set(browser.native_network), {api_identity, worker_identity, new_identity, subframe_identity})
+        browser.inst.evidence.save.assert_called_once_with('document-navigation-aborts', {
+            'source': source, 'target': target, 'aborts': [],
+            'retired_documents': [{'request': 'old-document', 'source': source}],
+        })
+
+    def test_source_document_remains_pending_without_its_main_frame_playwright_request(self):
+        browser = self.browser()
+        source, target = browser.page.url, 'http://app/login'
+        browser.page_scopes = {id(browser.page): 7}
+        browser.page_main_frames = {7: 'main'}
+        identity = (7, 'page:7', 'old-document')
+        browser.native_network = {identity: {
+            'method': 'GET', 'url': source, 'type': 'Document', 'frame_id': 'main', 'failed': False}}
+        with browser.document_navigation('/login'):
+            browser.page.main_frame.url = target
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = target
+        self.assertEqual(browser.native_network, {identity: {
+            'method': 'GET', 'url': source, 'type': 'Document', 'frame_id': 'main', 'failed': False}})
+        browser.inst.evidence.save.assert_not_called()
+
     def test_abort_remains_an_error_when_the_page_already_has_the_target_url(self):
         browser = self.browser()
         browser.page.url = 'http://app/login'
@@ -124,6 +171,37 @@ class DocumentNavigationTests(unittest.TestCase):
             browser.document_navigated(browser.page, browser.page.main_frame)
             browser.page.url = 'http://app/'
         self.assertEqual(browser.errors, ['GET http://app/unexpected.css: net::ERR_ABORTED'])
+
+    def test_verified_navigation_accepts_only_its_declared_image_asset_abort(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'http://app/login'
+        icon = 'http://app/app/kickside-icon.svg'
+        with browser.document_navigation('/', asset_cleanup=(icon,)):
+            browser.request_failed(self.request(browser, url=icon, resource_type='image'))
+            browser.page.main_frame.url = 'http://app/'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = 'http://app/'
+        self.assertEqual(browser.errors, [])
+        browser.inst.evidence.save.assert_called_once_with('document-navigation-aborts', {
+            'source': 'http://app/login', 'target': 'http://app/',
+            'aborts': ['GET http://app/app/kickside-icon.svg: net::ERR_ABORTED'],
+        })
+
+    def test_other_or_unverified_image_abort_remains_an_error(self):
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'http://app/login'
+        icon = 'http://app/app/kickside-icon.svg'
+        with browser.document_navigation('/', asset_cleanup=(icon,)):
+            browser.request_failed(self.request(browser, url='http://app/app/other-icon.svg', resource_type='image'))
+            browser.page.main_frame.url = 'http://app/'
+            browser.document_navigated(browser.page, browser.page.main_frame)
+            browser.page.url = 'http://app/'
+        self.assertEqual(browser.errors, ['GET http://app/app/other-icon.svg: net::ERR_ABORTED'])
+        browser = self.browser()
+        browser.page.url = browser.page.main_frame.url = 'http://app/login'
+        with browser.document_navigation('/', asset_cleanup=(icon,)):
+            browser.request_failed(self.request(browser, url=icon, resource_type='image'))
+        self.assertEqual(browser.errors, ['GET http://app/app/kickside-icon.svg: net::ERR_ABORTED'])
 
 
 if __name__ == '__main__':

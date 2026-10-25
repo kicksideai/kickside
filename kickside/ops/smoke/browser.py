@@ -161,7 +161,7 @@ class Browser:
         # Browser contexts that this Browser owns; the browser-wide Target
         # session also sees other Playwright contexts.
         self.native_unscoped_workers = {}
-        self.page_scopes, self.context_scopes, self.page_cdps = {}, {}, {}
+        self.page_scopes, self.context_scopes, self.page_cdps, self.page_main_frames = {}, {}, {}, {}
         self.browser_context_scopes = {}
         self.next_page_scope = 0
         self.worker_events = []
@@ -344,6 +344,9 @@ class Browser:
             cdp.on('Target.attachedToTarget', lambda data: self.page_worker_attached(scope, cdp, data))
             cdp.on('Target.receivedMessageFromTarget', self.worker_message_received)
             cdp.send('Network.enable')
+            frame = cdp.send('Page.getFrameTree').get('frameTree', {}).get('frame', {}).get('id')
+            require(frame, 'CDP page watcher has no main frame ID')
+            self.page_main_frames[scope] = frame
             # The browser-level Target session receives every Chromium
             # context.  Learn this page's owning browserContextId so its
             # worker notifications cannot make an unrelated scenario busy.
@@ -434,7 +437,8 @@ class Browser:
         # Redirects reuse request ids; their final loading event remains the
         # terminal authority for the target-owned operation.
         self.native_network[self.native_identity(scope, target_id, request_id)] = {
-            'method': request.get('method'), 'url': request.get('url'), 'failed': False,
+            'method': request.get('method'), 'url': request.get('url'),
+            'type': data.get('type'), 'frame_id': data.get('frameId'), 'failed': False,
         }
         self.worker_event('native-start', scope=scope, target=target_id, request=request_id,
                           method=request.get('method'), url=request.get('url') or '')
@@ -718,6 +722,7 @@ class Browser:
         for page_id, page_scope in list(self.page_scopes.items()):
             if page_scope == scope:
                 self.page_scopes.pop(page_id, None)
+        getattr(self, 'page_main_frames', {}).pop(scope, None)
         for browser_context, scopes in list(getattr(self, 'browser_context_scopes', {}).items()):
             scopes.discard(scope)
             if not scopes:
@@ -857,7 +862,9 @@ class Browser:
                 is_main_frame = False
             expected_cleanup = (request.resource_type == 'script' or
                                 (request.resource_type == 'stylesheet' and
-                                 request.url in navigation['stylesheet_cleanup']))
+                                 request.url in navigation['stylesheet_cleanup']) or
+                                (request.resource_type == 'image' and
+                                 request.url in navigation['asset_cleanup']))
             source = urlparse(navigation['source'])._replace(fragment='').geturl()
             current = urlparse(self.page.url)._replace(fragment='').geturl()
             if (request.method == 'GET' and expected_cleanup and
@@ -875,12 +882,13 @@ class Browser:
         self.errors.append(error)
 
     @contextmanager
-    def document_navigation(self, path, *, stylesheet_cleanup=()):
+    def document_navigation(self, path, *, stylesheet_cleanup=(), asset_cleanup=()):
         """Allow verified main-document cleanup while retaining all unrelated failures."""
         target = self.inst.base + path
         navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': self.page.url,
                       'target': target, 'main_frame_urls': [], 'aborts': [],
-                      'stylesheet_cleanup': frozenset(stylesheet_cleanup)}
+                      'stylesheet_cleanup': frozenset(stylesheet_cleanup),
+                      'asset_cleanup': frozenset(asset_cleanup), 'retired_documents': []}
         self.expected_document_navigations.append(navigation)
         try:
             yield
@@ -889,10 +897,53 @@ class Browser:
             transitioned = navigation['source'] != target and target in navigation['main_frame_urls']
             if not transitioned:
                 self.errors.extend(navigation['aborts'])
-            elif navigation['aborts']:
-                self.inst.evidence.save('document-navigation-aborts', {
+            else:
+                self.retire_navigation_source_document(navigation)
+            if transitioned and (navigation['aborts'] or navigation['retired_documents']):
+                receipt = {
                     'source': navigation['source'], 'target': target, 'aborts': navigation['aborts'],
-                })
+                }
+                if navigation['retired_documents']:
+                    receipt['retired_documents'] = navigation['retired_documents']
+                self.inst.evidence.save('document-navigation-aborts', receipt)
+
+    def retire_navigation_source_document(self, navigation):
+        """Retire one verified stale source document after its target arrives.
+
+        Chromium can omit a terminal CDP event for a source document displaced
+        by a successful cross-origin redirect.  This is deliberately narrower
+        than idle cleanup: both protocols must still identify the same page's
+        main-frame GET of the exact source URL, and only its CDP Document entry
+        is retired after this guard observes the declared target.
+        """
+        source = urlparse(navigation['source'])._replace(fragment='').geturl()
+        scope = getattr(self, 'page_scopes', {}).get(id(navigation['page']))
+        frame_id = getattr(self, 'page_main_frames', {}).get(scope)
+        if scope is None or frame_id is None:
+            return
+        target = 'page:' + str(scope)
+        native_network = getattr(self, 'native_network', {})
+        native = [identity for identity, entry in native_network.items()
+                  if identity[0] == scope and identity[1] == target
+                  and entry.get('method') == 'GET' and entry.get('type') == 'Document'
+                  and entry.get('frame_id') == frame_id
+                  and urlparse(entry.get('url') or '')._replace(fragment='').geturl() == source]
+        pending = []
+        for request in self.pending:
+            try:
+                request_source = urlparse(request.url)._replace(fragment='').geturl()
+                main_frame = request.frame == navigation['frame']
+            except Exception:
+                continue
+            if (request.method == 'GET' and request.resource_type == 'document' and
+                    main_frame and request_source == source):
+                pending.append(request)
+        if len(native) != 1 or len(pending) != 1:
+            return
+        identity = native[0]
+        native_network.pop(identity)
+        self.pending.pop(pending[0])
+        navigation['retired_documents'].append({'request': identity[2], 'source': source})
 
     @contextmanager
     def embedding_refusal(self, path):

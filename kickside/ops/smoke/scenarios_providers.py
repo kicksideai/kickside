@@ -684,7 +684,9 @@ def sso_oidc_login(ctx, *, restore_login=True):
     browser.settle()
     browser.page.goto(ctx.inst.base+'/login',wait_until='domcontentloaded')
     browser.page.evaluate('document.fonts.ready')
-    with browser.document_navigation('/', stylesheet_cleanup=(ctx.inst.base + '/api/public/facade/variables.css',)):
+    with browser.document_navigation(
+            '/', stylesheet_cleanup=(ctx.inst.base + '/api/public/facade/variables.css',),
+            asset_cleanup=(ctx.inst.base + '/app/kickside-icon.svg',)):
         with browser.page.expect_response(lambda response: urlsplit(response.url).path == '/api/public/sso/oidc/callback') as response:
             browser.page.get_by_role('link',name='Continue with Generic OIDC',exact=True).click()
         callback = response.value
