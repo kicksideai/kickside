@@ -28,7 +28,8 @@ class NativeErrorSourceTests(unittest.TestCase):
                        'if err:details().code == "resource_missing" then return nil, err end',
                        'local title = value:match("%a+")', 'if type(err) == "userdata" then end',
                        'if output.failure_class == "deterministic" then end',
-                       'if err:kind() == "NotFound" then end']:
+                       'if err:kind() == "NotFound" then end',
+                       'if message.observed_registry_version ~= "" then end']:
             with self.subTest(source=source): self.assertEqual(CHECK.findings(source), [])
 
     def test_message_decisions_include_match_and_equality_forms(self):
@@ -36,7 +37,10 @@ class NativeErrorSourceTests(unittest.TestCase):
                        'string.find(tostring(err), "missing")', 'string.match(err, "missing")',
                        'err:find("missing")', 'error_message:match("missing")',
                        'failure.message:find("missing")', 'if err == "missing" then end',
-                       'if "missing" ~= err then end', 'if failure.message == "missing" then end']:
+                       'if "missing" ~= err then end', 'if message == "missing" then end',
+                       'if failure.message == "missing" then end',
+                       'if (err or fallback) == "missing" then end',
+                       'if tostring(err or fallback) == "missing" then end']:
             with self.subTest(source=source):
                 self.assertEqual([row["rule"] for row in CHECK.findings(source)], ["error-text-decision"])
 
