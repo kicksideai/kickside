@@ -33,6 +33,29 @@ def projection_failure_contract(ctx):
             'worker_ref': 'func://app.smoke.projection_failure_contract:' + failure, 'start_seq': 0,
         }, expect=(201,), label='projection-failure-register-' + failure)
 
+        def remove_projection(registered=registered, failure=failure):
+            removed = ctx.inst.request('POST', base + '/projections/remove', {
+                'projection_id': registered['projection_id'],
+            }, label='projection-failure-remove-' + failure)
+            require(removed.get('success') is True, 'Projection cleanup does not report success')
+            receipt = removed.get('removed')
+            require(isinstance(receipt, dict) and receipt.get('projection_id') == registered['projection_id']
+                    and receipt.get('removed_cursors') == 1,
+                    'Projection cleanup does not remove its cursor')
+            cursors = ctx.inst.request('GET', base + '/projections',
+                                       label='projection-failure-cleanup-cursor')['cursors']
+            require(all(row['id'] != registered['cursor_id'] for row in cursors),
+                    'Projection cleanup leaves its cursor registered')
+            jobs = ctx.inst.request('GET', '/api/v1/jobs?thread_id=' + thread_id,
+                                    label='projection-failure-cleanup-job')['jobs']
+            job = next((row for row in jobs if row['id'] == registered['job_id']), None)
+            require(job is not None and job['status'] == 'cancelled',
+                    'Projection cleanup does not cancel its retry job')
+            ctx.inst.evidence.save('projection-failure-cleanup-' + failure,
+                                   {'receipt': receipt, 'job': job})
+
+        ctx.inst.cleanup.add('Projection failure ' + failure, remove_projection, scope='scenario')
+
         def settled():
             cursors = ctx.inst.request('GET', base + '/projections', label='projection-failure-cursor')['cursors']
             cursor = next((row for row in cursors if row['id'] == registered['cursor_id']), None)
@@ -52,17 +75,19 @@ def projection_failure_contract(ctx):
             message = 'projection worker boom' if failure == 'deterministic' else 'database unavailable'
             require(message in job['last_error'], 'Projection loses its worker error')
             if failure == 'deterministic':
+                require(cursor['status'] == 'invalid', 'Deterministic projection failure does not invalidate its cursor')
                 return snapshot if (job['status'] == 'pending' and job.get('scheduled_at') is None
                                     and job.get('execution_seq') == 1) else None
-            return snapshot if job['attempts'] > job['max_attempts'] else None
+            return snapshot if (job['attempts'] >= job['max_attempts'] and job['status'] == 'pending'
+                                and job.get('scheduled_at') is not None) else None
 
         snapshot = ctx.inst.wait(settled, 'Projection ' + failure + ' failure follows its slot contract', seconds=60)
         job = snapshot['job']
         if failure == 'deterministic':
             require(job['execution_seq'] == 1, 'Deterministic function failure runs more than once before parking')
         else:
-            require(job['status'] == 'running' or job.get('scheduled_at') is not None,
-                    'Infrastructure failure parks instead of retrying')
+            require(job['status'] == 'pending' and job.get('scheduled_at') is not None,
+                    'Infrastructure failure does not retain its scheduled retry')
 
 
 REGISTRY = [
