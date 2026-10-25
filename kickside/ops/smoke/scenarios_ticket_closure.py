@@ -46,18 +46,19 @@ def projection_failure_contract(ctx):
             ctx.inst.evidence.save('projection-failure-' + failure, snapshot)
             require(cursor['last_seq'] == 0, 'Failed projection advances its cursor')
             require(job['status'] in ('pending', 'running'), 'Failed projection loses its reusable slot')
-            if not job.get('last_error') or job['attempts'] < 1:
+            if not job.get('last_error'):
                 return None
             message = 'projection worker boom' if failure == 'deterministic' else 'database unavailable'
             require(message in job['last_error'], 'Projection loses its worker error')
             if failure == 'deterministic':
-                return snapshot if job['status'] == 'pending' and job.get('scheduled_at') is None else None
+                return snapshot if (job['status'] == 'pending' and job.get('scheduled_at') is None
+                                    and job.get('execution_seq') == 1) else None
             return snapshot if job['attempts'] > job['max_attempts'] else None
 
         snapshot = ctx.inst.wait(settled, 'Projection ' + failure + ' failure follows its slot contract', seconds=60)
         job = snapshot['job']
         if failure == 'deterministic':
-            require(job['attempts'] == 1, 'Deterministic function failure retries before parking')
+            require(job['execution_seq'] == 1, 'Deterministic function failure runs more than once before parking')
         else:
             require(job['status'] == 'running' or job.get('scheduled_at') is not None,
                     'Infrastructure failure parks instead of retrying')
