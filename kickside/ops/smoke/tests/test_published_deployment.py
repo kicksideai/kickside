@@ -12,35 +12,10 @@ from scenarios_published_installation_update import (
     materialize_application_update_sources,
     prepare_published_deployment,
     published_installation_update,
-    staged_mcp_candidate,
 )
 
 
 class PublishedDeploymentTests(unittest.TestCase):
-    def test_staged_mcp_candidate_uses_only_the_verified_receipt_for_resolution(self):
-        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
-            root = Path(directory)
-            source = root / 'source'
-            (source / 'src').mkdir(parents=True)
-            (source / 'src/marker.txt').write_text('current candidate bytes')
-            (source / 'test').mkdir()
-            (source / 'test/fixture.txt').write_text('development-only fixture')
-            (source / 'wippy.yaml').write_text(yaml.safe_dump({
-                'organization': 'kickside', 'module': 'mcp', 'type': 'plugin',
-            }, sort_keys=False))
-            inst = Mock(root=root / 'fixture', evidence=Mock())
-
-            staged = Path(staged_mcp_candidate(inst, source, {
-                'version': '0.1.54', 'sha256': 'verified-receipt',
-            }))
-
-            self.assertEqual(yaml.safe_load((staged / 'wippy.yaml').read_text())['version'], '0.1.54')
-            self.assertEqual((staged / 'src/marker.txt').read_text(), 'current candidate bytes')
-            self.assertFalse((staged / 'test').exists())
-            self.assertNotIn('version', yaml.safe_load((source / 'wippy.yaml').read_text()))
-            self.assertEqual(inst.evidence.save.call_args.args[0], 'published-installation-mcp-candidate')
-            self.assertEqual(inst.evidence.save.call_args.args[1]['baseline_receipt']['sha256'], 'verified-receipt')
-
     def test_application_update_leaves_optional_candidate_bytes_published(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             root = Path(directory)
@@ -80,6 +55,10 @@ class PublishedDeploymentTests(unittest.TestCase):
                 published_root = root / 'published' / module.replace('/', '_')
                 published_source = published_root / 'src'
                 published_source.mkdir(parents=True)
+                (published_root / 'wippy.yaml').write_text(yaml.safe_dump({
+                    'organization': 'kickside', 'module': module.split('/')[1],
+                    'version': '0.1.54' if module == 'kickside/mcp' else '0.1.0',
+                }, sort_keys=False))
                 (published_source / 'marker.txt').write_text('published-' + module)
                 published[module] = str(published_root)
 
@@ -93,6 +72,8 @@ class PublishedDeploymentTests(unittest.TestCase):
                              'candidate-kickside/core')
             self.assertEqual((Path(published['kickside/mcp']) / 'src/marker.txt').read_text(),
                              'published-kickside/mcp')
+            self.assertEqual(yaml.safe_load((Path(published['kickside/mcp']) / 'wippy.yaml').read_text())['version'],
+                             '0.1.54')
 
     def test_published_boot_keeps_the_normal_installation_selector_and_overrides(self):
         from runtime import Instance

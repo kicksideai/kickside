@@ -100,40 +100,6 @@ def materialize_application_update_sources(published_sources, replacements, sour
     return selected
 
 
-def staged_mcp_candidate(inst, source, receipt):
-    """Give an unversioned development source its verified resolver baseline.
-
-    Product source deliberately leaves release numbers to the publisher.  A
-    replacement, however, must declare a version when an installed root has a
-    version floor.  This scenario is an in-place source update from the
-    verified historical MCP receipt, so stage an owned copy and use that
-    receipt's version for resolution.  The source checkout and the published
-    artifact are never represented as the same bytes.
-    """
-    from scenarios_published_run_as import module_source_ignore
-
-    source = Path(source)
-    version = receipt.get('version')
-    require(source.is_dir(), 'Published MCP upgrade has no candidate source tree')
-    require(isinstance(version, str) and version,
-            'Published MCP upgrade has no verified baseline version')
-    manifest_path = source / 'wippy.yaml'
-    manifest = yaml.safe_load(manifest_path.read_text())
-    require(isinstance(manifest, dict), 'Published MCP candidate manifest is invalid')
-    require(not manifest.get('version'),
-            'Published MCP candidate must keep its publisher-assigned version: ' + str(manifest.get('version')))
-    directory = inst.root / 'published-installation-current-mcp'
-    shutil.copytree(source, directory, ignore=module_source_ignore(source))
-    staged_manifest = yaml.safe_load((directory / 'wippy.yaml').read_text())
-    staged_manifest['version'] = version
-    (directory / 'wippy.yaml').write_text(yaml.safe_dump(staged_manifest, sort_keys=False))
-    inst.evidence.save('published-installation-mcp-candidate', {
-        'declared_source': str(source.resolve()), 'staged_source': str(directory),
-        'resolver_version': version, 'baseline_receipt': dict(receipt),
-    })
-    return str(directory)
-
-
 def published_installation_update(ctx, *, credentials=False, plan_only=False):
     candidates = ctx.inst.config['replace']
     baseline = json.loads((HERE / 'mocks/security_model/published_installation_baseline.json').read_text())
@@ -314,18 +280,6 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                 inst.evidence.save('installation-credentials-before', {
                     'accounts': database_rows(inst, 'SELECT user_id, status, auth_generation FROM app_users'),
                     'memberships': database_rows(inst, 'SELECT user_id, group_id FROM app_user_groups')})
-                if credentials:
-                    from module_lifecycle_contract import update_source
-                    mcp_source = candidates.get('kickside/mcp')
-                    require(mcp_source, 'Published MCP upgrade requires its candidate source')
-                    mcp_source = staged_mcp_candidate(inst, mcp_source, inventory['kickside/mcp'])
-                    update_source(fixture, mcp_source, 'kickside/mcp')
-                    schema = database_rows(inst,
-                        'SELECT credential_id, oauth_resource FROM kickside_mcp_credentials')
-                    require(any(row['credential_id'] == mcp['credential_id'] for row in schema),
-                            'MCP Hub update omits the oauth resource migration')
-                    inst.evidence.save('installation-mcp-schema-after-direct-update', schema)
-                    mcp_access('direct-update')
                 materialize_application_update_sources(sources, candidates, ctx.inst.config.get('source'))
                 install_credential_probe(Path(sources['kickside/users']))
                 from module_lifecycle_contract import versions
@@ -340,6 +294,12 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                 require(not [row for row in applied.get('execution', []) if row['status'] in ('failed', 'rollback_failed')],
                         'Published application update fails')
                 inst.await_keeper()
+                if credentials:
+                    schema = database_rows(inst,
+                        'SELECT credential_id, oauth_resource FROM kickside_mcp_credentials')
+                    require(any(row['credential_id'] == mcp['credential_id'] for row in schema),
+                            'Application update omits the installed MCP credential schema')
+                    inst.evidence.save('installation-mcp-schema-after-application-update', schema)
                 after = token_payloads(inst)
                 require(all(after.get(key) == value for key, value in payloads.items()),
                         'Application Hub update rewrites saved session payloads')
