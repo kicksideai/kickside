@@ -34,6 +34,12 @@ def projection_failure_contract(ctx):
         }, expect=(201,), label='projection-failure-register-' + failure)
 
         def remove_projection(registered=registered, failure=failure):
+            before = ctx.inst.request('GET', base + '/projections',
+                                      label='projection-failure-cleanup-cursor-before')['cursors']
+            cursor = next((row for row in before if row['id'] == registered['cursor_id']), None)
+            require(cursor is not None and isinstance(cursor.get('job_id'), str) and cursor['job_id'],
+                    'Projection cleanup cannot identify its retry job')
+            job_id = cursor['job_id']
             removed = ctx.inst.request('POST', base + '/projections/remove', {
                 'projection_id': registered['projection_id'],
             }, label='projection-failure-remove-' + failure)
@@ -48,7 +54,7 @@ def projection_failure_contract(ctx):
                     'Projection cleanup leaves its cursor registered')
             jobs = ctx.inst.request('GET', '/api/v1/jobs?thread_id=' + thread_id,
                                     label='projection-failure-cleanup-job')['jobs']
-            job = next((row for row in jobs if row['id'] == registered['job_id']), None)
+            job = next((row for row in jobs if row['id'] == job_id), None)
             require(job is not None and job['status'] == 'cancelled',
                     'Projection cleanup does not cancel its retry job')
             ctx.inst.evidence.save('projection-failure-cleanup-' + failure,
@@ -75,7 +81,10 @@ def projection_failure_contract(ctx):
             message = 'projection worker boom' if failure == 'deterministic' else 'database unavailable'
             require(message in job['last_error'], 'Projection loses its worker error')
             if failure == 'deterministic':
-                require(cursor['status'] == 'invalid', 'Deterministic projection failure does not invalidate its cursor')
+                if cursor['status'] != 'invalid':
+                    return None
+                require(message in cursor.get('last_error', ''),
+                        'Deterministic projection cursor loses its worker error')
                 return snapshot if (job['status'] == 'pending' and job.get('scheduled_at') is None
                                     and job.get('execution_seq') == 1) else None
             return snapshot if (job['attempts'] >= job['max_attempts'] and job['status'] == 'pending'

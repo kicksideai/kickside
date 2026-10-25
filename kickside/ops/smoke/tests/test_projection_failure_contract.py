@@ -9,7 +9,7 @@ from scenarios_ticket_closure import projection_failure_contract
 
 
 class ProjectionFailureContractTests(unittest.TestCase):
-    def test_projection_cleanup_cancels_slots_before_deleting_thread(self):
+    def test_defers_deterministic_invalidation_and_uses_cursor_job_id_for_cleanup(self):
         with tempfile.TemporaryDirectory() as directory:
             thread_id = 'failure-thread'
             base = '/api/v1/threads/' + thread_id
@@ -25,17 +25,19 @@ class ProjectionFailureContractTests(unittest.TestCase):
                     return {}
                 if method == 'POST' and path == base + '/projections':
                     failure = body['projection_key']
+                    # The public registration receipt identifies the cursor but not its job slot.
                     registered = {'projection_id': 'projection-' + failure,
-                                  'cursor_id': 'cursor-' + failure, 'job_id': 'job-' + failure}
-                    cursors.append({'id': registered['cursor_id'], 'job_id': registered['job_id'], 'last_seq': 0,
-                                    'status': 'invalid' if failure == 'deterministic' else 'active'})
-                    jobs.append({'id': registered['job_id'], 'status': 'pending',
+                                  'cursor_id': 'cursor-' + failure}
+                    job_id = 'job-' + failure
+                    cursors.append({'id': registered['cursor_id'], 'job_id': job_id, 'last_seq': 0,
+                                    'status': 'active'})
+                    jobs.append({'id': job_id, 'status': 'pending',
                                  'scheduled_at': None if failure == 'deterministic' else '2030-01-01T00:00:00Z',
                                  'execution_seq': 1, 'attempts': 3, 'max_attempts': 3,
                                  'last_error': 'projection worker boom' if failure == 'deterministic' else 'database unavailable'})
                     return registered
                 if method == 'GET' and path == base + '/projections':
-                    return {'cursors': list(cursors)}
+                    return {'cursors': [dict(cursor) for cursor in cursors]}
                 if method == 'GET' and path == '/api/v1/jobs?thread_id=' + thread_id:
                     return {'jobs': list(jobs)}
                 if method == 'POST' and path == base + '/projections/remove':
@@ -47,8 +49,18 @@ class ProjectionFailureContractTests(unittest.TestCase):
                     return {'success': True, 'removed': {'projection_id': projection_id, 'removed_cursors': 1}}
                 raise AssertionError('Unexpected request: ' + repr((method, path, body, label)))
 
+            def wait(condition, *_args, **_kwargs):
+                result = condition()
+                if result is not None:
+                    return result
+                # The job error is visible before the cursor invalidation transition.
+                cursor = next(row for row in cursors if row['id'] == 'cursor-deterministic')
+                cursor['status'] = 'invalid'
+                cursor['last_error'] = 'projection worker boom'
+                return condition()
+
             inst = SimpleNamespace(app=Path(directory), cleanup=Cleanup(), request=request,
-                                   wait=lambda condition, *_args, **_kwargs: condition(), evidence=Mock())
+                                   wait=wait, evidence=Mock())
             (inst.app / 'src').mkdir()
             ctx = SimpleNamespace(inst=inst, restart=lambda: None)
             deleted = []
@@ -67,3 +79,5 @@ class ProjectionFailureContractTests(unittest.TestCase):
                               if call.args[0].startswith('projection-failure-cleanup-')],
                              ['projection-failure-cleanup-infrastructure',
                               'projection-failure-cleanup-deterministic'])
+            self.assertEqual([call.args[1]['cursor']['status'] for call in inst.evidence.save.call_args_list
+                              if call.args[0] == 'projection-failure-deterministic'], ['active', 'invalid'])
