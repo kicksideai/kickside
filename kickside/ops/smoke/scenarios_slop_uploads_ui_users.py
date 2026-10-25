@@ -78,13 +78,13 @@ def facade_dependency(ctx):
 
 
 def ui_kit_manifest(ctx):
-    root = Path(ctx.inst.config['source'])
     environment = dict(os.environ, TMPDIR=str(ctx.inst.root / 'temp'))
-    completed = subprocess.run(['node', '--test', 'scripts/wire-ui-kit.test.mjs', 'scripts/build-modules.test.mjs'], cwd=root,
-                               env=environment, capture_output=True, text=True, timeout=120)
-    ctx.inst.evidence.save('ui-kit-manifest-test', {'code': completed.returncode,
-        'output': completed.stdout, 'error': completed.stderr})
-    require(completed.returncode == 0, 'UI kit manifest validation writes or accepts an invalid manifest')
+    with public_source_overlay(ctx, ('scripts/wire-ui-kit.test.mjs', 'scripts/build-modules.test.mjs')) as root:
+        completed = subprocess.run(['node', '--test', 'scripts/wire-ui-kit.test.mjs', 'scripts/build-modules.test.mjs'], cwd=root,
+                                   env=environment, capture_output=True, text=True, timeout=120)
+        ctx.inst.evidence.save('ui-kit-manifest-test', {'code': completed.returncode,
+            'output': completed.stdout, 'error': completed.stderr})
+        require(completed.returncode == 0, 'UI kit manifest validation writes or accepts an invalid manifest')
 
 
 def login_theme_config(ctx):
