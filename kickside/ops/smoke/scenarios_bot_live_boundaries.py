@@ -266,9 +266,9 @@ REGISTRY = [
     Scenario('browser_bot_held_agent_control', 'regression', browser_bot_held_agent_control, ('boot',), instance_setup=True,
              issues=('BOT-HELD-AGENT-AUTHORITY',)),
     Scenario('browser_bot_held_agent_disable', 'regression', browser_bot_held_agent_disable, ('boot',), instance_setup=True,
-             issues=('RA-S04', 'BOT-HELD-AGENT-AUTHORITY', 'RA-B11', 'RA-H40')),
+             issues=('RA-S04', 'BOT-HELD-AGENT-AUTHORITY', 'RA-B11', 'RA-H40', 'UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY')),
     Scenario('browser_bot_held_agent_group_reduction', 'regression', browser_bot_held_agent_group_reduction, ('boot',), instance_setup=True,
-             issues=('BOT-HELD-AGENT-AUTHORITY', 'RA-H40')),
+             issues=('BOT-HELD-AGENT-AUTHORITY', 'RA-H40', 'UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY')),
     Scenario('browser_bot_held_agent_adoption', 'regression', browser_bot_held_agent_adoption, ('boot',), instance_setup=True,
              issues=('BOT-HELD-CARRIER-ADOPTION', 'RA-H38', 'RA-H50', 'RA-H51')),
 ]
