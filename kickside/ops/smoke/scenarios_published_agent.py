@@ -101,7 +101,8 @@ def browser_published_agent_provider_hub_ui_update(ctx):
             inst.evidence.paths.append(str(trace))
 
     browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui,
-        setup=setup, observe=observe, modules=('kickside/agents', 'kickside/models'))
+        setup=setup, observe=observe, modules=('kickside/agents', 'kickside/models'),
+        controller_source='keeper/keeper')
 
 
 REGISTRY = [Scenario('browser_published_agent_provider_hub_ui_update', 'regression',

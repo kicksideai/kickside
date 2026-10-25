@@ -174,7 +174,8 @@ def _published_channel(ctx, provider):
 
     browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui,
         setup=setup, observe=observe, modules=('kickside/agents', 'kickside/models', 'kickside/connection',
-                                             'kickside/channel', 'kickside/' + provider.provider))
+                                             'kickside/channel', 'kickside/' + provider.provider),
+        controller_source='keeper/keeper')
 
 
 def browser_published_discord_responder_hub_ui_update(ctx):

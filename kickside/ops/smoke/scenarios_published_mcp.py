@@ -96,7 +96,7 @@ def browser_published_mcp_credential_hub_ui_update(ctx):
             'transports': sorted(client.transports)})
 
     browser_published_human_automation_update(ctx, installer=install,
-        observe=observe, modules=('kickside/mcp',))
+        observe=observe, modules=('kickside/mcp',), controller_source='keeper/keeper')
 
 
 REGISTRY = [Scenario('browser_published_mcp_credential_hub_ui_update', 'regression',
