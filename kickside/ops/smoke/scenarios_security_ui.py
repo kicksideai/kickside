@@ -59,25 +59,56 @@ def assign_scope(ctx, user, scope):
 def assert_portaled_editor_presentation(dialog):
     """Prove the portaled editor is visible and shields its Users surface."""
     presentation = dialog.evaluate("""dialog => {
+        function parent(node) {
+            return node.parentNode || (node.getRootNode?.() instanceof ShadowRoot ? node.getRootNode().host : null);
+        }
+        function composedContains(ancestor, node) {
+            for (let current = node; current; current = parent(current)) if (current === ancestor) return true;
+            return false;
+        }
+        function closestComposed(node, match) {
+            for (let current = node; current; current = parent(current)) {
+                if (current.nodeType === Node.ELEMENT_NODE && match(current)) return current;
+            }
+            return null;
+        }
+        function deepHit(root, x, y) {
+            let hit = root.elementFromPoint(x, y);
+            const seen = new Set();
+            while (hit?.shadowRoot && !seen.has(hit)) {
+                seen.add(hit);
+                const nested = hit.shadowRoot.elementFromPoint(x, y);
+                if (!nested || nested === hit) break;
+                hit = nested;
+            }
+            return hit;
+        }
+        function describe(node) {
+            if (!node) return null;
+            const root = node.getRootNode();
+            return {tag: node.tagName, id: node.id || null, class: node.className || null,
+                    rootType: root.constructor.name, rootHost: root.host?.tagName || null,
+                    modalMask: node.getAttribute?.('data-pc-section') || null};
+        }
         const bounds = dialog.getBoundingClientRect();
         const viewport = {width: window.innerWidth, height: window.innerHeight};
-        const center = document.elementFromPoint(bounds.left + bounds.width / 2,
-                                                  bounds.top + bounds.height / 2);
+        const center = deepHit(document, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
         const corners = [[1, 1], [viewport.width - 1, 1],
                          [1, viewport.height - 1], [viewport.width - 1, viewport.height - 1]];
         const outside = corners.find(([x, y]) => x < bounds.left || x > bounds.right ||
                                      y < bounds.top || y > bounds.bottom);
-        const backdrop = outside && document.elementFromPoint(...outside);
+        const backdrop = outside && deepHit(document, ...outside);
         const users = document.querySelector('kickside-users');
-        const mask = dialog.closest('[data-pc-section="mask"]');
+        const mask = closestComposed(dialog, element => element.getAttribute('data-pc-section') === 'mask');
         return {
             bounds: {left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom,
                      width: bounds.width, height: bounds.height},
             viewport,
-            centerTopLayer: !!center && (center === dialog || dialog.contains(center)),
-            portalOwnsDialog: !!users && !!mask && mask.contains(dialog) && !users.contains(mask),
-            backdropMaskHit: !!mask && !!backdrop && !dialog.contains(backdrop) &&
-                             (backdrop === mask || mask.contains(backdrop)),
+            centerTopLayer: composedContains(dialog, center),
+            portalOwnsDialog: !!users && !!mask && composedContains(mask, dialog) && !users.contains(mask),
+            backdropMaskHit: composedContains(mask, backdrop) && !composedContains(dialog, backdrop),
+            hit: {center: describe(center), backdrop: describe(backdrop), dialog: describe(dialog),
+                  mask: describe(mask), dialogRoot: describe(dialog.getRootNode().host || dialog.getRootNode())},
         };
     }""")
     bounds, viewport = presentation.get('bounds', {}), presentation.get('viewport', {})

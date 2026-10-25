@@ -83,9 +83,59 @@ class SecurityUiPresentationTests(unittest.TestCase):
             with self.assertRaisesRegex(Failure, 'portaled modal mask'):
                 assert_portaled_editor_presentation(dialog)
 
+            dialog = render('<kickside-users><div data-pc-section="mask">'
+                            '<div role="dialog" aria-label="Edit user"></div></div></kickside-users>')
+            with self.assertRaisesRegex(Failure, 'portaled modal mask'):
+                assert_portaled_editor_presentation(dialog)
+
             dialog = render('<kickside-users></kickside-users><div data-pc-section="mask" style="pointer-events:none">'
                             '<div role="dialog" aria-label="Edit user" style="pointer-events:auto"></div></div>'
                             '<div id="sidebar"></div>')
+            with self.assertRaisesRegex(Failure, 'modal mask'):
+                assert_portaled_editor_presentation(dialog)
+        finally:
+            session.close()
+
+    def test_portaled_editor_evaluator_descends_shadow_roots_and_rejects_shadow_overlay(self):
+        session = BrowserSession()
+        try:
+            page = session.start().new_page()
+            page.set_content('<kickside-users></kickside-users>')
+            page.evaluate("""() => {
+                const host = document.querySelector('kickside-users');
+                host.attachShadow({mode: 'open'}).innerHTML = `<style>
+                    [data-pc-section=mask] { position: absolute; inset: 0; background: rgba(0,0,0,.2); }
+                    [role=dialog] { position: absolute; left: 200px; top: 100px; width: 600px; height: 400px; }
+                </style><div data-pc-section="mask"><div role="dialog" aria-label="Edit user"></div></div>`;
+            }""")
+            dialog = page.get_by_role('dialog', name='Edit user', exact=True)
+            presentation = assert_portaled_editor_presentation(dialog)
+            self.assertEqual(presentation['hit']['center']['rootType'], 'ShadowRoot')
+            self.assertEqual(presentation['hit']['center']['rootHost'], 'KICKSIDE-USERS')
+
+            page.evaluate("""() => {
+                const root = document.querySelector('kickside-users').shadowRoot;
+                root.querySelector('[data-pc-section=mask]').style.pointerEvents = 'none';
+                root.querySelector('[role=dialog]').style.pointerEvents = 'auto';
+            }""")
+            with self.assertRaisesRegex(Failure, 'modal mask'):
+                assert_portaled_editor_presentation(dialog)
+
+            page.evaluate("""() => {
+                const root = document.querySelector('kickside-users').shadowRoot;
+                root.querySelector('[data-pc-section=mask]').style.pointerEvents = 'auto';
+                root.querySelector('[role=dialog]').style.pointerEvents = 'none';
+            }""")
+            with self.assertRaisesRegex(Failure, 'obscured'):
+                assert_portaled_editor_presentation(dialog)
+
+            page.evaluate("""() => {
+                document.querySelector('kickside-users').shadowRoot.querySelector('[role=dialog]').style.pointerEvents = 'auto';
+                const host = document.createElement('overlay-host');
+                host.style.cssText = 'position:fixed;left:0;top:0;width:100px;height:100px;z-index:2';
+                host.attachShadow({mode: 'open'}).innerHTML = '<div style="position:absolute;inset:0"></div>';
+                document.body.append(host);
+            }""")
             with self.assertRaisesRegex(Failure, 'modal mask'):
                 assert_portaled_editor_presentation(dialog)
         finally:
