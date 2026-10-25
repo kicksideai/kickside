@@ -46,7 +46,9 @@ local function run()
                 action = "catalog", catalog_id = "blocks:app:block.engine_public_step",
             })
             local item = read.item :: Map
-            local encoded = json.decode(json.encode(item)) :: Map
+            local item_json, item_json_err = json.encode(item)
+            test.is_nil(item_json_err)
+            local encoded = json.decode(item_json) :: Map
             local created = call(actor, scope, "kickside.workflows.agent:flows_manage", { action = "create", title = "Empty settings" })
             local id = tostring((created.workflow :: Map).id)
             call(actor, scope, "kickside.workflows.agent:flows_manage", { action = "apply", id = id, commands = {
@@ -74,7 +76,9 @@ local function run()
             local published, publish_err = version_publish.publish(id, "tester")
             test.is_nil(publish_err)
             test.is_true((published :: Map).ok, json.encode((published :: Map).errors))
-            local row = json.decode(json.encode(descriptor)) :: Map
+            local descriptor_json, descriptor_json_err = json.encode(descriptor)
+            test.is_nil(descriptor_json_err)
+            local row = json.decode(descriptor_json) :: Map
             for _, key in ipairs({ "input_schema", "config_schema", "config", "output_schema" }) do
                 test.eq(json.encode((row[key] :: Map).properties), "{}")
                 test.eq(json.encode((row[key] :: Map).default), "{}")
