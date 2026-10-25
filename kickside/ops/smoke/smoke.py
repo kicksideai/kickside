@@ -664,6 +664,12 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
         isolated = {instance_area(owner) for owner in RuntimePool.isolated}
         def completed(result):
             results.append(result)
+            # Persist the scenario outcome before terminal owner cleanup.  A
+            # crashed browser's teardown is deliberately process-level and is
+            # allowed to report a failure, but it must never erase the page
+            # crash that caused it.
+            print(f'{engine} {result.scenario}: {result.status} ({result.duration:.1f}s)', flush=True)
+            write_results(root, results, tier, config)
             owner = owners.get(result.scenario)
             if owner is not None:
                 remaining_owners[owner] -= 1
@@ -671,16 +677,16 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
                     try:
                         runner.executors[owner].submit(runner.sessions[owner].close).result()
                     except Exception as failure:
-                        early_cleanup_errors.append(runner.contexts[owner].inst.redactor.text(
-                            f'{owner} session: {failure}'))
+                        error = runner.contexts[owner].inst.redactor.text(f'{owner} session: {failure}')
+                        early_cleanup_errors.append(error)
+                        results.append(Result(owner + ' session cleanup', engine, 'failed', 0, error))
+                        write_results(root, results, tier, config)
             area = areas[result.scenario]
             remaining[area] -= 1
             if area in isolated and remaining[area] == 0:
                 cleanup = runner.close(areas={area})
                 if cleanup.error:
                     early_cleanup_errors.append(cleanup.error)
-            print(f'{engine} {result.scenario}: {result.status} ({result.duration:.1f}s)', flush=True)
-            write_results(root, results, tier, config)
         runner.run(tier, selected_names, workers, completed)
     except BaseException as failure:
         redactor = Redactor()

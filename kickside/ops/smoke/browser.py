@@ -1,11 +1,13 @@
 """Headless browser evidence and strict console/network checks."""
 from contextlib import contextmanager
 import json
+from pathlib import Path
 import re
 from urllib.parse import quote, urlparse
 import time
 
 from harness import Failure, require
+from process_supervision import owned_process, stop_owned_tree
 
 
 ASSISTANT_TEXT = """el => {
@@ -52,14 +54,43 @@ ICONIFY_MIRRORS = frozenset({'api.iconify.design', 'api.simplesvg.com', 'api.uni
 
 class BrowserSession:
     """A Playwright driver and Chromium process owned by one scenario thread."""
+    crash_grace_seconds = 3
+
     def __init__(self):
         self.playwright = None
         self.browser = None
+        self.driver_record = None
+        self.driver_record_error = 'Playwright driver has not started'
+        self.crash_cleanup_failure = None
+
+    def capture_driver_ownership(self):
+        """Best-effort record of the local Playwright pipe driver we just started.
+
+        The normal lifecycle remains portable.  This record is only required
+        for the exceptional path where a page crash makes Playwright RPC
+        teardown unsafe.
+        """
+        try:
+            transport = self.playwright._impl_obj._connection._transport
+            pid = transport._proc.pid
+            require(isinstance(pid, int) and pid > 0,
+                    'Playwright transport does not expose a local driver PID')
+            command = Path('/proc') / str(pid) / 'cmdline'
+            arguments = command.read_bytes().split(b'\0')
+            require(any(b'playwright' in argument for argument in arguments)
+                    and b'run-driver' in arguments,
+                    'Playwright transport PID is not the run-driver process')
+            self.driver_record = owned_process(pid)
+            self.driver_record_error = None
+        except Exception as error:
+            self.driver_record = None
+            self.driver_record_error = f'{type(error).__name__}: {error}'
 
     def start(self):
         if self.playwright is None:
             from playwright.sync_api import sync_playwright
             self.playwright = sync_playwright().start()
+            self.capture_driver_ownership()
             try:
                 self.browser = self.playwright.chromium.launch(headless=True, args=['--no-sandbox'])
             except Exception:
@@ -67,7 +98,34 @@ class BrowserSession:
                 raise
         return self.browser
 
+    def discard_crashed_driver(self):
+        """Stop a known-crashed session without sending any Playwright RPCs."""
+        if self.playwright is None:
+            return {'status': 'not-started', 'processes': []}
+        try:
+            require(self.driver_record is not None,
+                    'Browser crash driver cleanup unavailable: ' + str(self.driver_record_error))
+            receipt = stop_owned_tree(self.driver_record, grace_seconds=self.crash_grace_seconds)
+            # sync_playwright().start() owns a local greenlet and event loop.
+            # Its public stop() is the context-manager's local dispatcher and
+            # event-loop shutdown.  The owned driver tree is already gone, so
+            # this cannot send a protocol request to a live crashed browser.
+            self.playwright.stop()
+        except Exception as error:
+            self.crash_cleanup_failure = f'{type(error).__name__}: {error}'
+            raise
+        # Only forget the session after its verified process tree is gone: a
+        # subsequent Browser must start a new driver and Chromium context.
+        self.browser = None
+        self.playwright = None
+        self.driver_record = None
+        self.driver_record_error = 'Playwright driver was discarded after a page crash'
+        self.crash_cleanup_failure = None
+        return receipt
+
     def close(self):
+        if self.crash_cleanup_failure is not None:
+            raise Failure('Browser session terminal after crash cleanup failure: ' + self.crash_cleanup_failure)
         errors = []
         for name, method in (('browser', 'close'), ('playwright', 'stop')):
             resource = getattr(self, name)
@@ -1049,6 +1107,36 @@ class Browser:
         return chat
 
     def close(self):
+        if self.crashes:
+            # A crashed page can wedge the sync Playwright transport.  In this
+            # branch do not close the context, detach CDP, close Chromium, or
+            # stop Playwright: each is a protocol RPC that may never return.
+            errors = []
+            self.context = self.page = None
+            self.browser_cdp = None
+            try:
+                receipt = self.session.discard_crashed_driver()
+                self.inst.evidence.save('browser-crash-driver-cleanup', receipt)
+            except Exception as error:
+                diagnostic = self.inst.redactor.text(f'{type(error).__name__}: {error}')
+                self.inst.evidence.save('browser-crash-driver-cleanup', {
+                    'status': 'failed', 'error': diagnostic,
+                })
+                errors.append(diagnostic)
+            self.navigation_urls = {}
+            self.worker_targets.clear()
+            self.worker_sessions.clear()
+            self.worker_session_cdps.clear()
+            self.worker_parsed_urls.clear()
+            self.worker_network_urls.clear()
+            self.native_network.clear()
+            self.native_unscoped_workers.clear()
+            self.page_scopes.clear()
+            self.context_scopes.clear()
+            self.browser_context_scopes.clear()
+            self.page_cdps.clear()
+            require(not errors, 'Browser crash cleanup: ' + '; '.join(errors))
+            return
         errors = []
         if self.context is not None:
             try:

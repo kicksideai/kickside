@@ -684,6 +684,42 @@ class AttachedStateTests(unittest.TestCase):
         self.assertEqual(document['counts']['exit_code'], 1)
         runner.close.assert_called_once_with()
 
+    def test_one_shot_persists_failed_scenario_before_terminal_owner_cleanup(self):
+        registry = [Scenario('crashed', 'full', lambda ctx: None, owner='crashed_owner')]
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory) / 'result-root'
+            case = self
+            class Session:
+                def close(self):
+                    document = json.loads((root / 'results.json').read_text())
+                    case.assertEqual([row['scenario'] for row in document['results']], ['crashed'])
+                    case.assertEqual(document['results'][0]['status'], 'failed')
+                    raise RuntimeError('terminal owner cleanup fails')
+
+            executor = ThreadPoolExecutor(max_workers=1)
+            runner = Mock()
+            runner.pool.instances = {}
+            runner.sessions = {'crashed_owner': Session()}
+            runner.executors = {'crashed_owner': executor}
+            runner.contexts = {'crashed_owner': Mock(inst=Mock(redactor=Mock(text=str)))}
+            runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+            runner.run.side_effect = lambda _tier, _names, _workers, completed: completed(
+                Result('crashed', 'sqlite', 'failed', 0, 'Browser page crashed'))
+            connection = Mock()
+            try:
+                with patch.object(smoke, 'REGISTRY', registry), \
+                        patch.object(smoke, 'EngineRunner', return_value=runner), \
+                        patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process({'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}},
+                                         'sqlite', root, [], 'full', 1, connection)
+                document = json.loads((root / 'results.json').read_text())
+            finally:
+                executor.shutdown(wait=True)
+        self.assertEqual([row['scenario'] for row in document['results']],
+                         ['crashed', 'crashed_owner session cleanup', 'cleanup'])
+        self.assertIn('terminal owner cleanup fails', document['results'][1]['error'])
+        self.assertIn('Browser page crashed', document['results'][0]['error'])
+
     def test_gate_constructor_failure_returns_owned_engine_receipt(self):
         for engine in ('sqlite', 'postgres'):
             with self.subTest(engine=engine), tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
