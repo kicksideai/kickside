@@ -1,6 +1,7 @@
 import yaml
 
 from harness import Scenario, require
+from cleanup_evidence import delete_component
 from scenarios_core import create_thread
 
 
@@ -21,7 +22,7 @@ def projection_failure_contract(ctx):
     }, sort_keys=False))
     ctx.restart()
     thread_id = create_thread(ctx, 'Projection failure contract')
-    ctx.inst.cleanup.add('Projection failure thread', lambda: ctx.inst.request('DELETE', '/api/v1/threads/' + thread_id),
+    ctx.inst.cleanup.add('Projection failure thread', lambda: delete_component(ctx.inst, thread_id, '/api/v1/threads/' + thread_id),
                          scope='scenario')
     base = '/api/v1/threads/' + thread_id
     ctx.inst.request('POST', base + '/messages', {'text': 'Projection event', 'role': 'user'},
