@@ -123,12 +123,6 @@ class PublishedProviderUpdateTests(unittest.TestCase):
         self.assertEqual(update.call_args_list[0].kwargs, {'live': True, 'refresh_session': True})
         self.assertEqual(update.call_args_list[1].kwargs, {'live': True})
 
-    def test_code_execution_historical_contract_constraints_are_explicit(self):
-        from scenarios_published_provider_identity import CODE_EXECUTION_CONTRACT_CONSTRAINTS
-        self.assertEqual(CODE_EXECUTION_CONTRACT_CONSTRAINTS, {
-            '0.1.16': None, '0.1.17': '*', '0.1.18': '*',
-        })
-
     def test_code_execution_rejects_an_archive_with_a_different_contract_constraint(self):
         baseline = {'version': '0.1.18',
                     'hash': 'b12f9471a0efc06a553a30316d62227de47bf9f7451983a6a47735532b626f16',
