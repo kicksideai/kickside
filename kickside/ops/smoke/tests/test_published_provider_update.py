@@ -9,7 +9,11 @@ from unittest.mock import Mock, patch
 import yaml
 
 from harness import Failure
-from scenarios_published_provider_identity import provider_binding_update
+from scenarios_published_provider_identity import (
+    CODE_EXECUTION_HISTORICAL_CONTRACT,
+    provider_binding_update,
+    provider_historical_closure,
+)
 
 
 class PublishedProviderUpdateTests(unittest.TestCase):
@@ -122,6 +126,12 @@ class PublishedProviderUpdateTests(unittest.TestCase):
                          ['kickside/code-execution', 'kickside/contract'])
         self.assertEqual(update.call_args_list[0].kwargs, {'live': True, 'refresh_session': True})
         self.assertEqual(update.call_args_list[1].kwargs, {'live': True})
+
+    def test_code_execution_only_pins_contract_for_declared_historical_dependencies(self):
+        self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': '0.1.16'}), ())
+        for version in ('0.1.17', '0.1.18'):
+            self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': version}),
+                             ({**CODE_EXECUTION_HISTORICAL_CONTRACT, 'provider_constraint': '*'},))
 
     def test_code_execution_rejects_an_archive_with_a_different_contract_constraint(self):
         baseline = {'version': '0.1.18',

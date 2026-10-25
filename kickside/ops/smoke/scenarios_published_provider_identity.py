@@ -98,6 +98,8 @@ def provider_historical_closure(module, baseline):
     expected = CODE_EXECUTION_CONTRACT_CONSTRAINTS.get(baseline['version'])
     require(baseline['version'] in CODE_EXECUTION_CONTRACT_CONSTRAINTS,
             'Code Execution fixture has no verified Contract constraint for ' + baseline['version'])
+    if expected is None:
+        return ()
     return ({**CODE_EXECUTION_HISTORICAL_CONTRACT, 'provider_constraint': expected},)
 
 
