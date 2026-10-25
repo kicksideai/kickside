@@ -9,7 +9,8 @@ def projection_failure_contract(ctx):
     fixture.mkdir(exist_ok=True)
     (fixture / 'worker.lua').write_text(
         'local M = {}\n'
-        'function M.deterministic(_input) error("projection worker boom") end\n'
+        'function M.deterministic(_input) error(errors.new({message = "projection worker boom", '
+        'kind = errors.INVALID, retryable = false})) end\n'
         'function M.infrastructure(_input) error(errors.new({message = "database unavailable", '
         'kind = errors.UNAVAILABLE, retryable = true})) end\nreturn M\n')
     (fixture / '_index.yaml').write_text(yaml.safe_dump({
