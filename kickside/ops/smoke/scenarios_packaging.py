@@ -12,7 +12,7 @@ import yaml
 
 from harness import Failure, Scenario, require
 from data_contracts import data_contracts
-from module_harness import public_source_overlay
+from module_harness import _private_suite_root, public_source_overlay
 
 
 def public_source_root(ctx):
@@ -108,25 +108,45 @@ REGISTRY += [Scenario('brave_package_readme', 'full', brave_package_readme, ('bo
 REGISTRY += [Scenario('data_contracts', 'full', data_contracts, ('boot',))]
 
 
+RELEASE_HARNESS_TOOLING = (
+    'scripts/check-release-hygiene.py',
+    'scripts/test-release-hygiene.py',
+    'tests/test_release_hygiene.py',
+    '.github/scripts/release_content.py',
+    'tests/test_build_input_refresh.py',
+    'tests/fixtures/previous-build-inputs.lock',
+)
+
+
 def release_harness_configuration(ctx):
     import subprocess
     import sys
 
     root = public_source_root(ctx)
-    checks = {script: [sys.executable, script] for script in
-             ['scripts/test-release-hygiene.py', 'tests/test_source_conventions.py',
-              'scripts/check-source-conventions.py',
-              '.github/scripts/test_delivery.py', '.github/scripts/test_release_content.py']}
-    checks['ops.compat.tests.test_fetch'] = [sys.executable, '-m', 'unittest',
-                                          'ops.compat.tests.test_fetch']
-    checks['tests.test_build_input_refresh'] = [sys.executable, '-m', 'unittest',
-                                              'tests.test_build_input_refresh']
-    checks['ops/smoke/coverage/tests/test_issues.py'] = [sys.executable, '-m', 'unittest',
-        'discover', '-s', 'ops/smoke/coverage', '-p', 'test_issues.py']
-    for script, command in checks.items():
-        result = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=60)
-        require(result.returncode == 0, script + ': ' + result.stdout + result.stderr)
-    ctx.inst.evidence.save('release-harness-configuration', {'checks': list(checks), 'status': 'pass'})
+    suite = _private_suite_root()
+    checks = [
+        (suite, 'tests.test_source_conventions', [sys.executable, '-m', 'unittest', 'tests.test_source_conventions'], 60),
+        (suite, 'scripts/check-source-conventions.py', [sys.executable, 'scripts/check-source-conventions.py',
+                                                         '--root', str(root)], 60),
+        (suite, 'ops.compat.tests.test_fetch', [sys.executable, '-m', 'unittest',
+                                                'ops.compat.tests.test_fetch'], 60),
+        (suite, 'ops/smoke/coverage/tests/test_issues.py', [sys.executable, '-m', 'unittest',
+         'discover', '-s', 'ops/smoke/coverage', '-p', 'test_issues.py'], 60),
+    ]
+    with public_source_overlay(ctx, RELEASE_HARNESS_TOOLING) as overlay:
+        checks.extend([
+            (overlay, 'scripts/test-release-hygiene.py', [sys.executable, 'scripts/test-release-hygiene.py'], 60),
+            (overlay, 'tests.test_release_hygiene', [sys.executable, '-m', 'unittest',
+                                                      'tests.test_release_hygiene'], 60),
+            (overlay, 'tests.test_build_input_refresh', [sys.executable, '-m', 'unittest',
+                                                          'tests.test_build_input_refresh'], 60),
+        ])
+        for cwd, label, command, timeout in checks:
+            result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+            require(result.returncode == 0, label + ': ' + result.stdout + result.stderr)
+    ctx.inst.evidence.save('release-harness-configuration', {
+        'checks': [label for _, label, _, _ in checks], 'status': 'pass',
+    })
 
 
 REGISTRY += [Scenario('release_harness_configuration', 'full', release_harness_configuration,
@@ -140,10 +160,16 @@ def release_contract_invokers(ctx):
     import sys
 
     root = public_source_root(ctx)
-    result = subprocess.run([sys.executable, 'scripts/check-contract-surface.py'], cwd=root,
-                            capture_output=True, text=True, timeout=60)
-    require(result.returncode == 0, result.stdout + result.stderr)
-    ctx.inst.evidence.save('release-contract-invokers', {'status': 'pass'})
+    suite = _private_suite_root()
+    checks = {
+        'tests.test_contract_surface': [sys.executable, '-m', 'unittest', 'tests.test_contract_surface'],
+        'scripts/check-contract-surface.py': [sys.executable, 'scripts/check-contract-surface.py',
+                                              '--root', str(root)],
+    }
+    for label, command in checks.items():
+        result = subprocess.run(command, cwd=suite, capture_output=True, text=True, timeout=60)
+        require(result.returncode == 0, label + ': ' + result.stdout + result.stderr)
+    ctx.inst.evidence.save('release-contract-invokers', {'checks': list(checks), 'status': 'pass'})
 
 
 REGISTRY += [Scenario('release_contract_invokers', 'full', release_contract_invokers,
