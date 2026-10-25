@@ -649,7 +649,7 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, interrupt)
     results = []
-    session_cleanup_errors = []
+    early_cleanup_errors = []
     started = time.monotonic()
     runner = None
     try:
@@ -671,14 +671,14 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
                     try:
                         runner.executors[owner].submit(runner.sessions[owner].close).result()
                     except Exception as failure:
-                        session_cleanup_errors.append(runner.contexts[owner].inst.redactor.text(
+                        early_cleanup_errors.append(runner.contexts[owner].inst.redactor.text(
                             f'{owner} session: {failure}'))
             area = areas[result.scenario]
             remaining[area] -= 1
             if area in isolated and remaining[area] == 0:
-                instance = runner.pool.instances.get(area)
-                if instance is not None:
-                    instance.stop()
+                cleanup = runner.close(areas={area})
+                if cleanup.error:
+                    early_cleanup_errors.append(cleanup.error)
             print(f'{engine} {result.scenario}: {result.status} ({result.duration:.1f}s)', flush=True)
             write_results(root, results, tier, config)
         runner.run(tier, selected_names, workers, completed)
@@ -699,9 +699,9 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
     finally:
         if runner is not None:
             cleanup = runner.close()
-            if session_cleanup_errors:
+            if early_cleanup_errors:
                 cleanup.status = 'failed'
-                cleanup.error = '\n'.join(filter(None, [cleanup.error, *session_cleanup_errors]))
+                cleanup.error = '\n'.join(filter(None, [cleanup.error, *early_cleanup_errors]))
             results.append(cleanup)
         timing = {'mode': 'fresh', 'workers': workers,
                         'cold_boot_seconds': sum(getattr(inst, 'boot_seconds', 0) for inst in runner.pool.instances.values()) if runner else 0,
