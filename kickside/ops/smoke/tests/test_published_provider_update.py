@@ -13,7 +13,8 @@ from scenarios_published_provider_identity import provider_binding_update
 
 
 class PublishedProviderUpdateTests(unittest.TestCase):
-    def exercise(self, *, parameters=None, target=None, includes=None, groups=None, dependencies=None):
+    def exercise(self, *, parameters=None, target=None, includes=None, groups=None, dependencies=None,
+                 module='example/provider', baseline=None, archived_constraint='*'):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             root = Path(directory)
             candidate = root / 'candidate'
@@ -23,7 +24,16 @@ class PublishedProviderUpdateTests(unittest.TestCase):
             (inst.app / 'src').mkdir(parents=True)
             inst.password = 'fixture password'
             inst.request.return_value = {'policies': [{'id': 'example.provider.security:module_access', 'intent': 'module_access'}]}
-            inst.config = {'replace': {'example/provider': str(candidate)}}
+            replacements = {module: str(candidate)}
+            contract = root / 'contract-candidate'
+            if module == 'kickside/code-execution':
+                (contract / 'src').mkdir(parents=True)
+                replacements['kickside/contract'] = str(contract)
+            inst.config = {'replace': replacements}
+            prepared_replacements = []
+            inst.resolve_dependencies.side_effect = lambda **kwargs: prepared_replacements.append({
+                'modules': kwargs['modules'], 'replacements': dict(inst.config['replace']),
+            })
             (inst.app / '.wippy.yaml').write_text(yaml.safe_dump({'workspace': {}}))
             ctx = Mock()
             ctx.inst.config = deepcopy(inst.config)
@@ -31,7 +41,8 @@ class PublishedProviderUpdateTests(unittest.TestCase):
             group = 'security.identity.provider:bound'
             supplied = [{'name': 'example.provider.security:user_security_scope', 'value': group},
                         {'name': 'example.provider:api_router', 'value': 'app:api'}]
-            before = {'parameters': supplied, 'entries': [{'module': 'example/provider', 'module_version': '1.0.0'}]}
+            selected_baseline = baseline or {'version': '1.0.0', 'hash': 'verified digest', 'declared': True}
+            before = {'parameters': supplied, 'entries': [{'module': module, 'module_version': selected_baseline['version']}]}
             after = deepcopy(before)
             if parameters is not None:
                 after['parameters'] = parameters
@@ -44,13 +55,16 @@ class PublishedProviderUpdateTests(unittest.TestCase):
             entries = {endpoint_id: endpoint, bundle['id']: bundle,
                        supplied[0]['name']: requirement, supplied[1]['name']: {'data': {}}}
             probe = Mock(return_value={'member': 200, 'outside': 403})
-            specification = {'module': 'example/provider', 'namespace': 'example.provider',
+            specification = {'module': module, 'namespace': 'example.provider',
                              'endpoint_component': endpoint_id, 'parameters': {'example.provider:api_router': 'app:api'},
                              'probe': probe, 'dependencies': dependencies or []}
-            def archive(path, module, baseline):
+            def archive(path, archived_module, archived_baseline):
                 path.mkdir()
                 (path / 'src').mkdir()
-                return {'version': baseline['version'], 'sha256': 'verified digest'}
+                if archived_module == 'kickside/code-execution':
+                    (path / 'src/entries.yaml').write_text(yaml.safe_dump({'version': '1.0', 'namespace': 'kickside.code_execution',
+                        'entries': [{'name': 'contract', 'kind': 'ns.dependency', 'component': 'kickside/contract', 'version': archived_constraint}]}))
+                return {'version': archived_baseline['version'], 'sha256': archived_baseline.get('hash', 'verified digest')}
             @contextmanager
             def isolated(context, *, config, prepare):
                 prepare(fixture)
@@ -61,9 +75,9 @@ class PublishedProviderUpdateTests(unittest.TestCase):
                  patch('scenarios_published_provider_identity.update_source') as update, \
                  patch('scenarios_published_provider_identity.registry_entry', side_effect=lambda instance, id, label: entries[id]), \
                  patch('scenarios_published_provider_identity.provider_members', return_value=('member token', 'outside token')):
-                provider_binding_update(ctx, specification, {'version': '1.0.0', 'hash': 'verified digest', 'declared': True})
-            self.assertTrue(update.call_args.kwargs['live'])
-            self.assertTrue(update.call_args.kwargs['refresh_session'])
+                provider_binding_update(ctx, specification, selected_baseline)
+            self.assertTrue(update.call_args_list[0].kwargs['live'])
+            self.assertTrue(update.call_args_list[0].kwargs['refresh_session'])
             self.assertEqual(inst.install.call_args.kwargs['parameters'], supplied)
             probe.assert_called_once_with(fixture, 'member token', 'outside token')
             if dependencies:
@@ -71,6 +85,7 @@ class PublishedProviderUpdateTests(unittest.TestCase):
                 companion = next(row for row in declarations if row['component'] == 'example/companion')
                 self.assertEqual(companion['version'], '*')
                 self.assertEqual(companion['parameters'], dependencies[0]['parameters'])
+            return update, prepared_replacements, str(contract) if module == 'kickside/code-execution' else None
 
     def test_updates_an_arbitrary_provider_with_its_existing_binding(self):
         self.exercise()
@@ -94,3 +109,29 @@ class PublishedProviderUpdateTests(unittest.TestCase):
     def test_declares_existing_support_bindings_for_the_archived_graph(self):
         self.exercise(dependencies=[{'component': 'example/companion', 'parameters': [
             {'name': 'example.companion:ui_server', 'value': 'app:gateway'}]}])
+
+    def test_code_execution_boots_a_pinned_historical_contract_then_upgrades_before_current_contract(self):
+        baseline = {'version': '0.1.18',
+                    'hash': 'b12f9471a0efc06a553a30316d62227de47bf9f7451983a6a47735532b626f16',
+                    'declared': True}
+        update, prepared, current_contract = self.exercise(module='kickside/code-execution', baseline=baseline)
+        self.assertEqual(prepared[0]['modules'], ('kickside/code-execution', 'kickside/contract'))
+        self.assertNotEqual(prepared[0]['replacements']['kickside/contract'], current_contract)
+        self.assertTrue(prepared[0]['replacements']['kickside/contract'].endswith('published-kickside-contract'))
+        self.assertEqual([call.args[2] for call in update.call_args_list],
+                         ['kickside/code-execution', 'kickside/contract'])
+        self.assertEqual(update.call_args_list[0].kwargs, {'live': True, 'refresh_session': True})
+        self.assertEqual(update.call_args_list[1].kwargs, {'live': True})
+
+    def test_code_execution_historical_contract_constraints_are_explicit(self):
+        from scenarios_published_provider_identity import CODE_EXECUTION_CONTRACT_CONSTRAINTS
+        self.assertEqual(CODE_EXECUTION_CONTRACT_CONSTRAINTS, {
+            '0.1.16': None, '0.1.17': '*', '0.1.18': '*',
+        })
+
+    def test_code_execution_rejects_an_archive_with_a_different_contract_constraint(self):
+        baseline = {'version': '0.1.18',
+                    'hash': 'b12f9471a0efc06a553a30316d62227de47bf9f7451983a6a47735532b626f16',
+                    'declared': True}
+        with self.assertRaisesRegex(Failure, 'Contract constraint'):
+            self.exercise(module='kickside/code-execution', baseline=baseline, archived_constraint='>=0.3.1')

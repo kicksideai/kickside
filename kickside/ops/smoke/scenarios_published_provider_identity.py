@@ -19,6 +19,22 @@ from scenarios_runtime_batch_root import registry_entry
 HERE = Path(__file__).parent / 'mocks/security_model'
 
 
+# Code Execution 0.1.18 still wraps its trait calls through the retired
+# contract result-window helper.  It was published against Contract 0.2.4;
+# do not boot that archived provider against the current Contract source and
+# mistake the deliberately incoherent graph for an update failure.
+CODE_EXECUTION_HISTORICAL_CONTRACT = {
+    'component': 'kickside/contract',
+    'version': '0.2.4',
+    'hash': '8967ae4cf083c3a47cf3643cd2afcac9dae9178b7054565096415310ce881ab2',
+}
+CODE_EXECUTION_CONTRACT_CONSTRAINTS = {
+    '0.1.16': None,
+    '0.1.17': '*',
+    '0.1.18': '*',
+}
+
+
 def provider_identity_inventory(ctx):
     baselines = json.loads((HERE / 'published_provider_baselines.json').read_text())
     published = json.loads((HERE / 'published_provider_registry.json').read_text())
@@ -64,10 +80,33 @@ def provider_members(fixture):
     return tuple(tokens)
 
 
+def archived_dependency_constraint(source, component):
+    """Return an archived module's exact declared range for one component."""
+    matches = []
+    for index in sorted((Path(source) / 'src').glob('*.yaml')):
+        document = yaml.safe_load(index.read_text())
+        for entry in document.get('entries', []):
+            if entry.get('kind') == 'ns.dependency' and entry.get('component') == component:
+                matches.append(entry.get('version'))
+    require(len(matches) <= 1, 'Published provider declares duplicate dependency on ' + component)
+    return matches[0] if matches else None
+
+
+def provider_historical_closure(module, baseline):
+    if module != 'kickside/code-execution':
+        return ()
+    expected = CODE_EXECUTION_CONTRACT_CONSTRAINTS.get(baseline['version'])
+    require(baseline['version'] in CODE_EXECUTION_CONTRACT_CONSTRAINTS,
+            'Code Execution fixture has no verified Contract constraint for ' + baseline['version'])
+    return ({**CODE_EXECUTION_HISTORICAL_CONTRACT, 'provider_constraint': expected},)
+
+
 def provider_binding_update(ctx, specification, baseline):
     module, namespace = specification['module'], specification['namespace']
     candidate = ctx.inst.config['replace'][module]
     receipts = {}
+    closure = provider_historical_closure(module, baseline)
+    current_closure_sources = {}
     requirement_id = namespace + '.security:user_security_scope'
     parameters = [{'name': name, 'value': value} for name, value in {
         requirement_id: BOUND_GROUP, **specification['parameters']}.items()]
@@ -76,7 +115,24 @@ def provider_binding_update(ctx, specification, baseline):
         inst = fixture.inst
         directory = inst.root / 'published-provider'
         receipts.update(published_source(directory, module, baseline))
-        inst.config['replace'] = dict(inst.config['replace'], **{module: str(directory)})
+        historical_sources = {module: str(directory)}
+        for closure_entry in closure:
+            component = closure_entry['component']
+            current = inst.config['replace'].get(component)
+            require(current, 'Provider fixture needs the current source for ' + component)
+            current_closure_sources[component] = current
+            archived = inst.root / ('published-' + component.replace('/', '-'))
+            receipt = published_source(archived, component, closure_entry)
+            require(receipt == {'version': closure_entry['version'], 'sha256': closure_entry['hash']},
+                    'Published closure receipt differs from its pinned artifact: ' + component)
+            historical_sources[component] = str(archived)
+            receipts[component] = receipt
+        constraint = next((row['provider_constraint'] for row in closure
+                           if row['component'] == 'kickside/contract'), None)
+        if module == 'kickside/code-execution':
+            require(archived_dependency_constraint(directory, 'kickside/contract') == constraint,
+                    'Published Code Execution Contract constraint differs from its verified archive')
+        inst.config['replace'] = dict(inst.config['replace'], **historical_sources)
         configuration = inst.app / '.wippy.yaml'
         config = yaml.safe_load(configuration.read_text())
         config['workspace']['replacements'] = inst.config['replace']
@@ -108,7 +164,7 @@ def provider_binding_update(ctx, specification, baseline):
                 'entries': dependencies}, sort_keys=False))
         if specification.get('prepare'):
             specification['prepare'](fixture)
-        inst.resolve_dependencies(modules=(module,))
+        inst.resolve_dependencies(modules=tuple(historical_sources))
     with isolated_fixture(ctx, config=deepcopy(ctx.inst.config), prepare=prepare) as fixture:
         inst = fixture.inst
         inst.install(module, parameters=parameters, version='=' + baseline['version'])
@@ -124,6 +180,13 @@ def provider_binding_update(ctx, specification, baseline):
         shutil.copytree(candidate, directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns(
             '.git', '.wippy', 'node_modules', '__pycache__', 'test', 'lint-harness'))
         update_source(fixture, str(directory), module, live=True, refresh_session=True)
+        for closure_entry in closure:
+            component = closure_entry['component']
+            update_source(fixture, current_closure_sources[component], component, live=True)
+        inst.evidence.save('published-provider-upgrade-order', {
+            'baseline': baseline, 'historical_closure': closure,
+            'updates': [module, *(row['component'] for row in closure)],
+        })
         after = dependency(inst, module)
         updated = {row['name']: row['value'] for row in after['parameters']}
         require(all(updated.get(name) == value for name, value in supplied.items()),
