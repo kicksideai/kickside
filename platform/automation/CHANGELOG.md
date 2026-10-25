@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/kicksideai/kickside/compare/automation-v0.2.2...automation-v0.2.3) (2026-10-25)
+
+
+### Bug Fixes
+
+* **automation:** preserve legacy recurring agent inputs ([#134](https://github.com/kicksideai/kickside/issues/134)) ([c71eea2](https://github.com/kicksideai/kickside/commit/c71eea238abc29abe01b2b872e600557cbd7965d))
+* **automation:** wake retention after round release ([#142](https://github.com/kicksideai/kickside/issues/142)) ([e4ef878](https://github.com/kicksideai/kickside/commit/e4ef8782c41889cd41b7a28a21a032f44e88090f))
+
 ## [0.2.2](https://github.com/kicksideai/kickside/compare/automation-v0.2.1...automation-v0.2.2) (2026-10-23)
 
 

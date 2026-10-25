@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.62](https://github.com/kicksideai/kickside/compare/jobs-v0.1.61...jobs-v0.1.62) (2026-10-25)
+
+
+### Bug Fixes
+
+* **jobs:** fence thread-owned slot purges before locking jobs ([#139](https://github.com/kicksideai/kickside/issues/139)) ([f71f151](https://github.com/kicksideai/kickside/commit/f71f15129ef4023da645149c7902144e07ce40fe))
+* **jobs:** serialize run retirement with thread cleanup ([#141](https://github.com/kicksideai/kickside/issues/141)) ([2eb0b69](https://github.com/kicksideai/kickside/commit/2eb0b6964d41141598964e99dd3e1e9a0b3fa460))
+
 ## [0.1.61](https://github.com/kicksideai/kickside/compare/jobs-v0.1.60...jobs-v0.1.61) (2026-10-23)
 
 
