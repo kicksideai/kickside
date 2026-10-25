@@ -604,6 +604,52 @@ class AttachedStateTests(unittest.TestCase):
         self.assertEqual(sessions['parallel_owner'].close_count, 0)
         runner.close.assert_called_once_with()
 
+    def test_one_shot_reports_owner_session_close_failure_after_remaining_scenarios(self):
+        class Session:
+            def __init__(self, fails=False):
+                self.fails = fails
+
+            def close(self):
+                if self.fails:
+                    raise RuntimeError('close fails')
+
+        registry = [
+            Scenario('first', 'full', lambda ctx: None, owner='failing_owner'),
+            Scenario('later', 'full', lambda ctx: None, owner='later_owner'),
+        ]
+        executors = {owner: ThreadPoolExecutor(max_workers=1) for owner in
+                     ('failing_owner', 'later_owner')}
+        runner = Mock()
+        runner.pool.instances = {}
+        runner.sessions = {'failing_owner': Session(fails=True), 'later_owner': Session()}
+        runner.executors = executors
+        runner.contexts = {owner: Mock(inst=Mock(redactor=Mock(text=str))) for owner in executors}
+        runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+        executed = []
+        def run(_tier, _names, _workers, completed):
+            for scenario in ('first', 'later'):
+                completed(Result(scenario, 'sqlite', 'passed', 0))
+                executed.append(scenario)
+        runner.run.side_effect = run
+        connection = Mock()
+        config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
+        try:
+            with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+                with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 1, connection)
+                packet = json.loads(connection.send_bytes.call_args.args[0])
+                document = json.loads(Path(packet['results_file']).read_text())
+                rows = document['results']
+        finally:
+            for executor in executors.values():
+                executor.shutdown(wait=True)
+        self.assertEqual(executed, ['first', 'later'])
+        self.assertEqual(rows[-1]['scenario'], 'cleanup')
+        self.assertEqual(rows[-1]['status'], 'failed')
+        self.assertIn('failing_owner session: close fails', rows[-1]['error'])
+        self.assertEqual(document['counts']['exit_code'], 1)
+        runner.close.assert_called_once_with()
+
     def test_gate_constructor_failure_returns_owned_engine_receipt(self):
         for engine in ('sqlite', 'postgres'):
             with self.subTest(engine=engine), tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:

@@ -649,6 +649,7 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, interrupt)
     results = []
+    session_cleanup_errors = []
     started = time.monotonic()
     runner = None
     try:
@@ -667,7 +668,11 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
             if owner is not None:
                 remaining_owners[owner] -= 1
                 if remaining_owners[owner] == 0:
-                    runner.executors[owner].submit(runner.sessions[owner].close).result()
+                    try:
+                        runner.executors[owner].submit(runner.sessions[owner].close).result()
+                    except Exception as failure:
+                        session_cleanup_errors.append(runner.contexts[owner].inst.redactor.text(
+                            f'{owner} session: {failure}'))
             area = areas[result.scenario]
             remaining[area] -= 1
             if area in isolated and remaining[area] == 0:
@@ -693,7 +698,11 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
         results.append(Result('engine', engine, 'failed', 0, error, [str(diagnostic)]))
     finally:
         if runner is not None:
-            results.append(runner.close())
+            cleanup = runner.close()
+            if session_cleanup_errors:
+                cleanup.status = 'failed'
+                cleanup.error = '\n'.join(filter(None, [cleanup.error, *session_cleanup_errors]))
+            results.append(cleanup)
         timing = {'mode': 'fresh', 'workers': workers,
                         'cold_boot_seconds': sum(getattr(inst, 'boot_seconds', 0) for inst in runner.pool.instances.values()) if runner else 0,
                         'wall_seconds': round(time.monotonic() - started, 3)}
