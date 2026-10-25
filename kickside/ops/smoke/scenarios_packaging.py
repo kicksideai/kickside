@@ -166,16 +166,19 @@ REGISTRY += [Scenario('channel_execution_authority', 'regression', channel_execu
 
 
 def hubspot_capacity_boundary(ctx):
-    from pathlib import Path
     import subprocess
     import sys
-    from module_harness import run_focused_module_test
+    from module_harness import _private_suite_root, run_focused_module_test, selected_module_overlay
 
     source = ctx.inst.config['replace'].get('kickside/hubspot')
     require(source, 'HubSpot boundary guard requires a local replacement')
-    result = subprocess.run([sys.executable, 'scripts/check_architecture.py'], cwd=Path(source),
-                            capture_output=True, text=True, timeout=60)
-    require(result.returncode == 0, result.stdout + result.stderr)
+    with selected_module_overlay(
+            ctx, 'kickside/hubspot',
+            [('providers/hubspot/scripts/check_architecture.py', 'scripts/check_architecture.py')],
+            owner=_private_suite_root().parent) as root:
+        result = subprocess.run([sys.executable, 'scripts/check_architecture.py'], cwd=root,
+                                capture_output=True, text=True, timeout=60)
+        require(result.returncode == 0, result.stdout + result.stderr)
     run_focused_module_test(ctx, 'kickside/hubspot', 'capacity_transport_test')
 
 
