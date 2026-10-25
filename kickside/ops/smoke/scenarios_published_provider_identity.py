@@ -250,9 +250,12 @@ def provider_binding_update(ctx, specification, baseline):
                           replacements=staged_sources, refresh_session=True)
             # The staged root update brings the complete candidate graph into
             # the restarted runtime.  Only then may the retained provider root
-            # be installed, so Hub records a current Code Execution selection
-            # instead of retaining the archived .18 dependency metadata.
+            # be installed from its current local source.  A local source can
+            # deliberately retain the published coordinate, so the source
+            # provenance—not a fabricated version bump—is the transition.
             update_source(fixture, candidate, module, live=True, refresh_session=True)
+            require(inst.config['replace'].get(module) == candidate,
+                    'Current provider Hub install does not retain the candidate source selection')
             updates = [snapshot['root'], module]
         else:
             directory = inst.root / 'published-provider'
@@ -272,8 +275,8 @@ def provider_binding_update(ctx, specification, baseline):
         after = dependency(inst, module)
         resolved_after = {row['module_version'] for row in after['entries'] if row['module'] == module}
         if snapshot:
-            require(len(resolved_after) == 1 and resolved_after != {baseline['version']},
-                    'Current provider Hub install does not select a new Code Execution version')
+            require(len(resolved_after) == 1,
+                    'Current provider Hub install has no unique Code Execution selection')
         updated = {row['name']: row['value'] for row in after['parameters']}
         require(all(updated.get(name) == value for name, value in supplied.items()),
                 'Hub update drops or rewrites an existing provider binding')
@@ -292,7 +295,8 @@ def provider_binding_update(ctx, specification, baseline):
         member_token, outside_token = provider_members(fixture)
         access = specification['probe'](fixture, member_token, outside_token)
         inst.evidence.save('published-provider-after', {'module': module, 'archive': receipts, 'dependency': after,
-            'current_provider_selection': sorted(resolved_after),
+            'current_provider_selection': {'versions': sorted(resolved_after),
+                                           'source': inst.config['replace'].get(module)},
             'endpoint_component': endpoint, 'requirement': requirement, 'bundle': bundle, 'access': access})
 
 

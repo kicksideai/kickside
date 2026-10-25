@@ -60,8 +60,6 @@ class PublishedProviderUpdateTests(unittest.TestCase):
             selected_baseline = baseline or {'version': '1.0.0', 'hash': 'verified digest', 'declared': True}
             before = {'parameters': supplied, 'entries': [{'module': module, 'module_version': selected_baseline['version']}]}
             after = deepcopy(before)
-            if module == 'kickside/code-execution' and selected_baseline['version'] == '0.1.18':
-                after['entries'][0]['module_version'] = '0.1.19'
             if parameters is not None:
                 after['parameters'] = parameters
             endpoint_id = 'example.provider.security:endpoint_access'
@@ -94,11 +92,16 @@ class PublishedProviderUpdateTests(unittest.TestCase):
             def deployment(instance, locked, *, root):
                 return {component: {'version': row['version'], 'sha256': row['hash']}
                         for component, row in locked.items()}
+            def update(fixture, source, selected, **kwargs):
+                if kwargs.get('replacements'):
+                    inst.config['replace'] = dict(kwargs['replacements'])
+                else:
+                    inst.config['replace'][selected] = source
             with patch('scenarios_published_provider_identity.isolated_fixture', isolated), \
                  patch('scenarios_published_provider_identity.published_source', archive), \
                  patch('scenarios_published_provider_identity.prepare_published_deployment', side_effect=deployment), \
                  patch('scenarios_published_provider_identity.dependency', side_effect=[before, after]), \
-                 patch('scenarios_published_provider_identity.update_source') as update, \
+                 patch('scenarios_published_provider_identity.update_source', side_effect=update) as update, \
                  patch('scenarios_published_provider_identity.registry_entry', side_effect=lambda instance, id, label: entries[id]), \
                  patch('scenarios_published_provider_identity.provider_members', return_value=('member token', 'outside token')):
                 provider_binding_update(ctx, specification, selected_baseline)
@@ -158,6 +161,7 @@ class PublishedProviderUpdateTests(unittest.TestCase):
         self.assertEqual(staged['kickside/code-execution'], str(Path(current_contract).parent / 'candidate'))
         self.assertEqual(staged['kickside/contract'], current_contract)
         self.assertEqual(update.call_args_list[1].kwargs, {'live': True, 'refresh_session': True})
+        self.assertEqual(update.call_args_list[1].args[1], staged['kickside/code-execution'])
         self.assertEqual(self.fixture_configs[0]['source'], None)
         self.assertEqual(self.fixture_configs[0]['published'], '0.1.146')
         self.assertEqual(self.fixture_configs[0]['replace'], {})
