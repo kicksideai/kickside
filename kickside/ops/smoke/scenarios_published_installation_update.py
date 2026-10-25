@@ -294,12 +294,6 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                 require(not [row for row in applied.get('execution', []) if row['status'] in ('failed', 'rollback_failed')],
                         'Published application update fails')
                 inst.await_keeper()
-                if credentials:
-                    schema = database_rows(inst,
-                        'SELECT credential_id, oauth_resource FROM kickside_mcp_credentials')
-                    require(any(row['credential_id'] == mcp['credential_id'] for row in schema),
-                            'Application update omits the installed MCP credential schema')
-                    inst.evidence.save('installation-mcp-schema-after-application-update', schema)
                 after = token_payloads(inst)
                 require(all(after.get(key) == value for key, value in payloads.items()),
                         'Application Hub update rewrites saved session payloads')

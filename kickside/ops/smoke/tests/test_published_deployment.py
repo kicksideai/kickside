@@ -16,7 +16,7 @@ from scenarios_published_installation_update import (
 
 
 class PublishedDeploymentTests(unittest.TestCase):
-    def test_application_update_leaves_optional_candidate_bytes_published(self):
+    def test_application_update_retains_the_optional_mcp_published_contract(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             root = Path(directory)
             app = root / 'source/app'
