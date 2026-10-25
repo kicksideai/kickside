@@ -21,6 +21,7 @@ from harness import instance_area, Cleanup, Evidence, Failure, Redactor, require
 
 
 SERVER_CONNECTIONS_PER_RUNTIME = 4
+MAX_STALE_INSTALL_ATTEMPTS = 3
 
 
 def psql(pg, env, sql):
@@ -599,33 +600,63 @@ class Instance:
             plan_args['version'] = version
         if parameters is not None:
             plan_args['parameters'] = parameters
-        # The security projection commits after each install; a plan computed
-        # across that commit is refused and requested again once it lands.
+
+        def registry_moved(conflict):
+            """Identify the Hub's optimistic-lock response, not every 409."""
+            if type(conflict) != dict:
+                return False
+            details = conflict.get('details')
+            plan_version = details.get('plan_version') if type(details) == dict else None
+            current_version = details.get('current_version') if type(details) == dict else None
+            return (conflict.get('code') == 'Conflict'
+                    and conflict.get('success') is False
+                    and conflict.get('error') == 'registry moved since the plan was computed'
+                    and type(plan_version) is int and type(current_version) is int
+                    and current_version > plan_version)
+
+        # The security projection commits after each install.  That may move the
+        # registry after a plan is issued but before its payload is accepted; in
+        # that one case obtain and validate a completely fresh plan.
+        plan_attempt = 0
+        install_attempt = 0
         def planned():
+            nonlocal plan_attempt
+            plan_attempt += 1
             plan = self.request('POST', '/api/v1/keeper/hub/dependencies/plan',
-                                plan_args, label=label + '-plan', expect=(200, 409), timeout=120)
+                                plan_args, label=label + '-plan-' + str(plan_attempt), expect=(200, 409), timeout=120)
             if 'install_payload' in plan:
                 return plan
-            require('registry moved since the plan was computed' in str(plan.get('error')),
+            require(registry_moved(plan),
                     'Hub ' + component + ': plan refused: ' + str(plan))
             return None
-        plan = self.wait(planned, 'Hub ' + component + ' plan', seconds=120)
-        unresolved = [row.get('parameter_name') or row.get('full_id') or row.get('name')
-                      for row in plan.get('requirements', []) if row.get('missing') or row.get('invalid')]
-        require(not unresolved, 'Hub ' + component + ': unresolved requirements: ' + ', '.join(map(str, unresolved)))
-        body = dict(plan['install_payload'])
-        if version is None:
-            body.pop('version', None)
-        if parameters is not None:
-            resolved = {row['name']: row for row in body.get('parameters', [])}
-            resolved.update({row['name']: row for row in parameters})
-            body['parameters'] = list(resolved.values())
-        body['run_migrations'] = True
-        installed = self.request('POST', '/api/v1/keeper/hub/dependencies/install', body,
-                                 label=label + '-install', timeout=300)
-        failed = [row for row in installed.get('execution', []) if row.get('status') in ('failed', 'rollback_failed')]
-        require(not failed, 'Hub ' + component + ' installation fails: ' + str(failed))
-        self.await_keeper()
+        while True:
+            plan = self.wait(planned, 'Hub ' + component + ' plan', seconds=120)
+            unresolved = [row.get('parameter_name') or row.get('full_id') or row.get('name')
+                          for row in plan.get('requirements', []) if row.get('missing') or row.get('invalid')]
+            require(not unresolved, 'Hub ' + component + ': unresolved requirements: ' + ', '.join(map(str, unresolved)))
+            body = dict(plan['install_payload'])
+            if version is None:
+                body.pop('version', None)
+            if parameters is not None:
+                resolved = {row['name']: row for row in body.get('parameters', [])}
+                resolved.update({row['name']: row for row in parameters})
+                body['parameters'] = list(resolved.values())
+            body['run_migrations'] = True
+            install_attempt += 1
+            installed = self.request('POST', '/api/v1/keeper/hub/dependencies/install', body,
+                                     label=label + '-install-' + str(plan_attempt), expect=(200, 409), timeout=300)
+            if registry_moved(installed):
+                require(install_attempt < MAX_STALE_INSTALL_ATTEMPTS,
+                        'Hub ' + component + ' registry continued moving after '
+                        + str(MAX_STALE_INSTALL_ATTEMPTS) + ' install attempts: ' + str(installed))
+                continue
+            require(installed.get('success') is not False and 'error' not in installed and 'code' not in installed
+                    and type(installed.get('execution')) is list,
+                    'Hub ' + component + ' installation refused: ' + str(installed))
+            failed = [row for row in installed.get('execution', []) if row.get('status') in ('failed', 'rollback_failed')]
+            require(not failed, 'Hub ' + component + ' installation fails: ' + str(failed))
+            self.await_keeper()
+            return
 
 
 class RuntimePool:
