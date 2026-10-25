@@ -284,7 +284,7 @@ def published_installation_update(ctx, *, credentials=False, plan_only=False):
                     from module_lifecycle_contract import update_source
                     mcp_source = candidates.get('kickside/mcp')
                     require(mcp_source, 'Published MCP upgrade requires its candidate source')
-                    update_source(fixture, mcp_source, 'kickside/mcp', live=True)
+                    update_source(fixture, mcp_source, 'kickside/mcp')
                     schema = database_rows(inst,
                         'SELECT credential_id, oauth_resource FROM kickside_mcp_credentials')
                     require(any(row['credential_id'] == mcp['credential_id'] for row in schema),

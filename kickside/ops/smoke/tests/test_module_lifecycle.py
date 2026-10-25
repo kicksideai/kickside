@@ -1,7 +1,7 @@
 import unittest
 import tempfile
 from pathlib import Path
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from unittest.mock import Mock, patch
 import yaml
 from harness import Failure
@@ -111,6 +111,32 @@ class ModuleLifecycleTests(unittest.TestCase):
             self.assertEqual([call.args[0] for call in run.call_args_list], [
                 ['wippy', '--config', '.wippy.yaml', 'update', '--src-dir', '.', 'kickside/ui'],
                 ['wippy', '--config', '.wippy.yaml', 'install']])
+
+    def test_source_update_plans_after_the_restarted_runtime_loads_the_candidate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, app = root / 'module', root / 'app'
+            source.mkdir()
+            app.mkdir()
+            (app / '.wippy.yaml').write_text('version: "1.0"\n')
+            events = []
+            inst = Mock(app=app, config={'replace': {}})
+            ctx = Mock(inst=inst)
+
+            @contextmanager
+            def paused(*_args, **_kwargs):
+                events.append('stopped')
+                yield
+                events.append('restarted')
+
+            def install(*_args, **_kwargs):
+                self.assertEqual(events, ['stopped', 'restarted'])
+                return {'entries': [{'module': 'kickside/ui', 'module_version': '2.0.0'}]}
+
+            with patch('browser.Browser.paused', paused), \
+                    patch('module_lifecycle_contract.install_latest', side_effect=install):
+                lifecycle.update_source(ctx, str(source), module='kickside/ui')
+            inst.resolve_dependencies.assert_called_once_with(modules=('kickside/ui',))
 
     def test_latest_install_keeps_a_wildcard_declaration(self):
         inst = Mock()

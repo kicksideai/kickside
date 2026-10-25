@@ -80,8 +80,15 @@ def update_source(ctx, source, module=MODULE, *, live=False, refresh_session=Fal
         inst.config['replace'] = dict(inst.config['replace'], **selected_sources)
         if not live:
             inst.resolve_dependencies(modules=tuple(selected_sources))
-    install = install_latest if installer is None else installer
-    dep = install(inst, module=module, replacement=True, refresh_session=refresh_session)
+        # A live runtime already owns its resolved graph.  Its Hub plan can
+        # run in-process; a staged source update must first leave the pause so
+        # the restarted runtime reads the newly resolved graph.
+        if live:
+            install = install_latest if installer is None else installer
+            dep = install(inst, module=module, replacement=True, refresh_session=refresh_session)
+    if not live:
+        install = install_latest if installer is None else installer
+        dep = install(inst, module=module, replacement=True, refresh_session=refresh_session)
     resolved = {row['module_version'] for row in dep['entries'] if row['module'] == module}
     require(len(resolved) == 1, 'Local source applied ownership has no unique Hub module selection')
     selected = {'name': module, 'version': resolved.pop()}
