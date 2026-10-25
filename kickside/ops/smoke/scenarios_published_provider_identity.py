@@ -13,8 +13,10 @@ from module_harness import run_focused_module_test
 from module_lifecycle_contract import dependency, update_source
 from runtime_fixtures import isolated_fixture
 from scenarios_identity_policy_upgrade import published_source
+from scenarios_published_installation_update import prepare_published_deployment
 from scenarios_published_security_identity import expected_security_identities, identity_changes
 from scenarios_runtime_batch_root import registry_entry
+from upgrade_regressions import candidate_dependency_sources
 
 HERE = Path(__file__).parent / 'mocks/security_model'
 
@@ -33,6 +35,28 @@ CODE_EXECUTION_CONTRACT_CONSTRAINTS = {
     '0.1.17': '*',
     '0.1.18': '*',
 }
+
+
+def code_execution_historical_snapshot(module, baseline):
+    """Return the explicit pre-retirement catalog snapshot for Code Execution .18.
+
+    The old application published floating ranges, so this is deliberately a
+    reproducible catalog snapshot rather than a claimed recovered production
+    lock.  Its artifact receipts are checked by ``prepare_published_deployment``.
+    """
+    if module != 'kickside/code-execution' or baseline['version'] != '0.1.18':
+        return None
+    snapshot = json.loads((HERE / 'published_code_execution_018_snapshot.json').read_text())
+    modules = snapshot['modules']
+    require(snapshot['root'] == 'kickside/kickside', 'Historical Code Execution snapshot has no application root')
+    require(len(modules) == 50, 'Historical Code Execution snapshot has an incomplete application closure')
+    require(modules[module] == {'version': baseline['version'], 'hash': baseline['hash']},
+            'Historical Code Execution snapshot differs from its verified provider receipt')
+    require(modules['kickside/contract'] == {
+        'version': CODE_EXECUTION_HISTORICAL_CONTRACT['version'],
+        'hash': CODE_EXECUTION_HISTORICAL_CONTRACT['hash'],
+    }, 'Historical Code Execution snapshot differs from its verified Contract receipt')
+    return snapshot
 
 
 def provider_identity_inventory(ctx):
@@ -105,9 +129,11 @@ def provider_historical_closure(module, baseline):
 
 def provider_binding_update(ctx, specification, baseline):
     module, namespace = specification['module'], specification['namespace']
-    candidate = ctx.inst.config['replace'][module]
+    candidate_sources = deepcopy(ctx.inst.config['replace'])
+    candidate = candidate_sources[module]
     receipts = {}
     closure = provider_historical_closure(module, baseline)
+    snapshot = code_execution_historical_snapshot(module, baseline)
     current_closure_sources = {}
     requirement_id = namespace + '.security:user_security_scope'
     parameters = [{'name': name, 'value': value} for name, value in {
@@ -118,17 +144,36 @@ def provider_binding_update(ctx, specification, baseline):
         directory = inst.root / 'published-provider'
         receipts.update(published_source(directory, module, baseline))
         historical_sources = {module: str(directory)}
-        for closure_entry in closure:
-            component = closure_entry['component']
-            current = inst.config['replace'].get(component)
-            require(current, 'Provider fixture needs the current source for ' + component)
-            current_closure_sources[component] = current
-            archived = inst.root / ('published-' + component.replace('/', '-'))
-            receipt = published_source(archived, component, closure_entry)
-            require(receipt == {'version': closure_entry['version'], 'sha256': closure_entry['hash']},
-                    'Published closure receipt differs from its pinned artifact: ' + component)
-            historical_sources[component] = str(archived)
-            receipts[component] = receipt
+        if snapshot:
+            application = inst.root / 'published-application'
+            app_receipt = published_source(application, snapshot['root'], snapshot['modules'][snapshot['root']],
+                                           application=True)
+            require(app_receipt == {'version': snapshot['modules'][snapshot['root']]['version'],
+                                    'sha256': snapshot['modules'][snapshot['root']]['hash']},
+                    'Historical Code Execution application receipt differs from its catalog snapshot')
+            runtime = yaml.safe_load((application / '.wippy.yaml').read_text())
+            runtime['workspace'] = {'include_host_dependencies': True}
+            (inst.app / 'src').mkdir(exist_ok=True)
+            (inst.app / '.wippy.yaml').write_text(yaml.safe_dump(runtime, sort_keys=False))
+            deployed = prepare_published_deployment(inst, snapshot['modules'], root=snapshot['root'])
+            expected_deployment = {component: {'version': row['version'], 'sha256': row['hash']}
+                                   for component, row in snapshot['modules'].items()}
+            require(deployed == expected_deployment,
+                    'Historical Code Execution deployment differs from its catalog snapshot')
+            receipts.update(deployed)
+            inst.config.update(source=None, published=None, replace=historical_sources)
+        else:
+            for closure_entry in closure:
+                component = closure_entry['component']
+                current = inst.config['replace'].get(component)
+                require(current, 'Provider fixture needs the current source for ' + component)
+                current_closure_sources[component] = current
+                archived = inst.root / ('published-' + component.replace('/', '-'))
+                receipt = published_source(archived, component, closure_entry)
+                require(receipt == {'version': closure_entry['version'], 'sha256': closure_entry['hash']},
+                        'Published closure receipt differs from its pinned artifact: ' + component)
+                historical_sources[component] = str(archived)
+                receipts[component] = receipt
         if module == 'kickside/code-execution':
             expected = CODE_EXECUTION_CONTRACT_CONSTRAINTS[baseline['version']]
             require(archived_dependency_constraint(directory, 'kickside/contract') == expected,
@@ -136,7 +181,7 @@ def provider_binding_update(ctx, specification, baseline):
         inst.config['replace'] = dict(inst.config['replace'], **historical_sources)
         configuration = inst.app / '.wippy.yaml'
         config = yaml.safe_load(configuration.read_text())
-        config['workspace']['replacements'] = inst.config['replace']
+        config.setdefault('workspace', {})['replacements'] = inst.config['replace']
         configuration.write_text(yaml.safe_dump(config, sort_keys=False))
         declaration = inst.app / 'src/published-provider-installation'
         declaration.mkdir()
@@ -166,7 +211,10 @@ def provider_binding_update(ctx, specification, baseline):
         if specification.get('prepare'):
             specification['prepare'](fixture)
         inst.resolve_dependencies(modules=tuple(historical_sources))
-    with isolated_fixture(ctx, config=deepcopy(ctx.inst.config), prepare=prepare) as fixture:
+    fixture_config = deepcopy(ctx.inst.config)
+    if snapshot:
+        fixture_config.update(source=None, published=snapshot['modules'][snapshot['root']]['version'], replace={})
+    with isolated_fixture(ctx, config=fixture_config, prepare=prepare) as fixture:
         inst = fixture.inst
         inst.install(module, parameters=parameters, version='=' + baseline['version'])
         before = dependency(inst, module)
@@ -176,19 +224,41 @@ def provider_binding_update(ctx, specification, baseline):
         require(all(supplied.get(row['name']) == row['value'] for row in parameters),
                 'Published baseline loses an existing supplied parameter')
         inst.evidence.save('published-provider-before', {'module': module, 'archive': receipts, 'dependency': before})
-        directory = inst.root / 'published-provider'
-        shutil.rmtree(directory / 'src')
-        shutil.copytree(candidate, directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns(
-            '.git', '.wippy', 'node_modules', '__pycache__', 'test', 'lint-harness'))
-        update_source(fixture, str(directory), module, live=True, refresh_session=True)
-        for closure_entry in closure:
-            component = closure_entry['component']
-            update_source(fixture, current_closure_sources[component], component, live=True)
+        if snapshot:
+            source_root = ctx.inst.config.get('source')
+            candidate_app = Path(source_root) / 'app' if source_root else None
+            require(candidate_app and candidate_app.is_dir(),
+                    'Historical Code Execution upgrade requires the current application source')
+            staged_sources = candidate_dependency_sources(candidate_sources, (snapshot['root'], module),
+                                                          application=candidate_app)
+            update_source(fixture, str(candidate_app), snapshot['root'],
+                          replacements=staged_sources, refresh_session=True)
+            # The staged root update brings the complete candidate graph into
+            # the restarted runtime.  Only then may the retained provider root
+            # be installed, so Hub records a current Code Execution selection
+            # instead of retaining the archived .18 dependency metadata.
+            update_source(fixture, candidate, module, live=True, refresh_session=True)
+            updates = [snapshot['root'], module]
+        else:
+            directory = inst.root / 'published-provider'
+            shutil.rmtree(directory / 'src')
+            shutil.copytree(candidate, directory, dirs_exist_ok=True, ignore=shutil.ignore_patterns(
+                '.git', '.wippy', 'node_modules', '__pycache__', 'test', 'lint-harness'))
+            update_source(fixture, str(directory), module, live=True, refresh_session=True)
+            for closure_entry in closure:
+                component = closure_entry['component']
+                update_source(fixture, current_closure_sources[component], component, live=True)
+            updates = [module, *(row['component'] for row in closure)]
         inst.evidence.save('published-provider-upgrade-order', {
             'baseline': baseline, 'historical_closure': closure,
-            'updates': [module, *(row['component'] for row in closure)],
+            'catalog_snapshot': snapshot and {'cutoff': snapshot['catalog_cutoff'], 'root': snapshot['root']},
+            'updates': updates,
         })
         after = dependency(inst, module)
+        resolved_after = {row['module_version'] for row in after['entries'] if row['module'] == module}
+        if snapshot:
+            require(len(resolved_after) == 1 and resolved_after != {baseline['version']},
+                    'Current provider Hub install does not select a new Code Execution version')
         updated = {row['name']: row['value'] for row in after['parameters']}
         require(all(updated.get(name) == value for name, value in supplied.items()),
                 'Hub update drops or rewrites an existing provider binding')
@@ -207,6 +277,7 @@ def provider_binding_update(ctx, specification, baseline):
         member_token, outside_token = provider_members(fixture)
         access = specification['probe'](fixture, member_token, outside_token)
         inst.evidence.save('published-provider-after', {'module': module, 'archive': receipts, 'dependency': after,
+            'current_provider_selection': sorted(resolved_after),
             'endpoint_component': endpoint, 'requirement': requirement, 'bundle': bundle, 'access': access})
 
 
