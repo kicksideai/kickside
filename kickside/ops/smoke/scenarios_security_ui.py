@@ -56,6 +56,45 @@ def assign_scope(ctx, user, scope):
     assign_scopes(ctx, user, [scope])
 
 
+def assert_portaled_editor_presentation(dialog):
+    """Prove the portaled editor is visible and shields its Users surface."""
+    presentation = dialog.evaluate("""dialog => {
+        const bounds = dialog.getBoundingClientRect();
+        const viewport = {width: window.innerWidth, height: window.innerHeight};
+        const center = document.elementFromPoint(bounds.left + bounds.width / 2,
+                                                  bounds.top + bounds.height / 2);
+        const corners = [[1, 1], [viewport.width - 1, 1],
+                         [1, viewport.height - 1], [viewport.width - 1, viewport.height - 1]];
+        const outside = corners.find(([x, y]) => x < bounds.left || x > bounds.right ||
+                                     y < bounds.top || y > bounds.bottom);
+        const backdrop = outside && document.elementFromPoint(...outside);
+        const users = document.querySelector('kickside-users');
+        const mask = dialog.closest('[data-pc-section="mask"]');
+        return {
+            bounds: {left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom,
+                     width: bounds.width, height: bounds.height},
+            viewport,
+            centerTopLayer: !!center && (center === dialog || dialog.contains(center)),
+            portalOwnsDialog: !!users && !!mask && mask.contains(dialog) && !users.contains(mask),
+            backdropMaskHit: !!mask && !!backdrop && !dialog.contains(backdrop) &&
+                             (backdrop === mask || mask.contains(backdrop)),
+        };
+    }""")
+    bounds, viewport = presentation.get('bounds', {}), presentation.get('viewport', {})
+    require(bounds.get('width', 0) > 0 and bounds.get('height', 0) > 0
+            and bounds.get('left', -1) >= 0 and bounds.get('top', -1) >= 0
+            and bounds.get('right', float('inf')) <= viewport.get('width', 0)
+            and bounds.get('bottom', float('inf')) <= viewport.get('height', 0),
+            'Account editor is not fully visible in its viewport: ' + str(presentation))
+    require(presentation.get('centerTopLayer'),
+            'Account editor is obscured at its visual center: ' + str(presentation))
+    require(presentation.get('portalOwnsDialog'),
+            'Account editor is not owned by the portaled modal mask: ' + str(presentation))
+    require(presentation.get('backdropMaskHit'),
+            'Account editor backdrop point does not hit its modal mask: ' + str(presentation))
+    return presentation
+
+
 def assign_scopes(ctx, user, scopes):
     from playwright.sync_api import expect
     browser = ctx.browser
@@ -70,8 +109,17 @@ def assign_scopes(ctx, user, scopes):
     for scope in scopes:
         expect(dialog.locator('input[type=checkbox][value="' + scope + '"]')).to_be_checked()
     expect(dialog).to_have_attribute('aria-modal', 'true')
+    presentation = assert_portaled_editor_presentation(dialog)
+    # This must be a real pointer action, not only programmatic checkbox
+    # state.  Toggle and restore the selected scope before saving it.
+    selected = dialog.locator('input[type=checkbox][value="' + scopes[0] + '"]')
+    selected.click()
+    expect(selected).not_to_be_checked()
+    selected.click()
+    expect(selected).to_be_checked()
     ctx.inst.evidence.save('account-editor-content-flow', {
         'modal': dialog.get_attribute('aria-modal'),
+        'presentation': presentation,
         'scopes': list(scopes),
     })
     with browser.page.expect_response(lambda r: r.request.method == 'PUT' and r.url.endswith('/users/' + user['user_id'])) as response:
