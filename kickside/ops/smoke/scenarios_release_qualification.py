@@ -1,5 +1,6 @@
 """Release qualification retains published shapes and immutable source replacements."""
 from pathlib import Path
+import os
 import sys
 
 from harness import Scenario, require
@@ -13,9 +14,14 @@ def source_root(ctx):
 
 
 def immutable_replacement_sources(ctx):
+    owner = _private_suite_root()
+    environment = dict(ctx.inst.env)
+    smoke_path = str(owner / 'ops/smoke')
+    environment['PYTHONPATH'] = smoke_path + (os.pathsep + environment['PYTHONPATH']
+                                              if environment.get('PYTHONPATH') else '')
     _command(ctx.inst, 'immutable-replacement-sources', [sys.executable, '-m', 'unittest',
              'discover', '-s', 'ops/smoke/tests', '-p', 'test_module_harness.py'],
-             _private_suite_root(), ctx.inst.env, 900)
+             owner, environment, 900)
 
 
 def workflows_published_output_shape(ctx):
