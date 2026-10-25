@@ -1,9 +1,10 @@
 """Release qualification retains published shapes and immutable source replacements."""
 from pathlib import Path
+import os
 import sys
 
 from harness import Scenario, require
-from module_harness import _command, run_focused_app_test, run_focused_module_test
+from module_harness import _command, _private_suite_root, run_focused_app_test, run_focused_module_test
 
 
 def source_root(ctx):
@@ -13,16 +14,23 @@ def source_root(ctx):
 
 
 def immutable_replacement_sources(ctx):
+    owner = _private_suite_root()
+    environment = dict(ctx.inst.env)
+    smoke_path = str(owner / 'ops/smoke')
+    environment['PYTHONPATH'] = smoke_path + (os.pathsep + environment['PYTHONPATH']
+                                              if environment.get('PYTHONPATH') else '')
     _command(ctx.inst, 'immutable-replacement-sources', [sys.executable, '-m', 'unittest',
              'discover', '-s', 'ops/smoke/tests', '-p', 'test_module_harness.py'],
-             source_root(ctx), ctx.inst.env, 900)
+             owner, environment, 900)
 
 
 def workflows_published_output_shape(ctx):
     output = ctx.inst.evidence.root / ctx.inst.evidence.label / 'published-output'
+    environment = dict(ctx.inst.env)
+    environment['KICKSIDE_SOURCE_ROOT'] = str(source_root(ctx).resolve())
     _command(ctx.inst, 'workflows-published-output', [sys.executable, '-m', 'ops.compat.gate',
              '--repo', str(source_root(ctx)), '--module', 'kickside/workflows', '--output', str(output)],
-             source_root(ctx), ctx.inst.env, 900)
+             _private_suite_root(), environment, 900)
 
 
 def google_transport_retry_error(ctx):

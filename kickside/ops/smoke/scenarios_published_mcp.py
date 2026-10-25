@@ -96,11 +96,11 @@ def browser_published_mcp_credential_hub_ui_update(ctx):
             'transports': sorted(client.transports)})
 
     browser_published_human_automation_update(ctx, installer=install,
-        observe=observe, modules=('kickside/mcp',))
+        observe=observe, modules=('kickside/mcp',), controller_source='keeper/keeper')
 
 
 REGISTRY = [Scenario('browser_published_mcp_credential_hub_ui_update', 'regression',
     browser_published_mcp_credential_hub_ui_update, ('boot',), instance_setup=True,
     issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C08', 'BOT-PUBLISHED-MCP-CREDENTIAL-CONTINUITY',
                                'SECURITY-POLICY-EXPANSION-FENCE', 'USERS-UNCHANGED-AUTHORITY-DELEGATION-REVOCATION',
-                               'AUTOMATION-PUBLISHED-CONFIG-PAYLOAD'))]
+                               'AUTOMATION-PUBLISHED-CONFIG-PAYLOAD'), source_components=('keeper/keeper',))]

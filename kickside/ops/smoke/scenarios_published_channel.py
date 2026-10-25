@@ -174,7 +174,8 @@ def _published_channel(ctx, provider):
 
     browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui,
         setup=setup, observe=observe, modules=('kickside/agents', 'kickside/models', 'kickside/connection',
-                                             'kickside/channel', 'kickside/' + provider.provider))
+                                             'kickside/channel', 'kickside/' + provider.provider),
+        controller_source='keeper/keeper')
 
 
 def browser_published_discord_responder_hub_ui_update(ctx):
@@ -187,7 +188,7 @@ def browser_published_slack_responder_hub_ui_update(ctx):
 
 REGISTRY = [Scenario('browser_published_discord_responder_hub_ui_update', 'regression',
     browser_published_discord_responder_hub_ui_update, ('boot',), instance_setup=True,
-    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C05', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER')),
+    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C05', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER'), source_components=('keeper/keeper',)),
     Scenario('browser_published_slack_responder_hub_ui_update', 'regression',
     browser_published_slack_responder_hub_ui_update, ('boot',), instance_setup=True,
-    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C06', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER'))]
+    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C06', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER'), source_components=('keeper/keeper',))]

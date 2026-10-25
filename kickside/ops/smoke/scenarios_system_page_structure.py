@@ -1,5 +1,4 @@
 """Security administration tab structure regression."""
-import re
 from harness import Scenario
 from scenarios_core import system
 
@@ -8,9 +7,8 @@ def ready(ctx):
     from playwright.sync_api import expect
     browser = ctx.browser_check(viewport={'width': 1600, 'height': 1000})
     browser.login()
-    personal = browser.frame.locator('kickside-agent-onboarding')
-    personal.get_by_role('button', name=re.compile('Skip|Not now|Later', re.I)).click()
-    expect(personal).to_have_count(0, timeout=30000)
+    browser.frame.locator('.sidebar').wait_for(timeout=30000)
+    expect(browser.frame.locator('dialog.sp-dialog[open], kickside-agent-onboarding')).to_have_count(0, timeout=30000)
 
 
 def security_tabs(ctx):
@@ -44,7 +42,7 @@ def security_tabs(ctx):
 
 
 REGISTRY = [
-    Scenario('system_page_structure_ready', 'quick', ready, ('platform_onboarding',)),
+    Scenario('system_page_structure_ready', 'quick', ready, ('first_agent',)),
     Scenario('system_security_tab_structure', 'quick', security_tabs, ('system_page_structure_ready',),
              issues=('SECURITY-ADMIN-TAB-STRUCTURE',)),
 ]

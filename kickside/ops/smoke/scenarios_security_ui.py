@@ -56,6 +56,76 @@ def assign_scope(ctx, user, scope):
     assign_scopes(ctx, user, [scope])
 
 
+def assert_portaled_editor_presentation(dialog):
+    """Prove the portaled editor is visible and shields its Users surface."""
+    presentation = dialog.evaluate("""dialog => {
+        function parent(node) {
+            return node.parentNode || (node.getRootNode?.() instanceof ShadowRoot ? node.getRootNode().host : null);
+        }
+        function composedContains(ancestor, node) {
+            for (let current = node; current; current = parent(current)) if (current === ancestor) return true;
+            return false;
+        }
+        function closestComposed(node, match) {
+            for (let current = node; current; current = parent(current)) {
+                if (current.nodeType === Node.ELEMENT_NODE && match(current)) return current;
+            }
+            return null;
+        }
+        function deepHit(root, x, y) {
+            let hit = root.elementFromPoint(x, y);
+            const seen = new Set();
+            while (hit?.shadowRoot && !seen.has(hit)) {
+                seen.add(hit);
+                const nested = hit.shadowRoot.elementFromPoint(x, y);
+                if (!nested || nested === hit) break;
+                hit = nested;
+            }
+            return hit;
+        }
+        function describe(node) {
+            if (!node) return null;
+            const root = node.getRootNode();
+            return {tag: node.tagName, id: node.id || null, class: node.className || null,
+                    rootType: root.constructor.name, rootHost: root.host?.tagName || null,
+                    modalMask: node.getAttribute?.('data-pc-section') || null};
+        }
+        const bounds = dialog.getBoundingClientRect();
+        const viewport = {width: window.innerWidth, height: window.innerHeight};
+        const center = deepHit(document, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+        const corners = [[1, 1], [viewport.width - 1, 1],
+                         [1, viewport.height - 1], [viewport.width - 1, viewport.height - 1]];
+        const outside = corners.find(([x, y]) => x < bounds.left || x > bounds.right ||
+                                     y < bounds.top || y > bounds.bottom);
+        const backdrop = outside && deepHit(document, ...outside);
+        const users = document.querySelector('kickside-users');
+        const mask = closestComposed(dialog, element => element.getAttribute('data-pc-section') === 'mask');
+        return {
+            bounds: {left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom,
+                     width: bounds.width, height: bounds.height},
+            viewport,
+            centerTopLayer: composedContains(dialog, center),
+            portalOwnsDialog: !!users && !!mask && composedContains(mask, dialog) && !users.contains(mask),
+            backdropMaskHit: composedContains(mask, backdrop) && !composedContains(dialog, backdrop),
+            hit: {center: describe(center), backdrop: describe(backdrop), dialog: describe(dialog),
+                  mask: describe(mask), dialogRoot: describe(dialog.getRootNode().host || dialog.getRootNode())},
+        };
+    }""")
+    bounds, viewport = presentation.get('bounds', {}), presentation.get('viewport', {})
+    require(bounds.get('width', 0) > 0 and bounds.get('height', 0) > 0
+            and bounds.get('left', -1) >= 0 and bounds.get('top', -1) >= 0
+            and bounds.get('right', float('inf')) <= viewport.get('width', 0)
+            and bounds.get('bottom', float('inf')) <= viewport.get('height', 0),
+            'Account editor is not fully visible in its viewport: ' + str(presentation))
+    require(presentation.get('centerTopLayer'),
+            'Account editor is obscured at its visual center: ' + str(presentation))
+    require(presentation.get('portalOwnsDialog'),
+            'Account editor is not owned by the portaled modal mask: ' + str(presentation))
+    require(presentation.get('backdropMaskHit'),
+            'Account editor backdrop point does not hit its modal mask: ' + str(presentation))
+    return presentation
+
+
 def assign_scopes(ctx, user, scopes):
     from playwright.sync_api import expect
     browser = ctx.browser
@@ -69,15 +139,20 @@ def assign_scopes(ctx, user, scopes):
             checkbox.set_checked(checkbox.get_attribute('value') in scopes)
     for scope in scopes:
         expect(dialog.locator('input[type=checkbox][value="' + scope + '"]')).to_be_checked()
-    layout = dialog.evaluate('''editor => {
-        const rows = [...editor.closest('.ku').querySelectorAll('.ku-row')];
-        return {row_count: rows.length,
-                row_bottom: Math.max(...rows.map(row => row.getBoundingClientRect().bottom)),
-                editor_top: editor.getBoundingClientRect().top};
-    }''')
-    ctx.inst.evidence.save('account-editor-content-flow', layout)
-    require(layout['row_count'] > 0 and layout['row_bottom'] <= layout['editor_top'],
-            'Account list overlaps account editor: ' + json.dumps(layout))
+    expect(dialog).to_have_attribute('aria-modal', 'true')
+    presentation = assert_portaled_editor_presentation(dialog)
+    # This must be a real pointer action, not only programmatic checkbox
+    # state.  Toggle and restore the selected scope before saving it.
+    selected = dialog.locator('input[type=checkbox][value="' + scopes[0] + '"]')
+    selected.click()
+    expect(selected).not_to_be_checked()
+    selected.click()
+    expect(selected).to_be_checked()
+    ctx.inst.evidence.save('account-editor-content-flow', {
+        'modal': dialog.get_attribute('aria-modal'),
+        'presentation': presentation,
+        'scopes': list(scopes),
+    })
     with browser.page.expect_response(lambda r: r.request.method == 'PUT' and r.url.endswith('/users/' + user['user_id'])) as response:
         dialog.get_by_role('button', name='Save', exact=True).click()
     require(response.value.status == 200 and response.value.json().get('success'), 'UI scope assignment fails')

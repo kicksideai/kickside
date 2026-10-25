@@ -209,6 +209,65 @@ class PublicSourceOverlayTests(unittest.TestCase):
             self.assertEqual(styles.read_text(), 'selected styles\n')
             self.assertFalse((selected / 'ui/tests/layout.py').exists())
 
+    def test_selected_module_repository_overlay_keeps_owned_sibling_fixtures_in_the_copy(self):
+        from module_harness import selected_module_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            repository = workspace / 'providers'
+            selected = repository / 'hubspot'
+            private = workspace / 'private'
+            source.mkdir()
+            (repository / '.github').mkdir(parents=True)
+            (repository / '.github/modules.json').write_text('{}')
+            fixture = repository / 'lua-fixtures/tests/capacity_http_fixture.lua'
+            fixture.parent.mkdir(parents=True)
+            fixture.write_text('owned fixture\n')
+            linked_fixture = selected / 'test/capacity_http_fixture.lua'
+            linked_fixture.parent.mkdir(parents=True)
+            linked_fixture.symlink_to('../../lua-fixtures/tests/capacity_http_fixture.lua')
+            check = private / 'checks/architecture.py'
+            check.parent.mkdir(parents=True)
+            check.write_text('private architecture check\n')
+            ctx = self._context(workspace, source)
+            ctx.inst.config['replace']['kickside/hubspot'] = str(selected)
+
+            with selected_module_overlay(ctx, 'kickside/hubspot',
+                                         (('checks/architecture.py', 'scripts/check_architecture.py'),),
+                                         owner=private, repository=True) as overlay:
+                self.assertEqual((overlay / 'test/capacity_http_fixture.lua').read_text(), 'owned fixture\n')
+                self.assertEqual((overlay / 'scripts/check_architecture.py').read_text(),
+                                 'private architecture check\n')
+                self.assertTrue((overlay / 'test/capacity_http_fixture.lua').resolve().is_relative_to(
+                    overlay.parents[1]))
+
+            self.assertEqual(fixture.read_text(), 'owned fixture\n')
+            self.assertFalse((selected / 'scripts/check_architecture.py').exists())
+
+    def test_selected_module_repository_overlay_rejects_external_links(self):
+        from harness import Failure
+        from module_harness import selected_module_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            repository = workspace / 'providers'
+            selected = repository / 'hubspot'
+            private = workspace / 'private'
+            outside = workspace / 'outside.lua'
+            source.mkdir()
+            (repository / '.github').mkdir(parents=True)
+            (repository / '.github/modules.json').write_text('{}')
+            selected.mkdir()
+            private.mkdir()
+            outside.write_text('outside fixture\n')
+            (selected / 'capacity.lua').symlink_to(outside)
+            ctx = self._context(workspace, source)
+            ctx.inst.config['replace']['kickside/hubspot'] = str(selected)
+
+            with self.assertRaisesRegex(Failure, 'Selected module repository source symlink escapes its owned tree'):
+                with selected_module_overlay(ctx, 'kickside/hubspot', (), owner=private, repository=True):
+                    self.fail('external fixture link reached an executable overlay')
+
     def test_requires_each_named_private_fixture_before_copying(self):
         from harness import Failure
         from module_harness import public_source_overlay
@@ -717,6 +776,97 @@ class FocusedModuleHarnessTests(unittest.TestCase):
                     configured = yaml.safe_load(path.read_text())
                     self.assertEqual(configured['workspace']['replacements']['kickside/core'], str(expected))
 
+    def test_source_profile_allows_only_owned_declared_fixture_aliases(self):
+        import yaml
+        from harness import Failure
+        from module_harness import _verify_focused_source_profile
+
+        scratch = Path(os.environ['TMPDIR']) / 'module-harness-tests'
+        scratch.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=scratch) as directory:
+            workspace = Path(directory)
+            copied_repository = workspace / 'copy' / 'chestor'
+            focused_root = copied_repository / 'workspace' / 'test'
+            selected_workspace = workspace / 'selected-workspace'
+            fixture_support = copied_repository / 'test' / 'support'
+            fixture_other = copied_repository / 'test' / 'other'
+            fixture_mirror = focused_root / 'module-mirror'
+            fixture_outside_focus = copied_repository / 'fixtures' / 'mirror'
+            outside = workspace / 'copy' / 'outside'
+            for path in (focused_root, selected_workspace, fixture_support, fixture_other,
+                         fixture_mirror, fixture_outside_focus, outside):
+                path.mkdir(parents=True, exist_ok=True)
+            expected = {'chestor/workspace': str(selected_workspace)}
+            config_path = workspace / '.wippy.yaml'
+            declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/test-support': '../../test/support',
+            }}})
+
+            def write(replacements):
+                config_path.write_text(yaml.safe_dump({'workspace': {'replacements': replacements}}))
+
+            # Captured R5 shape: all selected mappings plus a local fixture alias
+            # rebased into the disposable repository copy.
+            write({**expected, 'chestor/test-support': str(fixture_support)})
+            evidence = _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                       focused_root, declared)
+            self.assertEqual(evidence['owned_fixture_aliases'], ['chestor/test-support'])
+            self.assertEqual(evidence['owned_selected_fixture_remaps'], [])
+
+            # Captured CRM shape: native lockrefresh creates an owned mirror
+            # declared by the focused test configuration.
+            remap_declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/workspace': './module-mirror',
+                'chestor/test-support': '../../test/support',
+            }}})
+            write({'chestor/workspace': str(fixture_mirror),
+                   'chestor/test-support': str(fixture_support)})
+            evidence = _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                       focused_root, remap_declared)
+            self.assertEqual(evidence['owned_selected_fixture_remaps'], ['chestor/workspace'])
+
+            for declaration, replacement in (
+                    ({'chestor/test-support': '../../test/support'}, fixture_mirror),
+                    ({'chestor/workspace': str(fixture_mirror)}, fixture_mirror),
+                    ({'chestor/workspace': '../../fixtures/mirror'}, fixture_outside_focus)):
+                with self.subTest(declaration=declaration):
+                    write({'chestor/workspace': str(replacement),
+                           'chestor/test-support': str(fixture_support)})
+                    with self.assertRaisesRegex(Failure, 'changed selected mappings: chestor/workspace'):
+                        _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                       focused_root, yaml.safe_dump({'workspace': {
+                                                           'replacements': declaration}}))
+
+            write({'chestor/test-support': str(fixture_support)})
+            with self.assertRaisesRegex(Failure, 'missing selected mappings: chestor/workspace'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, declared)
+
+            write({'chestor/workspace': str(fixture_support)})
+            with self.assertRaisesRegex(Failure, 'changed selected mappings: chestor/workspace'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, declared)
+
+            write({**expected, 'chestor/test-support': str(fixture_support)})
+            with self.assertRaisesRegex(Failure, 'fixture alias is not declared locally: chestor/test-support'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, yaml.safe_dump({'workspace': {'replacements': {}}}))
+
+            wrong_declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/test-support': '../../test/other',
+            }}})
+            with self.assertRaisesRegex(Failure, 'fixture alias does not match its declared path: chestor/test-support'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, wrong_declared)
+
+            outside_declared = yaml.safe_dump({'workspace': {'replacements': {
+                'chestor/test-support': '../../../outside',
+            }}})
+            write({**expected, 'chestor/test-support': str(outside)})
+            with self.assertRaisesRegex(Failure, 'fixture alias escapes the owned copy: chestor/test-support'):
+                _verify_focused_source_profile(config_path, expected, copied_repository,
+                                                focused_root, outside_declared)
+
     def test_refreshes_a_replaced_module_on_a_published_application(self):
         from module_harness import _refresh_command
 
@@ -1052,11 +1202,16 @@ class FocusedModuleHarnessTests(unittest.TestCase):
             instance = Instance(root / 'run', source)
             failed = type('Failed', (), {'returncode': 1, 'stdout': 'fixture lint fails', 'stderr': ''})()
             with patch('module_harness.subprocess.run', side_effect=[Completed(), failed]) as invoke, \
+                 patch('module_harness._loaded_test_ids', return_value={'kickside.core:guard_test'}), \
                  patch('module_harness.drop_database') as drop:
                 with self.assertRaisesRegex(Failure, "fixture lint fails"):
-                    run_focused_module_test(Context(instance), 'kickside/core', 'guard_test', lint=True)
+                    run_focused_module_test(Context(instance), 'kickside/core', 'guard_test', lint=True,
+                                            lint_namespaces=('kickside.core', 'kickside.core.jobs'))
             self.assertEqual(invoke.call_count, 2)
-            self.assertIn('lint', invoke.call_args_list[1].args[0])
+            self.assertEqual(invoke.call_args_list[1].args[0], [
+                '/bin/wippy', '--config', '.wippy.yaml', 'lint', '--profile', 'postgres',
+                '--ns', 'kickside.core', '--ns', 'kickside.core.jobs',
+            ])
             self.assertEqual(drop.call_count, 2)
             self.assertEqual((harness / '.wippy.yaml').read_text(), original)
 

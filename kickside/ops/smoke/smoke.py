@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run maintained KickSide smoke scenarios against published or source deployments."""
 import argparse
+from collections import Counter
 import re
 from datetime import datetime, timezone
 import json
@@ -275,10 +276,17 @@ class EngineRunner:
         self.config, self.engine, self.root = config, engine, root
         self.pool = RuntimePool(config, engine, root / ('instances-' + uuid.uuid4().hex[:8]))
         self.outcomes, self.executors, self.sessions, self.contexts = {}, {}, {}, {}
+        self.native_root_contexts = set()
         self.setup_attempts = set()
         self.restart_reasons = []
         self.context_lock = threading.RLock()
         self.snapshot = SourceSnapshot(config, engine)
+
+    @staticmethod
+    def native_root_only(scenario):
+        """Focused native guards need scheduler capacity, not browser affinity."""
+        claims = parallel_resources(scenario)
+        return bool(claims) and all(claim.startswith('native-root:') for claim in claims)
 
     def context(self, scenario):
         with self.context_lock:
@@ -293,7 +301,10 @@ class EngineRunner:
                 ctx.restart_runtime = self.restart_instance
                 ctx.pause_runtime = self.pause_instance
                 self.contexts[key] = ctx
-                self.executors[key] = ThreadPoolExecutor(max_workers=1)
+                if self.native_root_only(scenario):
+                    self.native_root_contexts.add(key)
+                else:
+                    self.executors[key] = ThreadPoolExecutor(max_workers=1)
                 if ctx is not owner:
                     ctx.inst.cleanup.add(key + ' fixtures', ctx.fixtures.stop)
             ctx = self.contexts[key]
@@ -312,6 +323,8 @@ class EngineRunner:
             if context is ctx:
                 return operation(context)
             key = next(key for key, candidate in contexts if candidate is context)
+            if key in getattr(self, 'native_root_contexts', ()):
+                return operation(context)
             return self.executors[key].submit(operation, context).result()
         return Browser.paused(ctx.inst, [context for _, context in contexts], dispatch, hard=hard)
 
@@ -357,7 +370,7 @@ class EngineRunner:
                     # activation browser. Focused native guards explicitly
                     # claim only native module roots and require no browser.
                     claims = parallel_resources(scenario)
-                    if (claims and not all(claim.startswith('native-root:') for claim in claims)
+                    if (claims and not self.native_root_only(scenario)
                             and ctx.browser is None):
                         ctx.browser_check()
                 result = execute_scenario(self.config, self.engine, scenario, ctx, self.outcomes, activate)
@@ -368,6 +381,8 @@ class EngineRunner:
                         for name in before.keys() - ctx.state.keys():
                             owner.state.pop(name, None)
                 return result
+            if self.native_root_only(scenario):
+                return execute()
             return self.executors[key].submit(execute).result()
         try:
             return schedule(selected, run_one, self.outcomes, workers, completed)
@@ -432,9 +447,14 @@ class EngineRunner:
                 except Exception as failure:
                     failures.append(ctx.inst.redactor.text(f'{key} session: {failure}'))
                 return failures
-            errors.extend(self.executors[key].submit(close_context).result())
-            self.executors[key].shutdown(wait=True)
-            del self.contexts[key], self.executors[key], self.sessions[key]
+            if key in getattr(self, 'native_root_contexts', ()):
+                errors.extend(close_context())
+                self.native_root_contexts.remove(key)
+            else:
+                executor = self.executors.pop(key)
+                errors.extend(executor.submit(close_context).result())
+                executor.shutdown(wait=True)
+            del self.contexts[key], self.sessions[key]
         errors.extend(self.pool.cleanup() if areas is None else self.pool.cleanup(areas))
         temporary = self.root / 'temp'
         if areas is None and temporary.exists():
@@ -629,15 +649,44 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, interrupt)
     results = []
+    early_cleanup_errors = []
     started = time.monotonic()
     runner = None
     try:
         root.mkdir(parents=True, exist_ok=True)
         runner = EngineRunner(config, engine, root)
+        selected = select_scenarios(REGISTRY, tier, selected_names)
+        areas = {scenario.name: instance_area(scenario.owner) for scenario in selected}
+        remaining = Counter(areas.values())
+        owners = {scenario.name: scenario.owner for scenario in selected
+                  if not parallel_resources(scenario)}
+        remaining_owners = Counter(owners.values())
+        isolated = {instance_area(owner) for owner in RuntimePool.isolated}
         def completed(result):
             results.append(result)
+            # Persist the scenario outcome before terminal owner cleanup.  A
+            # crashed browser's teardown is deliberately process-level and is
+            # allowed to report a failure, but it must never erase the page
+            # crash that caused it.
             print(f'{engine} {result.scenario}: {result.status} ({result.duration:.1f}s)', flush=True)
             write_results(root, results, tier, config)
+            owner = owners.get(result.scenario)
+            if owner is not None:
+                remaining_owners[owner] -= 1
+                if remaining_owners[owner] == 0:
+                    try:
+                        runner.executors[owner].submit(runner.sessions[owner].close).result()
+                    except Exception as failure:
+                        error = runner.contexts[owner].inst.redactor.text(f'{owner} session: {failure}')
+                        early_cleanup_errors.append(error)
+                        results.append(Result(owner + ' session cleanup', engine, 'failed', 0, error))
+                        write_results(root, results, tier, config)
+            area = areas[result.scenario]
+            remaining[area] -= 1
+            if area in isolated and remaining[area] == 0:
+                cleanup = runner.close(areas={area})
+                if cleanup.error:
+                    early_cleanup_errors.append(cleanup.error)
         runner.run(tier, selected_names, workers, completed)
     except BaseException as failure:
         redactor = Redactor()
@@ -655,7 +704,11 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
         results.append(Result('engine', engine, 'failed', 0, error, [str(diagnostic)]))
     finally:
         if runner is not None:
-            results.append(runner.close())
+            cleanup = runner.close()
+            if early_cleanup_errors:
+                cleanup.status = 'failed'
+                cleanup.error = '\n'.join(filter(None, [cleanup.error, *early_cleanup_errors]))
+            results.append(cleanup)
         timing = {'mode': 'fresh', 'workers': workers,
                         'cold_boot_seconds': sum(getattr(inst, 'boot_seconds', 0) for inst in runner.pool.instances.values()) if runner else 0,
                         'wall_seconds': round(time.monotonic() - started, 3)}

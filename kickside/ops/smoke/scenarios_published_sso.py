@@ -116,9 +116,10 @@ def browser_published_sso_session_hub_ui_update(ctx):
         })
 
     browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui,
-        setup=setup, observe=observe, modules=('kickside/sso', 'kickside/sso-oidc'))
+        setup=setup, observe=observe, modules=('kickside/sso', 'kickside/sso-oidc'),
+        controller_source='keeper/keeper')
 
 
 REGISTRY = [Scenario('browser_published_sso_session_hub_ui_update', 'regression',
     browser_published_sso_session_hub_ui_update, ('boot',), instance_setup=True,
-    issues=PUBLISHED[0].issues + ('RA-C02', 'RA-B16', 'RA-B17'))]
+    issues=PUBLISHED[0].issues + ('RA-C02', 'RA-B16', 'RA-B17'), source_components=('keeper/keeper',))]

@@ -45,6 +45,41 @@ class SourceProfileTests(unittest.TestCase):
                             [self.scenario()])
             self.assertEqual(profile['replacements']['spiralscout/meetings'], str(selected))
 
+    def test_source_mode_selects_the_declared_keeper_controller(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            keeper = root / 'keeper'
+            keeper.mkdir()
+            (keeper / 'wippy.yaml').write_text('organization: keeper\nmodule: keeper\n')
+            scenario = Scenario('published-update', 'regression', lambda ctx: None,
+                                source_components=('keeper/keeper',))
+            self.assertEqual(build(source, {'keeper/keeper': str(keeper)}, [scenario])['replacements'],
+                             {'keeper/keeper': str(keeper)})
+
+    def test_source_mode_published_updates_declare_the_keeper_controller(self):
+        from scenarios_published_agent import REGISTRY as agent
+        from scenarios_published_channel import REGISTRY as channel
+        from scenarios_published_mcp import REGISTRY as mcp
+        from scenarios_published_run_as import REGISTRY as human
+        from scenarios_published_sso import REGISTRY as sso
+        from scenarios_published_workflow import REGISTRY as workflow
+        registry = {scenario.name: scenario for group in (agent, channel, mcp, human, sso, workflow)
+                    for scenario in group}
+        names = {
+            'browser_published_human_automation_update',
+            'browser_published_human_automation_hub_ui_update',
+            'browser_published_human_sessions_hub_ui_update',
+            'browser_published_agent_provider_hub_ui_update',
+            'browser_published_mcp_credential_hub_ui_update',
+            'browser_published_workflow_await_hub_ui_update',
+            'browser_published_discord_responder_hub_ui_update',
+            'browser_published_slack_responder_hub_ui_update',
+            'browser_published_sso_session_hub_ui_update',
+        }
+        self.assertTrue(all('keeper/keeper' in registry[name].source_components for name in names))
+
     def test_rejects_mismatched_explicit_module_identity(self):
         with tempfile.TemporaryDirectory() as directory:
             source, _, _ = self.cohort(Path(directory))
@@ -68,7 +103,7 @@ class SourceProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / 'kickside'
             source.mkdir()
-            with self.assertRaisesRegex(ValueError, 'spiralscout/meetings.*module-template'):
+            with self.assertRaisesRegex(ValueError, 'spiralscout/meetings.*declared checkout identities'):
                 build(source, {}, [self.scenario()])
 
     def test_ignores_nested_fixture_manifest(self):
@@ -94,6 +129,64 @@ class SourceProfileTests(unittest.TestCase):
                 sibling.mkdir()
                 (sibling / 'wippy.yaml').write_text('organization: other\nmodule: duplicate\n')
             self.assertEqual(build(source, {}, []), {'replacements': {}, 'checkouts': {}})
+
+    def test_requires_declared_docs_checkout_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            docs = root / 'docs'
+            docs.mkdir()
+            scenario = Scenario('docs', 'regression', lambda ctx: None,
+                                source_checkout_roots=('docs',))
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: docs'):
+                build(source, {}, [scenario])
+            (docs / 'kickside-development').mkdir()
+            (docs / 'kickside-development/developer-handbook.md').write_text('handbook\n')
+            (docs / 'operations').mkdir()
+            (docs / 'operations/configuration.md').write_text('configuration\n')
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: docs'):
+                build(source, {}, [scenario])
+            (docs / 'building-modules').mkdir()
+            (docs / 'building-modules/index.md').write_text('module authoring\n')
+            (docs / 'reference').mkdir()
+            (docs / 'reference/documentation-catalog.md').write_text('public documentation catalog\n')
+            self.assertEqual(build(source, {}, [scenario])['checkouts'], {'docs': str(docs)})
+
+    def test_requires_declared_docs_site_checkout_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            site = root / 'docs-site'
+            site.mkdir()
+            scenario = Scenario('docs-site', 'regression', lambda ctx: None,
+                                source_checkout_roots=('docs-site',))
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: docs-site'):
+                build(source, {}, [scenario])
+            (site / 'scripts').mkdir()
+            (site / 'tests').mkdir()
+            for path in ('mkdocs.yml', 'scripts/sync_sources.py', 'tests/test_workflows.py'):
+                (site / path).write_text('present\n')
+            self.assertEqual(build(source, {}, [scenario])['checkouts'], {'docs-site': str(site)})
+
+    def test_requires_real_public_repository_bundle_markers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            repositories = root / 'public-repositories'
+            repositories.mkdir()
+            scenario = Scenario('public-source-hygiene', 'regression', lambda ctx: None,
+                                source_checkout_roots=('public-repositories',))
+            with self.assertRaisesRegex(ValueError, 'declared checkout identities: public-repositories'):
+                build(source, {}, [scenario])
+            for name in ('kickside', 'providers', 'converters', 'crm', 'components', 'chestor', 'module', 'docs'):
+                marker = repositories / name / '.git'
+                marker.mkdir(parents=True)
+                (marker / 'HEAD').write_text('ref: refs/heads/main\n')
+            self.assertEqual(build(source, {}, [scenario])['checkouts'],
+                             {'public-repositories': str(repositories)})
 
 
 if __name__ == '__main__':

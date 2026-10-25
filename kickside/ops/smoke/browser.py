@@ -1,11 +1,13 @@
 """Headless browser evidence and strict console/network checks."""
 from contextlib import contextmanager
 import json
+from pathlib import Path
 import re
 from urllib.parse import quote, urlparse
 import time
 
 from harness import Failure, require
+from process_supervision import owned_process, stop_owned_tree
 
 
 ASSISTANT_TEXT = """el => {
@@ -52,14 +54,43 @@ ICONIFY_MIRRORS = frozenset({'api.iconify.design', 'api.simplesvg.com', 'api.uni
 
 class BrowserSession:
     """A Playwright driver and Chromium process owned by one scenario thread."""
+    crash_grace_seconds = 3
+
     def __init__(self):
         self.playwright = None
         self.browser = None
+        self.driver_record = None
+        self.driver_record_error = 'Playwright driver has not started'
+        self.crash_cleanup_failure = None
+
+    def capture_driver_ownership(self):
+        """Best-effort record of the local Playwright pipe driver we just started.
+
+        The normal lifecycle remains portable.  This record is only required
+        for the exceptional path where a page crash makes Playwright RPC
+        teardown unsafe.
+        """
+        try:
+            transport = self.playwright._impl_obj._connection._transport
+            pid = transport._proc.pid
+            require(isinstance(pid, int) and pid > 0,
+                    'Playwright transport does not expose a local driver PID')
+            command = Path('/proc') / str(pid) / 'cmdline'
+            arguments = command.read_bytes().split(b'\0')
+            require(any(b'playwright' in argument for argument in arguments)
+                    and b'run-driver' in arguments,
+                    'Playwright transport PID is not the run-driver process')
+            self.driver_record = owned_process(pid)
+            self.driver_record_error = None
+        except Exception as error:
+            self.driver_record = None
+            self.driver_record_error = f'{type(error).__name__}: {error}'
 
     def start(self):
         if self.playwright is None:
             from playwright.sync_api import sync_playwright
             self.playwright = sync_playwright().start()
+            self.capture_driver_ownership()
             try:
                 self.browser = self.playwright.chromium.launch(headless=True, args=['--no-sandbox'])
             except Exception:
@@ -67,7 +98,34 @@ class BrowserSession:
                 raise
         return self.browser
 
+    def discard_crashed_driver(self):
+        """Stop a known-crashed session without sending any Playwright RPCs."""
+        if self.playwright is None:
+            return {'status': 'not-started', 'processes': []}
+        try:
+            require(self.driver_record is not None,
+                    'Browser crash driver cleanup unavailable: ' + str(self.driver_record_error))
+            receipt = stop_owned_tree(self.driver_record, grace_seconds=self.crash_grace_seconds)
+            # sync_playwright().start() owns a local greenlet and event loop.
+            # Its public stop() is the context-manager's local dispatcher and
+            # event-loop shutdown.  The owned driver tree is already gone, so
+            # this cannot send a protocol request to a live crashed browser.
+            self.playwright.stop()
+        except Exception as error:
+            self.crash_cleanup_failure = f'{type(error).__name__}: {error}'
+            raise
+        # Only forget the session after its verified process tree is gone: a
+        # subsequent Browser must start a new driver and Chromium context.
+        self.browser = None
+        self.playwright = None
+        self.driver_record = None
+        self.driver_record_error = 'Playwright driver was discarded after a page crash'
+        self.crash_cleanup_failure = None
+        return receipt
+
     def close(self):
+        if self.crash_cleanup_failure is not None:
+            raise Failure('Browser session terminal after crash cleanup failure: ' + self.crash_cleanup_failure)
         errors = []
         for name, method in (('browser', 'close'), ('playwright', 'stop')):
             resource = getattr(self, name)
@@ -103,7 +161,7 @@ class Browser:
         # Browser contexts that this Browser owns; the browser-wide Target
         # session also sees other Playwright contexts.
         self.native_unscoped_workers = {}
-        self.page_scopes, self.context_scopes, self.page_cdps = {}, {}, {}
+        self.page_scopes, self.context_scopes, self.page_cdps, self.page_main_frames = {}, {}, {}, {}
         self.browser_context_scopes = {}
         self.next_page_scope = 0
         self.worker_events = []
@@ -286,6 +344,9 @@ class Browser:
             cdp.on('Target.attachedToTarget', lambda data: self.page_worker_attached(scope, cdp, data))
             cdp.on('Target.receivedMessageFromTarget', self.worker_message_received)
             cdp.send('Network.enable')
+            frame = cdp.send('Page.getFrameTree').get('frameTree', {}).get('frame', {}).get('id')
+            require(frame, 'CDP page watcher has no main frame ID')
+            self.page_main_frames[scope] = frame
             # The browser-level Target session receives every Chromium
             # context.  Learn this page's owning browserContextId so its
             # worker notifications cannot make an unrelated scenario busy.
@@ -376,7 +437,8 @@ class Browser:
         # Redirects reuse request ids; their final loading event remains the
         # terminal authority for the target-owned operation.
         self.native_network[self.native_identity(scope, target_id, request_id)] = {
-            'method': request.get('method'), 'url': request.get('url'), 'failed': False,
+            'method': request.get('method'), 'url': request.get('url'),
+            'type': data.get('type'), 'frame_id': data.get('frameId'), 'failed': False,
         }
         self.worker_event('native-start', scope=scope, target=target_id, request=request_id,
                           method=request.get('method'), url=request.get('url') or '')
@@ -660,6 +722,7 @@ class Browser:
         for page_id, page_scope in list(self.page_scopes.items()):
             if page_scope == scope:
                 self.page_scopes.pop(page_id, None)
+        getattr(self, 'page_main_frames', {}).pop(scope, None)
         for browser_context, scopes in list(getattr(self, 'browser_context_scopes', {}).items()):
             scopes.discard(scope)
             if not scopes:
@@ -724,13 +787,26 @@ class Browser:
                                     + str(item['status']) + r' \([^)]+\)', message.text)]
         if matched:
             self.inst.evidence.save('expected-rejection-console', {'text': message.text, 'url': message.location['url']})
+            return
+        critical = [item for item in self.expected_http
+                    if item.get('critical_console') is not None and item['observed'] == 1
+                    and item['critical_observed'] == 0
+                    and re.fullmatch(item['critical_console'], message.text)]
+        if critical:
+            item = critical[0]
+            item['critical_observed'] += 1
+            self.inst.evidence.save('expected-rejection-critical-console', {
+                'method': item['method'], 'url': item['url'], 'status': item['status'],
+                'text': self.inst.redactor.text(message.text),
+            })
         else:
             self.errors.append(self.inst.redactor.text(message.text))
 
     @contextmanager
-    def rejection(self, method, path, status):
+    def rejection(self, method, path, status, *, critical_console=None):
         require(400 <= status <= 499, 'A deliberate UI rejection must name its client-error status')
-        item = {'method': method, 'url': self.inst.base + path, 'status': status, 'observed': 0}
+        item = {'method': method, 'url': self.inst.base + path, 'status': status, 'observed': 0,
+                'critical_console': critical_console, 'critical_observed': 0}
         with self._expected_response(item) as response:
             yield response
 
@@ -764,7 +840,8 @@ class Browser:
             with self.page.expect_response(lambda r: r.request.method == item['method'] and r.url == item['url']) as response:
                 yield response
             self.settle()
-            require(response.value.status == item['status'] and item['observed'] == 1,
+            require(response.value.status == item['status'] and item['observed'] == 1
+                    and (item.get('critical_console') is None or item.get('critical_observed') == 1),
                     'UI rejection does not return exactly one expected response: ' + str(item))
         finally:
             self.expected_http.remove(item)
@@ -799,7 +876,9 @@ class Browser:
                 is_main_frame = False
             expected_cleanup = (request.resource_type == 'script' or
                                 (request.resource_type == 'stylesheet' and
-                                 request.url in navigation['stylesheet_cleanup']))
+                                 request.url in navigation['stylesheet_cleanup']) or
+                                (request.resource_type == 'image' and
+                                 request.url in navigation['asset_cleanup']))
             source = urlparse(navigation['source'])._replace(fragment='').geturl()
             current = urlparse(self.page.url)._replace(fragment='').geturl()
             if (request.method == 'GET' and expected_cleanup and
@@ -817,24 +896,75 @@ class Browser:
         self.errors.append(error)
 
     @contextmanager
-    def document_navigation(self, path, *, stylesheet_cleanup=()):
+    def document_navigation(self, path, *, stylesheet_cleanup=(), asset_cleanup=(), source_path=None):
         """Allow verified main-document cleanup while retaining all unrelated failures."""
         target = self.inst.base + path
-        navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': self.page.url,
+        require(source_path is None or source_path.startswith('/'),
+                'A declared document-navigation source must be an absolute path')
+        source = self.inst.base + source_path if source_path is not None else self.page.url
+        navigation = {'page': self.page, 'frame': self.page.main_frame, 'source': source,
                       'target': target, 'main_frame_urls': [], 'aborts': [],
-                      'stylesheet_cleanup': frozenset(stylesheet_cleanup)}
+                      'stylesheet_cleanup': frozenset(stylesheet_cleanup),
+                      'asset_cleanup': frozenset(asset_cleanup), 'retired_documents': [],
+                      'declared_source': source_path is not None}
         self.expected_document_navigations.append(navigation)
         try:
             yield
         finally:
             self.expected_document_navigations.remove(navigation)
-            transitioned = navigation['source'] != target and target in navigation['main_frame_urls']
+            if navigation['declared_source']:
+                transitioned = navigation['main_frame_urls'] == [navigation['source'], target]
+            else:
+                transitioned = navigation['source'] != target and target in navigation['main_frame_urls']
             if not transitioned:
                 self.errors.extend(navigation['aborts'])
-            elif navigation['aborts']:
-                self.inst.evidence.save('document-navigation-aborts', {
+            else:
+                self.retire_navigation_source_document(navigation)
+            if transitioned and (navigation['aborts'] or navigation['retired_documents']):
+                receipt = {
                     'source': navigation['source'], 'target': target, 'aborts': navigation['aborts'],
-                })
+                }
+                if navigation['retired_documents']:
+                    receipt['retired_documents'] = navigation['retired_documents']
+                self.inst.evidence.save('document-navigation-aborts', receipt)
+
+    def retire_navigation_source_document(self, navigation):
+        """Retire one verified stale source document after its target arrives.
+
+        Chromium can omit a terminal CDP event for a source document displaced
+        by a successful cross-origin redirect.  This is deliberately narrower
+        than idle cleanup: both protocols must still identify the same page's
+        main-frame GET of the exact source URL, and only its CDP Document entry
+        is retired after this guard observes the declared target.
+        """
+        source = urlparse(navigation['source'])._replace(fragment='').geturl()
+        scope = getattr(self, 'page_scopes', {}).get(id(navigation['page']))
+        frame_id = getattr(self, 'page_main_frames', {}).get(scope)
+        if scope is None or frame_id is None:
+            return
+        target = 'page:' + str(scope)
+        native_network = getattr(self, 'native_network', {})
+        native = [identity for identity, entry in native_network.items()
+                  if identity[0] == scope and identity[1] == target
+                  and entry.get('method') == 'GET' and entry.get('type') == 'Document'
+                  and entry.get('frame_id') == frame_id
+                  and urlparse(entry.get('url') or '')._replace(fragment='').geturl() == source]
+        pending = []
+        for request in self.pending:
+            try:
+                request_source = urlparse(request.url)._replace(fragment='').geturl()
+                main_frame = request.frame == navigation['frame']
+            except Exception:
+                continue
+            if (request.method == 'GET' and request.resource_type == 'document' and
+                    main_frame and request_source == source):
+                pending.append(request)
+        if len(native) != 1 or len(pending) != 1:
+            return
+        identity = native[0]
+        native_network.pop(identity)
+        self.pending.pop(pending[0])
+        navigation['retired_documents'].append({'request': identity[2], 'source': source})
 
     @contextmanager
     def embedding_refusal(self, path):
@@ -1049,6 +1179,36 @@ class Browser:
         return chat
 
     def close(self):
+        if self.crashes:
+            # A crashed page can wedge the sync Playwright transport.  In this
+            # branch do not close the context, detach CDP, close Chromium, or
+            # stop Playwright: each is a protocol RPC that may never return.
+            errors = []
+            self.context = self.page = None
+            self.browser_cdp = None
+            try:
+                receipt = self.session.discard_crashed_driver()
+                self.inst.evidence.save('browser-crash-driver-cleanup', receipt)
+            except Exception as error:
+                diagnostic = self.inst.redactor.text(f'{type(error).__name__}: {error}')
+                self.inst.evidence.save('browser-crash-driver-cleanup', {
+                    'status': 'failed', 'error': diagnostic,
+                })
+                errors.append(diagnostic)
+            self.navigation_urls = {}
+            self.worker_targets.clear()
+            self.worker_sessions.clear()
+            self.worker_session_cdps.clear()
+            self.worker_parsed_urls.clear()
+            self.worker_network_urls.clear()
+            self.native_network.clear()
+            self.native_unscoped_workers.clear()
+            self.page_scopes.clear()
+            self.context_scopes.clear()
+            self.browser_context_scopes.clear()
+            self.page_cdps.clear()
+            require(not errors, 'Browser crash cleanup: ' + '; '.join(errors))
+            return
         errors = []
         if self.context is not None:
             try:

@@ -1,5 +1,6 @@
 """Published human automations and saved credentials survive actual Hub updates."""
 from pathlib import Path
+import hashlib
 import shutil
 
 import yaml
@@ -51,23 +52,65 @@ def published_bot_accounts_capability(inst, token, label):
     return {'entry': entry, 'listing': bots}
 
 
-def browser_published_human_automation_update(ctx, *, installer=None, setup=None, observe=None, modules=()):
+def _sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _active_controller_source(inst, controller):
+    entry = inst.request('GET', '/api/v1/keeper/registry/entry?id=keeper.gov.service%3Acentral',
+                         label='published-controller-active-source')['entry']
+    source = entry.get('data', {}).get('source')
+    require(isinstance(source, str), 'Active governance controller has no registry source')
+    active_sha256 = hashlib.sha256(source.encode()).hexdigest()
+    require(active_sha256 == controller['central_sha256'],
+            'Active governance controller differs from the selected source override')
+    return {**controller, 'registry_entry': entry['id'], 'active_source_sha256': active_sha256}
+
+
+def browser_published_human_automation_update(ctx, *, installer=None, setup=None, observe=None, modules=(),
+                                               controller_source=None):
     from playwright.sync_api import expect
     from scenarios_identity_policy_upgrade import published_source
+
+    require(controller_source in (None, 'keeper/keeper'),
+            'Published update fixture supports only the Keeper governance controller override')
+    selected_controller = controller_source if ctx.inst.config.get('source') else None
 
     def prepare(fixture):
         inst = fixture.inst
         source = ctx.inst.config.get('source')
         candidates = candidate_dependency_sources(ctx.inst.config['replace'],
-            ('kickside/kickside', 'kickside/sync', 'kickside/automation', 'kickside/inbox', 'kickside/webhooks') + tuple(modules),
+            ('kickside/kickside', 'kickside/sync', 'kickside/automation', 'kickside/inbox', 'kickside/webhooks')
+            + tuple(modules) + ((selected_controller,) if selected_controller else ()),
             application=Path(source) / 'app' if source else None)
-        sources, baselines = {}, {}
+        sources, baselines, controller = {}, {}, None
         for module, candidate in candidates.items():
             manifest = yaml.safe_load((Path(candidate) / 'wippy.yaml').read_text())
             directory = inst.root / 'temp/published-sources' / module.replace('/', '_')
             directory.parent.mkdir(exist_ok=True)
-            baselines[module] = published_source(directory, module, None, application=manifest.get('type') == 'application')
+            if module == selected_controller:
+                receipt = inst.root / 'temp/published-controller-receipts' / module.replace('/', '_')
+                receipt.parent.mkdir(exist_ok=True)
+                baselines[module] = published_source(receipt, module, None, application=manifest.get('type') == 'application')
+                directory = inst.root / 'temp/runtime-support' / module.replace('/', '_')
+                shutil.copytree(candidate, directory, ignore=module_source_ignore(Path(candidate)))
+                central = directory / 'src/keeper/gov/service/central.lua'
+                require(central.is_file(), 'Controller source has no governance central: ' + module)
+                controller = {
+                    'mode': 'source',
+                    'component': module,
+                    'declared_source': str(Path(candidate).resolve()),
+                    'active_source': str(directory),
+                    'central_path': str(central),
+                    'central_sha256': _sha256(central),
+                    'published_receipt': baselines[module],
+                    'published_receipt_path': str(receipt),
+                }
+            else:
+                baselines[module] = published_source(directory, module, None, application=manifest.get('type') == 'application')
             sources[module] = str(directory)
+        require(selected_controller is None or controller is not None,
+                'Selected controller source is absent from the source replacement closure: ' + str(selected_controller))
         configuration = yaml.safe_load((Path(sources['kickside/kickside']) / '.wippy.yaml').read_text())
         require(not configuration.get('workspace'), 'Published application includes local source replacements')
         configuration['workspace'] = {'include_host_dependencies': True, 'replacements': sources}
@@ -75,11 +118,22 @@ def browser_published_human_automation_update(ctx, *, installer=None, setup=None
         fixture.state['published_sources'] = sources
         fixture.state['candidate_sources'] = candidates
         (inst.app / '.wippy.yaml').write_text(yaml.safe_dump(configuration, sort_keys=False))
-        inst.evidence.save('published-human-runtime-baseline', {'archives': baselines,
-            'profiles': sorted(configuration.get('profiles', {}))})
+        inst.evidence.save('published-human-runtime-baseline', {
+            'mode': 'source' if selected_controller else 'published',
+            'archives': baselines,
+            'historical_app_product_archives': {
+                module: receipt for module, receipt in baselines.items() if module != selected_controller},
+            'profiles': sorted(configuration.get('profiles', {})),
+        })
+        if controller is not None:
+            fixture.state['controller_source'] = controller
+            inst.evidence.save('published-human-controller-override', controller)
 
     with published_fixture(ctx, published_app=True, prepare=prepare) as fixture:
         inst = fixture.inst
+        controller = fixture.state.get('controller_source')
+        if controller is not None:
+            inst.evidence.save('published-human-controller-active', _active_controller_source(inst, controller))
         aid, hook, declaration, title = sync_fixture(fixture)
         if setup is not None:
             setup(fixture)
@@ -188,14 +242,19 @@ def browser_published_human_automation_update(ctx, *, installer=None, setup=None
                 'runtime_pid': inst.process.pid})
 
 
+def browser_published_human_automation_source_update(ctx):
+    browser_published_human_automation_update(ctx, controller_source='keeper/keeper')
+
+
 REGISTRY = [Scenario('browser_published_human_automation_update', 'regression',
-                     browser_published_human_automation_update, ('boot',), instance_setup=True,
+                     browser_published_human_automation_source_update, ('boot',), instance_setup=True,
                      issues=('SMOKE-PUBLISHED-WORKSPACE-FIXTURE', 'BOT-PUBLISHED-HUMAN-AUTOMATION-UPDATE', 'SMOKE-HUB-UPDATE-CLOSURE-SOURCES',
                              'SMOKE-PUBLISHED-RESOURCE-METADATA', 'SMOKE-CLI-REPOSITORY-IMPORTS',
                              'SMOKE-PUBLISHED-MANIFEST-TYPE',
                              'RUNTIME-LIVE-HUB-UPDATE-AUTHENTICATION-GAP',
                              'HUB-UPDATE-RETIRED-PROJECTION-SESSION-REVOCATION',
-                             'RA-C01', 'RA-C03', 'RA-C10', 'RA-C12', 'RA-C18'))]
+                             'RA-C01', 'RA-C03', 'RA-C10', 'RA-C12', 'RA-C18'),
+                     source_components=('keeper/keeper',))]
 
 
 def install_source_through_hub_ui(fixture, inst, *, module, replacement, refresh_session):
@@ -235,11 +294,12 @@ def install_source_through_hub_ui(fixture, inst, *, module, replacement, refresh
 
 
 def browser_published_human_automation_hub_ui_update(ctx):
-    browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui)
+    browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui,
+                                              controller_source='keeper/keeper')
 
 REGISTRY.append(Scenario('browser_published_human_automation_hub_ui_update', 'regression',
     browser_published_human_automation_hub_ui_update, ('boot',), instance_setup=True,
-    issues=REGISTRY[0].issues + ('RA-B16',)))
+    issues=REGISTRY[0].issues + ('RA-B16',), source_components=('keeper/keeper',)))
 
 
 
@@ -324,9 +384,10 @@ def browser_published_human_sessions_hub_ui_update(ctx):
             inst.evidence.save('published-session-module-expansion', expanded)
             observe(fixture, 'expansion')
 
-    browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui, observe=observe)
+    browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui, observe=observe,
+                                              controller_source='keeper/keeper')
 
 
 REGISTRY.append(Scenario('browser_published_human_sessions_hub_ui_update', 'regression',
     browser_published_human_sessions_hub_ui_update, ('boot',), instance_setup=True,
-    issues=REGISTRY[0].issues + ('RA-B16', 'RA-B17')))
+    issues=REGISTRY[0].issues + ('RA-B16', 'RA-B17'), source_components=('keeper/keeper',)))

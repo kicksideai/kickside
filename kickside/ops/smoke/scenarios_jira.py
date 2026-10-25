@@ -28,8 +28,7 @@ def features(component, category, *keys):
 def ui(ctx, viewport=None):
     browser = ctx.browser_check()
     browser.settle()
-    storage = browser.context.storage_state()
-    browser.reset_context(storage_state=storage, viewport=viewport or {'width': 1440, 'height': 1000})
+    browser.page.set_viewport_size(viewport or {'width': 1440, 'height': 1000})
     browser.page.goto(ctx.inst.base + '/', wait_until='domcontentloaded', timeout=30000)
     browser.frame.locator('.sidebar').wait_for(timeout=30000)
     browser.settle()
@@ -520,6 +519,24 @@ def regression_2439(ctx, *, before_failure=None):
     browser.screenshot('discord-visible-misconfiguration')
 
 
+def regression_2439_member_reply(ctx):
+    from scenarios import first_agent, member_identity, refresh_member_token
+    from scenarios_chat import for_role
+
+    ctx.browser_check().login()
+    member = member_identity(ctx)
+    refresh_member_token(ctx.inst, member, '/api/v1/agents/traits', lambda result: bool(result.get('traits')),
+                         'discord-member-admission')
+    ctx.state['chat_member'] = member
+
+    def reply(member_ctx):
+        member_ctx.browser_check().login(member['email'], member_ctx.inst.password)
+        first_agent(member_ctx)
+        regression_2439(member_ctx)
+
+    for_role('member', reply)(ctx)
+
+
 def regression_responder_state_refresh(ctx):
     dropped = []
     def before_failure():
@@ -634,6 +651,8 @@ REGISTRY = [
         features('google', 'mcp_tool', 'kickside.google.traits:gmail_read_tool'))),
     Scenario('regression_EE2_2439', 'full', regression_2439, READY, issues=('EE2-2439',), model=True, features=(features('channel', 'automation', 'kickside.channel.responder:channel_responder') +
         features('discord', 'connection_provider', 'kickside.discord.connection:discord_connection') + features('automation', 'http', 'POST /api/v1/automations'))),
+    Scenario('regression_EE2_2439_member_reply', 'regression', regression_2439_member_reply, READY,
+        instance_setup=True, model=True, issues=('EE2-2439',)),
     Scenario('regression_EE2_2515', 'full', regression_2515, READY, issues=('EE2-2515',), features=features('automation', 'http', 'GET /api/v1/automations/sinks')),
     Scenario('regression_EE2_2444', 'full', regression_2444, READY, issues=('EE2-2444',), features=features('agents', 'http', 'GET /api/v1/agents/tools', 'GET /api/v1/agents/traits')),
 ]

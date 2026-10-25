@@ -9,6 +9,22 @@ from tests.test_endpoint_policy_components import module_repositories, module_so
 
 
 class NativeGuardSelectionTests(unittest.TestCase):
+    def test_crm_idempotency_guard_selects_each_registered_split_assertion(self):
+        import scenarios_workflow_native_recovery as guards
+
+        crm = module_sources(module_repositories())['kickside/crm']
+        entries = test_entries(crm / 'test')
+        expected = {
+            'crm_sink_receipt_test': ('file://crm_sink_receipt_test.lua', 'run'),
+            'crm_sink_receipts_test': ('file://crm_sink_crm_sink_test.lua', 'run_receipts'),
+            'crm_sink_references_test': ('file://crm_sink_crm_sink_test.lua', 'run_references'),
+            'crm_sink_reconciliation_test': ('file://crm_sink_contract_test.lua', 'run_reconciliation'),
+            'crm_sink_conditional_test': ('file://crm_sink_contract_test.lua', 'run_conditional'),
+        }
+        self.assertEqual(tuple(guards.CRM_IDEMPOTENCY_TESTS), tuple(expected))
+        registered = {row['name']: (row['source'], row['method']) for row in entries.values()}
+        self.assertEqual({name: registered.get(name) for name in guards.CRM_IDEMPOTENCY_TESTS}, expected)
+
     def test_pure_native_guards_claim_each_focused_module_root(self):
         import scenarios_native_errors_component_command_causes as component
         import scenarios_native_errors_core_retention_notifier as core

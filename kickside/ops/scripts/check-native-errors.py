@@ -82,6 +82,10 @@ def error_operand(items):
         return False
     if len(items) >= 4 and [item[1] for item in items[-4:]] == [":", "kind", "(", ")"]:
         return False
+    if (len(items) % 2 == 1 and
+            all(kind == "name" if index % 2 == 0 else value == "."
+                for index, (kind, value, _) in enumerate(items))):
+        return bool(ERROR_NAME.search(items[-1][1]))
     return any(kind == "name" and ERROR_NAME.search(value) for kind, value, _ in items)
 
 

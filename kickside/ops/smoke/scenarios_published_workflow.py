@@ -158,7 +158,8 @@ def browser_published_workflow_await_hub_ui_update(ctx):
             'original_human': state['actor']})
 
     browser_published_human_automation_update(ctx, installer=install_source_through_hub_ui,
-                                            observe=observe, modules=('kickside/workflows',))
+                                            observe=observe, modules=('kickside/workflows',),
+                                            controller_source='keeper/keeper')
 
 
 REGISTRY = [Scenario('browser_published_workflow_await_hub_ui_update', 'regression',
@@ -167,4 +168,5 @@ REGISTRY = [Scenario('browser_published_workflow_await_hub_ui_update', 'regressi
                                  'DATAFLOW-PUBLISHED-PROJECTED-POLICY-CONTINUITY',
                                  'WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',
                                  'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE',
-                                 'SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE'))]
+                                 'SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE'),
+    source_components=('keeper/keeper',))]

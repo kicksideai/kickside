@@ -292,7 +292,8 @@ class ProviderSetup(unittest.TestCase):
             scenarios_providers.sso_oidc_login(ctx)
         self.assertEqual(browser.page.expect_response.call_count, 1)
         browser.document_navigation.assert_called_once_with(
-            '/', stylesheet_cleanup=('http://127.0.0.1:731/api/public/facade/variables.css',))
+            '/', stylesheet_cleanup=('http://127.0.0.1:731/api/public/facade/variables.css',),
+            asset_cleanup=('http://127.0.0.1:731/app/kickside-icon.svg',))
         ctx.inst.request.assert_called_once_with('GET', '/api/v1/user/me', auth='oidc-session', label='oidc-session-profile')
         ctx.inst.redactor.add.assert_called_once_with('oidc-session')
         ctx.inst.evidence.save.assert_called_once_with('oidc-callback', {'status': 302, 'session_minted': True, 'error': ''})

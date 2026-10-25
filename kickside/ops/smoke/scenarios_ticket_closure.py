@@ -1,10 +1,8 @@
 import yaml
 
 from harness import Scenario, require
+from cleanup_evidence import delete_component
 from scenarios_core import create_thread
-from scenarios import first_agent, member_identity, refresh_member_token
-from scenarios_chat import for_role
-from scenarios_jira import jira_setup, regression_2439
 
 
 def projection_failure_contract(ctx):
@@ -12,7 +10,8 @@ def projection_failure_contract(ctx):
     fixture.mkdir(exist_ok=True)
     (fixture / 'worker.lua').write_text(
         'local M = {}\n'
-        'function M.deterministic(_input) error("projection worker boom") end\n'
+        'function M.deterministic(_input) error(errors.new({message = "projection worker boom", '
+        'kind = errors.INVALID, retryable = false})) end\n'
         'function M.infrastructure(_input) error(errors.new({message = "database unavailable", '
         'kind = errors.UNAVAILABLE, retryable = true})) end\nreturn M\n')
     (fixture / '_index.yaml').write_text(yaml.safe_dump({
@@ -23,7 +22,7 @@ def projection_failure_contract(ctx):
     }, sort_keys=False))
     ctx.restart()
     thread_id = create_thread(ctx, 'Projection failure contract')
-    ctx.inst.cleanup.add('Projection failure thread', lambda: ctx.inst.request('DELETE', '/api/v1/threads/' + thread_id),
+    ctx.inst.cleanup.add('Projection failure thread', lambda: delete_component(ctx.inst, thread_id, '/api/v1/threads/' + thread_id),
                          scope='scenario')
     base = '/api/v1/threads/' + thread_id
     ctx.inst.request('POST', base + '/messages', {'text': 'Projection event', 'role': 'user'},
@@ -33,6 +32,35 @@ def projection_failure_contract(ctx):
             'kind': 'failure-contract', 'projection_key': failure,
             'worker_ref': 'func://app.smoke.projection_failure_contract:' + failure, 'start_seq': 0,
         }, expect=(201,), label='projection-failure-register-' + failure)
+
+        def remove_projection(registered=registered, failure=failure):
+            before = ctx.inst.request('GET', base + '/projections',
+                                      label='projection-failure-cleanup-cursor-before')['cursors']
+            cursor = next((row for row in before if row['id'] == registered['cursor_id']), None)
+            require(cursor is not None and isinstance(cursor.get('job_id'), str) and cursor['job_id'],
+                    'Projection cleanup cannot identify its retry job')
+            job_id = cursor['job_id']
+            removed = ctx.inst.request('POST', base + '/projections/remove', {
+                'projection_id': registered['projection_id'],
+            }, label='projection-failure-remove-' + failure)
+            require(removed.get('success') is True, 'Projection cleanup does not report success')
+            receipt = removed.get('removed')
+            require(isinstance(receipt, dict) and receipt.get('projection_id') == registered['projection_id']
+                    and receipt.get('removed_cursors') == 1,
+                    'Projection cleanup does not remove its cursor')
+            cursors = ctx.inst.request('GET', base + '/projections',
+                                       label='projection-failure-cleanup-cursor')['cursors']
+            require(all(row['id'] != registered['cursor_id'] for row in cursors),
+                    'Projection cleanup leaves its cursor registered')
+            jobs = ctx.inst.request('GET', '/api/v1/jobs?thread_id=' + thread_id,
+                                    label='projection-failure-cleanup-job')['jobs']
+            job = next((row for row in jobs if row['id'] == job_id), None)
+            require(job is not None and job['status'] == 'cancelled',
+                    'Projection cleanup does not cancel its retry job')
+            ctx.inst.evidence.save('projection-failure-cleanup-' + failure,
+                                   {'receipt': receipt, 'job': job})
+
+        ctx.inst.cleanup.add('Projection failure ' + failure, remove_projection, scope='scenario')
 
         def settled():
             cursors = ctx.inst.request('GET', base + '/projections', label='projection-failure-cursor')['cursors']
@@ -48,42 +76,30 @@ def projection_failure_contract(ctx):
             ctx.inst.evidence.save('projection-failure-' + failure, snapshot)
             require(cursor['last_seq'] == 0, 'Failed projection advances its cursor')
             require(job['status'] in ('pending', 'running'), 'Failed projection loses its reusable slot')
-            if not job.get('last_error') or job['attempts'] < 1:
+            if not job.get('last_error'):
                 return None
             message = 'projection worker boom' if failure == 'deterministic' else 'database unavailable'
             require(message in job['last_error'], 'Projection loses its worker error')
             if failure == 'deterministic':
-                return snapshot if job['status'] == 'pending' and job.get('scheduled_at') is None else None
-            return snapshot if job['attempts'] > job['max_attempts'] else None
+                if cursor['status'] != 'invalid':
+                    return None
+                require(message in cursor.get('last_error', ''),
+                        'Deterministic projection cursor loses its worker error')
+                return snapshot if (job['status'] == 'pending' and job.get('scheduled_at') is None
+                                    and job.get('execution_seq') == 1) else None
+            return snapshot if (job['attempts'] >= job['max_attempts'] and job['status'] == 'pending'
+                                and job.get('scheduled_at') is not None) else None
 
         snapshot = ctx.inst.wait(settled, 'Projection ' + failure + ' failure follows its slot contract', seconds=60)
         job = snapshot['job']
         if failure == 'deterministic':
-            require(job['attempts'] == 1, 'Deterministic function failure retries before parking')
+            require(job['execution_seq'] == 1, 'Deterministic function failure runs more than once before parking')
         else:
-            require(job['status'] == 'running' or job.get('scheduled_at') is not None,
-                    'Infrastructure failure parks instead of retrying')
-
-
-def member_discord_reply(ctx):
-    ctx.browser_check().login()
-    jira_setup(ctx)
-    member = member_identity(ctx)
-    refresh_member_token(ctx.inst, member, '/api/v1/agents/traits', lambda result: bool(result.get('traits')),
-                         'discord-member-admission')
-    ctx.state['chat_member'] = member
-
-    def reply(member_ctx):
-        member_ctx.browser_check().login(member['email'], member_ctx.inst.password)
-        first_agent(member_ctx)
-        regression_2439(member_ctx)
-
-    for_role('member', reply)(ctx)
+            require(job['status'] == 'pending' and job.get('scheduled_at') is not None,
+                    'Infrastructure failure does not retain its scheduled retry')
 
 
 REGISTRY = [
     Scenario('regression_EE2_2571_projection_failure_contract', 'regression', projection_failure_contract,
         ('first_agent',), instance_setup=True, model=True, issues=('EE2-2571',)),
-    Scenario('regression_EE2_2439_member_reply', 'regression', member_discord_reply,
-        ('first_agent',), instance_setup=True, model=True, issues=('EE2-2439',)),
 ]

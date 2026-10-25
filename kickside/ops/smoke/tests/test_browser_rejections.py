@@ -48,6 +48,59 @@ class BrowserRejectionTests(unittest.TestCase):
         browser.console_received(message)
         self.assertEqual(browser.errors, ['Uncaught application failure'])
 
+    def configured_rejection(self):
+        browser = self.browser()
+        browser.page = Mock()
+        browser.settle = Mock()
+        response = Mock(status=401, url='http://localhost:731/api/v1/views/pages/routes')
+        response.request.method = 'GET'
+        browser.page.expect_response.return_value = nullcontext(Mock(value=response))
+        return browser, response
+
+    def critical_message(self, text='Wippy critical error: AxiosError: Request failed with status code 401'):
+        return Mock(type='error', text=text, location={'url': 'http://localhost:731/'})
+
+    def test_rejection_requires_its_exact_declared_critical_console_once(self):
+        browser, response = self.configured_rejection()
+        signature = r'Wippy critical error: AxiosError: Request failed with status code 401'
+        with browser.rejection('GET', '/api/v1/views/pages/routes', 401, critical_console=signature):
+            browser.response_received(response)
+            browser.console_received(self.critical_message())
+        self.assertEqual(browser.errors, [])
+        browser.inst.evidence.save.assert_any_call('expected-rejection-critical-console', {
+            'method': 'GET', 'url': 'http://localhost:731/api/v1/views/pages/routes', 'status': 401,
+            'text': 'Wippy critical error: AxiosError: Request failed with status code 401',
+        })
+
+    def test_rejection_fails_when_its_declared_critical_console_is_missing(self):
+        browser, response = self.configured_rejection()
+        with self.assertRaisesRegex(Failure, 'critical_observed'):
+            with browser.rejection('GET', '/api/v1/views/pages/routes', 401,
+                                   critical_console=r'expected managed layout report'):
+                browser.response_received(response)
+
+    def test_rejection_does_not_accept_a_critical_console_before_its_response(self):
+        browser, response = self.configured_rejection()
+        signature = r'Wippy critical error: AxiosError: Request failed with status code 401'
+        with self.assertRaisesRegex(Failure, 'critical_observed'):
+            with browser.rejection('GET', '/api/v1/views/pages/routes', 401, critical_console=signature):
+                browser.console_received(self.critical_message())
+                browser.response_received(response)
+        self.assertEqual(browser.errors, ['Wippy critical error: AxiosError: Request failed with status code 401'])
+
+    def test_rejection_leaves_duplicate_or_unrelated_critical_console_as_errors(self):
+        browser, response = self.configured_rejection()
+        signature = r'Wippy critical error: AxiosError: Request failed with status code 401'
+        with browser.rejection('GET', '/api/v1/views/pages/routes', 401, critical_console=signature):
+            browser.response_received(response)
+            browser.console_received(self.critical_message())
+            browser.console_received(self.critical_message())
+            browser.console_received(self.critical_message('Wippy critical error: different failure'))
+        self.assertEqual(browser.errors, [
+            'Wippy critical error: AxiosError: Request failed with status code 401',
+            'Wippy critical error: different failure',
+        ])
+
 
 class BrowserErrorReceiptTests(BrowserRejectionTests):
     def test_api_failure_keeps_redacted_response_evidence_before_any_later_timeout(self):

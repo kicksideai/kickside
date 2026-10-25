@@ -14,6 +14,20 @@ from scenarios_hot_update_work import database_rows
 from scenarios_token_continuity import source_fixture, member, issue, token_payloads, MODULE
 
 
+WEBCOMPONENT_ASSETS = 'https://web-host.wippy.ai/webcomponents-1.0.67/@core/assets/'
+UNSIGNED_LOGIN_STYLESHEET_CLEANUP = tuple(WEBCOMPONENT_ASSETS + name for name in (
+    'ManagedLayoutShell.BSSHBzOD.css', 'realm-api.RjJ4kW08.css', 'tailwind.B8wgLWdU.css'))
+UNSIGNED_LOGIN_CRITICAL_401 = (
+    r'Wippy critical error: AxiosError: Request failed with status code 401\n'
+    r'    at at \(https://web-host\.wippy\.ai/webcomponents-1\.0\.67/@vendor/axios\.js:3:1078\)\n'
+    r'    at XMLHttpRequest\.w \(https://web-host\.wippy\.ai/webcomponents-1\.0\.67/@vendor/axios\.js:3:5900\)\n'
+    r'    at j\.request \(https://web-host\.wippy\.ai/webcomponents-1\.0\.67/@vendor/axios\.js:5:2078\)\n'
+    r'    at async Co \(https://web-host\.wippy\.ai/webcomponents-1\.0\.67/@core/realm-api\.DV7YnK69\.js:1:1987\)\n'
+    r'    at async He \(https://web-host\.wippy\.ai/webcomponents-1\.0\.67/managed-layout\.js:2:20099\)\n'
+    r'    at async https://web-host\.wippy\.ai/webcomponents-1\.0\.67/managed-layout\.js:2:21254'
+)
+
+
 def token_entry(directory):
     path = directory / 'src/security/_index.yaml'
     document = yaml.safe_load(path.read_text())
@@ -108,6 +122,9 @@ def role_transition(role):
             browser.frame.locator('.sidebar').wait_for(timeout=30000)
             await_workspace(inst, user_id, browser)
             storage = browser.context.storage_state()
+            # Signing invalidates this bearer; close its live client before the
+            # activation, then restore the saved state to prove re-login.
+            browser.reset_context()
             before = retained_data(inst)
             payloads = token_payloads(inst)
             path, document, entry = token_entry(directory)
@@ -128,9 +145,17 @@ def role_transition(role):
                     'Unsigned HTTP admission crashes the runtime')
             require(keeper_tools(inst, minted) == baseline_tools, 'Signing activation breaks a Keeper MCP bearer')
             browser.reset_context(storage_state=storage)
-            browser.page.goto(inst.base + '/', wait_until='domcontentloaded', timeout=30000)
-            browser.page.wait_for_url(inst.base + '/login', timeout=30000)
-            expect(browser.page.get_by_role('button', name='Sign In', exact=True)).to_be_visible()
+            # The restored unsigned storage must be rejected once by the UI,
+            # then take the attempted root document directly to login.  The
+            # expected rejection owns its accompanying managed-layout report;
+            # all other browser errors remain in the ledger.
+            with browser.document_navigation('/login', source_path='/',
+                                             stylesheet_cleanup=UNSIGNED_LOGIN_STYLESHEET_CLEANUP):
+                with browser.rejection('GET', '/api/v1/views/pages/routes', 401,
+                                       critical_console=UNSIGNED_LOGIN_CRITICAL_401):
+                    browser.page.goto(inst.base + '/', wait_until='domcontentloaded', timeout=30000)
+                    browser.page.wait_for_url(inst.base + '/login', timeout=30000)
+                    expect(browser.page.get_by_role('button', name='Sign In', exact=True)).to_be_visible()
             browser.login(user['email'], inst.password)
             signed = issue(inst, user)
             require('.' in signed, 'Re-login does not issue a signed bearer')

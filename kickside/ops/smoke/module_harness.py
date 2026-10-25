@@ -156,13 +156,15 @@ def public_source_overlay(ctx, owned_paths, *, owner=None, module_overrides=None
 
 
 @contextmanager
-def selected_module_overlay(ctx, component, owned_paths, *, owner=None):
+def selected_module_overlay(ctx, component, owned_paths, *, owner=None, repository=False):
     """Stage private checks beside a disposable copy of one selected module.
 
     Provider modules are selected independently from the application source
-    tree.  Their smoke-only checks therefore need the same ownership boundary
+    tree. Their smoke-only checks therefore need the same ownership boundary
     as application frontend checks: selected product bytes are copied first,
-    and private fixtures may only fill paths absent from those bytes.
+    and private fixtures may only fill paths absent from those bytes. Callers
+    whose selected module has owned sibling fixtures may request its declared
+    repository boundary, so those fixtures stay inside the disposable copy.
     """
     selected = ctx.inst.config.get('replace', {}).get(component)
     require(selected, 'Selected module overlay requires a local replacement for ' + component)
@@ -178,10 +180,19 @@ def selected_module_overlay(ctx, component, owned_paths, *, owner=None):
     temporary = Path(ctx.inst.root) / 'temp'
     temporary.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='selected-module-overlay-', dir=temporary) as directory:
-        overlay = Path(directory) / source.name
-        _validate_copied_links(source, overlay, source, overlay.resolve(), 'Selected module')
-        shutil.copytree(source, overlay, symlinks=True,
-                        ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+        if repository:
+            boundary = next((parent for parent in source.parents
+                             if (parent / '.github/modules.json').is_file()), None)
+            require(boundary, 'Selected module repository boundary is absent: ' + str(source))
+            copied_boundary = Path(directory) / 'repository' / boundary.name
+            _validate_copied_links(boundary, copied_boundary, boundary, copied_boundary.resolve(),
+                                   'Selected module repository')
+            overlay = copy_harness(source, boundary, Path(directory))
+        else:
+            overlay = Path(directory) / source.name
+            _validate_copied_links(source, overlay, source, overlay.resolve(), 'Selected module')
+            shutil.copytree(source, overlay, symlinks=True,
+                            ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
         resolved_overlay = overlay.resolve()
         for relative, fixture in fixtures:
             destination = overlay / relative
@@ -242,15 +253,16 @@ def copy_harness(original,repository,scratch):
 
 
 
-def run_focused_module_test(ctx, component, entry, *, timeout=DEFAULT_TIMEOUT, lint=False):
-    """Refresh and run one named test entry, with optional harness lint."""
+def run_focused_module_test(ctx, component, entry, *, timeout=DEFAULT_TIMEOUT, lint=False,
+                            lint_namespaces=()):
+    """Refresh and run one named test entry, with optional scoped harness lint."""
     source = ctx.inst.config['replace'].get(component)
     require(source, 'Focused module test requires a local replacement for ' + component)
     module_root = Path(source)
     test_root = module_root / 'test'
     require(test_root.is_dir(), 'Focused module test has no test directory: ' + str(test_root))
     return _run(ctx, test_root, entry, timeout=timeout, module_root=module_root,
-                label=component.replace('/', '-'), lint=lint)
+                label=component.replace('/', '-'), lint=lint, lint_namespaces=lint_namespaces)
 
 
 def run_focused_module_suite(ctx, component, suite, *, timeout=DEFAULT_TIMEOUT):
@@ -279,7 +291,8 @@ def valid_focused_selection(entry):
         r'[A-Za-z0-9_.]+(?::[A-Za-z0-9_]+)?', entry) is not None
 
 
-def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False, lint=False):
+def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False, lint=False,
+         lint_namespaces=()):
     require(valid_focused_selection(entry),
             'Focused test entry is invalid: ' + str(entry))
     inst = ctx.inst
@@ -304,35 +317,85 @@ def _run(ctx, root, entry, *, timeout, module_root, label, repository_gate=False
                         copied_module=copied_module.parent
                 replace = dict(inst.config.get('replace', {}))
                 verify_source_profile = bool(source and module_root and not root.is_relative_to(source))
+                copied_repository = copied
+                for _ in root.relative_to(repository).parts:
+                    copied_repository = copied_repository.parent
                 if repository_gate:
-                    copied_repository = copied
-                    for _ in root.relative_to(repository).parts:
-                        copied_repository = copied_repository.parent
                     for name, path in replace.items():
                         if Path(path).resolve().is_relative_to(repository):
                             replace[name] = str(copied_repository / Path(path).resolve().relative_to(repository))
                 return _run_locked(ctx, copied, entry, timeout=timeout, module_root=copied_module,
-                                   label=label, repository_gate=repository_gate, lint=lint, replace=replace,
-                                   verify_source_profile=verify_source_profile)
+                                   label=label, repository_gate=repository_gate, lint=lint,
+                                   lint_namespaces=lint_namespaces, replace=replace,
+                                   verify_source_profile=verify_source_profile,
+                                   copied_repository=copied_repository)
         finally:
             fcntl.flock(lock, fcntl.LOCK_UN)
 
 
+def _verify_focused_source_profile(config_path, replace, copied_repository, root, original):
+    """Keep selected replacements exact, allowing only owned fixture aliases."""
+    configured = yaml.safe_load(config_path.read_text()) or {}
+    actual = configured.get('workspace', {}).get('replacements', {})
+    require(isinstance(actual, dict),
+            'Focused module replacement profile has invalid replacements')
+    expected = {name: str(Path(path).resolve()) for name, path in replace.items()}
+    missing = sorted(expected.keys() - actual.keys())
+    changed = sorted(name for name in expected.keys() & actual.keys()
+                     if actual[name] != expected[name])
+    require(not missing,
+            'Focused module replacement profile is missing selected mappings: ' + ', '.join(missing))
+    declared = (yaml.safe_load(original) or {}).get('workspace', {}).get('replacements', {}) if original else {}
+    require(isinstance(declared, dict),
+            'Focused module fixture declarations are invalid')
+    boundary = Path(copied_repository).resolve()
+    focused_root = Path(root).resolve()
+    selected_fixture_remaps = []
+    invalid_changed = []
+    for name in changed:
+        declared_path = declared.get(name)
+        path = actual[name]
+        if not (isinstance(declared_path, str) and declared_path and
+                not Path(declared_path).is_absolute() and isinstance(path, str) and path):
+            invalid_changed.append(name)
+            continue
+        candidate = Path(path).resolve()
+        if (candidate != (focused_root / declared_path).resolve() or not candidate.is_dir() or
+                not candidate.is_relative_to(focused_root) or not candidate.is_relative_to(boundary)):
+            invalid_changed.append(name)
+            continue
+        selected_fixture_remaps.append(name)
+    require(not invalid_changed,
+            'Focused module replacement profile changed selected mappings: ' + ', '.join(invalid_changed))
+    extras = sorted(actual.keys() - expected.keys())
+    for name in extras:
+        declared_path = declared.get(name)
+        require(isinstance(declared_path, str) and declared_path and not Path(declared_path).is_absolute(),
+                'Focused module fixture alias is not declared locally: ' + name)
+        path = actual[name]
+        require(isinstance(path, str) and path,
+                'Focused module fixture alias has invalid source: ' + name)
+        candidate = Path(path).resolve()
+        require(candidate == (focused_root / declared_path).resolve(),
+                'Focused module fixture alias does not match its declared path: ' + name)
+        require(candidate.is_dir(),
+                'Focused module fixture alias is absent: ' + name)
+        require(candidate.is_relative_to(boundary),
+                'Focused module fixture alias escapes the owned copy: ' + name)
+    for name, path in actual.items():
+        require(isinstance(path, str) and Path(path).is_dir(),
+                'Focused module replacement profile contains an absent source: ' + str(name))
+    return {'replacements': actual, 'owned_fixture_aliases': extras,
+            'owned_selected_fixture_remaps': selected_fixture_remaps}
+
+
 def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repository_gate=False, lint=False,
-                verify_source_profile=False):
+                lint_namespaces=(), verify_source_profile=False, copied_repository=None):
     inst = ctx.inst
     identifier = re.sub(r'[^a-z0-9_]+', '_', label.lower()).strip('_')[-20:] or 'app'
     database = 'smoke_focused_' + identifier + '_' + uuid.uuid4().hex[:12]
     created = []
-    config_path, _ = _write_config(inst, root, database, replace)
-    if verify_source_profile:
-        configured = yaml.safe_load(config_path.read_text())
-        actual = configured.get('workspace', {}).get('replacements', {})
-        expected = {name: str(Path(path).resolve()) for name, path in replace.items()}
-        require(actual == expected, 'Focused module replacement profile differs from the selected source profile')
-        require(all(Path(path).is_dir() for path in actual.values()),
-                'Focused module replacement profile contains an absent source')
-        inst.evidence.save('focused-' + label + '-source-profile', {'replacements': actual})
+    config_path, original = _write_config(inst, root, database, replace)
     environment = dict(inst.env)
     environment['PATH'] = str(Path(inst.config['binary']).parent) + os.pathsep + environment.get('PATH', '')
     preparation = root / 'prepare.sh'
@@ -347,11 +410,17 @@ def _run_locked(ctx, root, entry, *, timeout, module_root, label, replace, repos
             _command(inst, label + '-prepare', ['bash', preparation.name], root, environment, timeout)
         refresh_root = root if refresh[0] == inst.config['binary'] else module_root or root
         _command(inst, label + '-refresh', refresh, refresh_root, environment, timeout)
+        if verify_source_profile:
+            inst.evidence.save('focused-' + label + '-source-profile',
+                               _verify_focused_source_profile(config_path, replace, copied_repository,
+                                                               root, original))
         available = _loaded_test_ids(inst, root, environment, timeout, label)
         if lint:
             command = [inst.config['binary'], '--config', config_path.name, 'lint']
             if inst.engine == 'postgres':
                 command.extend(('--profile', 'postgres'))
+            for namespace in lint_namespaces:
+                command.extend(('--ns', namespace))
             _command(inst, label + '-lint', command, root, environment, timeout)
         focused_config = yaml.safe_load(config_path.read_text())
         _focus_tests(root, focused_config, None if repository_gate else entry, available=available)

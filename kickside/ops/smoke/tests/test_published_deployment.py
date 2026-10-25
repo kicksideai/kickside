@@ -8,10 +8,73 @@ from unittest.mock import Mock, patch
 
 import yaml
 
-from scenarios_published_installation_update import prepare_published_deployment, published_installation_update
+from scenarios_published_installation_update import (
+    materialize_application_update_sources,
+    prepare_published_deployment,
+    published_installation_update,
+)
 
 
 class PublishedDeploymentTests(unittest.TestCase):
+    def test_application_update_retains_the_optional_mcp_published_contract(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory)
+            app = root / 'source/app'
+            app_source = app / 'src'
+            app_source.mkdir(parents=True)
+            (app / 'wippy.yaml').write_text(yaml.safe_dump({
+                'organization': 'kickside', 'module': 'kickside', 'type': 'application',
+                'directories': {'src': 'src'},
+            }))
+            (app_source / '_index.yaml').write_text(yaml.safe_dump({
+                'namespace': 'app', 'entries': [
+                    {'name': 'core', 'kind': 'ns.dependency', 'component': 'kickside/core'},
+                ],
+            }))
+            candidates = {}
+            for module, dependencies in {
+                'kickside/core': (),
+                'kickside/mcp': (),
+            }.items():
+                module_root = root / module.replace('/', '_')
+                module_source = module_root / 'src'
+                module_source.mkdir(parents=True)
+                (module_root / 'wippy.yaml').write_text(yaml.safe_dump({'directories': {'src': 'src'}}))
+                (module_source / '_index.yaml').write_text(yaml.safe_dump({
+                    'namespace': module.replace('/', '.'),
+                    'entries': [
+                        {'name': 'dependency-' + str(index), 'kind': 'ns.dependency', 'component': dependency}
+                        for index, dependency in enumerate(dependencies)
+                    ],
+                }))
+                (module_source / 'marker.txt').write_text('candidate-' + module)
+                candidates[module] = str(module_root)
+
+            published = {}
+            for module in candidates:
+                published_root = root / 'published' / module.replace('/', '_')
+                published_source = published_root / 'src'
+                published_source.mkdir(parents=True)
+                (published_root / 'wippy.yaml').write_text(yaml.safe_dump({
+                    'organization': 'kickside', 'module': module.split('/')[1],
+                    'version': '0.1.54' if module == 'kickside/mcp' else '0.1.0',
+                }, sort_keys=False))
+                (published_source / 'marker.txt').write_text('published-' + module)
+                published[module] = str(published_root)
+
+            selected = materialize_application_update_sources(published, candidates, root / 'source')
+
+            self.assertEqual(selected, {
+                'kickside/kickside': str(app),
+                'kickside/core': candidates['kickside/core'],
+            })
+            self.assertEqual((Path(published['kickside/core']) / 'src/marker.txt').read_text(),
+                             'candidate-kickside/core')
+            self.assertEqual((Path(published['kickside/mcp']) / 'src/marker.txt').read_text(),
+                             'published-kickside/mcp')
+            self.assertEqual(yaml.safe_load((Path(published['kickside/mcp']) / 'wippy.yaml').read_text())['version'],
+                             '0.1.54')
+
     def test_published_boot_keeps_the_normal_installation_selector_and_overrides(self):
         from runtime import Instance
         inst = Instance.__new__(Instance)

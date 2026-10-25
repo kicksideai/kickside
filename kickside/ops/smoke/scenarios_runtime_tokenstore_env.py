@@ -1,12 +1,11 @@
 """Token stores resolve environment signing keys before boot configuration decode."""
-from pathlib import Path
 
 from harness import Scenario
-from module_harness import run_focused_app_test
+from module_harness import _private_suite_root, run_focused_app_test
 
 
 def tokenstore_boot_env_signing(ctx):
-    root = Path(ctx.inst.config['source']) / 'ops/smoke/fixtures/runtime-tokenstore-env'
+    root = _private_suite_root() / 'ops/smoke/fixtures/runtime-tokenstore-env'
     run_focused_app_test(ctx, root, 'tokenstore_boot_env_test')
 
 
@@ -15,7 +14,7 @@ REGISTRY = [Scenario('runtime_tokenstore_boot_env_signing', 'regression', tokens
 
 
 def unsigned_token_signing_continuity(ctx):
-    root = Path(ctx.inst.config['source']) / 'ops/smoke/fixtures/runtime-tokenstore-env'
+    root = _private_suite_root() / 'ops/smoke/fixtures/runtime-tokenstore-env'
     run_focused_app_test(ctx, root, 'unsigned_token_transition_test')
 
 

@@ -208,6 +208,115 @@ class HubSourceUpdateTests(unittest.TestCase):
             self.assertEqual(configuration['workspace']['replacements'], fixture.state['published_sources'])
             self.assertEqual(set(configuration['workspace']['replacements']), set(candidates))
 
+    def test_selected_controller_is_preloaded_from_an_owned_copy_with_its_published_receipt(self):
+        from scenarios_published_run_as import browser_published_human_automation_update
+
+        class Prepared(RuntimeError):
+            pass
+
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory)
+            (root / 'temp').mkdir()
+            app = root / 'runtime'
+            app.mkdir()
+            candidates = {}
+            for module, manifest in {
+                    'kickside/kickside': {'type': 'application'},
+                    'keeper/keeper': {'type': 'plugin'}}.items():
+                candidate = root / module.replace('/', '_')
+                candidate.mkdir()
+                (candidate / 'wippy.yaml').write_text(yaml.safe_dump(manifest))
+                candidates[module] = str(candidate)
+            canonical = Path(candidates['keeper/keeper']) / 'src/keeper/gov/service'
+            canonical.mkdir(parents=True)
+            central = canonical / 'central.lua'
+            central.write_text('return { run = function() return "fixed" end }\n')
+            fixture = SimpleNamespace(inst=SimpleNamespace(root=root, app=app, config={}, evidence=Mock()), state={})
+
+            def materialize(directory, module, baseline, *, application):
+                directory.mkdir()
+                if application:
+                    (directory / '.wippy.yaml').write_text('version: "1.0"\n')
+                return {'version': 'published', 'sha256': module + '-receipt'}
+
+            def prepared_fixture(ctx, **arguments):
+                arguments['prepare'](fixture)
+                raise Prepared('baseline preparation completes')
+
+            with patch('scenarios_published_run_as.candidate_dependency_sources', return_value=candidates), \
+                 patch('scenarios_identity_policy_upgrade.published_source', side_effect=materialize) as source, \
+                 patch('scenarios_published_run_as.published_fixture', side_effect=prepared_fixture):
+                with self.assertRaisesRegex(Prepared, 'baseline preparation completes'):
+                    browser_published_human_automation_update(
+                        SimpleNamespace(inst=SimpleNamespace(config={'source': '/candidate', 'replace': candidates})),
+                        controller_source='keeper/keeper')
+
+            controller = fixture.state['controller_source']
+            active = Path(controller['active_source'])
+            self.assertNotEqual(active, Path(candidates['keeper/keeper']))
+            self.assertEqual((active / 'src/keeper/gov/service/central.lua').read_text(), central.read_text())
+            self.assertEqual(controller['published_receipt'], {'version': 'published', 'sha256': 'keeper/keeper-receipt'})
+            self.assertEqual(Path(controller['published_receipt_path']).parent.name, 'published-controller-receipts')
+            self.assertEqual(yaml.safe_load((app / '.wippy.yaml').read_text())['workspace']['replacements']['keeper/keeper'],
+                             str(active))
+            self.assertEqual(central.read_text(), 'return { run = function() return "fixed" end }\n')
+            self.assertEqual([call.args[1] for call in source.call_args_list], ['kickside/kickside', 'keeper/keeper'])
+
+    def test_published_mode_keeps_the_published_controller_when_a_source_override_is_declared(self):
+        from scenarios_published_run_as import browser_published_human_automation_update
+
+        class Prepared(RuntimeError):
+            pass
+
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory)
+            (root / 'temp').mkdir()
+            app = root / 'runtime'
+            app.mkdir()
+            candidates = {}
+            for module, manifest in {
+                    'kickside/kickside': {'type': 'application'},
+                    'keeper/keeper': {'type': 'plugin'}}.items():
+                candidate = root / module.replace('/', '_')
+                candidate.mkdir()
+                (candidate / 'wippy.yaml').write_text(yaml.safe_dump(manifest))
+                candidates[module] = str(candidate)
+            fixture = SimpleNamespace(inst=SimpleNamespace(root=root, app=app, config={}, evidence=Mock()), state={})
+
+            def materialize(directory, module, baseline, *, application):
+                directory.mkdir()
+                if application:
+                    (directory / '.wippy.yaml').write_text('version: "1.0"\n')
+                return {'version': 'published', 'sha256': module + '-receipt'}
+
+            def prepared_fixture(ctx, **arguments):
+                arguments['prepare'](fixture)
+                raise Prepared('baseline preparation completes')
+
+            with patch('scenarios_published_run_as.candidate_dependency_sources', return_value=candidates), \
+                 patch('scenarios_identity_policy_upgrade.published_source', side_effect=materialize), \
+                 patch('scenarios_published_run_as.published_fixture', side_effect=prepared_fixture):
+                with self.assertRaisesRegex(Prepared, 'baseline preparation completes'):
+                    browser_published_human_automation_update(
+                        SimpleNamespace(inst=SimpleNamespace(config={'source': None, 'replace': candidates})),
+                        controller_source='keeper/keeper')
+
+            self.assertNotIn('controller_source', fixture.state)
+            active = Path(fixture.state['published_sources']['keeper/keeper'])
+            self.assertEqual(active.parent.name, 'published-sources')
+            self.assertEqual(yaml.safe_load((app / '.wippy.yaml').read_text())['workspace']['replacements']['keeper/keeper'],
+                             str(active))
+
+    def test_active_controller_proof_requires_the_selected_source_bytes(self):
+        from scenarios_published_run_as import _active_controller_source
+        source = 'return { run = function() return "fixed" end }\n'
+        import hashlib
+        inst = Mock()
+        inst.request.return_value = {'entry': {'id': 'keeper.gov.service:central', 'data': {'source': source}}}
+        proof = _active_controller_source(inst, {'central_sha256': hashlib.sha256(source.encode()).hexdigest()})
+        self.assertEqual(proof['active_source_sha256'], proof['central_sha256'])
+        self.assertEqual(proof['registry_entry'], 'keeper.gov.service:central')
+
     def test_live_update_uses_keeper_planning_without_cli_resolution(self):
         with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
             root = Path(directory)

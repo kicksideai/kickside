@@ -7,6 +7,15 @@ from module_harness import run_focused_module_test
 from scenarios import workflow
 
 
+CRM_IDEMPOTENCY_TESTS = (
+    'crm_sink_receipt_test',
+    'crm_sink_receipts_test',
+    'crm_sink_references_test',
+    'crm_sink_reconciliation_test',
+    'crm_sink_conditional_test',
+)
+
+
 def workflow_native_recovery(ctx):
     for entry in ('launch_reconciliation_live_test', 'native_admission_recovery_test',
                   'native_capacity_recovery_test', 'native_publication_recovery_test',
@@ -68,7 +77,7 @@ def workflow_stale_completion_admission(ctx):
 
 
 def crm_idempotency_conflict_code(ctx):
-    for entry in ('crm_sink_receipt_test', 'crm_sink_crm_sink_test', 'crm_sink_contract_test'):
+    for entry in CRM_IDEMPOTENCY_TESTS:
         run_focused_module_test(ctx, 'kickside/crm', entry)
 
 
@@ -86,7 +95,8 @@ def workflow_native_creation_errors(ctx):
 
 
 def workflow_undo_handoff_import_closure(ctx):
-    run_focused_module_test(ctx, 'kickside/workflows', 'undo_test', lint=True)
+    run_focused_module_test(ctx, 'kickside/workflows', 'undo_test', lint=True,
+                            lint_namespaces=('kickside.workflows.runs',))
 
 
 def workflow_unadmitted_run_reads(ctx):

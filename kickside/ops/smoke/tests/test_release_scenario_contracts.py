@@ -1,4 +1,6 @@
 import json
+import os
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -8,9 +10,32 @@ from mcp_client import MCPClient
 import module_lifecycle_contract
 import scenarios_automation as automation
 import scenarios_core as core
+import scenarios_release_qualification as qualification
 
 
 class ReleaseScenarioContracts(unittest.TestCase):
+    def test_immutable_source_guard_prefers_its_private_owner_tooling(self):
+        owner = Path('/private/owner')
+        public = Path('/public/source')
+        inst = SimpleNamespace(env={'PATH': '/bin', 'TMPDIR': '/owned/run/temp',
+                                    'PYTHONPATH': str(public / 'ops/smoke')})
+        ctx = SimpleNamespace(inst=inst)
+        with patch.object(qualification, '_private_suite_root', return_value=owner), \
+             patch.object(qualification, '_command') as command:
+            qualification.immutable_replacement_sources(ctx)
+
+        _, label, invocation, cwd, environment, timeout = command.call_args.args
+        self.assertEqual(label, 'immutable-replacement-sources')
+        self.assertEqual(cwd, owner)
+        self.assertEqual(timeout, 900)
+        self.assertEqual(invocation[:3], [qualification.sys.executable, '-m', 'unittest'])
+        self.assertEqual(environment['PYTHONPATH'].split(os.pathsep)[0],
+                         str(owner / 'ops/smoke'))
+        self.assertNotEqual(environment['PYTHONPATH'].split(os.pathsep)[0],
+                            str(public / 'ops/smoke'))
+        self.assertEqual(environment['TMPDIR'], '/owned/run/temp')
+        self.assertEqual(inst.env['PYTHONPATH'], str(public / 'ops/smoke'))
+
     def test_large_code_result_requires_the_complete_native_value(self):
         payload = 'Northwind 😀\n' * 12000
         result = {'success': True, 'result': payload}

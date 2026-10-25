@@ -4,6 +4,15 @@ from pathlib import Path
 import yaml
 
 
+CHECKOUT_IDENTITIES = {
+    'docs': ('building-modules/index.md', 'reference/documentation-catalog.md'),
+    'docs-site': ('mkdocs.yml', 'scripts/sync_sources.py', 'tests/test_workflows.py'),
+    'public-repositories': ('kickside/.git/HEAD', 'providers/.git/HEAD', 'converters/.git/HEAD',
+                            'crm/.git/HEAD', 'components/.git/HEAD', 'chestor/.git/HEAD',
+                            'module/.git/HEAD', 'docs/.git/HEAD'),
+}
+
+
 def requirements(scenarios):
     """Return public modules and non-module checkouts explicitly declared by a selection."""
     return (sorted({component for scenario in scenarios for component in scenario.source_components}),
@@ -39,6 +48,13 @@ def _cohort_components(source, components):
     return roots
 
 
+def _checkout_identity(name, path):
+    markers = CHECKOUT_IDENTITIES.get(name)
+    if markers:
+        return all((path / marker).is_file() for marker in markers)
+    return (path / '.kickside-module.json').is_file()
+
+
 def build(source, replacements, scenarios):
     """Build a selected-source profile while keeping public and fixture inputs distinct."""
     source = Path(source).resolve()
@@ -57,14 +73,14 @@ def build(source, replacements, scenarios):
             mismatched.append(component + ' (declares ' + str(_identity(path)) + ')')
     checkouts = {name: str((source.parent / name).resolve()) for name in checkout_names}
     missing_checkouts = [name for name, path in checkouts.items()
-                         if not (Path(path) / '.kickside-module.json').is_file()]
+                         if not _checkout_identity(name, Path(path))]
     messages = []
     if missing:
         messages.append('Source profile lacks selected module checkouts: ' + ', '.join(missing))
     if mismatched:
         messages.append('Source profile module identities do not match their replacement keys: ' + ', '.join(mismatched))
     if missing_checkouts:
-        messages.append('Source profile lacks module-template checkouts: ' + ', '.join(missing_checkouts))
+        messages.append('Source profile lacks declared checkout identities: ' + ', '.join(missing_checkouts))
     if messages:
         raise ValueError('; '.join(messages))
     return {'replacements': selected, 'checkouts': checkouts}

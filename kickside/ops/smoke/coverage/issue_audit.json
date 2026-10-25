@@ -21367,7 +21367,26 @@
       "user_visible": false
     },
     "UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY": {
-      "guards": {},
+      "guards": {
+        "browser_bot_held_agent_disable": {
+          "assertions": [
+            "A held Agent invocation finishes exactly once under its admitted bot identity after the bot is disabled; the next invocation resolves the disabled executor before model or effect work and is denied."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        },
+        "browser_bot_held_agent_group_reduction": {
+          "assertions": [
+            "A held Agent invocation finishes exactly once under its admitted bot identity after execution-group removal; the next invocation resolves the reduced executor before model or effect work and is denied."
+          ],
+          "types": [
+            "API-smoke",
+            "browser-UI"
+          ]
+        }
+      },
       "harness": [],
       "reason": "Superseded by the explicit invocation-admission authority contract (UPSTREAM-AGENT-INVOCATION-ADMISSION): effects are admitted with the current executor and authority identity before any held tool work, rather than relying on the retired live-recheck model.",
       "user_visible": false
@@ -22058,7 +22077,7 @@
       "guards": {
         "workflow_undo_handoff_import_closure": {
           "assertions": [
-            "Fresh Workflows harness lint resolves every authored import before the unchanged native undo suite executes."
+            "Fresh native lint of the Workflow runs maintenance closure resolves its authored proc_supervisor imports before the unchanged undo suite executes."
           ],
           "types": [
             "API-smoke"

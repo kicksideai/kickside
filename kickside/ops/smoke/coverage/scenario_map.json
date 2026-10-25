@@ -6362,7 +6362,8 @@
         "RA-S04",
         "BOT-HELD-AGENT-AUTHORITY",
         "RA-B11",
-        "RA-H40"
+        "RA-H40",
+        "UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY"
       ],
       "tier": "regression"
     },
@@ -6370,7 +6371,8 @@
       "features": [],
       "issues": [
         "BOT-HELD-AGENT-AUTHORITY",
-        "RA-H40"
+        "RA-H40",
+        "UPSTREAM-AGENT-TOOL-LIVE-AUTHORITY"
       ],
       "tier": "regression"
     },

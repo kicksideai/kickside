@@ -3,17 +3,24 @@ from pathlib import Path
 import subprocess
 import sys
 from harness import Scenario, require
+from module_harness import _private_suite_root
 
 
 def ratchet(ctx):
-    root = Path(__file__).resolve().parents[2]
-    mirror = root.parent / "kickside-internal/kickside/ops/smoke/coverage/tests"
-    for label, command in [
-        ("native-error-overlay-tests", [sys.executable, "-m", "unittest", "discover", "-s", str(mirror), "-p", "test_native_error_source.py"]),
-        ("native-error-source-tests", [sys.executable, "-m", "unittest", "discover", "-s", "ops/smoke/coverage/tests", "-p", "test_native_error_source.py"]),
-        ("native-error-source-check", [sys.executable, "ops/scripts/check-native-errors.py"]),
+    source = ctx.inst.config.get('source')
+    require(source, 'Native-error source ratchet requires the configured public source checkout')
+    root = Path(source).resolve()
+    require(root.is_dir(), 'Native-error source ratchet requires the configured public source checkout')
+    suite = _private_suite_root()
+    tests = suite / 'ops/smoke/coverage/tests'
+    require(tests.is_dir(), 'Private native-error tests are absent: ' + str(tests))
+    conventions = suite / 'scripts/check-source-conventions.py'
+    require(conventions.is_file(), 'Private source-conventions checker is absent: ' + str(conventions))
+    for label, cwd, command in [
+        ("native-error-private-tests", root, [sys.executable, "-m", "unittest", "discover", "-s", str(tests), "-p", "test_native_error_source.py"]),
+        ("native-error-source-conventions", suite, [sys.executable, str(conventions), "--root", str(root)]),
     ]:
-        result = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, timeout=60)
         ctx.inst.evidence.save(label, {"command": command, "exit_code": result.returncode,
             "stdout": result.stdout, "stderr": result.stderr})
         require(result.returncode == 0, result.stdout + result.stderr)

@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import Mock, patch
 
 from harness import Scenario, Result
@@ -322,6 +323,44 @@ class AttachedStateTests(unittest.TestCase):
                     self.assertEqual(owner.state, {'a': 'new-a', 'b': 'new-b'})
                 self.assertEqual(runner.close().status, 'passed')
 
+    def test_native_root_guards_use_only_bounded_scheduler_workers(self):
+        from scenarios import Context
+        inst = Mock(cleanup=Cleanup())
+        inst.evidence.paths = []
+        inst.redactor.text.side_effect = str
+        owner = Context(inst)
+        owner.state['preserved'] = 'owner-state'
+        pool = Mock(contexts={'scenarios': owner}, browser_areas=set())
+        pool.context.return_value = owner
+        pool.cleanup.return_value = []
+        barrier = threading.Barrier(3)
+        threads, calls = set(), []
+        def guard(name):
+            def run(ctx):
+                barrier.wait(timeout=3)
+                threads.add(threading.get_ident())
+                calls.append(name)
+                ctx.state[name] = 'completed'
+            return run
+        registry = [Scenario('native-' + str(index), 'full', guard('native-' + str(index)),
+                             parallel=('native-root:module-' + str(index),))
+                    for index in range(3)]
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'RuntimePool', return_value=pool):
+                runner = smoke.EngineRunner({'model': {}, 'source': '', 'binary': '/bin/true', 'replace': {}}, 'sqlite', Path(directory))
+                baseline = set(threading.enumerate())
+                for _ in range(2):
+                    threads.clear()
+                    rows = runner.run('full', [], 3)
+                    self.assertEqual([row.status for row in rows], ['passed'] * 3, [row.error for row in rows])
+                    self.assertEqual(runner.executors, {})
+                    self.assertLessEqual(len(threads), 3)
+                    self.assertFalse(set(threading.enumerate()) - baseline)
+                self.assertEqual(owner.state, {'preserved': 'owner-state', **{name: 'completed' for name in calls}})
+                self.assertEqual(len(calls), 6)
+                self.assertEqual(runner.close().status, 'passed')
+                self.assertFalse(set(threading.enumerate()) - baseline)
+
     def test_future_areas_do_not_allocate_ports_before_their_scenarios(self):
         from scenarios import Context
         pool = Mock()
@@ -459,6 +498,227 @@ class AttachedStateTests(unittest.TestCase):
                 result_path = packet['results_file']
                 self.assertEqual([r['scenario'] for r in json.loads(Path(result_path).read_text())['results']], ['engine', 'cleanup'])
         runner.close.assert_called_once_with()
+
+    def test_one_shot_cleans_an_isolated_area_after_its_last_terminal_result(self):
+        class Session:
+            def __init__(self):
+                self.close_count = 0
+
+            def close(self):
+                self.close_count += 1
+
+        class Context:
+            def __init__(self, inst):
+                self.inst = inst
+
+            def close_browser(self):
+                pass
+
+        class Instance:
+            def __init__(self):
+                self.cleanup = Cleanup()
+                self.redactor = Mock(text=str)
+                self.boot_seconds = 0
+
+        for cleanup_fails in (False, True):
+            with self.subTest(cleanup_fails=cleanup_fails), tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+                events, cleanup_areas, executed = [], [], []
+                live = {'value': True}
+                ai, main = Instance(), Instance()
+                def stop():
+                    events.append(('stop', live['value']))
+                    live['value'] = False
+                def api_cleanup():
+                    events.append(('api', live['value']))
+                    if cleanup_fails:
+                        raise RuntimeError('early cleanup fails')
+                ai.cleanup.add('runtime stop', stop)
+                ai.cleanup.add('API credentials', api_cleanup)
+                class Pool:
+                    instances = {'main': main, 'ai': ai}
+
+                    def cleanup(self, areas=None):
+                        cleanup_areas.append(areas)
+                        errors = []
+                        for area, inst in self.instances.items():
+                            if areas is None or area in areas:
+                                errors.extend(area + ': ' + inst.redactor.text(error)
+                                              for error in inst.cleanup.run())
+                        return errors
+                runner = smoke.EngineRunner.__new__(smoke.EngineRunner)
+                runner.engine, runner.root, runner.pool = 'sqlite', Path(directory), Pool()
+                runner.contexts = {'scenarios': Context(main), 'scenarios_ai': Context(ai)}
+                runner.sessions = {'scenarios': Session(), 'scenarios_ai': Session()}
+                runner.executors = {owner: ThreadPoolExecutor(max_workers=1)
+                                    for owner in runner.contexts}
+                runner.native_root_contexts = set()
+                registry = [
+                    Scenario('ai-last', 'full', lambda ctx: None, owner='scenarios_ai'),
+                    Scenario('main-follow', 'full', lambda ctx: None),
+                ]
+                def run(_tier, _names, _workers, completed):
+                    completed(Result('ai-last', 'sqlite', 'passed', 0))
+                    self.assertEqual(events, [('api', True), ('stop', True)])
+                    completed(Result('main-follow', 'sqlite', 'passed', 0))
+                    executed.append('main-follow')
+                runner.run = run
+                connection = Mock()
+                config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
+                try:
+                    with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                        smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 1, connection)
+                    packet = json.loads(connection.send_bytes.call_args.args[0])
+                    document = json.loads(Path(packet['results_file']).read_text())
+                finally:
+                    for executor in runner.executors.values():
+                        executor.shutdown(wait=True)
+                self.assertEqual(executed, ['main-follow'])
+                self.assertEqual(events, [('api', True), ('stop', True)])
+                self.assertEqual(cleanup_areas, [{'ai'}, None])
+                self.assertEqual(runner.sessions, {})
+                cleanup = document['results'][-1]
+                self.assertEqual(cleanup['scenario'], 'cleanup')
+                self.assertEqual(cleanup['status'], 'failed' if cleanup_fails else 'passed')
+                self.assertEqual(document['counts']['exit_code'], int(cleanup_fails))
+                if cleanup_fails:
+                    self.assertIn('ai: API credentials: RuntimeError: early cleanup fails', cleanup['error'])
+
+    def test_one_shot_retires_owner_sessions_after_their_last_terminal_result(self):
+        class Session:
+            def __init__(self):
+                self.close_count, self.close_threads = 0, []
+
+            def close(self):
+                self.close_count += 1
+                self.close_threads.append(threading.get_ident())
+
+        registry = [
+            Scenario('shared-first', 'full', lambda ctx: None, owner='shared_owner'),
+            Scenario('shared-last', 'full', lambda ctx: None, owner='shared_owner'),
+            Scenario('failed', 'full', lambda ctx: None, owner='failed_owner'),
+            Scenario('skipped', 'full', lambda ctx: None, owner='skipped_owner'),
+            Scenario('parallel', 'full', lambda ctx: None, owner='parallel_owner', parallel=('parallel',)),
+        ]
+        sessions = {owner: Session() for owner in
+                    ('shared_owner', 'failed_owner', 'skipped_owner', 'parallel_owner')}
+        executors = {owner: ThreadPoolExecutor(max_workers=1) for owner in
+                     ('shared_owner', 'failed_owner', 'skipped_owner')}
+        runner = Mock()
+        runner.pool.instances = {}
+        runner.sessions = sessions
+        runner.executors = executors
+        runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+        executor_threads = {owner: executor.submit(threading.get_ident).result()
+                            for owner, executor in executors.items()}
+        rows = [
+            Result('shared-first', 'sqlite', 'passed', 0),
+            Result('failed', 'sqlite', 'failed', 0),
+            Result('skipped', 'sqlite', 'skipped: no model configured', 0),
+            Result('shared-last', 'sqlite', 'passed', 0),
+            Result('parallel', 'sqlite', 'passed', 0),
+        ]
+        def run(_tier, _names, _workers, completed):
+            for row in rows:
+                completed(row)
+                if row.scenario == 'shared-first':
+                    self.assertEqual(sessions['shared_owner'].close_count, 0)
+        runner.run.side_effect = run
+        connection = Mock()
+        config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
+        try:
+            with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+                with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 2, connection)
+        finally:
+            for executor in executors.values():
+                executor.shutdown(wait=True)
+        for owner in ('shared_owner', 'failed_owner', 'skipped_owner'):
+            self.assertEqual(sessions[owner].close_count, 1)
+            self.assertEqual(sessions[owner].close_threads, [executor_threads[owner]])
+        self.assertEqual(sessions['parallel_owner'].close_count, 0)
+        runner.close.assert_called_once_with()
+
+    def test_one_shot_reports_owner_session_close_failure_after_remaining_scenarios(self):
+        class Session:
+            def __init__(self, fails=False):
+                self.fails = fails
+
+            def close(self):
+                if self.fails:
+                    raise RuntimeError('close fails')
+
+        registry = [
+            Scenario('first', 'full', lambda ctx: None, owner='failing_owner'),
+            Scenario('later', 'full', lambda ctx: None, owner='later_owner'),
+        ]
+        executors = {owner: ThreadPoolExecutor(max_workers=1) for owner in
+                     ('failing_owner', 'later_owner')}
+        runner = Mock()
+        runner.pool.instances = {}
+        runner.sessions = {'failing_owner': Session(fails=True), 'later_owner': Session()}
+        runner.executors = executors
+        runner.contexts = {owner: Mock(inst=Mock(redactor=Mock(text=str))) for owner in executors}
+        runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+        executed = []
+        def run(_tier, _names, _workers, completed):
+            for scenario in ('first', 'later'):
+                completed(Result(scenario, 'sqlite', 'passed', 0))
+                executed.append(scenario)
+        runner.run.side_effect = run
+        connection = Mock()
+        config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
+        try:
+            with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+                with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 1, connection)
+                packet = json.loads(connection.send_bytes.call_args.args[0])
+                document = json.loads(Path(packet['results_file']).read_text())
+                rows = document['results']
+        finally:
+            for executor in executors.values():
+                executor.shutdown(wait=True)
+        self.assertEqual(executed, ['first', 'later'])
+        self.assertEqual(rows[-1]['scenario'], 'cleanup')
+        self.assertEqual(rows[-1]['status'], 'failed')
+        self.assertIn('failing_owner session: close fails', rows[-1]['error'])
+        self.assertEqual(document['counts']['exit_code'], 1)
+        runner.close.assert_called_once_with()
+
+    def test_one_shot_persists_failed_scenario_before_terminal_owner_cleanup(self):
+        registry = [Scenario('crashed', 'full', lambda ctx: None, owner='crashed_owner')]
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory) / 'result-root'
+            case = self
+            class Session:
+                def close(self):
+                    document = json.loads((root / 'results.json').read_text())
+                    case.assertEqual([row['scenario'] for row in document['results']], ['crashed'])
+                    case.assertEqual(document['results'][0]['status'], 'failed')
+                    raise RuntimeError('terminal owner cleanup fails')
+
+            executor = ThreadPoolExecutor(max_workers=1)
+            runner = Mock()
+            runner.pool.instances = {}
+            runner.sessions = {'crashed_owner': Session()}
+            runner.executors = {'crashed_owner': executor}
+            runner.contexts = {'crashed_owner': Mock(inst=Mock(redactor=Mock(text=str)))}
+            runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+            runner.run.side_effect = lambda _tier, _names, _workers, completed: completed(
+                Result('crashed', 'sqlite', 'failed', 0, 'Browser page crashed'))
+            connection = Mock()
+            try:
+                with patch.object(smoke, 'REGISTRY', registry), \
+                        patch.object(smoke, 'EngineRunner', return_value=runner), \
+                        patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process({'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}},
+                                         'sqlite', root, [], 'full', 1, connection)
+                document = json.loads((root / 'results.json').read_text())
+            finally:
+                executor.shutdown(wait=True)
+        self.assertEqual([row['scenario'] for row in document['results']],
+                         ['crashed', 'crashed_owner session cleanup', 'cleanup'])
+        self.assertIn('terminal owner cleanup fails', document['results'][1]['error'])
+        self.assertIn('Browser page crashed', document['results'][0]['error'])
 
     def test_gate_constructor_failure_returns_owned_engine_receipt(self):
         for engine in ('sqlite', 'postgres'):
