@@ -12,6 +12,7 @@ from harness import Failure
 from scenarios_published_provider_identity import (
     CODE_EXECUTION_HISTORICAL_CONTRACT,
     code_execution_historical_snapshot,
+    owned_candidate_application,
     provider_binding_update,
     provider_historical_closure,
 )
@@ -151,13 +152,42 @@ class PublishedProviderUpdateTests(unittest.TestCase):
         self.assertEqual(update.call_args_list[0].kwargs['refresh_session'], True)
         self.assertNotIn('live', update.call_args_list[0].kwargs)
         staged = update.call_args_list[0].kwargs['replacements']
-        self.assertEqual(staged['kickside/kickside'], str(Path(current_contract).parent / 'source/app'))
+        self.assertEqual(staged['kickside/kickside'],
+                         str(Path(current_contract).parent / 'current-code-execution-application'))
+        self.assertEqual(update.call_args_list[0].args[1], staged['kickside/kickside'])
         self.assertEqual(staged['kickside/code-execution'], str(Path(current_contract).parent / 'candidate'))
         self.assertEqual(staged['kickside/contract'], current_contract)
         self.assertEqual(update.call_args_list[1].kwargs, {'live': True, 'refresh_session': True})
         self.assertEqual(self.fixture_configs[0]['source'], None)
         self.assertEqual(self.fixture_configs[0]['published'], '0.1.146')
         self.assertEqual(self.fixture_configs[0]['replace'], {})
+
+    def test_code_execution_owned_candidate_excludes_a_node_modules_symlink_without_touching_source(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory)
+            source = root / 'source/app'
+            source.mkdir(parents=True)
+            (source / 'wippy.yaml').write_text('type: application\n')
+            (source / 'current.txt').write_text('candidate bytes')
+            linked = root / 'linked-node-modules'
+            linked.mkdir()
+            (linked / 'package.json').write_text('{}')
+            (source / 'node_modules').symlink_to(linked, target_is_directory=True)
+            (source / '.wippy').mkdir()
+            (source / '.git').mkdir()
+            (source / 'test').mkdir()
+            (source / 'test/fixture.txt').write_text('development fixture')
+            inst = Mock(root=root / 'fixture')
+
+            owned = owned_candidate_application(inst, source)
+
+            self.assertEqual((owned / 'current.txt').read_text(), 'candidate bytes')
+            self.assertFalse((owned / 'node_modules').exists())
+            self.assertFalse((owned / '.wippy').exists())
+            self.assertFalse((owned / '.git').exists())
+            self.assertFalse((owned / 'test').exists())
+            self.assertTrue((source / 'node_modules').is_symlink())
+            self.assertEqual((linked / 'package.json').read_text(), '{}')
 
     def test_code_execution_only_pins_contract_for_declared_historical_dependencies(self):
         self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': '0.1.16'}), ())

@@ -59,6 +59,18 @@ def code_execution_historical_snapshot(module, baseline):
     return snapshot
 
 
+def owned_candidate_application(inst, candidate):
+    """Copy a candidate app into the fixture without development-only trees."""
+    from scenarios_published_run_as import module_source_ignore
+    require(candidate is not None, 'Historical Code Execution upgrade requires the current application source')
+    candidate = Path(candidate)
+    require(candidate.is_dir(), 'Historical Code Execution upgrade requires the current application source')
+    owned = inst.root / 'current-code-execution-application'
+    shutil.copytree(candidate, owned, ignore=module_source_ignore(candidate))
+    require(owned.is_dir(), 'Historical Code Execution fixture cannot stage the current application source')
+    return owned
+
+
 def provider_identity_inventory(ctx):
     baselines = json.loads((HERE / 'published_provider_baselines.json').read_text())
     published = json.loads((HERE / 'published_provider_registry.json').read_text())
@@ -227,10 +239,13 @@ def provider_binding_update(ctx, specification, baseline):
         if snapshot:
             source_root = ctx.inst.config.get('source')
             candidate_app = Path(source_root) / 'app' if source_root else None
-            require(candidate_app and candidate_app.is_dir(),
-                    'Historical Code Execution upgrade requires the current application source')
+            candidate_app = owned_candidate_application(inst, candidate_app)
             staged_sources = candidate_dependency_sources(candidate_sources, (snapshot['root'], module),
                                                           application=candidate_app)
+            inst.evidence.save('published-provider-candidate-application', {
+                'declared_source': str(Path(source_root) / 'app'), 'staged_source': str(candidate_app),
+                'excluded': ['.git', '.wippy', 'wippy.lock', 'node_modules', '__pycache__', 'test', 'tests', 'lint-harness'],
+            })
             update_source(fixture, str(candidate_app), snapshot['root'],
                           replacements=staged_sources, refresh_session=True)
             # The staged root update brings the complete candidate graph into
