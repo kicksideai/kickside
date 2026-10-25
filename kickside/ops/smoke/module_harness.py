@@ -156,13 +156,15 @@ def public_source_overlay(ctx, owned_paths, *, owner=None, module_overrides=None
 
 
 @contextmanager
-def selected_module_overlay(ctx, component, owned_paths, *, owner=None):
+def selected_module_overlay(ctx, component, owned_paths, *, owner=None, repository=False):
     """Stage private checks beside a disposable copy of one selected module.
 
     Provider modules are selected independently from the application source
-    tree.  Their smoke-only checks therefore need the same ownership boundary
+    tree. Their smoke-only checks therefore need the same ownership boundary
     as application frontend checks: selected product bytes are copied first,
-    and private fixtures may only fill paths absent from those bytes.
+    and private fixtures may only fill paths absent from those bytes. Callers
+    whose selected module has owned sibling fixtures may request its declared
+    repository boundary, so those fixtures stay inside the disposable copy.
     """
     selected = ctx.inst.config.get('replace', {}).get(component)
     require(selected, 'Selected module overlay requires a local replacement for ' + component)
@@ -178,10 +180,19 @@ def selected_module_overlay(ctx, component, owned_paths, *, owner=None):
     temporary = Path(ctx.inst.root) / 'temp'
     temporary.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='selected-module-overlay-', dir=temporary) as directory:
-        overlay = Path(directory) / source.name
-        _validate_copied_links(source, overlay, source, overlay.resolve(), 'Selected module')
-        shutil.copytree(source, overlay, symlinks=True,
-                        ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
+        if repository:
+            boundary = next((parent for parent in source.parents
+                             if (parent / '.github/modules.json').is_file()), None)
+            require(boundary, 'Selected module repository boundary is absent: ' + str(source))
+            copied_boundary = Path(directory) / 'repository' / boundary.name
+            _validate_copied_links(boundary, copied_boundary, boundary, copied_boundary.resolve(),
+                                   'Selected module repository')
+            overlay = copy_harness(source, boundary, Path(directory))
+        else:
+            overlay = Path(directory) / source.name
+            _validate_copied_links(source, overlay, source, overlay.resolve(), 'Selected module')
+            shutil.copytree(source, overlay, symlinks=True,
+                            ignore=shutil.ignore_patterns(*SOURCE_COPY_IGNORED))
         resolved_overlay = overlay.resolve()
         for relative, fixture in fixtures:
             destination = overlay / relative

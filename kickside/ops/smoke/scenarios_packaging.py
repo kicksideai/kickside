@@ -175,7 +175,7 @@ def hubspot_capacity_boundary(ctx):
     with selected_module_overlay(
             ctx, 'kickside/hubspot',
             [('providers/hubspot/scripts/check_architecture.py', 'scripts/check_architecture.py')],
-            owner=_private_suite_root().parent) as root:
+            owner=_private_suite_root().parent, repository=True) as root:
         result = subprocess.run([sys.executable, 'scripts/check_architecture.py'], cwd=root,
                                 capture_output=True, text=True, timeout=60)
         require(result.returncode == 0, result.stdout + result.stderr)

@@ -209,6 +209,65 @@ class PublicSourceOverlayTests(unittest.TestCase):
             self.assertEqual(styles.read_text(), 'selected styles\n')
             self.assertFalse((selected / 'ui/tests/layout.py').exists())
 
+    def test_selected_module_repository_overlay_keeps_owned_sibling_fixtures_in_the_copy(self):
+        from module_harness import selected_module_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            repository = workspace / 'providers'
+            selected = repository / 'hubspot'
+            private = workspace / 'private'
+            source.mkdir()
+            (repository / '.github').mkdir(parents=True)
+            (repository / '.github/modules.json').write_text('{}')
+            fixture = repository / 'lua-fixtures/tests/capacity_http_fixture.lua'
+            fixture.parent.mkdir(parents=True)
+            fixture.write_text('owned fixture\n')
+            linked_fixture = selected / 'test/capacity_http_fixture.lua'
+            linked_fixture.parent.mkdir(parents=True)
+            linked_fixture.symlink_to('../../lua-fixtures/tests/capacity_http_fixture.lua')
+            check = private / 'checks/architecture.py'
+            check.parent.mkdir(parents=True)
+            check.write_text('private architecture check\n')
+            ctx = self._context(workspace, source)
+            ctx.inst.config['replace']['kickside/hubspot'] = str(selected)
+
+            with selected_module_overlay(ctx, 'kickside/hubspot',
+                                         (('checks/architecture.py', 'scripts/check_architecture.py'),),
+                                         owner=private, repository=True) as overlay:
+                self.assertEqual((overlay / 'test/capacity_http_fixture.lua').read_text(), 'owned fixture\n')
+                self.assertEqual((overlay / 'scripts/check_architecture.py').read_text(),
+                                 'private architecture check\n')
+                self.assertTrue((overlay / 'test/capacity_http_fixture.lua').resolve().is_relative_to(
+                    overlay.parents[1]))
+
+            self.assertEqual(fixture.read_text(), 'owned fixture\n')
+            self.assertFalse((selected / 'scripts/check_architecture.py').exists())
+
+    def test_selected_module_repository_overlay_rejects_external_links(self):
+        from harness import Failure
+        from module_harness import selected_module_overlay
+        with tempfile.TemporaryDirectory(dir=self.scratch) as directory:
+            workspace = Path(directory)
+            source = workspace / 'public'
+            repository = workspace / 'providers'
+            selected = repository / 'hubspot'
+            private = workspace / 'private'
+            outside = workspace / 'outside.lua'
+            source.mkdir()
+            (repository / '.github').mkdir(parents=True)
+            (repository / '.github/modules.json').write_text('{}')
+            selected.mkdir()
+            private.mkdir()
+            outside.write_text('outside fixture\n')
+            (selected / 'capacity.lua').symlink_to(outside)
+            ctx = self._context(workspace, source)
+            ctx.inst.config['replace']['kickside/hubspot'] = str(selected)
+
+            with self.assertRaisesRegex(Failure, 'Selected module repository source symlink escapes its owned tree'):
+                with selected_module_overlay(ctx, 'kickside/hubspot', (), owner=private, repository=True):
+                    self.fail('external fixture link reached an executable overlay')
+
     def test_requires_each_named_private_fixture_before_copying(self):
         from harness import Failure
         from module_harness import public_source_overlay
