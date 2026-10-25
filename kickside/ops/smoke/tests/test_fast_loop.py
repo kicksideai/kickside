@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import Mock, patch
 
 from harness import Scenario, Result
@@ -516,6 +517,9 @@ class AttachedStateTests(unittest.TestCase):
             Scenario('ai-last', 'full', lambda ctx: None, owner='scenarios_ai'),
             Scenario('main-last', 'full', lambda ctx: None),
         ]
+        owners = {scenario.owner for scenario in registry}
+        runner.sessions = {owner: Mock() for owner in owners}
+        runner.executors = {owner: ThreadPoolExecutor(max_workers=1) for owner in owners}
         rows = [
             Result('main-first', 'sqlite', 'passed', 0),
             Result('ai-first', 'sqlite', 'passed', 0),
@@ -534,11 +538,70 @@ class AttachedStateTests(unittest.TestCase):
         runner.run.side_effect = run
         connection = Mock()
         config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
-        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
-            with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
-                smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 2, connection)
+        try:
+            with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+                with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 2, connection)
+        finally:
+            for executor in runner.executors.values():
+                executor.shutdown(wait=True)
         self.assertEqual(events, ['core', 'providers', 'ai'])
         self.assertFalse(main.stop.called)
+        runner.close.assert_called_once_with()
+
+    def test_one_shot_retires_owner_sessions_after_their_last_terminal_result(self):
+        class Session:
+            def __init__(self):
+                self.close_count, self.close_threads = 0, []
+
+            def close(self):
+                self.close_count += 1
+                self.close_threads.append(threading.get_ident())
+
+        registry = [
+            Scenario('shared-first', 'full', lambda ctx: None, owner='shared_owner'),
+            Scenario('shared-last', 'full', lambda ctx: None, owner='shared_owner'),
+            Scenario('failed', 'full', lambda ctx: None, owner='failed_owner'),
+            Scenario('skipped', 'full', lambda ctx: None, owner='skipped_owner'),
+            Scenario('parallel', 'full', lambda ctx: None, owner='parallel_owner', parallel=('parallel',)),
+        ]
+        sessions = {owner: Session() for owner in
+                    ('shared_owner', 'failed_owner', 'skipped_owner', 'parallel_owner')}
+        executors = {owner: ThreadPoolExecutor(max_workers=1) for owner in
+                     ('shared_owner', 'failed_owner', 'skipped_owner')}
+        runner = Mock()
+        runner.pool.instances = {}
+        runner.sessions = sessions
+        runner.executors = executors
+        runner.close.return_value = Result('cleanup', 'sqlite', 'passed', 0)
+        executor_threads = {owner: executor.submit(threading.get_ident).result()
+                            for owner, executor in executors.items()}
+        rows = [
+            Result('shared-first', 'sqlite', 'passed', 0),
+            Result('failed', 'sqlite', 'failed', 0),
+            Result('skipped', 'sqlite', 'skipped: no model configured', 0),
+            Result('shared-last', 'sqlite', 'passed', 0),
+            Result('parallel', 'sqlite', 'passed', 0),
+        ]
+        def run(_tier, _names, _workers, completed):
+            for row in rows:
+                completed(row)
+                if row.scenario == 'shared-first':
+                    self.assertEqual(sessions['shared_owner'].close_count, 0)
+        runner.run.side_effect = run
+        connection = Mock()
+        config = {'source': '', 'published': '', 'runtime_version': 'unit', 'model': {}}
+        try:
+            with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+                with patch.object(smoke, 'REGISTRY', registry), patch.object(smoke, 'EngineRunner', return_value=runner), patch.object(smoke.signal, 'signal'):
+                    smoke.engine_process(config, 'sqlite', Path(directory), [], 'full', 2, connection)
+        finally:
+            for executor in executors.values():
+                executor.shutdown(wait=True)
+        for owner in ('shared_owner', 'failed_owner', 'skipped_owner'):
+            self.assertEqual(sessions[owner].close_count, 1)
+            self.assertEqual(sessions[owner].close_threads, [executor_threads[owner]])
+        self.assertEqual(sessions['parallel_owner'].close_count, 0)
         runner.close.assert_called_once_with()
 
     def test_gate_constructor_failure_returns_owned_engine_receipt(self):

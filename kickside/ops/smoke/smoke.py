@@ -654,12 +654,20 @@ def engine_process(config, engine, root, selected_names, tier, workers, connecti
     try:
         root.mkdir(parents=True, exist_ok=True)
         runner = EngineRunner(config, engine, root)
-        areas = {scenario.name: instance_area(scenario.owner)
-                 for scenario in select_scenarios(REGISTRY, tier, selected_names)}
+        selected = select_scenarios(REGISTRY, tier, selected_names)
+        areas = {scenario.name: instance_area(scenario.owner) for scenario in selected}
         remaining = Counter(areas.values())
+        owners = {scenario.name: scenario.owner for scenario in selected
+                  if not parallel_resources(scenario)}
+        remaining_owners = Counter(owners.values())
         isolated = {instance_area(owner) for owner in RuntimePool.isolated}
         def completed(result):
             results.append(result)
+            owner = owners.get(result.scenario)
+            if owner is not None:
+                remaining_owners[owner] -= 1
+                if remaining_owners[owner] == 0:
+                    runner.executors[owner].submit(runner.sessions[owner].close).result()
             area = areas[result.scenario]
             remaining[area] -= 1
             if area in isolated and remaining[area] == 0:
