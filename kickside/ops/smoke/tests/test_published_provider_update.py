@@ -129,9 +129,18 @@ class PublishedProviderUpdateTests(unittest.TestCase):
 
     def test_code_execution_only_pins_contract_for_declared_historical_dependencies(self):
         self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': '0.1.16'}), ())
-        for version in ('0.1.17', '0.1.18'):
-            self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': version}),
-                             ({**CODE_EXECUTION_HISTORICAL_CONTRACT, 'provider_constraint': '*'},))
+        self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': '0.1.17'}), ())
+        self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': '0.1.18'}),
+                         ({**CODE_EXECUTION_HISTORICAL_CONTRACT, 'provider_constraint': '*'},))
+
+    def test_code_execution_017_uses_current_contract_after_asserting_its_archived_range(self):
+        baseline = {'version': '0.1.17',
+                    'hash': 'c937a9dbc51e55039c57ad8d6102ef28da78e165b4f86b4874ae540347707d08',
+                    'declared': True}
+        update, prepared, current_contract = self.exercise(module='kickside/code-execution', baseline=baseline)
+        self.assertEqual(prepared[0]['modules'], ('kickside/code-execution',))
+        self.assertEqual(prepared[0]['replacements']['kickside/contract'], current_contract)
+        self.assertEqual([call.args[2] for call in update.call_args_list], ['kickside/code-execution'])
 
     def test_code_execution_rejects_an_archive_with_a_different_contract_constraint(self):
         baseline = {'version': '0.1.18',

@@ -98,7 +98,7 @@ def provider_historical_closure(module, baseline):
     expected = CODE_EXECUTION_CONTRACT_CONSTRAINTS.get(baseline['version'])
     require(baseline['version'] in CODE_EXECUTION_CONTRACT_CONSTRAINTS,
             'Code Execution fixture has no verified Contract constraint for ' + baseline['version'])
-    if expected is None:
+    if baseline['version'] != '0.1.18':
         return ()
     return ({**CODE_EXECUTION_HISTORICAL_CONTRACT, 'provider_constraint': expected},)
 
@@ -129,10 +129,9 @@ def provider_binding_update(ctx, specification, baseline):
                     'Published closure receipt differs from its pinned artifact: ' + component)
             historical_sources[component] = str(archived)
             receipts[component] = receipt
-        constraint = next((row['provider_constraint'] for row in closure
-                           if row['component'] == 'kickside/contract'), None)
         if module == 'kickside/code-execution':
-            require(archived_dependency_constraint(directory, 'kickside/contract') == constraint,
+            expected = CODE_EXECUTION_CONTRACT_CONSTRAINTS[baseline['version']]
+            require(archived_dependency_constraint(directory, 'kickside/contract') == expected,
                     'Published Code Execution Contract constraint differs from its verified archive')
         inst.config['replace'] = dict(inst.config['replace'], **historical_sources)
         configuration = inst.app / '.wippy.yaml'
