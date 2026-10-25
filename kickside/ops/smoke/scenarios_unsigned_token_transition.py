@@ -108,6 +108,9 @@ def role_transition(role):
             browser.frame.locator('.sidebar').wait_for(timeout=30000)
             await_workspace(inst, user_id, browser)
             storage = browser.context.storage_state()
+            # Signing invalidates this bearer; close its live client before the
+            # activation, then restore the saved state to prove re-login.
+            browser.reset_context()
             before = retained_data(inst)
             payloads = token_payloads(inst)
             path, document, entry = token_entry(directory)
