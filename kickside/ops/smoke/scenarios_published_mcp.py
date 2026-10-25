@@ -103,4 +103,4 @@ REGISTRY = [Scenario('browser_published_mcp_credential_hub_ui_update', 'regressi
     browser_published_mcp_credential_hub_ui_update, ('boot',), instance_setup=True,
     issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C08', 'BOT-PUBLISHED-MCP-CREDENTIAL-CONTINUITY',
                                'SECURITY-POLICY-EXPANSION-FENCE', 'USERS-UNCHANGED-AUTHORITY-DELEGATION-REVOCATION',
-                               'AUTOMATION-PUBLISHED-CONFIG-PAYLOAD'))]
+                               'AUTOMATION-PUBLISHED-CONFIG-PAYLOAD'), source_components=('keeper/keeper',))]

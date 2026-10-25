@@ -45,6 +45,41 @@ class SourceProfileTests(unittest.TestCase):
                             [self.scenario()])
             self.assertEqual(profile['replacements']['spiralscout/meetings'], str(selected))
 
+    def test_source_mode_selects_the_declared_keeper_controller(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'kickside'
+            source.mkdir()
+            keeper = root / 'keeper'
+            keeper.mkdir()
+            (keeper / 'wippy.yaml').write_text('organization: keeper\nmodule: keeper\n')
+            scenario = Scenario('published-update', 'regression', lambda ctx: None,
+                                source_components=('keeper/keeper',))
+            self.assertEqual(build(source, {'keeper/keeper': str(keeper)}, [scenario])['replacements'],
+                             {'keeper/keeper': str(keeper)})
+
+    def test_source_mode_published_updates_declare_the_keeper_controller(self):
+        from scenarios_published_agent import REGISTRY as agent
+        from scenarios_published_channel import REGISTRY as channel
+        from scenarios_published_mcp import REGISTRY as mcp
+        from scenarios_published_run_as import REGISTRY as human
+        from scenarios_published_sso import REGISTRY as sso
+        from scenarios_published_workflow import REGISTRY as workflow
+        registry = {scenario.name: scenario for group in (agent, channel, mcp, human, sso, workflow)
+                    for scenario in group}
+        names = {
+            'browser_published_human_automation_update',
+            'browser_published_human_automation_hub_ui_update',
+            'browser_published_human_sessions_hub_ui_update',
+            'browser_published_agent_provider_hub_ui_update',
+            'browser_published_mcp_credential_hub_ui_update',
+            'browser_published_workflow_await_hub_ui_update',
+            'browser_published_discord_responder_hub_ui_update',
+            'browser_published_slack_responder_hub_ui_update',
+            'browser_published_sso_session_hub_ui_update',
+        }
+        self.assertTrue(all('keeper/keeper' in registry[name].source_components for name in names))
+
     def test_rejects_mismatched_explicit_module_identity(self):
         with tempfile.TemporaryDirectory() as directory:
             source, _, _ = self.cohort(Path(directory))

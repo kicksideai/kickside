@@ -188,7 +188,7 @@ def browser_published_slack_responder_hub_ui_update(ctx):
 
 REGISTRY = [Scenario('browser_published_discord_responder_hub_ui_update', 'regression',
     browser_published_discord_responder_hub_ui_update, ('boot',), instance_setup=True,
-    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C05', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER')),
+    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C05', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER'), source_components=('keeper/keeper',)),
     Scenario('browser_published_slack_responder_hub_ui_update', 'regression',
     browser_published_slack_responder_hub_ui_update, ('boot',), instance_setup=True,
-    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C06', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER'))]
+    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C06', 'BOT-PUBLISHED-PROVIDER-CONVERSATION-CONTINUITY', 'SMOKE-PUBLISHED-PROVIDER-ACTIVATION-PROOF', 'UPSTREAM-KEEPER-HUB-BROWSE-RESPONSE-ORDER'), source_components=('keeper/keeper',))]

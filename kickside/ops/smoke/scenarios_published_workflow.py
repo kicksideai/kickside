@@ -168,4 +168,5 @@ REGISTRY = [Scenario('browser_published_workflow_await_hub_ui_update', 'regressi
                                  'DATAFLOW-PUBLISHED-PROJECTED-POLICY-CONTINUITY',
                                  'WORKFLOW-PUBLISHED-RESTART-STATE-CONTINUITY',
                                  'WORKFLOW-PUBLISHED-RUN-RESPONSE-SHAPE',
-                                 'SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE'))]
+                                 'SMOKE-PUBLISHED-WORKFLOW-HISTORY-BASELINE'),
+    source_components=('keeper/keeper',))]

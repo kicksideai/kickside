@@ -107,4 +107,5 @@ def browser_published_agent_provider_hub_ui_update(ctx):
 
 REGISTRY = [Scenario('browser_published_agent_provider_hub_ui_update', 'regression',
     browser_published_agent_provider_hub_ui_update, ('boot',), instance_setup=True,
-    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C04', 'BOT-PUBLISHED-AGENT-PROVIDER-CONTINUITY'))]
+    issues=PUBLISHED[0].issues + ('RA-B16', 'RA-C04', 'BOT-PUBLISHED-AGENT-PROVIDER-CONTINUITY'),
+    source_components=('keeper/keeper',))]
