@@ -1,4 +1,5 @@
 """Native deferred-authority smoke guards for the run-as identity boundary."""
+import re
 import shutil
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -11,6 +12,8 @@ from harness import Scenario, require
 HERE = Path(__file__).resolve().parent
 NAMESPACE = 'smoke.identity_authority'
 OWNER = NAMESPACE + ':deferred_owner'
+_RETRYABLE_PROJECTION_ERROR = re.compile(
+    r'^scope projection reconcile timed out waiting for [A-Za-z0-9_.-]+\.security\.service:scope_projection\.service$')
 
 
 def _fixture(ctx, group, denied_group=None, unbound_group=None):
@@ -88,6 +91,26 @@ def _user(inst, suffix, label, groups):
     return record, token
 
 
+def _wait_for_scope_projection(ctx, groups, label):
+    """Wait for the native scope that a Users group update makes observable."""
+    inst = ctx.inst
+    attempts = 0
+
+    def projected():
+        nonlocal attempts
+        attempts += 1
+        result = inst.request('POST', '/api/v1/identity-authority/projection', {'groups': groups},
+                              expect=(200, 409), label=label + '-attempt-' + str(attempts))
+        if result.get('success') is True:
+            return result
+        error = result.get('error', '')
+        if isinstance(error, str) and _RETRYABLE_PROJECTION_ERROR.fullmatch(error):
+            return None
+        require(False, label + ': scope projection fails: ' + str(result))
+
+    return inst.wait(projected, label + ': scope projection becomes ready')
+
+
 def deferred_native_authority(ctx):
     """RA-H07/H08/H10: a worker cannot replace the recorded authorizer scope."""
     inst = ctx.inst
@@ -135,6 +158,7 @@ def deferred_native_authority(ctx):
     # after the policy declaration exists; the session itself is not authority.
     inst.request('PUT', '/api/v1/users/' + authorizer['user_id'] + '/groups',
                  {'groups': ['app.security:user', operators]}, label='authorizer-live-scope-refresh')
+    _wait_for_scope_projection(ctx, ['app.security:user', operators], 'authorizer-live-scope-projection')
     payload['root'] = automation
     payload['component_id'] = automation
     allowed = inst.request('POST', '/api/v1/identity-authority/deferred', payload,
@@ -149,6 +173,7 @@ def deferred_native_authority(ctx):
     require(exact_deny.get('success') is True, 'fixture does not create exact-root native deny')
     inst.request('PUT', '/api/v1/users/' + authorizer['user_id'] + '/groups',
                  {'groups': ['app.security:user', operators, denies]}, label='authorizer-exact-deny-scope-refresh')
+    _wait_for_scope_projection(ctx, ['app.security:user', operators, denies], 'authorizer-exact-deny-scope-projection')
     exact_denial = inst.request('POST', '/api/v1/identity-authority/deferred', payload, expect=(403,),
                                 label='exact-root-deny-overrides-all-root-allow')
     require(exact_denial.get('success') is False and 'delegation' in exact_denial.get('error', '').lower(),
