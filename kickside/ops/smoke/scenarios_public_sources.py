@@ -44,12 +44,15 @@ def documentation_sources(ctx):
 def documentation_workflows(ctx):
     root = public_sibling_root(ctx, 'docs-site')
     docs = public_sibling_root(ctx, 'docs')
+    sources = root / '.sources'
+    require(sources.is_dir(),
+            'Public documentation workflow guard requires prepared native CI sources at docs-site/.sources')
     result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
                              '-p', 'test_workflows.py'], cwd=root,
                             text=True, capture_output=True, check=True)
     ctx.inst.evidence.save('documentation-workflow-check', {'output': result.stdout + result.stderr})
     subprocess.run([sys.executable, 'scripts/sync_sources.py', '--check',
-                    '--content', str(docs), '--sources', str(root.parent)],
+                    '--content', str(docs), '--sources', str(sources)],
                    cwd=root, check=True)
 
 
