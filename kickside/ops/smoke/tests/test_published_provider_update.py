@@ -11,6 +11,8 @@ import yaml
 from harness import Failure
 from scenarios_published_provider_identity import (
     CODE_EXECUTION_HISTORICAL_CONTRACT,
+    CODE_EXECUTION_ACTIVE_FUNCTION,
+    active_code_execution_source,
     code_execution_historical_snapshot,
     owned_candidate_application,
     provider_binding_update,
@@ -44,6 +46,10 @@ class PublishedProviderUpdateTests(unittest.TestCase):
                 (candidate / 'wippy.yaml').write_text(yaml.safe_dump({'directories': {'src': 'src'}}))
                 (candidate / 'src/_index.yaml').write_text(yaml.safe_dump({'namespace': 'kickside.code_execution',
                     'entries': [{'name': 'contract', 'kind': 'ns.dependency', 'component': 'kickside/contract'}]}))
+                traits = candidate / 'src/traits.yaml'
+                traits.write_text(yaml.safe_dump({'namespace': 'kickside.code_execution.traits', 'entries': [{
+                    'name': 'run_code_tool', 'kind': 'function.lua', 'source': 'file://current_run_code.lua'}]}))
+                (candidate / 'src/current_run_code.lua').write_text('return "current run code"\n')
                 (contract / 'wippy.yaml').write_text(yaml.safe_dump({'directories': {'src': 'src'}}))
             inst.config = {'source': str(source), 'replace': replacements}
             prepared_replacements = []
@@ -70,6 +76,8 @@ class PublishedProviderUpdateTests(unittest.TestCase):
                                                'path': '.groups +='}]}}
             entries = {endpoint_id: endpoint, bundle['id']: bundle,
                        supplied[0]['name']: requirement, supplied[1]['name']: {'data': {}}}
+            if module == 'kickside/code-execution':
+                entries[CODE_EXECUTION_ACTIVE_FUNCTION] = {'data': {'source': 'return "current run code"\n'}}
             probe = Mock(return_value={'member': 200, 'outside': 403})
             specification = {'module': module, 'namespace': 'example.provider',
                              'endpoint_component': endpoint_id, 'parameters': {'example.provider:api_router': 'app:api'},
@@ -82,6 +90,10 @@ class PublishedProviderUpdateTests(unittest.TestCase):
                 if archived_module == 'kickside/code-execution':
                     (path / 'src/entries.yaml').write_text(yaml.safe_dump({'version': '1.0', 'namespace': 'kickside.code_execution',
                         'entries': [{'name': 'contract', 'kind': 'ns.dependency', 'component': 'kickside/contract', 'version': archived_constraint}]}))
+                    (path / 'src/traits.yaml').write_text(yaml.safe_dump({'version': '1.0',
+                        'namespace': 'kickside.code_execution.traits', 'entries': [{
+                            'name': 'run_code_tool', 'kind': 'function.lua', 'source': 'file://archived_run_code.lua'}]}))
+                    (path / 'src/archived_run_code.lua').write_text('return "archived run code"\n')
                 return {'version': archived_baseline['version'], 'sha256': archived_baseline.get('hash', 'verified digest')}
             fixture_configs = []
             @contextmanager
@@ -192,6 +204,23 @@ class PublishedProviderUpdateTests(unittest.TestCase):
             self.assertFalse((owned / 'test').exists())
             self.assertTrue((source / 'node_modules').is_symlink())
             self.assertEqual((linked / 'package.json').read_text(), '{}')
+
+    def test_code_execution_active_source_rejects_a_stale_archive_despite_candidate_config(self):
+        with tempfile.TemporaryDirectory(dir=os.environ['TMPDIR']) as directory:
+            root = Path(directory)
+            candidate, archived = root / 'candidate', root / 'archived'
+            for tree, source in ((candidate, 'return "current"\n'), (archived, 'return "archived"\n')):
+                src = tree / 'src'
+                src.mkdir(parents=True)
+                (src / '_index.yaml').write_text(yaml.safe_dump({
+                    'namespace': 'kickside.code_execution.traits', 'entries': [{
+                        'name': 'run_code_tool', 'kind': 'function.lua', 'source': 'file://run_code.lua'}]}))
+                (src / 'run_code.lua').write_text(source)
+            inst = Mock(config={'replace': {'kickside/code-execution': str(candidate)}})
+            with patch('scenarios_published_provider_identity.registry_entry', return_value={
+                    'data': {'source': 'return "archived"\n'}}):
+                with self.assertRaisesRegex(Failure, 'differs from the selected candidate'):
+                    active_code_execution_source(inst, candidate, archived)
 
     def test_code_execution_only_pins_contract_for_declared_historical_dependencies(self):
         self.assertEqual(provider_historical_closure('kickside/code-execution', {'version': '0.1.16'}), ())

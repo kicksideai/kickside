@@ -1,6 +1,7 @@
 """Published provider identities and existing Hub bindings survive source updates."""
 import base64
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -69,6 +70,51 @@ def owned_candidate_application(inst, candidate):
     shutil.copytree(candidate, owned, ignore=module_source_ignore(candidate))
     require(owned.is_dir(), 'Historical Code Execution fixture cannot stage the current application source')
     return owned
+
+
+CODE_EXECUTION_ACTIVE_FUNCTION = 'kickside.code_execution.traits:run_code_tool'
+
+
+def code_execution_function_source(directory, identifier=CODE_EXECUTION_ACTIVE_FUNCTION):
+    """Read one explicitly owned Code Execution function from a source tree."""
+    namespace, name = identifier.split(':', 1)
+    root = Path(directory) / 'src'
+    matches = []
+    for index in root.rglob('*.yaml'):
+        document = yaml.safe_load(index.read_text()) or {}
+        if document.get('namespace') != namespace:
+            continue
+        matches.extend((index, entry) for entry in document.get('entries', [])
+                       if entry.get('name') == name and entry.get('kind') == 'function.lua')
+    require(len(matches) == 1, 'Code Execution source has no unique function: ' + identifier)
+    index, entry = matches[0]
+    source = entry.get('source', '')
+    require(source.startswith('file://'), 'Code Execution function has no file source: ' + identifier)
+    path = (index.parent / source.removeprefix('file://')).resolve()
+    require(path.is_relative_to(root.resolve()) and path.is_file(),
+            'Code Execution function source leaves its module tree: ' + identifier)
+    return path.read_text()
+
+
+def active_code_execution_source(inst, candidate, archived):
+    """Prove the active runtime uses changed current bytes, not its .18 archive."""
+    candidate = Path(candidate)
+    require(inst.config['replace'].get('kickside/code-execution') == str(candidate),
+            'Current provider fixture does not select the candidate source')
+    current = code_execution_function_source(candidate)
+    historical = code_execution_function_source(archived)
+    current_hash = hashlib.sha256(current.encode()).hexdigest()
+    historical_hash = hashlib.sha256(historical.encode()).hexdigest()
+    require(current_hash != historical_hash,
+            'Code Execution active-source oracle no longer distinguishes current from archived .18 bytes')
+    active = registry_entry(inst, CODE_EXECUTION_ACTIVE_FUNCTION, 'updated-provider-active-source')
+    source = active.get('data', {}).get('source')
+    require(isinstance(source, str), 'Active Code Execution function has no source')
+    active_hash = hashlib.sha256(source.encode()).hexdigest()
+    require(active_hash == current_hash,
+            'Active Code Execution function differs from the selected candidate source')
+    return {'id': CODE_EXECUTION_ACTIVE_FUNCTION, 'candidate_sha256': current_hash,
+            'archived_sha256': historical_hash, 'active_sha256': active_hash}
 
 
 def provider_identity_inventory(ctx):
@@ -146,6 +192,7 @@ def provider_binding_update(ctx, specification, baseline):
     receipts = {}
     closure = provider_historical_closure(module, baseline)
     snapshot = code_execution_historical_snapshot(module, baseline)
+    historical_provider_source = {}
     current_closure_sources = {}
     requirement_id = namespace + '.security:user_security_scope'
     parameters = [{'name': name, 'value': value} for name, value in {
@@ -155,6 +202,7 @@ def provider_binding_update(ctx, specification, baseline):
         inst = fixture.inst
         directory = inst.root / 'published-provider'
         receipts.update(published_source(directory, module, baseline))
+        historical_provider_source['source'] = directory
         historical_sources = {module: str(directory)}
         if snapshot:
             application = inst.root / 'published-application'
@@ -256,6 +304,7 @@ def provider_binding_update(ctx, specification, baseline):
             update_source(fixture, candidate, module, live=True, refresh_session=True)
             require(inst.config['replace'].get(module) == candidate,
                     'Current provider Hub install does not retain the candidate source selection')
+            active_provider_source = active_code_execution_source(inst, candidate, historical_provider_source['source'])
             updates = [snapshot['root'], module]
         else:
             directory = inst.root / 'published-provider'
@@ -297,6 +346,7 @@ def provider_binding_update(ctx, specification, baseline):
         inst.evidence.save('published-provider-after', {'module': module, 'archive': receipts, 'dependency': after,
             'current_provider_selection': {'versions': sorted(resolved_after),
                                            'source': inst.config['replace'].get(module)},
+            'active_provider_source': active_provider_source if snapshot else None,
             'endpoint_component': endpoint, 'requirement': requirement, 'bundle': bundle, 'access': access})
 
 
