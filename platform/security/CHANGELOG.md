@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/security-v0.2.10...security-v0.2.11) (2026-10-25)
+
+
+### Bug Fixes
+
+* **security:** avoid duplicate registry projection passes ([#144](https://github.com/kicksideai/kickside/issues/144)) ([f5f0a03](https://github.com/kicksideai/kickside/commit/f5f0a030e85edcacb0cdca5e7469ee41e21f655e))
+
 ## [0.2.10](https://github.com/kicksideai/kickside/compare/security-v0.2.9...security-v0.2.10) (2026-10-22)
 
 

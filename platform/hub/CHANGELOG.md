@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/hub-v0.1.65...hub-v0.1.66) (2026-10-25)
+
+
+### Bug Fixes
+
+* **hub:** require typed recommender completion ([#145](https://github.com/kicksideai/kickside/issues/145)) ([b93bc77](https://github.com/kicksideai/kickside/commit/b93bc77a6f2835548592816a8e46591e7d72bbb1))
+* **hub:** resolve shared widget dependencies in clean builds ([#150](https://github.com/kicksideai/kickside/issues/150)) ([38ee765](https://github.com/kicksideai/kickside/commit/38ee7655adbce4ae32486381ccbf2e5ba7171e2c))
+
 ## [0.1.65](https://github.com/kicksideai/kickside/compare/hub-v0.1.64...hub-v0.1.65) (2026-10-23)
 
 

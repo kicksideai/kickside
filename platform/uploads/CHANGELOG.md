@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kicksideai/kickside/compare/uploads-v0.3.0...uploads-v0.3.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **uploads:** page files using their selected sort order ([#138](https://github.com/kicksideai/kickside/issues/138)) ([3174d1d](https://github.com/kicksideai/kickside/commit/3174d1da2cf78aef89ae4da2ecf31654922e1a73))
+
 ## [0.3.0](https://github.com/kicksideai/kickside/compare/uploads-v0.2.0...uploads-v0.3.0) (2026-10-22)
 
 

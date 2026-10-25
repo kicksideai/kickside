@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.67](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.66...knowledge-v0.1.67) (2026-10-25)
+
+
+### Bug Fixes
+
+* **knowledge:** honor singular sink picker keys ([#140](https://github.com/kicksideai/kickside/issues/140)) ([ea87659](https://github.com/kicksideai/kickside/commit/ea8765922efac3a35345ee15080c772f4ab925f2))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.65...knowledge-v0.1.66) (2026-10-23)
 
 

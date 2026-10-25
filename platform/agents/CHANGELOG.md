@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/kicksideai/kickside/compare/agents-v0.2.5...agents-v0.2.6) (2026-10-25)
+
+
+### Bug Fixes
+
+* **hub:** require typed recommender completion ([#145](https://github.com/kicksideai/kickside/issues/145)) ([b93bc77](https://github.com/kicksideai/kickside/commit/b93bc77a6f2835548592816a8e46591e7d72bbb1))
+
 ## [0.2.5](https://github.com/kicksideai/kickside/compare/agents-v0.2.4...agents-v0.2.5) (2026-10-23)
 
 
