@@ -88,10 +88,10 @@ local function defer(row: Map, failure: any): (string?, any, boolean?)
     return nil, failure, tonumber(persisted.rows_affected) == 1
 end
 
-function M.arm(component_id: string): (string?, any, boolean?)
+function M.arm(component_id: string): (string?, any, boolean?, boolean?)
     local row, read_err = M.read(component_id)
     if read_err then return nil, read_err end
-    if not row then return nil, errors.new({ kind = errors.NOT_FOUND, retryable = false, message = "OAuth connection not found" }) end
+    if not row then return nil, errors.new({ kind = errors.NOT_FOUND, retryable = false, message = "OAuth connection not found" }), false, true end
     local r = row :: Map
     if r.refresh_wake_generation == r.refresh_wake_applied_generation then return r.schedule_id, nil end
     local deadline, deadline_err = M.connection_deadline(r)
@@ -146,6 +146,19 @@ function M.cancel(component_id: string): (any?, any)
     local _, wake_err = M.notify()
     if wake_err then return nil, wake_err end
     return M.arm(component_id)
+end
+
+-- Library imports flatten error userdata. Preserve only the missing-row marker
+-- emitted by M.arm's own absent-row branch for the component deletable to make
+-- its idempotency decision; a scheduler NOT_FOUND is still a hard failure.
+function M.cancel_for_component(component_id: string): Map
+    local job_id, cancel_err, _, missing = M.cancel(component_id)
+    if not cancel_err then return { success = true, job_id = job_id } end
+    return {
+        success = false,
+        error = tostring(cancel_err),
+        missing = missing == true,
+    }
 end
 
 function M.dispatch(): (Map?, any)
