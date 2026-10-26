@@ -265,6 +265,7 @@ class HubInstallTests(unittest.TestCase):
         from runtime import Instance
         inst = Instance.__new__(Instance)
         inst.await_keeper = Mock()
+        inst.await_current_security_projection = Mock()
         return inst
 
     def test_successful_install_waits_for_keeper_reconciliation_before_callers_continue(self):
@@ -281,6 +282,7 @@ class HubInstallTests(unittest.TestCase):
             raise AssertionError(path)
         inst.request = Mock(side_effect=request)
         inst.await_keeper.side_effect = lambda: calls.append('await-keeper')
+        inst.await_current_security_projection.side_effect = lambda label: calls.append(label)
 
         inst.install('kickside/automation')
 
@@ -289,6 +291,7 @@ class HubInstallTests(unittest.TestCase):
             '/api/v1/keeper/hub/dependencies/plan',
             '/api/v1/keeper/hub/dependencies/install',
             'await-keeper',
+            'Hub kickside/automation security projection',
         ])
 
     def test_install_propagates_keeper_readiness_failure(self):

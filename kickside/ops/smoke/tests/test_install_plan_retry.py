@@ -17,6 +17,7 @@ class InstallPlanRetryTests(unittest.TestCase):
         inst = object.__new__(Instance)
         inst.request = Mock(side_effect=responses)
         inst.await_keeper = Mock()
+        inst.await_current_security_projection = Mock()
         return inst
 
     def test_plan_is_requested_again_when_a_permission_projection_commit_moves_the_registry(self):

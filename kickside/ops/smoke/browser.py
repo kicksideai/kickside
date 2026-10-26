@@ -216,10 +216,15 @@ class Browser:
         errors = inst.cleanup.run(scope='scenario')
         require(not errors, 'Runtime resource cleanup: ' + '; '.join(errors))
         inst.stop(hard=hard)
+        completed = False
         try:
             yield
+            completed = True
         finally:
             inst.start()
+            if completed:
+                inst.await_keeper()
+                inst.await_current_security_projection('Runtime restart security projection')
             for context, state in navigation.items():
                 dispatch(context, lambda c, saved=state: c.browser_check().restore(saved))
 

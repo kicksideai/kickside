@@ -528,6 +528,23 @@ class Instance:
                              'keeper.state.service:sync_branch'}.intersection(sources))
         return self.wait(ready, 'Keeper state reconciliation', seconds=120)
 
+    def await_current_security_projection(self, label):
+        """Wait until this administrator's group set reaches the current registry revision."""
+        def current():
+            attempt = getattr(self, '_security_projection_readiness_attempt', 0) + 1
+            self._security_projection_readiness_attempt = attempt
+            result = self.request('GET', '/api/v1/security/projection',
+                                  label='security-projection-readiness-' + str(attempt))
+            if result.get('success') is False:
+                require(False, label + ': security projection status fails: ' + str(result))
+            require(type(result.get('current')) is bool,
+                    label + ': security projection status has no boolean current: ' + str(result))
+            require(type(result.get('scope_name')) is str and bool(result['scope_name']),
+                    label + ': security projection status has no nonempty scope_name: ' + str(result))
+            return result if result['current'] else None
+
+        return self.wait(current, label + ': security projection becomes current')
+
     def loaded_edits(self, edits):
         import yaml
         installed = {row['name'] for row in yaml.safe_load((self.app / 'wippy.lock').read_text())['modules']}
@@ -656,6 +673,7 @@ class Instance:
             failed = [row for row in installed.get('execution', []) if row.get('status') in ('failed', 'rollback_failed')]
             require(not failed, 'Hub ' + component + ' installation fails: ' + str(failed))
             self.await_keeper()
+            self.await_current_security_projection('Hub ' + component + ' security projection')
             return
 
 

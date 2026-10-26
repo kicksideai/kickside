@@ -208,9 +208,12 @@ class UpgradeFixtureTests(unittest.TestCase):
         inst.preserve_dependencies.side_effect = lambda: events.append('preserve')
         inst.stop.side_effect = lambda **kwargs: events.append('stop')
         inst.start.side_effect = lambda: events.append('start')
+        inst.await_keeper.side_effect = lambda: events.append('keeper')
+        inst.await_current_security_projection.side_effect = lambda label: events.append(label)
         with Browser.paused(inst, [], lambda context, action: action(context)):
             events.append('body')
-        self.assertEqual(events, ['preserve', 'stop', 'body', 'start'])
+        self.assertEqual(events, ['preserve', 'stop', 'body', 'start', 'keeper',
+                                  'Runtime restart security projection'])
         inst.stop.reset_mock()
         inst.preserve_dependencies.side_effect = RuntimeError('dependency read fails')
         with self.assertRaisesRegex(RuntimeError, 'dependency read fails'):
