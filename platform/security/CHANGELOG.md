@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/security-v0.2.11...security-v0.2.12) (2026-10-26)
+
+
+### Performance Improvements
+
+* **security:** avoid hashing unchanged projection bindings ([3264022](https://github.com/kicksideai/kickside/commit/3264022b4becd082376f16dfd78be29103c35cca))
+* **security:** skip hashes for equal projected bindings ([528a6e1](https://github.com/kicksideai/kickside/commit/528a6e1c9a9e317be198993e94bbce1f4491d0f5))
+
 ## [0.2.11](https://github.com/kicksideai/kickside/compare/security-v0.2.10...security-v0.2.11) (2026-10-25)
 
 
