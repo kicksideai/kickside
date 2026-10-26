@@ -578,6 +578,18 @@ entries:
       refresh_schedule: kickside.oauth:refresh_schedule
       component: kickside.component:component
 
+  - name: orphaned_child_delete_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_oauth, comment: A missing OAuth child is idempotent only for its access-gated component deletable; SQL failures and unauthorized callers still refuse deletion. }
+    source: file://orphaned_child_delete_test.lua
+    method: run
+    modules: [sql, uuid, json, contract, security]
+    imports:
+      test: wippy.test:test
+      oauth_repo: kickside.oauth.persist:oauth_repo
+      jobs: kickside.core.jobs:jobs
+      refresh_schedule: kickside.oauth:refresh_schedule
+
   - name: token_request_test
     kind: function.lua
     meta: {type: test, suite: kickside_oauth}
