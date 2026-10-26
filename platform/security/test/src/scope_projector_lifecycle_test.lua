@@ -65,6 +65,9 @@ local function spawn_projector(): string
     local pid, spawn_err = process.spawn_monitored(PROJECTOR, "app:processes", {})
     if spawn_err or not pid then error("scope lifecycle spawn: " .. tostring(spawn_err)) end
     spawned[#spawned + 1] = tostring(pid)
+    local ready, ready_err = request(tostring(pid))
+    test.is_nil(ready_err, "scope lifecycle readiness: " .. tostring(ready_err))
+    test.is_true(ready and ready.success, tostring(ready and ready.error))
     return tostring(pid)
 end
 
@@ -126,6 +129,7 @@ local function define_tests()
             local records = assert(storage.get("app:invalidation_records"))
             records:delete("delay")
             records:delete("record_delay")
+            records:delete("fail_at")
             records:release()
             local restored, restore_err = registry.apply_version(original)
             test.is_nil(restore_err)
