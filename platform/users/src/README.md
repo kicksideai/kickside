@@ -59,3 +59,9 @@ revocation boundary.
 The explicit `session_index.invalidate_groups` API retains its `allow_only`
 coverage behavior for native group invalidation. Custom-scope writes use the
 separate delegation fence and do not use that session-invalidation option.
+
+## Runtime compatibility
+
+Live selected-policy authority requires Runtime 0.3.54a or newer. Upgrade Runtime
+before updating Users to this source-policy resolver. The Security API stage
+retains the old materialization contract for installations still using older Users.
