@@ -46,7 +46,7 @@ local function define_tests(register)
             local minted, err = session.mint(user)
             test.is_nil(err, tostring(err)); test.not_nil(minted)
             test.not_nil((trigger_reconcile.trigger()))
-            return minted.token
+            return assert(minted.token)
         end
         local function payload(token)
             local db = assert(sql.get("app:db"))
