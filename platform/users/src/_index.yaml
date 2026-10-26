@@ -41,7 +41,7 @@ entries:
 
   - name: dep.kickside.security
     kind: ns.dependency
-    version: '>=0.2.11'
+    version: '>=0.2.13'
     component: kickside/security
 
   - name: baseline_security_scope
@@ -773,7 +773,7 @@ entries:
           mint_session: kickside.users.provisioning:provisioning_mint_session
 
   - name: dep.kickside.execution
-    version: '*'
+    version: '>=0.2.7'
     kind: ns.dependency
     meta:
       comment: Execution identity primitive (principal codec, delegation, live run-as).

@@ -65,3 +65,14 @@ separate delegation fence and do not use that session-invalidation option.
 Live selected-policy authority requires Runtime 0.3.54a or newer. Upgrade Runtime
 before updating Users to this source-policy resolver. The Security API stage
 retains the old materialization contract for installations still using older Users.
+
+The source-policy resolver requires Security >=0.2.13 and Execution >=0.2.7.
+Both are minimum versions, so existing locks must advance to implementations
+that provide the public resolver and preserve selected policies during run-as.
+Security retains its native named-scope and materialization APIs for older
+consumers; this Users client does not depend on its persistence or generated IDs.
+
+Native compatibility projection also retains its post-projection reduction
+fence. It closes the window in which an older native-scope consumer could
+capture the previous grants after the source pre-write fence but before the
+registry update. Authentication generations and token records remain unchanged.
