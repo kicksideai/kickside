@@ -39,7 +39,7 @@
     "vue": "^3.5.0"
   },
   "wippy": {
-    "description": "Builds four web components from one package (per-tag registry entries live in src/_index.yaml): the primary tag kickside-knowledge (index.js) \u2014 the Knowledge surface that lists knowledge bases and opens a detail view mounting the KB engine's own component \u2014 plus wc-kb-picker (picker.js), the kb_reader/kb_writer trait config element, kx-kb-create-dialog (kb_create.js), the standalone create-KB dialog, and kickside-onboard-knowledge (onboard.js), the onboarding wizard step. The surface accepts a 'route' attribute (the sub-path under /knowledge: empty for the list, '<kbId>' or '<kbId>/<nodeId>' for deep links) and emits 'navigate' with the new sub-path for the shell to reflect into the URL. wc-kb-picker receives trait context via its 'config' prop ({ kb_ids: string[] }) and emits 'config-changed' with { kb_ids } when the selection changes; kx-kb-create-dialog accepts a 'parent-id' attribute and emits 'created' and 'close'; the onboarding element emits 'done' and 'back' to drive the host wizard. The props block below describes the primary kickside-knowledge tag, and the events block covers the surface's 'navigate' plus the picker's 'config-changed'; the other tags' schemas are declared in their own registry entries.",
+    "description": "Builds four web components from one package (per-tag registry entries live in src/_index.yaml): the primary tag kickside-knowledge (index.js) \u2014 the Knowledge surface that lists knowledge bases and opens a detail view mounting the KB engine's own component \u2014 plus wc-kb-picker (picker.js), the reusable knowledge configuration element, kx-kb-create-dialog (kb_create.js), the standalone create-KB dialog, and kickside-onboard-knowledge (onboard.js), the onboarding wizard step. The surface accepts a 'route' attribute (the sub-path under /knowledge: empty for the list, '<kbId>' or '<kbId>/<nodeId>' for deep links) and emits 'navigate' with the new sub-path for the shell to reflect into the URL. wc-kb-picker receives config { kb_ids: string[] } for multi-base trait scopes, or a schema declaring kb_id for one embed-sink destination; it emits 'config-changed' with that matching key. kx-kb-create-dialog accepts a 'parent-id' attribute and emits 'created' and 'close'; the onboarding element emits 'done' and 'back' to drive the host wizard. The props block below describes the primary kickside-knowledge tag, and the events block covers the surface's 'navigate' plus the picker's 'config-changed'; the other tags' schemas are declared in their own registry entries.",
     "tagName": "kickside-knowledge",
     "type": "component",
     "props": {
@@ -58,6 +58,9 @@
         "config-changed": {
           "type": "object",
           "properties": {
+            "kb_id": {
+              "type": "string"
+            },
             "kb_ids": {
               "type": "array",
               "items": {
@@ -65,7 +68,7 @@
               }
             }
           },
-          "description": "Emitted by the wc-kb-picker element (kb_reader/kb_writer trait config) when the selected knowledge bases change."
+          "description": "Emitted by wc-kb-picker with kb_ids for trait scopes or kb_id when the supplied schema declares a single embed-sink destination."
         },
         "navigate": {
           "type": "string",

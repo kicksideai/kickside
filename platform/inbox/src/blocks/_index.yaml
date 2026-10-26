@@ -100,6 +100,9 @@ entries:
     security:
       policies:
       - kickside.inbox.security:submit_output_publish
+      - kickside.inbox.security:review_assignee_directory_get
+      - kickside.inbox.security:review_assignee_directory_open
+      - kickside.inbox.security:review_assignee_directory_exists
     source: file://arm_decision.lua
     method: arm_decision
     modules: [security, contract, expr]

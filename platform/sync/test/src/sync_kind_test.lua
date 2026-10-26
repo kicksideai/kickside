@@ -354,6 +354,74 @@ local function define_tests()
     end)
 
     test.describe("kickside.sync reconfigure", function()
+        test.it("refuses opaque edits without holding a source change pending", function()
+            local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                resource_id = uuid.v7(), config = { resource = "first" } }
+            local installed = install_ok(declaration({ transform = transform }))
+            local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed",
+                external_ref = "source-change:" .. uuid.v4(), title = "Source" })
+            test.is_nil(create_err, tostring(create_err))
+            local service = (contract.get("kickside.component:component_service") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local granted, grant_err = service:grant_subtree({ root_component_id = tostring(created.thread_id),
+                subject = { subject_id = security.actor():id(), subject_type = "user" }, access_mask = 1 })
+            test.is_nil(grant_err, tostring(grant_err))
+            test.is_true(granted.success)
+            manage({ action = "pause", id = installed.id })
+            manage({ action = "resume", id = installed.id })
+            local before = read_drive(installed.id, "main") :: Map
+            test.eq(before.phase, "active")
+            local changed = declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
+                config = { thread_id = tostring(created.thread_id) }, backfill = "none" },
+                transform = { kind = transform.kind, ["function"] = transform["function"],
+                    resource_id = transform.resource_id, config = { resource = "second" } } })
+            local result, err = funcs.new():call(MANAGE, { action = "reconfigure", id = installed.id, input = changed })
+            test.is_nil(result)
+            test.not_nil(err)
+            test.ok(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            test.contains(tostring(err), "execution subject")
+            local after = read_drive(installed.id, "main") :: Map
+            test.is_nil(after.pending_command_id)
+            test.eq(after.phase, before.phase)
+            test.eq(after.source_kind, before.source_kind)
+            test.eq(after.applied.declaration.transform.config.resource, "first")
+            manage({ action = "uninstall", id = installed.id })
+        end)
+
+        test.it("keeps shared pure edits and refuses opaque configuration edits", function()
+            local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                resource_id = uuid.v7(), config = { nested = { resource = "first" } } }
+            local installed = install_ok(declaration({ transform = transform }))
+            local shared = funcs.new()
+            local pure, pure_err = shared:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ title = "Renamed", transform = transform }) })
+            test.is_nil(pure_err, tostring(pure_err))
+            test.not_nil(pure)
+            manage({ action = "pause", id = installed.id })
+            manage({ action = "resume", id = installed.id })
+            local before = read_drive(installed.id, "main") :: Map
+            test.eq(before.phase, "active")
+            local changed = { kind = transform.kind, ["function"] = transform["function"],
+                resource_id = transform.resource_id, config = { nested = { resource = "second" } } }
+            local result, err = shared:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ transform = changed }) })
+            test.is_nil(result)
+            test.not_nil(err)
+            test.ok(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            test.contains(tostring(err), "execution subject")
+            local main = read_drive(installed.id, "main") :: Map
+            test.eq(main.applied.declaration.transform.config.nested.resource, "first")
+            test.is_true(main.enabled)
+            test.eq(main.phase, before.phase)
+            test.is_nil(main.pending_command_id)
+            local accepted, subject_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ transform = changed }) })
+            test.is_nil(subject_err, tostring(subject_err))
+            test.not_nil(accepted)
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.transform.config.nested.resource, "second")
+            manage({ action = "uninstall", id = installed.id })
+        end)
+
         test.it("accepts an unchanged event source when editing title and transform, and refuses an invalid source change", function()
             local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
             local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed", external_ref = "sync-edit:" .. uuid.v4(), title = "Source" })

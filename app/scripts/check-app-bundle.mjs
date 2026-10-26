@@ -1,4 +1,5 @@
 import { readFile, stat } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -7,6 +8,15 @@ export async function checkAppBundle(appDir) {
   async function requireFile(path) {
     const info = await stat(path)
     if (!info.isFile() || info.size === 0) throw new Error(`Application asset is empty: ${path}`)
+  }
+  function localAsset(reference, from = bundle) {
+    const value = reference.split(/[?#]/, 1)[0].replace(/^\/app\/app\/main\//, '')
+    const path = resolve(from, value)
+    const within = relative(bundle, path)
+    if (within.startsWith('../') || within === '..' || within === '' || value.startsWith('/')) {
+      throw new Error(`Application contains an invalid local asset path: ${reference}`)
+    }
+    return path
   }
   const htmlPath = join(bundle, 'app.html')
   await requireFile(htmlPath)
@@ -27,6 +37,37 @@ export async function checkAppBundle(appDir) {
     await requireFile(path)
   }
   await requireFile(join(bundle, 'wippy-meta.json'))
+  const manifest = JSON.parse(await readFile(join(bundle, 'vendor/manifest.json'), 'utf8'))
+  if (!manifest.files || !manifest.imports || !Object.keys(manifest.files).length) {
+    throw new Error('Application vendor manifest is missing its assets')
+  }
+  for (const [name, expected] of Object.entries(manifest.files)) {
+    const path = localAsset(name)
+    await requireFile(path)
+    const digest = 'sha256-' + createHash('sha256').update(await readFile(path)).digest('base64')
+    if (digest !== expected) throw new Error(`Application asset integrity mismatch: ${name}`)
+  }
+  for (const entry of Object.values(manifest.imports)) await requireFile(localAsset(entry.file))
+  const importMapText = html.match(/<script\b[^>]*type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/)?.[1]
+  if (!importMapText) throw new Error('Application import map is missing')
+  const importMap = JSON.parse(importMapText)
+  for (const entry of Object.values(manifest.imports)) {
+    if (!Object.values(importMap.imports || {}).includes('/app/app/main/' + entry.file)) {
+      throw new Error(`Application import map omits vendor asset: ${entry.file}`)
+    }
+  }
+  const stylesheets = Object.keys(manifest.files).filter(name => name.endsWith('.css'))
+    .map(name => join(bundle, name))
+  stylesheets.push(resolve(appDir, 'static/custom-css.facade.generated.css'))
+  for (const stylesheet of stylesheets) {
+    await requireFile(stylesheet)
+    const css = await readFile(stylesheet, 'utf8')
+    for (const match of css.matchAll(/url\(\s*["']?([^\s"')]+)["']?\s*\)/g)) {
+      const reference = match[1]
+      if (/^(?:[a-z]+:|\/\/|#)/i.test(reference)) continue
+      await requireFile(localAsset(reference, reference.startsWith('/app/app/main/') ? bundle : dirname(stylesheet)))
+    }
+  }
   return references.length
 }
 

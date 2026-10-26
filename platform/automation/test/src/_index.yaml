@@ -8,6 +8,37 @@ namespace: app
 # the namespace exclude in wippy.yaml.
 
 entries:
+  - name: config_access_probe
+    kind: function.lua
+    source: file://config_access_probe.lua
+    method: run
+    imports:
+      types: kickside.automation:types
+
+  - name: config_probe_call
+    kind: security.policy
+    policy:
+      resources: app:config_access_probe
+      actions: funcs.call
+      effect: allow
+
+  - name: config_probe_read
+    kind: security.policy
+    policy:
+      resources: kickside.automation:db_config
+      actions: registry.get
+      effect: allow
+
+  - name: config_access_test
+    kind: function.lua
+    meta: {type: test, suite: automation_config_access}
+    source: file://config_access_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      types: kickside.automation:types
+
   - name: slot_provision_errors_test
     kind: function.lua
     meta: {type: test, suite: automation}
@@ -377,6 +408,7 @@ entries:
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: app:drive_repair_slot_boundary
+      slot_repair: kickside.automation.engine:slot_repair
 
 
   - name: drive_repair_races_test

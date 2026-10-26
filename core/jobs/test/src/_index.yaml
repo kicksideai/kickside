@@ -609,6 +609,7 @@ entries:
       lease: kickside.core.jobs.persist:lease_heartbeat
       lifecycle: kickside.core.jobs.persist:lifecycle
       job_fixture: app:job_fixture
+      config: kickside.core.jobs:config
   - name: worker_pulse_test
     kind: function.lua
     meta:
@@ -1436,6 +1437,7 @@ entries:
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: app:start_fence_native_marker_adapter
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: app:start_fence_native_fixture
 
   - name: start_fence_native_test
     kind: function.lua
@@ -1736,6 +1738,7 @@ entries:
       lifecycle: kickside.core.jobs.persist:lifecycle
       run_status: kickside.core.jobs:run_status
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: app:slot_purge_native_fixture
 
   - name: slot_purge_native_test
     kind: function.lua
@@ -1791,6 +1794,7 @@ entries:
       clock: kickside.core.jobs:clock
       thread_teardown: app:retention_native_fixture
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: retention_native_test
     kind: function.lua

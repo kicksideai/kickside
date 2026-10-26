@@ -334,17 +334,20 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
             createdb "$database"
             databases+=("$database")
-            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
-            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_1"
+            createdb "$database"
+            databases+=("$database")
+            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
+            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
             cd ../live-test
             mkdir -p .wippy
-            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_repair_live"
-            createdb "$database"
-            databases+=("$database")
+            repair_live_database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_repair_live"
+            createdb "$repair_live_database"
+            databases+=("$repair_live_database")
             wippy install
-            wippy test --profile postgres --set "vars.pg_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
+            wippy test --profile postgres --set "vars.pg_database=$repair_live_database" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
             awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
             cd "$source_root"
@@ -1328,6 +1331,7 @@ jobs:
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
             cd platform/ui-kit
+            make test
             wippy update
             wippy lint
             cd "$source_root"
@@ -1651,3 +1655,27 @@ jobs:
     defaults:
       run:
         working-directory: source
+  app-release-assets:
+    name: Application release assets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '22'
+    - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
+      with:
+        version: 0.3.52a
+        hub-url: https://hub.wippy.ai
+    - name: Test missing and incomplete application bundles
+      run: node --test app/scripts/check-app-bundle.test.mjs
+    - name: Build, validate and pack the application frontend
+      run: |
+        set -euo pipefail
+        version=$(jq -er '.app' .release-please-manifest.json)
+        make -C app release-check VERSION="$version" WIPPY_BIN=wippy

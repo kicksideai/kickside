@@ -24,7 +24,8 @@ local function target_port(kind)
 end
 
 -- Convenience targets lower to the same declared writable port as an action.
--- A workflow reference pins its published version; an agent remains a port.
+-- Saved agent targets remain compatible through the provider-owned port.
+-- New task authoring only offers workflows and explicit actions.
 function M.resolve(target: any): (any?, any)
     if type(target) ~= "table" then return nil, invalid("target is required") end
     if (target.kind == "workflow" or target.kind == "action") and type(target.input) == "table" then

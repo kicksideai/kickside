@@ -20,6 +20,37 @@ local function retains(actual: error, source: error): ()
 end
 return {run = test.run_cases(function()
     test.describe("native slot purge dependencies", function()
+        test.it("thread-owned slots acquire the cleanup fence before the job lock", function()
+            fixture.reset(nil, nil, sql.type.POSTGRES)
+            fixture.thread_owned = true
+            local removed, err = purge.purge_slot(params)
+            test.is_nil(err)
+            test.eq(removed, 1)
+            test.eq(fixture.fences, 1)
+            test.eq(fixture.fence_id, "owner")
+            test.eq(fixture.queries_at_fence, 1)
+        end)
+        test.it("fence failures retain their retry policy and prevent slot mutation", function()
+            local source = errors.new({kind = errors.UNAVAILABLE, message = "fence unavailable", retryable = true,
+                details = {code = "purge_dependency", nested = {marker = "kept"}}})
+            fixture.reset("fence", source, sql.type.POSTGRES)
+            fixture.thread_owned = true
+            local removed, err = purge.purge_slot(params)
+            test.is_nil(removed)
+            retains(required(err), source)
+            test.eq(fixture.rollbacks, 1)
+            test.eq(fixture.writes, 0)
+            test.eq(fixture.releases, 1)
+        end)
+        test.it("a missing fence proof refuses the purge without mutating the slot", function()
+            fixture.reset("fence", nil, sql.type.POSTGRES)
+            fixture.thread_owned, fixture.missing = true, true
+            local removed, err = purge.purge_slot(params)
+            test.is_nil(removed)
+            test.eq(required(err):details().field, "fence")
+            test.eq(fixture.rollbacks, 1)
+            test.eq(fixture.writes, 0)
+        end)
         for _, dialect in ipairs({sql.type.SQLITE, sql.type.POSTGRES}) do
             local stages = {"get", "dialect", "begin", "slot", "job", "runs", "delete_runs", "remaining", "delete_job", "next", "commit"}
             if dialect == sql.type.POSTGRES then stages[#stages + 1] = "run_lock" end

@@ -8,6 +8,7 @@ local cfg = require("config")
 local clock = require("clock")
 local thread_teardown = require("thread_teardown")
 local sql_boundary = require("sql_boundary")
+local thread_fence = require("thread_fence")
 
 local function bounded(limit: integer?, maximum: integer): integer
     return math.max(0, math.min(maximum, limit or maximum))
@@ -66,7 +67,7 @@ local function prune_owned(db: any, thread_id: string?, cutoff: string, runs: bo
     params[#params + 1] = batch
     local limit_arg = "$" .. tostring(#params)
     local no_runs = runs and "" or " AND NOT EXISTS (SELECT 1 FROM kickside_job_run r WHERE r.job_id=kickside_job.id)"
-    local cols = runs and "id,job_id" or "id"
+    local cols = runs and "id,job_id,owner_kind,owner_id" or "id,owner_kind,owner_id"
     local rows, read_err = db:query("SELECT " .. cols .. " FROM " .. table_name .. " WHERE " .. predicate
         .. " AND " .. settled .. " AND finished_at IS NOT NULL AND finished_at < " .. cutoff_arg
         .. no_runs .. " ORDER BY finished_at,id LIMIT " .. limit_arg, params)
@@ -78,13 +79,28 @@ local function prune_owned(db: any, thread_id: string?, cutoff: string, runs: bo
     if not tx then return nil, response_error("transaction") end
     local job_ids: { string } = {}
     local run_ids: { string } = {}
+    local thread_ids: { string } = {}
     for _, row in ipairs(rows) do
+        if row.owner_kind == "thread" then
+            if type(row.owner_id) ~= "string" or row.owner_id == "" then
+                return nil, sql_boundary.rollback(tx, response_error("candidates.owner"), "retention rollback failed")
+            end
+            thread_ids[#thread_ids + 1] = row.owner_id
+        end
         if runs then
             job_ids[#job_ids + 1] = tostring(row.job_id)
             run_ids[#run_ids + 1] = tostring(row.id)
         else
             job_ids[#job_ids + 1] = tostring(row.id)
         end
+    end
+    -- Match claim/cleanup lock order before retiring any thread-owned row.
+    -- A candidate may be gone after waiting; the bounded DELETE counts reality.
+    if #thread_ids > 0 then
+        local fences, fence_err = thread_fence.lock_many(tx, thread_ids)
+        if fence_err then return nil, sql_boundary.rollback(tx, fence_err, "retention rollback failed") end
+        if type(fences) ~= "table" then return nil, sql_boundary.rollback(tx,
+            response_error("thread_fences"), "retention rollback failed") end
     end
     local job_lock_err = prelock_ids(tx, tostring(dbtype), "kickside_job", job_ids)
     if job_lock_err then return nil, sql_boundary.rollback(tx, job_lock_err, "retention rollback failed") end

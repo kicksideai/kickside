@@ -212,3 +212,130 @@ names a domain concept, it belongs to that module.
 4. Bump `package/package.json` and publish the module at the **same version**;
    `wippy publish` refuses a mismatch. Then repin `build-inputs`.
 5. Update this file. A vocabulary nobody can read is a vocabulary nobody adopts.
+
+## Library chrome
+
+The chrome sheets style native markup. They do not replace PrimeVue defaults;
+keep PrimeVue-specific overrides in the facade. Import tokens first, then the
+sheets required below, and delete adopted local rules. Do not apply native
+confirm parts as PrimeVue pass-through classes: use `kx-modal-head.css` for
+PrimeVue header slots and qualify dialog footer overrides under the dialog root
+as described above.
+
+### Geometry additions
+
+| Token | Default | Why it exists |
+|---|---|---|
+| `--kx-control-height-sm` | 30px | Compact controls need a second shared height; the existing 34px control height stays unchanged. |
+| `--kx-rail-width` | 264px | Navigation column width, including a resizer's inline override; the theme has no rail geometry. |
+| `--kx-reading-measure` | 880px | Maximum reading-column width; the theme has no prose measure. |
+| `--kx-row-height` | 32px | Navigation rows align across library views independently of control heights. |
+
+The chrome reuses `--kx-control-height`, `--kx-radius-6/8/14` and
+`--kx-surface-1/2`. Background, border, text, primary and severity colors read
+`--p-*` directly. Rail labels and search hints use the semantic muted text color;
+notice text uses the semantic text color while its icon, border and wash carry
+severity. Filled danger controls use the danger contrast token. The quieter text, transparent border and primary tint use
+`color-mix` directly where their proportions differ from an existing derived
+token; they do not introduce aliases. Focus reads `--p-focus-ring-color` and
+`--p-focus-ring-shadow`. Pills use 999px corners, chips 6px, controls 8px and
+surface/icon tiles 14px.
+
+### `kx-shell.css` — borderless navigation and reading area
+
+This sheet owns the rail/main split, with a capped rail above the main area at
+760px and below. It does not set the host height, choose a navigation model,
+resize the rail or supply application-specific rows.
+
+| Class | Purpose | Does not do | Adoption cost |
+|---|---|---|---|
+| `.kx-shell` | Grid with a rail and flexible main column | Set host height | Replace the two-column root rule; keep its flex ancestors sized |
+| `.kx-rail` | Vertical rail with a quiet surface and divider | Render navigation | Apply to the shell's first child; delete rail chrome |
+| `.kx-rail-body` | Scrollable, padded rail content | Select rows | Replace the rail scroll container rule |
+| `.kx-main` | Flexible main column with clipped overflow | Scroll its content | Apply to the shell's second child |
+| `.kx-main-scroll` | Reader gutter, vertical spacing and scrolling | Limit prose width | Replace the reader scroll rule; use the measure token for prose |
+| `.kx-railhead` | Title/actions row with divider | Supply actions | Replace the header row rule |
+| `.kx-railhead-title` | Uppercase label with tabular count in `b` | Count items | Rename the label and delete its typography rule |
+| `.kx-railhead-acts` | Tight icon-action row | Size icons | Rename the action container |
+| `.kx-railsec` | Divider between adjacent foldable groups | Own open state | Replace the group class; toggle `closed` from application state |
+| `.kx-railsec-h` | Full-width section toggle | Bind keyboard/click events | Apply to a button with `aria-expanded` |
+| `.kx-railsec-chev` | Rotating disclosure glyph | Toggle the group | Apply to the glyph; `closed` controls rotation |
+| `.kx-railsec-ic` | Optional section glyph size | Pick an icon | Rename the icon class |
+| `.kx-railsec-t` | Ellipsized section title | Supply a label | Rename the title class |
+| `.kx-railsec-b` | Section body spacing | Hide collapsed content | Replace padding rule; retain controlled visibility |
+
+The optional `.count` inside `.kx-railsec-h` aligns its numeric label at the end;
+it has no styling outside that header.
+
+### `kx-controls.css` — native library controls
+
+This sheet owns the geometry and paint of native buttons, search fields and
+labels. It does not own events, validation, accessible names or loading logic.
+It does not style `.p-button` or `.p-inputtext`.
+
+| Class | Purpose | Does not do | Adoption cost |
+|---|---|---|---|
+| `.kx-iconbtn` | 28px square glyph button | Supply a label | Rename the native button; retain `aria-label`; delete local rules |
+| `.kx-iconbtn.sm`, `.kx-iconbtn.lg` | 30px and 34px footprints | Change glyph size | Keep size modifiers on the same button |
+| `.kx-iconbtn.bordered` | Quiet bordered resting state | Change action semantics | Keep the modifier and remove local paint |
+| `.kx-iconbtn.on` | Selected primary tint | Manage selection | Keep the controlled modifier |
+| `.kx-iconbtn.danger` | Danger hover/selected tint | Confirm destructive work | Keep the modifier; retain confirmation behavior |
+| `.kx-btn` | Shared text-button size, spacing and disabled state | Choose a variant | Apply base plus a variant; delete local button rules |
+| `.kx-btn.sm` | Compact height and padding | Shorten the label | Keep the size modifier |
+| `.kx-btn-primary` | Filled primary action | Submit automatically | Apply with base and an explicit native type |
+| `.kx-btn-ghost` | Transparent bordered action | Remove its border | Apply with base |
+| `.kx-btn-soft` | Tinted primary action | Represent severity | Apply with base |
+| `.kx-btn-danger` | Filled danger action | Confirm an operation | Apply with base; retain confirmation behavior |
+| `.kx-search` | Relative field wrapper | Execute searches | Replace the wrapper rule |
+| `.kx-search-ico` | Leading search glyph | Provide an input label | Rename the icon class |
+| `.kx-search-input` | Sized text input and theme focus halo | Debounce or validate | Rename the input; retain its accessible label and events |
+| `.kx-search-clear` | Positioned clear button | Clear the value | Rename the button; retain its label and click behavior |
+| `.kx-chip` | Uppercase kind label with 6px corners | Encode status | Rename the label; delete its paint and sizing |
+| `.kx-count` | Compact tinted numeric pill | Calculate a count | Rename the pill; retain the value |
+
+### `kx-overlay.css` — notices and secondary surfaces
+
+This sheet owns appearance and transitions. It does not mount a portal, trap or
+restore focus, bind Escape, dismiss a surface, or set dialog semantics. Retain
+those behaviors in the consuming component. Transition names are `kx-modal`
+and `kx-drawer` for Vue's standard enter/leave class generation.
+
+| Class | Purpose | Does not do | Adoption cost |
+|---|---|---|---|
+| `.kx-notice` | Icon/text banner | Announce live updates | Rename the banner; retain appropriate ARIA behavior |
+| `.kx-notice.info`, `.warn`, `.error`, `.help` | Informational, warning, error and help paint | Infer severity | Keep the tone modifier; delete local tone rules |
+| `.kx-notice-action` | Small outlined banner action | Execute or retry work | Rename the native button; retain its handler |
+| `.kx-modal-mask` | Centered confirm scrim | Dismiss on click | Replace the scrim rule and keep dismissal behavior |
+| `.kx-modal` | 460px confirm surface with 14px corners | Implement a PrimeVue Dialog | Replace native surface chrome; retain dialog role and accessible name |
+| `.kx-modal.danger` | Danger icon treatment | Require confirmation | Keep the modifier when appropriate |
+| `.kx-modal-h` | Compact confirm header row | Add a close button | Rename the header container |
+| `.kx-modal-h-ico` | 34px header icon tile | Select an icon | Rename the icon wrapper |
+| `.kx-modal-h-text` | Flexible title/subtitle column | Supply text | Rename the text wrapper |
+| `.kx-modal-h-title` | Confirm title typography | Label the dialog automatically | Rename the title; retain dialog naming |
+| `.kx-modal-h-sub` | Ellipsized subtitle | Display full overflow text | Rename the subtitle |
+| `.kx-modal-body` | Confirm message spacing and type | Scroll a long editor | Replace the native body rule |
+| `.kx-modal-foot` | Divided, right-aligned action row | Order or bind buttons | Replace the native footer rule |
+| `.kx-modal-enter-active`, `.kx-modal-leave-active` | Fade duration | Mount/unmount | Rename the Vue transition to `kx-modal` |
+| `.kx-modal-enter-from`, `.kx-modal-leave-to` | Fade endpoints | Toggle visibility | Use the same transition name |
+| `.kx-drawer-mask` | Right-docked scrim clipped to its viewport | Dismiss or portal | Replace the scrim rule; retain its click behavior |
+| `.kx-drawer` | Full-height 560px panel with left divider | Manage focus | Replace panel chrome; retain dialog behavior |
+| `.kx-drawer-h` | Fixed drawer header row | Supply a close action | Rename the header |
+| `.kx-drawer-title` | Icon/title alignment and type | Name the dialog automatically | Rename the title; retain dialog naming |
+| `.kx-drawer-b` | Padded, scrolling drawer body | Render its content | Rename the scroll container |
+| `.kx-drawer-enter-active`, `.kx-drawer-leave-active` | Scrim fade and panel slide timing | Mount/unmount | Rename the Vue transition to `kx-drawer` |
+| `.kx-drawer-enter-from`, `.kx-drawer-leave-to` | Transparent scrim and translated panel endpoints | Bind open state | Use the same transition name |
+
+### `kx-state.css` — reader variants
+
+These extend the existing state vocabulary; importing the sheet preserves its
+original compact empty/loading defaults. There is no separate library state
+family. The controls sheet paints the CTA.
+
+| Class | Purpose | Does not do | Adoption cost |
+|---|---|---|---|
+| `.kx-empty.kx-empty-spacious` | Open-reader spacing and slightly smaller text in the existing title/sub/icon parts | Set host height | Replace the empty root; rename its children to `kx-empty-ico/title/sub` and delete local state rules |
+| `.kx-empty-ico.primary` | Bordered primary medallion | Indicate success | Keep the explicit tone modifier |
+| `.kx-empty-ico.muted` | Neutral medallion | Indicate failure | Keep the explicit tone modifier |
+| `.kx-empty-cta` | CTA spacing inside an empty state | Paint a button | Apply with `kx-btn kx-btn-primary`; import controls |
+| `.kx-loading.kx-loading-centered` | Fill and center a reader's loading state | Fetch data | Replace the loading root and delete local layout rules |
+| `.kx-loading-inner` | Vertical glyph/label group | Animate the glyph | Rename the inner wrapper; use `spin.css` for rotation |

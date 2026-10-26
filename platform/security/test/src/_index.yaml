@@ -598,6 +598,7 @@ entries:
       test: wippy.test:test
       policy_groups: kickside.security.service:policy_groups
       security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
 
   - name: policy_coverage_test
     kind: function.lua

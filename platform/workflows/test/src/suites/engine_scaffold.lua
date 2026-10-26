@@ -124,8 +124,9 @@ local function new(deps: any): Map
         return scope
     end
 
-    local function call_as(actor_id: string, args: any): (any, any?)
-        local actor, actor_err = security.new_actor(actor_id, {})
+    local function call_as(actor_id: string, args: any, actor_meta: any?): (any, any?)
+        local actor, actor_err = security.new_actor(actor_id,
+            type(actor_meta) == "table" and actor_meta or {})
         if actor_err or not actor then return nil, actor_err end
         return funcs.new()
             :with_actor(actor)
@@ -167,8 +168,10 @@ local function new(deps: any): Map
         }
     end
 
-    local function launch_as(actor_id: string, workflow_id: string, input: any, mode: string?): (any, any)
-        local launched, launch_err = call_as(actor_id, { op = "launch", workflow_id = workflow_id, input = input, mode = mode })
+    local function launch_as(actor_id: string, workflow_id: string, input: any, mode: string?, actor_meta: any?): (any, any)
+        local launched, launch_err = call_as(actor_id, {
+            op = "launch", workflow_id = workflow_id, input = input, mode = mode,
+        }, actor_meta)
         test.is_nil(launch_err)
         test.not_nil(launched)
         test.eq((launched :: Map).success, true)

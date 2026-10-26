@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.86](https://github.com/kicksideai/kickside/compare/sync-v0.1.85...sync-v0.1.86) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** restrict authority-bearing edits to the execution subject ([#68](https://github.com/kicksideai/kickside/issues/68)) ([aed8ab5](https://github.com/kicksideai/kickside/commit/aed8ab5ec044ff0cbe8fb1962a8c7caa44bd88b1))
+
 ## [0.1.85](https://github.com/kicksideai/kickside/compare/sync-v0.1.84...sync-v0.1.85) (2026-10-22)
 
 

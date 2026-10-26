@@ -55,6 +55,7 @@ entries:
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: worker_marker
     kind: library.lua
@@ -169,6 +170,7 @@ entries:
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: kickside.core.jobs.persist:worker_marker
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: completion
     kind: library.lua
@@ -198,6 +200,7 @@ entries:
       clock: kickside.core.jobs:clock
       thread_teardown: kickside.core.jobs.persist:thread_teardown
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: wake
     kind: library.lua

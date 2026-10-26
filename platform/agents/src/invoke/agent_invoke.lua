@@ -57,6 +57,17 @@ local function positive_int(value: any, default_value: integer, min_value: integ
     return n :: integer
 end
 
+-- An exit schema is the agent runtime's canonical typed-completion contract:
+-- it becomes the schema of its built-in finish tool. Keep the boundary narrow
+-- so callers cannot accidentally request an arbitrary non-object completion.
+local function completion_schema(value: any): (any?, string?)
+    if value == nil then return nil, nil end
+    if type(value) ~= "table" or (value :: Map).type ~= "object" then
+        return nil, "exit_schema must be an object JSON Schema"
+    end
+    return value, nil
+end
+
 local function string_list(raw: any, max_items: integer): { string }
     local out: { string } = {}
     local seen: { [string]: boolean } = {}
@@ -317,6 +328,8 @@ local function run_agent(req: any, deps: Deps?): (RunOk?, RunErr?)
     if trait_err then return nil, run_fail(trait_err, false) end
     local max_iterations = positive_int(config.max_iterations, 8, 1, MAX_ITERATIONS)
     local title = trim(config.title) ~= "" and trim(config.title) or resolved_agent_ref
+    local exit_schema, schema_err = completion_schema(config.exit_schema)
+    if schema_err then return nil, run_fail(schema_err, false) end
 
     -- Optional per-run overrides of the selected agent, empty when unset so the agent
     -- keeps its own configuration.
@@ -352,11 +365,17 @@ local function run_agent(req: any, deps: Deps?): (RunOk?, RunErr?)
     local agent_cfg: Map = {
         arena = {
             max_iterations = max_iterations,
-            tool_calling = "auto",
+            -- A typed completion must be the run's only possible terminal
+            -- result. The dataflow agent turns this into its built-in finish
+            -- tool and returns its validated arguments as structured data.
+            tool_calling = exit_schema and "any" or "auto",
             context = arena_context,
         },
         metadata = agent_metadata or { title = title .. " agent" },
     }
+    if exit_schema then
+        (agent_cfg.arena :: Map).exit_schema = exit_schema
+    end
     local run_result, run_err = flow_mod(deps).create()
         :with_title("Agent run: " .. title)
         :with_metadata(metadata)

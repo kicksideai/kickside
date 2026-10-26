@@ -170,7 +170,8 @@ type AccessMasks = {
 }
 
 function M.db_id(): string
-    local entry = select(1, registry.get(M.DB_CONFIG)) :: any
+    local entry, err = registry.get(M.DB_CONFIG)
+    if err then error(err) end
     return entry.meta.db_id :: string
 end
 

@@ -2,7 +2,7 @@ version: "1.0"
 namespace: app.deps
 
 entries:
-  - version: "*"
+  - version: ">=0.1.6"
     name: agent_onboarding
     kind: ns.dependency
     component: kickside/agent-onboarding
@@ -10,14 +10,14 @@ entries:
       - name: kickside.agent_onboarding:ui_server
         value: app:gateway
   # app.deps:agent
-  - version: "*"
+  - version: ">=0.5.9"
     name: agent
     kind: ns.dependency
     meta: {}
     component: wippy/agent
 
   # app.deps:bootloader
-  - version: "*"
+  - version: ">=0.3.18"
     name: bootloader
     kind: ns.dependency
     meta: {}
@@ -29,7 +29,7 @@ entries:
         value: app.env:store
 
   # app.deps:dataflow
-  - version: "*"
+  - version: ">=0.7.29"
     name: dataflow
     kind: ns.dependency
     meta: {}
@@ -39,7 +39,7 @@ entries:
         value: app:db
 
   # app.deps:facade
-  - version: "*"
+  - version: ">=0.6.47"
     name: facade
     kind: ns.dependency
     meta: {}
@@ -183,7 +183,7 @@ entries:
         value: "fs://css-variables.facade.json"
 
   # app.deps:keeper
-  - version: "*"
+  - version: ">=0.5.109"
     name: keeper
     kind: ns.dependency
     meta: {}
@@ -205,7 +205,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_agents
-  - version: '*'
+  - version: ">=0.2.3"
     name: kickside_agents
     kind: ns.dependency
     meta: {}
@@ -216,7 +216,7 @@ entries:
     - name: kickside.agents:ui_server
       value: app:gateway
 
-  - version: '*'
+  - version: ">=0.2.1"
     name: kickside_automation
     kind: ns.dependency
     meta: {}
@@ -229,7 +229,7 @@ entries:
     - name: kickside.automation:ui_server
       value: app:gateway
 
-  - version: "*"
+  - version: ">=0.1.38"
     name: kickside_blocks
     kind: ns.dependency
     meta: {}
@@ -239,7 +239,7 @@ entries:
         value: app:processes
 
   # app.deps:kickside_channel
-  - version: "*"
+  - version: ">=0.2.4"
     name: kickside_channel
     kind: ns.dependency
     meta: {}
@@ -253,7 +253,7 @@ entries:
         value: app:gateway
 
   # app.deps:kickside_component
-  - version: '*'
+  - version: ">=0.3.1"
     name: kickside_component
     kind: ns.dependency
     meta: {}
@@ -266,7 +266,7 @@ entries:
     - name: kickside.component:lifecycle_impl
       value: kickside.core.lifecycle:component_lifecycle_impl
 
-  - version: '*'
+  - version: ">=0.4.0"
     name: kickside_connection
     kind: ns.dependency
     meta: {}
@@ -277,7 +277,7 @@ entries:
     - name: kickside.connection:ui_server
       value: app:gateway
 
-  - version: '*'
+  - version: ">=0.3.1"
     name: kickside_contract
     kind: ns.dependency
     meta: {}
@@ -288,7 +288,7 @@ entries:
     - name: kickside.contract.http:user_security_scope
       value: app.security:unassigned_endpoints
 
-  - version: '*'
+  - version: ">=0.3.4"
     name: kickside_core
     kind: ns.dependency
     meta: {}
@@ -323,7 +323,7 @@ entries:
     - name: kickside.core.projections:api_router
       value: app:api
 
-  - version: '*'
+  - version: ">=0.1.61"
     name: kickside_jobs
     kind: ns.dependency
     meta: {}
@@ -334,7 +334,7 @@ entries:
     - name: kickside.core.jobs:process_host
       value: app:processes
 
-  - version: "*"
+  - version: ">=0.1.40"
     name: kickside_sso
     kind: ns.dependency
     meta: {}
@@ -351,7 +351,7 @@ entries:
       - name: kickside.sso:ui_server
         value: app:gateway
 
-  - version: "*"
+  - version: ">=0.1.14"
     name: kickside_sso_google
     kind: ns.dependency
     meta: {}
@@ -360,7 +360,7 @@ entries:
   # The upload pipeline discovers rasterizers by capability. Keep the canonical
   # PDF rasterizer as an explicit application root so sparse/scanned PDFs work
   # without requiring a separate Hub install.
-  - version: "*"
+  - version: ">=0.7.13"
     name: pdf2image
     kind: ns.dependency
     meta: {}

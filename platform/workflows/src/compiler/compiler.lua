@@ -7,6 +7,7 @@
 -- metadata.def_node_id, and injects the run input — this is what the launcher calls
 -- per run so each run is an independent dataflow.
 
+local json = require("json")
 local graph = require("graph")
 local materialize = require("materialize")
 local consts = require("consts")
@@ -53,7 +54,7 @@ end
 
 local function deep_copy(v: any): any
     if type(v) ~= "table" then return v end
-    local out: any = {}
+    local out: any = next(v) == nil and json.encode(v) == "{}" and table.create(0, 1) or {}
     for k, item in pairs(v :: { [any]: any }) do out[k] = deep_copy(item) end
     return out
 end

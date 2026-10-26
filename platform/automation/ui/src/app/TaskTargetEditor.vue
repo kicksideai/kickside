@@ -128,7 +128,7 @@ watch(() => props.modelValue.flow_ref, async (reference, _previous, onCleanup) =
   <div class="task-target">
     <label class="task-field">Target
       <select :value="kind" aria-label="Target kind" :disabled="disabled" @change="changeKind">
-        <option value="agent">Agent prompt</option>
+        <option v-if="kind === 'agent'" value="agent">Agent prompt (existing task)</option>
         <option value="workflow">Published workflow</option>
         <option value="action">Writable action</option>
       </select>

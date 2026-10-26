@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { relativeTime } from '@widgets/app/datetime'
-import { fmtNum, fmtBytes, moduleAccent, moduleIcon, isAppModule } from '../lib.ts'
+import { fmtNum, fmtBytes, formatLicense, moduleAccent, moduleIcon, isAppModule } from '../lib.ts'
 import type { useModulesPage } from './useModulesPage.ts'
 
 type ModulesPageState = ReturnType<typeof useModulesPage>
@@ -66,7 +66,7 @@ const selected = computed(() => props.page.selected.value!)
             <section class="d-block">
               <div class="d-row"><Icon icon="tabler:download" class="d-row-i" aria-hidden="true" /><span class="d-row-k">Downloads</span><span class="d-row-v">{{ fmtNum(selectedModule?.total_downloads) }}</span></div>
               <div v-if="selectedModule?.favorites_count" class="d-row"><Icon icon="tabler:star" class="d-row-i" aria-hidden="true" /><span class="d-row-k">Favorites</span><span class="d-row-v">{{ selectedModule.favorites_count }}</span></div>
-              <div v-if="selectedModule?.license" class="d-row"><Icon icon="tabler:license" class="d-row-i" aria-hidden="true" /><span class="d-row-k">License</span><span class="d-row-v">{{ selectedModule.license }}</span></div>
+              <div v-if="selectedModule?.license" class="d-row"><Icon icon="tabler:license" class="d-row-i" aria-hidden="true" /><span class="d-row-k">License</span><span class="d-row-v" :title="selectedModule.license">{{ formatLicense(selectedModule.license) }}</span></div>
               <div v-if="selectedModule?.type" class="d-row"><Icon icon="tabler:category" class="d-row-i" aria-hidden="true" /><span class="d-row-k">Type</span><span class="d-row-v">{{ selectedModule.type }}</span></div>
               <div v-if="selectedIsPrivate" class="d-row"><Icon icon="tabler:lock" class="d-row-i" aria-hidden="true" /><span class="d-row-k">Visibility</span><span class="d-row-v">Private</span></div>
               <div v-if="selectedModule?.update_time" class="d-row"><Icon icon="tabler:clock" class="d-row-i" aria-hidden="true" /><span class="d-row-k">Updated</span><span class="d-row-v">{{ relativeTime(selectedModule.update_time, { maxUnit: 'year' }) }}</span></div>
