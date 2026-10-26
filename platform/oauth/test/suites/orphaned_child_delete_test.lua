@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+
 -- An OAuth component may outlive its owned credentials after a prior cleanup
 -- completes the child delete but cannot finish unregistering the component. The
 -- normal, access-gated component delete must release that orphan without
