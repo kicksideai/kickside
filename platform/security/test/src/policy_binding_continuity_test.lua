@@ -36,8 +36,15 @@ local function define_tests()
                     test.eq(scope:evaluate(security.new_actor("member"), "read", "record:1"), "allow")
                     test.eq(scope:evaluate(security.new_actor("member"), "read", "record:outside"), "undefined")
                     for _, entry in ipairs(assert(registry.find({[".kind"] = "security.policy"}))) do
-                        test.is_nil((entry.meta or {}).scope_projection_policy)
-                        test.neq((entry.meta or {}).scope_metadata, true)
+                        local meta = entry.meta or {}
+                        test.is_false(selected[meta.scope_projection_policy] == true,
+                            "new source selection creates a copied policy")
+                        if meta.scope_metadata == true then
+                            for _, group in ipairs((entry.data or {}).groups or {}) do
+                                test.neq(group, "kickside.security.scopes:" .. slug,
+                                    "new source selection creates metadata grants")
+                            end
+                        end
                     end
                 end)
                 test.is_true(assert(scopes.delete(slug)))
