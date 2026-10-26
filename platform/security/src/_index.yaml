@@ -137,8 +137,6 @@ entries:
         path: .meta.target_db
       - entry: kickside.security.migrations:05_group_set_revisions
         path: .meta.target_db
-      - entry: kickside.security.migrations:06_source_scopes
-        path: .meta.target_db
       - entry: kickside.security:db_config
         path: .meta.db_id
       - entry: kickside.security.service:group_set_db

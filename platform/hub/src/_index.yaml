@@ -22,7 +22,7 @@ entries:
     meta:
       comment: Hub uses Keeper's registry-backed dependency inventory and mutation APIs.
     component: keeper/keeper
-    version: ">=0.5.104"
+    version: ">=0.5.110"
 
   - name: dep.kickside.agents
     kind: ns.dependency

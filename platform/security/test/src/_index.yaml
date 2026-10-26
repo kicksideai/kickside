@@ -774,23 +774,16 @@ entries:
       scope_store: kickside.security.persist:scope_store
       execution_identity: kickside.execution:execution_identity
 
-  - name: retire_source_bindings
-    kind: function.lua
-    source: file://source_scope_migration.lua
-    method: retire_generated
-    modules: [registry]
-    imports:
-      migration: wippy.migration:migration
-      security_consts: kickside.security:security_consts
-  - name: source_scope_upgrade_test
+  - name: native_scope_compatibility_test
     kind: function.lua
     meta: {type: test, suite: kickside_security}
-    source: file://source_scope_upgrade_test.lua
+    source: file://native_scope_compatibility_test.lua
     method: run
-    modules: [registry, funcs]
+    modules: [security, channel, time]
     imports:
       test: wippy.test:test
-      security_consts: kickside.security:security_consts
+      scope_writer: app:registry_fixture
+      source_scope: app:source_scope
 
   - name: source_scope_decisions_test
     kind: function.lua

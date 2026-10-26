@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import { keeperHub } from '../keeper-hub.ts'
+import { keeperHub, type HubInstallPlan } from '../keeper-hub.ts'
 import { errorMessage, resolvedDependencyVersion } from '../lib.ts'
 import type { InstalledRow, UpdateInfo, UpdateStatus } from './modules-page.types.ts'
 
@@ -22,7 +22,7 @@ export function useModuleUpdates({ hub, installed, installedError, installedCanU
   const availableUpdates = computed(() => installed.value.filter(dep => {
     const info = updateInfoForDep(dep)
     return installedCanUpdate(dep) && installedIsRoot(dep) && info
-      && ['available', 'failed', 'blocked'].includes(info.status)
+      && ['available', 'failed', 'blocked', 'skipped'].includes(info.status)
       && isNewerVersion(info.latestVersion, resolvedDependencyVersion(dep))
   }))
 
@@ -84,6 +84,8 @@ function updateStatusLabel(dep: InstalledRow): string {
   const info = updateInfoForDep(dep)
   if (!info) return ''
   if (info.status === 'available') return `${info.currentVersion || '?'} → ${info.latestVersion || '?'}`
+  if (info.status === 'queued') return 'queued'
+  if (info.status === 'skipped') return 'skipped'
   if (info.status === 'planning') return 'planning'
   if (info.status === 'updating') return 'updating'
   if (info.status === 'updated') return 'updated'
@@ -96,6 +98,8 @@ function updateStatusIcon(dep: InstalledRow): string {
   const status = updateInfoForDep(dep)?.status
   if (status === 'planning' || status === 'updating') return 'tabler:loader-2'
   if (status === 'updated') return 'tabler:check'
+  if (status === 'queued') return 'tabler:clock'
+  if (status === 'skipped') return 'tabler:player-skip-forward'
   if (status === 'blocked') return 'tabler:lock'
   if (status === 'failed') return 'tabler:alert-triangle'
   return 'tabler:arrow-up-circle'
@@ -142,14 +146,10 @@ async function scanInstalledUpdates() {
   }
 }
 
-type PlannedRootUpdate =
-  | { ok: true; version: string }
-  | { ok: false; reason: 'blocked' | 'failed'; message: string }
-
 // Plan one installed root's update to `version`. Marks the row planning while
 // the planner runs and records why it cannot proceed; the caller decides what
 // a refusal means for the rest of its batch.
-async function planRootUpdate(component: string, version: string): Promise<PlannedRootUpdate> {
+async function planRootUpdate(component: string, version: string): Promise<HubInstallPlan | null> {
   setUpdateInfo(component, { status: 'planning', message: undefined })
   try {
     const plan = await hub!.planInstall({ component, version, run_migrations: true })
@@ -157,24 +157,13 @@ async function planRootUpdate(component: string, version: string): Promise<Plann
     if (missing.length) {
       const message = `Missing required settings: ${missing.join(', ')}`
       setUpdateInfo(component, { status: 'blocked', message })
-      return { ok: false, reason: 'blocked', message }
+      return null
     }
-    return { ok: true, version }
+    return plan
   } catch (e: unknown) {
     const message = errorMessage(e, 'update plan failed')
     setUpdateInfo(component, { status: 'failed', message })
-    return { ok: false, reason: 'failed', message }
-  }
-}
-
-// A row whose update never started must not keep a spinner: planning and
-// updating are transient, and only this call ends them.
-function clearTransientUpdates(rows: InstalledRow[]): void {
-  for (const dep of rows) {
-    const status = updateInfoForDep(dep)?.status
-    if (status === 'planning' || status === 'updating') {
-      setUpdateInfo(dep.component, { status: 'available', message: undefined })
-    }
+    return null
   }
 }
 
@@ -202,14 +191,16 @@ async function updateInstalledDependency(dep: InstalledRow): Promise<boolean> {
   try {
     const version = trackingConstraint(info.latestVersion)
     const planned = await planRootUpdate(dep.component, version)
-    if (!planned.ok) return false
-    setUpdateInfo(dep.component, { status: 'updating' })
-    await hub.install({
+    if (!planned) return false
+    const installing = hub.install({
+      ...planned.install_payload,
       component: dep.component,
       version,
       run_migrations: true,
       migration_policy: 'up',
     })
+    setUpdateInfo(dep.component, { status: 'updating' })
+    await installing
     setUpdateInfo(dep.component, {
       status: 'updated',
       currentVersion: info.latestVersion,
@@ -229,61 +220,53 @@ async function updateAllAvailable() {
   updateAllRunning.value = true
   const pending = [...availableUpdates.value]
   try {
-    const dependencies = []
-    let refusal: 'blocked' | 'failed' | null = null
-    for (const dep of pending) {
-      const info = updateInfoForDep(dep)
-      if (!info?.latestVersion) continue
-      const planned = await planRootUpdate(dep.component, trackingConstraint(info.latestVersion))
-      if (!planned.ok) {
-        // One root that cannot be planned ends the batch: this install is
-        // atomic, so a partial set is not an outcome worth sending.
-        refusal = planned.reason
+    for (const dep of pending) setUpdateInfo(dep.component, { status: 'queued' })
+    const unsuccessful: InstalledRow[] = []
+    const updated: string[] = []
+    const failed: string[] = []
+    const skipped: string[] = []
+    while (pending.length) {
+      // used_by contains the installed roots whose dependency closure reaches
+      // this module, including roots that are themselves dependencies.
+      const index = pending.findIndex(dep => !pending.some(other =>
+        other.used_by?.includes(dep.component)))
+      if (index < 0) throw new Error(`Cannot order module updates: dependency cycle among ${pending.map(dep => dep.component).join(', ')}`)
+      const [dep] = pending.splice(index, 1)
+      const unavailable = unsuccessful.filter(other => other.used_by?.includes(dep.component))
+      if (unavailable.length) {
+        const message = `Dependency update failed: ${unavailable.map(other => other.component).join(', ')}`
+        setUpdateInfo(dep.component, { status: 'skipped', message })
+        unsuccessful.push(dep)
+        skipped.push(`${dep.component}: ${message}`)
         continue
       }
-      dependencies.push({ component: dep.component, version: planned.version, run_migrations: true })
-      setUpdateInfo(dep.component, { status: 'updating', message: undefined })
-    }
-
-    if (refusal) {
-      clearTransientUpdates(pending)
-      showToast('error', refusal === 'blocked'
-        ? 'Update all is blocked by required settings'
-        : 'Update all stopped: a module could not be planned')
-      return
-    }
-
-    if (dependencies.length === 0) {
-      showToast('error', 'No updates could be applied')
-      return
-    }
-
-    await hub!.install({ dependencies, run_migrations: true, migration_policy: 'up' })
-    for (const dep of pending) {
-      const info = updateInfoForDep(dep)
-      if (info?.status !== 'updating') continue
-      setUpdateInfo(dep.component, {
-        status: 'updated',
-        currentVersion: info.latestVersion,
-        latestVersion: info.latestVersion,
-        message: undefined,
-      })
-    }
-    notifyModulesChanged()
-    showToast('ok', `Updated ${dependencies.length} module${dependencies.length === 1 ? '' : 's'}`)
-    await refreshAll()
-    await refreshSelectedDetail()
-  } catch (e: unknown) {
-    const message = errorMessage(e, 'update failed')
-    for (const dep of pending) {
-      if (updateInfoForDep(dep)?.status === 'updating') {
+      if (await updateInstalledDependency(dep)) {
+        updated.push(dep.component)
+      } else {
+        const message = updateInfoForDep(dep)?.message || 'update failed'
         setUpdateInfo(dep.component, { status: 'failed', message })
+        unsuccessful.push(dep)
+        failed.push(`${dep.component}: ${message}`)
       }
     }
-    clearTransientUpdates(pending)
+    showToast(failed.length || skipped.length ? 'error' : 'ok', [
+      `Updated ${updated.length}${updated.length ? `: ${updated.join(', ')}` : ''}`,
+      `Failed ${failed.length}${failed.length ? `: ${failed.join('; ')}` : ''}`,
+      `Skipped ${skipped.length}${skipped.length ? `: ${skipped.join('; ')}` : ''}`,
+    ].join('. '))
+  } catch (e: unknown) {
+    const message = errorMessage(e, 'update failed')
+    for (const dep of pending) setUpdateInfo(dep.component, { status: 'failed', message })
     showToast('error', message)
   } finally {
-    updateAllRunning.value = false
+    try {
+      await refreshAll()
+      await refreshSelectedDetail()
+    } catch (e: unknown) {
+      showToast('error', `Module status could not be refreshed: ${errorMessage(e, 'refresh failed')}`)
+    } finally {
+      updateAllRunning.value = false
+    }
   }
 }
 

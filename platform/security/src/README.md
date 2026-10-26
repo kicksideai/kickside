@@ -50,8 +50,9 @@ projection service updates their `security.scope` catalog entries on reconcile.
 
 Session minting unions native policies from every built-in membership with the
 source IDs selected by the user's custom scopes, then creates one native scope.
-It creates no policy copies, metadata grants, or union-group entries. The scope
-catalog continues to merge DB selections, role descriptors, and built-in groups.
+It creates no per-login union-group entries. Native compatibility bindings
+remain projected for existing application calls to `security.named_scope`. The
+scope catalog continues to merge DB selections, role descriptors, and built-in groups.
 
 The projector writes Security-owned custom-scope descriptors and derived routing
 entries in `kickside.security.projection`. It never updates another owner's
@@ -71,8 +72,9 @@ same live lookup and keep their bearer tokens.
 
 Changes to a custom scope's policy set, target, or enabled state fence affected
 users through the existing authority epochs before the write. Membership changes
-also advance those epochs. Policy-body coverage proofs are not part of this
-protocol. Native policy edits take effect through native policy resolution.
+also advance those epochs. These pre-write fences do not use policy-body
+coverage proofs. Native compatibility projection retains its existing reduction
+fencing and coverage evidence for callers using named scopes.
 The separate explicit session-invalidation API retains its existing `allow_only`
 coverage contract for native groups; custom-scope writes do not call it.
 
@@ -81,10 +83,12 @@ During staged upgrades, the existing
 and registered bindings remain supported. Older Users versions continue to
 receive a stable scope containing the union of all their memberships. The legacy
 projector retains reduction fencing and binding identities for these registered
-sets; new resolver callers do not register sets or create policy copies.
-Migration 06 removes generated policies only when there are no registered legacy
-sets. Its registration check uses the migration transaction directly. Retirement
-of the old API and table requires a separate consumer-compatibility decision.
+sets. New resolver callers do not register union groups. Native bindings for
+composed application scopes and custom scopes remain available through
+`security.named_scope`; the resolver reads their source IDs instead of
+using the generated copies as its authorization input. This rollout contains no
+retirement migration. Removing the old API/table or native bindings requires a
+separate compatibility decision.
 
 ## Requirements
 
@@ -110,3 +114,9 @@ to `kickside.users.persist:delegation_fencer`. Hosts can bind another fencing
 operation. Existing `sessions_invalidator` bindings retain session and account
 revocation. Execution identity resolves current source IDs and captures those
 IDs in new authority snapshots; existing snapshots remain issuance audit data.
+
+## Runtime compatibility
+
+The live source-policy API is qualified on released Runtime 0.3.54a or newer.
+Use that Runtime before switching Users to selected-policy authority. The
+retained materialization entry point supports staged Users upgrades.

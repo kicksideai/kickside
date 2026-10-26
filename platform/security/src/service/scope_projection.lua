@@ -18,7 +18,7 @@ local policy_groups = require("policy_groups")
 
 local M = {}
 
-local function fence_delegations(groups, allow_only, previous_group_rules)
+local function fence_delegations(groups, allow_only, previous_group_rules, reason: string?)
     if #groups == 0 then return true, nil end
     local config, config_err = registry.get("kickside.security:composition_config")
     if config_err then return nil, config_err end
@@ -28,7 +28,7 @@ local function fence_delegations(groups, allow_only, previous_group_rules)
     if type(id) ~= "string" or id == "" then return nil, (errors.new({kind = errors.UNAVAILABLE,
         retryable = true, message = "host delegation fencer is unconfigured"}) :: error) end
     local result, err = funcs.call(id, {group_ids = groups, allow_only = allow_only == true,
-        previous_group_rules = previous_group_rules, reason = "group policy composition changes"})
+        previous_group_rules = previous_group_rules, reason = reason or "group policy composition changes"})
     if err then return nil, err end
     if not result or result.success ~= true then
         return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
@@ -56,10 +56,10 @@ local function native_group_policies(snap)
     local effective = {}
     for _, policy in ipairs(native) do
         if (policy.meta or {}).managed_by ~= consts.MANAGED_BY then
-        for _, group in ipairs((policy.data or {}).groups or {}) do
-            effective[group] = effective[group] or {}
-            effective[group][tostring(policy.id)] = true
-        end
+            for _, group in ipairs((policy.data or {}).groups or {}) do
+                effective[group] = effective[group] or {}
+                effective[group][tostring(policy.id)] = true
+            end
         end
     end
     return effective, nil
@@ -288,19 +288,11 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
     for group in pairs(affected) do fences[#fences + 1] = group end
     table.sort(fences)
 
-    local legacy_scopes = {}
-    for _, set in ipairs(registered) do
-        legacy_scopes[set.scope_name] = group_policies[set.scope_name]
-        for _, group in ipairs(set.groups) do
-            legacy_scopes[group] = group_policies[group] or ids(native[group] or {})
-        end
-    end
-    local bindings = {creates = {}, updates = {}, deletes = {}, reduced_groups = {}, allow_only = true, previous_group_rules = {}}
-    if #registered > 0 then
-        local bindings_err
-        bindings, bindings_err = policy_groups.plan(legacy_scopes, effective, snap)
-        if bindings_err then return nil, bindings_err end
-    end
+    -- Native named scopes remain a public application contract. Keep the
+    -- existing projection for every composed group; the live resolver uses
+    -- source IDs without creating a per-login union group.
+    local bindings, bindings_err = policy_groups.plan(group_policies, effective, snap)
+    if bindings_err then return nil, bindings_err end
     local created, updated, deleted = #creates, #updates, #deletes
     for _, entry in ipairs(bindings.creates) do creates[#creates + 1] = entry end
     for _, entry in ipairs(bindings.updates) do updates[#updates + 1] = entry end
@@ -340,22 +332,7 @@ end
 -- fence(groups) closes the delegated authority of groups whose rules a caller
 -- reduced with its own registry write.
 function M.fence(groups)
-    if #groups == 0 then return true, nil end
-    local config, config_err = registry.get("kickside.security:composition_config")
-    if config_err then return nil, config_err end
-    local id = config and config.meta and config.meta.delegation_fencer
-    if type(id) ~= "string" or id == "" then
-        return nil, errors.new({kind = errors.UNAVAILABLE, retryable = true,
-            message = "host delegation fencer is unconfigured"})
-    end
-    local result, err = funcs.call(id, {group_ids = groups, allow_only = false,
-        reason = "scope authority changes"})
-    if err then return nil, err end
-    if not result or result.success ~= true then
-        return nil, errors.new({kind = errors.INTERNAL, retryable = false,
-            message = "group delegation fencing failed: " .. tostring(result and result.error)})
-    end
-    return true, nil
+    return fence_delegations(groups, false, nil, "scope authority changes")
 end
 
 local function validate_groups(groups)

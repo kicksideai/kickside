@@ -42,7 +42,7 @@ return {run = test.run_cases(function()
                 local generated = assert(registry.find({[".kind"] = "security.policy",
                     ["meta.scope_projection_policy"] = "app:staged_selected_grant"}))
                 test.eq(#generated, 1)
-                test.is_true(assert(funcs.call("app:retire_source_bindings", true)))
+                assert(trigger.trigger())
                 test.not_nil(assert(registry.get(tostring(generated[1].id))))
                 assert(store.upsert({slug = slug, policies = {}}))
                 assert(trigger.trigger())
@@ -64,7 +64,7 @@ return {run = test.run_cases(function()
             if not ok then error(failure) end
         end)
 
-        test.it("resolves source IDs without registering or copying a new group set", function()
+        test.it("resolves source IDs without registering a new group set", function()
             local original = assert(registry.current_version())
             local slug = "staged_source_only"
             local projector
@@ -81,8 +81,7 @@ return {run = test.run_cases(function()
                 test.eq(#selected.groups, 0)
                 test.eq(selected.policy_ids[1], "app:staged_unbound_source")
                 test.eq(#assert(group_sets.list()), previous)
-                test.eq(#assert(registry.find({[".kind"] = "security.policy",
-                    ["meta.scope_projection_policy"] = "app:staged_unbound_source"})), 0)
+
             end)
             if projector then
                 assert(store.delete(slug))
