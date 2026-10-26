@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.13](https://github.com/kicksideai/kickside/compare/security-v0.2.12...security-v0.2.13) (2026-10-26)
+
+
+### Bug Fixes
+
+* **security:** expose live scope resolution during staged upgrades ([db3c54d](https://github.com/kicksideai/kickside/commit/db3c54d66cc2dfc17da33040357e1decee522bf8))
+* **security:** expose live scope resolution during staged upgrades ([ed39a5e](https://github.com/kicksideai/kickside/commit/ed39a5e7f85a9a2f3669853dc63b508af5ebb9a3))
+* **security:** preserve native scopes alongside source resolution ([39de48e](https://github.com/kicksideai/kickside/commit/39de48e1964617fad60b36873f78e0cbbe6d1584))
+
 ## [0.2.12](https://github.com/kicksideai/kickside/compare/security-v0.2.11...security-v0.2.12) (2026-10-26)
 
 

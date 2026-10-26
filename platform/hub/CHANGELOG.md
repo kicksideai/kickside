@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.67](https://github.com/kicksideai/kickside/compare/hub-v0.1.66...hub-v0.1.67) (2026-10-26)
+
+
+### Bug Fixes
+
+* **hub:** require released sequential-update planner ([0e7d001](https://github.com/kicksideai/kickside/commit/0e7d00102e5ae272ae8d5cfdf918af4304ea584b))
+* **hub:** update modules one by one in dependency order ([98e5a49](https://github.com/kicksideai/kickside/commit/98e5a496080ea62e893d321d1a7b6214e6c3330f))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/hub-v0.1.65...hub-v0.1.66) (2026-10-25)
 
 
