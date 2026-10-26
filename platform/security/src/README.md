@@ -110,3 +110,9 @@ to `kickside.users.persist:delegation_fencer`. Hosts can bind another fencing
 operation. Existing `sessions_invalidator` bindings retain session and account
 revocation. Execution identity resolves current source IDs and captures those
 IDs in new authority snapshots; existing snapshots remain issuance audit data.
+
+## Runtime compatibility
+
+The live source-policy API is qualified on released Runtime 0.3.54a or newer.
+Use that Runtime before switching Users to selected-policy authority. The
+retained materialization entry point supports staged Users upgrades.
