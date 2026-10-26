@@ -142,8 +142,8 @@ local function define_tests()
             test.not_nil(projected, "policy reduction reconciled before issuing a new session")
             local current = login()
             test.eq(assert(user_repo.get(uid)).auth_generation, before)
-            test.eq(assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation, delegation_before,
-                "native rule updates resolve directly without a custom selection mutation")
+            test.eq(assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation, delegation_before + 1,
+                "native compatibility reduction fences delegations without changing login authentication")
             local tokens = assert(security.token_store("kickside.users.security:tokens"))
             for _, token in ipairs({older, current}) do
                 local actor, scope, validate_err = tokens:validate(token)
@@ -240,14 +240,14 @@ local function define_tests()
             test.not_nil(deleted)
         end)
 
-        test.it("does not expose the retired group materialization function", function()
+        test.it("keeps legacy group materialization unavailable to an ordinary caller", function()
             local policy = assert(security.policy("app:projection_caller"))
             local scope = assert(security.new_scope({policy}))
             local bound = assert(funcs.new()):with_actor(security.new_actor("ordinary_member")):with_scope(scope)
             local result, err = bound:call("kickside.security.binding:materialize_group_set", {
                 groups = {"app.security:admin", "app.security:user"}})
             test.is_nil(result)
-            test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
+            test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
         end)
 
         test.it("rejects an existing membership whose policy group is removed without an internal error", function()

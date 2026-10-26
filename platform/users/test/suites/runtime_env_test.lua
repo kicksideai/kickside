@@ -87,7 +87,7 @@ local function define_tests()
             local policies, read_err = registry.find({[".kind"] = "security.policy",
                 ["meta.scope_projection_policy"] = tostring(entry.id)})
             test.is_nil(read_err)
-            test.eq(#policies, 0, "member scopes keep source IDs without generated bindings")
+            test.eq(#policies, 1, "native member scopes retain their compatibility binding")
         end)
     end)
 end
