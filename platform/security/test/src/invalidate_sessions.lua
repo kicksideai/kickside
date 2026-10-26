@@ -10,7 +10,7 @@ local function record(request, operation)
     local calls = records:get("calls") or {}
     local scope = source_scope.resolve(request.group_ids[1])
     local decision = scope and scope:evaluate(security.new_actor("probe", {}), "access", "app:module.endpoint") or "undefined"
-    calls[#calls + 1] = {operation = operation, groups = request.group_ids, decision = decision, allow_only = request.allow_only,
+    calls[#calls + 1] = {reason = request.reason, operation = operation, groups = request.group_ids, decision = decision, allow_only = request.allow_only,
         preserve_sessions = request.preserve_sessions, previous_group_rules = request.previous_group_rules}
     records:set("calls", calls)
     local fail_at = records:get("fail_at")

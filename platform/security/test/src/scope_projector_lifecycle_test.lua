@@ -93,13 +93,13 @@ local function projected_replacement(group: string, old_resource: string, new_re
     local deadline = time.now():add(5 * time.SECOND)
     local scope, calls
     while time.now():before(deadline) do
-        scope = assert(source_scope.resolve(group))
+        scope = assert(security.named_scope(group))
         local records = assert(storage.get("app:invalidation_records"))
         calls = records:get("calls") or {}
         records:release()
         if scope:evaluate(security.new_actor("member"), "access", old_resource) == "undefined"
             and scope:evaluate(security.new_actor("member"), "access", new_resource) == "allow"
-            then break end
+            and #calls > 0 then break end
         time.sleep("25ms")
     end
     return scope, calls
@@ -277,7 +277,8 @@ local function define_tests()
                 "the members group retains a removed policy")
             test.eq(updated_scope:evaluate(security.new_actor("member"), "access", new_resource), "allow",
                 "the members group never receives a replacement policy")
-            test.eq(#calls, 0, "native policy replacement needs no coverage proof")
+            test.eq(#calls, 1, "native compatibility replacement retains reduction fencing")
+            test.eq(calls[1].allow_only, true)
         end)
 
         test.it("removes a missing composition source from a live direct member group after its registry commit", function()
@@ -309,8 +310,15 @@ local function define_tests()
             test.eq(old_scope:evaluate(security.new_actor("member"), "access", old_resource), "allow",
                 "the direct member group never projects its initial policy")
 
-            local generated = assert(registry.find({[".kind"] = "security.policy", ["meta.scope_projection_policy"] = old_id}))
-            test.eq(#generated, 0, "scope composition creates no copied policies")
+            local generated
+            deadline = time.now():add(5 * time.SECOND)
+            while time.now():before(deadline) do
+                generated = assert(registry.find({ [".kind"] = "security.policy",
+                    ["meta.scope_projection_policy"] = old_id }))
+                if #generated == 1 then break end
+                time.sleep("25ms")
+            end
+            test.eq(#generated, 1, "the original policy was never materialized for the composed group")
 
             local records = assert(storage.get("app:invalidation_records"))
             records:set("calls", {})
@@ -327,7 +335,8 @@ local function define_tests()
                 "the direct member group retains a removed composition policy")
             test.eq(updated_scope:evaluate(security.new_actor("member"), "access", new_resource), "allow",
                 "the direct member group never receives a replacement policy")
-            test.eq(#calls, 0, "native policies resolve directly after source replacement")
+            test.eq(#calls, 1, "native compatibility source replacement retains reduction fencing")
+            test.eq(calls[1].allow_only, true)
         end)
 
         -- A scope saved during a pass references a policy the pass's snapshot

@@ -11,6 +11,16 @@ local time = require("time")
 local storage = require("store")
 local security = require("security")
 
+-- Source-row writes fence before mutation. Native compatibility projection
+-- also retains its existing post-projection coverage fence for older consumers.
+local function source_fences(records)
+    local out = {}
+    for _, call in ipairs(records:get("calls") or {}) do
+        if call.reason == "scope authority changes" then out[#out + 1] = call end
+    end
+    return out
+end
+
 -- Exercises the DB -> security.scope projection (the event-driven reconcile the
 -- admin write endpoints trigger). DB is authoritative; reconcile creates/updates/
 -- deletes the projected registry entry to match enabled rows, idempotently.
@@ -286,7 +296,9 @@ local function define_tests()
                 for _, id in ipairs({before_id, first_id, second_id}) do changes:delete(id) end
                 test.is_nil(select(2, changes:apply()))
                 records:release()
-                test.eq(#calls, 1)
+                test.eq(#calls, 2)
+                test.eq(calls[1].reason, "scope authority changes")
+                test.eq(calls[2].reason, "group policy composition changes")
                 for _, call in ipairs(calls) do
                     test.eq(#call.groups, 1)
                     test.eq(call.groups[1], consts.CUSTOM_SCOPE_NS .. ":" .. slug)
@@ -312,7 +324,8 @@ local function define_tests()
             test.is_nil(reconcile_err)
             test.not_nil(result)
             local calls = records:get("calls") or {}
-            test.eq(#calls, 0)
+            test.eq(#calls, 1)
+            test.eq(calls[1].reason, "group policy composition changes")
             local current = assert(source_scope.resolve(consts.CUSTOM_SCOPE_NS .. ":policy_body_change"))
             local actor = security.new_actor("member")
             test.eq(current:evaluate(actor, "access", "app:module.endpoint"), "undefined")
@@ -413,7 +426,7 @@ local function define_tests()
             result, reconcile_err = trigger_reconcile.trigger()
             test.is_nil(reconcile_err)
             test.not_nil(result)
-            local calls = records:get("calls")
+            local calls = source_fences(records)
             test.eq(#calls, 1)
             test.eq(calls[1].groups[1], consts.CUSTOM_SCOPE_NS .. ":" .. slug)
             test.eq(calls[1].allow_only, false)
@@ -429,7 +442,7 @@ local function define_tests()
             records:set("calls", {})
             test.not_nil((store.upsert({slug = expanding, policies = {"app:module_access"}}, "tester")))
             test.not_nil((trigger_reconcile.trigger()))
-            test.eq(#(records:get("calls") or {}), 1)
+            test.eq(#(source_fences(records)), 1)
             local actor = security.new_actor("expansion_member")
             local scope = assert(source_scope.resolve(consts.CUSTOM_SCOPE_NS .. ":" .. expanding))
             test.eq(scope:evaluate(actor, "access", "app:module.endpoint"), "allow")
@@ -439,7 +452,7 @@ local function define_tests()
             test.not_nil((store.upsert({slug = expanding, policies = {"app:module_access"}}, "tester")))
             test.not_nil((store.upsert({slug = reducing, policies = {}}, "tester")))
             test.not_nil((trigger_reconcile.trigger()))
-            local calls = records:get("calls") or {}
+            local calls = source_fences(records)
             test.eq(#calls, 2)
             test.eq(#calls[1].groups, 1)
             test.eq(calls[1].groups[1], consts.CUSTOM_SCOPE_NS .. ":" .. expanding)
@@ -462,7 +475,7 @@ local function define_tests()
             records:set("calls", {})
             test.not_nil((store.upsert({slug = slug, policies = {"app:module_access", policy_id}}, "tester")))
             test.not_nil((trigger_reconcile.trigger()))
-            local calls = records:get("calls") or {}
+            local calls = source_fences(records)
             test.eq(#calls, 1)
             test.eq(#calls[1].groups, 1)
             test.eq(calls[1].groups[1], consts.CUSTOM_SCOPE_NS .. ":" .. slug)
@@ -473,7 +486,7 @@ local function define_tests()
             records:set("calls", {})
             test.not_nil((store.upsert({slug = slug, policies = {"app:module_access"}}, "tester")))
             test.not_nil((trigger_reconcile.trigger()))
-            test.eq(#(records:get("calls") or {}), 1)
+            test.eq(#(source_fences(records)), 1)
             test.eq(assert(source_scope.resolve(consts.CUSTOM_SCOPE_NS .. ":" .. slug))
                 :evaluate(actor, "access", "app:module.endpoint"), "allow")
             test.is_true((store.delete(slug)))
@@ -503,15 +516,18 @@ local function define_tests()
             result, reconcile_err = trigger_reconcile.trigger()
             test.is_nil(reconcile_err)
             local calls = records:get("calls")
-            test.eq(#calls, 1)
+            test.eq(#calls, 2)
+            test.eq(calls[1].reason, "scope authority changes")
+            test.eq(calls[2].reason, "group policy composition changes")
             test.eq(calls[1].groups[1], consts.CUSTOM_SCOPE_NS .. ":" .. slug)
             test.eq(calls[1].decision, "allow")
             test.eq(calls[1].allow_only, false)
             test.is_nil(calls[1].preserve_sessions)
             test.eq(calls[1].operation, "delegation_fencing")
-            for _, call in ipairs(calls) do
-                test.is_nil(call.previous_group_rules, "source selection changes do not carry policy-body coverage proofs")
-            end
+            test.is_nil(calls[1].previous_group_rules,
+                "the pre-write source fence does not use policy-body coverage proofs")
+            test.not_nil(calls[2].previous_group_rules,
+                "the native compatibility reduction retains its coverage evidence")
             local deleted, delete_err = store.delete(slug)
             test.is_nil(delete_err)
             test.not_nil(deleted)
@@ -579,7 +595,7 @@ local function define_tests()
                 test.is_nil(select(2, trigger_reconcile.trigger()))
                 local bindings = assert(registry.find({[".kind"] = "security.policy",
                     ["meta.scope_projection_policy"] = old_id}))
-                test.eq(#bindings, 0)
+                test.eq(#bindings, 1)
 
                 changes = assert(registry.snapshot()):changes()
                 changes:delete(old_id)
