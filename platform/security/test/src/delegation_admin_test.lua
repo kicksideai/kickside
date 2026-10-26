@@ -1,3 +1,4 @@
+local source_scope = require("source_scope")
 local test = require("test")
 local registry = require("registry")
 local registry_fixture = require("registry_fixture")
@@ -129,7 +130,7 @@ return {run = test.run_cases(function()
             test.eq(entry.meta.grantor, "authenticated-security-admin")
             test.eq(entry.meta.target_id, target)
             test.eq(entry.data.groups[1], group)
-            local allowed = assert(security.named_scope(group))
+            local allowed = assert(source_scope.resolve(group))
             test.eq(allowed:evaluate(security.new_actor("operator"), "security.actor.delegate", result.resource), "allow")
             test.eq(allowed:evaluate(security.new_actor("operator"), "security.actor.delegate", "different-root"), "undefined")
             test.is_nil(entry.meta.credential_id)
@@ -153,9 +154,9 @@ return {run = test.run_cases(function()
             local result, err = invoke(request({root = "*"}))
             test.is_nil(err)
             test.eq(assert(registry.get(result.policy_id)).meta.root, "*")
-            test.eq(assert(security.named_scope(group)):evaluate(security.new_actor("operator"),
+            test.eq(assert(source_scope.resolve(group)):evaluate(security.new_actor("operator"),
                 "security.actor.delegate", result.resource), "allow")
-            test.eq(assert(security.named_scope(group)):evaluate(security.new_actor("operator"),
+            test.eq(assert(source_scope.resolve(group)):evaluate(security.new_actor("operator"),
                 "security.actor.delegate", "other-target"), "undefined")
         end)
         test.it("RA-H06 a writer scoped to the canonical native policy can administer its grant", function()
@@ -199,16 +200,16 @@ return {run = test.run_cases(function()
             test.not_nil((scopes.upsert({slug = composed_slug, policies = {granted.policy_id}}, "test-admin")))
             test.not_nil((reconcile.trigger()))
             local name = "kickside.security.scopes:" .. composed_slug
-            test.eq(assert(security.named_scope(name)):evaluate(security.new_actor("operator"),
+            test.eq(assert(source_scope.resolve(name)):evaluate(security.new_actor("operator"),
                 "security.actor.delegate", granted.resource), "allow")
             test.not_nil((invoke(request({groups = {}}), nil, revoke)))
             test.eq(assert(scopes.get(composed_slug)).policies[1], granted.policy_id)
-            test.eq(assert(security.named_scope(name)):evaluate(security.new_actor("operator"),
+            test.eq(assert(source_scope.resolve(name)):evaluate(security.new_actor("operator"),
                 "security.actor.delegate", granted.resource), "undefined")
             local regranted, regrant_err = invoke(request())
             test.is_nil(regrant_err)
             test.eq(regranted.policy_id, granted.policy_id)
-            test.eq(assert(security.named_scope(name)):evaluate(security.new_actor("operator"),
+            test.eq(assert(source_scope.resolve(name)):evaluate(security.new_actor("operator"),
                 "security.actor.delegate", granted.resource), "allow")
         end)
         for index, extra in ipairs({{principal = {kind = "group", id = "app:group"}}, {root = ""},
@@ -257,7 +258,7 @@ return {run = test.run_cases(function()
             test.eq(result.success, true)
             local inactive = assert(registry.get(granted.policy_id))
             test.eq(inactive.meta.active, false)
-            test.eq(assert(security.named_scope(group)):evaluate(security.new_actor("operator"),
+            test.eq(assert(source_scope.resolve(group)):evaluate(security.new_actor("operator"),
                 "security.actor.delegate", granted.resource), "undefined")
         end)
         for _, unavailable in ipairs({"empty", "missing", "outage", "withdrawn"}) do
@@ -275,7 +276,7 @@ return {run = test.run_cases(function()
                 test.is_nil(err)
                 test.eq(result.success, true)
                 test.eq(assert(registry.get(granted.policy_id)).meta.active, false)
-                test.eq(assert(security.named_scope(group)):evaluate(security.new_actor("operator"),
+                test.eq(assert(source_scope.resolve(group)):evaluate(security.new_actor("operator"),
                     "security.actor.delegate", granted.resource), "undefined")
             end)
         end

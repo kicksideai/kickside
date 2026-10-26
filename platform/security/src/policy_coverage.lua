@@ -193,24 +193,21 @@ function M.member_change(before_groups, after_groups, previous_group_rules)
     end
     for _, group in ipairs(after_groups) do becomes_member[group] = true end
     for _, entry in ipairs(entries) do
-        -- Projection metadata grants registry discovery, not principal authority.
-        if (entry.meta or {}).scope_metadata ~= true then
-            local data = entry.data
-            local was, becomes = false, false
-            for _, group in ipairs(data.groups or {}) do
-                was = was or was_member[group] == true
-                observed[group] = true
-                becomes = becomes or becomes_member[group] == true
+        local data = entry.data
+        local was, becomes = false, false
+        for _, group in ipairs(data.groups or {}) do
+            was = was or was_member[group] == true
+            observed[group] = true
+            becomes = becomes or becomes_member[group] == true
+        end
+        if was or becomes then
+            if type(data.policy) ~= "table" then return nil, errors.new({kind = errors.INVALID,
+                retryable = false, message = "group policy unavailable: " .. tostring(entry.id)}) end
+            if was and not becomes and data.policy.effect ~= "allow" then
+                return {changed = true, reduced = true, allow_only = false}, nil
             end
-            if was or becomes then
-                if type(data.policy) ~= "table" then return nil, errors.new({kind = errors.INVALID,
-                    retryable = false, message = "group policy unavailable: " .. tostring(entry.id)}) end
-                if was and not becomes and data.policy.effect ~= "allow" then
-                    return {changed = true, reduced = true, allow_only = false}, nil
-                end
-                if was then before[#before + 1] = data.policy end
-                if becomes then after[#after + 1] = data.policy end
-            end
+            if was then before[#before + 1] = data.policy end
+            if becomes then after[#after + 1] = data.policy end
         end
     end
     for group in pairs(was_member) do

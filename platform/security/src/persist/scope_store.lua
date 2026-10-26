@@ -2,6 +2,9 @@
 -- This is the source of truth the projection service projects into security.scope
 -- registry entries. The store never writes the registry itself.
 
+local registry = require("registry")
+local trigger_reconcile = require("trigger_reconcile")
+
 local sql = require("sql")
 local json = require("json")
 local time = require("time")
@@ -88,7 +91,7 @@ function M.get(slug: any): (any?, error?)
 end
 
 local function previous_policies(db, slug, gate)
-    local rows, read_err = db:query("SELECT policies FROM kickside_security_scopes WHERE slug=$1", {slug})
+    local rows, read_err = db:query("SELECT slug, label, description, policies, target, internal, enabled, created_at, updated_at FROM kickside_security_scopes WHERE slug=$1", {slug})
     if read_err then return nil, (errors.wrap(read_err, "scope mutation read failed") :: error) end
     if not rows or not rows[1] then return "", nil end
     local raw = rows[1].policies
@@ -96,12 +99,23 @@ local function previous_policies(db, slug, gate)
     if decode_err then return nil, decode_err end
     local _, authorization_err = composition.authorize_mutation(policies, gate, true)
     if authorization_err then return nil, authorization_err end
-    return raw, nil
+    local row, row_err = decode_row(rows[1])
+    if row_err then return nil, row_err end
+    return raw, nil, row
 end
 
 local function mutation_conflict()
     return (errors.new({kind = errors.CONFLICT, retryable = true,
         message = "scope policies change before authorized mutation", details = {code = "scope_mutation_conflict"}}) :: error)
+end
+
+local function same_policies(before, after)
+    local previous, current = {}, {}
+    for _, id in ipairs(before) do previous[id] = true end
+    for _, id in ipairs(after) do current[id] = true end
+    for id in pairs(previous) do if not current[id] then return false end end
+    for id in pairs(current) do if not previous[id] then return false end end
+    return true
 end
 
 -- upsert creates or updates a custom scope. policies must be a string array.
@@ -119,11 +133,22 @@ function M.upsert(args: any, _actor_id: any): (any?, error?, boolean?)
     local db, err = open()
     if not db then return nil, err end
     local dbh = db :: sql.DB
-    local previous, previous_err = previous_policies(dbh, slug, "kickside.security.api:save_scope.endpoint")
+    local previous, previous_err, previous_row = previous_policies(dbh, slug, "kickside.security.api:save_scope.endpoint")
     if previous_err then dbh:release(); return nil, previous_err end
     local encoded, encode_err = json.encode(policies)
     if encode_err then dbh:release(); return nil, (errors.wrap(encode_err, "scope policy encoding failed") :: error) end
     local now = time.now():utc():format_rfc3339()
+    local old_target = previous_row and previous_row.target or ""
+    if not previous_row or not same_policies(previous_row.policies, policies) or old_target ~= tostring(args.target or "")
+        or previous_row.enabled ~= (args.enabled ~= false) then
+        local old_group = old_target ~= "" and old_target or consts.CUSTOM_SCOPE_NS .. ":" .. slug
+        local target = tostring(args.target or "")
+        local group = target ~= "" and target or consts.CUSTOM_SCOPE_NS .. ":" .. slug
+        local groups = {old_group}
+        if group ~= old_group then groups[#groups + 1] = group end
+        local fenced, fence_err = trigger_reconcile.trigger({fence_groups = groups})
+        if not fenced then dbh:release(); return nil, fence_err end
+    end
     local written, xerr = dbh:execute([[
         INSERT INTO kickside_security_scopes (slug, label, description, policies, target, internal, enabled, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -133,10 +158,13 @@ function M.upsert(args: any, _actor_id: any): (any?, error?, boolean?)
             internal = excluded.internal,
             enabled = excluded.enabled, updated_at = excluded.updated_at
         WHERE kickside_security_scopes.policies = $10
+            AND kickside_security_scopes.target = $11
+            AND kickside_security_scopes.enabled = $12
     ]], {
         slug, tostring(args.label or ""), tostring(args.description or ""),
         encoded, tostring(args.target or ""),
         args.internal == true, args.enabled ~= false, now, now, previous,
+        previous_row and previous_row.target or "", previous_row and previous_row.enabled or false,
     })
     dbh:release()
     if xerr then return nil, (errors.wrap(xerr, "scope write failed") :: error) end
@@ -155,14 +183,37 @@ function M.delete(slug: any): (boolean, error?)
     local db, err = open()
     if not db then return false, err end
     local dbh = db :: sql.DB
-    local previous, previous_err = previous_policies(dbh, slug, "kickside.security.api:delete_scope.endpoint")
+    local previous, previous_err, previous_row = previous_policies(dbh, slug, "kickside.security.api:delete_scope.endpoint")
     if previous_err then dbh:release(); return false, previous_err end
     if previous == "" then dbh:release(); return true, nil end
-    local written, xerr = dbh:execute("DELETE FROM kickside_security_scopes WHERE slug = $1 AND policies=$2", {slug, previous})
+    local target = previous_row and previous_row.target or ""
+    local fenced, fence_err = trigger_reconcile.trigger({fence_groups = {target ~= "" and target or consts.CUSTOM_SCOPE_NS .. ":" .. slug}})
+    if not fenced then dbh:release(); return false, fence_err end
+    local written, xerr = dbh:execute("DELETE FROM kickside_security_scopes WHERE slug = $1 AND policies=$2 AND target=$3 AND enabled=$4", {slug, previous, previous_row.target, previous_row.enabled})
     dbh:release()
     if xerr then return false, (errors.wrap(xerr, "security scope persistence failed") :: error) end
     if not written or written.rows_affected == 0 then return false, mutation_conflict() end
     return true
+end
+
+-- One bounded query for the source selections requested by the runtime resolver.
+function M.selections(slugs: {string}): (any?, error?)
+    if #slugs == 0 then return {}, nil end
+    local marks = {}
+    for i in ipairs(slugs) do marks[i] = "$" .. tostring(i) end
+    local db, db_err = open()
+    if not db then return nil, db_err end
+    local rows, read_err = db:query("SELECT slug, target, policies, enabled FROM kickside_security_scopes WHERE slug IN ("
+        .. table.concat(marks, ",") .. ")", slugs)
+    db:release()
+    if read_err then return nil, read_err end
+    local out = {}
+    for _, row in ipairs(rows or {}) do
+        local decoded, decode_err = decode_row(row)
+        if decode_err then return nil, decode_err end
+        out[#out + 1] = decoded
+    end
+    return out, nil
 end
 
 return M

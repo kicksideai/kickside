@@ -7,6 +7,14 @@ namespace: kickside.security.service
 # registry writes) so it may registry.apply.
 
 entries:
+  - name: policy_groups
+    kind: library.lua
+    source: file://policy_groups.lua
+    modules: [registry]
+    imports:
+      security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
+      policy_coverage: kickside.security:policy_coverage
   - name: projection_transport
     kind: security.policy
     meta: {private: true, service_only: true, comment: Lets the reconcile request message the registered scope projector.}
@@ -19,7 +27,7 @@ entries:
   - name: reconcile_request_access
     kind: security.policy
     meta:
-      comment: Lets the trusted reconcile clients (group-set materialization, scope admin writes) hand requests to the projector through the security identity.
+      comment: Lets scope administration and delegation writes reach the Security writer through its own identity.
     policy:
       resources: kickside.security.service:reconcile_request
       actions: funcs.call
@@ -41,14 +49,6 @@ entries:
       policies:
         - kickside.security.service:projection_transport
 
-  - name: policy_groups
-    kind: library.lua
-    source: file://policy_groups.lua
-    modules: [registry]
-    imports:
-      security_consts: kickside.security:security_consts
-      canonical_json: kickside.contract:canonical_json
-      policy_coverage: kickside.security:policy_coverage
   - name: scope_projection
     kind: library.lua
     meta: { comment: Idempotent reconcile projecting enabled DB custom scopes into security.scope registry entries. }
@@ -57,6 +57,7 @@ entries:
     imports:
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
+      scope_key: kickside.security.projection:scope_key
       group_sets: kickside.security.persist:group_sets
       policy_groups: kickside.security.service:policy_groups
       policy_composition: kickside.security:policy_composition

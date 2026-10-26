@@ -2,23 +2,23 @@
 -- Projects DB-backed custom scopes into security.scope registry entries.
 -- Owned by the projection service (the single registry writer for the custom-scope
 -- namespace). Reconcile is idempotent: it creates/updates entries for enabled DB
--- rows and removes registry entries whose DB row is gone or disabled. The runtime
--- then resolves each scope via security.named_scope(id).
+-- rows and removes registry entries whose DB row is gone or disabled. The
+-- catalog retains the source policy IDs; sessions compose native scopes directly.
 
 local registry = require("registry")
 local logger = require("logger"):named("kickside.security.scope_projection")
 local consts = require("security_consts")
 local store = require("scope_store")
-local policy_groups = require("policy_groups")
-local composition = require("policy_composition")
-
 local funcs = require("funcs")
+local composition = require("policy_composition")
+local key = require("scope_key")
 
 local group_sets = require("group_sets")
+local policy_groups = require("policy_groups")
 
 local M = {}
 
-local function fence_delegations(groups, allow_only, previous_group_rules)
+local function fence_delegations(groups, allow_only, previous_group_rules, reason: string?)
     if #groups == 0 then return true, nil end
     local config, config_err = registry.get("kickside.security:composition_config")
     if config_err then return nil, config_err end
@@ -28,7 +28,7 @@ local function fence_delegations(groups, allow_only, previous_group_rules)
     if type(id) ~= "string" or id == "" then return nil, (errors.new({kind = errors.UNAVAILABLE,
         retryable = true, message = "host delegation fencer is unconfigured"}) :: error) end
     local result, err = funcs.call(id, {group_ids = groups, allow_only = allow_only == true,
-        previous_group_rules = previous_group_rules, reason = "group policy composition changes"})
+        previous_group_rules = previous_group_rules, reason = reason or "group policy composition changes"})
     if err then return nil, err end
     if not result or result.success ~= true then
         return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
@@ -43,7 +43,7 @@ end
 
 -- The registry id a row projects to: the built-in scope id it overlays (target),
 -- else a new id in the custom-scope namespace. An overlay id (e.g.
--- app.security:user) is UNIONED onto the default scope by the runtime.
+-- app.security:user) contributes its DB selection alongside the native group.
 local function scope_entry_id(row: any): string
     local t = tostring((row :: any).target or "")
     if t ~= "" then return t end
@@ -55,7 +55,7 @@ local function native_group_policies(snap)
     if read_err then return nil, read_err end
     local effective = {}
     for _, policy in ipairs(native) do
-        if (policy.meta or {}).scope_metadata ~= true and (policy.meta or {}).scope_projection_policy == nil then
+        if (policy.meta or {}).managed_by ~= consts.MANAGED_BY then
             for _, group in ipairs((policy.data or {}).groups or {}) do
                 effective[group] = effective[group] or {}
                 effective[group][tostring(policy.id)] = true
@@ -80,18 +80,19 @@ local function desired_entry(row: any, policies: any): any
     }
 end
 
-local function policies_equal(a: any, b: any): boolean
-    if type(a) ~= "table" or type(b) ~= "table" then return false end
-    if #a ~= #b then return false end
-    for i = 1, #a do if a[i] ~= b[i] then return false end end
+local function equal(left, right)
+    if type(left) ~= type(right) then return false end
+    if type(left) ~= "table" then return left == right end
+    for key, value in pairs(left) do if not equal(value, right[key]) then return false end end
+    for key in pairs(right) do if left[key] == nil then return false end end
     return true
 end
 
 -- project makes the security.scope registry entries in CUSTOM_SCOPE_NS match the
--- enabled DB rows and group sets, planned against one registry snapshot: every
+-- enabled DB rows and declarations, planned against one registry snapshot: every
 -- scope, composition and policy read comes from snap and the changes apply onto
 -- it. Returns { created, updated, deleted } counts and the resulting version.
-local function project(snap: any): (any, error?, any?)
+local function project(snap: any, fence_groups: any?): (any, error?, any?)
     local function snapshot_get(id: string): (any?, any?)
         return snap:get(id)
     end
@@ -104,9 +105,11 @@ local function project(snap: any): (any, error?, any?)
     -- Index the scope entries this service owns (stamped with managed_by), so we
     -- never touch platform- or other-module-declared security.scope entries.
     local by_id: { [string]: any } = {}
+    local owned = {}
     for _, entry in ipairs(existing or {}) do
         local m = (type((entry :: any).meta) == "table") and (entry :: any).meta or {}
-        if m.managed_by == consts.MANAGED_BY then by_id[tostring((entry :: any).id)] = entry end
+        by_id[tostring(entry.id)] = entry
+        if m.managed_by == consts.MANAGED_BY then owned[tostring(entry.id)] = true end
     end
 
     -- Diff DB rows against the pass snapshot's managed scope entries.
@@ -117,6 +120,8 @@ local function project(snap: any): (any, error?, any?)
     local group_policies = {}
     local group_rows = {}
     local group_sources = {}
+    local direct_policies = {}
+    local scope_sources = {}
 
     local declarations, declarations_err = snap:find({
         [".kind"] = "registry.entry", ["meta.type"] = "kickside.security.group_composition",
@@ -148,11 +153,18 @@ local function project(snap: any): (any, error?, any?)
         end
     end
 
+    for group, policies in pairs(group_policies) do
+        direct_policies[group] = {}
+        for _, id in ipairs(policies) do direct_policies[group][#direct_policies[group] + 1] = id end
+    end
+
     for _, row in ipairs(rows :: { any }) do
         local policies, policy_err = composition.expand_available((row :: any).policies, snapshot_get)
         if policy_err then return nil, policy_err end
         local id = scope_entry_id(row)
         group_rows[id] = row
+        scope_sources[id] = scope_sources[id] or {}
+        scope_sources[id][row.slug] = id
         group_policies[id] = group_policies[id] or {}
         local already = {}
         for _, policy_id in ipairs(group_policies[id]) do already[policy_id] = true end
@@ -160,100 +172,148 @@ local function project(snap: any): (any, error?, any?)
             if not already[policy_id] then group_policies[id][#group_policies[id] + 1] = policy_id end
         end
     end
-    local effective, effective_err = native_group_policies(snap)
-    if not effective then return nil, effective_err end
-    for group, policies in pairs(group_policies) do
-        effective[group] = effective[group] or {}
-        for _, id in ipairs(policies) do effective[group][id] = true end
+    -- Existing Users versions register group sets. Keep their scope and
+    -- bindings alive while consumers move to the source-policy resolver.
+    local registered, registered_err = group_sets.list()
+    if registered_err then return nil, registered_err end
+    local set_names = {}
+    for _, set in ipairs(registered) do
+        set_names[#set_names + 1] = set.scope_name
+        group_sources[set.scope_name] = set.groups
+        group_rows[set.scope_name] = {slug = set.scope_name:match(":(.+)$"), internal = true, label = "Group set"}
     end
+    local native, native_err = native_group_policies(snap)
+    if not native then return nil, native_err end
+    local effective, slug_sets = {}, {}
+    local affected = {}
+    for _, group in ipairs(fence_groups or {}) do affected[group] = true end
     local completed, visiting = {}, {}
     local function include_groups(group)
         if completed[group] then return nil end
-        if visiting[group] then return (errors.new({kind = errors.INVALID, retryable = false, message = "group composition cycle at " .. group}) :: error) end
+        if visiting[group] then return (errors.new({kind = errors.INVALID, retryable = false,
+            message = "group composition cycle at " .. group}) :: error) end
         visiting[group] = true
-        effective[group] = effective[group] or {}
+        effective[group], slug_sets[group] = {}, {}
+        if native[group] then
+            for id in pairs(native[group]) do effective[group][id] = true end
+        end
+        for _, id in ipairs(group_policies[group] or {}) do effective[group][id] = true end
+        for slug, source in pairs(scope_sources[group] or {}) do slug_sets[group][slug] = source end
         for _, source in ipairs(group_sources[group] or {}) do
             local source_err = include_groups(source)
             if source_err then return source_err end
-            for id in pairs(effective[source]) do effective[group][id] = true end
-        end
-        visiting[group] = nil
-        completed[group] = true
-        return nil
-    end
-    local sets, sets_err = group_sets.list()
-    if sets_err then return nil, sets_err end
-    local set_names = {}
-    for _, set in ipairs(sets) do
-        set_names[#set_names + 1] = set.scope_name
-        group_sources[set.scope_name] = set.groups
-        group_rows[set.scope_name] = {slug = set.scope_name:match(":(.+)$"), internal = true,
-            label = "Group set", groups = set.groups}
-    end
-    for group in pairs(group_sources) do
-        local source_err = include_groups(group)
-        if source_err then return nil, source_err end
-        local ids = {}
-        for id in pairs(effective[group]) do ids[#ids + 1] = id end
-        table.sort(ids)
-        group_policies[group] = ids
-    end
-    for group, policies in pairs(group_policies) do
-        local canonical, seen = {}, {}
-        for _, id in ipairs(policies) do
-            if not seen[id] then canonical[#canonical + 1] = id; seen[id] = true end
-        end
-        table.sort(canonical)
-        group_policies[group] = canonical
-    end
-    for id, row in pairs(group_rows) do
-        local policies = group_policies[id]
-        desired_ids[id] = true
-        local have = by_id[id]
-        if not have then
-            creates[#creates + 1] = desired_entry(row, policies)
-        else
-            local hd = have.data
-            local hm = (type(have.meta) == "table") and have.meta or {}
-            if not policies_equal(hd.policies, policies)
-                or hm.internal ~= ((row :: any).internal == true)
-                or hm.label ~= (row :: any).label then
-                updates[#updates + 1] = desired_entry(row, policies)
+            if affected[source] then affected[group] = true end
+            for _, sets in ipairs({effective, slug_sets}) do
+                for id, value in pairs(sets[source]) do sets[group][id] = value end
             end
         end
+        visiting[group], completed[group] = nil, true
+        return nil
     end
+    local function ids(selected)
+        local out = {}
+        for id in pairs(selected) do out[#out + 1] = id end
+        table.sort(out)
+        return out
+    end
+    for group in pairs(group_sources) do group_policies[group] = group_policies[group] or {} end
+    local function ordered(values)
+        local set = {}
+        for _, value in ipairs(values or {}) do set[value] = true end
+        return ids(set)
+    end
+    -- Runtime routes retain only each target's own source IDs. The resolver
+    -- follows group references live; authored descriptors are never snapshotted.
+    local routes = {}
+    for group in pairs(group_policies) do
+        local sources = {}
+        for slug, target in pairs(scope_sources[group] or {}) do
+            sources[#sources + 1] = {slug = slug, group_id = target}
+        end
+        table.sort(sources, function(left, right) return left.slug < right.slug end)
+        routes[group] = {native_groups = native[group] and {group} or {},
+            groups = ordered(group_sources[group]), scope_sources = sources,
+            direct_policies = ordered(direct_policies[group])}
+    end
+    for group in pairs(group_policies) do
+        local source_err = include_groups(group)
+        if source_err then return nil, source_err end
+        group_policies[group] = ids(effective[group])
+    end
+    for id in pairs(group_policies) do
+        group_rows[id] = group_rows[id] or {label = id, internal = false}
+    end
+    local projected, projected_err = snap:find({[".kind"] = "registry.entry", ["meta.type"] = key.META_TYPE})
+    if projected_err then return nil, projected_err end
+    local owned_projections = {}
+    for _, entry in ipairs(projected or {}) do
+        if (entry.meta or {}).managed_by == consts.MANAGED_BY then owned_projections[tostring(entry.id)] = entry end
+    end
+    for id, row in pairs(group_rows) do
+        local route_id, route_err = key.id(id)
+        if route_err then return nil, route_err end
+        desired_ids[route_id] = true
+        local data = routes[id]
+        data.has_scope_sources = next(slug_sets[id] or {}) ~= nil
+        -- Catalog-only projection. Runtime resolves local routes and live DB
+        -- rows instead of authorizing from this derived policy list.
+        data.policies = group_policies[id]
+        local want = {id = route_id, kind = "registry.entry",
+            meta = {type = key.META_TYPE, managed_by = consts.MANAGED_BY, target = id}, data = data}
+        local have, read_err = snap:get(route_id)
+        if read_err and not errors.is(read_err, errors.NOT_FOUND) then return nil, read_err end
+        if have and not owned_projections[route_id] then
+            return nil, errors.new({kind = errors.INVALID, message = "scope projection id is owned by another declaration: " .. route_id})
+        end
+        if not have then creates[#creates + 1] = want
+        elseif not equal(have.meta, want.meta) or not equal(have.data, want.data) then updates[#updates + 1] = want end
 
-    -- Registry entries with no enabled DB row are removed.
-    for id, _ in pairs(by_id) do
-        if not desired_ids[id] then
-            deletes[#deletes + 1] = id
+        -- Custom scope descriptors are Security-owned. Overlays and group
+        -- compositions never update or replace another owner's scope entry.
+        if row.slug and tostring(row.target or "") == "" then
+            desired_ids[id] = true
+            have = by_id[id]
+            if have and not owned[id] then
+                return nil, errors.new({kind = errors.INVALID, message = "custom scope id is owned by another declaration: " .. id})
+            end
+            want = desired_entry(row, group_policies[id])
+            if not have then creates[#creates + 1] = want
+            elseif not equal(have.meta, want.meta) or not equal(have.data, want.data) then updates[#updates + 1] = want end
         end
     end
+    for id in pairs(owned) do if not desired_ids[id] then deletes[#deletes + 1] = id end end
+    for id in pairs(owned_projections) do if not desired_ids[id] then deletes[#deletes + 1] = id end end
 
-    local created, updated, deleted = #creates, #updates, #deletes
+    local fences = {}
+    for group in pairs(affected) do fences[#fences + 1] = group end
+    table.sort(fences)
+
+    -- Native named scopes remain a public application contract. Keep the
+    -- existing projection for every composed group; the live resolver uses
+    -- source IDs without creating a per-login union group.
     local bindings, bindings_err = policy_groups.plan(group_policies, effective, snap)
     if bindings_err then return nil, bindings_err end
-    if created + updated + deleted + #bindings.creates + #bindings.updates + #bindings.deletes == 0 then
-        local marked, mark_err = group_sets.mark_materialized(set_names, tostring(snap:version():id()))
-        if not marked then return nil, mark_err end
-        return { created = 0, updated = 0, deleted = 0 }, nil, snap:version()
+    local created, updated, deleted = #creates, #updates, #deletes
+    for _, entry in ipairs(bindings.creates) do creates[#creates + 1] = entry end
+    for _, entry in ipairs(bindings.updates) do updates[#updates + 1] = entry end
+    for _, id in ipairs(bindings.deletes) do deletes[#deletes + 1] = id end
+    local applied = snap:version()
+    if #creates + #updates + #deletes > 0 then
+        local changes = snap:changes()
+        for _, want in ipairs(creates) do changes:create(want) end
+        for _, want in ipairs(updates) do changes:update(want) end
+        for _, id in ipairs(deletes) do changes:delete(id) end
+        local result, apply_err = changes:apply()
+        if apply_err then return nil, apply_err end
+        applied = result
+        logger:info("scopes reconciled", { created = created, updated = updated, deleted = deleted })
     end
-
-    local changes = snap:changes()
-    for _, want in ipairs(creates) do changes:create(want) end
-    for _, want in ipairs(updates) do changes:update(want) end
-    for _, id in ipairs(deletes) do changes:delete(id) end
-    for _, entry in ipairs(bindings.creates) do changes:create(entry) end
-    for _, entry in ipairs(bindings.updates) do changes:update(entry) end
-    for _, id in ipairs(bindings.deletes) do changes:delete(id) end
-
-    local applied, aerr = changes:apply()
-    if aerr then return nil, aerr end
-    local fenced, fence_err = fence_delegations(bindings.reduced_groups, bindings.allow_only, bindings.previous_group_rules)
-    if not fenced then return nil, fence_err end
+    local legacy_fenced, legacy_fence_err = fence_delegations(bindings.reduced_groups, bindings.allow_only, bindings.previous_group_rules)
+    if not legacy_fenced then return nil, legacy_fence_err, applied end
     local marked, mark_err = group_sets.mark_materialized(set_names, tostring(applied:id()))
-    if not marked then return nil, mark_err end
-    logger:info("scopes reconciled", { created = created, updated = updated, deleted = deleted })
+    if not marked then return nil, mark_err, applied end
+    local fenced, fence_err = M.fence(fences)
+    if not fenced then return nil, fence_err, applied end
     return { created = created, updated = updated, deleted = deleted }, nil, applied
 end
 
@@ -261,18 +321,18 @@ end
 -- returns its statistics and the registry version it leaves. A registry commit
 -- landing between the snapshot and the apply fails the pass with the registry
 -- conflict; that commit's own event starts the next pass.
-function M.reconcile(): (any, error?, any?)
+function M.reconcile(fence_groups: any?): (any, error?, any?)
     local snap, serr = registry.snapshot()
     if serr then return nil, serr end
     if not snap then return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
         message = "registry snapshot failed"}) :: error) end
-    return project(snap)
+    return project(snap, fence_groups)
 end
 
 -- fence(groups) closes the delegated authority of groups whose rules a caller
 -- reduced with its own registry write.
 function M.fence(groups)
-    return fence_delegations(groups, false)
+    return fence_delegations(groups, false, nil, "scope authority changes")
 end
 
 local function validate_groups(groups)
@@ -332,5 +392,6 @@ function M.materialize(groups)
     result.scope_name = set.scope_name
     return result, nil
 end
+
 
 return M
