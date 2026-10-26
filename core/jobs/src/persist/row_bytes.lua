@@ -6,6 +6,11 @@ local sql = require("sql")
 
 local M = {}
 M.NULL = {}
+-- kickside_job has an automatic updated_at trigger. Its future timestamp is
+-- not an explicit caller change, so reserve the longest JSON-safe canonical
+-- RFC3339 representation while checking that trigger-bearing row. This is a
+-- bounded, fail-closed near-cap projection; kickside_job_run has no trigger.
+local JOB_UPDATED_AT_MAX = "9999-12-31T23:59:59.999999999+00:00"
 local function response_error(field: string): error
     return errors.new({message = "retained row response is invalid", kind = errors.INTERNAL,
         retryable = false, details = {code = "job_row_bytes_response", field = field}})
@@ -75,6 +80,9 @@ function M.check_update(exec: any, table_name: string, id: string, changes: any,
     end
     for key, value in pairs(changes) do
         if value == M.NULL then row[key] = nil else row[key] = value end
+    end
+    if table_name == "kickside_job" and row.updated_at ~= nil then
+        row.updated_at = JOB_UPDATED_AT_MAX
     end
     local bytes, bytes_err = M.measure(row)
     if bytes_err then return bytes_err end
