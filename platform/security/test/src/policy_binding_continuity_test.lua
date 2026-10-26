@@ -1,6 +1,7 @@
 local test = require("test")
 local policy_groups = require("policy_groups")
 local consts = require("security_consts")
+local canonical_json = require("canonical_json")
 
 local SOURCE = "app:retained_source"
 local BINDING = consts.CUSTOM_SCOPE_NS .. ".bindings:6170703a72657461696e65645f736f75726365"
@@ -15,6 +16,13 @@ local function binding()
         managed_by = consts.MANAGED_BY, scope_projection_policy = SOURCE},
         data = {groups = {"app:previous_group"},
             policy = {actions = "access", resources = "app:previous_resource", effect = "allow"}}}
+end
+
+local function projected(entries, id)
+    for _, entry in ipairs(entries) do
+        if entry.id == id then return entry end
+    end
+    error("projected entry is missing " .. id)
 end
 
 local function plan(entries)
@@ -130,6 +138,93 @@ local function define_tests()
             test.eq(#result.creates, 0)
             test.eq(#result.updates, 0)
             test.eq(#result.deletes, 0)
+        end)
+        test.it("keeps a nested projected binding unchanged but distinguishes an empty object from an array", function()
+            local native = source("app:current_resource")
+            native.data.policy.actions = {"access", "registry.get"}
+            native.data.policy.resources = {"app:current_resource", "app:other_resource"}
+            local group = "app:shape_group"
+            local scopes, effective = {[group] = {SOURCE}}, {[group] = {[SOURCE] = true}}
+            local created, created_err = policy_groups.plan(scopes, effective, {find = function() return {native} end})
+            test.is_nil(created_err)
+            test.eq(#created.creates, 2)
+
+            local unchanged, unchanged_err = policy_groups.plan(scopes, effective, {find = function() return {
+                native, created.creates[1], created.creates[2],
+            } end})
+            test.is_nil(unchanged_err)
+            test.eq(#unchanged.creates, 0)
+            test.eq(#unchanged.updates, 0)
+            test.eq(#unchanged.deletes, 0)
+
+            local metadata = created.creates[1].meta.scope_metadata and created.creates[1] or created.creates[2]
+            local binding = metadata == created.creates[1] and created.creates[2] or created.creates[1]
+            local wrong_shape = {
+                id = metadata.id, kind = metadata.kind,
+                meta = {private = true, managed_by = consts.MANAGED_BY, scope_metadata = true,
+                    scope_projection_effective = {}},
+                data = metadata.data,
+            }
+            local corrected, corrected_err = policy_groups.plan(scopes, effective, {find = function() return {
+                native, wrong_shape, binding,
+            } end})
+            test.is_nil(corrected_err)
+            test.eq(#corrected.creates, 0)
+            test.eq(#corrected.updates, 1)
+            test.eq(corrected.updates[1].id, metadata.id)
+        end)
+        test.it("retains canonical errors for a projected binding beyond the hash wrapper depth", function()
+            local native = source("app:deep_resource")
+            local nested = {}
+            local cursor = nested
+            -- Lower the codec limit for this focused boundary test. Standalone
+            -- policy hashing accepts this shape, but the {meta, data} wrapper
+            -- must retain the depth error during projected-entry comparison.
+            for _ = 1, 5 do
+                cursor.value = {}
+                cursor = cursor.value
+            end
+            native.data.policy.extra = nested
+            local group = "app:deep_group"
+            local scopes, effective = {[group] = {SOURCE}}, {[group] = {[SOURCE] = true}}
+            local original_limit = canonical_json.MAX_DEPTH
+            canonical_json.MAX_DEPTH = 8
+            local ok, created, created_err, result, plan_err = pcall(function()
+                local first, first_err = policy_groups.plan(scopes, effective, {find = function() return {native} end})
+                if first_err then return first, first_err end
+                local binding_entry = projected(first.creates,
+                    consts.CUSTOM_SCOPE_NS .. ".bindings:6170703a72657461696e65645f736f75726365")
+                local metadata = first.creates[1] == binding_entry and first.creates[2] or first.creates[1]
+                local second, second_err = policy_groups.plan(scopes, effective, {find = function() return {
+                    native, metadata, binding_entry,
+                } end})
+                return first, first_err, second, second_err
+            end)
+            canonical_json.MAX_DEPTH = original_limit
+            test.is_true(ok, tostring(created))
+            test.is_nil(created_err)
+            test.is_nil(result)
+            test.not_nil(plan_err)
+        end)
+        test.it("does not treat metatable-provided projected metadata as canonical data", function()
+            local native = source("app:current_resource")
+            local group = "app:metatable_group"
+            local scopes, effective = {[group] = {SOURCE}}, {[group] = {[SOURCE] = true}}
+            local created, created_err = policy_groups.plan(scopes, effective, {find = function() return {native} end})
+            test.is_nil(created_err)
+            local binding_entry = projected(created.creates,
+                consts.CUSTOM_SCOPE_NS .. ".bindings:6170703a72657461696e65645f736f75726365")
+            local metadata = created.creates[1] == binding_entry and created.creates[2] or created.creates[1]
+            binding_entry.meta = setmetatable({private = true, managed_by = consts.MANAGED_BY}, {
+                __index = {scope_projection_policy = SOURCE},
+            })
+            local result, plan_err = policy_groups.plan(scopes, effective, {find = function() return {
+                native, metadata, binding_entry,
+            } end})
+            test.is_nil(plan_err)
+            test.eq(#result.creates, 0)
+            test.eq(#result.updates, 1)
+            test.eq(result.updates[1].id, binding_entry.id)
         end)
         test.it("withdraws a binding when its source policy no longer exists", function()
             local result = plan({binding()})
