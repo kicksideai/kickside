@@ -331,7 +331,7 @@ const anchorEl = ref<HTMLElement | null>(null)
                   >
                     <Icon :icon="updateStatusIcon(dep)" :class="['km-i', updateStatusBusy(dep) && 'spin']" aria-hidden="true" />
                   </button>
-                  <button v-else-if="installedCanUpdate(dep)" class="km-icon-btn" :aria-label="`Open update planner for ${dep.component}`" @click.stop="openUpdateDialog(dep)"><Icon icon="tabler:refresh-dot" class="km-i" aria-hidden="true" /></button>
+                  <button v-else-if="installedCanUpdate(dep)" class="km-icon-btn" :disabled="updateAllRunning" :aria-label="`Open update planner for ${dep.component}`" @click.stop="openUpdateDialog(dep)"><Icon icon="tabler:refresh-dot" class="km-i" aria-hidden="true" /></button>
                   <button v-else class="km-icon-btn" disabled :title="installedUpdateDisabledReason(dep)" :aria-label="`Cannot update ${dep.component}: ${installedUpdateDisabledReason(dep)}`"><Icon icon="tabler:refresh-off" class="km-i" aria-hidden="true" /></button>
                   <button v-if="installedCanUninstall(dep)" class="km-icon-btn km-danger" :aria-label="`Uninstall ${dep.component}`" @click.stop="openUninstallDialog(dep)"><Icon icon="tabler:trash" class="km-i" aria-hidden="true" /></button>
                   <button v-else class="km-icon-btn" disabled :title="installedUninstallDisabledReason(dep)" :aria-label="`Cannot uninstall ${dep.component}: ${installedUninstallDisabledReason(dep)}`"><Icon icon="tabler:trash-off" class="km-i" aria-hidden="true" /></button>
