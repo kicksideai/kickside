@@ -8,6 +8,7 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import type { RunRow } from '../api/api'
 import { relativeTime, runFailureCause, runStatus, runStatusLabel, runStatusTone, runVersionBadge, shortRunId, sortRunsNewestFirst } from './run-history'
+import { formatDuration } from './run-detail'
 
 // The toolbar's "Runs" popover: past runs for this workflow, newest first, each a
 // status badge + relative time. Picking a row loads that run's state onto the canvas
@@ -18,6 +19,8 @@ const emit = defineEmits<{ (e: 'select', row: RunRow): void; (e: 'close'): void 
 
 const sorted = computed(() => sortRunsNewestFirst(props.rows).map((row) => ({
   row, ver: runVersionBadge(row.flow_ref?.version ?? 0), cause: runFailureCause(row),
+  duration: row.started_at && row.finished_at
+    ? formatDuration(Date.parse(row.finished_at) - Date.parse(row.started_at)) : '—',
 })))
 
 function runSeverity(status: string): 'success' | 'danger' | 'info' {
@@ -48,13 +51,14 @@ function onVisibleChange(visible: boolean) {
     <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
     <p v-else-if="!sorted.length" class="wf-sim-note">No runs yet — Simulate, or publish and trigger this Workflow, to see runs here.</p>
     <div v-else class="wf-runs-list">
-      <Button v-for="{ row: r, ver, cause } in sorted" :key="r.run_id" class="wf-runs-row" text severity="secondary" @click="emit('select', r)">
+      <Button v-for="{ row: r, ver, cause, duration } in sorted" :key="r.run_id" class="wf-runs-row" text severity="secondary" @click="emit('select', r)">
         <Tag class="wf-run-status-tag" :severity="runSeverity(runStatus(r))" :value="runStatusLabel(runStatus(r))" />
         <span class="wf-runs-meta">
+          <span class="wf-runs-time">Started {{ relativeTime(r.started_at || r.finished_at) }}</span>
           <span class="wf-runs-id">{{ shortRunId(r.run_id) }}</span>
-          <span class="wf-runs-time">{{ relativeTime(r.started_at || r.finished_at) }}</span>
           <span v-if="cause" class="wf-runs-cause" :title="cause">{{ cause }}</span>
         </span>
+        <span class="wf-runs-duration" title="Duration">{{ duration }}</span>
         <Tag class="wf-run-version-tag" :severity="ver.kind === 'published' ? 'secondary' : 'warn'" :value="ver.label" :title="ver.title" />
         <Icon icon="tabler:chevron-right" class="wf-runs-go" aria-hidden="true" />
       </Button>
