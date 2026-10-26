@@ -3,15 +3,15 @@ import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponen
 import KbPicker from './app/kb-picker.vue'
 import stylesText from './picker.css?inline'
 
-// The Knowledge trait config component (wc-kb-picker). A separate element from
-// the knowledge surface, built as its own bundle (picker.js) and registered as
-// its own view.component. Receives the trait context as the `config` prop and
-// reports the chosen knowledge bases via the `config-changed` event — the generic
-// trait config contract the agent editor consumes. Used by the kb_reader and
-// kb_writer traits, whose tools read context.kb_ids.
-interface PickerProps { config?: { kb_ids?: string[] } }
+// The reusable Knowledge config component. Trait contexts use `config.kb_ids`;
+// a host that passes a schema declaring `kb_id` receives and reports one sink
+// destination id instead. The schema controls that durable key.
+interface PickerProps {
+  config?: { kb_id?: string; kb_ids?: string[] }
+  schema?: { properties?: Record<string, unknown> }
+}
 interface PickerEvents {
-  'config-changed': { kb_ids: string[] }
+  'config-changed': { kb_id: string } | { kb_ids: string[] }
   load: undefined
   error: { message: string; error: unknown }
 }
@@ -19,7 +19,8 @@ interface PickerEvents {
 const PROPS_SCHEMA = {
   type: 'object',
   properties: {
-    config: { type: 'object', description: 'Capability context: { kb_ids: string[] }' },
+    config: { type: 'object', description: 'Trait context { kb_ids: string[] } or sink configuration { kb_id: string }.' },
+    schema: { type: 'object', description: 'Optional declared field schema; a kb_id field selects one destination knowledge base.' },
   },
 } as unknown as WippyPropsSchema
 

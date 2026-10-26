@@ -3,7 +3,8 @@ local registry = require("registry")
 local consts = require("security_consts")
 local migration_api = require("migration")
 
-local function retire_generated()
+local function retire_generated(has_registered_sets)
+    if has_registered_sets == true then return true, nil end
     while true do
         local snapshot, read_err = registry.snapshot()
         if read_err then return nil, read_err end
@@ -29,8 +30,10 @@ local migrate = migration_api.define(function()
     migration("source policy scopes", function()
         for _, engine in ipairs({"postgres", "sqlite"}) do
             database(engine, function()
-                up(function()
-                    local done, err = retire_generated()
+                up(function(db)
+                    local registered, read_err = db:query("SELECT 1 FROM kickside_security_group_sets LIMIT 1")
+                    if read_err then error(read_err) end
+                    local done, err = retire_generated(registered and #registered > 0)
                     if not done then error(err) end
                 end)
             end)

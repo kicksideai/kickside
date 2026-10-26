@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.40](https://github.com/kicksideai/kickside/compare/blocks-v0.1.39...blocks-v0.1.40) (2026-10-25)
+
+
+### Bug Fixes
+
+* **blocks:** include Await execution in module access ([#135](https://github.com/kicksideai/kickside/issues/135)) ([6b8b2e4](https://github.com/kicksideai/kickside/commit/6b8b2e401676b9cf259431d99ebd7911e45f2692))
+
+## [0.1.39](https://github.com/kicksideai/kickside/compare/blocks-v0.1.38...blocks-v0.1.39) (2026-10-23)
+
+
+### Bug Fixes
+
+* **workflows:** preserve empty object schemas through publication ([#110](https://github.com/kicksideai/kickside/issues/110)) ([06213cb](https://github.com/kicksideai/kickside/commit/06213cb3f2de773e5c83a894d810a81838b8cc3c))
+
 ## 0.1.37 (2026-10-14)
 
 - Preserve declared empty object fields in new portable Flow artifacts and retain existing artifact checksums.

@@ -4,7 +4,7 @@ import { openBlock as f, createElementBlock as m, mergeProps as ye, createBlock 
 import { Icon as C } from "@iconify/vue";
 import { api as Q, loadByTagName as Ie, host as nt, define as at } from "@wippy-fe/proxy";
 import { s as Re, u as ot, a as it } from "./componentRealtime-Bs_cyDpl.js";
-import { s as st } from "./styles-DXi6GXMP.js";
+import { s as st } from "./styles-DqTthkup.js";
 var lt = `
     .p-tag {
         display: inline-flex;

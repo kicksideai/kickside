@@ -142,6 +142,15 @@ local function notify_status(ctx: Map, automation_id: string): error?
     return err
 end
 
+-- A round fence blocks receipt retention. Once its transaction releases that
+-- fence, a dispatcher pass which overlapped the round must run again: it saw
+-- the blocker and could not safely retire an otherwise-aged receipt.
+local function wake_dispatcher_after_release(committed: Map?): error?
+    if not committed or not committed.committed then return nil end
+    local _, err = slot.wake_dispatcher()
+    return err
+end
+
 -- round_failure(failure, error_kind, prior_attempts, rp) -> the failure a
 -- round records on its drive: the phase it leaves and, unless it parks, the
 -- capped jittered retry time.
@@ -161,6 +170,8 @@ local function settle(ctx: Map, round: Map, failure: Map, error_kind: string?, p
     logger(ctx.deps):warn("round failed", { automation_id = round.automation_id, drive_key = round.drive_key, phase = recorded.phase,
         error = failure.message, fenced = not (settled :: Map).committed })
     if not (settled :: Map).committed then return complete(ctx, drive.utc_now()) end
+    local wake_err = wake_dispatcher_after_release(settled :: Map)
+    if wake_err then return nil, wake_err end
     local notify_err = notify_status(ctx, round.automation_id)
     if notify_err then return nil, notify_err end
     local parks = recorded.next_run_at == nil
@@ -282,10 +293,12 @@ local function run(deps: Map, input: any): (Map?, error?)
     end
     if not implements(tostring((auto :: Map).impl_id), ROUND_CONSUMER) then
         -- The kind has no round consumer: its items are delivered elsewhere.
-        local _, release_err = in_tx(function(tx: any): (any?, error?)
+        local released, release_err = in_tx(function(tx: any): (any?, error?)
             return commit.release_tx(tx, round)
         end)
         if release_err then return nil, release_err end
+        local wake_err = wake_dispatcher_after_release(released :: Map?)
+        if wake_err then return nil, wake_err end
         return complete(ctx, nil, true, "kind implements no round consumer")
     end
     local identity = (auto :: Map).identity
@@ -496,6 +509,8 @@ local function run(deps: Map, input: any): (Map?, error?)
     end)
     if commit_err then return settle(ctx, round, classify(commit_err), nil, attempts, rp) end
     if not (committed :: Map).committed then return complete(ctx, drive.utc_now()) end
+    local wake_err = wake_dispatcher_after_release(committed :: Map)
+    if wake_err then return nil, wake_err end
     local notify_err = notify_status(ctx, automation_id)
     if notify_err then return nil, notify_err end
     for _, item_outcome in ipairs(ledger_outcomes) do
@@ -505,10 +520,6 @@ local function run(deps: Map, input: any): (Map?, error?)
                 delivery_key = item_outcome.item.delivery_key, code = item_outcome.error.code,
                 message = item_outcome.error.message })
         end
-    end
-    if committed.retention_work then
-        local _, wake_err = slot.wake_dispatcher()
-        if wake_err then return nil, wake_err end
     end
     if result.event_seq ~= nil and d.pin_generation ~= nil then
         local _, pin_err = automations_lib.advance_pin(automation_id, drive_key)

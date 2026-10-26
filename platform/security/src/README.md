@@ -27,7 +27,7 @@ never the reverse:
 - `kickside.security.service` — `scope_projection.service`: the supervised process that
   **owns** the DB → `security.scope` projection. Boot-reconciles and listens for
   admin write notifications,
-  idempotently. It writes descriptors only, and runs under
+  idempotently. It retains legacy group-set bindings during staged consumer upgrades and runs under
   a dedicated trust group because `wippy.security:process` denies registry writes.
 - `kickside.security.api` — `scope_catalog` (read model) plus the admin endpoints
   for scopes, policies, and roles.
@@ -76,10 +76,15 @@ protocol. Native policy edits take effect through native policy resolution.
 The separate explicit session-invalidation API retains its existing `allow_only`
 coverage contract for native groups; custom-scope writes do not call it.
 
-The forward migration removes managed binding and metadata policies in registry
-commits of at most 200 deletions. It is idempotent and resumes from the remaining
-entries after interruption. The retired group-set table and its data remain in
-place; session minting and validation no longer read or write it.
+During staged upgrades, the existing
+`kickside.security.binding:materialize_group_set` entry point, group-set table,
+and registered bindings remain supported. Older Users versions continue to
+receive a stable scope containing the union of all their memberships. The legacy
+projector retains reduction fencing and binding identities for these registered
+sets; new resolver callers do not register sets or create policy copies.
+Migration 06 removes generated policies only when there are no registered legacy
+sets. Its registration check uses the migration transaction directly. Retirement
+of the old API and table requires a separate consumer-compatibility decision.
 
 ## Requirements
 

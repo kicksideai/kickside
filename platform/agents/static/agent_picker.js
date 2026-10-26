@@ -1,7 +1,7 @@
 import { u as f, g as m, W as g, P as y } from "./primevue-plugin-Dn0ACs8V.js";
 import { defineComponent as d, computed as i, openBlock as h, createBlock as S } from "vue";
 import { M as v } from "./MultiSelectField-CJKHhAnf.js";
-import { s as k } from "./styles-CiCzyjUM.js";
+import { s as k } from "./styles-DLTipENZ.js";
 import "@iconify/vue";
 import { define as C } from "@wippy-fe/proxy";
 function _(e, t) {

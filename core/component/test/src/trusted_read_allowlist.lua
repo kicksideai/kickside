@@ -55,6 +55,13 @@ M.ALLOW = {
             entry = "app.security:delegation_validator",
         },
     },
+    ["platform/automation/src/declaration_writer.lua"] = {
+        get_private_context = {
+            count = 1,
+            why = "the pending declaration verifier compares protected values with the live baseline after checking operator WRITE and both principals' resource grants; it never returns private context",
+            entry = "kickside.automation:declaration_writer_verify",
+        },
+    },
     ["platform/automation/src/identity_writer.lua"] = {
         list_system = {
             count = 1,

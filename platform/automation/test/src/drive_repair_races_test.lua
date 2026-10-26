@@ -168,20 +168,29 @@ local cases=test.run_cases(function()
             test.is_nil(assert(drive.get(db,owner,"main")).job_id)
             db:release()
         end)
-        test.it("cancels a repaired slot when its source is removed concurrently",function()
-            local db=assert(sql.get(types.db_id()))
-            local owner=fixture(db)
-            boundary.after=function(id)
-                if id~=owner then return end
+        for _, remove_at in ipairs({1,3}) do
+            test.it("cancels a repaired slot when its source is removed on attempt "..remove_at,function()
+                local db=assert(sql.get(types.db_id()))
+                local owner=fixture(db,"event")
+                local calls=0
+                boundary.after=function(id)
+                    if id~=owner then return end
+                    calls=calls+1
+                    if calls==remove_at then
+                        boundary.after=nil
+                        execute(db,"UPDATE kickside_automation_drive SET source_kind='none',revision=revision+1 WHERE automation_id=$1",{owner})
+                    else
+                        execute(db,"UPDATE kickside_automation_drive SET source_thread_id=$1,revision=revision+1 WHERE automation_id=$2",{uuid.v7(),owner})
+                    end
+                end
+                local result=migration(db,"app:repair-race:"..uuid.v7())
                 boundary.after=nil
-                execute(db,"UPDATE kickside_automation_drive SET source_kind='none',revision=revision+1 WHERE automation_id=$1",{owner})
-            end
-            local result=migration(db,"app:repair-race:"..uuid.v7())
-            boundary.after=nil
-            test.eq(result.status,"complete",tostring(result.error))
-            test.eq(#active(owner),0)
-            db:release()
-        end)
+                test.eq(result.status,"complete",tostring(result.error))
+                test.eq(calls,remove_at)
+                test.eq(#active(owner),0)
+                db:release()
+            end)
+        end
         test.it("does not complete before dispatcher wake succeeds",function()
             local db=assert(sql.get(types.db_id()))
             local owner=fixture(db)

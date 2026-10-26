@@ -619,10 +619,3 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 .tool-reference summary { cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
 .tool-reference code, .tool-reference pre { font-size: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tool-reference h3 { margin: 0; }
-
-.kx-background-run { flex: 0 0 auto; display: grid; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--p-content-border-color); }
-.kx-background-run header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.kx-background-run h2 { margin: 0; font-size: 16px; }
-.kx-background-run p { margin: 0; }
-.kx-background-run label { display: grid; gap: 6px; }
-.kx-background-run textarea { width: 100%; padding: 10px; border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-8); background: var(--p-content-background); color: var(--p-text-color); font: inherit; }

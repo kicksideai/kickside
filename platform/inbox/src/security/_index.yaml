@@ -40,6 +40,44 @@ entries:
       actions: [security.actor.create, security.policy_group.get]
       effect: allow
 
+  # The review arm validates one explicit assignee before it publishes the
+  # decision item. These are intentionally arm-owned contract capabilities:
+  # a caller may use the Inbox Block without receiving general Users-directory
+  # access. Keep each contract authorization pair separate: definition/get,
+  # canonical binding/open, and exists/call.
+  - name: review_assignee_directory_get
+    kind: security.policy
+    meta:
+      private: true
+      service_only: true
+      comment: Review-arm-only lookup of the principal-directory contract definition.
+    policy:
+      resources: kickside.contract:directory
+      actions: contract.get
+      effect: allow
+
+  - name: review_assignee_directory_open
+    kind: security.policy
+    meta:
+      private: true
+      service_only: true
+      comment: Review-arm-only open of the canonical principal-directory binding.
+    policy:
+      resources: kickside.users.directory:directory_binding
+      actions: contract.open
+      effect: allow
+
+  - name: review_assignee_directory_exists
+    kind: security.policy
+    meta:
+      private: true
+      service_only: true
+      comment: Review-arm-only directory exists call for its explicit assignee.
+    policy:
+      resources: exists
+      actions: contract.call
+      effect: allow
+
   - name: projection_public_meta
     kind: security.policy
     policy:

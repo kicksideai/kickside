@@ -7,6 +7,14 @@ namespace: kickside.security.service
 # registry writes) so it may registry.apply.
 
 entries:
+  - name: policy_groups
+    kind: library.lua
+    source: file://policy_groups.lua
+    modules: [registry]
+    imports:
+      security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
+      policy_coverage: kickside.security:policy_coverage
   - name: projection_transport
     kind: security.policy
     meta: {private: true, service_only: true, comment: Lets the reconcile request message the registered scope projector.}
@@ -51,6 +59,8 @@ entries:
       scope_store: kickside.security.persist:scope_store
       scope_key: kickside.security.projection:scope_key
       group_resolver: kickside.security.runtime:groups
+      group_sets: kickside.security.persist:group_sets
+      policy_groups: kickside.security.service:policy_groups
       policy_composition: kickside.security:policy_composition
 
   - name: scope_projection_proc
@@ -64,6 +74,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       security_consts: kickside.security:security_consts
       scope_projection: kickside.security.service:scope_projection
+      group_sets: kickside.security.persist:group_sets
 
   # Dedicated trust group for the projector. wippy.security:process is denied
   # registry writes (registry.no_write), so the service runs under this group,

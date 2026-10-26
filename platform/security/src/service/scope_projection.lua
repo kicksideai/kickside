@@ -12,9 +12,30 @@ local store = require("scope_store")
 local funcs = require("funcs")
 local composition = require("policy_composition")
 local key = require("scope_key")
-local group_resolver = require("group_resolver")
+
+local group_sets = require("group_sets")
+local policy_groups = require("policy_groups")
 
 local M = {}
+
+local function fence_delegations(groups, allow_only, previous_group_rules)
+    if #groups == 0 then return true, nil end
+    local config, config_err = registry.get("kickside.security:composition_config")
+    if config_err then return nil, config_err end
+    if not config then return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
+        message = "composition config unavailable"}) :: error) end
+    local id = config.meta.delegation_fencer
+    if type(id) ~= "string" or id == "" then return nil, (errors.new({kind = errors.UNAVAILABLE,
+        retryable = true, message = "host delegation fencer is unconfigured"}) :: error) end
+    local result, err = funcs.call(id, {group_ids = groups, allow_only = allow_only == true,
+        previous_group_rules = previous_group_rules, reason = "group policy composition changes"})
+    if err then return nil, err end
+    if not result or result.success ~= true then
+        return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
+            message = "group delegation fencing failed: " .. tostring(result and result.error)}) :: error)
+    end
+    return true, nil
+end
 
 local function entry_id(slug: string): string
     return consts.CUSTOM_SCOPE_NS .. ":" .. slug
@@ -34,9 +55,11 @@ local function native_group_policies(snap)
     if read_err then return nil, read_err end
     local effective = {}
     for _, policy in ipairs(native) do
+        if (policy.meta or {}).managed_by ~= consts.MANAGED_BY then
         for _, group in ipairs((policy.data or {}).groups or {}) do
             effective[group] = effective[group] or {}
             effective[group][tostring(policy.id)] = true
+        end
         end
     end
     return effective, nil
@@ -149,6 +172,16 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
             if not already[policy_id] then group_policies[id][#group_policies[id] + 1] = policy_id end
         end
     end
+    -- Existing Users versions register group sets. Keep their scope and
+    -- bindings alive while consumers move to the source-policy resolver.
+    local registered, registered_err = group_sets.list()
+    if registered_err then return nil, registered_err end
+    local set_names = {}
+    for _, set in ipairs(registered) do
+        set_names[#set_names + 1] = set.scope_name
+        group_sources[set.scope_name] = set.groups
+        group_rows[set.scope_name] = {slug = set.scope_name:match(":(.+)$"), internal = true, label = "Group set"}
+    end
     local native, native_err = native_group_policies(snap)
     if not native then return nil, native_err end
     local effective, slug_sets = {}, {}
@@ -255,9 +288,25 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
     for group in pairs(affected) do fences[#fences + 1] = group end
     table.sort(fences)
 
+    local legacy_scopes = {}
+    for _, set in ipairs(registered) do
+        legacy_scopes[set.scope_name] = group_policies[set.scope_name]
+        for _, group in ipairs(set.groups) do
+            legacy_scopes[group] = group_policies[group] or ids(native[group] or {})
+        end
+    end
+    local bindings = {creates = {}, updates = {}, deletes = {}, reduced_groups = {}, allow_only = true, previous_group_rules = {}}
+    if #registered > 0 then
+        local bindings_err
+        bindings, bindings_err = policy_groups.plan(legacy_scopes, effective, snap)
+        if bindings_err then return nil, bindings_err end
+    end
     local created, updated, deleted = #creates, #updates, #deletes
+    for _, entry in ipairs(bindings.creates) do creates[#creates + 1] = entry end
+    for _, entry in ipairs(bindings.updates) do updates[#updates + 1] = entry end
+    for _, id in ipairs(bindings.deletes) do deletes[#deletes + 1] = id end
     local applied = snap:version()
-    if created + updated + deleted > 0 then
+    if #creates + #updates + #deletes > 0 then
         local changes = snap:changes()
         for _, want in ipairs(creates) do changes:create(want) end
         for _, want in ipairs(updates) do changes:update(want) end
@@ -267,6 +316,10 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
         applied = result
         logger:info("scopes reconciled", { created = created, updated = updated, deleted = deleted })
     end
+    local legacy_fenced, legacy_fence_err = fence_delegations(bindings.reduced_groups, bindings.allow_only, bindings.previous_group_rules)
+    if not legacy_fenced then return nil, legacy_fence_err, applied end
+    local marked, mark_err = group_sets.mark_materialized(set_names, tostring(applied:id()))
+    if not marked then return nil, mark_err, applied end
     local fenced, fence_err = M.fence(fences)
     if not fenced then return nil, fence_err, applied end
     return { created = created, updated = updated, deleted = deleted }, nil, applied
@@ -305,18 +358,63 @@ function M.fence(groups)
     return true, nil
 end
 
-function M.group_set(groups)
-    if type(groups) ~= "table" or #groups == 0 then
-        return nil, errors.new({kind = errors.INVALID, retryable = false, message = "group set requires groups"})
+local function validate_groups(groups)
+    local snap, snapshot_err = registry.snapshot()
+    if snapshot_err then return nil, snapshot_err end
+    if not snap then return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
+        message = "group validation snapshot unavailable"}) :: error) end
+    local known, known_err = native_group_policies(snap)
+    if known_err then return nil, known_err end
+    local declarations, declaration_err = snap:find({[".kind"] = "registry.entry",
+        ["meta.type"] = "kickside.security.group_composition"})
+    if declaration_err then return nil, declaration_err end
+    for _, declaration in ipairs(declarations or {}) do
+        local targets, target_err = composition.group_ids(declaration.data, tostring(declaration.id))
+        if target_err then return nil, target_err end
+        for _, id in ipairs(targets) do known[id] = known[id] or {} end
     end
+    local rows, rows_err = store.list_enabled()
+    if rows_err then return nil, rows_err end
+    for _, row in ipairs(rows) do known[scope_entry_id(row)] = known[scope_entry_id(row)] or {} end
     for _, group in ipairs(groups) do
-        if type(group) ~= "string" or group == "" then
-            return nil, errors.new({kind = errors.INVALID, retryable = false, message = "group must be a non-empty id"})
+        if not known[group] then
+            return nil, (errors.new({kind = errors.NOT_FOUND, retryable = false,
+                message = "group unavailable " .. group, details = {code = "group_not_found", group_id = group}}) :: error)
         end
     end
-    local resolved, err = group_resolver.resolve(groups)
-    if not resolved then return nil, err end
-    return {scope_name = groups[#groups], current = true}, nil
+    return snap, nil
 end
+
+-- group_set(groups) validates a principal's groups and returns the name of the
+-- scope that unions them and whether a projection pass of the current registry
+-- revision materialized it, so its bindings reflect every policy as it stands.
+function M.group_set(groups)
+    local name, sorted_or_err = group_sets.name_for(groups)
+    if not name then return nil, sorted_or_err end
+    local snap, valid_err = validate_groups(groups)
+    if not snap then return nil, valid_err end
+    local entry, entry_err = snap:get(name)
+    if entry_err and not errors.is(entry_err, errors.NOT_FOUND) then return nil, entry_err end
+    local meta = type(entry) == "table" and type(entry.meta) == "table" and entry.meta or {}
+    local materialized, materialized_err = group_sets.current(name, tostring(snap:version():id()))
+    if materialized_err then return nil, materialized_err end
+    return {scope_name = name, current = materialized == true and entry ~= nil
+        and entry.kind == consts.SCOPE_KIND and meta.managed_by == consts.MANAGED_BY}, nil
+end
+
+-- materialize(groups) returns the scope that unions a principal's groups,
+-- projecting the registry first unless the set is current.
+function M.materialize(groups)
+    local set, set_err = M.group_set(groups)
+    if not set then return nil, set_err end
+    if set.current then return {created = 0, updated = 0, deleted = 0, scope_name = set.scope_name}, nil end
+    local _, save_err = group_sets.save(groups)
+    if save_err then return nil, save_err end
+    local result, reconcile_err = M.reconcile()
+    if reconcile_err then return nil, reconcile_err end
+    result.scope_name = set.scope_name
+    return result, nil
+end
+
 
 return M

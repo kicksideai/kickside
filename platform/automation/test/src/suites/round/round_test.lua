@@ -28,6 +28,22 @@ local db, exec, query = h.db, h.exec, h.query
 local read_drive, new_drive, set_drive = h.read_drive, h.new_drive, h.set_drive
 local log_rows, ledger_row = h.log_rows, h.ledger_row
 
+-- Jobs store timestamps in each database's native representation, so compare
+-- against its clock rather than attempting to parse the driver's result.
+local function dispatcher_state(dispatcher_id: string): Map?
+    local opened = db()
+    local dialect = tostring(opened:type())
+    opened:release()
+    local due = dialect == "sqlite"
+        and "CASE WHEN scheduled_at IS NOT NULL AND julianday(scheduled_at) <= julianday('now') THEN 1 ELSE 0 END"
+        or "CASE WHEN scheduled_at IS NOT NULL AND scheduled_at <= CURRENT_TIMESTAMP THEN TRUE ELSE FALSE END"
+    return query("SELECT status,scheduled_at," .. due .. " AS is_due FROM kickside_job WHERE id=$1", { dispatcher_id })[1]
+end
+
+local function dispatcher_is_due(dispatcher: Map): boolean
+    return dispatcher.is_due == true or dispatcher.is_due == 1 or dispatcher.is_due == "1" or dispatcher.is_due == "t"
+end
+
 local function define_tests()
     test.describe("automation round", function()
         local env: Map = {}
@@ -92,10 +108,41 @@ local function define_tests()
             test.eq(notice.completions, completions, "notify before completing the slot")
         end)
 
+        test.it("wakes receipt maintenance when an empty event round releases its fence", function()
+            local key, source_port = "empty_retention_release", "fixture:empty-retention-release"
+            new_drive({ automation_id = automation_id, drive_key = key, source_kind = "event",
+                source_thread_id = thread_id, action = { source_ref = source_port, event_type = EVENT_TYPE } })
+            -- The mapped-receipt guard treats a non-object admission journal as
+            -- active work; model the settled journal retained by live drives.
+            set_drive(automation_id, key, "admission_json='{}'", {})
+            exec([[INSERT INTO kickside_automation_receipt
+                (owner_id,source_port,item_key,map_slot,identity_key,dest_ref_json,updated_at)
+                VALUES ($1,$2,'aged','default','aged','{"id":"remote"}',$3)]], { automation_id, source_port, PAST })
+            local dispatcher_id, dispatcher_err = slot.ensure_dispatcher()
+            test.is_nil(dispatcher_err, tostring(dispatcher_err))
+            test.not_nil(dispatcher_id)
+            local future = "2999-01-01T00:00:00Z"
+            exec([[UPDATE kickside_job SET status='pending',scheduled_at=$1,lease_token=NULL,lease_until=NULL,
+                wake_enabled=TRUE,wake_demand_at=NULL,wake_control_pending=FALSE WHERE id=$2]], { future, dispatcher_id })
+
+            local _, round_err = run(automation_id, key)
+            test.is_nil(round_err, tostring(round_err))
+            local dispatcher = dispatcher_state(dispatcher_id)
+            test.not_nil(dispatcher)
+            test.is_true(dispatcher.status == "running" or
+                (type(dispatcher.scheduled_at) == "string" and dispatcher_is_due(dispatcher)),
+                "releasing a retention blocker must demand a fresh dispatcher pass")
+        end)
+
         test.it("propagates a component notification error after committing", function()
             local key = "phase_notify_error"
             new_drive({ automation_id = automation_id, drive_key = key, source_kind = "event",
                 source_thread_id = thread_id, action = { source_ref = "fixture:phase", event_type = EVENT_TYPE } })
+            local dispatcher_id, dispatcher_err = slot.ensure_dispatcher()
+            test.is_nil(dispatcher_err, tostring(dispatcher_err))
+            local future = "2999-01-01T00:00:00Z"
+            exec([[UPDATE kickside_job SET status='pending',scheduled_at=$1,lease_token=NULL,lease_until=NULL,
+                wake_enabled=TRUE,wake_demand_at=NULL,wake_control_pending=FALSE WHERE id=$2]], { future, dispatcher_id })
             env.notify_error = errors.new({ kind = errors.UNAVAILABLE, message = "notification failed" })
             local expected = env.notify_error
             local before = #env.completions
@@ -104,6 +151,11 @@ local function define_tests()
             test.eq(err, expected)
             test.eq(read_drive(automation_id, key).phase, "active")
             test.eq(#env.completions, before)
+            local dispatcher = dispatcher_state(dispatcher_id)
+            test.not_nil(dispatcher)
+            test.is_true(dispatcher.status == "running" or
+                (type(dispatcher.scheduled_at) == "string" and dispatcher_is_due(dispatcher)),
+                "the committed release must wake maintenance before notification can fail")
         end)
 
         test.it("logs a committed terminal delivery failure with its item and reason", function()

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.6](https://github.com/kicksideai/kickside/compare/agents-v0.2.5...agents-v0.2.6) (2026-10-25)
+
+
+### Bug Fixes
+
+* **hub:** require typed recommender completion ([#145](https://github.com/kicksideai/kickside/issues/145)) ([b93bc77](https://github.com/kicksideai/kickside/commit/b93bc77a6f2835548592816a8e46591e7d72bbb1))
+
+## [0.2.5](https://github.com/kicksideai/kickside/compare/agents-v0.2.4...agents-v0.2.5) (2026-10-23)
+
+
+### Bug Fixes
+
+* **agents:** clarify generated artifact tag instructions ([#130](https://github.com/kicksideai/kickside/issues/130)) ([17e539a](https://github.com/kicksideai/kickside/commit/17e539af8533a0b587378b2cccccf96a5048a5fd))
+* **automation:** retire direct agent launch controls without breaking saved tasks ([#95](https://github.com/kicksideai/kickside/issues/95)) ([86e687a](https://github.com/kicksideai/kickside/commit/86e687ad79c4d29d91c753d5e7d1ca9e7caf873a))
+
 ## [0.2.4](https://github.com/kicksideai/kickside/compare/agents-v0.2.3...agents-v0.2.4) (2026-10-22)
 
 

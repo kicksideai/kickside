@@ -18,15 +18,20 @@ local function handle(request_dto)
         }
     end
 
-    local _, cancel_err = refresh_schedule.cancel(component_id)
-    if cancel_err then return { success = false, error = tostring(cancel_err) } end
+    local cancel_result, cancel_err = refresh_schedule.cancel_for_component(component_id)
+    if cancel_result and cancel_result.missing == true then
+        return { success = true, already_deleted = true }
+    end
+    if cancel_err or not cancel_result or not cancel_result.success then
+        return { success = false, error = tostring(cancel_err or (cancel_result and cancel_result.error) or "unknown error") }
+    end
 
     -- Delete the OAuth connection and all its data
     local delete_result, delete_err = oauth_repo.delete_connection(component_id)
     if delete_err then
         return {
             success = false,
-            error = "Failed to delete OAuth connection: " .. delete_err
+            error = "Failed to delete OAuth connection: " .. tostring(delete_err)
         }
     end
 

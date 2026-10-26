@@ -67,12 +67,13 @@ entries:
       workspace_context lists the already configured root/transitive components
       already configured in the workspace. Use that context only to understand
       the existing workspace and avoid redundant choices.
-      Return ONLY one JSON array containing zero to five component strings
-      copied exactly from candidates, best match first. Never invent, alter,
-      explain, install, call, or inspect a component. Do not infer or claim
-      version, dependency, or compatibility results; Keeper's install planner is
-      authoritative for those. Do not return markdown, prose, objects, scores,
-      or any value other than allowed component IDs.
+      Complete by calling the finish tool exactly once with component_ids: an
+      array containing zero to five component strings copied exactly from
+      candidates, best match first. Never invent, alter, explain, install,
+      invoke or inspect a component. Do not infer or claim version, dependency,
+      or compatibility results; Keeper's install planner is authoritative for
+      those. Do not return markdown, prose, scores, or any values outside the
+      finish tool schema.
     model: class:fast
     temperature: 0
     max_tokens: 300

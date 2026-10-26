@@ -83,5 +83,15 @@
       ]
     },
     "reason": "The SSO provisioner calls the host user provisioning contract for verified external identities, group assignment and session creation."
+  },
+  {
+    "module": "kickside/mcp-client",
+    "source": "mcp-client/src/oauth/config.lua",
+    "contracts": {
+      "kickside.oauth.runtime:connection": [
+        "get_config"
+      ]
+    },
+    "reason": "The external MCP client opens OAuth's actor- and scope-bound runtime reader to obtain only its own non-secret provider configuration before dispatching a remote MCP request."
   }
 ]

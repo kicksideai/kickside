@@ -204,6 +204,7 @@ entries:
     method: run
     modules: [registry, channel, time, sql, security, funcs, uuid]
     imports:
+      source_scope: app:source_scope
       canonical_json: kickside.contract:canonical_json
       test: wippy.test:test
       scope_projection: kickside.security.service:scope_projection
@@ -439,7 +440,7 @@ entries:
     method: run
     modules: [sql, uuid]
     imports:
-      group_resolver: kickside.security.runtime:groups
+      groups: kickside.security.persist:group_sets
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_writer: app:registry_fixture
       test: wippy.test:test
@@ -629,6 +630,26 @@ entries:
       source_scope: app:source_scope
       test: wippy.test:test
       security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
+  - name: legacy_policy_binding_continuity_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+    source: file://legacy_policy_binding_continuity_test.lua
+    method: run
+    modules: [registry, security]
+    imports:
+      policy_groups: kickside.security.service:policy_groups
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      scope_store: kickside.security.persist:scope_store
+      scope_projection: kickside.security.service:scope_projection
+      source_scope: app:source_scope
+      test: wippy.test:test
+      security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
 
   - name: policy_coverage_test
     kind: function.lua
@@ -707,6 +728,8 @@ entries:
     source: file://projection_source.lua
     modules: [logger, funcs]
     imports:
+      group_sets: kickside.security.persist:group_sets
+      policy_groups: kickside.security.service:policy_groups
       scope_key: kickside.security.projection:scope_key
       group_resolver: kickside.security.runtime:groups
       registry: app:security_dependency_fixture
@@ -813,3 +836,17 @@ entries:
       actions: db.get
       resources: app:db
       effect: allow
+
+  - name: staged_scope_api_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://staged_scope_api_test.lua
+    method: run
+    modules: [registry, funcs, security, sql, channel, time]
+    imports:
+      test: wippy.test:test
+      scope_writer: app:registry_fixture
+      scope_store: kickside.security.persist:scope_store
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+      group_resolver: kickside.security.runtime:groups

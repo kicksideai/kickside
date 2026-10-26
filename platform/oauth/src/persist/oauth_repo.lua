@@ -1,6 +1,7 @@
 -- OAuth connection create, update, schedule, and delete persistence.
 local sql = require("sql")
 local uuid = require("uuid")
+local errors = require("errors")
 local oauth_types = require("oauth_types")
 local support = require("oauth_repo_support")
 local refresh_schedule = require("refresh_schedule")
@@ -321,7 +322,7 @@ end
 -- Clamp pagination so list queries never return unbounded rows. Default page is
 -- 100; callers page through larger sets with offset.
 
-function oauth_repo.delete_connection(component_id: string?): (oauth_types.DeleteResult?, string?)
+function oauth_repo.delete_connection(component_id: string?): (oauth_types.DeleteResult?, any?)
     if not component_id or component_id == "" then
         return nil, VALIDATION_ERRORS.COMPONENT_ID_REQUIRED
     end
@@ -345,7 +346,7 @@ function oauth_repo.delete_connection(component_id: string?): (oauth_types.Delet
     end
 
     if result.rows_affected == 0 then
-        return nil, "OAuth connection not found"
+        return nil, errors.new({ kind = errors.NOT_FOUND, retryable = false, message = "OAuth connection not found" })
     end
 
     return ({

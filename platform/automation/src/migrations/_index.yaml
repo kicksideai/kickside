@@ -90,6 +90,7 @@ entries:
     source: file://stranded_drives.lua
     modules: [sql, json]
     imports:
+      slot_repair: kickside.automation.engine:slot_repair
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot

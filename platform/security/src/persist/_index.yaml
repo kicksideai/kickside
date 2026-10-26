@@ -6,6 +6,16 @@ namespace: kickside.security.persist
 # from this layer.
 
 entries:
+  - name: group_sets
+    kind: library.lua
+    source: file://group_sets.lua
+    modules:
+    - sql
+    - json
+    imports:
+      security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
+      persisted_json: kickside.contract:persisted_json
 
   - name: scope_store
     kind: library.lua

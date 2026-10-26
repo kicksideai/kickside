@@ -1,0 +1,35 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local security = require("security")
+local funcs = require("funcs")
+local types = require("types")
+
+local function lookup(policies)
+    local scope, scope_err = security.new_scope(policies)
+    test.is_nil(scope_err)
+    local actor = security.new_actor("automation-config-reader", {})
+    return funcs.new():with_actor(actor):with_scope(scope):call("app:config_access_probe")
+end
+
+return { run = test.run_cases(function()
+    test.describe("Automation configuration access", function()
+        test.it("preserves a denied registry lookup as a nonretryable permission error", function()
+            local policy, policy_err = security.policy("app:config_probe_call")
+            test.is_nil(policy_err)
+            local value, err = lookup({ policy })
+            test.is_nil(value)
+            test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            test.is_false(err:retryable())
+        end)
+
+        test.it("returns the configured database for an authorized scope", function()
+            local call, call_err = security.policy("app:config_probe_call")
+            test.is_nil(call_err)
+            local read, read_err = security.policy("app:config_probe_read")
+            test.is_nil(read_err)
+            local value, err = lookup({ call, read })
+            test.is_nil(err, tostring(err))
+            test.eq(value, types.db_id())
+        end)
+    end)
+end) }

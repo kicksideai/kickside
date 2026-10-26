@@ -11,6 +11,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicHarnessTests(unittest.TestCase):
+    def test_release_extra_files_resolve_within_their_module(self):
+        config = json.loads((ROOT / 'release-please-config.json').read_text())
+        checked = []
+        for module, package in config['packages'].items():
+            for extra in package.get('extra-files', []):
+                path = extra if isinstance(extra, str) else extra['path']
+                if isinstance(extra, dict) and extra.get('glob'):
+                    continue
+                # Release Please resolves extra-file paths against the package.
+                target = ROOT / path.lstrip('/') if path.startswith('/') else ROOT / module / path
+                with self.subTest(module=module, path=path):
+                    self.assertTrue(target.is_file(), f'release updater cannot find {target}')
+                checked.append(target)
+        self.assertIn(ROOT / 'platform/ui-kit/package/package.json', checked)
+
     def test_stateful_postgres_jobs_allocate_and_select_owned_databases(self):
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
         jobs = re.split(r'(?m)^        - module: ', workflow)[1:]

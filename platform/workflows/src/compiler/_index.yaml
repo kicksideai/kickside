@@ -70,7 +70,7 @@ entries:
     kind: library.lua
     meta: { comment: "Facade — compile(document) validates + materializes; remint(commands, gen_id, input) mints fresh per-run ids." }
     source: file://compiler.lua
-    modules: [expr]
+    modules: [expr, json]
     imports:
       graph: kickside.workflows.compiler:graph
       materialize: kickside.workflows.compiler:materialize

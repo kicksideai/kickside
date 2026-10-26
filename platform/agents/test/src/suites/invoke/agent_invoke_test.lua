@@ -90,7 +90,44 @@ local function define_tests()
             test.not_nil(run)
             test.eq(run.value, "user_agent:agent-1")
             test.eq(run.cfg.arena.max_iterations, 5)
+            test.eq(run.cfg.arena.tool_calling, "auto")
+            test.is_nil(run.cfg.arena.exit_schema)
             test.eq(input_call(calls).value.message, "Summarize yesterday.")
+        end)
+
+        test.it("passes an object exit schema only through the existing finish mechanism", function()
+            local calls = {}
+            local schema = {
+                type = "object",
+                additionalProperties = false,
+                required = { "component_ids" },
+                properties = { component_ids = { type = "array", items = { type = "string" } } },
+            }
+            local result = agent_invoke.invoke({
+                config = { agent_id = "agent-1", max_iterations = 1, exit_schema = schema },
+                input = { content = "Recommend one component." },
+            }, {
+                can_agent = function() return true end,
+                flow = make_flow(calls, { component_ids = { "acme/alpha" } }, nil),
+            })
+
+            test.is_true(result.success)
+            test.eq(result.structured.component_ids[1], "acme/alpha")
+            local run = agent_call(calls)
+            test.eq(run.cfg.arena.tool_calling, "any")
+            test.eq(run.cfg.arena.exit_schema, schema)
+            test.is_nil(run.cfg.arena.tools)
+        end)
+
+        test.it("rejects a non-object exit schema before starting the flow", function()
+            local calls = {}
+            local result = agent_invoke.invoke({
+                config = { agent_id = "agent-1", exit_schema = { type = "array" } },
+                input = { content = "Go." },
+            }, { can_agent = function() return true end, flow = make_flow(calls, "unused", nil) })
+            test.is_false(result.success)
+            test.contains(result.error.message, "exit_schema must be an object JSON Schema")
+            test.is_nil(agent_call(calls))
         end)
 
         test.it("rejects an unreadable user agent before starting the flow", function()

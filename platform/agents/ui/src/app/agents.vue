@@ -7,7 +7,6 @@ import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { useComponentEvents } from '../constants.ts'
 import AgentForm from './AgentForm.vue'
 import { errMsg } from '@widgets/app/errMsg'
-import WcMount from '@widgets/app/WcMount.vue'
 import { loadToolCatalog } from './toolCatalog.ts'
 
 // Canonical WC: the authenticated client comes from @wippy-fe/proxy; in-component
@@ -93,25 +92,6 @@ async function loadOptions() {
 // agent's session start-token (packed per agent by the API).
 function startChat(a: Agent) {
   if (a.start_token) emit('kickside-chat-open', { kind: 'start', startToken: a.start_token })
-}
-
-const runAgent = ref<Agent | null>(null)
-const runPrompt = ref('')
-const preparedRun = ref<{ parent: string; title: string; target: string } | null>(null)
-const runError = ref('')
-function mayLaunch(a: Agent) { return ((a.access_level || 0) & 2) !== 0 }
-function openBackground(a: Agent) {
-  if (!mayLaunch(a)) return
-  runAgent.value = { ...a }; runPrompt.value = ''; preparedRun.value = null; runError.value = ''
-}
-function closeBackground() { runAgent.value = null; preparedRun.value = null; runError.value = '' }
-function prepareBackground() {
-  if (!runAgent.value || !runPrompt.value.trim() || preparedRun.value) return
-  preparedRun.value = { parent: runAgent.value.id, title: `Run ${runAgent.value.title || 'agent'}`,
-    target: JSON.stringify({ kind: 'agent', agent_id: runAgent.value.id, prompt: runPrompt.value }) }
-}
-function backgroundError(value: unknown) {
-  runError.value = errMsg(value, 'Could not launch the background task')
 }
 
 // ── editor ──
@@ -206,14 +186,6 @@ useHostVisibilityRefresh(async () => {
 
     <div v-if="error" class="kx-err">{{ error }}</div>
 
-    <section v-if="runAgent" class="kx-background-run" aria-label="Background agent run">
-      <header><h2>Run {{ runAgent.title || 'agent' }} in background</h2><Button type="button" label="Close background run" severity="secondary" outlined @click="closeBackground" /></header>
-      <p>The task runs with its selected account's current access. Its recorded human authorizer still needs access and permission to select that account.</p>
-      <label>Task prompt<textarea v-model="runPrompt" aria-label="Task prompt" :readonly="!!preparedRun" rows="4" /></label>
-      <Button v-if="!preparedRun" type="button" label="Prepare background run" :disabled="!runPrompt.trim()" @click="prepareBackground" />
-      <WcMount v-else tag="wc-manual-task-launcher" :attrs="preparedRun" @error="backgroundError" @created="runError = ''" />
-      <p v-if="runError" role="alert">{{ runError }}</p>
-    </section>
 
     <div class="kx-body">
       <div v-if="loading && !agents.length" class="kx-loading">
@@ -258,9 +230,6 @@ useHostVisibilityRefresh(async () => {
               </div>
             </div>
             <div class="kx-card-actions" @click.stop>
-              <Button v-if="mayLaunch(a)" type="button" severity="secondary" outlined size="small" title="Run in background" :aria-label="`Run ${a.title} in background`" @click="openBackground(a)">
-                <template #icon="{ class: iconClass }"><Icon icon="tabler:player-play" :class="iconClass" aria-hidden="true" /></template>
-              </Button>
               <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${a.title}`" @click="openEdit(a)">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>
