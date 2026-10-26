@@ -187,13 +187,26 @@ local function define_tests()
                 "live membership authority does not inherit a session-mint default")
         end)
 
-        test.it("creates no generated binding or metadata policies", function()
-            for _, entry in ipairs(assert(registry.find({[".kind"] = "security.policy"}))) do
-                local meta = entry.meta or {}
-                test.is_nil(meta.scope_projection_policy, "scope composition creates no binding policy")
-                test.neq(meta.scope_metadata, true, "scope composition creates no metadata policy")
+        test.it("mints source references without registering a union scope", function()
+            local function union_count()
+                local count = 0
+                for _, entry in ipairs(assert(registry.find({[".kind"] = "security.scope",
+                        ["meta.managed_by"] = "kickside.security.scopes"}))) do
+                    if tostring(entry.id):match("^kickside%.security%.scopes:set_") then count = count + 1 end
+                end
+                return count
             end
+            local before = union_count()
+            assert(user_group_sources_repo.set_user_groups(uid, {group, "app.security:scope_support"}))
+            local minted = assert(session.mint(assert(user_groups_repo.get_user_with_groups(uid))))
+            local selected = false
+            for _, policy in ipairs(minted.scope:policies()) do
+                if policy:id() == source then selected = true end
+            end
+            test.is_true(selected, "the custom grant retains its original policy identity")
+            test.eq(union_count(), before, "minting a new membership combination creates no union scope")
         end)
+
     end)
 end
 return {run = test.run_cases(define_tests)}
