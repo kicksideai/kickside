@@ -1,13 +1,20 @@
+local group_resolver = require("group_resolver")
+local scope_writer = require("scope_writer")
+local trigger_reconcile = require("trigger_reconcile")
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local registry = require("registry_fixture")
 local configured = require("configured")
 local consts = require("security_consts")
 local scopes = require("scopes")
-local groups = require("groups")
+local projection = require("projection")
 
 return {run = test.run_cases(function()
     test.describe("security database configuration", function()
+        local projector
+        test.before_all(function() projector = scope_writer.start_projector() end)
+        test.after_all(function() scope_writer.stop_projector(projector) end)
+
         test.it("propagates the registry configuration error unchanged", function()
             local source = errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
                 message = "database configuration read denied"})
@@ -23,6 +30,9 @@ return {run = test.run_cases(function()
             test.is_true(errors.is(err, errors.UNAVAILABLE))
         end)
         test.it("uses the shared resolver at every persistence boundary", function()
+            local slug = "configuration_scope_read"
+            test.not_nil(assert(scopes.upsert({slug = slug, policies = {}})))
+            test.not_nil(assert(trigger_reconcile.trigger()))
             local original = consts.db_id
             local source = errors.new({kind = errors.UNAVAILABLE, retryable = true,
                 message = "database configuration unavailable"})
@@ -30,17 +40,19 @@ return {run = test.run_cases(function()
             local ok, failure = pcall(function()
                 for index, read in ipairs({
                     function() return scopes.list() end,
-                    function() return groups.list() end,
-                    function() return groups.save({"app:configured_group"}) end,
-                    function() return groups.current("app:configured_set", "revision") end,
-                    function() return groups.mark_materialized({"app:configured_set"}, "revision") end,
+                    function() return scopes.get("configured") end,
+                    function() return scopes.upsert({slug = "configured", policies = {}}) end,
+                    function() return scopes.delete("configured") end,
+                    function() return group_resolver.resolve({"kickside.security.scopes:" .. slug}) end,
                 }) do
                     local result, err = read()
-                    test.is_nil(result, "persistence boundary " .. index)
+                    test.is_true(result == nil or result == false, "persistence boundary " .. index)
                     test.eq(err, source, "persistence boundary " .. index)
                 end
             end)
             consts.db_id = original
+            test.is_true(assert(scopes.delete(slug)))
+            test.not_nil(assert(trigger_reconcile.trigger()))
             if not ok then error(failure) end
         end)
     end)

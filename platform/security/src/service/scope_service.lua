@@ -135,7 +135,7 @@ function M.main()
                 end
             end
             -- A commit this service applied itself needs no further pass.
-            local needs_pass = not projected
+            local needs_pass = not projected or #fences > 0
             for _, pending in ipairs(answered) do
                 if pending.require_pass then needs_pass = true; break end
             end
@@ -147,14 +147,7 @@ function M.main()
             local rerr
             local applied
             if needs_pass then
-                stats, rerr, applied = projection.reconcile()
-            end
-            -- A delegation barrier can still carry credential fences. The
-            -- event-driven projection established registry authority; run
-            -- those fences before acknowledging the caller.
-            if not rerr then
-                local _, fence_err = projection.fence(fences)
-                rerr = fence_err
+                stats, rerr, applied = projection.reconcile(fences)
             end
             if rerr then
                 projected = nil

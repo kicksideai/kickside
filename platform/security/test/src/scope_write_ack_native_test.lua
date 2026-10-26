@@ -1,3 +1,5 @@
+local scope_writer = require("scope_writer")
+local trigger_reconcile = require("trigger_reconcile")
 local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
@@ -8,6 +10,10 @@ local ack_probe = require("ack_probe")
 
 local function define_tests()
     test.describe("native scope write acknowledgements", function()
+        local projector
+        test.before_all(function() projector = scope_writer.start_projector() end)
+        test.after_all(function() scope_writer.stop_projector(projector) end)
+
         test.it("reports commit state without changing the successful row or precommit failure", function()
             local slug = "native_ack_state_" .. uuid.v7():gsub("-", "")
             local row, err, committed = scopes.upsert({slug = slug, policies = {}}, "native-ack-actor")

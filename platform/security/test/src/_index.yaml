@@ -37,6 +37,7 @@ entries:
     method: run
     modules: [registry, security, funcs, uuid, sql, json, channel, time]
     imports:
+      source_scope: app:source_scope
       test: wippy.test:test
       registry_fixture: app:registry_fixture
       trigger_reconcile: kickside.security:trigger_reconcile
@@ -102,11 +103,17 @@ entries:
     method: run
     modules: [store, security, time]
 
+    imports:
+      source_scope: app:source_scope
+
   - name: fence_delegations
     kind: function.lua
     source: file://invalidate_sessions.lua
     method: fence
     modules: [store, security, time]
+
+    imports:
+      source_scope: app:source_scope
 
   - name: declared_group
     kind: registry.entry
@@ -168,6 +175,10 @@ entries:
       - security
       - store
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      execution_identity: kickside.execution:execution_identity
+      source_scope: app:source_scope
       test: wippy.test:test
       scope_store: kickside.security.persist:scope_store
       scope_projection: kickside.security.service:scope_projection
@@ -193,6 +204,7 @@ entries:
     method: run
     modules: [registry, channel, time, sql, security, funcs, uuid]
     imports:
+      source_scope: app:source_scope
       canonical_json: kickside.contract:canonical_json
       test: wippy.test:test
       scope_projection: kickside.security.service:scope_projection
@@ -211,7 +223,7 @@ entries:
   - name: registry_fixture
     kind: library.lua
     source: file://registry_fixture.lua
-    modules: [registry, time]
+    modules: [registry, time, channel]
 
   - name: registry_fixture_test
     kind: function.lua
@@ -234,6 +246,8 @@ entries:
     method: run
     modules: [registry, security, channel, time, funcs, sql, store]
     imports:
+      execution_identity: kickside.execution:execution_identity
+      source_scope: app:source_scope
       test: wippy.test:test
       registry_fixture: app:registry_fixture
       security_consts: kickside.security:security_consts
@@ -247,6 +261,7 @@ entries:
     method: run
     modules: [registry, channel, time, store, funcs, security]
     imports:
+      source_scope: app:source_scope
       test: wippy.test:test
       registry_fixture: app:registry_fixture
       security_consts: kickside.security:security_consts
@@ -400,6 +415,9 @@ entries:
     source: file://producer_scope_test.lua
     modules: [security]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      source_scope: app:source_scope
       test: wippy.test:test
       scope_catalog: kickside.security.api:scope_catalog
       scope_store: kickside.security.persist:scope_store
@@ -422,9 +440,11 @@ entries:
     method: run
     modules: [sql, uuid]
     imports:
+      groups: kickside.security.persist:group_sets
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
       test: wippy.test:test
       scopes: kickside.security.persist:scope_store
-      groups: kickside.security.persist:group_sets
       projection: kickside.security.service:scope_projection
 
   - name: native_fingerprint_failure
@@ -484,6 +504,8 @@ entries:
     method: run
     modules: [sql, uuid, registry, funcs]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
       test: wippy.test:test
       scopes: kickside.security.persist:scope_store
       ack_probe: app:scope_write_ack_fixture
@@ -540,6 +562,8 @@ entries:
     kind: function.lua
     source: file://delegation_composition_probe.lua
     method: run
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
     modules: [sql, json]
     imports:
       scopes: kickside.security.persist:scope_store
@@ -551,6 +575,9 @@ entries:
     method: run
     modules: [registry, security, funcs, uuid]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      source_scope: app:source_scope
       test: wippy.test:test
       scopes: kickside.security.persist:scope_store
       projection: kickside.security.service:scope_projection
@@ -594,9 +621,33 @@ entries:
       group: KickSide Security
     source: file://policy_binding_continuity_test.lua
     method: run
+    modules: [registry, security]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      scope_store: kickside.security.persist:scope_store
+      scope_projection: kickside.security.service:scope_projection
+      source_scope: app:source_scope
       test: wippy.test:test
+      security_consts: kickside.security:security_consts
+      canonical_json: kickside.contract:canonical_json
+  - name: legacy_policy_binding_continuity_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_security
+      group: KickSide Security
+    source: file://legacy_policy_binding_continuity_test.lua
+    method: run
+    modules: [registry, security]
+    imports:
       policy_groups: kickside.security.service:policy_groups
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      scope_store: kickside.security.persist:scope_store
+      scope_projection: kickside.security.service:scope_projection
+      source_scope: app:source_scope
+      test: wippy.test:test
       security_consts: kickside.security:security_consts
       canonical_json: kickside.contract:canonical_json
 
@@ -606,8 +657,8 @@ entries:
     source: file://policy_coverage_test.lua
     method: run
     imports:
-      test: wippy.test:test
       policy_coverage: kickside.security:policy_coverage
+      test: wippy.test:test
 
   - name: catalog_registry_failure_test
     kind: function.lua
@@ -628,6 +679,7 @@ entries:
     kind: library.lua
     source: file://catalog_source.lua
     imports:
+      scope_key: kickside.security.projection:scope_key
       registry: app:security_dependency_fixture
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
@@ -644,12 +696,15 @@ entries:
     source: file://database_config_test.lua
     method: run
     imports:
+      group_resolver: kickside.security.runtime:groups
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
+      projection: kickside.security.service:scope_projection
       test: wippy.test:test
       registry_fixture: app:security_dependency_fixture
       configured: app:database_config_probe
       security_consts: kickside.security:security_consts
       scopes: kickside.security.persist:scope_store
-      groups: kickside.security.persist:group_sets
 
   - name: trigger_request_probe
     kind: library.lua
@@ -673,11 +728,13 @@ entries:
     source: file://projection_source.lua
     modules: [logger, funcs]
     imports:
+      group_sets: kickside.security.persist:group_sets
+      policy_groups: kickside.security.service:policy_groups
+      scope_key: kickside.security.projection:scope_key
+      group_resolver: kickside.security.runtime:groups
       registry: app:security_dependency_fixture
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
-      group_sets: kickside.security.persist:group_sets
-      policy_groups: kickside.security.service:policy_groups
       policy_composition: kickside.security:policy_composition
   - name: projection_registry_failure_test
     kind: function.lua
@@ -688,7 +745,6 @@ entries:
       test: wippy.test:test
       registry_fixture: app:security_dependency_fixture
       projection: app:projection_registry_probe
-      policy_groups: kickside.security.service:policy_groups
 
   - name: member_catalog_caller
     kind: security.policy
@@ -704,6 +760,93 @@ entries:
     method: run
     modules: [funcs, security, registry]
     imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_writer: app:registry_fixture
       test: wippy.test:test
       scope_store: kickside.security.persist:scope_store
       scope_catalog: kickside.security.api:scope_catalog
+
+  - name: source_scope
+    kind: library.lua
+    source: file://source_scope.lua
+    imports:
+      group_resolver: kickside.security.runtime:groups
+      scope_store: kickside.security.persist:scope_store
+      execution_identity: kickside.execution:execution_identity
+
+  - name: retire_source_bindings
+    kind: function.lua
+    source: file://source_scope_migration.lua
+    method: retire_generated
+    modules: [registry]
+    imports:
+      migration: wippy.migration:migration
+      security_consts: kickside.security:security_consts
+  - name: source_scope_upgrade_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://source_scope_upgrade_test.lua
+    method: run
+    modules: [registry, funcs]
+    imports:
+      test: wippy.test:test
+      security_consts: kickside.security:security_consts
+
+  - name: source_scope_decisions_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://source_scope_decisions_test.lua
+    method: run
+    modules: [registry, security]
+    imports:
+      test: wippy.test:test
+
+  - name: resolver_boundary_client
+    kind: function.lua
+    source: file://resolver_boundary_client.lua
+    method: resolve
+    modules: [sql, funcs]
+  - name: resolver_boundary_calls
+    kind: security.policy
+    policy:
+      actions: [funcs.call, funcs.security, registry.get]
+      resources: [app:resolver_boundary_client, kickside.security.runtime:resolve_groups]
+      effect: allow
+  - name: resolver_boundary_client_only
+    kind: security.policy
+    policy:
+      actions: [funcs.call, funcs.security, registry.get]
+      resources: app:resolver_boundary_client
+      effect: allow
+  - name: resolver_boundary_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://resolver_boundary_test.lua
+    method: run
+    modules: [funcs, security, registry, sql]
+    imports:
+      test: wippy.test:test
+      scope_writer: app:registry_fixture
+      trigger_reconcile: kickside.security:trigger_reconcile
+      scope_store: kickside.security.persist:scope_store
+
+  - name: resolver_boundary_own_db
+    kind: security.policy
+    policy:
+      actions: db.get
+      resources: app:db
+      effect: allow
+
+  - name: staged_scope_api_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_security}
+    source: file://staged_scope_api_test.lua
+    method: run
+    modules: [registry, funcs, security, sql, channel, time]
+    imports:
+      test: wippy.test:test
+      scope_writer: app:registry_fixture
+      scope_store: kickside.security.persist:scope_store
+      trigger_reconcile: kickside.security:trigger_reconcile
+      group_sets: kickside.security.persist:group_sets
+      group_resolver: kickside.security.runtime:groups

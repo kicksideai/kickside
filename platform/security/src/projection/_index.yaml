@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.security.projection
+entries:
+  - name: scope_key
+    kind: library.lua
+    source: file://scope_key.lua
+    modules: [hash]
