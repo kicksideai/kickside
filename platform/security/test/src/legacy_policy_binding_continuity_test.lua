@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local policy_groups = require("policy_groups")
 local consts = require("security_consts")
