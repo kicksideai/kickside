@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/kicksideai/kickside/compare/workflows-v0.2.2...workflows-v0.2.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* **workflows:** give the run notice and run list readable spacing ([e5802ac](https://github.com/kicksideai/kickside/commit/e5802ac565f191edee5b910ee8803fd78393a89e))
+* **workflows:** style run controls through owned PT classes ([eb1259d](https://github.com/kicksideai/kickside/commit/eb1259db049c43c6397398883664815befe8994d))
+
 ## [0.2.2](https://github.com/kicksideai/kickside/compare/workflows-v0.2.1...workflows-v0.2.2) (2026-10-25)
 
 
