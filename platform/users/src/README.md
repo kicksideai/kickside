@@ -34,12 +34,20 @@ security scopes. This module owns user storage, token-store configuration, and
 repository libraries; other KickSide modules consume `kickside.users.persist:*`
 rather than depending on kickside auth internals.
 
-Group-policy fences call `kickside.users.persist:delegation_fencer` with
-`group_ids` and optional `previous_group_rules`. Security compares the member's
-combined policy coverage; Users locks the accounts and advances delegation
-epochs transactionally. Missing historical rules require conservative coverage.
-Saved credentials retain their payloads, session index and authentication
-generation. Validation resolves current groups and policies.
+Sessions compose native group policies with the source policy IDs selected by
+custom scopes. The native subject lookup resolves current memberships and live
+DB selections on validation; users without custom selections add no query, and
+all held custom selections share one query by scope primary key. Original
+membership labels remain in actor metadata for ACL checks. Live authority uses
+actual memberships; a session-mint default does not add authority to an account
+with no memberships.
+
+Custom-scope writes ask the existing Security writer to fence the affected groups,
+including composed memberships, before changing their DB selections. The writer
+calls `kickside.users.persist:delegation_fencer`; Users locks those accounts and
+advances their delegation epochs transactionally. This path uses no policy-body
+coverage proof. Saved sessions retain their bearer tokens, ownership rows and
+authentication generation while live validation reflects the current selection.
 
 `kickside.users.persist:session_revoker` retains user, token and group revocation.
 Omitting `preserve_sessions` revokes group sessions and delegation authority.
@@ -47,3 +55,24 @@ The published `preserve_sessions = true` request retains its fencing behavior;
 new callers use the explicit delegation operation. The published
 `session_index.invalidate_groups` option retains the same dispatch at the
 revocation boundary.
+
+The explicit `session_index.invalidate_groups` API retains its `allow_only`
+coverage behavior for native group invalidation. Custom-scope writes use the
+separate delegation fence and do not use that session-invalidation option.
+
+## Runtime compatibility
+
+Live selected-policy authority requires Runtime 0.3.54a or newer. Upgrade Runtime
+before updating Users to this source-policy resolver. The Security API stage
+retains the old materialization contract for installations still using older Users.
+
+The source-policy resolver requires Security >=0.2.13 and Execution >=0.2.7.
+Both are minimum versions, so existing locks must advance to implementations
+that provide the public resolver and preserve selected policies during run-as.
+Security retains its native named-scope and materialization APIs for older
+consumers; this Users client does not depend on its persistence or generated IDs.
+
+Native compatibility projection also retains its post-projection reduction
+fence. It closes the window in which an older native-scope consumer could
+capture the previous grants after the source pre-write fence but before the
+registry update. Authentication generations and token records remain unchanged.

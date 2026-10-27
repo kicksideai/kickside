@@ -139,8 +139,8 @@ entries:
     modules:
       - sql
     imports:
-      credential_eligibility: kickside.users.persist:credential_eligibility
       policy_coverage: kickside.security:policy_coverage
+      credential_eligibility: kickside.users.persist:credential_eligibility
       user_consts: kickside.users:consts
 
   - name: session_revoker
@@ -161,6 +161,7 @@ entries:
         - kickside.users.security:login_db_access
         - kickside.users.security:login_env_read
         - kickside.users.security:session_group_policy_read
+        - kickside.users.security:resolve_scope_groups
 
   - name: profile_writer
     kind: library.lua
@@ -208,3 +209,4 @@ entries:
         - kickside.users.security:login_db_access
         - kickside.users.security:login_env_read
         - kickside.users.security:session_group_policy_read
+        - kickside.users.security:resolve_scope_groups

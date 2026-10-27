@@ -36,7 +36,6 @@ end
 
 local function define_tests()
     test.describe("login actor metadata", function()
-        local union_scope_name
 
         test.it("applies added group policies to an existing token without login", function()
             local uid, slug = "session_allow_expansion", "session_allow_expansion"
@@ -143,8 +142,8 @@ local function define_tests()
             test.not_nil(projected, "policy reduction reconciled before issuing a new session")
             local current = login()
             test.eq(assert(user_repo.get(uid)).auth_generation, before)
-            test.is_true(assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation > delegation_before,
-                "projection omits delegation fencing for a configured host operation")
+            test.eq(assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation, delegation_before + 1,
+                "native compatibility reduction fences delegations without changing login authentication")
             local tokens = assert(security.token_store("kickside.users.security:tokens"))
             for _, token in ipairs({older, current}) do
                 local actor, scope, validate_err = tokens:validate(token)
@@ -189,9 +188,9 @@ local function define_tests()
             test.not_nil(current)
             local tokens, tokens_err = security.token_store("kickside.users.security:tokens")
             test.is_nil(tokens_err)
-            local _, _, older_validate_err = tokens:validate(older.token)
+            local _, _, older_validate_err = tokens:validate(assert(older.token))
             test.not_nil(older_validate_err)
-            local actor, _, validate_err = tokens:validate(current.token)
+            local actor, _, validate_err = tokens:validate(assert(current.token))
             test.is_nil(validate_err)
             test.eq(actor:id(), uid)
             tokens:close()
@@ -241,7 +240,7 @@ local function define_tests()
             test.not_nil(deleted)
         end)
 
-        test.it("denies named group materialization without runtime composition authority", function()
+        test.it("keeps legacy group materialization unavailable to an ordinary caller", function()
             local policy = assert(security.policy("app:projection_caller"))
             local scope = assert(security.new_scope({policy}))
             local bound = assert(funcs.new()):with_actor(security.new_actor("ordinary_member")):with_scope(scope)
@@ -471,18 +470,19 @@ local function define_tests()
                 test.not_nil(actor)
                 test.not_nil(scope)
                 local name = actor:meta().scope_id
-                test.is_true(name:match("^kickside%.security%.scopes:set_%x+$") ~= nil)
+                test.is_true(name:match("^kickside%.security%.scopes:set_%x+$") == nil)
                 test.eq(payload.security.scope, name)
-                if union_scope_name then test.eq(name, union_scope_name) end
-                union_scope_name = name
                 local executor, executor_err = funcs.new()
                 test.is_nil(executor_err)
                 local bound = executor:with_actor(actor):with_scope(scope)
                 local recovered, recover_err = bound:call("kickside.users.binding:subject_lookup", {subject_id = uid})
                 test.is_nil(recover_err)
                 test.eq(recovered.scope_name, name)
-                test.eq(#recovered.scope_groups, 1)
-                test.eq(recovered.scope_groups[1], name)
+                test.eq(#recovered.scope_groups, 3)
+                test.eq(#recovered.scope_policy_ids, 0)
+                local selected = {}
+                for _, group in ipairs(recovered.scope_groups) do selected[group] = true end
+                for _, group in ipairs(groups) do test.is_true(selected[group]) end
                 test.eq(scope:evaluate(actor, "access", "app:crm.endpoint"), "allow", "CRM group grant")
                 test.eq(scope:evaluate(actor, "access", "app:journal.endpoint"), "allow", "Journal group grant")
                 test.eq(scope:evaluate(actor, "access", "app:shared.endpoint"), "deny")

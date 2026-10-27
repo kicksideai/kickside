@@ -105,7 +105,7 @@ function M.preflight_membership_change(db, user_id, prepare)
     local decision, decision_err = classify_membership_effect(before_groups, after_groups)
     if decision_err then return nil, decision_err end
     return { before_groups = before_groups, before_sources = before_sources, after_groups = after_groups, context = context,
-        effect = decision.effect, revision = decision.revision }, nil
+        effect = decision.effect, revision = decision.revision, fence_groups = decision.fence_groups }, nil
 end
 
 -- apply_membership_change_in applies a previously classified change after taking
@@ -131,7 +131,10 @@ function M.apply_membership_change_in(tx, user_id, preflight, write)
     local write_result, write_err = write(preflight.context)
     if write_err then return nil, write_err end
     local invalidated = { revoked = 0 }
-    if preflight.effect == "reduction" then
+    if preflight.effect == "allow_only" and #(preflight.fence_groups or {}) > 0 then
+        local _, fence_err = session_index.invalidate_delegations_in(tx, user_id)
+        if fence_err then return nil, fence_err end
+    elseif preflight.effect == "reduction" then
         local invalidate_err
         invalidated, invalidate_err = session_index.invalidate_user_in(tx, user_id, {revoke_delegations = true})
         if invalidate_err then return nil, invalidate_err end

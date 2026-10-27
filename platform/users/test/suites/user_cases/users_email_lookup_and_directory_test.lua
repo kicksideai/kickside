@@ -154,6 +154,7 @@ local function define_tests()
                 local email = uid .. "@test.local"
                 local db, db_err = sql.get("app:db")
                 test.is_nil(db_err)
+                db = assert(db)
                 for i = 0, 50 do
                     local id = i == 0 and uid or ("newer-member-" .. suffix .. "-" .. i)
                     local _, insert_err = sql.builder.insert("app_users"):set_map({
@@ -206,6 +207,7 @@ local function define_tests()
                 test.is_false(after.success)
                 db, db_err = sql.get("app:db")
                 test.is_nil(db_err)
+                db = assert(db)
                 local _, component_cleanup_err = sql.builder.delete("kickside_components"):where("component_id = ?", root):run_with(db):exec()
                 test.is_nil(component_cleanup_err)
                 local _, cleanup_err = sql.builder.delete("app_users"):where("user_id LIKE ?", "%" .. suffix .. "%"):run_with(db):exec()
@@ -431,6 +433,7 @@ local function define_tests()
 
                 local db, db_err = sql.get("app:db")
                 test.is_nil(db_err)
+                db = assert(db)
                 test.not_nil(db)
                 if not db then error(tostring(db_err or "database unavailable")) end
                 local rows, query_err = sql.builder.select("COUNT(*) AS count")

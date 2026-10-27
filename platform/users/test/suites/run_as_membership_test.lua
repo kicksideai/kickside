@@ -39,7 +39,7 @@ local function mint(user_id)
     local minted, mint_err = session.mint(user)
     test.is_nil(mint_err)
     test.not_nil(minted)
-    return minted.token
+    return assert(minted.token)
 end
 
 local function validate(token)
