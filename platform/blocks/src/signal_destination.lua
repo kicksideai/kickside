@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Blocks owns destination inspection; external arm owners use authorize_arm.
 local sql = require("sql")
 local json = require("json")

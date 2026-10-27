@@ -87,10 +87,7 @@ function M.resume(args: any): (Map?, error?)
         return nil, destination.failure(frame_err, "Flow identity invalid",
             "BLOCK_FLOW_IDENTITY_INVALID", errors.PERMISSION_DENIED, false)
     end
-    local executor, executor_err = funcs.new()
-    if not executor then return nil, destination.failure(executor_err, "Signal executor unavailable",
-        "BLOCK_SIGNAL_EXECUTOR_UNAVAILABLE", errors.UNAVAILABLE, true) end
-    local resumed, resume_err = executor:with_actor(actor):with_scope(scope):call(RESUME_UNDER_IDENTITY, {
+    local resumed, resume_err = funcs.new():with_actor(actor):with_scope(scope):call(RESUME_UNDER_IDENTITY, {
         dataflow_id = dataflow_id,
         signal_id = signal_id,
         payload = payload,
