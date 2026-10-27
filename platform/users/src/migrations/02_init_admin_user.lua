@@ -74,6 +74,22 @@ local function hash_password(password)
     return hashed
 end
 
+local function credential_summary(username, email, password, group_id, is_default)
+    local credential_type = is_default and "DEFAULT" or "GENERATED"
+    local lines = {
+        "    " .. credential_type .. " ADMIN USER CREATED - SAVE THESE CREDENTIALS!",
+        "    Username: " .. username,
+        "    Email:    " .. email,
+    }
+    if not is_default then
+        lines[#lines + 1] = "    Password: " .. password
+    end
+    lines[#lines + 1] = "    Group:    " .. group_id
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "    Login URL: /api/public/user/token"
+    return lines
+end
+
 -- Create the admin user (using provided db connection)
 local function create_admin_user(db)
     -- Check if admin already exists
@@ -144,20 +160,15 @@ local function create_admin_user(db)
 
     log:info("Admin user created and assigned to admin group", { user_id = admin_username })
 
-    -- Print credentials
-    local credential_type = is_default_admin and "DEFAULT" or "GENERATED"
-    print("    " .. credential_type .. " ADMIN USER CREATED - SAVE THESE CREDENTIALS!")
-    print("    Username: " .. admin_username)
-    print("    Email:    " .. admin_email)
-    print("    Password: " .. admin_password)
-    print("    Group:    " .. admin_group_id)
-    print("")
-    print("    Login URL: /api/public/user/token")
+    for _, line in ipairs(credential_summary(admin_username, admin_email, admin_password,
+        admin_group_id, is_default_admin)) do
+        print(line)
+    end
 
     return { username = admin_username }
 end
 
-return require("migration").define(function()
+local migrate = require("migration").define(function()
     migration("Initialize admin user with randomized credentials on first boot", function()
         database("postgres", function()
             up(function(db)
@@ -182,3 +193,5 @@ return require("migration").define(function()
         end)
     end)
 end)
+
+return { migrate = migrate, credential_summary = credential_summary }
