@@ -167,7 +167,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      destination: kickside.blocks:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: resume_under_identity
@@ -180,7 +180,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      destination: kickside.blocks:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: process_host
@@ -198,3 +198,24 @@ entries:
     source: file://review_signal.lua
     imports:
       dataflow_repo: userspace.dataflow.persist:dataflow_repo
+
+  - name: signal_destination
+    kind: library.lua
+    meta: { private: true }
+    source: file://signal_destination.lua
+    modules: [sql, json]
+    imports:
+      consts: userspace.dataflow:consts
+      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      data_reader: userspace.dataflow.persist:data_reader
+      error_envelope: kickside.contract:error_envelope
+
+  - name: authorize_arm
+    kind: function.lua
+    meta:
+      comment: Authorizes an external Block arm under the current actor for an owned pending parked signal.
+    source: file://authorize_arm.lua
+    method: authorize
+    modules: [security]
+    imports:
+      destination: kickside.blocks:signal_destination

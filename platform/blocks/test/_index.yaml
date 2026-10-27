@@ -285,7 +285,7 @@ entries:
     kind: function.lua
     source: file://native_wait_arm.lua
     method: arm
-    modules: [security, sql]
+    modules: [security, sql, funcs]
 
   - name: native_wait_phase_one
     kind: process.lua

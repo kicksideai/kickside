@@ -2,6 +2,78 @@ version: "1.0"
 namespace: app.blocks_suites
 
 entries:
+  - name: signal_fixture
+    kind: function.lua
+    source: file://signal_fixture.lua
+    method: create
+    modules: [uuid]
+    imports:
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+
+  - name: arm_test
+    kind: function.lua
+    meta: { type: test, suite: blocks, group: KickSide Blocks }
+    source: file://arm_test.lua
+    method: run
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: resume_execution_frame_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_destination_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_client_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_funcs_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_fixture
+    kind: library.lua
+    source: file://resume_fixture.lua
+    imports:
+      destination: kickside.blocks:signal_destination
+
+  - name: resume_subject
+    kind: library.lua
+    source: file://resume_subject.lua
+    modules: [security]
+    imports:
+      funcs: app.blocks_suites:resume_funcs_fixture
+      client: app.blocks_suites:resume_client_fixture
+      destination: app.blocks_suites:resume_destination_fixture
+      execution_frame: app.blocks_suites:resume_execution_frame_fixture
+
+  - name: resume_test
+    kind: function.lua
+    meta: { type: test, suite: blocks, group: KickSide Blocks }
+    source: file://resume_test.lua
+    method: run
+    security:
+      actor: {id: 'system:blocks-owner', meta: {system: true}}
+      policies: [app:proof_policy]
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      subject: app.blocks_suites:resume_subject
+      fixture: app.blocks_suites:resume_fixture
+
   - name: blocks_test
     kind: function.lua
     meta:
