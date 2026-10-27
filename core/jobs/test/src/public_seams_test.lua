@@ -3,6 +3,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local process = require("process")
 local channel = require("channel")
+local time = require("time")
 local security = require("security")
 local funcs = require("funcs")
 local jobs = require("jobs")
@@ -24,6 +25,45 @@ local function params(scope: string, key: string): table
         job_type = "app:generic_job_target", immutable_payload = {}, slot = true, parked = true }
 end
 
+local function seed_history(job_id: string, owner: string, settled: integer, unsettled: boolean?)
+    local db = assert(sql.get("app:db"))
+    local tx = assert(db:begin())
+    for seq = 1, settled + (unsettled and 1 or 0) do
+        local running = seq > settled
+        local _, err = sql.builder.insert("kickside_job_run"):set_map({
+            id = uuid.v7(), job_id = job_id, owner_kind = "test", owner_id = owner,
+            job_type = "app:generic_job_target", attempt_no = 1, execution_seq = seq,
+            status = running and "running" or "completed", lease_token = "history-fixture",
+            started_at = "2026-10-01T00:00:00Z",
+            finished_at = not running and "2026-10-01T00:00:01Z" or nil,
+        }):run_with(tx):exec()
+        test.is_nil(err)
+    end
+    local _, err = tx:commit()
+    db:release()
+    test.is_nil(err)
+end
+
+local function history_count(job_id: string): integer
+    local db = assert(sql.get("app:db"))
+    local rows, err = db:query("SELECT COUNT(*) AS n FROM kickside_job_run WHERE job_id=$1", { job_id })
+    db:release()
+    test.is_nil(err)
+    return tonumber(rows[1].n) :: integer
+end
+
+local function continuation(input: table, needs_continue: boolean, wait_for: string?, deleted: integer)
+    local removed, err = constrained("purge", input)
+    test.is_nil(removed)
+    test.is_true(errors.is(err, errors.CONFLICT), tostring(err))
+    test.is_true(err:retryable())
+    test.not_nil(err:details())
+    test.is_true(err:details().cleanup_pending)
+    test.eq(err:details().needs_continue, needs_continue)
+    test.eq(err:details().wait_for, wait_for)
+    test.eq(err:details().deleted_runs, deleted)
+end
+
 local function define_tests()
     test.describe("Jobs public owner operations", function()
         test.it("nudges the pool after caller-owned enqueue commits without persistence grants", function()
@@ -37,7 +77,7 @@ local function define_tests()
             local before = channel.select({ mailbox:case_receive(), default = true })
             local _, commit_err = tx:commit()
             local sent, nudge_err = constrained("nudge")
-            local after = channel.select({ mailbox:case_receive(), default = true })
+            local after = channel.select({ mailbox:case_receive(), time.after("5s"):case_receive() })
             process.registry.unregister("kickside.core.jobs.worker_pool", process.registry.CONSISTENT)
             process.unlisten(mailbox)
             db:release()
@@ -110,6 +150,52 @@ local function define_tests()
             verify:release()
             test.is_nil(read_err)
             test.eq(#rows, 0)
+        end)
+
+        test.it("pages settled history through the public owner seam before deleting the slot", function()
+            local input = params(uuid.v7(), "pages")
+            local queued = assert(jobs.enqueue(input))
+            seed_history(queued.id, input.scope, 201)
+            for _, remaining in ipairs({ 101, 1 }) do
+                continuation(input, true, nil, 100)
+                test.eq(history_count(queued.id), remaining)
+                local row, err = jobs.get_job(queued.id)
+                test.is_nil(err)
+                test.not_nil(row)
+            end
+            local removed, err = constrained("purge", input)
+            test.is_nil(err)
+            test.eq(removed, 1)
+            test.eq(history_count(queued.id), 0)
+            local row, read_err = jobs.get_job(queued.id)
+            test.is_nil(read_err)
+            test.is_nil(row)
+        end)
+
+        test.it("waits for unsettled history through the public owner seam before deleting the slot", function()
+            local input = params(uuid.v7(), "settlement")
+            local queued = assert(jobs.enqueue(input))
+            seed_history(queued.id, input.scope, 2, true)
+            continuation(input, true, nil, 2)
+            test.eq(history_count(queued.id), 1)
+            continuation(input, false, "run_history_settlement", 0)
+            test.eq(history_count(queued.id), 1)
+            local row, read_err = jobs.get_job(queued.id)
+            test.is_nil(read_err)
+            test.not_nil(row)
+            local db = assert(sql.get("app:db"))
+            local _, settle_err = sql.builder.update("kickside_job_run")
+                :set_map({ status = "completed", finished_at = "2026-10-01T00:00:01Z" })
+                :where(sql.builder.eq({ job_id = queued.id, status = "running" })):run_with(db):exec()
+            db:release()
+            test.is_nil(settle_err)
+            local removed, err = constrained("purge", input)
+            test.is_nil(err)
+            test.eq(removed, 1)
+            test.eq(history_count(queued.id), 0)
+            local missing, missing_err = jobs.get_job(queued.id)
+            test.is_nil(missing_err)
+            test.is_nil(missing)
         end)
 
         test.it("preserves purge input validation", function()

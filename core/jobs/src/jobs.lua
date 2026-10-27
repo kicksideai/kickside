@@ -1,5 +1,4 @@
 local sql = require("sql")
-local funcs = require("funcs")
 
 local cfg = require("config")
 local lifecycle = require("lifecycle")
@@ -178,11 +177,7 @@ end
 
 -- Call only after the owning transaction commits; durable demand survives an absent pool.
 function jobs.nudge_workers(): (integer, error?)
-    local sent, err = funcs.call("kickside.core.jobs:nudge_workers")
-    if err then return 0, err end
-    local count, count_err = sql_boundary.number_value(sent, "nudge", 0, true, false, response_error)
-    if count_err then return 0, count_err end
-    return count :: integer, nil
+    return wake.notify_workers("kickside.core.jobs:nudge_workers")
 end
 
 -- The owner authorizes retirement before deleting its exact slot and settled history.

@@ -231,7 +231,6 @@ entries:
     modules:
       - sql
       - logger
-      - funcs
     imports:
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle

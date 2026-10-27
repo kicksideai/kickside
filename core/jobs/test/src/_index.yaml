@@ -13,11 +13,28 @@ entries:
     meta: { type: test, suite: jobs_public_seams }
     source: file://public_seams_test.lua
     method: run
-    modules: [sql, uuid, process, channel, security, funcs]
+    modules: [sql, uuid, process, channel, time, security, funcs]
     imports:
       test: wippy.test:test
       jobs: kickside.core.jobs:jobs
       job_fixture: app:job_fixture
+
+  - name: public_seams_delayed_test
+    kind: function.lua
+    meta: { type: test, suite: jobs_public_seams_delayed }
+    source: file://public_seams_test.lua
+    method: run
+    modules: [sql, uuid, process, time, security, funcs]
+    imports:
+      channel: app:public_seams_delayed_channel
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      job_fixture: app:job_fixture
+
+  - name: public_seams_delayed_channel
+    kind: library.lua
+    source: file://public_seams_delayed_channel.lua
+    modules: [channel]
 
   - name: public_seams_probe
     kind: function.lua
@@ -3816,3 +3833,41 @@ entries:
     imports:
       test: wippy.test:test
       boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: notification_native_jobs
+    kind: library.lua
+    meta:
+      comment: "Durable jobs API: enqueue, post-commit nudge, slot purge, fenced cancellation, lease validation, completion, listing, retention, and health."
+    source: file://scope_native_source.lua
+    modules:
+      - sql
+      - logger
+    imports:
+      config: kickside.core.jobs:config
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
+      lease_status: kickside.core.jobs.persist:lease_status
+      wake: app:wake_native_source
+      slot_purge: kickside.core.jobs.persist:slot_purge
+      clock: kickside.core.jobs:clock
+      completion: kickside.core.jobs.persist:completion
+      retention: kickside.core.jobs.persist:retention
+      thread_teardown: kickside.core.jobs.persist:thread_teardown
+      api_scope: kickside.core.jobs.api:scope
+      lease_release: kickside.core.jobs:lease_release
+      claim: kickside.core.jobs.persist:claim
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: notification_native_test
+    kind: function.lua
+    meta: { type: test, suite: jobs_notification_native }
+    source: file://notification_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      jobs: app:notification_native_jobs
+      wake: app:wake_native_source
+      fixture: app:wake_native_fixture
