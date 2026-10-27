@@ -19,6 +19,7 @@ entries:
       uploads_resources: kickside.uploads.binding:uploads_resources
       artifact_schema: kickside.uploads.persist:artifact_schema
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
 
   - name: artifact_parts_repo
     kind: library.lua

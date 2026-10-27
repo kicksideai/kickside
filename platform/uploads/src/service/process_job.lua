@@ -191,11 +191,14 @@ local function run(input: any): (any, any?)
                 log:warn("failed to enqueue upload error callback", { upload_id = upload_id, error = tostring(callback_err) })
                 return nil, callback_err
             end
-            return publish_output(job, failed_event(upload, error_text, upload.trace_context), {
+            local output, publish_err = publish_output(job, failed_event(upload, error_text, upload.trace_context), {
                 upload_id = upload_id, job_error = error_text,
             })
+            if publish_err then return nil, publish_err end
+            if type(proc_err) == "userdata" then return output, proc_err end
+            return output, nil
         end
-        return nil, tostring(proc_err or "upload processing failed")
+        return nil, proc_err or "upload processing failed"
     end
 
     local final_upload: any = type(processed_upload) == "table" and processed_upload or upload

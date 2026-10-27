@@ -306,6 +306,67 @@ local function define_tests()
             test.eq(upload_id, row.uuid)
         end)
 
+        for _, retryable in ipairs({ false, true }) do
+            test.it("preserves classified relocation failures through pipeline and job for retryable=" .. tostring(retryable), function()
+                local id, owner = uuid_v4(), "relocation-user-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local storage = assert(fs.get("app:uploads"))
+                assert(storage:writefile(id, "relocation source"))
+                local upload = assert(upload_record_repo.create(id, owner, 17, "text/plain", "app:uploads",
+                    id, "app:types.relocation", upload_metadata(owner, "relocation.txt"), "uploaded"))
+                local kind = retryable and errors.UNAVAILABLE or errors.PERMISSION_DENIED
+                local source = errors.new({ kind = kind, message = "target metadata refused", retryable = retryable,
+                    details = { code = "relocation_target", cause = { kind = errors.CONFLICT,
+                        message = "native target cause", retryable = retryable, details = { target = "original" } } } })
+                local apply = pipeline_lib.apply_relocation
+                pipeline_lib.apply_relocation = function() return nil, source end
+                local success, pipeline_err, _, retriable = pipeline_lib.process_upload(upload)
+                pipeline_lib.apply_relocation = apply
+                test.is_false(success)
+                test.eq("userdata", type(pipeline_err), tostring(pipeline_err))
+                test.eq(kind, pipeline_err:kind())
+                test.eq(retryable, pipeline_err:retryable())
+                test.eq(retryable, retriable)
+                test.eq("relocation_target", pipeline_err:details().code)
+                test.eq(kind, pipeline_err:details().cause.kind)
+                test.eq("native target cause", pipeline_err:details().cause.details.cause.message)
+
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                local token = uuid_v4()
+                assert(db:execute([[UPDATE kickside_job SET status='running',lease_token=$1,
+                    execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
+                    { token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }))
+                local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+                local input, _, input_err = worker_dispatch.build_worker_input(job)
+                test.is_nil(input_err)
+                pipeline_lib.apply_relocation = function() return nil, source end
+                local result = process_job.main(input)
+                pipeline_lib.apply_relocation = apply
+                test.is_false(result.ok)
+                test.eq(kind, result.error_native.kind)
+                test.eq(retryable, result.error_native.retryable)
+                test.eq("relocation_target", result.error_native.details.code)
+                test.eq(kind, result.error_native.details.cause.kind)
+                test.eq("native target cause", result.error_native.details.cause.details.cause.message)
+                local _, transported = worker_dispatch.interpret_proc_result({ value = result })
+                test.eq(kind, transported:kind())
+                test.eq(retryable, transported:retryable())
+                test.eq("native target cause", transported:details().cause.details.cause.message)
+                local state = assert(db:query("SELECT storage_state FROM kickside_uploads WHERE uuid=$1", { id }))[1]
+                local settled = assert(db:query("SELECT status FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+                local events = assert(db:query([[SELECT body FROM kickside_event
+                    WHERE thread_id=$1 AND external_id=$2 AND type=$3]],
+                    { queued.thread_id, id, uploads_events.TYPE.FAILED }))
+                db:release()
+                test.eq(retryable and "uploaded" or "failed", state.storage_state)
+                test.eq(retryable and "running" or "done", settled.status)
+                test.eq(retryable and 0 or 1, #events)
+                test.is_true(storage:exists(id))
+                assert(storage:remove(id))
+            end)
+        end
+
         test.it("process job terminal error retains the upload's stored bytes", function()
             local storage = fs.get("app:uploads")
             test.not_nil(storage)

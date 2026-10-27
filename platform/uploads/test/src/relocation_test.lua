@@ -67,6 +67,39 @@ end
 
 return { run = test.run_cases(function()
     test.describe("upload stage relocation", function()
+        for _, retryable in ipairs({ false, true }) do
+            test.it("preserves native stage failure classification for retryable=" .. tostring(retryable), function()
+                local id, owner = path("stage-error"), path("stage-error-owner")
+                local upload = create_upload(assert(fs.get(SOURCE)), id, id, "stage source", owner)
+                upload.type_id = "app:types.relocation"
+                upload.metadata = pipeline_metadata(owner)
+                upload.metadata.stage_failure_kind = retryable and errors.UNAVAILABLE or errors.PERMISSION_DENIED
+                upload.metadata.stage_failure_retryable = retryable
+                local success, err, _, retriable = pipeline.process_upload(upload)
+                test.is_false(success)
+                test.eq("userdata", type(err), tostring(err))
+                test.eq(upload.metadata.stage_failure_kind, err:kind())
+                test.eq(retryable, err:retryable())
+                test.eq(retryable, retriable)
+                test.eq("stage_failure", err:details().code)
+                remove(assert(fs.get(SOURCE)), id)
+                records.delete(id)
+            end)
+        end
+
+        test.it("resolves original-backed artifacts through the canonical upload reader", function()
+            local get = queries.get
+            local source = errors.new({ kind = errors.UNAVAILABLE, retryable = true, message = "upload lookup unavailable",
+                details = { code = "upload_reader" } })
+            local seen
+            queries.get = function(id) seen = id; return nil, source end
+            local resolved, err = artifacts.resolve_storage({ upload_id = "original-reader", locator = { type = "upload.original" } })
+            queries.get = get
+            test.eq("original-reader", seen)
+            test.is_nil(resolved)
+            test.eq(source, err)
+        end)
+
         test.it("commits original and derived locations before removing superseded bytes", function()
             local source = assert(fs.get(SOURCE))
             local destination = assert(fs.get(DESTINATION))

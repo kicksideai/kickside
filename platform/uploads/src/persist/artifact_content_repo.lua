@@ -9,6 +9,7 @@ local persisted_json = require("persisted_json")
 local resources = require("uploads_resources")
 local artifact_schema = require("artifact_schema")
 local artifact_cleanup_repo = require("artifact_cleanup_repo")
+local upload_query_repo = require("upload_query_repo")
 
 local artifact_content_repo = {}
 
@@ -136,25 +137,6 @@ local function locator_storage(locator)
     if type(storage_id) ~= "string" or storage_id == "" then return nil, nil end
     if type(storage_path) ~= "string" or storage_path == "" then return nil, nil end
     return storage_id, storage_path
-end
-
-local function current_upload_storage(upload_id)
-    local db, db_err = resources.get_db()
-    if db_err or not db then return nil, nil, db_err or "failed to get upload database" end
-    local rows, query_err = sql.builder.select("storage_id", "storage_path")
-        :from("kickside_uploads")
-        :where("uuid = ?", upload_id)
-        :limit(1)
-        :run_with(db)
-        :query()
-    db:release()
-    if query_err then return nil, nil, query_err end
-    if not rows or not rows[1] then return nil, nil, typed(errors.NOT_FOUND, "upload not found") end
-    local storage_id, storage_path = rows[1].storage_id, rows[1].storage_path
-    if type(storage_id) ~= "string" or storage_id == "" or type(storage_path) ~= "string" or storage_path == "" then
-        return nil, nil, typed(errors.INVALID, "upload storage location is invalid")
-    end
-    return storage_id, storage_path, nil
 end
 
 function artifact_content_repo.create_blob(mime_type, content, metadata, options)
@@ -499,9 +481,9 @@ function artifact_content_repo.resolve_storage(artifact)
     local locator = artifact.locator
     local storage_id, storage_path
     if type(locator) == "table" and locator.type == "upload.original" then
-        local current_err
-        storage_id, storage_path, current_err = current_upload_storage(artifact.upload_id)
+        local upload, current_err = upload_query_repo.get(artifact.upload_id)
         if current_err then return nil, current_err end
+        storage_id, storage_path = locator_storage(upload)
     else
         storage_id, storage_path = locator_storage(locator)
     end
@@ -511,8 +493,8 @@ function artifact_content_repo.resolve_storage(artifact)
     return {
         checksum = artifact.checksum,
         mime_type = artifact.mime_type,
-        storage_id = storage_id,
-        storage_path = storage_path,
+        storage_id = storage_id :: string,
+        storage_path = storage_path :: string,
         metadata = artifact.metadata or {},
     }, nil
 end

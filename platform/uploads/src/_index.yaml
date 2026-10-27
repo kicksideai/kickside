@@ -360,6 +360,7 @@ entries:
       uploads_resources: kickside.uploads.binding:uploads_resources
       storage_catalog: kickside.uploads.binding:storage_catalog
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      error_envelope: kickside.contract:error_envelope
 
   - name: uploads
     kind: library.lua

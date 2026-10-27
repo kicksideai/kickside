@@ -13,6 +13,7 @@ local artifact_content_repo = require("artifact_content_repo")
 local resources = require("uploads_resources")
 local storage_catalog = require("storage_catalog")
 local metadata_sanitizer = require("metadata_sanitizer")
+local error_envelope = require("error_envelope")
 
 -- Private upload-metadata key carrying the uploader's stored execution identity
 -- ({ actor_id, actor_context }). It uses the canonical managed-context spelling
@@ -255,8 +256,14 @@ local function callback_status(success: any): string
     return success and "completed" or "error"
 end
 
-local function stage_error(stage_title: any, processor_id: any, message: any): string
-    return "upload stage \"" .. tostring(stage_title) .. "\" (" .. tostring(processor_id) .. ") failed: " .. tostring(message)
+local function stage_error(stage_title: any, processor_id: any, source: any): any
+    local context = 'upload stage "' .. tostring(stage_title) .. '" (' .. tostring(processor_id) .. ') failed'
+    if type(source) == "userdata" then
+        local data = error_envelope.encode(error_envelope.wrap(source, context, {}))
+        data.message = context .. ": " .. data.message
+        return errors.new(data)
+    end
+    return context .. ": " .. tostring(source)
 end
 
 -- Transcription stages report a soft failure as success = true plus a code under
@@ -455,21 +462,20 @@ function pipeline_lib.process_upload(upload, opts)
             cancel_ref = cancel_ref,
         })
 
-        -- Check for errors. A thrown/absent result is a transient-shaped failure and
-        -- retries through the job budget. A processor MAY instead return a classified
-        -- failure { success = false, retriable = ... }: a permanent input failure
-        -- (retriable = false) is surfaced with its flag so the job finalizes on the
-        -- first attempt instead of looping.
+        -- Native failures keep their retry decision; response-shaped failures use
+        -- the processor's retriable flag below.
         if err or not result then
-            local raw_error = err and tostring(err) or ("Processing failed at step " .. i)
-            local error_msg = stage_error(stage_title, processor_id, raw_error)
+            local source = err or ("Processing failed at step " .. i)
+            local error_msg = stage_error(stage_title, processor_id, source)
             log:error("upload processor failed", {
                 upload_id = upload.uuid,
                 processor_id = processor_id,
                 stage = stage_title,
-                error = raw_error,
+                error = tostring(source),
             })
-            return false, error_msg
+            local retryable = nil
+            if type(err) == "userdata" then retryable = err:retryable() end
+            return false, error_msg, nil, retryable
         end
 
         continue = should_continue
@@ -514,7 +520,11 @@ function pipeline_lib.process_upload(upload, opts)
         if result.success ~= false then
             local relocated, relocation_err = pipeline_lib.apply_relocation(upload, result.relocation)
             if relocation_err or not relocated then
-                return false, stage_error(stage_title, processor_id, "failed to relocate upload: " .. tostring(relocation_err))
+                local source = relocation_err or errors.new({message = "upload relocation returned no record",
+                    kind = errors.INTERNAL, retryable = true})
+                local retryable = nil
+                if type(source) == "userdata" then retryable = (source :: error):retryable() end
+                return false, stage_error(stage_title, processor_id, source), nil, retryable
             end
             upload = relocated
         end

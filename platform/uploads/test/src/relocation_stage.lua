@@ -2,6 +2,10 @@ local M = {}
 
 function M.relocate(params)
     local metadata = type(params) == "table" and params.metadata or {}
+    if metadata.stage_failure_kind then
+        return nil, errors.new({ kind = metadata.stage_failure_kind, retryable = metadata.stage_failure_retryable,
+            message = "native stage failure", details = { code = "stage_failure" } })
+    end
     return {
         success = true,
         relocation = {
