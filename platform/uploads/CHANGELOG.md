@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/kicksideai/kickside/compare/uploads-v0.3.1...uploads-v0.3.2) (2026-10-27)
+
+
+### Features
+
+* **uploads:** support native storage paths and safe stage relocation ([b6be26e](https://github.com/kicksideai/kickside/commit/b6be26e9ded82d1dab0de96d5d3cb09f62fb2318))
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.3.1](https://github.com/kicksideai/kickside/compare/uploads-v0.3.0...uploads-v0.3.1) (2026-10-25)
 
 
