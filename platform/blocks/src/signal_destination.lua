@@ -100,7 +100,11 @@ function M.pending(dataflow_id: string, signal_id: string, flow: Map): (Map?, er
     local satisfied: Map = {}
     for _, record in ipairs(records or {}) do
         if record.type == consts.DATA_TYPE.NODE_YIELD_RESULT then
-            satisfied[record.key or record.discriminator] = true
+            local yield_id = record.key or record.discriminator
+            if type(yield_id) ~= "string" or yield_id == "" then
+                return nil, M.failure(nil, "Signal result identifier invalid", "BLOCK_SIGNAL_STATE_INVALID", errors.INTERNAL, false)
+            end
+            satisfied[yield_id] = true
         end
     end
     local pending: Map = {}
@@ -109,6 +113,9 @@ function M.pending(dataflow_id: string, signal_id: string, flow: Map): (Map?, er
         if record.type == consts.DATA_TYPE.NODE_YIELD and candidates[record.node_id] then
             local value, decode_err = content(record.content)
             if decode_err then return nil, decode_err end
+            if type(value.yield_id) ~= "string" or value.yield_id == "" then
+                return nil, M.failure(nil, "Signal yield identifier invalid", "BLOCK_SIGNAL_STATE_INVALID", errors.INTERNAL, false)
+            end
             local wait = type(value.yield_context) == "table" and value.yield_context or {}
             if wait.wait_for_signal == true and wait.signal_id == signal_id then
                 if satisfied[value.yield_id] then closed[record.node_id] = true end

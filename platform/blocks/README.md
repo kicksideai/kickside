@@ -104,8 +104,11 @@ Both resume functions return native errors. Missing Flows use `NOT_FOUND` with
 `BLOCK_SIGNAL_IDENTITY_MISMATCH`. Native Dataflow, handler, and transport errors
 retain their kinds, retryability, and detail codes. Delivery failures without a
 dependency code use `BLOCK_SIGNAL_FAILED`; legacy string delivery failures are
-retryable `UNAVAILABLE`. A durable result owner can release a result when the
-destination returns `NOT_FOUND`, and use kinds/codes for other handling without
+retryable `UNAVAILABLE`. A durable result owner can release a result only for
+confirmed destination absence: `BLOCK_FLOW_NOT_FOUND` or
+`BLOCK_SIGNAL_NOT_FOUND`. A dependency `NOT_FOUND` from identity reconstruction
+or a recorded resume handler does not prove the destination is closed; retain
+the undelivered result and handle the dependency failure by kind/code without
 matching messages.
 
 ## Reference

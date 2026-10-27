@@ -63,6 +63,24 @@ local function cases()
             test.eq(err:details().code, "BLOCK_SIGNAL_FAILED")
         end)
 
+        for _, stage in ipairs({"identity", "handler"}) do
+            test.it("keeps the destination open after dependency NOT_FOUND from " .. stage, function()
+                local args, create_err = funcs.call("app.blocks_suites:signal_fixture", {state = "parked"})
+                test.is_nil(create_err)
+                fixture.state = {stage = stage, dataflow_id = args.dataflow_id, failure = errors.new({kind = errors.NOT_FOUND,
+                    retryable = false, message = "dependency missing", details = {code = "DEPENDENCY_NOT_FOUND"}})}
+                if stage == "handler" then fixture.state.metadata = {run_id = "run", resume_handler = "app:handler"} end
+                local result, err = subject.resume(args)
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
+                test.eq(err:details().code, "DEPENDENCY_NOT_FOUND")
+                local authorization, arm_err = funcs.call("kickside.blocks:authorize_arm", args)
+                test.is_nil(arm_err)
+                test.eq(authorization.authorized, true)
+                test.eq(authorization.node_id, args.node_id)
+            end)
+        end
+
         test.it("keeps the resume success shape", function()
             fixture.state = {actor = security.actor()}
             local result, err = subject.resume_under_identity({dataflow_id = "flow", signal_id = "signal", payload = {ok = true}})

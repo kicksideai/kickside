@@ -5,6 +5,12 @@ M.state = {} :: Map
 
 function M.get(): (any?, any?)
     if M.state.stage == "get" then return nil, M.state.failure end
+    if M.state.dataflow_id then
+        local flow, err = destination.get(M.state.dataflow_id)
+        if err then return nil, err end
+        if M.state.metadata then flow.metadata = M.state.metadata end
+        return flow, nil
+    end
     return { actor_id = M.state.actor and M.state.actor:id() or "blocks-owner", actor_context = {}, metadata = M.state.metadata or {} }, nil
 end
 
