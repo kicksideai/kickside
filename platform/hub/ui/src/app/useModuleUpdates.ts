@@ -220,40 +220,45 @@ async function updateAllAvailable() {
   updateAllRunning.value = true
   const pending = [...availableUpdates.value]
   try {
-    for (const dep of pending) setUpdateInfo(dep.component, { status: 'queued' })
-    const unsuccessful: InstalledRow[] = []
-    const updated: string[] = []
-    const failed: string[] = []
-    const skipped: string[] = []
-    while (pending.length) {
-      // used_by contains the installed roots whose dependency closure reaches
-      // this module, including roots that are themselves dependencies.
-      const index = pending.findIndex(dep => !pending.some(other =>
-        other.used_by?.includes(dep.component)))
-      if (index < 0) throw new Error(`Cannot order module updates: dependency cycle among ${pending.map(dep => dep.component).join(', ')}`)
-      const [dep] = pending.splice(index, 1)
-      const unavailable = unsuccessful.filter(other => other.used_by?.includes(dep.component))
-      if (unavailable.length) {
-        const message = `Dependency update failed: ${unavailable.map(other => other.component).join(', ')}`
-        setUpdateInfo(dep.component, { status: 'skipped', message })
-        unsuccessful.push(dep)
-        skipped.push(`${dep.component}: ${message}`)
-        continue
-      }
-      if (await updateInstalledDependency(dep)) {
-        updated.push(dep.component)
-      } else {
-        const message = updateInfoForDep(dep)?.message || 'update failed'
-        setUpdateInfo(dep.component, { status: 'failed', message })
-        unsuccessful.push(dep)
-        failed.push(`${dep.component}: ${message}`)
+    for (const dep of pending) setUpdateInfo(dep.component, { status: 'planning' })
+    const plan = await hub!.planBatchInstall({
+      dependencies: pending.map(dep => ({
+        id: dep.dependencyId,
+        component: dep.component,
+        version: trackingConstraint(updateInfoForDep(dep)!.latestVersion),
+      })),
+      run_migrations: true,
+      migration_policy: 'up',
+    })
+    const blockers = new Map<string, string>()
+    for (const root of plan.plans) {
+      const missing = root.missing_requirements || []
+      const invalid = (root.requirements || []).filter(requirement => requirement.invalid)
+        .map(requirement => `${requirement.id || requirement.parameter_name}: ${requirement.invalid_reason || 'invalid value'}`)
+      if (root.applicable === false || missing.length || invalid.length) {
+        const message = [
+          missing.length ? `Missing required settings: ${missing.join(', ')}` : '',
+          invalid.length ? `Invalid settings: ${invalid.join(', ')}` : '',
+        ].filter(Boolean).join('. ') || 'Update plan cannot be applied'
+        blockers.set(root.dependency?.component || 'Unknown module', message)
       }
     }
-    showToast(failed.length || skipped.length ? 'error' : 'ok', [
-      `Updated ${updated.length}${updated.length ? `: ${updated.join(', ')}` : ''}`,
-      `Failed ${failed.length}${failed.length ? `: ${failed.join('; ')}` : ''}`,
-      `Skipped ${skipped.length}${skipped.length ? `: ${skipped.join('; ')}` : ''}`,
-    ].join('. '))
+    if (!plan.applicable || blockers.size) {
+      for (const dep of pending) setUpdateInfo(dep.component, {
+        status: blockers.has(dep.component) ? 'blocked' : 'skipped',
+        message: blockers.get(dep.component) || 'Batch not applied because its plan is blocked',
+      })
+      showToast('error', blockers.size
+        ? [...blockers].map(([component, message]) => `${component}: ${message}`).join('; ')
+        : 'Update plan cannot be applied. No modules were changed.')
+      return
+    }
+    if (!plan.install_payload?.dependencies?.length) throw new Error('Update plan returned no install payload')
+    for (const dep of pending) setUpdateInfo(dep.component, { status: 'updating' })
+    await hub!.install(plan.install_payload)
+    for (const dep of pending) setUpdateInfo(dep.component, { status: 'updated' })
+    notifyModulesChanged()
+    showToast('ok', `Updated ${pending.length} module${pending.length === 1 ? '' : 's'}`)
   } catch (e: unknown) {
     const message = errorMessage(e, 'update failed')
     for (const dep of pending) setUpdateInfo(dep.component, { status: 'failed', message })

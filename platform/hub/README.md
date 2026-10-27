@@ -45,7 +45,7 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-Use **System → Modules** to inspect packages, dependencies, and host requirements. To update an installation, choose **Update all**, review and apply the plan, then restart from the same directory. The owning modules ship data migrations; installation-specific data conversion is not part of the update procedure.
+Use **System → Modules** to inspect packages, dependencies, and host requirements. Choose **Scan updates**, then **Update all** to plan the available updates together. If any module lacks required settings, the batch is not applied and the affected rows show which settings need attention. Open that module’s update dialog to configure its requirements. When the combined plan is applicable, Update all submits its returned bindings and dependencies in one install request. Planning does not reserve the registry: Keeper validates again when applying, and migration or bootloader errors can still occur after registry changes commit. Refresh module and migration status after an interrupted request before retrying. The owning modules ship data migrations; installation-specific data conversion is not part of the update procedure.
 
 ## Reference
 
