@@ -31,6 +31,38 @@ content deduplication and queues the declared ingestion pipeline. Result snapsho
 use `store_file` so storing a permitted tool result does not require access to
 another component or start jobs.
 
+## Packed storage and delivery
+
+Available starting with Uploads 0.3.2. The default storage adapter accepts
+relative filesystem paths, `fs://<resource-id>/<path>` and
+`s3://<resource-id>/<key>`. Relative paths use the record's `storage_id`; packed
+paths name their native resource directly. Bind
+`kickside.uploads:storage_runtime_policy` to the exact resources the host permits.
+Packed locations are trusted storage metadata, not arbitrary client input.
+
+Successful processing stages may return `relocation = { storage_path = ..., blobs =
+{ { blob_id = ..., storage_path = ... } } }`. Uploads rejects directories and
+size mismatches, checks blob ownership, and commits new locations and private
+cleanup intent in one database transaction. Cleanup rechecks live references
+before deleting old bytes. A failed removal does not roll back the new locations;
+its intent remains for processing retries or deletion. Cleanup preserves
+concurrent metadata edits and does not advance public recency.
+
+`kickside.uploads:uploads.delivery_url(upload_id, options)` returns a URL or an
+error. Options include `audience` and `expires_in` (seconds). S3 uses a signed
+object URL; filesystem content uses a tokened raw URL. The caller must authorize
+read access to the upload or validate a trusted source relationship before
+calling this internal helper: it does not perform that authorization itself.
+
+Authorized original/artifact API responses expose `raw_url`. The default S3
+expiry is 15 minutes; consumers obtain a fresh authorized response after expiry.
+The raw endpoints also support S3 content. Cross-origin browser delivery needs
+GET/HEAD access allowed by the object host. Opening a signed URL directly does
+not guarantee the record's filename; the UI download action supplies its name.
+
+Consumers using these capabilities must require Uploads >=0.3.2. An older
+installed package satisfying a wildcard dependency does not provide them.
+
 ## Upload artifact contract
 
 The `upload.type` entries in [types/_index.yaml](types/_index.yaml),
