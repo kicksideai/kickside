@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Generic Signal resume owned by Blocks/Dataflow rather than the optional visual
 -- Workflows plugin.
 
