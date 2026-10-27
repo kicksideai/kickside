@@ -51,17 +51,103 @@ local function define_tests()
             end
         end
 
+    -- Every acquired resource is registered before the next setup assertion.
+    -- Attempt all cleanup steps before reporting an error, including releasing
+    -- the keeper connection when registry restoration or SQL cleanup fails.
+    local function cleanup_service_probe(started: table)
+        local failures: { string } = {}
+        local function attempt(fn)
+            local ok, err = pcall(fn)
+            if not ok then failures[#failures + 1] = tostring(err) end
+        end
+        local db = started.db
+        local roots: table = {}
+        local proc_events = process.events()
+        if db and started.table_created then
+            attempt(function()
+                local rows, err = db:query("SELECT DISTINCT pid FROM jobs_service_probe")
+                test.is_nil(err)
+                for _, row in ipairs(rows or {}) do
+                    local pid = tostring(row.pid)
+                    local _, monitor_err = process.monitor(pid)
+                    -- Earlier incarnations may already have exited.
+                    if not monitor_err then roots[pid] = true end
+                end
+            end)
+        end
+        if started.original_version then
+            attempt(function()
+                local _, err = registry.apply_version(started.original_version)
+                test.is_nil(err)
+            end)
+        end
+        attempt(function()
+            local deadline = time.after("15s")
+            while next(roots) do
+                local selected = channel.select({ proc_events:case_receive(), deadline:case_receive() })
+                test.eq(selected.channel, proc_events, "probe services did not stop")
+                local event = selected.value
+                if type(event) == "table" and event.kind == process.event.EXIT then
+                    roots[tostring(event.from)] = nil
+                end
+            end
+        end)
+        if db then
+            if started.table_created then
+                attempt(function()
+                    local _, err = db:execute("DROP TABLE IF EXISTS jobs_service_probe")
+                    test.is_nil(err)
+                end)
+            end
+            for _, row in ipairs(started.pending or {}) do
+                attempt(function()
+                    local _, err = db:execute("UPDATE kickside_job SET scheduled_at=$1 WHERE id=$2 AND status='pending'",
+                        { row.scheduled_at, row.id })
+                    test.is_nil(err)
+                end)
+            end
+            attempt(function() db:release() end)
+        end
+        test.eq(#failures, 0, table.concat(failures, "\n"))
+    end
 
     test.describe("jobs.worker loop lifecycle", function()
         local cleanup_version: any? = nil
-        local keeper_to_release: any? = nil
-        test.after_each(function()
-            if cleanup_version then
-                local _, restore_err = registry.apply_version(cleanup_version)
-                test.is_nil(restore_err)
-                cleanup_version = nil
-            end
-            if keeper_to_release then keeper_to_release:release(); keeper_to_release = nil end
+        local probe: table? = nil
+        local function cleanup_probe()
+            local started = probe or {}
+            probe = nil
+            started.original_version = cleanup_version
+            cleanup_version = nil
+            cleanup_service_probe(started)
+        end
+        test.after_each(cleanup_probe)
+
+        local function create_probe_table()
+            local db, db_err = sql.get("app:db")
+            if not db then error("test database unavailable: " .. tostring(db_err)) end
+            -- Retain the connection across service restarts and release it
+            -- even if creating the table or the service fails.
+            probe = { db = db }
+            test.is_nil(db_err)
+            local _, table_err = db:execute([[CREATE TABLE jobs_service_probe (stamp TEXT PRIMARY KEY, pid TEXT NOT NULL UNIQUE, started_version TEXT)]])
+            probe.table_created = table_err == nil
+            test.is_nil(table_err)
+        end
+
+        test.it("cleans a partially set up probe before the next run", function()
+            local ok, setup_err = pcall(function()
+                create_probe_table()
+                error("forced partial probe setup failure")
+            end)
+            test.is_false(ok)
+            test.is_true(string.find(tostring(setup_err), "forced partial probe setup failure", 1, true) ~= nil)
+            cleanup_probe()
+            cleanup_probe() -- Teardown also tolerates being called twice.
+
+            local next_ok, next_err = pcall(create_probe_table)
+            test.is_true(next_ok, "next setup sees a leftover probe: " .. tostring(next_err))
+            cleanup_probe()
         end)
 
         local function describe_rows(rows: table, fields: { string }): string
@@ -242,15 +328,7 @@ local function define_tests()
         end)
 
         test.it("drives a live jobs process.service through mutation, kill, and entry restart", function()
-            local db, db_err = sql.get("app:db")
-            if not db then error("test database unavailable: " .. tostring(db_err)) end
-            test.is_nil(db_err)
-            local _, table_err = db:execute([[CREATE TABLE jobs_service_probe (stamp TEXT PRIMARY KEY, pid TEXT NOT NULL UNIQUE, started_version TEXT)]])
-            test.is_nil(table_err)
-            -- Keep the harness's in-memory SQLite database alive while the
-            -- service is torn down and recreated between registry versions.
-            local keeper_db = db
-            keeper_to_release = keeper_db
+            create_probe_table()
 
             local original_version, original_err = registry.current_version()
             test.is_nil(original_err)
@@ -333,15 +411,7 @@ local function define_tests()
             test.is_true(restored)
             test.is_nil((registry.get("app:jobs_service_restart_probe")))
             wait_for_proc_end(proc_events, third.id)
-            local cleanup, cleanup_err = sql.get("app:db")
-            if not cleanup then error("test database unavailable: " .. tostring(cleanup_err)) end
-            test.is_nil(cleanup_err)
-            local _, drop_err = cleanup:execute([[DROP TABLE jobs_service_probe]])
-            test.is_nil(drop_err)
-            cleanup:release()
-            keeper_db:release()
-            keeper_to_release = nil
-            cleanup_version = nil
+            cleanup_probe()
         end)
     end)
 
@@ -364,20 +434,29 @@ local function define_tests()
 
         local active: table? = nil
 
-        -- start_upgrade_service starts a test-owned pool service on the
-        -- module's worker code with every pre-existing pending job parked.
-        local function start_upgrade_service(): table
+        -- Register cleanup before creating the table or parking pending jobs.
+        local function prepare_upgrade_service(): table
             local db, db_err = sql.get("app:db")
             if not db then error("test database unavailable: " .. tostring(db_err)) end
+            active = { db = db }
+            test.is_nil(db_err)
             local _, table_err = db:execute([[CREATE TABLE jobs_service_probe (stamp TEXT PRIMARY KEY, pid TEXT NOT NULL, started_version TEXT)]])
+            active.table_created = table_err == nil
             test.is_nil(table_err)
             local pending, pending_err = db:query("SELECT id,scheduled_at FROM kickside_job WHERE status='pending' AND scheduled_at IS NOT NULL")
             test.is_nil(pending_err)
+            active.pending = pending
             local _, park_err = db:execute("UPDATE kickside_job SET scheduled_at=NULL WHERE status='pending'")
             test.is_nil(park_err)
-            db:release()
             local original_version, original_err = registry.current_version()
             test.is_nil(original_err)
+            active.original_version = original_version
+            return active :: table
+        end
+
+        -- Run the module's worker code with pre-existing pending jobs parked.
+        local function start_upgrade_service(): table
+            local started = prepare_upgrade_service()
             local snapshot, snapshot_err = registry.snapshot()
             test.is_nil(snapshot_err)
             local changes = snapshot:changes()
@@ -395,39 +474,48 @@ local function define_tests()
             })
             local service_version, service_err = changes:apply()
             test.is_nil(service_err)
-            active = { pending = pending, original_version = original_version, service_version = service_version }
-            return active :: table
+            started.service_version = service_version
+            return started
         end
 
         local function stop_upgrade_service(started: table): ()
-            local running = open_db()
-            local roots, root_err = running:query("SELECT DISTINCT pid FROM jobs_service_probe")
-            test.is_nil(root_err)
-            running:release()
-            local proc_events = process.events()
-            for _, root in ipairs(roots or {}) do
-                local _, monitor_err = process.monitor(tostring(root.pid))
-                test.is_nil(monitor_err)
-            end
-            local restored, restore_err = registry.apply_version(started.original_version)
-            test.is_nil(restore_err)
-            test.is_true(restored)
-            for _, root in ipairs(roots or {}) do wait_for_exit(proc_events, tostring(root.pid)) end
+            if active ~= started then return end
             active = nil
-            local cleanup, cleanup_err = sql.get("app:db")
-            if not cleanup then error("test database unavailable: " .. tostring(cleanup_err)) end
-            local _, drop_err = cleanup:execute([[DROP TABLE jobs_service_probe]])
-            test.is_nil(drop_err)
-            for _, row in ipairs(started.pending) do
-                local _, unpark_err = cleanup:execute("UPDATE kickside_job SET scheduled_at=$1 WHERE id=$2 AND status='pending'",
-                    { row.scheduled_at, row.id })
-                test.is_nil(unpark_err)
-            end
-            cleanup:release()
+            cleanup_service_probe(started)
         end
 
         test.after_each(function()
             if active then stop_upgrade_service(active :: table) end
+        end)
+
+        test.it("cleans partial upgrade setup and restores parked jobs before the next run", function()
+            local db = open_db()
+            local queued, enqueue_err = jobs.enqueue({ namespace = "jobs-service-test", scope = "upgrade",
+                owner_locator = { kind = "test", id = "loop_test" },
+                key = uuid.v7(), job_type = "app:live_job_probe", immutable_payload = {} })
+            test.is_nil(enqueue_err)
+            local scheduled_at = job_row(db, queued.id).scheduled_at
+            db:release()
+            test.not_nil(scheduled_at)
+
+            local ok, setup_err = pcall(function()
+                prepare_upgrade_service()
+                error("forced partial upgrade setup failure")
+            end)
+            test.is_false(ok)
+            test.is_true(string.find(tostring(setup_err), "forced partial upgrade setup failure", 1, true) ~= nil)
+            local started = active :: table
+            stop_upgrade_service(started)
+            stop_upgrade_service(started)
+            local check = open_db()
+            local restored_at = job_row(check, queued.id).scheduled_at
+            check:release()
+            test.eq(restored_at, scheduled_at)
+
+            local next_run = prepare_upgrade_service()
+            stop_upgrade_service(next_run)
+            local _, cancel_err = jobs.cancel(queued.id)
+            test.is_nil(cancel_err)
         end)
 
         local function enqueue_probe(topic: string, extra: table?): table
