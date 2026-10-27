@@ -320,7 +320,7 @@ local function define_tests(register)
             })
             test.is_nil(mint_err, tostring(mint_err))
             local before = payload(minted.token)
-            local expansion_group = fixture_id("app:continuity_expansion_group")
+            local expansion_group = fixture_id("app:continuity_group_expanded")
             local changes = projection_changes()
             changes:create({id = fixture_id("app:continuity_expansion_policy"), kind = "security.policy", data = {
                 groups = {expansion_group},

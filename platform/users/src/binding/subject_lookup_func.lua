@@ -57,7 +57,7 @@ function M.lookup(args: any): any
 
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
     local live_groups = user.security_groups or {}
-    local metadata = session_metadata.actor(user, authority_epochs, scope_name,
+    local metadata = session_metadata.actor(user, authority_epochs, stored_meta.scope_id or scope_name,
         live_groups, stored_meta.login_time, stored_meta)
 
     return {
