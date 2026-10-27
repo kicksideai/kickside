@@ -65,6 +65,48 @@ local function define_tests()
             test.is_nil(empty_err)
             test.not_nil(empty_result)
         end)
+        test.it("plans member access so it applies in the same registry version as the policy", function()
+            test.not_nil((projection.reconcile()))
+            local id = "app:planned_member_contributor"
+            local policy = {id = id, kind = "security.policy",
+                meta = {member_scope = "kickside.contract.http:user_security_scope"},
+                data = {policy = {actions = "access",
+                    resources = {"planned.module:list.endpoint"}, effect = "allow"}}}
+            local planned, plan_err = projection.plan({{op = "create", entry = policy}})
+            test.is_nil(plan_err)
+            test.not_nil(planned)
+            test.is_false(planned.deferred)
+            test.is_true(#planned.ops > 0)
+            local before = registry.current_version():id()
+            local applied, apply_err = fixture.apply(function(changes)
+                changes:create(policy)
+                for _, op in ipairs(planned.ops) do
+                    if op.kind == "entry.create" then changes:create(op.entry)
+                    elseif op.kind == "entry.update" then changes:update(op.entry)
+                    else changes:delete(op.entry.id) end
+                end
+            end, time.now():add(time.SECOND * 5))
+            local after = registry.current_version():id()
+            local actor = assert(security.new_actor("planned-member", {}))
+            local decision = assert(source_scope.resolve("app:unassigned_endpoints")):evaluate(actor,
+                "access", "planned.module:list.endpoint")
+            local settled = projection.reconcile()
+            fixture.apply(function(changes) changes:delete(id) end, time.now():add(time.SECOND * 5))
+            test.not_nil((projection.reconcile()))
+            test.is_nil(apply_err)
+            test.not_nil(applied)
+            test.eq(after, before + 1)
+            test.eq(decision, "allow")
+            test.not_nil(settled)
+            test.eq(settled.created + settled.updated + settled.deleted, 0)
+        end)
+        test.it("plans no operations for a changeset that touches no policy", function()
+            test.not_nil((projection.reconcile()))
+            local planned, plan_err = projection.plan({{op = "create", entry = {id = "app:planned_plain",
+                kind = "registry.entry", meta = {}, data = {}}}})
+            test.is_nil(plan_err)
+            test.eq(#planned.ops, 0)
+        end)
         test.it("retains the existing member default when the host omits the binding", function()
             local requirement = assert(registry.get("kickside.contract.http:user_security_scope"))
             test.eq(requirement.data.default, "kickside.security.groups:members")

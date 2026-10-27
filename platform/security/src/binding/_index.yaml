@@ -32,6 +32,21 @@ entries:
       policies: [kickside.security.service:reconcile_request_access]
     imports:
       trigger_reconcile: kickside.security:trigger_reconcile
+  - name: registry_before_apply
+    kind: function.lua
+    meta:
+      type: registry.observer
+      priority: 10
+      phase: before_apply
+      kinds: [security.policy, security.scope, registry.entry]
+      private: true
+      comment: Plans the scope projection for a registry changeset before Keeper applies it, so module policies are in force in the same registry version as the module endpoints.
+    source: file://registry_before_apply.lua
+    method: run
+    security:
+      policies: [kickside.security.service:reconcile_request_access]
+    imports:
+      trigger_reconcile: kickside.security:trigger_reconcile
 
   - name: list_scopes_func
     kind: function.lua

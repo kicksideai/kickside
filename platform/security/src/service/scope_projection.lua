@@ -92,7 +92,7 @@ end
 -- enabled DB rows and declarations, planned against one registry snapshot: every
 -- scope, composition and policy read comes from snap and the changes apply onto
 -- it. Returns { created, updated, deleted } counts and the resulting version.
-local function project(snap: any, fence_groups: any?): (any, error?, any?)
+local function compute(snap: any, fence_groups: any?): (any?, error?)
     local function snapshot_get(id: string): (any?, any?)
         return snap:get(id)
     end
@@ -297,6 +297,16 @@ local function project(snap: any, fence_groups: any?): (any, error?, any?)
     for _, entry in ipairs(bindings.creates) do creates[#creates + 1] = entry end
     for _, entry in ipairs(bindings.updates) do updates[#updates + 1] = entry end
     for _, id in ipairs(bindings.deletes) do deletes[#deletes + 1] = id end
+    return {creates = creates, updates = updates, deletes = deletes, created = created, updated = updated,
+        deleted = deleted, bindings = bindings, set_names = set_names, fences = fences}, nil
+end
+
+local function project(snap: any, fence_groups: any?): (any, error?, any?)
+    local pass, pass_err = compute(snap, fence_groups)
+    if not pass then return nil, pass_err end
+    local creates, updates, deletes = pass.creates, pass.updates, pass.deletes
+    local created, updated, deleted = pass.created, pass.updated, pass.deleted
+    local bindings, set_names, fences = pass.bindings, pass.set_names, pass.fences
     local applied = snap:version()
     if #creates + #updates + #deletes > 0 then
         local changes = snap:changes()
@@ -327,6 +337,100 @@ function M.reconcile(fence_groups: any?): (any, error?, any?)
     if not snap then return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
         message = "registry snapshot failed"}) :: error) end
     return project(snap, fence_groups)
+end
+
+local PREVIEW_KEYS = {[".kind"] = "kind", [".id"] = "id"}
+
+local function preview_value(entry: any, key: string): (any, boolean)
+    local field = PREVIEW_KEYS[key]
+    if field then return entry[field], true end
+    local root, path = key:match("^(%a+)%.(.+)$")
+    if root ~= "meta" and root ~= "data" then return nil, false end
+    local value = entry[root]
+    for part in path:gmatch("[^%.]+") do
+        if type(value) ~= "table" then return nil, true end
+        value = value[part]
+    end
+    return value, true
+end
+
+local function preview_matches(entry: any, filter: any): (boolean, error?)
+    for key, want in pairs(filter) do
+        local have, known = preview_value(entry, tostring(key))
+        if not known then
+            return false, (errors.new({kind = errors.INVALID, retryable = false,
+                message = "preview filter key is not supported: " .. tostring(key)}) :: error)
+        end
+        if type(have) == "table" then
+            local found = false
+            for _, item in ipairs(have) do if item == want then found = true; break end end
+            if not found then return false, nil end
+        elseif have ~= want then
+            return false, nil
+        end
+    end
+    return true, nil
+end
+
+-- preview(snap, planned) reads snap as if the planned operations were applied:
+-- planned creates and updates replace their entries, planned deletes remove them.
+local function preview(snap: any, planned: any): any
+    local changed = {}
+    for _, op in ipairs(planned or {}) do
+        local entry = type(op) == "table" and op.entry or nil
+        if type(entry) == "table" and type(entry.id) == "string" then
+            changed[entry.id] = op.op == "delete" and false or entry
+        end
+    end
+    local view = {}
+    function view:get(id: string): (any?, any?)
+        local entry = changed[id]
+        if entry == false then
+            return nil, (errors.new({kind = errors.NOT_FOUND, retryable = false,
+                message = "entry not found: " .. tostring(id)}) :: error)
+        end
+        if entry ~= nil then return entry, nil end
+        return snap:get(id)
+    end
+    function view:find(filter: any): (any?, error?)
+        local base, base_err = snap:find(filter)
+        if base_err then return nil, base_err end
+        local out = {}
+        for _, entry in ipairs(base or {}) do
+            if changed[tostring(entry.id)] == nil then out[#out + 1] = entry end
+        end
+        for _, entry in pairs(changed) do
+            if entry then
+                local matched, match_err = preview_matches(entry, filter)
+                if match_err then return nil, match_err end
+                if matched then out[#out + 1] = entry end
+            end
+        end
+        return out, nil
+    end
+    function view:version() return snap:version() end
+    return view
+end
+
+-- plan(planned) computes the projection for a registry changeset before it is
+-- applied, so the scope operations can land in the same registry version. It
+-- applies nothing. A pass that must fence reduced authority returns no
+-- operations; the projection after the apply then handles it.
+function M.plan(planned: any): (any?, error?)
+    local snap, serr = registry.snapshot()
+    if serr then return nil, serr end
+    if not snap then return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
+        message = "registry snapshot failed"}) :: error) end
+    local pass, pass_err = compute(preview(snap, planned), nil)
+    if not pass then return nil, pass_err end
+    if #pass.fences > 0 or #(pass.bindings.reduced_groups or {}) > 0 then
+        return {ops = {}, deferred = true}, nil
+    end
+    local ops = {}
+    for _, entry in ipairs(pass.creates) do ops[#ops + 1] = {kind = "entry.create", entry = entry} end
+    for _, entry in ipairs(pass.updates) do ops[#ops + 1] = {kind = "entry.update", entry = entry} end
+    for _, id in ipairs(pass.deletes) do ops[#ops + 1] = {kind = "entry.delete", entry = {id = id}} end
+    return {ops = ops, deferred = false}, nil
 end
 
 -- fence(groups) closes the delegated authority of groups whose rules a caller
