@@ -18,6 +18,60 @@ local routes = {"measure", "check", "update"}
 local function group(first: integer, last: integer)
     return test.run_cases(function()
     test.describe("native retained row boundaries", function()
+        if first == 1 then
+            for _, kind in ipairs(kinds) do
+                test.it("insert/postgres/query/" .. kind, function()
+                    fixture.reset("", nil, "postgres")
+                    local source = errors.new({kind = kind, message = "projection refusal", retryable = false,
+                        details = {code = "projection_dependency"}})
+                    local executor: any = {query = function() return nil, source end}
+                    local actual = required(bytes.check_job_insert(executor, "postgres", {payload = "{}"},
+                        4096, "scope", "enqueue_job"))
+                    test.is_true(errors.is(actual, source:kind()))
+                    test.is_false(actual:retryable())
+                    test.eq(actual:details().code, "projection_dependency")
+                    test.eq(fixture.encodes, 0)
+                end)
+            end
+            for index, malformed in ipairs({{}, {value = false}, {value = 0}, {value = {}},
+                    {value = {{}}}, {value = {{payload = false}}}, {value = {{payload = {}}}}}) do
+                test.it("insert/postgres/response/" .. tostring(index), function()
+                    fixture.reset("", nil, "postgres")
+                    local executor: any = {query = function() return malformed.value, nil end}
+                    local actual = required(bytes.check_job_insert(executor, "postgres", {payload = "{}"},
+                        4096, "scope", "enqueue_job"))
+                    test.is_true(errors.is(actual, errors.INTERNAL))
+                    test.is_false(actual:retryable())
+                    test.eq(actual:details().field, "insert.payload")
+                    test.eq(fixture.encodes, 0)
+                end)
+            end
+            for _, dialect in ipairs({"sqlite", "postgres"}) do
+                test.it("insert/immutable/" .. dialect, function()
+                    fixture.reset("", nil, dialect)
+                    local reads = 0
+                    local row = {payload = '{"a":1}', scheduled_at = "2026-10-10T00:00:00Z"}
+                    local executor: any = {query = function(_, statement, params)
+                        reads = reads + 1
+                        test.eq(statement, "SELECT CAST($1 AS JSONB) AS payload")
+                        test.eq(params[1], row.payload)
+                        return {{payload = '{"a": 1}'}}, nil
+                    end}
+                    test.is_nil(bytes.check_job_insert(executor, dialect, row, 4096, "scope", "enqueue_job"))
+                    test.eq(reads, dialect == "postgres" and 1 or 0)
+                    test.eq(fixture.encodes, 1)
+                    test.eq(row.payload, '{"a":1}')
+                    test.eq(row.scheduled_at, "2026-10-10T00:00:00Z")
+                    test.is_nil(row.created_at)
+                    test.is_nil(row.updated_at)
+                    test.is_nil(row.actor_context)
+                    test.is_nil(row.execution_seq)
+                    test.is_nil(row.wake_enabled)
+                    test.is_nil(row.wake_generation)
+                    test.is_nil(row.wake_control_pending)
+                end)
+            end
+        end
         for _, dialect in ipairs({"sqlite", "postgres"}) do
             for route_index = first, last do
                 local route = routes[route_index]

@@ -41,6 +41,36 @@ function M.check(row: table, cap: integer, scope: string, operation: string): er
     return M.too_large(scope, bytes :: integer, cap, operation)
 end
 
+-- Enqueue omits these non-null defaults from 04_jobs. Predict their retained
+-- encoding without supplying values to INSERT, so database timestamps and
+-- defaults keep their existing semantics. PostgreSQL booleans bound SQLite's
+-- numeric flags; the timestamp bound covers both supported dialects.
+function M.check_job_insert(exec: any, dbtype: string, row: table,
+    cap: integer, scope: string, operation: string): error?
+    local predicted: { [string]: any } = {}
+    for key, value in pairs(row) do predicted[key] = value end
+    -- JSONB normalizes whitespace and numeric notation. Ask the same database
+    -- for its retained representation, while INSERT still receives the caller's
+    -- original payload. Compact JSON length cannot bound arbitrary JSONB.
+    if dbtype == sql.type.POSTGRES then
+        local rows, err = exec:query("SELECT CAST($1 AS JSONB) AS payload", { row.payload })
+        if err then return errors.wrap(err, "job insert payload projection failed") end
+        if type(rows) ~= "table" or type(rows[1]) ~= "table" or type(rows[1].payload) ~= "string" then
+            return response_error("insert.payload")
+        end
+        predicted.payload = rows[1].payload
+    end
+    predicted.actor_context = "{}"
+    predicted.created_at = JOB_UPDATED_AT_MAX
+    predicted.updated_at = JOB_UPDATED_AT_MAX
+    predicted.execution_seq = 0
+    predicted.wake_enabled = true
+    predicted.wake_generation = 0
+    predicted.wake_control_pending = false
+    if predicted.scheduled_at ~= nil then predicted.scheduled_at = JOB_UPDATED_AT_MAX end
+    return M.check(predicted, cap, scope, operation)
+end
+
 -- Read the complete retained row and measure the values that the caller will
 -- store. A missing row is left to the caller's fenced UPDATE/row-count check.
 -- A supplied snapshot is the complete row already locked by this transaction.

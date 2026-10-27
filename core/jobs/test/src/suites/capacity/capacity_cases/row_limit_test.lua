@@ -25,6 +25,119 @@ end
 
 local function define_tests()
     test.describe("jobs row byte limit", function()
+        test.it("accounts for database defaults before accepting an enqueue row", function()
+            local policy, policy_err = config.policy()
+            test.is_nil(policy_err)
+            if not policy or not policy.max_row_bytes then error("missing Jobs row byte limit") end
+            local db, owner = open_db(), uuid.v7()
+            local function insert(key: string, filler: string): (string?, error?)
+                local id, err = lifecycle.enqueue_job(db, tostring(db:type()), {
+                    owner_locator = { kind = "test", id = owner },
+                    job_identity = { namespace = "enqueue_defaults", scope = owner, key = key },
+                    job_type = "test.enqueue_defaults", payload = { filler = filler }, parked = true,
+                })
+                return id, err
+            end
+            local template_id, template_err = insert("template", "")
+            test.is_nil(template_err)
+            local rows, read_err = db:query("SELECT * FROM kickside_job WHERE id=$1", { template_id })
+            test.is_nil(read_err)
+            local template = rows[1]
+            -- Reconstruct the explicit INSERT map that previously passed at
+            -- exactly cap, before the database supplied these seven defaults.
+            for _, key in ipairs({ "actor_context", "created_at", "updated_at", "execution_seq",
+                    "wake_enabled", "wake_generation", "wake_control_pending" }) do
+                template[key] = nil
+            end
+            template.slot = false
+            template.payload = json.encode({ filler = "" })
+            local base, base_err = row_bytes.measure(template)
+            test.is_nil(base_err)
+            local pad = policy.max_row_bytes - (base :: integer)
+            test.is_true(pad > 512)
+            template.payload = json.encode({ filler = string.rep("x", pad) })
+            test.eq(row_bytes.measure(template), policy.max_row_bytes)
+            test.is_nil(select(2, db:execute("DELETE FROM kickside_job WHERE id=$1", { template_id })))
+
+            local rejected_id, reject_err = insert("target__", string.rep("x", pad))
+            test.is_nil(rejected_id)
+            test.not_nil(reject_err)
+            test.eq(reject_err:kind(), errors.INVALID)
+            test.eq(reject_err:details().reason, "row_too_large")
+            local remaining, remaining_err = db:query("SELECT id FROM kickside_job WHERE owner_id=$1", { owner })
+            test.is_nil(remaining_err)
+            test.eq(#remaining, 0)
+
+            local safe_id, safe_err = insert("safe____", string.rep("x", pad - 512))
+            test.is_nil(safe_err)
+            local stored_rows, stored_err = db:query("SELECT * FROM kickside_job WHERE id=$1", { safe_id })
+            test.is_nil(stored_err)
+            local stored = stored_rows[1]
+            local stored_bytes, measure_err = row_bytes.measure(stored)
+            test.is_nil(measure_err)
+            test.is_true((stored_bytes :: integer) <= policy.max_row_bytes)
+            test.eq(stored.actor_context, "{}")
+            test.not_nil(stored.created_at)
+            test.not_nil(stored.updated_at)
+            test.is_true(stored.created_at ~= "9999-12-31T23:59:59.999999999+00:00")
+            test.eq(tonumber(stored.execution_seq), 0)
+            test.is_nil(select(2, db:execute("DELETE FROM kickside_job WHERE id=$1", { safe_id })))
+            db:release()
+        end)
+
+        test.it("measures PostgreSQL JSONB expansion when admitting an enqueue payload", function()
+            local policy, policy_err = config.policy()
+            test.is_nil(policy_err)
+            if not policy or not policy.max_row_bytes then error("missing Jobs row byte limit") end
+            local db, owner = open_db(), uuid.v7()
+            local dbtype = tostring(db:type())
+            local payload: { [string]: any } = { filler = "" }
+            for i = 1, 1024 do payload["key" .. tostring(i)] = "v" end
+            local function insert(key: string): (string?, error?)
+                local id, err = lifecycle.enqueue_job(db, dbtype, {
+                    owner_locator = { kind = "test", id = owner },
+                    job_identity = { namespace = "enqueue_jsonb", scope = owner, key = key },
+                    job_type = "test.enqueue_jsonb", payload = payload, parked = true,
+                })
+                return id, err
+            end
+            local template_id, template_err = insert("template")
+            test.is_nil(template_err)
+            local rows, read_err = db:query("SELECT * FROM kickside_job WHERE id=$1", { template_id })
+            test.is_nil(read_err)
+            local predicted = rows[1]
+            predicted.payload = json.encode(payload)
+            predicted.created_at = "9999-12-31T23:59:59.999999999+00:00"
+            predicted.updated_at = predicted.created_at
+            predicted.slot = false
+            predicted.wake_enabled = true
+            predicted.wake_control_pending = false
+            local base, base_err = row_bytes.measure(predicted)
+            test.is_nil(base_err)
+            local pad = policy.max_row_bytes - (base :: integer) - 512
+            test.is_true(pad > 0)
+            payload.filler = string.rep("x", pad)
+            predicted.payload = json.encode(payload)
+            test.eq(row_bytes.measure(predicted), policy.max_row_bytes - 512)
+            test.is_nil(select(2, db:execute("DELETE FROM kickside_job WHERE id=$1", { template_id })))
+            local id, insert_err = insert("target__")
+            if dbtype == sql.type.POSTGRES then
+                test.is_nil(id)
+                test.not_nil(insert_err)
+                test.eq(insert_err:details().reason, "row_too_large")
+            else
+                test.is_nil(insert_err)
+                test.not_nil(id)
+                local stored_rows, stored_err = db:query("SELECT * FROM kickside_job WHERE id=$1", { id })
+                test.is_nil(stored_err)
+                local bytes, bytes_err = row_bytes.measure(stored_rows[1])
+                test.is_nil(bytes_err)
+                test.is_true((bytes :: integer) <= policy.max_row_bytes)
+                test.is_nil(select(2, db:execute("DELETE FROM kickside_job WHERE id=$1", { id })))
+            end
+            db:release()
+        end)
+
         test.it("checks an already locked complete snapshot without rereading or changing it", function()
             local row: any = { id = uuid.v7(), owner_kind = "test", owner_id = "snapshot",
                 payload = string.rep("x", 512), status = "pending", last_error = "prior" }
