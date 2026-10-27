@@ -106,6 +106,13 @@ function M.main()
             for _, message in ipairs(requests) do
                 if type(message) ~= "table" or type(message.reply_pid) ~= "string" or type(message.reply_topic) ~= "string" then
                     logger:warn("scope reconcile request rejected: it names no reply destination")
+                elseif message.plan == true then
+                    local planned, plan_err = projection.plan(message.planned)
+                    if plan_err then
+                        reply_to(message, failed_reply(plan_err))
+                    else
+                        reply_to(message, { success = true, ops = planned.ops, deferred = planned.deferred })
+                    end
                 elseif message.groups ~= nil then
                     local set, set_err = projection.group_set(message.groups)
                     if not set then
