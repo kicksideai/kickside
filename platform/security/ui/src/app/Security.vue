@@ -210,13 +210,13 @@ function shortId(id: string): string {
 
 <template>
   <div class="ks">
-    <Tabs :value="activeTab" @update:value="selectTab">
+    <Tabs class="ks-tabs" :value="activeTab" @update:value="selectTab">
       <TabList :pt="{ tabList: { 'aria-label': 'Security administration' } }">
-        <Tab value="scopes">Scopes</Tab>
-        <Tab value="delegations" data-tab="delegations">Act-as grants</Tab>
+        <Tab value="scopes"><Icon icon="tabler:shield-lock" aria-hidden="true" />Scopes<b>{{ scopes.length }}</b></Tab>
+        <Tab value="delegations" data-tab="delegations"><Icon icon="tabler:user-shield" aria-hidden="true" />Run as</Tab>
       </TabList>
     </Tabs>
-    <Delegations v-if="delegationsOpened" v-show="activeTab === 'delegations'" ref="delegationPanel" />
+    <Delegations v-if="delegationsOpened" v-show="activeTab === 'delegations'" ref="delegationPanel" :scopes="scopes" />
     <Notice v-if="error" severity="danger" class="ks-top-notice" @dismiss="error = ''">{{ error }}</Notice>
     <Notice v-else-if="savedMsg" severity="success" class="ks-top-notice" @dismiss="savedMsg = ''">{{ savedMsg }}</Notice>
 

@@ -38,7 +38,7 @@ export function useDelegations() {
       if (sequence === loadSequence) delegations.value = data.delegations
     }
     catch (cause) {
-      if (sequence === loadSequence) error.value = messageOf(cause, 'Could not load act-as grants')
+      if (sequence === loadSequence) error.value = messageOf(cause, 'Could not load run-as permissions')
     }
     finally {
       if (sequence === loadSequence) loading.value = false
@@ -55,13 +55,13 @@ export function useDelegations() {
       const { data } = operation.method === 'save'
         ? await api.post('/api/v1/security/delegations', operation.request)
         : await api.delete('/api/v1/security/delegations', { data: operation.request })
-      if (data?.success !== true) throw new Error(data?.error || 'Act-as request is unconfirmed')
+      if (data?.success !== true) throw new Error(data?.error || 'Run-as request is unconfirmed')
       pending.value = null
-      confirmation.value = operation.method === 'save' ? 'Act-as grant saved' : 'Act-as grant revoked'
+      confirmation.value = operation.method === 'save' ? 'Run-as permission saved' : 'Run-as permission revoked'
       await load()
     }
     catch (cause) {
-      error.value = messageOf(cause, 'Could not confirm act-as request')
+      error.value = messageOf(cause, 'Could not confirm run-as request')
       const status = (cause as { response?: { status?: number } })?.response?.status
       // A definite refusal permits correction. A lost or server-error response
       // keeps the request so the same action can be retried.
