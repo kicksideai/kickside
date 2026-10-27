@@ -26,8 +26,9 @@ entries:
     meta: {type: test, suite: kickside_security}
     source: file://projection_status_test.lua
     method: run
-    modules: [registry, security, funcs]
+    modules: [registry, security, funcs, sql]
     imports:
+      group_sets: kickside.security.persist:group_sets
       test: wippy.test:test
       scope_projection: kickside.security.service:scope_projection
   - name: delegation_admin_test
