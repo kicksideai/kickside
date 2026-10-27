@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.inbox.sink
+entries:
+  - name: aggregate_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }
+    source: file://aggregate_test.lua
+    method: run
+    modules: [funcs, contract, security, channel, uuid]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity

@@ -32,6 +32,7 @@ entries:
         content: { description: Item content payload; shape depends on the item type. }
         metadata: { type: object }
         source_id: { type: string }
+        aggregate_key: { type: string }
         priority: { type: string }
         actor_id: { type: string }
         created_at: { type: number }
@@ -53,7 +54,13 @@ entries:
         source_id: { type: string }
         priority: { type: string }
         delivery_key: { type: string }
-      required: [id, item_type, title, delivery_key]
+        aggregate_key: { type: string }
+        status: { type: string, enum: [pending, resolved] }
+        resolved_at: { type: number }
+      required: [id, delivery_key]
+      anyOf:
+        - required: [item_type, title]
+        - required: [source_id, aggregate_key, status]
 
   - name: item.resolved
     kind: registry.entry

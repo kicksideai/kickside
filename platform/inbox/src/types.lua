@@ -45,6 +45,11 @@ function M.component_topic(component_id: string): string
     return "component." .. tostring(component_id)
 end
 
+function M.resolution_id(item: any): string
+    local suffix = item.aggregate_key ~= nil and (":" .. tostring(item.version_event_id or item.created_event_id)) or ""
+    return "resolve:" .. item.id .. suffix
+end
+
 M.ERROR = {
     NOT_FOUND = "inbox.not_found",
     TITLE_REQUIRED = "inbox.title_required",
@@ -63,6 +68,8 @@ type InboxItem = {
     metadata_json: string?,
     metadata: Metadata,
     source_id: string?,
+    aggregate_key: string?,
+    version_event_id: string?,
     status: string,
     priority: string,
     actor_id: string?,
@@ -84,6 +91,8 @@ type InboxCreateParams = {
     metadata: Metadata?,
     metadata_json: string?,
     source_id: string?,
+    aggregate_key: string?,
+    idempotency_key: string?,
     priority: string?,
     actor_id: string?,
     trace_context: Metadata?,
