@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local adapter = require("adapter")
 return {run = function(args)
     local storage = assert(adapter.get("app:uploads"))

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local M = {}
 local objects = {}
 M.denied = errors.new({message = "native cloud denied", kind = errors.PERMISSION_DENIED, retryable = false})

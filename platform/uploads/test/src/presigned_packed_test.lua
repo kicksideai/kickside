@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local lifecycle = require("lifecycle")
 local uuid = require("uuid")

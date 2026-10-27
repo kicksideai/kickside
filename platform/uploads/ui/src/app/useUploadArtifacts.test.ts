@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
