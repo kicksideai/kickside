@@ -2,9 +2,13 @@ directories:
     modules: .wippy
     src: .
 modules:
+    - name: kickside/component
+      version: 0.0.0
     - name: kickside/contract
       version: 0.0.0
     - name: kickside/execution
+      version: 0.0.0
+    - name: kickside/realtime-dispatch
       version: 0.0.0
     - name: kickside/security
       version: 0.0.0

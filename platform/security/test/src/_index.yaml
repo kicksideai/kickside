@@ -77,8 +77,9 @@ entries:
     modules: [registry, funcs]
   - name: delegation_admin
     kind: security.policy
+    meta: {comment: A Security administrator with the host user baseline that carries the caller through component ports.}
     policy:
-      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, access]
+      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, access, contract.get, contract.open, contract.call, contract.security]
       resources: '*'
       effect: allow
   - name: delegation_writer
@@ -354,6 +355,10 @@ entries:
         value: app:fence_delegations
       - name: kickside.security:process_host
         value: app:processes
+      - name: kickside.component:target_db
+        value: app:db
+      - name: kickside.component:api_router
+        value: app:api
 
   - name: dep.kickside.contract
     kind: ns.dependency

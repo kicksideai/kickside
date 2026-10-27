@@ -16,17 +16,6 @@ entries:
       scope_resolver: kickside.users.binding:scope_resolver_func
       execution_identity: kickside.execution:execution_identity
       component: kickside.component:component
-  - name: delegation_roots
-    kind: function.lua
-    meta: {private: true}
-    source: file://roots.lua
-    method: roots
-    security:
-      policies:
-        - app.security:delegation_component_config
-        - app.security:delegation_component_db
-    imports:
-      component: kickside.component:component
   - name: delegation_subject_read
     kind: security.policy
     meta: {private: true, service_only: true}

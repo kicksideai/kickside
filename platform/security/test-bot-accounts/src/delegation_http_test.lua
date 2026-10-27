@@ -163,15 +163,30 @@ return {run = test.run_cases(function()
             local denied = request("GET", "/api/security/delegations", ungranted)
             test.eq(denied.status_code, 403, denied.body)
         end)
-        test.it("RA-H51 list names each component root by its title", function()
-            local token = login({"app.security:admin"})
-            execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
-                {uuid.v4(), root, "title", "Nightly digest"})
+        test.it("RA-H51 list names each component root the viewer can read by its title", function()
+            local token, admin = login({"app.security:admin"})
+            local function titled(id, title, readable)
+                if id ~= root then
+                    roots[#roots + 1] = id
+                    execute("INSERT INTO kickside_components (component_id,impl_id) VALUES ($1,$2)", {id, "app:http_fixture_root"})
+                end
+                if title then
+                    execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
+                        {uuid.v4(), id, "title", title})
+                end
+                if readable then
+                    execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_type,subject_id,access_mask) VALUES ($1,$2,$3,$4,$5,$6)",
+                        {uuid.v4(), id, id, "user", admin, 1})
+                end
+            end
+            titled(root, "Nightly digest", true)
             local exact = save(token, args())
             local untitled = uuid.v4()
-            roots[#roots + 1] = untitled
-            execute("INSERT INTO kickside_components (component_id,impl_id) VALUES ($1,$2)", {untitled, "app:http_fixture_root"})
+            titled(untitled, nil, true)
             local plain = save(token, args({root = untitled}))
+            local hidden = uuid.v4()
+            titled(hidden, "Private digest", false)
+            local unreadable = save(token, args({root = hidden}))
             local every = save(token, args({root = "*"}))
             local response, payload = request("GET", "/api/security/delegations", token)
             test.eq(response.status_code, 200, response.body)
@@ -181,6 +196,8 @@ return {run = test.run_cases(function()
             test.eq(rows[exact.policy_id].root_label, "Nightly digest")
             test.eq(rows[plain.policy_id].root, untitled)
             test.is_nil(rows[plain.policy_id].root_label)
+            test.eq(rows[unreadable.policy_id].root, hidden)
+            test.is_nil(rows[unreadable.policy_id].root_label)
             test.eq(rows[every.policy_id].root, "*")
             test.is_nil(rows[every.policy_id].root_label)
         end)

@@ -116,8 +116,6 @@ entries:
     parameters:
       - name: kickside.security:delegation_validator
         value: app.security:delegation_validator
-      - name: kickside.security:delegation_roots
-        value: app.security:delegation_roots
       - name: kickside.security:sessions_invalidator
         value: kickside.users.persist:session_revoker
       - name: api_router

@@ -59,8 +59,6 @@ entries:
     source: file://delegation.lua
     method: handler_list
     modules: [http, json]
-    security:
-      policies: [kickside.security:delegation_roots_call]
     imports:
       delegation: kickside.security:delegation
       api_errors: kickside.security.api:errors
@@ -75,8 +73,6 @@ entries:
     source: file://delegation.lua
     method: handler_roots
     modules: [http, json]
-    security:
-      policies: [kickside.security:delegation_roots_call]
     imports:
       delegation: kickside.security:delegation
       api_errors: kickside.security.api:errors

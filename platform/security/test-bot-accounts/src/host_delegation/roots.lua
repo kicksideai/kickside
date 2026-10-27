@@ -1,1 +1,0 @@
-../../../../../app/src/app/security/registry/delegation/roots.lua
