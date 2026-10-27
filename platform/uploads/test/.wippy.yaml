@@ -16,6 +16,7 @@ workspace:
     kickside/realtime: ../../realtime
     kickside/settings: ../../settings
     kickside/pdf2image: ../../../../converters/pdf2image
+    kickside/doc2md: ../../../../converters/doc2md
 vars:
   sqlite_path: ':memory:'
   pg_host: localhost
