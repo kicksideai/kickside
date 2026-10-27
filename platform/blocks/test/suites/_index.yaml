@@ -29,6 +29,7 @@ entries:
     meta: { type: test, suite: blocks, group: KickSide Blocks }
     source: file://destination_test.lua
     method: run
+    modules: [json]
     imports:
       test: wippy.test:test
       subject: app.blocks_suites:destination_subject

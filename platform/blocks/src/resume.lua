@@ -75,6 +75,8 @@ function M.resume(args: any): (Map?, error?)
         })
         if handler_err then return nil, destination.failure(handler_err, "Flow resume handler failed",
             "BLOCK_FLOW_RESUME_HANDLER_FAILED", errors.UNAVAILABLE, true) end
+        if type(result) ~= "table" then return nil, destination.failure(nil, "Flow resume handler returned an invalid result",
+            "BLOCK_SIGNAL_RESULT_INVALID", errors.INTERNAL, false) end
         return result, nil
     end
     local actor, scope, frame_err = execution_frame.reconstruct(

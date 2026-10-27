@@ -40,5 +40,5 @@ function M.new(): (any?, any?)
     return executor, nil
 end
 
-function M.call(): (any?, any?) return nil, M.state.failure end
+function M.call(): (any?, any?) return M.state.handler_result, M.state.failure end
 return M

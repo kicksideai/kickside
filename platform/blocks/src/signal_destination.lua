@@ -59,6 +59,9 @@ end
 
 local function content(value: any): (Map?, error?)
     if type(value) == "table" then return value :: Map, nil end
+    if type(value) ~= "string" then
+        return nil, M.failure(nil, "Signal wait record invalid", "BLOCK_SIGNAL_STATE_INVALID", errors.INTERNAL, false)
+    end
     local decoded, err = json.decode(value)
     if err or type(decoded) ~= "table" then
         return nil, M.failure(err, "Signal wait record invalid", "BLOCK_SIGNAL_STATE_INVALID", errors.INTERNAL, false)
@@ -76,7 +79,7 @@ function M.pending(dataflow_id: string, signal_id: string, flow: Map): (Map?, er
     if nodes_err then
         return nil, M.failure(nodes_err, "Signal nodes lookup failed", "BLOCK_SIGNAL_LOOKUP_FAILED", errors.UNAVAILABLE, true)
     end
-    local candidates: Map = {}
+    local candidates: { [string]: Map } = {}
     for _, node in ipairs(nodes or {}) do
         -- During arm invocation the yield is durable but passivation has not
         -- changed RUNNING to WAITING yet.
@@ -107,7 +110,7 @@ function M.pending(dataflow_id: string, signal_id: string, flow: Map): (Map?, er
             satisfied[yield_id] = true
         end
     end
-    local pending: Map = {}
+    local pending: { [string]: Map } = {}
     local closed: Map = {}
     for _, record in ipairs(records or {}) do
         if record.type == consts.DATA_TYPE.NODE_YIELD and candidates[record.node_id] then
@@ -116,8 +119,12 @@ function M.pending(dataflow_id: string, signal_id: string, flow: Map): (Map?, er
             if type(value.yield_id) ~= "string" or value.yield_id == "" then
                 return nil, M.failure(nil, "Signal yield identifier invalid", "BLOCK_SIGNAL_STATE_INVALID", errors.INTERNAL, false)
             end
-            local wait = type(value.yield_context) == "table" and value.yield_context or {}
-            if wait.wait_for_signal == true and wait.signal_id == signal_id then
+            local wait = value.yield_context
+            if type(wait) ~= "table" or wait.wait_for_signal ~= true
+                or type(wait.signal_id) ~= "string" or wait.signal_id == "" then
+                return nil, M.failure(nil, "Signal wait context invalid", "BLOCK_SIGNAL_STATE_INVALID", errors.INTERNAL, false)
+            end
+            if wait.signal_id == signal_id then
                 if satisfied[value.yield_id] then closed[record.node_id] = true end
                 pending[record.node_id] = candidates[record.node_id]
             end

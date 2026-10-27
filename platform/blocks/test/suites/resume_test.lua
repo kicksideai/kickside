@@ -7,6 +7,26 @@ local uuid = require("uuid")
 
 local function cases()
     test.describe("Blocks resume native errors", function()
+        for index, row in ipairs({{}, {value = false}, {value = 7}, {value = "invalid"}}) do
+            test.it("rejects malformed handler result case " .. index, function()
+                fixture.state = {metadata = {run_id = "run", resume_handler = "app:handler"}, handler_result = row.value}
+                local result, err = subject.resume({dataflow_id = "flow", signal_id = "signal"})
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.INTERNAL), tostring(err))
+                test.eq(err:details().code, "BLOCK_SIGNAL_RESULT_INVALID")
+                test.eq(err:retryable(), false)
+            end)
+        end
+
+        test.it("keeps a valid handler result", function()
+            fixture.state = {metadata = {run_id = "run", resume_handler = "app:handler"},
+                handler_result = {ok = true, commit_id = "handler-commit"}}
+            local result, err = subject.resume({dataflow_id = "flow", signal_id = "signal"})
+            test.is_nil(err)
+            test.eq(result.ok, true)
+            test.eq(result.commit_id, "handler-commit")
+        end)
+
         test.it("returns INVALID with stable codes for missing identifiers", function()
             for _, row in ipairs({ {{}, "BLOCK_DATAFLOW_ID_REQUIRED"}, {{dataflow_id = "flow"}, "BLOCK_SIGNAL_ID_REQUIRED"} }) do
                 local result, err = subject.resume(row[1])
