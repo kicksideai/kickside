@@ -148,6 +148,24 @@ entries:
       comment: Harness-owned durable lifecycle reporter probe.
     source: file://lifecycle_report_stub.lua
 
+  - name: bootstrap_password_log_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_users}
+    source: file://bootstrap_password_log_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      admin_migration: app:admin_migration
+
+  - name: admin_migration
+    kind: library.lua
+    source: file://admin_migration.lua
+    modules: [logger, env, crypto, sql]
+    imports:
+      migration: wippy.migration:migration
+      consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support
+
   - name: migration_ledger_test
     kind: function.lua
     meta:
