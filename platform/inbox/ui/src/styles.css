@@ -154,3 +154,21 @@
   .kx-detail-action { flex: 1; min-width: 0; }
   .kx-resolved { flex-basis: 100%; }
 }
+
+.kx-files { margin-top: 20px; }
+.kx-files h3 { margin: 0 0 8px; font-size: 12px; color: var(--p-text-muted-color); }
+.kx-file-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--p-content-border-color); border-radius: 8px; }
+.kx-file-list > li + li { border-top: 1px solid var(--p-content-border-color); }
+.kx-file-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; }
+.kx-file-row > svg { flex: none; font-size: 20px; color: var(--p-text-muted-color); }
+.kx-file-label { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
+.kx-file-name { overflow-wrap: anywhere; color: var(--p-text-color); }
+.kx-file-size, .kx-file-locked { color: var(--p-text-muted-color); }
+.kx-file-row a { flex: none; color: var(--p-text-color); text-decoration: underline; text-underline-offset: 2px; }
+.kx-file-preview { padding: 12px; border-top: 1px solid var(--p-content-border-color); }
+.kx-file-preview wc-resource-view { display: block; min-height: 180px; }
+.kx-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 420px) {
+  .kx-file-row { flex-wrap: wrap; }
+  .kx-file-label { flex-basis: calc(100% - 40px); }
+}

@@ -4,6 +4,23 @@ local list = require("list_handler")
 local context = require("list_context")
 local function run()
     test.describe("Inbox list decision contract", function()
+        test.it("returns only viewer-authorized file metadata", function()
+            context.rows = { { id = "file-item", item_type = "notice", metadata_json = "{}",
+                files = { { component_id = "private:provider", title = "private name", context = { key = "private" } } } } }
+            list._modules = { http = context, security = context, reader = context, events = context,
+                files = { list = function(refs: any): (any?, any?)
+                    test.eq(refs[1].context.key, "private")
+                    return { { locked = true } }, nil
+                end } }
+            list.handler()
+            list._modules = {}
+            local file = context.body().items[1].files[1]
+            test.is_true(file.locked)
+            test.is_nil(file.title)
+            test.is_nil(file.context)
+            test.is_nil(file.component_id)
+        end)
+
         for _, identifier in ipairs({ "target", "absent", "" }) do
             test.it("filters a requested item identity before pagination: " .. identifier, function()
                 context.rows = {

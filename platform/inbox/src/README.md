@@ -55,6 +55,7 @@ Empty item `metadata` and submitted `form` values serialize as JSON objects
 | GET | `/inbox` | list items (`status`, `type`, `priority`, `page`, `limit`) |
 | GET | `/inbox/item-types` | declared item types + render metadata |
 | POST | `/inbox` | enqueue an item |
+| GET | `/inbox/{id}/files/{index}` | read attached file bytes as the current viewer |
 | POST | `/inbox/{id}/{action}` | apply an action declared by the item's canonical item type |
 
 Modules can also enqueue in-process via the `inbox_writer` library. Terminal
@@ -105,3 +106,18 @@ recipient's existing component ownership, and records `metadata.assigned_by`.
 It never reconstructs the recipient's actor or reads the recipient's Inbox.
 A recipient must have a provisioned Inbox. Re-arming uses the same event identity
 and does not reopen a resolved decision.
+
+## Files
+
+Item creation, the Inbox sink, SubmitToInbox, and review Block config accept optional
+`files: [{component_id, context?, title?}]` references. This reuses the generic
+`content_provider` reference shape; for example, an upload reference uses
+`component_id: "kickside.uploads:content_provider"` and `context: {upload_id: "..."}`.
+References grant no access. The list and resolution APIs resolve `get_info` under
+the viewer's actor and scope, returning only filename, content type, size, and the
+provider's optional `view_url`. Inaccessible references return `{locked: true}`.
+The shared resource viewer fetches preview bytes through the item file endpoint,
+which invokes `get_content` under the current viewer identity on every request.
+Existing items without files retain their behavior. Content versions that omit
+`files` preserve existing references; an explicit empty list removes them. No data
+migration is required.

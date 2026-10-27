@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.inbox
+entries:
+  - name: files_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }
+    source: file://files_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      inbox_files: kickside.inbox:inbox_files
+
+  - name: file_context
+    kind: library.lua
+    source: file://file_context.lua
+  - name: file_reader_context
+    kind: library.lua
+    source: file://file_reader_context.lua
+  - name: file_provider_context
+    kind: library.lua
+    source: file://file_provider_context.lua
+  - name: file_content_subject
+    kind: library.lua
+    source: file://file_content_subject.lua
+    imports:
+      http: kickside.inbox:file_context
+      inbox_reader: kickside.inbox:file_reader_context
+      inbox_files: kickside.inbox:file_provider_context
+      http_errors: kickside.contract:http_errors
+  - name: file_content_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }
+    source: file://file_content_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      context: kickside.inbox:file_context
+      reader: kickside.inbox:file_reader_context
+      provider: kickside.inbox:file_provider_context
+      handler: kickside.inbox:file_content_subject

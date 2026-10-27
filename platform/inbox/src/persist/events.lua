@@ -9,6 +9,7 @@ local component = require("component")
 
 local inbox_types = require("inbox_types")
 local item_types = require("inbox_item_types")
+local files = require("inbox_files")
 local object_fields = require("object_fields")
 
 local M = {}
@@ -258,6 +259,9 @@ function M.create(params: any, deps: any?): (string?, any?, string?)
     local declared_type, type_err = item_types.get(item_type)
     if not declared_type then return nil, type_err end
 
+    local file_refs, files_err = files.normalize(params.files)
+    if files_err then return nil, files_err end
+
     local id = (type(params.id) == "string" and params.id ~= "") and params.id or uuid.v4()
     local aggregate_key = params.aggregate_key
     if aggregate_key ~= nil then
@@ -266,7 +270,7 @@ function M.create(params: any, deps: any?): (string?, any?, string?)
         if identity_err then return nil, identity_err end
     end
     local body: { [string]: any } = {
-        id = id, item_type = item_type, title = title, content = params.content,
+        id = id, item_type = item_type, title = title, content = params.content, files = file_refs,
         metadata = type(params.metadata) == "table" and params.metadata or {},
         source_id = params.source_id,
         priority = type(params.priority) == "string" and params.priority or inbox_types.PRIORITY.NORMAL,
@@ -283,7 +287,7 @@ function M.create(params: any, deps: any?): (string?, any?, string?)
     end
     local opener = deps and deps.open_threads
     local claimed, claim_err = M.claim_delivery(delivery_key, "upsert", id, {
-        item_type = item_type, title = title, content = params.content,
+        item_type = item_type, title = title, content = params.content, files = file_refs,
         metadata = body.metadata, source_id = body.source_id, priority = body.priority,
         aggregate_key = aggregate_key,
     }, opener)

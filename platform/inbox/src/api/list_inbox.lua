@@ -9,6 +9,7 @@ local reader = require("inbox_reader")
 local inbox_types = require("inbox_types")
 local inbox_events = require("inbox_events")
 local object_fields = require("object_fields")
+local inbox_files = require("inbox_files")
 
 local M = { _modules = {} }
 
@@ -121,8 +122,15 @@ local function handler()
             local decoded, derr = json.decode(r.metadata_json :: string)
             if not derr and type(decoded) == "table" then meta = decoded end
         end
+        local files, files_err = dependency("files", inbox_files).list(r.files)
+        if files_err then
+            res:set_status(http.STATUS.INTERNAL_ERROR)
+            res:write_json({ success = false, error = tostring(files_err) })
+            return
+        end
         items[#items + 1] = {
             id = r.id, item_type = r.item_type, title = r.title, content = r.content,
+            files = files,
             metadata = object_fields.object(meta), source_id = r.source_id, status = r.status,
             priority = r.priority, actor_id = r.actor_id,
             created_at = r.created_at, resolved_at = r.resolved_at,
