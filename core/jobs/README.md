@@ -45,6 +45,14 @@ variables in the harness configuration for your test server.
 
 Enqueue work through the existing domain owner, using an exact worker entry ID and immutable payload. Workers retain the enclosing deadline and resolve owner-held execution identity. Use transactional enqueue when a durable fact and its job must commit together.
 
+After a caller-owned `jobs.enqueue_tx(tx, dbtype, params)` transaction commits,
+call `jobs.nudge_workers()` to notify the worker pool. Retired slot owners call
+`jobs.purge_slot({ namespace = namespace, scope = scope, key = key })` and honor
+its bounded cleanup continuation errors. Both operations use the public
+`kickside.core.jobs:jobs` facade without persistence call grants. See the
+[dependency interface](src/README.md#dependency-interface) for return values,
+authorization, and retry semantics.
+
 ## Reference
 
 - [Module reference](src/README.md)

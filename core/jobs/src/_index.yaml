@@ -209,14 +209,29 @@ entries:
       policies:
         - kickside.core.jobs:signal_transport
 
+  # Public notification entry: callers need only Jobs runtime call access.
+  - name: nudge_workers
+    kind: function.lua
+    source: file://persist/pool_nudge.lua
+    method: run
+    modules: [process]
+    imports:
+      config: kickside.core.jobs:config
+    security:
+      actor:
+        id: kickside.core.jobs:nudge_workers
+      policies:
+        - kickside.core.jobs:signal_transport
+
   - name: jobs
     kind: library.lua
     meta:
-      comment: "Durable jobs API: enqueue, fenced cancellation, lease validation, completion, listing, retention, and health."
+      comment: "Durable jobs API: enqueue, post-commit nudge, slot purge, fenced cancellation, lease validation, completion, listing, retention, and health."
     source: file://jobs.lua
     modules:
       - sql
       - logger
+      - funcs
     imports:
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -224,6 +239,7 @@ entries:
       lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
       lease_status: kickside.core.jobs.persist:lease_status
       wake: kickside.core.jobs.persist:wake
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: kickside.core.jobs:clock
       completion: kickside.core.jobs.persist:completion
       retention: kickside.core.jobs.persist:retention

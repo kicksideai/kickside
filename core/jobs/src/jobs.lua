@@ -1,10 +1,12 @@
 local sql = require("sql")
+local funcs = require("funcs")
 
 local cfg = require("config")
 local lifecycle = require("lifecycle")
 local lifecycle_cancel = require("lifecycle_cancel")
 local enqueue = require("lifecycle_enqueue")
 local wake = require("wake")
+local slot_purge = require("slot_purge")
 local clock = require("clock")
 local completion = require("completion")
 local lease_status = require("lease_status")
@@ -172,6 +174,20 @@ function jobs.enqueue_tx(tx: sql.Transaction, dbtype: string, params: table): (t
     local job_params, params_err = prepare_enqueue_params(params)
     if params_err or not job_params then return nil, params_err end
     return enqueue_tx(tx, dbtype, job_params)
+end
+
+-- Call only after the owning transaction commits; durable demand survives an absent pool.
+function jobs.nudge_workers(): (integer, error?)
+    local sent, err = funcs.call("kickside.core.jobs:nudge_workers")
+    if err then return 0, err end
+    local count, count_err = sql_boundary.number_value(sent, "nudge", 0, true, false, response_error)
+    if count_err then return 0, count_err end
+    return count :: integer, nil
+end
+
+-- The owner authorizes retirement before deleting its exact slot and settled history.
+function jobs.purge_slot(params: table): (integer?, error?)
+    return slot_purge.purge_slot(params)
 end
 
 function jobs.cancel(id: string, expected_lease_token: string?): (table?, error?)
