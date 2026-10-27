@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { describe, expect, it, vi } from 'vitest'
 import { keeperHub, type Api } from './keeper-hub.ts'
 
