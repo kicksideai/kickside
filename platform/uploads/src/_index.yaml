@@ -356,6 +356,9 @@ entries:
       execution_identity: kickside.execution:execution_identity
       jobs: kickside.core.jobs:jobs
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      storage_catalog: kickside.uploads.binding:storage_catalog
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
 
   - name: uploads

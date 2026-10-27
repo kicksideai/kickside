@@ -1,0 +1,15 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: presigned_packed_lifecycle
+    kind: library.lua
+    source: file://fixtures/uploads_presigned.lua
+  - name: presigned_packed_test
+    kind: function.lua
+    meta: {type: test, suite: packed_storage}
+    source: file://presigned_packed_test.lua
+    method: run
+    modules: [uuid, time]
+    imports:
+      test: wippy.test:test
+      lifecycle: app:presigned_packed_lifecycle

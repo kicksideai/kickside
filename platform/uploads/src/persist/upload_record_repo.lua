@@ -240,7 +240,11 @@ function upload_record_repo.finalize_tx(tx, dbtype, upload_id, metadata_updates,
     upload.trace_context = upload.trace_context or trace_context
     local trace_json, trace_err = encode_trace_context(upload.trace_context)
     if trace_err then return nil, trace_err end
-    if type(key) == "string" and key ~= "" then upload.storage_path = key end
+    -- Completion supplies an object key, retaining the stored resource authority.
+    if type(key) == "string" and key ~= "" then
+        local authority = type(upload.storage_path) == "string" and upload.storage_path:match("^.-://[^/]+/") or nil
+        upload.storage_path = authority and (authority .. key) or key
+    end
     upload.storage_state, upload.metadata = "uploaded", metadata
     upload.processing_intent_state = upload.processing_intent_state or "pending"
     upload.processing_max_execution_ms = upload.processing_max_execution_ms or max_execution_ms
@@ -373,7 +377,7 @@ function upload_record_repo.release_content_hash(uuid)
 end
 
 -- Update upload storage
-function upload_record_repo.update_storage(uuid, storage_id, storage_path)
+function upload_record_repo.update_storage(uuid, storage_id, storage_path, tx)
     if not uuid or uuid == "" then
         return nil, "Upload ID is required"
     end
@@ -386,10 +390,26 @@ function upload_record_repo.update_storage(uuid, storage_id, storage_path)
         return nil, "Storage Path is required"
     end
 
-    local db, err = resources.get_db()
-    if err then
-        return nil, err
+    local db = tx
+    local owned_db = false
+    if not db then
+        local err
+        db, err = resources.get_db()
+        if err then return nil, err end
+        owned_db = true
     end
+
+    local rows, read_err = db:query(
+        "SELECT storage_id, storage_path FROM kickside_uploads WHERE uuid=$1", { uuid })
+    if read_err then
+        if owned_db then db:release() end
+        return nil, read_err
+    end
+    if not rows or not rows[1] then
+        if owned_db then db:release() end
+        return nil, typed(errors.NOT_FOUND, "upload not found")
+    end
+    local previous = { storage_id = rows[1].storage_id, storage_path = rows[1].storage_path }
 
     local now = now_rfc3339()
 
@@ -406,14 +426,14 @@ function upload_record_repo.update_storage(uuid, storage_id, storage_path)
     local executor = query:run_with(db)
     local result, err = executor:exec()
 
-    db:release()
+    if owned_db then db:release() end
 
     if err then
         return nil, "Failed to update upload storage: " .. err
     end
 
     if result.rows_affected == 0 then
-        return nil, "Upload not found"
+        return nil, typed(errors.NOT_FOUND, "upload not found")
     end
 
     return {
@@ -422,7 +442,7 @@ function upload_record_repo.update_storage(uuid, storage_id, storage_path)
         storage_path = storage_path,
         updated_at = now,
         updated = true
-    }
+    }, nil, previous
 end
 
 -- Update upload metadata

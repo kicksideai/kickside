@@ -204,7 +204,7 @@ entries:
     kind: fs.directory
     meta:
       comment: Secondary storage ID for artifact dedupe scope checks.
-    directory: ./.wippy/uploads/
+    directory: ./.wippy/other_uploads/
     auto_init: true
 
   - name: env_storage
@@ -313,6 +313,20 @@ entries:
       comment: Test-only universal upload stage that fails when explicitly requested.
     source: file://failing_stage.lua
     method: process
+
+  - name: packed_storage_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: packed_storage
+    source: file://packed_storage_test.lua
+    method: run
+    modules: [fs, uuid]
+    imports:
+      test: wippy.test:test
+      storage_adapter: kickside.uploads.binding:storage_adapter_default
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
 
   - name: types.failing
     kind: registry.entry
@@ -801,3 +815,39 @@ entries:
     imports:
       test: wippy.test:test
       resources: kickside.uploads.binding:uploads_resources
+
+  - name: native_storage_error_probe
+    kind: function.lua
+    source: file://native_storage_error_probe.lua
+    method: run
+    imports:
+      adapter: kickside.uploads.binding:storage_adapter_default
+
+  - name: native_storage_call_probe
+    kind: security.policy
+    policy:
+      resources: [app:native_storage_error_probe, app:uploads]
+      actions: [funcs.call, fs.get]
+      effect: allow
+
+  - name: native_storage_deny
+    kind: security.policy
+    policy:
+      resources: [app:objects]
+      actions: [cloudstorage.get, fs.get]
+      effect: deny
+
+  - name: native_storage_allow_missing
+    kind: security.policy
+    policy:
+      resources: [app:objects]
+      actions: [cloudstorage.get, fs.get]
+      effect: allow
+
+  - name: native_storage_errors_test
+    kind: function.lua
+    meta: {type: test, suite: native_storage_errors}
+    source: file://native_storage_errors_test.lua
+    method: run
+    modules: [security, funcs]
+    imports: {test: 'wippy.test:test'}
