@@ -379,7 +379,11 @@ local function preview(snap: any, planned: any): any
     for _, op in ipairs(planned or {}) do
         local entry = type(op) == "table" and op.entry or nil
         if type(entry) == "table" and type(entry.id) == "string" then
-            changed[entry.id] = op.op == "delete" and false or entry
+            if op.op == "delete" then
+                changed[entry.id] = false
+            else
+                changed[entry.id] = entry
+            end
         end
     end
     local view = {}

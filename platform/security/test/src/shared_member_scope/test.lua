@@ -100,6 +100,39 @@ local function define_tests()
             test.not_nil(settled)
             test.eq(settled.created + settled.updated + settled.deleted, 0)
         end)
+        test.it("defers a deleted member policy for the existing revocation path without changing authority", function()
+            local id = "app:deleted_member_contributor"
+            local policy = {id = id, kind = "security.policy",
+                meta = {member_scope = "kickside.contract.http:user_security_scope"},
+                data = {policy = {actions = "access",
+                    resources = {"deleted.module:list.endpoint"}, effect = "allow"}}}
+            local created, create_err = fixture.apply(function(changes) changes:create(policy) end,
+                time.now():add(time.SECOND * 5))
+            test.is_nil(create_err, "create deleted-policy fixture: " .. tostring(create_err))
+            test.not_nil(created, "create deleted-policy fixture")
+            local initial, initial_err = projection.reconcile()
+            test.is_nil(initial_err, "project deleted-policy fixture: " .. tostring(initial_err))
+            test.not_nil(initial, "project deleted-policy fixture")
+            local actor = assert(security.new_actor("deleted-policy-member", {}))
+            local before = registry.current_version():id()
+            local planned, plan_err = projection.plan({{op = "delete", entry = {id = id, kind = "security.policy"}}})
+            local after = registry.current_version():id()
+            local decision = assert(source_scope.resolve("app:unassigned_endpoints")):evaluate(actor,
+                "access", "deleted.module:list.endpoint")
+            local removed, remove_err = fixture.apply(function(changes) changes:delete(id) end,
+                time.now():add(time.SECOND * 5))
+            local reconciled, reconcile_err = projection.reconcile()
+            test.is_nil(remove_err)
+            test.not_nil(removed, "remove deleted-policy fixture")
+            test.is_nil(reconcile_err)
+            test.not_nil(reconciled, "reconcile deleted-policy fixture cleanup")
+            test.is_nil(plan_err, "plan policy deletion: " .. tostring(plan_err))
+            test.not_nil(planned, "plan policy deletion")
+            test.is_true(planned.deferred)
+            test.eq(#planned.ops, 0)
+            test.eq(after, before)
+            test.eq(decision, "allow")
+        end)
         test.it("plans no operations for a changeset that touches no policy", function()
             test.not_nil((projection.reconcile()))
             local planned, plan_err = projection.plan({{op = "create", entry = {id = "app:planned_plain",
