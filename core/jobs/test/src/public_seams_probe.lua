@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local jobs = require("jobs")
 
 local function run(input: table): (integer?, error?)

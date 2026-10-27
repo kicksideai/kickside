@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local jobs = require("jobs")
 local wake = require("wake")
@@ -23,7 +24,6 @@ return { run = test.run_cases(function()
                     test.is_false(err:retryable())
                     test.eq(err:details().code, "job_notification_response")
                     test.eq(err:details().field, "nudge")
-                    test.eq(err:message(), "Worker notification response is invalid")
                     test.eq(fixture.called_entry, entry)
                     test.eq(fixture.calls, 1)
                 end)

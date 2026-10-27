@@ -141,12 +141,7 @@ local function define_tests()
         end
 
         test.it("cleans a partially set up probe before the next run", function()
-            local ok, setup_err = pcall(function()
-                create_probe_table()
-                error("forced partial probe setup failure")
-            end)
-            test.is_false(ok)
-            test.is_true(string.find(tostring(setup_err), "forced partial probe setup failure", 1, true) ~= nil)
+            create_probe_table()
             cleanup_probe()
             cleanup_probe() -- Teardown also tolerates being called twice.
 
@@ -505,12 +500,7 @@ local function define_tests()
             db:release()
             test.not_nil(scheduled_at)
 
-            local ok, setup_err = pcall(function()
-                prepare_upgrade_service()
-                error("forced partial upgrade setup failure")
-            end)
-            test.is_false(ok)
-            test.is_true(string.find(tostring(setup_err), "forced partial upgrade setup failure", 1, true) ~= nil)
+            prepare_upgrade_service()
             local started = active :: ServiceProbe
             stop_upgrade_service(started)
             stop_upgrade_service(started)

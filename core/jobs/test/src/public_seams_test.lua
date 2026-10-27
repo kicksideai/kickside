@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
@@ -162,11 +163,7 @@ local function define_tests()
             local count, purge_err = constrained("purge", input)
             test.is_nil(purge_err)
             test.eq(count, 1)
-            local verify = assert(sql.get("app:db"))
-            local rows, read_err = verify:query("SELECT id FROM kickside_job_run WHERE job_id=$1", { job_id(queued) })
-            verify:release()
-            test.is_nil(read_err)
-            test.eq(#rows, 0)
+            test.eq(history_count(job_id(queued)), 0)
         end)
 
         test.it("pages settled history through the public owner seam before deleting the slot", function()
