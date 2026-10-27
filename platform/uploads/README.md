@@ -49,6 +49,10 @@ Add a file in **Uploads** and inspect its processing state and preview. Installe
 
 ### Optional storage extensions
 
+Packed paths, stage relocation and `uploads.delivery_url` are available starting
+with Uploads 0.3.2. Storage consumers must require that version or newer; a
+wildcard dependency can retain an incompatible older installed package.
+
 The default adapter reads relative filesystem paths, `fs://<resource-id>/<path>`
 and `s3://<resource-id>/<key>` packed paths. Relative paths use the upload's
 `storage_id`; packed paths identify their native resource directly. Existing
