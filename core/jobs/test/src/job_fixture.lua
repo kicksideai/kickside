@@ -75,7 +75,7 @@ fixture.no_retention_schedule = {
 }
 
 -- The queue closure, parents first: kickside_job_run references kickside_job.
-local QUEUE_TABLES = { "kickside_job_thread_cleanup", "kickside_job", "kickside_job_run",
+local QUEUE_TABLES = { "kickside_wake_fanout", "kickside_job_thread_cleanup", "kickside_job", "kickside_job_run",
     "kickside_job_worker", "kickside_job_worker_pulse" }
 
 local IDENTIFIER = "^[a-z_][a-z0-9_]*$"

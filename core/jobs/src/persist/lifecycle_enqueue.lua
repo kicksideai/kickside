@@ -292,7 +292,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if params.idempotency_key ~= nil and params.idempotency_key ~= "" then
         row.idempotency_key = params.idempotency_key
     end
-    local size_err = row_bytes.check(row, (policy :: any).max_row_bytes,
+    local size_err = row_bytes.check_job_insert(db_or_tx, dbtype, row, (policy :: any).max_row_bytes,
         owner.kind .. ":" .. owner.id, "enqueue_job")
     if size_err then return nil, size_err end
     local fence_err = thread_fence.admit(db_or_tx :: sql.Transaction, owner, "enqueue_job")

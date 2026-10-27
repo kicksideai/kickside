@@ -6,6 +6,11 @@ local sql = require("sql")
 
 local M = {}
 M.NULL = {}
+-- kickside_job has an automatic updated_at trigger. Its future timestamp is
+-- not an explicit caller change, so reserve the longest JSON-safe canonical
+-- RFC3339 representation while checking that trigger-bearing row. This is a
+-- bounded, fail-closed near-cap projection; kickside_job_run has no trigger.
+local JOB_UPDATED_AT_MAX = "9999-12-31T23:59:59.999999999+00:00"
 local function response_error(field: string): error
     return errors.new({message = "retained row response is invalid", kind = errors.INTERNAL,
         retryable = false, details = {code = "job_row_bytes_response", field = field}})
@@ -34,6 +39,36 @@ function M.check(row: table, cap: integer, scope: string, operation: string): er
     if bytes_err then return bytes_err end
     if (bytes :: integer) <= cap then return nil end
     return M.too_large(scope, bytes :: integer, cap, operation)
+end
+
+-- Enqueue omits these non-null defaults from 04_jobs. Predict their retained
+-- encoding without supplying values to INSERT, so database timestamps and
+-- defaults keep their existing semantics. PostgreSQL booleans bound SQLite's
+-- numeric flags; the timestamp bound covers both supported dialects.
+function M.check_job_insert(exec: any, dbtype: string, row: table,
+    cap: integer, scope: string, operation: string): error?
+    local predicted: { [string]: any } = {}
+    for key, value in pairs(row) do predicted[key] = value end
+    -- JSONB normalizes whitespace and numeric notation. Ask the same database
+    -- for its retained representation, while INSERT still receives the caller's
+    -- original payload. Compact JSON length cannot bound arbitrary JSONB.
+    if dbtype == sql.type.POSTGRES then
+        local rows, err = exec:query("SELECT CAST($1 AS JSONB) AS payload", { row.payload })
+        if err then return errors.wrap(err, "job insert payload projection failed") end
+        if type(rows) ~= "table" or type(rows[1]) ~= "table" or type(rows[1].payload) ~= "string" then
+            return response_error("insert.payload")
+        end
+        predicted.payload = rows[1].payload
+    end
+    predicted.actor_context = "{}"
+    predicted.created_at = JOB_UPDATED_AT_MAX
+    predicted.updated_at = JOB_UPDATED_AT_MAX
+    predicted.execution_seq = 0
+    predicted.wake_enabled = true
+    predicted.wake_generation = 0
+    predicted.wake_control_pending = false
+    if predicted.scheduled_at ~= nil then predicted.scheduled_at = JOB_UPDATED_AT_MAX end
+    return M.check(predicted, cap, scope, operation)
 end
 
 -- Read the complete retained row and measure the values that the caller will
@@ -75,6 +110,9 @@ function M.check_update(exec: any, table_name: string, id: string, changes: any,
     end
     for key, value in pairs(changes) do
         if value == M.NULL then row[key] = nil else row[key] = value end
+    end
+    if table_name == "kickside_job" and row.updated_at ~= nil then
+        row.updated_at = JOB_UPDATED_AT_MAX
     end
     local bytes, bytes_err = M.measure(row)
     if bytes_err then return bytes_err end

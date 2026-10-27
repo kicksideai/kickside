@@ -16,6 +16,7 @@ end
 function M.policy() return M.result("policy", policy.policy()) end
 function M.normalize(value) return M.result("trace", value) end
 function M.check(...) if M.stage == "size" then return M.source end; return nil end
+M.check_job_insert = M.check
 function M.admit(...) if M.stage == "fence" then return M.source end; return nil end
 function M.encode(value) if M.stage == "encode" then return M.result("encode", nil) end; return json.encode(value) end
 function M.decode(value) if M.stage == "decode" then return M.result("decode", nil) end; return json.decode(value) end

@@ -3335,6 +3335,10 @@ entries:
     kind: db.sql.sqlite
     foreign_keys: true
     file: ":memory:"
+  - name: private_queue_wake_recovery_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
   - name: claim_exclusion_test
     kind: function.lua
     source: file://claim_exclusion_test.lua

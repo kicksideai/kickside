@@ -98,6 +98,17 @@ entries:
     imports:
       user_agents: kickside.agents.binding:user_agents_func
 
+  - name: memory_host_bindings_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: memory_host_bindings
+    source: file://memory_host_bindings_test.lua
+    method: run
+    modules: [registry]
+    imports:
+      test: wippy.test:test
+
   - name: memory_runtime_test
     kind: function.lua
     meta:
