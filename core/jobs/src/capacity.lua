@@ -79,12 +79,16 @@ end
 
 -- group(job) verifies that all entries in a group name the same Settings values.
 function M.group(job: any): (table?, error?)
-    if type(job) ~= "table" or type((job :: any).capacity_group) ~= "string"
-        or (job :: any).capacity_group == "" then return nil, nil end
+    if type(job) ~= "table" then return nil, nil end
     local worker_ref = (job :: any).worker_ref or (job :: any).job_type
-    local descriptor, descriptor_err = M.descriptor(worker_ref)
+    local descriptor, descriptor_err = M.admit(worker_ref, (job :: any).concurrency_key)
     if descriptor_err then return nil, descriptor_err end
-    if not descriptor or descriptor.group ~= (job :: any).capacity_group then
+    if not descriptor then return nil, nil end
+    local stored_group = (job :: any).capacity_group
+    if stored_group ~= nil and (type(stored_group) ~= "string" or stored_group == "") then
+        return nil, invalid("admitted group is malformed")
+    end
+    if stored_group ~= nil and descriptor.group ~= stored_group then
         return nil, invalid("declaration does not match admitted group " .. tostring((job :: any).capacity_group))
     end
     local entries, find_err = registry.find({ [M.META .. ".group"] = descriptor.group })

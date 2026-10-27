@@ -16,7 +16,7 @@ local function with_db(fn)
 end
 
 local function enqueue(db: sql.DB, dbtype: string, worker: string, key: string, ordinal: integer,
-        scheduled_at: string?): string
+        scheduled_at: string?, slot: boolean?): string
     local id, err = lifecycle.enqueue_job(db, dbtype, {
         owner_locator = { kind = "test", id = "capacity_claim" },
         thread_id = uuid.v7(),
@@ -25,6 +25,7 @@ local function enqueue(db: sql.DB, dbtype: string, worker: string, key: string, 
         concurrency_key = key,
         job_identity = { namespace = "capacity", scope = key, key = tostring(ordinal) },
         scheduled_at = scheduled_at or "2000-01-01T00:00:00Z",
+        slot = slot == true,
     })
     if err then error("capacity enqueue failed: " .. tostring(err)) end
     return id :: string
@@ -100,6 +101,41 @@ local function define_tests()
                 end
                 test.eq(running, 1)
                 test.eq(pending, 1)
+            end)
+        end)
+
+        test.it("converges declared capacity for existing jobs and reusable slots", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local admitted = enqueue(db, dbtype, "app:capacity_worker_a", "persisted-admission", 1,
+                    "2999-01-01T00:00:00Z", true)
+                local _, clear_admitted_err = db:execute("UPDATE kickside_job SET capacity_group=NULL WHERE id=$1", { admitted })
+                test.is_nil(clear_admitted_err)
+                local admitted_again, admitted_err, inserted = lifecycle.enqueue_job(db, dbtype, {
+                    owner_locator = { kind = "test", id = "capacity_claim" },
+                    thread_id = uuid.v7(),
+                    job_type = "app:capacity_worker_a",
+                    worker_ref = "app:capacity_worker_a",
+                    concurrency_key = "persisted-admission",
+                    job_identity = { namespace = "capacity", scope = "persisted-admission", key = "1" },
+                    slot = true,
+                })
+                test.is_nil(admitted_err)
+                test.eq(admitted_again, admitted)
+                test.is_false(inserted)
+
+                local pending = enqueue(db, dbtype, "app:capacity_worker_b", "persisted-claim", 2, nil, true)
+                local _, clear_pending_err = db:execute("UPDATE kickside_job SET capacity_group=NULL WHERE id=$1", { pending })
+                test.is_nil(clear_pending_err)
+                local claimed, claim_err = claim.claim_job(db, dbtype)
+                test.is_nil(claim_err)
+                test.eq(claimed.id, pending)
+
+                local rows, rows_err = db:query("SELECT id,capacity_group FROM kickside_job WHERE id IN ($1,$2)",
+                    { admitted, pending })
+                test.is_nil(rows_err)
+                test.eq(#rows, 2)
+                for _, row in ipairs(rows) do test.eq(row.capacity_group, "app.capacity") end
             end)
         end)
     end)

@@ -193,7 +193,9 @@ function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
         if commit_err then return nil, errors.wrap(commit_err, "claim commit failed") end
         return nil, nil
     end
-    if type(job.capacity_group) == "string" and job.capacity_group ~= "" then
+    local descriptor, descriptor_err = capacity.group(job)
+    if descriptor_err then return nil, boundary.rollback(tx, descriptor_err, "claim rollback failed") end
+    if descriptor then
         local rollback_err = boundary.rollback(tx, nil, "claim rollback failed")
         if rollback_err then return nil, rollback_err end
         local claimed, batch_err = claim.claim_batch(db, dbtype, 1)
@@ -345,12 +347,31 @@ end
 type CapacityState = { descriptor: table, global_limit: integer, concurrency_key_limit: integer,
     running: integer, running_keys: { [string]: integer } }
 
-local function capacity_states(rows: table[]): ({ [string]: CapacityState }?, error?)
+local function converge_capacity_group(tx: sql.Transaction, job: table, descriptor: table,
+        max_row_bytes: integer): error?
+    if job.capacity_group == descriptor.group then return nil end
+    if job.capacity_group ~= nil then return response_error("capacity_group") end
+    local size_err = row_bytes.check_update(tx, "kickside_job", job.id,
+        { capacity_group = descriptor.group }, max_row_bytes, "claim_capacity")
+    if size_err then return size_err end
+    local updated, update_err = sql.builder.update("kickside_job"):set("capacity_group", descriptor.group)
+        :where(sql.builder.eq({ id = job.id })):where("capacity_group IS NULL"):run_with(tx):exec()
+    local count, count_err = boundary.single_row_count(updated, update_err,
+        "claim capacity admission update failed", "capacity_group.rows_affected", response_error)
+    if count_err then return count_err end
+    if count ~= 1 then return response_error("capacity_group.rows_affected") end
+    job.capacity_group = descriptor.group
+    return nil
+end
+
+local function capacity_states(tx: sql.Transaction, rows: table[], max_row_bytes: integer): ({ [string]: CapacityState }?, error?)
     local states: { [string]: CapacityState } = {}
     for _, job in ipairs(rows) do
         local descriptor, descriptor_err = capacity.group(job)
         if descriptor_err then return nil, descriptor_err end
         if descriptor then
+            local converge_err = converge_capacity_group(tx, job, descriptor, max_row_bytes)
+            if converge_err then return nil, converge_err end
             local group = descriptor.group
             local state = states[group]
             if not state then
@@ -521,7 +542,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
     for _, tier in ipairs(TIER_ORDER) do
         for _, job in ipairs(candidates[tier] or {}) do capacity_candidates[#capacity_candidates + 1] = job end
     end
-    local capacities, capacities_err = capacity_states(capacity_candidates)
+    local capacities, capacities_err = capacity_states(tx, capacity_candidates, (policy :: any).max_row_bytes)
     if capacities_err or not capacities then
         return nil, boundary.rollback(tx, capacities_err, "claim rollback failed")
     end
