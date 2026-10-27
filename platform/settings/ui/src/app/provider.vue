@@ -6,6 +6,7 @@ import Select from 'primevue/select'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { useProps } from '@wippy-fe/webcomponent-vue'
 import { api } from '@wippy-fe/proxy'
+import WcMount from '@widgets/app/WcMount.vue'
 
 // A shared, config-driven provider settings card. One element, reused by every
 // connection/tool provider block: it is handed a `config = { namespace, title?,
@@ -47,6 +48,7 @@ interface Setting {
   title?: string | null
   category?: string | null
   order?: number | null
+  control?: { tag: string; props?: Record<string, unknown> } | null
 }
 
 const props = useProps<{ config?: ProviderConfig | null }>()
@@ -101,10 +103,8 @@ const groups = computed<Group[]>(() => {
 const singleDefaultGroup = computed(() =>
   groups.value.length === 1 && groups.value[0].name === DEFAULT_CATEGORY)
 
-function seed(s: Setting) {
-  if (s.value_type === 'secret') { draft.value[s.key] = ''; return }
-  if (s.value_type === 'json') { draft.value[s.key] = JSON.stringify(s.value, null, 2); return }
-  draft.value[s.key] = s.value as never
+function seed(s: Setting, value: unknown) {
+  draft.value[s.key] = s.value_type === 'json' ? JSON.stringify(value, null, 2) : (value as string | number | boolean)
 }
 
 // A field is dirty when its draft differs from the stored value. A secret is
@@ -135,7 +135,7 @@ async function load() {
     if (!data?.success) throw new Error(data?.error || 'failed to load settings')
     settings.value = Array.isArray(data.settings) ? (data.settings as Setting[]) : []
     draft.value = {}
-    for (const s of settings.value) seed(s)
+    for (const s of settings.value) seed(s, s.value_type === 'secret' ? '' : s.value)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -240,8 +240,16 @@ onMounted(load)
                   </Button>
                 </div>
 
+                <template v-if="s.control">
+                  <span v-if="s.editable === false">{{ s.value }}</span>
+                  <WcMount v-else :tag="s.control.tag"
+                    :attrs="{ ...s.control.props, value: coerce(s, draft[s.key]) }"
+                    @select="seed(s, $event)" />
+                  <p v-if="s.description" class="ap-hint">{{ s.description }}</p>
+                </template>
+
                 <!-- bool: a real toggle switch -->
-                <div v-if="s.value_type === 'bool'" class="ap-toggle-row pv-toggle">
+                <div v-else-if="s.value_type === 'bool'" class="ap-toggle-row pv-toggle">
                   <div class="ap-toggle-text">
                     <span v-if="s.description" class="ap-toggle-desc">{{ s.description }}</span>
                   </div>
