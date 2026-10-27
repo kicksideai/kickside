@@ -6,6 +6,7 @@ export interface Delegation {
   policy_id: string
   principal: { kind: 'user'; id: string }
   root: string
+  root_label?: string
   groups: string[]
   active: boolean
   grantor: string

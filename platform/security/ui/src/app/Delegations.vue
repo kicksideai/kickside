@@ -148,7 +148,7 @@ defineExpose({ load: store.load })
                 <button type="button" role="radio" :aria-checked="!anyComponent" :class="{ on: !anyComponent }" @click="anyComponent = false">One component</button>
               </div>
             </FormField>
-            <WcMount v-if="!anyComponent" class="ks-runas-component" tag="wc-component-picker" :attrs="{ title: 'Component', placeholder: 'Choose a component…' }" :config="root ? { thread_id: root } : {}" @change="componentChoice" @error="pickerError" />
+            <WcMount v-if="!anyComponent" class="ks-runas-component" tag="wc-component-picker" :attrs="{ source: '/api/v1/security/delegations/roots', title: 'Component', placeholder: 'Choose a component you manage…' }" :config="root ? { thread_id: root } : {}" @change="componentChoice" @error="pickerError" />
           </li>
         </ol>
       </fieldset>
@@ -175,6 +175,7 @@ defineExpose({ load: store.load })
           </div>
           <div class="ks-runas-grant-meta">
             <span v-if="grant.root === '*'">on any component they manage</span>
+            <span v-else-if="grant.root_label">on <b>{{ grant.root_label }}</b></span>
             <span v-else>on component <code>{{ grant.root }}</code></span>
           </div>
         </div>

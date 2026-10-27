@@ -803,6 +803,7 @@
 .ks-runas-verb { color: var(--p-text-muted-color); }
 .ks-runas-grant-meta { color: var(--p-text-muted-color); font-size: 12px; overflow-wrap: anywhere; }
 .ks-runas-grant-meta code { font-family: ui-monospace, Menlo, monospace; font-size: 11px; padding: 1px 5px; border-radius: 4px; background: var(--kx-overlay-subtle); }
+.ks-runas-grant-meta b { color: var(--p-text-color); font-weight: 600; }
 .ks-runas-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 16px; text-align: center; border: 1px dashed var(--p-content-border-color); border-radius: var(--kx-radius-10); color: var(--p-text-muted-color); font-size: 13px; }
 .ks-runas-empty > svg { font-size: 28px; }
 .ks-runas-empty b { color: var(--p-text-color); }

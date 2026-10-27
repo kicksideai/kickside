@@ -163,6 +163,48 @@ return {run = test.run_cases(function()
             local denied = request("GET", "/api/security/delegations", ungranted)
             test.eq(denied.status_code, 403, denied.body)
         end)
+        test.it("RA-H51 list names each component root by its title", function()
+            local token = login({"app.security:admin"})
+            execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
+                {uuid.v4(), root, "title", "Nightly digest"})
+            local exact = save(token, args())
+            local untitled = uuid.v4()
+            roots[#roots + 1] = untitled
+            execute("INSERT INTO kickside_components (component_id,impl_id) VALUES ($1,$2)", {untitled, "app:http_fixture_root"})
+            local plain = save(token, args({root = untitled}))
+            local every = save(token, args({root = "*"}))
+            local response, payload = request("GET", "/api/security/delegations", token)
+            test.eq(response.status_code, 200, response.body)
+            local rows = {}
+            for _, row in ipairs(payload.delegations) do rows[row.policy_id] = row end
+            test.eq(rows[exact.policy_id].root, root)
+            test.eq(rows[exact.policy_id].root_label, "Nightly digest")
+            test.eq(rows[plain.policy_id].root, untitled)
+            test.is_nil(rows[plain.policy_id].root_label)
+            test.eq(rows[every.policy_id].root, "*")
+            test.is_nil(rows[every.policy_id].root_label)
+        end)
+        test.it("RA-H51 the root catalog lists only components the caller administers", function()
+            local token, admin = login({"app.security:admin"})
+            local managed = uuid.v4()
+            roots[#roots + 1] = managed
+            execute("INSERT INTO kickside_components (component_id,impl_id) VALUES ($1,$2)", {managed, "app:http_fixture_root"})
+            execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
+                {uuid.v4(), managed, "title", "Support bot"})
+            execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_type,subject_id,access_mask) VALUES ($1,$2,$3,$4,$5,$6)",
+                {uuid.v4(), managed, managed, "user", admin, 15})
+            local response, payload = request("GET", "/api/security/delegations/roots", token)
+            test.eq(response.status_code, 200, response.body)
+            test.eq(payload.success, true)
+            local listed = {}
+            for _, item in ipairs(payload.items) do listed[item.id] = item end
+            test.not_nil(listed[managed])
+            test.eq(listed[managed].label, "Support bot")
+            test.is_nil(listed[root])
+            local ungranted = login({"app.security:user"})
+            local denied = request("GET", "/api/security/delegations/roots", ungranted)
+            test.eq(denied.status_code, 403, denied.body)
+        end)
         test.it("RA-H50 DELETE retains canonical ID and removes native selection authority", function()
             local token = login({"app.security:admin"})
             local result = save(token, args())

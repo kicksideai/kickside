@@ -32,9 +32,27 @@ entries:
       actions: funcs.call
       resources: []
       effect: allow
+  - name: delegation_roots
+    kind: ns.requirement
+    default: ""
+    meta:
+      value_kind: function.lua
+      description: Optional host catalog of execution roots. It names the given component ids, or lists the components the caller administers; empty leaves roots unnamed and the root catalog unavailable.
+    targets:
+      - entry: kickside.security:delegation_config
+        path: .meta.roots
+      - entry: kickside.security:delegation_roots_call
+        path: ".policy.resources +="
+  - name: delegation_roots_call
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: funcs.call
+      resources: []
+      effect: allow
   - name: delegation_config
     kind: registry.entry
-    meta: {validator: ""}
+    meta: {validator: "", roots: ""}
   - name: delegation
     kind: library.lua
     source: file://delegation.lua
@@ -112,6 +130,8 @@ entries:
       - entry: kickside.security.api:delegation_revoke.endpoint
         path: .meta.router
       - entry: kickside.security.api:delegation_list.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:delegation_roots.endpoint
         path: .meta.router
 
   - name: ui_server

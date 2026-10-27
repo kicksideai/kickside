@@ -56,6 +56,26 @@ local function validate_host(request)
     return true, nil
 end
 
+-- The host root catalog names components for the Security surface: given
+-- component_ids it returns those roots, otherwise one page of the components the
+-- caller administers. Each item is {id, label, icon}.
+local function root_catalog(): (string?, error?)
+    local config, config_err = registry.get("kickside.security:delegation_config")
+    if config_err then return nil, config_err end
+    local catalog_id = config and config.meta and config.meta.roots
+    if type(catalog_id) ~= "string" or catalog_id == "" then return nil, nil end
+    return catalog_id, nil
+end
+
+local function call_catalog(catalog_id: string, args)
+    local result, call_err = funcs.call(catalog_id, args)
+    if call_err then return nil, call_err end
+    if type(result) ~= "table" or result.success ~= true or type(result.items) ~= "table" then
+        return nil, failure(errors.INTERNAL, "host delegation root catalog returns no items")
+    end
+    return result, nil
+end
+
 local function owned(entry, request)
     return entry and tostring(entry.kind) == "security.policy" and entry.meta
         and entry.meta.managed_by == "kickside.security" and entry.meta.intent == "execution_delegation"
@@ -123,6 +143,39 @@ function M.list()
             active = entry.meta.active, created_at = entry.meta.created_at}
     end
     table.sort(rows, function(left, right) return left.policy_id < right.policy_id end)
+    local catalog_id, catalog_err = root_catalog()
+    if catalog_err then return nil, catalog_err end
+    local ids, seen = table.create(1, 0), {}
+    for _, row in ipairs(rows) do
+        if row.root ~= "*" and not seen[row.root] then ids[#ids + 1] = row.root; seen[row.root] = true end
+    end
+    if catalog_id and #ids > 0 then
+        local named, call_err = call_catalog(catalog_id, {component_ids = ids})
+        if call_err then return nil, call_err end
+        local labels = {}
+        for _, item in ipairs(named.items) do
+            if type(item) == "table" and type(item.id) == "string" and type(item.label) == "string" and item.label ~= "" then
+                labels[item.id] = item.label
+            end
+        end
+        for _, row in ipairs(rows) do row.root_label = labels[row.root] end
+    end
     return {success = true, delegations = rows}, nil
+end
+
+function M.roots(args)
+    if not security.actor() or not security.can("access", "kickside.security.api:delegation_roots.endpoint") then
+        return nil, failure(errors.PERMISSION_DENIED, "delegation root catalog requires Security administration")
+    end
+    local offset = type(args) == "table" and args.offset or 0
+    if type(offset) ~= "number" or offset < 0 or offset % 1 ~= 0 then
+        return nil, failure(errors.INVALID, "offset must be a non-negative integer")
+    end
+    local catalog_id, catalog_err = root_catalog()
+    if catalog_err then return nil, catalog_err end
+    if not catalog_id then return nil, failure(errors.UNAVAILABLE, "host delegation root catalog is unconfigured", true) end
+    local page, call_err = call_catalog(catalog_id, {offset = offset})
+    if call_err then return nil, call_err end
+    return {success = true, items = page.items, next_offset = page.next_offset}, nil
 end
 return M

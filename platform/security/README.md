@@ -59,6 +59,7 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | Requirement | Declared default |
 | --- | --- |
 | [`kickside.security:delegation_validator`](src/_index.yaml) | Empty string |
+| [`kickside.security:delegation_roots`](src/_index.yaml) | Empty string |
 | [`kickside.security:sessions_invalidator`](src/_index.yaml) | Empty string |
 | [`kickside.security:delegation_fencer`](src/_index.yaml) | `kickside.users.persist:delegation_fencer` |
 | [`kickside.security:api_router`](src/_index.yaml) | Host supplies the value |
