@@ -21,7 +21,7 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+Wippy 0.3.x; repository validation uses 0.3.54a. Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -49,28 +49,44 @@ Add a file in **Uploads** and inspect its processing state and preview. Installe
 
 ### Optional storage extensions
 
-The base module keeps processed files in its host filesystem. S3 placement is
-provided by the independently installed `kickside/storage-s3` package. That
-extension owns its Settings component, policy, endpoints, durable jobs, tables,
-and registry overlay controller. It is not installed by default.
+The default adapter reads relative filesystem paths, `fs://<resource-id>/<path>`
+and `s3://<resource-id>/<key>` packed paths. Relative paths use the upload's
+`storage_id`; packed paths identify their native resource directly. Existing
+filesystem records keep their behavior.
 
-Storage extensions bind the generic `storage_adapter`, `processing_hooks`, and
-`storage_runtime_policy` requirements through `ns.dependency.parameters`.
-The native library interfaces preserve file handles and the caller's active SQL
-transaction, as the platform Component lifecycle interface does. Adapters expose
-`get(storage_id, db_id, staging_id, legacy_cloud_id, query_db)` and the filesystem
-read/write/stat/remove interface. Hooks implement `prepare(output)`,
-`completed(tx, dbtype, job, output, trace, prepared)`, and `prune(cutoff, limit)`.
-The default hooks have no effects. The default adapter uses native filesystem IO.
+The independently installed `kickside/storage-s3` package adds a universal stage
+at the lowest priority (`-100`). After processing, it copies local originals and
+derived blobs, verifies object metadata and returns relocation for Uploads to
+validate and commit transactionally before removing unreferenced old bytes.
+An S3 original retains its path while local derivatives still relocate. Upload,
+artifact, attachment and Knowledge IDs remain stable.
 
-`kickside.uploads.binding:storage_catalog` owns SQL for logical content addresses:
-`objects(db_id, upload_id)`, `get_upload(id)`, and `contains(db, storage_id, path)`.
-An implementation uses this interface instead of querying Uploads' tables.
-An optional runtime policy is bound only when its implementing package is installed.
-Uploads depends on neither Settings nor a particular storage extension.
+Relocation rejects directories and destinations whose size differs from the
+original or derived blob. Superseded locations are recorded in the same Uploads
+transaction as the new locations. A failed removal or restart retains that
+cleanup intent; processing retries and deletion resume it without removing bytes
+that still have live references. Internal cleanup does not change public recency.
 
-Disable placement before uninstalling a backend, and restore its remote content
-first. Removing an implementation must not be treated as deleting its files.
+Storage integrations use the existing `storage_adapter`, `processing_hooks` and
+`storage_runtime_policy` requirements. Storage-s3 binds only the runtime policy,
+granting exact native-resource access to Uploads' reads and processing. It owns
+its Settings policy and endpoints; it does not install by default. Uploads depends
+on neither Settings nor a specific storage extension.
+
+Authorized original and artifact responses supply `raw_url`: an expiring signed
+S3 URL or the authenticated raw endpoint for filesystem content. The existing raw
+endpoints also read S3 content. Signed URLs last 15 minutes; reloading a record
+issues a new URL after authorization. Browser delivery requires the object host
+to allow the application origin for GET/HEAD requests.
+
+The storage catalog owns logical content lookup, and original-backed artifacts
+resolve the upload's current location through the canonical upload reader.
+Keep native entries, credentials and runtime grants available while packed paths
+reference them. Disabling placement affects future processing; uninstalling a
+backend does not restore remote bytes.
+
+**BREAKING:** the packed-path storage-s3 implementation does not read or migrate
+placements written by storage-s3 0.1.0. Existing placement data is not dropped.
 
 ## Reference
 
@@ -99,6 +115,9 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | [`kickside.uploads:database_resource`](src/_index.yaml) | Host supplies the value |
 | [`kickside.uploads:storage_id`](src/_index.yaml) | Host supplies the value |
 | [`kickside.uploads:storage_s3`](src/_index.yaml) | Empty string |
+| [`kickside.uploads:storage_adapter`](src/_index.yaml) | Default native filesystem/S3 adapter |
+| [`kickside.uploads:processing_hooks`](src/_index.yaml) | No-op hooks |
+| [`kickside.uploads:storage_runtime_policy`](src/_index.yaml) | Default storage runtime policy; extension supplies its policy |
 | [`kickside.uploads:env_storage`](src/_index.yaml) | Host supplies the value |
 | [`kickside.uploads:document_image_artifacts_enabled`](src/_index.yaml) | `true` |
 | [`kickside.uploads:archive_max_zip_bytes`](src/_index.yaml) | `2147483648` |

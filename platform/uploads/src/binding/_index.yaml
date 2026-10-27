@@ -88,6 +88,15 @@ entries:
     source: file://storage_adapter_default.lua
     modules:
     - fs
+    - cloudstorage
+    - time
+    - uuid
+    - logger
+    imports:
+      storage_location: kickside.uploads.binding:storage_location
+  - name: storage_location
+    kind: library.lua
+    source: file://storage_location.lua
   - name: processing_hooks_default
     kind: library.lua
     source: file://processing_hooks_default.lua
@@ -97,3 +106,5 @@ entries:
     modules:
     - sql
     - env
+    imports:
+      storage_location: kickside.uploads.binding:storage_location

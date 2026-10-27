@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: packed_fs_fake
+    kind: library.lua
+    source: file://packed_fs_fake.lua
+    modules: [fs]
+  - name: packed_cloud_fake
+    kind: library.lua
+    source: file://packed_cloud_fake.lua
+  - name: packed_storage_location
+    kind: library.lua
+    source: file://fixtures/storage_location.lua
+  - name: packed_cloud_adapter
+    kind: library.lua
+    source: file://fixtures/storage_adapter_default.lua
+    modules: [uuid, logger, time]
+    imports:
+      fs: app:packed_fs_fake
+      cloudstorage: app:packed_cloud_fake
+      storage_location: app:packed_storage_location
+  - name: packed_cloud_test
+    kind: function.lua
+    meta: {type: test, suite: packed_storage}
+    source: file://packed_cloud_test.lua
+    method: run
+    modules: [fs, uuid, time]
+    imports:
+      test: wippy.test:test
+      cloud: app:packed_cloud_fake
+      fs_fake: app:packed_fs_fake
+      adapter: app:packed_cloud_adapter

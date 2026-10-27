@@ -9,7 +9,11 @@ local hash = require("hash")
 local security = require("security")
 local funcs = require("funcs")
 local artifact_parts_repo = require("artifact_parts_repo")
+local artifact_content_repo = require("artifact_content_repo")
+local resources = require("uploads_resources")
+local relocation_cleanup = require("relocation_cleanup_repo")
 local metadata_sanitizer = require("metadata_sanitizer")
+local error_envelope = require("error_envelope")
 
 -- Private upload-metadata key carrying the uploader's stored execution identity
 -- ({ actor_id, actor_context }). It uses the canonical managed-context spelling
@@ -45,6 +49,141 @@ function pipeline_lib.merge_metadata(existing_metadata, new_metadata)
     end
 
     return merged
+end
+
+local function relocation_error(message)
+    return errors.new({ message = message, kind = errors.INVALID, retryable = false })
+end
+
+local function relocation_path(value, field)
+    if type(value) ~= "string" or value == "" then
+        return nil, relocation_error(field .. " must be a non-empty string")
+    end
+    return value, nil
+end
+
+local function validate_relocation(upload, relocation)
+    if relocation == nil then return nil, nil end
+    if type(relocation) ~= "table" then return nil, relocation_error("relocation must be an object") end
+    for field in pairs(relocation) do
+        if field ~= "storage_path" and field ~= "blobs" then
+            return nil, relocation_error("relocation contains an unknown field")
+        end
+    end
+    local storage_path, path_err = relocation_path(relocation.storage_path, "relocation.storage_path")
+    if path_err then return nil, path_err end
+    local blobs = relocation.blobs
+    if blobs == nil then blobs = {} end
+    if type(blobs) ~= "table" then return nil, relocation_error("relocation.blobs must be an array") end
+
+    local blob_count, blob_max = 0, 0
+    for index in pairs(blobs) do
+        if type(index) ~= "number" or index < 1 or index ~= math.floor(index) then
+            return nil, relocation_error("relocation.blobs must be a dense array")
+        end
+        blob_count = blob_count + 1
+        if index > blob_max then blob_max = index end
+    end
+    if blob_count ~= blob_max then return nil, relocation_error("relocation.blobs must be a dense array") end
+
+    local normalized = { storage_path = storage_path, blobs = {} }
+    local seen = {}
+    for index, blob in ipairs(blobs) do
+        if type(blob) ~= "table" then return nil, relocation_error("relocation blob " .. tostring(index) .. " must be an object") end
+        for field in pairs(blob) do
+            if field ~= "blob_id" and field ~= "storage_path" then
+                return nil, relocation_error("relocation blob contains an unknown field")
+            end
+        end
+        local blob_id, blob_id_err = relocation_path(blob.blob_id, "relocation blob_id")
+        if blob_id_err then return nil, blob_id_err end
+        if seen[blob_id] then return nil, relocation_error("relocation contains a duplicate blob_id") end
+        seen[blob_id] = true
+        local blob_path, blob_path_err = relocation_path(blob.storage_path, "relocation blob storage_path")
+        if blob_path_err then return nil, blob_path_err end
+        normalized.blobs[#normalized.blobs + 1] = { blob_id = blob_id, storage_path = blob_path }
+    end
+    if type(upload) ~= "table" or type(upload.uuid) ~= "string" or upload.uuid == "" then
+        return nil, relocation_error("upload id is required for relocation")
+    end
+    return normalized, nil
+end
+
+local function validate_relocated_file(stat, expected_size, label)
+    if not stat or stat.is_dir == true then
+        return relocation_error(label .. " must be a file")
+    end
+    local expected, actual = tonumber(expected_size), tonumber(stat.size)
+    if expected == nil or actual == nil or actual ~= expected then
+        return relocation_error(label .. " size does not match its source")
+    end
+    return nil
+end
+
+local function validate_relocation_targets(upload, relocation)
+    local storage, storage_err = resources.get_storage(upload.storage_id)
+    if storage_err or not storage then return storage_err or errors.new({message = "storage is unavailable", kind = errors.UNAVAILABLE}) end
+    local original, original_err = storage:stat(relocation.storage_path)
+    if original_err then return original_err end
+    local invalid_original = validate_relocated_file(original, upload.size, "Relocated original")
+    if invalid_original then return invalid_original end
+    for _, blob in ipairs(relocation.blobs) do
+        local current, current_err = artifact_content_repo.get_blob(blob.blob_id)
+        if current_err then return current_err end
+        local blob_storage, storage_err = resources.get_storage(current.storage_id)
+        if storage_err then return storage_err end
+        local relocated, blob_err = blob_storage:stat(blob.storage_path)
+        if blob_err then return blob_err end
+        local invalid_blob = validate_relocated_file(relocated, current.size, "Relocated artifact")
+        if invalid_blob then return invalid_blob end
+    end
+    return nil
+end
+
+-- Relocation is durable before any local bytes are removed. The stage's copy and
+-- verification are complete before it returns this result; this function only
+-- commits its new locations, updates the in-memory record for later stages, then
+-- removes paths that no longer back a persisted row.
+function pipeline_lib.apply_relocation(upload, relocation)
+    local _, cleanup_err = relocation_cleanup.flush(upload)
+    if cleanup_err then return nil, cleanup_err end
+    local normalized, validate_err = validate_relocation(upload, relocation)
+    if validate_err then return nil, validate_err end
+    if not normalized then return upload, nil end
+    local target_err = validate_relocation_targets(upload, normalized)
+    if target_err then return nil, target_err end
+
+    local db, db_err = resources.get_db()
+    if db_err or not db then return nil, db_err or errors.new({message = "failed to get upload database", kind = errors.UNAVAILABLE}) end
+    local tx, begin_err = db:begin()
+    if begin_err or not tx then db:release(); return nil, begin_err or errors.new({message = "failed to begin upload relocation", kind = errors.UNAVAILABLE}) end
+    local function abort(err)
+        local _, rollback_err = tx:rollback()
+        db:release()
+        return nil, rollback_err or err
+    end
+
+    local _, original_err, original_previous = upload_record_repo.update_storage(upload.uuid,
+        upload.storage_id, normalized.storage_path, tx)
+    if original_err or not original_previous then return abort(original_err or errors.new({message = "failed to relocate upload", kind = errors.UNAVAILABLE})) end
+    local blob_previous, blob_err = artifact_content_repo.relocate_blobs_tx(tx, upload.uuid, normalized.blobs)
+    if blob_err or not blob_previous then return abort(blob_err or errors.new({message = "failed to relocate artifact blobs", kind = errors.UNAVAILABLE})) end
+
+    local next_paths, superseded = {}, {}
+    for _, blob in ipairs(normalized.blobs) do next_paths[blob.blob_id] = blob.storage_path end
+    for _, previous in ipairs(blob_previous) do
+        if next_paths[previous.blob_id] ~= previous.storage_path then superseded[#superseded + 1] = previous end
+    end
+    if original_previous.storage_path ~= normalized.storage_path then superseded[#superseded + 1] = original_previous end
+    local cleanup_metadata, intent_err = relocation_cleanup.enqueue_tx(tx, upload.uuid, superseded)
+    if intent_err then return abort(intent_err) end
+    local _, commit_err = tx:commit()
+    db:release()
+    if commit_err then return nil, commit_err end
+
+    upload.storage_path = normalized.storage_path
+    if cleanup_metadata then upload.metadata = cleanup_metadata end
+    return relocation_cleanup.flush(upload)
 end
 
 -- Build the funcs executor a deferred upload stage (processing or teardown) runs as.
@@ -116,8 +255,14 @@ local function callback_status(success: any): string
     return success and "completed" or "error"
 end
 
-local function stage_error(stage_title: any, processor_id: any, message: any): string
-    return "upload stage \"" .. tostring(stage_title) .. "\" (" .. tostring(processor_id) .. ") failed: " .. tostring(message)
+local function stage_error(stage_title: any, processor_id: any, source: any): any
+    local context = 'upload stage "' .. tostring(stage_title) .. '" (' .. tostring(processor_id) .. ') failed'
+    if type(source) == "userdata" then
+        local data = error_envelope.encode(error_envelope.wrap(source, context, {}))
+        data.message = context .. ": " .. data.message
+        return errors.new(data)
+    end
+    return context .. ": " .. tostring(source)
 end
 
 -- Transcription stages report a soft failure as success = true plus a code under
@@ -246,6 +391,12 @@ end
 -- Process a single upload using funcs library. Execution authority lives in
 -- kickside_job; this function only runs stages and updates upload artifacts.
 function pipeline_lib.process_upload(upload, opts)
+    local _, cleanup_err = relocation_cleanup.flush(upload)
+    if cleanup_err then
+        local retryable = true
+        if type(cleanup_err) == "userdata" then retryable = cleanup_err:retryable() end
+        return false, cleanup_err, nil, retryable
+    end
     opts = type(opts) == "table" and opts or {}
     local should_continue = type(opts.should_continue) == "function" and opts.should_continue or nil
     local cancel_ref = type(opts.cancel_ref) == "table" and opts.cancel_ref or nil
@@ -316,21 +467,20 @@ function pipeline_lib.process_upload(upload, opts)
             cancel_ref = cancel_ref,
         })
 
-        -- Check for errors. A thrown/absent result is a transient-shaped failure and
-        -- retries through the job budget. A processor MAY instead return a classified
-        -- failure { success = false, retriable = ... }: a permanent input failure
-        -- (retriable = false) is surfaced with its flag so the job finalizes on the
-        -- first attempt instead of looping.
+        -- Native failures keep their retry decision; response-shaped failures use
+        -- the processor's retriable flag below.
         if err or not result then
-            local raw_error = err and tostring(err) or ("Processing failed at step " .. i)
-            local error_msg = stage_error(stage_title, processor_id, raw_error)
+            local source = err or ("Processing failed at step " .. i)
+            local error_msg = stage_error(stage_title, processor_id, source)
             log:error("upload processor failed", {
                 upload_id = upload.uuid,
                 processor_id = processor_id,
                 stage = stage_title,
-                error = raw_error,
+                error = tostring(source),
             })
-            return false, error_msg
+            local retryable = nil
+            if type(err) == "userdata" then retryable = err:retryable() end
+            return false, error_msg, nil, retryable
         end
 
         continue = should_continue
@@ -370,6 +520,18 @@ function pipeline_lib.process_upload(upload, opts)
                     reported_error = nil
                 end
             end
+        end
+
+        if result.success ~= false then
+            local relocated, relocation_err = pipeline_lib.apply_relocation(upload, result.relocation)
+            if relocation_err or not relocated then
+                local source = relocation_err or errors.new({message = "upload relocation returned no record",
+                    kind = errors.INTERNAL, retryable = true})
+                local retryable = nil
+                if type(source) == "userdata" then retryable = (source :: error):retryable() end
+                return false, stage_error(stage_title, processor_id, source), nil, retryable
+            end
+            upload = relocated
         end
 
         -- If the processor returned updated metadata, merge with existing metadata

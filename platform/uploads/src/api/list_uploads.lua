@@ -4,6 +4,7 @@ local http_errors = require("http_errors")
 
 local upload_response = require("upload_response")
 local upload_types = require("types")
+local component = require("component")
 local upload_read_model = require("upload_read_model")
 
 -- Handler to list actor uploads
@@ -72,15 +73,37 @@ local function list_handler()
         return
     end
 
+    local component_id = upload_types.component_id_for_owner(actor_id)
+    if #uploads > 0 then
+        if not component_id then
+            res:set_status(http.STATUS.INTERNAL_ERROR)
+            res:write_json({success = false, error = "Upload owner is invalid"})
+            return
+        end
+        local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
+        if access_err then
+            res:set_status(http_errors.classify(access_err))
+            res:write_json({success = false, error = tostring(access_err)})
+            return
+        end
+    end
+
     -- Format the uploads for frontend use
     local formatted_uploads = {}
     for _, upload in ipairs(uploads) do
-        formatted_uploads[#formatted_uploads + 1] = upload_response.format_list_upload(upload)
+        local public = upload_response.format_list_upload(upload)
+        local url, delivery_err = upload_response.delivery_url(upload.storage_id, upload.storage_path, public.raw_url)
+        if delivery_err then
+            res:set_status(http_errors.classify(delivery_err))
+            res:write_json({success = false, error = "Failed to obtain upload delivery URL"})
+            return
+        end
+        public.raw_url = url
+        formatted_uploads[#formatted_uploads + 1] = public
     end
 
     -- Return success with uploads
     res:set_status(http.STATUS.OK)
-    local component_id = upload_types.component_id_for_owner(actor_id)
     res:write_json({
         success = true,
         uploads = formatted_uploads,

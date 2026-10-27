@@ -2,6 +2,7 @@
 -- use this native library interface so a caller transaction can be reused.
 local sql = require("sql")
 local env = require("env")
+local storage_location = require("storage_location")
 type Object = { storage_id: string, storage_path: string, mime_type: string? }
 type Upload = { uuid: string, actor_id: string, storage_state: string }
 local M = {}
@@ -26,8 +27,18 @@ function M.objects(db_id: string, upload_id: string): ({ Object }?, any?)
     return rows :: { Object }?, query_err
 end
 function M.contains(db: any, storage_id: string, path: string): (boolean?, any?)
-    local rows, err = db:query([[SELECT 1 AS present FROM kickside_uploads WHERE storage_id=$1 AND storage_path=$2
-        UNION SELECT 1 AS present FROM kickside_upload_artifact_blobs WHERE storage_id=$1 AND storage_path=$2 LIMIT 1]], {storage_id,path})
+    local location, location_err = storage_location.parse(storage_id, path)
+    if location_err or not location then return nil, location_err end
+    local predicate, params
+    if location.scheme == "fs" then
+        predicate = "(storage_id=$1 AND storage_path=$2) OR storage_path=$3"
+        params = { location.authority, location.key, storage_location.packed(location) }
+    else
+        predicate = "storage_path=$1"
+        params = { storage_location.packed(location) }
+    end
+    local rows, err = db:query("SELECT 1 AS present FROM kickside_uploads WHERE " .. predicate
+        .. " UNION SELECT 1 AS present FROM kickside_upload_artifact_blobs WHERE " .. predicate .. " LIMIT 1", params)
     if err then return nil, err end
     return #rows > 0, nil
 end

@@ -356,7 +356,11 @@ entries:
       execution_identity: kickside.execution:execution_identity
       jobs: kickside.core.jobs:jobs
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      error_envelope: kickside.contract:error_envelope
 
   - name: uploads
     kind: library.lua
@@ -367,9 +371,12 @@ entries:
     imports:
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_response: kickside.uploads.api:upload_response
+      upload_tokens: kickside.uploads.persist:upload_tokens
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_type: kickside.uploads:upload_type
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       uploads_resources: kickside.uploads.binding:uploads_resources
       uploads_events: kickside.uploads.persist:uploads_events
       types: kickside.uploads:types

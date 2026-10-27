@@ -46,8 +46,12 @@ function resources.storage_entry(storage_id: string): (any?, any?)
     return registry.get(storage_id)
 end
 
+function resources.get_s3_id()
+    return select(1, env.get(ENV.STORAGE_S3))
+end
+
 function resources.get_s3()
-    local id = env.get(ENV.STORAGE_S3)
+    local id = resources.get_s3_id()
     if not id or id == "" then
         return nil, "S3 storage is not configured"
     end

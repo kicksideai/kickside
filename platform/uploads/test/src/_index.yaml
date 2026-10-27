@@ -19,7 +19,7 @@ entries:
     modules: [security]
     imports:
       http: app:upload_http_probe
-      upload_response: kickside.uploads.api:upload_response
+      upload_response: app:signed_upload_response
       types: kickside.uploads:types
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_query_repo: kickside.uploads.persist:upload_query_repo
@@ -44,6 +44,7 @@ entries:
     modules: [security]
     imports:
       http: app:upload_http_probe
+      upload_response: app:signed_upload_response
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
@@ -151,6 +152,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       records: kickside.uploads.persist:upload_record_repo
+      artifacts: kickside.uploads.persist:artifact_content_repo
       types: kickside.uploads:types
 
   - name: dedup_migration_db
@@ -204,7 +206,7 @@ entries:
     kind: fs.directory
     meta:
       comment: Secondary storage ID for artifact dedupe scope checks.
-    directory: ./.wippy/uploads/
+    directory: ./.wippy/other_uploads/
     auto_init: true
 
   - name: env_storage
@@ -313,6 +315,20 @@ entries:
       comment: Test-only universal upload stage that fails when explicitly requested.
     source: file://failing_stage.lua
     method: process
+
+  - name: packed_storage_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: packed_storage
+    source: file://packed_storage_test.lua
+    method: run
+    modules: [fs, uuid]
+    imports:
+      test: wippy.test:test
+      storage_adapter: kickside.uploads.binding:storage_adapter_default
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
 
   - name: types.failing
     kind: registry.entry
@@ -745,6 +761,7 @@ entries:
     source: file://fixtures/list_uploads.lua
     modules: [security]
     imports:
+      component: kickside.component:component
       http: app:upload_http_probe
       http_errors: kickside.contract:http_errors
       upload_response: kickside.uploads.api:upload_response
@@ -801,3 +818,113 @@ entries:
     imports:
       test: wippy.test:test
       resources: kickside.uploads.binding:uploads_resources
+
+  - name: native_storage_error_probe
+    kind: function.lua
+    source: file://native_storage_error_probe.lua
+    method: run
+    imports:
+      adapter: kickside.uploads.binding:storage_adapter_default
+
+  - name: native_storage_call_probe
+    kind: security.policy
+    policy:
+      resources: [app:native_storage_error_probe, app:uploads]
+      actions: [funcs.call, fs.get]
+      effect: allow
+
+  - name: native_storage_deny
+    kind: security.policy
+    policy:
+      resources: [app:objects]
+      actions: [cloudstorage.get, fs.get]
+      effect: deny
+
+  - name: native_storage_allow_missing
+    kind: security.policy
+    policy:
+      resources: [app:objects]
+      actions: [cloudstorage.get, fs.get]
+      effect: allow
+
+  - name: native_storage_errors_test
+    kind: function.lua
+    meta: {type: test, suite: native_storage_errors}
+    source: file://native_storage_errors_test.lua
+    method: run
+    modules: [security, funcs]
+    imports: {test: 'wippy.test:test'}
+
+  - name: signed_upload_resources
+    kind: library.lua
+    source: file://signed_upload_resources.lua
+    imports:
+      adapter: app:packed_cloud_adapter
+  - name: signed_upload_response
+    kind: library.lua
+    source: file://fixtures/response.lua
+    modules: [time]
+    imports:
+      uploads_resources: app:signed_upload_resources
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+  - name: signed_upload_list_fixture
+    kind: library.lua
+    source: file://fixtures/list_uploads.lua
+    modules: [security]
+    imports:
+      component: kickside.component:component
+      http: app:upload_http_probe
+      upload_response: app:signed_upload_response
+      types: kickside.uploads:types
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      http_errors: kickside.contract:http_errors
+  - name: signed_upload_list_probe
+    kind: function.lua
+    source: file://signed_upload_list_probe.lua
+    method: run
+    imports:
+      api: app:signed_upload_list_fixture
+      http: app:upload_http_probe
+
+  - name: delivery_url_test
+    kind: function.lua
+    source: file://delivery_url_test.lua
+    method: run
+    meta: {type: test, suite: upload_delivery}
+    modules: [uuid, time]
+    imports:
+      test: wippy.test:test
+      uploads: app:delivery_uploads
+      records: kickside.uploads.persist:upload_record_repo
+      tokens: kickside.uploads.persist:upload_tokens
+      cloud: app:packed_cloud_fake
+
+  - name: delivery_uploads
+    kind: library.lua
+    meta:
+      comment: Library for handling file uploads to configured storage backends.
+    source: file://fixtures/uploads.lua
+    modules:
+    - uuid
+    - time
+    - hash
+    - logger
+    imports:
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_type: kickside.uploads:upload_type
+      artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      uploads_events: kickside.uploads.persist:uploads_events
+      types: kickside.uploads:types
+      pipeline_lib: kickside.uploads:pipeline
+      upload_mime: kickside.uploads:uploads_mime
+      uploads_tokens: kickside.uploads:uploads_tokens
+      uploads_presigned: kickside.uploads:uploads_presigned
+      execution_identity: kickside.execution:execution_identity
+      jobs: kickside.core.jobs:jobs
+      process_worker: kickside.uploads.service:process_worker
+      upload_response: app:signed_upload_response
+      upload_tokens: kickside.uploads.persist:upload_tokens

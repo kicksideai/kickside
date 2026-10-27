@@ -1,4 +1,5 @@
 local time = require("time")
+local resources = require("uploads_resources")
 local metadata_sanitizer = require("metadata_sanitizer")
 
 -- Normalize old numeric timestamps and current RFC3339 strings for frontend use.
@@ -36,10 +37,28 @@ local function transcription_meta(metadata: any): any?
     return out
 end
 
+local function raw_path(upload_id: string, artifact_id: string?): string
+    local path = "/api/v1/uploads/" .. upload_id
+    if artifact_id then path = path .. "/artifacts/" .. artifact_id end
+    return path .. "/raw"
+end
+
+local function delivery_url(storage_id: string, storage_path: string, raw_url: string?, options: any?): (string?, any?)
+    local storage, storage_err = resources.get_storage(storage_id)
+    if storage_err then return nil, storage_err end
+    if storage.signed_url then
+        local url, _, sign_err = storage:signed_url(storage_path, options)
+        if sign_err then return nil, sign_err end
+        if url then return url, nil end
+    end
+    return raw_url, nil
+end
+
 local function format_list_upload(upload: any): any
     local metadata = metadata_sanitizer.public(upload.metadata)
     return {
         uuid = upload.uuid,
+        raw_url = upload.uuid and raw_path(upload.uuid) or nil,
         size = upload.size,
         mime_type = upload.mime_type,
         status = upload.status,
@@ -55,6 +74,7 @@ local function format_get_upload(upload: any): any
     local metadata = metadata_sanitizer.public(upload.metadata)
     return {
         uuid = upload.uuid,
+        raw_url = upload.uuid and raw_path(upload.uuid) or nil,
         size = upload.size,
         mime_type = upload.mime_type,
         status = upload.status,
@@ -67,6 +87,8 @@ end
 
 return {
     format_date = format_date,
+    raw_path = raw_path,
+    delivery_url = delivery_url,
     format_list_upload = format_list_upload,
     format_get_upload = format_get_upload,
 }

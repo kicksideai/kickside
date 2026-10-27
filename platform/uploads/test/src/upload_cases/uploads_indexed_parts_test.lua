@@ -255,9 +255,10 @@ end
 local function define_tests()
     test.describe("kickside.uploads packaging", function()
         test.before_all(require_integration_schema)
-        test.it("reads existing image files through the provider when the primary artifact has no blob", function()
+        test.it("reads a relocated raw image through content and file views when the primary artifact has no blob", function()
             local upload_id = uuid_v4()
             local path = upload_id .. ".webp"
+            local relocated_path = "fs://app:other_uploads/" .. path
             local bytes = "RIFF\0\0\0\0WEBPVP8 " .. string.rep("x", 69450)
             local original = assert(fs.get("app:other_uploads"))
             local written, write_err = original:writefile(path, bytes)
@@ -267,9 +268,13 @@ local function define_tests()
                 "image/webp", "app:uploads", path, "images", { filename = "original.webp" }, "completed")
             test.is_nil(upload_err)
             test.not_nil(upload)
+            local _, relocation_err = upload_record_repo.update_storage(upload_id, "app:uploads", relocated_path)
+            test.is_nil(relocation_err)
             local artifact, artifact_err = artifact_content_repo.create_artifact({
                 upload_id = upload_id, kind = "image", role = "primary", mime_type = "image/webp",
-                label = "original.webp", locator = { type = "upload.original", storage_id = "app:uploads", storage_path = path },
+                label = "original.webp", locator = {
+                    type = "upload.original", storage_id = "app:uploads", storage_path = relocated_path,
+                },
             })
             test.is_nil(artifact_err)
             test.is_nil(artifact.blob_id)
@@ -280,6 +285,17 @@ local function define_tests()
             test.eq(result.content, bytes)
             test.eq(result.size, #bytes)
             test.eq(result.content_type, "image/webp")
+
+            local files, files_err = executor("test-user"):call("kickside.uploads.traits:view_files", {
+                upload_ids = { upload_id },
+            })
+            test.is_nil(files_err)
+            test.eq("original.webp", files.files[1].filename)
+            test.is_true(files.files[1].image_attached)
+            test.eq(1, #files._images)
+            local decoded, decode_err = base64.decode(files._images[1].source.data)
+            test.is_nil(decode_err)
+            test.eq(bytes, decoded)
         end)
 
         test.it("paginates artifact parts after dedupe and filters derived images", function()

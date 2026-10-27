@@ -9,6 +9,7 @@ local persisted_json = require("persisted_json")
 local resources = require("uploads_resources")
 local artifact_schema = require("artifact_schema")
 local artifact_cleanup_repo = require("artifact_cleanup_repo")
+local upload_query_repo = require("upload_query_repo")
 
 local artifact_content_repo = {}
 
@@ -397,6 +398,46 @@ function artifact_content_repo.get_blob(blob_id)
     return blob
 end
 
+-- Relocate derived blob locations as part of the caller's upload transaction.
+-- A blob must be attached to the named upload: accepting an arbitrary blob id here
+-- would let one stage rewrite another upload's storage authority.
+function artifact_content_repo.relocate_blobs_tx(tx, upload_id, relocations)
+    if not tx then return nil, typed(errors.INVALID, "Upload transaction is required") end
+    if type(upload_id) ~= "string" or upload_id == "" then return nil, typed(errors.INVALID, "upload_id is required") end
+    if type(relocations) ~= "table" then return nil, typed(errors.INVALID, "blob relocations are required") end
+
+    local previous = {}
+    for _, relocation in ipairs(relocations) do
+        local blob_id = type(relocation) == "table" and relocation.blob_id or nil
+        local storage_path = type(relocation) == "table" and relocation.storage_path or nil
+        if type(blob_id) ~= "string" or blob_id == "" then return nil, typed(errors.INVALID, "blob_id is required") end
+        if type(storage_path) ~= "string" or storage_path == "" then return nil, typed(errors.INVALID, "blob storage_path is required") end
+
+        local rows, read_err = tx:query([[SELECT b.storage_id, b.storage_path
+            FROM kickside_upload_artifact_blobs b
+            JOIN kickside_upload_artifacts a ON a.blob_id=b.blob_id
+            WHERE b.blob_id=$1 AND a.upload_id=$2 LIMIT 1]], { blob_id, upload_id })
+        if read_err then return nil, read_err end
+        if not rows or not rows[1] then
+            return nil, typed(errors.NOT_FOUND, "artifact blob not found for upload")
+        end
+
+        local old = { blob_id = blob_id, storage_id = rows[1].storage_id, storage_path = rows[1].storage_path }
+        local result, update_err = sql.builder.update("kickside_upload_artifact_blobs")
+            :set("storage_path", storage_path)
+            :set("updated_at", now())
+            :where("blob_id = ?", blob_id)
+            :run_with(tx)
+            :exec()
+        if update_err then return nil, update_err end
+        if not result or tonumber(result.rows_affected) ~= 1 then
+            return nil, typed(errors.NOT_FOUND, "artifact blob not found")
+        end
+        previous[#previous + 1] = old
+    end
+    return previous, nil
+end
+
 function artifact_content_repo.get_artifact(upload_id, artifact_id)
     if not upload_id or upload_id == "" then return nil, "upload_id is required" end
     if not artifact_id or artifact_id == "" then return nil, "artifact_id is required" end
@@ -433,6 +474,31 @@ function artifact_content_repo.read_blob(blob_id)
     return content, nil, blob
 end
 
+function artifact_content_repo.resolve_storage(artifact)
+    if artifact.blob_id and artifact.blob_id ~= "" then
+        return artifact_content_repo.get_blob(artifact.blob_id)
+    end
+    local locator = artifact.locator
+    local storage_id, storage_path
+    if type(locator) == "table" and locator.type == "upload.original" then
+        local upload, current_err = upload_query_repo.get(artifact.upload_id)
+        if current_err then return nil, current_err end
+        storage_id, storage_path = locator_storage(upload)
+    else
+        storage_id, storage_path = locator_storage(locator)
+    end
+    if not storage_id or not storage_path then
+        return nil, typed(errors.INVALID, "artifact has no readable bytes")
+    end
+    return {
+        checksum = artifact.checksum,
+        mime_type = artifact.mime_type,
+        storage_id = storage_id :: string,
+        storage_path = storage_path :: string,
+        metadata = artifact.metadata or {},
+    }, nil
+end
+
 function artifact_content_repo.read_artifact_content(upload_id, artifact_id)
     local artifact, artifact_err = artifact_content_repo.get_artifact(upload_id, artifact_id)
     if artifact_err then return nil, artifact_err end
@@ -444,33 +510,18 @@ function artifact_content_repo.read_artifact_content(upload_id, artifact_id)
         return content, nil, blob, artifact
     end
 
-    local storage_id, storage_path = locator_storage(artifact.locator)
-    if not storage_id or not storage_path then
-        return nil, typed(errors.INVALID, "artifact has no readable bytes")
-    end
-
-    local artifact_storage_id = storage_id :: string
-    local artifact_storage_path = storage_path :: string
-
-    local storage, storage_err = resources.get_storage(artifact_storage_id)
+    local location, location_err = artifact_content_repo.resolve_storage(artifact)
+    if location_err then return nil, location_err end
+    local storage, storage_err = resources.get_storage(location.storage_id)
     if storage_err or not storage then
         return nil, storage_err or "failed to get artifact storage"
     end
-
-    local content = storage:readfile(artifact_storage_path)
+    local content = storage:readfile(location.storage_path)
     if type(content) ~= "string" then
         return nil, typed(errors.INVALID, "failed to read artifact bytes")
     end
-
-    return content, nil, {
-        blob_id = nil,
-        checksum = artifact.checksum,
-        mime_type = artifact.mime_type,
-        size = #content,
-        storage_id = artifact_storage_id,
-        storage_path = artifact_storage_path,
-        metadata = artifact.metadata or {},
-    }, artifact
+    location.size = #content
+    return content, nil, location, artifact
 end
 
 return artifact_content_repo
