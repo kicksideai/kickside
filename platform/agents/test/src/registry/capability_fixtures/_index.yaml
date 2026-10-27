@@ -293,6 +293,18 @@ entries:
     parameters:
     - name: kickside.memory:ui_server
       value: app:gateway
+    - name: kickside.memory:api_router
+      value: app:api
+    - name: kickside.memory:target_db
+      value: app:db
+    - name: kickside.memory.security:user_security_scope
+      value: app:user
+    - name: kickside.knowledge:ui_server
+      value: app:gateway
+    - name: kickside.knowledge:api_router
+      value: app:api
+    - name: kickside.knowledge.security:user_security_scope
+      value: app:user
 
   - name: dep.kickside.models_fixture
     version: '*'
