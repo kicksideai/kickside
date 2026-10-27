@@ -1,8 +1,11 @@
 local upload_query_repo = require("upload_query_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local security = require("security")
+local component = require("component")
+local upload_types = require("types")
 local ctx = require("ctx")
 local metadata_sanitizer = require("metadata_sanitizer")
+local upload_response = require("upload_response")
 
 local function handle()
     local upload_id, err = ctx.get("upload_id")
@@ -16,20 +19,20 @@ local function handle()
 
     local upload, err = upload_query_repo.get(upload_id)
     if err then
-        return nil, "Failed to get upload information: " .. err
+        return nil, err
     end
 
     local actor = security.actor()
     if not actor then
-        return nil, "No authenticated actor found"
+        return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "No authenticated actor found" })
     end
 
-    local actor_id = actor:id()
-    local can_view_all = security.can("view_all", "uploads")
-
-    if upload.actor_id ~= actor_id and not can_view_all then
-        return nil, "Not authorized to access this content"
+    local component_id = upload_types.component_id_for_owner(upload.actor_id)
+    if not component_id then
+        return nil, errors.new({ kind = errors.INTERNAL, message = "Upload owner is invalid" })
     end
+    local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
+    if access_err then return nil, access_err end
 
     local content_type = upload.mime_type
     local size = upload.size
@@ -57,6 +60,7 @@ local function handle()
         content_type = content_type,
         size = size,
         filename = filename,
+        view_url = upload_response.format_get_upload(upload).view_url,
         created_at = upload.created_at,
         metadata = metadata,
         artifact_id = artifact_id,
