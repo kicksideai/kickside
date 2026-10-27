@@ -89,6 +89,7 @@ entries:
     modules:
     - fs
     - cloudstorage
+    - time
     - uuid
     - logger
     imports:

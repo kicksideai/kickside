@@ -1,11 +1,13 @@
 local fs = require("fs")
 local cloudstorage = require("cloudstorage")
 local uuid = require("uuid")
+local time = require("time")
 local logger = require("logger")
 local log = logger:named("uploads.storage")
 local storage_location = require("storage_location")
 
 local M = {}
+local SIGNED_URL_EXPIRATION = 15 * 60
 
 local function invalid(message: string): any
     return errors.new({ message = message, kind = errors.INVALID, retryable = false })
@@ -68,6 +70,17 @@ function M.get(storage_id: string, _db_id: string, _staging_id: string, _legacy_
             return nil, nil, nil, errors.new({message = tostring(storage), kind = errors.PERMISSION_DENIED, retryable = false})
         end
         return storage, location.key, location.scheme, err
+    end
+    function adapter:signed_url(path: string, options: any?): (string?, number?, any?)
+        local storage, key, scheme, err = resolve(path)
+        if err then return nil, nil, err end
+        if scheme == "fs" then return nil, nil, nil end
+        local expiration = options and options.expiration or SIGNED_URL_EXPIRATION
+        local expires_at = time.now():unix() + expiration
+        local url, sign_err = storage:presigned_get_url(key, {expiration = expiration})
+        storage:release()
+        if sign_err then return nil, nil, sign_err end
+        return url, expires_at, nil
     end
     function adapter:open(path: string, mode: string?): (any?, any?)
         local storage, key, scheme, err = resolve(path)

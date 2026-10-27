@@ -8,6 +8,7 @@ export interface UploadsMeta {
 }
 
 export interface Upload {
+  raw_url?: string | null
   uuid: string
   filename: string
   size: number

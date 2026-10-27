@@ -19,7 +19,7 @@ entries:
     modules: [security]
     imports:
       http: app:upload_http_probe
-      upload_response: kickside.uploads.api:upload_response
+      upload_response: app:signed_upload_response
       types: kickside.uploads:types
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_query_repo: kickside.uploads.persist:upload_query_repo
@@ -44,6 +44,7 @@ entries:
     modules: [security]
     imports:
       http: app:upload_http_probe
+      upload_response: app:signed_upload_response
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
@@ -151,6 +152,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       records: kickside.uploads.persist:upload_record_repo
+      artifacts: kickside.uploads.persist:artifact_content_repo
       types: kickside.uploads:types
 
   - name: dedup_migration_db
@@ -759,6 +761,7 @@ entries:
     source: file://fixtures/list_uploads.lua
     modules: [security]
     imports:
+      component: kickside.component:component
       http: app:upload_http_probe
       http_errors: kickside.contract:http_errors
       upload_response: kickside.uploads.api:upload_response
@@ -851,3 +854,34 @@ entries:
     method: run
     modules: [security, funcs]
     imports: {test: 'wippy.test:test'}
+
+  - name: signed_upload_resources
+    kind: library.lua
+    source: file://signed_upload_resources.lua
+    imports:
+      adapter: app:packed_cloud_adapter
+  - name: signed_upload_response
+    kind: library.lua
+    source: file://fixtures/response.lua
+    modules: [time]
+    imports:
+      uploads_resources: app:signed_upload_resources
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+  - name: signed_upload_list_fixture
+    kind: library.lua
+    source: file://fixtures/list_uploads.lua
+    modules: [security]
+    imports:
+      component: kickside.component:component
+      http: app:upload_http_probe
+      upload_response: app:signed_upload_response
+      types: kickside.uploads:types
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      http_errors: kickside.contract:http_errors
+  - name: signed_upload_list_probe
+    kind: function.lua
+    source: file://signed_upload_list_probe.lua
+    method: run
+    imports:
+      api: app:signed_upload_list_fixture
+      http: app:upload_http_probe

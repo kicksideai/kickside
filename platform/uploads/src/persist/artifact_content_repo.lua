@@ -492,6 +492,31 @@ function artifact_content_repo.read_blob(blob_id)
     return content, nil, blob
 end
 
+function artifact_content_repo.resolve_storage(artifact)
+    if artifact.blob_id and artifact.blob_id ~= "" then
+        return artifact_content_repo.get_blob(artifact.blob_id)
+    end
+    local locator = artifact.locator
+    local storage_id, storage_path
+    if type(locator) == "table" and locator.type == "upload.original" then
+        local current_err
+        storage_id, storage_path, current_err = current_upload_storage(artifact.upload_id)
+        if current_err then return nil, current_err end
+    else
+        storage_id, storage_path = locator_storage(locator)
+    end
+    if not storage_id or not storage_path then
+        return nil, typed(errors.INVALID, "artifact has no readable bytes")
+    end
+    return {
+        checksum = artifact.checksum,
+        mime_type = artifact.mime_type,
+        storage_id = storage_id,
+        storage_path = storage_path,
+        metadata = artifact.metadata or {},
+    }, nil
+end
+
 function artifact_content_repo.read_artifact_content(upload_id, artifact_id)
     local artifact, artifact_err = artifact_content_repo.get_artifact(upload_id, artifact_id)
     if artifact_err then return nil, artifact_err end
@@ -503,41 +528,18 @@ function artifact_content_repo.read_artifact_content(upload_id, artifact_id)
         return content, nil, blob, artifact
     end
 
-    local locator = artifact.locator
-    local storage_id, storage_path
-    if type(locator) == "table" and locator.type == "upload.original" then
-        local current_err
-        storage_id, storage_path, current_err = current_upload_storage(upload_id)
-        if current_err then return nil, current_err end
-    else
-        storage_id, storage_path = locator_storage(locator)
-    end
-    if not storage_id or not storage_path then
-        return nil, typed(errors.INVALID, "artifact has no readable bytes")
-    end
-
-    local artifact_storage_id = storage_id :: string
-    local artifact_storage_path = storage_path :: string
-
-    local storage, storage_err = resources.get_storage(artifact_storage_id)
+    local location, location_err = artifact_content_repo.resolve_storage(artifact)
+    if location_err then return nil, location_err end
+    local storage, storage_err = resources.get_storage(location.storage_id)
     if storage_err or not storage then
         return nil, storage_err or "failed to get artifact storage"
     end
-
-    local content = storage:readfile(artifact_storage_path)
+    local content = storage:readfile(location.storage_path)
     if type(content) ~= "string" then
         return nil, typed(errors.INVALID, "failed to read artifact bytes")
     end
-
-    return content, nil, {
-        blob_id = nil,
-        checksum = artifact.checksum,
-        mime_type = artifact.mime_type,
-        size = #content,
-        storage_id = artifact_storage_id,
-        storage_path = artifact_storage_path,
-        metadata = artifact.metadata or {},
-    }, artifact
+    location.size = #content
+    return content, nil, location, artifact
 end
 
 return artifact_content_repo
