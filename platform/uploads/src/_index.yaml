@@ -358,7 +358,7 @@ entries:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       uploads_resources: kickside.uploads.binding:uploads_resources
-      storage_catalog: kickside.uploads.binding:storage_catalog
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
       error_envelope: kickside.contract:error_envelope
 
@@ -376,6 +376,7 @@ entries:
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_type: kickside.uploads:upload_type
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       uploads_resources: kickside.uploads.binding:uploads_resources
       uploads_events: kickside.uploads.persist:uploads_events
       types: kickside.uploads:types

@@ -11,7 +11,7 @@ local funcs = require("funcs")
 local artifact_parts_repo = require("artifact_parts_repo")
 local artifact_content_repo = require("artifact_content_repo")
 local resources = require("uploads_resources")
-local storage_catalog = require("storage_catalog")
+local relocation_cleanup = require("relocation_cleanup_repo")
 local metadata_sanitizer = require("metadata_sanitizer")
 local error_envelope = require("error_envelope")
 
@@ -109,33 +109,35 @@ local function validate_relocation(upload, relocation)
     return normalized, nil
 end
 
+local function validate_relocated_file(stat, expected_size, label)
+    if not stat or stat.is_dir == true then
+        return relocation_error(label .. " must be a file")
+    end
+    local expected, actual = tonumber(expected_size), tonumber(stat.size)
+    if expected == nil or actual == nil or actual ~= expected then
+        return relocation_error(label .. " size does not match its source")
+    end
+    return nil
+end
+
 local function validate_relocation_targets(upload, relocation)
     local storage, storage_err = resources.get_storage(upload.storage_id)
     if storage_err or not storage then return storage_err or errors.new({message = "storage is unavailable", kind = errors.UNAVAILABLE}) end
-    local _, original_err = storage:stat(relocation.storage_path)
+    local original, original_err = storage:stat(relocation.storage_path)
     if original_err then return original_err end
+    local invalid_original = validate_relocated_file(original, upload.size, "Relocated original")
+    if invalid_original then return invalid_original end
     for _, blob in ipairs(relocation.blobs) do
         local current, current_err = artifact_content_repo.get_blob(blob.blob_id)
         if current_err then return current_err end
         local blob_storage, storage_err = resources.get_storage(current.storage_id)
         if storage_err then return storage_err end
-        local _, blob_err = blob_storage:stat(blob.storage_path)
+        local relocated, blob_err = blob_storage:stat(blob.storage_path)
         if blob_err then return blob_err end
+        local invalid_blob = validate_relocated_file(relocated, current.size, "Relocated artifact")
+        if invalid_blob then return invalid_blob end
     end
     return nil
-end
-
-local function remove_superseded(storage_id, previous)
-    local db, db_err = resources.get_db()
-    if db_err or not db then return db_err or errors.new({message = "failed to get upload database", kind = errors.UNAVAILABLE}) end
-    local still_referenced, contains_err = storage_catalog.contains(db, storage_id, previous.storage_path)
-    db:release()
-    if contains_err then return contains_err end
-    if still_referenced then return nil end
-    local storage, storage_err = resources.get_storage(storage_id)
-    if storage_err or not storage then return storage_err or errors.new({message = "storage is unavailable", kind = errors.UNAVAILABLE}) end
-    local _, remove_err = storage:remove(previous.storage_path)
-    return remove_err
 end
 
 -- Relocation is durable before any local bytes are removed. The stage's copy and
@@ -143,6 +145,8 @@ end
 -- commits its new locations, updates the in-memory record for later stages, then
 -- removes paths that no longer back a persisted row.
 function pipeline_lib.apply_relocation(upload, relocation)
+    local _, cleanup_err = relocation_cleanup.flush(upload)
+    if cleanup_err then return nil, cleanup_err end
     local normalized, validate_err = validate_relocation(upload, relocation)
     if validate_err then return nil, validate_err end
     if not normalized then return upload, nil end
@@ -165,26 +169,21 @@ function pipeline_lib.apply_relocation(upload, relocation)
     local blob_previous, blob_err = artifact_content_repo.relocate_blobs_tx(tx, upload.uuid, normalized.blobs)
     if blob_err or not blob_previous then return abort(blob_err or errors.new({message = "failed to relocate artifact blobs", kind = errors.UNAVAILABLE})) end
 
+    local next_paths, superseded = {}, {}
+    for _, blob in ipairs(normalized.blobs) do next_paths[blob.blob_id] = blob.storage_path end
+    for _, previous in ipairs(blob_previous) do
+        if next_paths[previous.blob_id] ~= previous.storage_path then superseded[#superseded + 1] = previous end
+    end
+    if original_previous.storage_path ~= normalized.storage_path then superseded[#superseded + 1] = original_previous end
+    local cleanup_metadata, intent_err = relocation_cleanup.enqueue_tx(tx, upload.uuid, superseded)
+    if intent_err then return abort(intent_err) end
     local _, commit_err = tx:commit()
     db:release()
     if commit_err then return nil, commit_err end
 
     upload.storage_path = normalized.storage_path
-    for _, previous in ipairs(blob_previous) do
-        local next_path
-        for _, relocation_blob in ipairs(normalized.blobs) do
-            if relocation_blob.blob_id == previous.blob_id then next_path = relocation_blob.storage_path; break end
-        end
-        if next_path ~= previous.storage_path then
-            local remove_err = remove_superseded(previous.storage_id, previous)
-            if remove_err then return nil, remove_err end
-        end
-    end
-    if original_previous.storage_path ~= normalized.storage_path then
-        local remove_err = remove_superseded(original_previous.storage_id, original_previous)
-        if remove_err then return nil, remove_err end
-    end
-    return upload, nil
+    if cleanup_metadata then upload.metadata = cleanup_metadata end
+    return relocation_cleanup.flush(upload)
 end
 
 -- Build the funcs executor a deferred upload stage (processing or teardown) runs as.
@@ -392,6 +391,12 @@ end
 -- Process a single upload using funcs library. Execution authority lives in
 -- kickside_job; this function only runs stages and updates upload artifacts.
 function pipeline_lib.process_upload(upload, opts)
+    local _, cleanup_err = relocation_cleanup.flush(upload)
+    if cleanup_err then
+        local retryable = true
+        if type(cleanup_err) == "userdata" then retryable = cleanup_err:retryable() end
+        return false, cleanup_err, nil, retryable
+    end
     opts = type(opts) == "table" and opts or {}
     local should_continue = type(opts.should_continue) == "function" and opts.should_continue or nil
     local cancel_ref = type(opts.cancel_ref) == "table" and opts.cancel_ref or nil

@@ -11,6 +11,7 @@ local upload_tokens = require("upload_tokens")
 local upload_read_model = require("upload_read_model")
 local upload_type = require("upload_type")
 local artifact_cleanup_repo = require("artifact_cleanup_repo")
+local relocation_cleanup = require("relocation_cleanup_repo")
 local resources = require("uploads_resources")
 local uploads_events = require("uploads_events")
 local upload_types = require("types")
@@ -131,6 +132,9 @@ end
 -- failed-upload, and delete paths.
 local function release_storage(upload: any, storage_override: any?): error?
     if type(upload) ~= "table" or type(upload.uuid) ~= "string" or upload.uuid == "" then return nil end
+
+    local _, cleanup_err = relocation_cleanup.flush(upload)
+    if cleanup_err then return cleanup_err end
 
     local storage = storage_override
     if not storage then

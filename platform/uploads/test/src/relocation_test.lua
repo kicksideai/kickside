@@ -10,6 +10,7 @@ local uploads = require("upload_lib")
 local events = require("uploads_events")
 local resources = require("uploads_resources")
 local storage_catalog = require("storage_catalog")
+local relocation_cleanup = require("relocation_cleanup_repo")
 local sql = require("sql")
 local execution_identity = require("execution_identity")
 
@@ -38,6 +39,22 @@ local function create_upload(source, upload_id, source_path, bytes, owner)
     test.is_nil(err, tostring(err))
     test.not_nil(upload)
     return upload
+end
+
+local function with_source_remove_hook(hook, action)
+    local get_storage = resources.get_storage
+    resources.get_storage = function(storage_id, ...)
+        local storage, err = get_storage(storage_id, ...)
+        if storage and storage_id == SOURCE then
+            local remove_bytes = storage.remove
+            storage.remove = function(self, name) return hook(remove_bytes, self, name) end
+        end
+        return storage, err
+    end
+    local ok, first, second = pcall(action)
+    resources.get_storage = get_storage
+    if not ok then error(first) end
+    return first, second
 end
 
 local function pipeline_metadata(user_id, relocation_storage_path, blob_id, relocation_blob_path)
@@ -161,6 +178,188 @@ return { run = test.run_cases(function()
             remove(destination, new_original)
             remove(destination, new_blob)
             records.delete(upload_id)
+        end)
+
+        for _, target_kind in ipairs({"wrong-sized file", "directory"}) do
+            test.it("preserves original bytes when relocation names a " .. target_kind, function()
+                local source, destination = assert(fs.get(SOURCE)), assert(fs.get(DESTINATION))
+                local id, old_path, target = path("unsafe-target"), path("safe-original"), path("bad-target")
+                local bytes = "complete original bytes"
+                local upload = create_upload(source, id, old_path, bytes)
+                if target_kind == "directory" then
+                    assert(destination:mkdir(target))
+                else
+                    write(destination, target, "short")
+                end
+                local moved, err = pipeline.apply_relocation(upload, {
+                    storage_path = "fs://" .. DESTINATION .. "/" .. target,
+                })
+                local persisted = assert(queries.get(id))
+                local original, read_err = source:readfile(old_path)
+                local source_survived = original == bytes and read_err == nil
+                remove(destination, target)
+                if source:exists(old_path) then remove(source, old_path) end
+                records.delete(id)
+                test.is_nil(moved)
+                test.not_nil(err)
+                test.eq(errors.INVALID, err:kind())
+                test.eq(old_path, persisted.storage_path)
+                test.is_true(source_survived)
+            end)
+        end
+
+        test.it("preserves all source locations when a derived target has the wrong size", function()
+            local source, destination = assert(fs.get(SOURCE)), assert(fs.get(DESTINATION))
+            local id, old_path, target = path("bad-derived"), path("derived-source"), path("derived-original-target")
+            local bytes = "original bytes for a failed blob relocation"
+            local upload = create_upload(source, id, old_path, bytes)
+            local blob = assert(artifacts.create_blob("text/plain", "complete derived bytes", {}, {}))
+            assert(artifacts.create_artifact({upload_id = id, blob_id = blob.blob_id,
+                kind = "text", mime_type = "text/plain", label = "derived.txt"}))
+            local blob_target = path("bad-derived-target")
+            write(destination, target, bytes)
+            write(destination, blob_target, "short")
+            local moved, err = pipeline.apply_relocation(upload, {
+                storage_path = "fs://" .. DESTINATION .. "/" .. target,
+                blobs = {{blob_id = blob.blob_id, storage_path = "fs://" .. DESTINATION .. "/" .. blob_target}},
+            })
+            local persisted = assert(queries.get(id))
+            local persisted_blob = assert(artifacts.get_blob(blob.blob_id))
+            local source_survived = source:exists(old_path) and source:exists(blob.storage_path)
+            remove(destination, target)
+            remove(destination, blob_target)
+            if source:exists(old_path) then remove(source, old_path) end
+            if source:exists(blob.storage_path) then remove(source, blob.storage_path) end
+            records.delete(id)
+            test.is_nil(moved)
+            test.not_nil(err)
+            test.eq(errors.INVALID, err:kind())
+            test.eq(old_path, persisted.storage_path)
+            test.eq(blob.storage_path, persisted_blob.storage_path)
+            test.is_true(source_survived)
+        end)
+
+        test.it("retries superseded-byte cleanup after reloading the committed upload", function()
+            local source, destination = assert(fs.get(SOURCE)), assert(fs.get(DESTINATION))
+            local id, old_path, target = path("cleanup-retry"), path("cleanup-old"), path("cleanup-new")
+            local bytes = "durable relocation cleanup bytes"
+            local upload = create_upload(source, id, old_path, bytes)
+            write(destination, target, bytes)
+            local next_path = "fs://" .. DESTINATION .. "/" .. target
+            local get_storage = resources.get_storage
+            local injected = errors.new({message = "temporary source cleanup failure", kind = errors.UNAVAILABLE, retryable = true})
+            resources.get_storage = function(storage_id, ...)
+                local storage, err = get_storage(storage_id, ...)
+                if storage and storage_id == SOURCE then
+                    local remove_bytes = storage.remove
+                    storage.remove = function(self, name)
+                        if name == old_path then return nil, injected end
+                        return remove_bytes(self, name)
+                    end
+                end
+                return storage, err
+            end
+            local ok, moved, move_err = pcall(pipeline.apply_relocation, upload, {storage_path = next_path})
+            resources.get_storage = get_storage
+            local persisted = assert(queries.get(id))
+            local before_retry = source:exists(old_path)
+            local retried, retry_err = pipeline.apply_relocation(persisted, {storage_path = next_path})
+            local after_retry = source:exists(old_path)
+            if after_retry then remove(source, old_path) end
+            remove(destination, target)
+            records.delete(id)
+            test.is_true(ok)
+            test.is_nil(moved)
+            test.eq(injected, move_err)
+            test.eq(next_path, persisted.storage_path)
+            test.is_true(before_retry)
+            test.not_nil(retried)
+            test.is_nil(retry_err)
+            test.is_false(after_retry)
+        end)
+
+        test.it("rolls back relocation when durable cleanup enrollment fails", function()
+            local source, destination = assert(fs.get(SOURCE)), assert(fs.get(DESTINATION))
+            local id, old_path, target = path("intent-failure"), path("intent-old"), path("intent-new")
+            local bytes = "keep the original when enrollment fails"
+            local upload = create_upload(source, id, old_path, bytes)
+            write(destination, target, bytes)
+            local enqueue = relocation_cleanup.enqueue_tx
+            local injected = errors.new({message = "cleanup intent unavailable", kind = errors.UNAVAILABLE, retryable = true})
+            relocation_cleanup.enqueue_tx = function() return nil, injected end
+            local ok, moved, move_err = pcall(pipeline.apply_relocation, upload, {
+                storage_path = "fs://" .. DESTINATION .. "/" .. target,
+            })
+            relocation_cleanup.enqueue_tx = enqueue
+            local persisted = assert(queries.get(id))
+            local survived = source:exists(old_path)
+            remove(source, old_path)
+            remove(destination, target)
+            records.delete(id)
+            test.is_true(ok)
+            test.is_nil(moved)
+            test.eq(injected, move_err)
+            test.eq(old_path, persisted.storage_path)
+            test.is_true(survived)
+        end)
+
+        test.it("preserves a concurrent metadata edit while retiring cleanup state", function()
+            local source, destination = assert(fs.get(SOURCE)), assert(fs.get(DESTINATION))
+            local id, old_path, target = path("cleanup-edit"), path("edit-old"), path("edit-new")
+            local bytes = "concurrent relocation cleanup metadata"
+            local upload = create_upload(source, id, old_path, bytes)
+            write(destination, target, bytes)
+            local next_path = "fs://" .. DESTINATION .. "/" .. target
+            local moved, move_err = with_source_remove_hook(function(remove_bytes, storage, name)
+                local value, err = remove_bytes(storage, name)
+                if name == old_path and not err then
+                    local current = assert(queries.get(id))
+                    current.metadata.note = "concurrent metadata survives"
+                    assert(records.update_metadata(id, current.metadata))
+                end
+                return value, err
+            end, function() return pipeline.apply_relocation(upload, {storage_path = next_path}) end)
+            local current = assert(queries.get(id))
+            local retried, retry_err = pipeline.apply_relocation(current, {storage_path = next_path})
+            local persisted = assert(queries.get(id))
+            remove(destination, target)
+            records.delete(id)
+            test.is_nil(moved)
+            test.not_nil(move_err)
+            test.eq(errors.UNAVAILABLE, move_err:kind())
+            test.not_nil(retried)
+            test.is_nil(retry_err)
+            test.eq("concurrent metadata survives", persisted.metadata.note)
+        end)
+
+        test.it("deletes pending old bytes before dropping a relocated upload", function()
+            local source, destination = assert(fs.get(SOURCE)), assert(fs.get(DESTINATION))
+            local id, old_path, target = path("cleanup-delete"), path("delete-old"), path("delete-new")
+            local bytes = "relocated upload with pending cleanup"
+            local upload = create_upload(source, id, old_path, bytes)
+            write(destination, target, bytes)
+            local injected = errors.new({message = "cleanup temporarily unavailable", kind = errors.UNAVAILABLE, retryable = true})
+            local moved, move_err = with_source_remove_hook(function(remove_bytes, storage, name)
+                if name == old_path then return nil, injected end
+                return remove_bytes(storage, name)
+            end, function() return pipeline.apply_relocation(upload, {
+                storage_path = "fs://" .. DESTINATION .. "/" .. target,
+            }) end)
+            local emit = events.emit
+            events.emit = function() return true, nil end
+            local ok, deleted, delete_err = pcall(uploads.delete_upload, id)
+            events.emit = emit
+            local old_remains, new_remains = source:exists(old_path), destination:exists(target)
+            if old_remains then remove(source, old_path) end
+            if new_remains then remove(destination, target) end
+            records.delete(id)
+            test.is_nil(moved)
+            test.eq(injected, move_err)
+            test.is_true(ok)
+            test.not_nil(deleted)
+            test.is_nil(delete_err)
+            test.is_false(old_remains)
+            test.is_false(new_remains)
         end)
 
         test.it("validates relative blob targets on the blob's own volume", function()
@@ -308,13 +507,14 @@ return { run = test.run_cases(function()
             local first_id = path("relocation-fs-alias-first")
             local second_id = path("relocation-fs-alias-second")
             local next_path = path("relocation-fs-alias-next")
-            write(destination, shared_path, "filesystem alias bytes")
+            local bytes = "filesystem alias bytes"
+            write(destination, shared_path, bytes)
             local packed_path = "fs://" .. DESTINATION .. "/" .. shared_path
-            local first = assert(records.create(first_id, "relocation-owner", 21, "text/plain", SOURCE,
+            local first = assert(records.create(first_id, "relocation-owner", #bytes, "text/plain", SOURCE,
                 packed_path, "generic", {}, "completed"))
-            assert(records.create(second_id, "relocation-owner", 21, "text/plain", DESTINATION,
+            assert(records.create(second_id, "relocation-owner", #bytes, "text/plain", DESTINATION,
                 packed_path, "generic", {}, "completed"))
-            write(source, next_path, "filesystem alias bytes")
+            write(source, next_path, bytes)
 
             local relocated, relocation_err = pipeline.apply_relocation(first, { storage_path = next_path })
             test.is_nil(relocation_err, tostring(relocation_err))

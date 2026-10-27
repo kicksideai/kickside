@@ -61,6 +61,12 @@ validate and commit transactionally before removing unreferenced old bytes.
 An S3 original retains its path while local derivatives still relocate. Upload,
 artifact, attachment and Knowledge IDs remain stable.
 
+Relocation rejects directories and destinations whose size differs from the
+original or derived blob. Superseded locations are recorded in the same Uploads
+transaction as the new locations. A failed removal or restart retains that
+cleanup intent; processing retries and deletion resume it without removing bytes
+that still have live references. Internal cleanup does not change public recency.
+
 Storage integrations use the existing `storage_adapter`, `processing_hooks` and
 `storage_runtime_policy` requirements. Storage-s3 binds only the runtime policy,
 granting exact native-resource access to Uploads' reads and processing. It owns

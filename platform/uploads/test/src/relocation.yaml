@@ -26,6 +26,7 @@ entries:
       uploads_events: kickside.uploads.persist:uploads_events
       uploads_resources: kickside.uploads.binding:uploads_resources
       storage_catalog: kickside.uploads.binding:storage_catalog
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       execution_identity: kickside.execution:execution_identity
 
   - name: relocation_stage

@@ -42,6 +42,17 @@ entries:
       persisted_json: kickside.contract:persisted_json
       uploads_resources: kickside.uploads.binding:uploads_resources
 
+  - name: relocation_cleanup_repo
+    kind: library.lua
+    meta:
+      comment: Persist superseded storage paths with relocation and retire them after successful reference-aware cleanup.
+    source: file://relocation_cleanup_repo.lua
+    modules: [json]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      storage_catalog: kickside.uploads.binding:storage_catalog
+      persisted_json: kickside.contract:persisted_json
+
   - name: upload_record_repo
     kind: library.lua
     meta:
