@@ -34,8 +34,10 @@ entries:
     meta: { type: test, suite: knowledge }
     source: file://upload_meta_boundary_test.lua
     method: run
-    modules: [funcs, security, sql, uuid]
+    modules: [funcs, security, sql, uuid, contract, json, fs]
     imports:
+      fixture_cleanup: app:fixture_cleanup
+      execution_identity: kickside.execution:execution_identity
       test: wippy.test:test
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       upload_types: kickside.uploads:types

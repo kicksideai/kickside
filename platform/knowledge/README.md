@@ -59,6 +59,31 @@ Create a knowledge base with an installed engine, ingest content, and inspect pr
 | [`kickside.knowledge:maintainable`](src/_index.yaml) | `schedule_resummarize`, `schedule_reembed`, `maintenance_status` |
 | [`kickside.knowledge:knowledge_bases`](src/_index.yaml) | `create`, `find`, `upsert`, `update`, `delete`, `list` |
 
+### Engines
+
+An engine declares `meta.type: kickside.kb_engine` on its registry entry or
+component binding. Set the optional boolean `meta.accepts_files: true` to admit
+uploads without extracted text:
+
+```yaml
+meta:
+  type: kickside.kb_engine
+  accepts_files: true
+```
+
+Knowledge resolves this capability from the target component's engine descriptor.
+Uploads with empty or non-text content produce the canonical
+`kickside.knowledge.events:content.upserted` event with `has_text: false` and no
+`content` field. The event retains `source_ref.upload_id`, an artifact reference
+when available, and filename, MIME type and size in metadata. An upload without
+a primary artifact uses the upload provider's original file reference. File-only
+versions use a `file:` prefix to distinguish them from extracted text versions.
+Authentication, access and unreadable-file errors still fail ingestion.
+
+The engine stores these files as unindexed until text becomes available. Text
+uploads retain their existing event shape. Engines that omit `accepts_files` or
+set it to `false` retain the existing empty and non-text upload rejection.
+
 ### Agent tools
 
 Tool names link to their input/output schemas. Capabilities and the caller’s

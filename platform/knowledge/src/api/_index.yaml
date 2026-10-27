@@ -220,6 +220,7 @@ entries:
     source: file://ingest_upload.lua
     modules: [contract, security]
     imports:
+      engines: kickside.knowledge:engines
       component: kickside.component:component
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo

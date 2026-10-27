@@ -5,6 +5,12 @@ local sql = require("sql")
 local uuid = require("uuid")
 local artifact_content_repo = require("artifact_content_repo")
 local upload_types = require("upload_types")
+local contract = require("contract")
+local fs = require("fs")
+local json = require("json")
+local execution_identity = require("execution_identity")
+local fixture_cleanup = require("fixture_cleanup")
+local fixtures: { string } = {}
 
 local DB = "app:db"
 local CALLBACK = "kickside.knowledge.injection:on_upload_complete"
@@ -45,13 +51,22 @@ local function meta_value(d: any, component_id: string, key: string): any
     return rows and rows[1] and rows[1].value or nil
 end
 
-local function seed_kb(component_id: string, owner: string): ()
+local function seed_kb(component_id: string, owner: string, impl_id: string?): ()
     local d = db()
+    local identity, identity_err = json.encode({
+        [execution_identity.CONTEXT_KEY] = {
+            version = execution_identity.VERSION,
+            principal = { kind = "user", id = owner },
+            authorized_by = { kind = "user", id = owner },
+            captured_at = execution_identity.utc_now(),
+        },
+    })
+    if identity_err then error(tostring(identity_err)) end
     local _, comp_err = sql.builder.insert("kickside_components")
         :set_map({
             component_id = component_id,
-            impl_id = "kickside.knowledge:knowledge_base",
-            private_context = "{}",
+            impl_id = impl_id or "kickside.knowledge:knowledge_base",
+            private_context = identity,
             created_at = 0,
             updated_at = 0,
         })
@@ -100,17 +115,17 @@ local function cleanup_upload(upload_id: string): ()
     d:release()
 end
 
-local function seed_upload_without_primary(upload_id: string, owner: string): ()
+local function seed_upload_without_primary(upload_id: string, owner: string, mime_type: string?, storage_path: string?): ()
     local d = db()
     local _, err = sql.builder.insert("kickside_uploads")
         :set_map({
             uuid = upload_id,
             actor_id = owner,
             size = 12,
-            mime_type = "application/octet-stream",
+            mime_type = mime_type or "application/octet-stream",
             storage_state = "uploaded",
             storage_id = "app:uploads",
-            storage_path = "missing-primary.bin",
+            storage_path = storage_path or "missing-primary.bin",
             type_id = "binary",
             created_at = 0,
             updated_at = 0,
@@ -314,6 +329,120 @@ local function define_tests()
             cleanup(uploads_component_id)
             cleanup(component_id)
         end)
+
+        test.after_each(function()
+            for _, id in ipairs(fixtures) do fixture_cleanup.cleanup(id) end
+            fixtures = {}
+        end)
+
+        test.it("requires both an opted-in engine and an upload reference for textless appends", function()
+            for _, entry in ipairs({
+                { impl_id = "test.kb:embeddable", source_ref = { kind = "upload", upload_id = "file" } },
+                { impl_id = "app:test_engine_files", source_ref = {} },
+            }) do
+                local owner, component_id = "file-validation-" .. uuid.v4(), uuid.v7()
+                fixtures[#fixtures + 1] = component_id
+                seed_kb(component_id, owner, entry.impl_id)
+                local result, err = funcs.new():with_actor(security.new_actor(owner, {})):with_scope(scope())
+                    :call("app:thread_ingest_append_probe", { kb_id = component_id, content = "", source_ref = entry.source_ref })
+                test.is_nil(result)
+                test.contains(tostring(err), "content is required")
+            end
+        end)
+
+        for _, case in ipairs({
+            { name = "image", mime = "image/png", content = "binary image bytes" },
+            { name = "archive", mime = "application/zip", content = "archive bytes" },
+            { name = "original image without extraction", mime = "image/png", content = "image bytes", original = true },
+            { name = "original archive without extraction", mime = "application/zip", content = "archive bytes", original = true },
+            { name = "empty original file", mime = "application/octet-stream", content = "", original = true },
+            { name = "empty extraction", mime = "text/markdown", content = "" },
+            { name = "extracted text", mime = "text/markdown", content = "# Extracted text", has_text = true },
+        }) do
+            test.it("admits " .. case.name .. " through the canonical upload event for a file engine", function()
+                local owner = "file-admission-" .. uuid.v4()
+                local component_id, upload_id = uuid.v7(), uuid.v7()
+                fixtures[#fixtures + 1] = component_id
+                seed_kb(component_id, owner, "app:test_engine_files")
+                local original_mime = case.original and case.mime or "application/octet-stream"
+                seed_upload_without_primary(upload_id, owner, original_mime, upload_id)
+                local artifact = nil
+                if case.original then
+                    local storage, storage_err = fs.get("app:uploads")
+                    test.is_nil(storage_err)
+                    local written, write_err = storage:writefile(upload_id, case.content)
+                    test.is_nil(write_err)
+                    test.is_true(written)
+                else
+                    local created, artifact_err = artifact_content_repo.create_artifact({
+                        upload_id = upload_id, kind = "markdown", role = "primary", mime_type = case.mime,
+                        label = "attachment", ordinal = 1, content = case.content,
+                        storage_id = "app:uploads", metadata = { filename = "attachment" },
+                    })
+                    test.is_nil(artifact_err)
+                    test.not_nil(created)
+                    artifact = created
+                end
+                local actor, actor_scope = security.new_actor(owner, {}), scope()
+                local def, get_err = contract.get("kickside.core:threads")
+                test.is_nil(get_err)
+                local threads, open_err = def:with_actor(actor):with_scope(actor_scope):open()
+                test.is_nil(open_err)
+                local _, ensure_err = threads:ensure_thread({ component_id = component_id,
+                    impl_id = "app:test_engine_files", thread_class = "kickside.knowledge.injection" })
+                test.is_nil(ensure_err)
+
+                local admission, admission_err = funcs.new():with_actor(actor):with_scope(actor_scope):call("app:ingest_upload_probe", {
+                    upload_id = upload_id, kb_id = component_id,
+                    file = { mime_type = original_mime, size = 12, metadata = { filename = "attachment" } },
+                })
+                test.is_nil(admission_err)
+                test.not_nil(admission.result, admission.error)
+                local result, call_err = funcs.new():with_actor(actor):with_scope(actor_scope):call(CALLBACK, {
+                    upload_id = upload_id, status = "completed", mime_type = original_mime,
+                    size = 12, metadata = { filename = "attachment" }, params = { kb_id = component_id },
+                })
+                test.is_nil(call_err)
+                test.eq(result.success, true)
+                test.is_nil(result.skipped)
+                test.eq(result.external_id, "upload:" .. upload_id)
+                local page, pull_err = funcs.new():with_actor(actor):with_scope(actor_scope)
+                    :call("kickside.core.threads:events_pullable", {
+                        config = { thread_id = component_id, event_type = "kickside.knowledge.events:content.upserted" },
+                        cursor = 0, limit = 10, idempotency_key = "file-admission",
+                    })
+                test.is_nil(pull_err)
+                test.eq(#page.items, 1)
+                local body = page.items[1].payload
+                if case.has_text then
+                    test.eq(body.content, case.content)
+                    test.is_nil(body.has_text)
+                else
+                    test.is_nil(body.content)
+                    test.eq(body.has_text, false)
+                    test.is_nil(body.content_omitted)
+                    test.contains(body.source_ref.external_version, "file:")
+                    test.eq(body.metadata.content_hash, artifact and artifact.checksum or nil)
+                end
+                test.eq(body.content_type, case.mime)
+                test.eq(body.source_ref.kind, "upload")
+                test.eq(body.source_ref.upload_id, upload_id)
+                test.eq(body.source_ref.artifact_id, artifact and artifact.artifact_id or nil)
+                test.eq(body.metadata.filename, "attachment")
+                test.eq(body.metadata.original_mime_type, original_mime)
+                test.eq(body.metadata.original_size, 12)
+                test.is_nil(body.metadata.storage_path)
+                test.is_nil(body.source_ref.storage_id)
+                if case.original then
+                    local storage, storage_err = fs.get("app:uploads")
+                    test.is_nil(storage_err)
+                    local removed, remove_err = storage:remove(upload_id)
+                    test.is_nil(remove_err)
+                    test.is_true(removed)
+                end
+                cleanup_upload(upload_id)
+            end)
+        end
 
         test.it("treats upload callbacks for a deleted KB as a handled cancellation", function()
             local owner = "upload-cancel-" .. uuid.v4()
