@@ -77,6 +77,13 @@ granting exact native-resource access to Uploads' reads and processing. It owns
 its Settings policy and endpoints; it does not install by default. Uploads depends
 on neither Settings nor a specific storage extension.
 
+Upload get and list responses also supply `view_url`, a stable relative app path
+(`/uploads/<upload UUID>`). The Uploads page opens the existing preview
+drawer directly from this link, including files outside the current list page.
+Opening or closing a preview updates the host URL. Reading a linked file uses
+the same upload READ permission as the upload endpoint. Missing or inaccessible
+files show an unavailable message.
+
 Authorized original and artifact responses supply `raw_url`: an expiring signed
 S3 URL or the authenticated raw endpoint for filesystem content. The existing raw
 endpoints also read S3 content. Signed URLs last 15 minutes; reloading a record

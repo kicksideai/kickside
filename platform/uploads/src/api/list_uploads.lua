@@ -89,9 +89,15 @@ local function list_handler()
     end
 
     -- Format the uploads for frontend use
+    local base, view_err = upload_response.view_base()
+    if view_err then
+        res:set_status(http_errors.classify(view_err))
+        res:write_json({success = false, error = "Failed to obtain upload navigation path"})
+        return
+    end
     local formatted_uploads = {}
     for _, upload in ipairs(uploads) do
-        local public = upload_response.format_list_upload(upload)
+        local public = upload_response.format_list_upload(upload, base)
         local url, delivery_err = upload_response.delivery_url(upload.storage_id, upload.storage_path, public.raw_url)
         if delivery_err then
             res:set_status(http_errors.classify(delivery_err))

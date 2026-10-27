@@ -39,12 +39,17 @@
     "vue": "^3.5.0"
   },
   "wippy": {
-    "description": "Full-page file-management web component (tag kickside-uploads) that renders the user's uploaded files over the native kickside/uploads HTTP API: a server-paginated, searchable, status-filterable file list with drag-and-drop and file-picker upload, a per-file detail panel listing derived artifacts (the converted-markdown primary plus extracted parts loaded one page at a time), and delete with confirmation. It takes no host-driven attributes \u2014 wippy.props is intentionally empty; mount the bare tag inside an authenticated host and it fetches all data itself through the proxy api client. Live stats and list invalidation come from subscribing to the uploads component's public meta summary (subscribeComponentMeta) instead of polling. The component emits no custom events of its own; all interaction stays inside it.",
+    "description": "Full-page file-management web component (tag kickside-uploads) that renders the user's uploaded files over the native kickside/uploads HTTP API: a server-paginated, searchable, status-filterable file list with drag-and-drop and file-picker upload, a per-file detail panel listing derived artifacts (the converted-markdown primary plus extracted parts loaded one page at a time), and delete with confirmation. The optional route attribute carries the host surface route; <upload UUID> opens a preview independently of list pagination. It fetches data through the proxy API client. Live stats and list invalidation come from subscribing to the uploads component's public meta summary (subscribeComponentMeta) instead of polling. The navigate event carries the relative route under the host navigation base when a preview opens or closes, so the host URL tracks the selected file.",
     "tagName": "kickside-uploads",
     "type": "component",
     "props": {
       "type": "object",
-      "properties": {}
+      "properties": {
+        "route": {
+          "type": "string",
+          "description": "Path after the Uploads navigation base: empty for the list, or an upload UUID for its preview."
+        }
+      }
     },
     "scripts": {
       "build": "build"

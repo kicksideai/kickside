@@ -3,7 +3,6 @@ import { api } from '@wippy-fe/proxy'
 import type { ArtifactState, PreviewSource, Upload, UploadArtifact } from './uploads.types.ts'
 import {
   artifactLabel,
-  canPreview,
   isPrimaryMarkdown,
   isRawRenderable,
 } from './uploads.format.ts'
@@ -76,7 +75,6 @@ export function useUploadArtifacts(error: Ref<string>) {
   }
 
   function openPreview(upload: Upload) {
-    if (!canPreview(upload)) return
     if (artifactView.value && preview.value?.uuid !== upload.uuid) artifactView.value = null
     preview.value = upload
     // Load the extracted parts up front so their chips appear alongside the file;

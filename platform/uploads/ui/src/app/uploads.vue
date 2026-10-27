@@ -19,6 +19,7 @@ import {
   statusLabel, statusSeverity, typeIcon, typeLabel, uploadLabel,
 } from './uploads.format.ts'
 import { useUploadArtifacts } from './useUploadArtifacts.ts'
+import { useComponentProps, useComponentEvents } from '../constants'
 
 const TERMINAL = new Set(['completed', 'error'])
 const PAGE_SIZE = 30
@@ -50,10 +51,68 @@ const retrying = ref(false)
 const {
   preview, artifactView, partsExpanded, busyAction,
   activePreviewSource,
-  openPreview, closePreview, viewOriginal, viewPrimary, viewArtifact,
+  openPreview: showPreview, closePreview: hidePreview, viewOriginal, viewPrimary, viewArtifact,
   currentArtifacts, partsTotal, partsPage, partsPages, partsRangeStart, partsRangeEnd,
   hasPrimary, artifactsLoading, gotoPartsPage, downloadActive, openActive,
 } = useUploadArtifacts(error)
+
+const routeProps = useComponentProps()
+const emit = useComponentEvents()
+const previewError = ref('')
+const previewLoading = ref(false)
+let previewRead = 0
+
+let pendingRoute: string | null = null
+
+function navigatePreview(id = '') {
+  pendingRoute = id
+  emit('navigate', { path: id })
+}
+
+function openPreview(upload: Upload) {
+  previewRead++
+  previewError.value = ''
+  previewLoading.value = false
+  showPreview(upload)
+  navigatePreview(upload.uuid)
+}
+
+function closePreview() {
+  previewRead++
+  previewError.value = ''
+  previewLoading.value = false
+  hidePreview()
+  navigatePreview()
+}
+
+watch(() => routeProps.value.route, async (route) => {
+  const id = String(route ?? '').replace(/^\/+|\/+$/g, '')
+  // Ignore an older host echo until the latest click's route returns.
+  if (pendingRoute !== null && id !== pendingRoute) return
+  pendingRoute = null
+  const read = ++previewRead
+  previewError.value = ''
+  previewLoading.value = false
+  if (id === preview.value?.uuid) return
+  hidePreview()
+  if (!id) return
+  previewLoading.value = true
+  try {
+    const { data } = await api.get(`/api/v1/uploads/${encodeURIComponent(id)}`)
+    if (read !== previewRead) return
+    if (!data.success || !data.upload) throw new Error(data.error || 'Failed to load upload')
+    const upload = data.upload as Upload
+    showPreview({ ...upload, filename: upload.filename || String(upload.meta?.filename || '') })
+  } catch (cause) {
+    if (read !== previewRead) return
+    const status = (cause as { response?: { status?: number } })?.response?.status
+    previewError.value = status === 403 || status === 404
+      ? 'File not found or you do not have permission to view it.'
+      : cause instanceof Error ? cause.message : 'Failed to load upload.'
+  } finally {
+    if (read === previewRead) previewLoading.value = false
+  }
+}, { immediate: true })
 
 const componentId = ref('')
 const meta = ref<UploadsMeta>({})
@@ -243,6 +302,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  previewRead++
   window.removeEventListener('keydown', onKeydown)
   if (searchTimer) clearTimeout(searchTimer)
   if (componentUnsub) componentUnsub()
@@ -310,7 +370,12 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <div v-if="error" class="kx-err">{{ error }}</div>
+    <div v-if="error" class="kx-err" role="alert">{{ error }}</div>
+    <div v-if="previewLoading" class="kx-loading" role="status">Loading file…</div>
+    <div v-if="previewError" class="kx-err" role="alert" data-testid="uploads-link-error">
+      {{ previewError }}
+      <Button label="Close preview" text severity="secondary" @click="closePreview" />
+    </div>
 
     <div class="kx-body">
       <div class="kx-main">

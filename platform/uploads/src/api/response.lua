@@ -1,3 +1,4 @@
+local registry = require("registry")
 local time = require("time")
 local resources = require("uploads_resources")
 local metadata_sanitizer = require("metadata_sanitizer")
@@ -43,6 +44,16 @@ local function raw_path(upload_id: string, artifact_id: string?): string
     return path .. "/raw"
 end
 
+local function view_base(): (string?, any?)
+    local nav, err = registry.get("kickside.uploads:nav_item")
+    if err then return nil, err end
+    local path = nav and nav.meta and nav.meta.path
+    if type(path) ~= "string" or path == "" then
+        return nil, errors.new({kind = errors.INTERNAL, message = "Upload navigation path is unavailable"})
+    end
+    return path, nil
+end
+
 local function delivery_url(storage_id: string, storage_path: string, raw_url: string?, options: any?): (string?, any?)
     local storage, storage_err = resources.get_storage(storage_id)
     if storage_err then return nil, storage_err end
@@ -54,11 +65,12 @@ local function delivery_url(storage_id: string, storage_path: string, raw_url: s
     return raw_url, nil
 end
 
-local function format_list_upload(upload: any): any
+local function format_list_upload(upload: any, base: string?): any
     local metadata = metadata_sanitizer.public(upload.metadata)
     return {
         uuid = upload.uuid,
         raw_url = upload.uuid and raw_path(upload.uuid) or nil,
+        view_url = upload.uuid and base and (base .. "/" .. upload.uuid) or nil,
         size = upload.size,
         mime_type = upload.mime_type,
         status = upload.status,
@@ -70,11 +82,12 @@ local function format_list_upload(upload: any): any
     }
 end
 
-local function format_get_upload(upload: any): any
+local function format_get_upload(upload: any, base: string?): any
     local metadata = metadata_sanitizer.public(upload.metadata)
     return {
         uuid = upload.uuid,
         raw_url = upload.uuid and raw_path(upload.uuid) or nil,
+        view_url = upload.uuid and base and (base .. "/" .. upload.uuid) or nil,
         size = upload.size,
         mime_type = upload.mime_type,
         status = upload.status,
@@ -88,6 +101,7 @@ end
 return {
     format_date = format_date,
     raw_path = raw_path,
+    view_base = view_base,
     delivery_url = delivery_url,
     format_list_upload = format_list_upload,
     format_get_upload = format_get_upload,

@@ -2,6 +2,7 @@ import { useProps, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { ComponentProps } from './types.ts'
 
 export interface Events {
+  navigate: { path: string }
   load: undefined
   unload: undefined
   error: { message: string, error: unknown }
