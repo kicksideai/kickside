@@ -232,3 +232,13 @@ profiles:
       "app:private_queue_claim_exclusion_test:options.search_path": kickside_private_queue_claim_exclusion_test
       "app:private_queue_claim_exclusion_test:pool.max_open": 8
       "app:private_queue_claim_exclusion_test:pool.max_idle": 4
+      "app:private_queue_wake_recovery_test:kind": db.sql.postgres
+      "app:private_queue_wake_recovery_test:host": "${pg_host}"
+      "app:private_queue_wake_recovery_test:port": "${pg_port}"
+      "app:private_queue_wake_recovery_test:database": "${pg_database}"
+      "app:private_queue_wake_recovery_test:username": "${pg_username}"
+      "app:private_queue_wake_recovery_test:password": "${pg_password}"
+      "app:private_queue_wake_recovery_test:options.sslmode": disable
+      "app:private_queue_wake_recovery_test:options.search_path": kickside_private_queue_wake_recovery_test
+      "app:private_queue_wake_recovery_test:pool.max_open": 8
+      "app:private_queue_wake_recovery_test:pool.max_idle": 4
