@@ -70,6 +70,11 @@ entries:
     foreign_keys: true
     file: ":memory:"
 
+  - name: private_queue_capacity_claim_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
   - name: private_queue_concurrency_test
     kind: db.sql.sqlite
     foreign_keys: true
@@ -215,6 +220,44 @@ entries:
       - sql
       - json
 
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: capacity_worker_a
+    kind: function.lua
+    meta:
+      comment: Capacity-declared worker fixture A.
+      job_capacity:
+        group: app.capacity
+        settings:
+          namespace: app.capacity
+          global_limit_key: global_limit
+          concurrency_key_limit_key: concurrency_key_limit
+    source: file://generic_job_target.lua
+    method: run
+    modules: [security, time, channel, sql, json]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: capacity_worker_b
+    kind: function.lua
+    meta:
+      comment: Capacity-declared worker fixture B.
+      job_capacity:
+        group: app.capacity
+        settings:
+          namespace: app.capacity
+          global_limit_key: global_limit
+          concurrency_key_limit_key: concurrency_key_limit
+    source: file://generic_job_target.lua
+    method: run
+    modules: [security, time, channel, sql, json]
     imports:
       jobs: kickside.core.jobs:jobs
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -2136,6 +2179,7 @@ entries:
       row_bytes: app:enqueue_native_row_bytes_adapter
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: app:capacity_native_adapter
 
   - name: enqueue_native_test
     kind: function.lua
@@ -3342,6 +3386,10 @@ entries:
       lifecycle_cancel: app:claim_native_lifecycle_cancel
       row_bytes: app:claim_native_row_bytes
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: app:capacity_native_adapter
+  - name: capacity_native_adapter
+    kind: library.lua
+    source: file://capacity_native_adapter.lua
   - name: claim_native_test
     kind: function.lua
     source: file://claim_native_test.lua

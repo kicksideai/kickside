@@ -82,6 +82,7 @@ entries:
       row_bytes: kickside.core.jobs.persist:row_bytes
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: kickside.core.jobs:capacity
 
   - name: thread_fence
     kind: library.lua
@@ -141,6 +142,7 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       row_bytes: kickside.core.jobs.persist:row_bytes
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: kickside.core.jobs:capacity
 
   - name: reclaim
     kind: library.lua

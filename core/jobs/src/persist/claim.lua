@@ -16,6 +16,7 @@ local thread_fence = require("thread_fence")
 local lifecycle_cancel = require("lifecycle_cancel")
 local row_bytes = require("row_bytes")
 local boundary = require("sql_boundary")
+local capacity = require("capacity")
 
 local claim = {}
 
@@ -53,14 +54,15 @@ local ORDER_SQL = "priority DESC, scheduled_at ASC"
 local SELECT_COLS = {
     "id", "thread_id", "owner_kind", "owner_id", "queue_tier", "job_type", "worker_ref", "payload",
     "attempts", "max_attempts", "generation", "execution_seq", "slot", "idempotency_key", "concurrency_key",
-    "scheduled_at", "priority", "dispatch_requested_at",
+    "capacity_group", "scheduled_at", "priority", "dispatch_requested_at",
 }
 
 -- Serialize keyed claim transitions without blocking an unrelated claimant.
--- The running-row index remains the durable exclusion proof. Its recheck uses
--- a fresh statement snapshot after the transaction acquires each advisory lock.
+-- The running-row index remains the durable exclusion proof for keys listed in
+-- running_keys. Its recheck uses a fresh statement snapshot after the
+-- transaction acquires each advisory lock.
 type KeyQuery = (string, table?) -> (table[]?, error?)
-function claim.reserve_keys(query: KeyQuery, dbtype: string, keys: { string }): ({ [string]: boolean }?, error?)
+function claim.reserve_keys(query: KeyQuery, dbtype: string, keys: { string }, running_keys: { string }?): ({ [string]: boolean }?, error?)
     local ordered: { string } = {}
     local seen: { [string]: boolean } = {}
     for _, key in ipairs(keys) do
@@ -94,15 +96,28 @@ function claim.reserve_keys(query: KeyQuery, dbtype: string, keys: { string }): 
     for _, key in ipairs(ordered) do
         if not observed[key] then return nil, response_error("keys.concurrency_key") end
     end
-    if #acquired == 0 then return held, nil end
+    local running_set: { [string]: boolean } = {}
+    if running_keys == nil then
+        for key in pairs(seen) do running_set[key] = true end
+    else
+        for _, key in ipairs(running_keys) do
+            if not seen[key] then return nil, response_error("keys.running_key") end
+            running_set[key] = true
+        end
+    end
+    local checked: { string } = {}
+    for _, key in ipairs(acquired) do
+        if running_set[key] then checked[#checked + 1] = key end
+    end
+    if #checked == 0 then return held, nil end
     local marks: { string } = {}
-    for index in ipairs(acquired) do marks[#marks + 1] = "$" .. tostring(index) end
+    for index in ipairs(checked) do marks[#marks + 1] = "$" .. tostring(index) end
     local running, read_err = query("SELECT concurrency_key FROM kickside_job WHERE status='running' AND concurrency_key IN ("
-        .. table.concat(marks, ",") .. ")", acquired)
+        .. table.concat(marks, ",") .. ")", checked)
     running, read_err = boundary.bounded_rows(running, read_err, "claim reserved key recheck failed", "keys.running", 0, nil, response_error)
     if read_err then return nil, read_err end
     local acquired_set: { [string]: boolean } = {}
-    for _, key in ipairs(acquired) do acquired_set[key] = true end
+    for _, key in ipairs(checked) do acquired_set[key] = true end
     for _, row in ipairs(running) do
         if type(row.concurrency_key) ~= "string" or not acquired_set[row.concurrency_key] then
             return nil, response_error("keys.running.concurrency_key")
@@ -110,6 +125,14 @@ function claim.reserve_keys(query: KeyQuery, dbtype: string, keys: { string }): 
         held[row.concurrency_key] = nil
     end
     return held, nil
+end
+
+local function available_concurrency_key(running_status: string): string
+    return "(concurrency_key IS NULL OR (capacity_group IS NULL AND NOT EXISTS (SELECT 1 FROM kickside_job running"
+        .. " WHERE running.status=" .. running_status .. " AND running.concurrency_key=kickside_job.concurrency_key))"
+        .. " OR (capacity_group IS NOT NULL AND NOT EXISTS (SELECT 1 FROM kickside_job running"
+        .. " WHERE running.status=" .. running_status .. " AND running.capacity_group IS NULL"
+        .. " AND running.concurrency_key=kickside_job.concurrency_key)))"
 end
 
 -- Lease one pending row inside tx and return the counters the row now holds.
@@ -124,8 +147,7 @@ function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token:
         .. greatest .. "(execution_seq, COALESCE((SELECT MAX(r.execution_seq) FROM kickside_job_run r"
         .. " WHERE r.job_id=kickside_job.id), 0)) + 1, lease_token=$2, lease_until=$3, heartbeat_at=$4,"
         .. " wake_demand_at=NULL WHERE id=$5 AND status=$6"
-        .. " AND (concurrency_key IS NULL OR NOT EXISTS (SELECT 1 FROM kickside_job running"
-        .. " WHERE running.status=$1 AND running.concurrency_key=kickside_job.concurrency_key)) RETURNING attempts, execution_seq",
+        .. " AND " .. available_concurrency_key("$1") .. " RETURNING attempts, execution_seq",
         { job_types.JOB_STATE.RUNNING, token, lease_until, now, id, job_types.JOB_STATE.PENDING })
     rows, err = boundary.bounded_rows(rows, err, "claim lease failed", "lease", 0, 1, response_error)
     if err then return nil, err end
@@ -138,83 +160,65 @@ function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token:
     return { attempts = attempts, execution_seq = sequence }, nil
 end
 
--- Select the single next due pending job inside tx. lock_suffix appends the
--- dialect's row-locking clause (empty for sqlite).
 local function select_next_pending(tx: sql.Transaction, dbtype: string, now: string, lock_suffix: string): (table?, error?)
     local query = sql.builder.select(table.unpack(SELECT_COLS))
         :from("kickside_job")
         :where(sql.builder.eq({ status = job_types.JOB_STATE.PENDING }))
         :where(sql.builder.lte({ scheduled_at = now }))
-        :where("(concurrency_key IS NULL OR NOT EXISTS (SELECT 1 FROM kickside_job running WHERE running.status = 'running' AND running.concurrency_key = kickside_job.concurrency_key))")
+        :where(available_concurrency_key("'running'"))
         :order_by(ORDER_SQL)
         :limit(1)
-    -- suffix returns the builder; reassign so the lock clause is applied.
-    if lock_suffix ~= "" then
-        query = query:suffix(lock_suffix)
-    end
+    if lock_suffix ~= "" then query = query:suffix(lock_suffix) end
     local rows, err = query:run_with(tx):query()
     rows, err = job_rows(rows, err, "claim select failed", "selected", 1, false)
     if err then return nil, err end
-    if #rows == 0 then
-        return nil, nil
-    end
+    if #rows == 0 then return nil, nil end
     return rows[1] :: table, nil
 end
 
--- Claim the next due pending job, flipping it to running under a fresh lease.
--- Returns the claimed job row with lease_token set, or nil when none is due.
+-- Legacy single claims retain their existing one-row path. Capacity-declared
+-- rows re-enter the shared batch path, which reserves their group resources.
 function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
     local policy, policy_err = read_policy()
     if policy_err then return nil, policy_err end
     local lease_seconds = (policy :: any).lease_timeout_seconds
     local now = lifecycle.now_string(dbtype)
     local lock_suffix = dbtype == sql.type.POSTGRES and "FOR UPDATE SKIP LOCKED" or ""
-
     local tx, tx_err = boundary.begin(db, "claim begin failed", "transaction", response_error)
     if tx_err then return nil, tx_err end
     local job, select_err = select_next_pending(tx, dbtype, now, lock_suffix)
-    if select_err then
-        return nil, boundary.rollback(tx, select_err, "claim rollback failed")
-    end
+    if select_err then return nil, boundary.rollback(tx, select_err, "claim rollback failed") end
     if not job then
         local _, commit_err = tx:commit()
-        if commit_err then
-            return nil, errors.wrap(commit_err, "claim commit failed")
-        end
+        if commit_err then return nil, errors.wrap(commit_err, "claim commit failed") end
         return nil, nil
     end
-
+    if type(job.capacity_group) == "string" and job.capacity_group ~= "" then
+        local rollback_err = boundary.rollback(tx, nil, "claim rollback failed")
+        if rollback_err then return nil, rollback_err end
+        local claimed, batch_err = claim.claim_batch(db, dbtype, 1)
+        if batch_err then return nil, batch_err end
+        return claimed and claimed[1] or nil, nil
+    end
     if type(job.concurrency_key) == "string" then
         local held, key_err = claim.reserve_keys(function(statement: string, params: table?): (table[]?, error?) return tx:query(statement, params) end, dbtype, { job.concurrency_key })
         if key_err then return nil, boundary.rollback(tx, key_err, "claim rollback failed") end
         if not held[job.concurrency_key] then return nil, boundary.rollback(tx, nil, "claim rollback failed") end
     end
-
     local lease_token = uuid.v7()
     local lease_until = lifecycle.future_string(dbtype, lease_seconds)
     local size_err = row_bytes.check_update(tx, "kickside_job", job.id, function(row)
         local attempts, sequence = tonumber(row.attempts), tonumber(row.execution_seq)
-        if not attempts or not sequence then return nil, (errors.new({
-            message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
-        return { status = job_types.JOB_STATE.RUNNING,
-            attempts = attempts + 1, execution_seq = sequence + 1,
+        if not attempts or not sequence then return nil, (errors.new({ message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
+        return { status = job_types.JOB_STATE.RUNNING, attempts = attempts + 1, execution_seq = sequence + 1,
             lease_token = lease_token, lease_until = lease_until, heartbeat_at = now, wake_demand_at = row_bytes.NULL }
     end, (policy :: any).max_row_bytes, "claim_job")
     if size_err then return nil, boundary.rollback(tx, size_err, "claim rollback failed") end
     local leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), lease_token, lease_until, now)
-    if update_err then
-        return nil, boundary.rollback(tx, errors.wrap(update_err, "claim update failed"), "claim rollback failed")
-    end
-    -- A losing racer's guarded update affects zero rows; yield the job to the winner.
-    if not leased then
-        return nil, boundary.rollback(tx, nil, "claim rollback failed")
-    end
-
+    if update_err then return nil, boundary.rollback(tx, errors.wrap(update_err, "claim update failed"), "claim rollback failed") end
+    if not leased then return nil, boundary.rollback(tx, nil, "claim rollback failed") end
     local _, commit_err = tx:commit()
-    if commit_err then
-        return nil, errors.wrap(commit_err, "claim commit failed")
-    end
-
+    if commit_err then return nil, errors.wrap(commit_err, "claim commit failed") end
     job.wake_demand_at = nil
     job.lease_token = lease_token
     job.lease_until = lease_until
@@ -285,8 +289,7 @@ local function candidate_rows(db: sql.DB, now: string, n: integer,
                 or "scheduled_at ASC, priority DESC, concurrency_key ASC, id ASC"
             queries[#queries + 1] = "SELECT * FROM (SELECT " .. table.concat(SELECT_COLS, ",")
                 .. " FROM kickside_job WHERE " .. where
-                .. " AND (concurrency_key IS NULL OR NOT EXISTS (SELECT 1 FROM kickside_job running"
-                .. " WHERE running.status='running' AND running.concurrency_key=kickside_job.concurrency_key))"
+                .. " AND " .. available_concurrency_key("'running'")
                 .. " ORDER BY " .. order .. " LIMIT " .. bind(limit)
                 .. ") AS " .. label .. tostring(index)
         end
@@ -334,10 +337,63 @@ function claim.lock_candidates(tx: sql.Transaction, dbtype: string, ids: { strin
     local suffix = dbtype == sql.type.POSTGRES and " FOR UPDATE SKIP LOCKED" or ""
     local rows, err = tx:query([[SELECT * FROM kickside_job
         WHERE status='pending' AND scheduled_at IS NOT NULL AND scheduled_at <= $1
-        AND (concurrency_key IS NULL OR NOT EXISTS (SELECT 1 FROM kickside_job running
-            WHERE running.status='running' AND running.concurrency_key=kickside_job.concurrency_key))
+        AND ]] .. available_concurrency_key("'running'") .. [[
         AND id IN (]] .. table.concat(marks, ",") .. ") ORDER BY id ASC" .. suffix, params)
     return job_rows(rows, err, "claim job lock failed", "locked", #ids, false)
+end
+
+type CapacityState = { descriptor: table, global_limit: integer, concurrency_key_limit: integer,
+    running: integer, running_keys: { [string]: integer } }
+
+local function capacity_states(rows: table[]): ({ [string]: CapacityState }?, error?)
+    local states: { [string]: CapacityState } = {}
+    for _, job in ipairs(rows) do
+        local descriptor, descriptor_err = capacity.group(job)
+        if descriptor_err then return nil, descriptor_err end
+        if descriptor then
+            local group = descriptor.group
+            local state = states[group]
+            if not state then
+                local limits, limits_err = capacity.limits(descriptor)
+                if limits_err or not limits then return nil, limits_err end
+                state = { descriptor = descriptor, global_limit = limits.global_limit,
+                    concurrency_key_limit = limits.concurrency_key_limit, running = 0, running_keys = {} }
+                states[group] = state
+            end
+            (job :: any).capacity = state
+        end
+    end
+    return states, nil
+end
+
+local function capacity_lock(group: string, key: string?): string
+    local group_part = tostring(#group) .. ":" .. group
+    if key == nil then return "\1capacity-group:" .. group_part end
+    return "\1capacity-key:" .. group_part .. ":" .. tostring(#key) .. ":" .. key
+end
+
+local function running_capacity(tx: sql.Transaction, states: { [string]: CapacityState }): error?
+    local groups: { string } = {}
+    for group in pairs(states) do groups[#groups + 1] = group end
+    if #groups == 0 then return nil end
+    table.sort(groups)
+    local marks: { string } = {}
+    for index in ipairs(groups) do marks[#marks + 1] = "$" .. tostring(index) end
+    local rows, query_err = tx:query("SELECT capacity_group,concurrency_key,COUNT(*) AS n FROM kickside_job"
+        .. " WHERE status='running' AND capacity_group IN (" .. table.concat(marks, ",") .. ")"
+        .. " GROUP BY capacity_group,concurrency_key", groups)
+    rows, query_err = boundary.bounded_rows(rows, query_err, "claim capacity count failed", "capacity", 0, nil, response_error)
+    if query_err then return query_err end
+    for _, row in ipairs(rows or {}) do
+        local group, key = row.capacity_group, row.concurrency_key
+        local state = type(group) == "string" and states[group] or nil
+        local count, count_err = boundary.number_value(row.n, "capacity.n", 1, true, false, response_error)
+        if count_err then return count_err end
+        if not state or type(key) ~= "string" then return response_error("capacity.group") end
+        state.running = state.running + (count :: integer)
+        state.running_keys[key] = (state.running_keys[key] or 0) + (count :: integer)
+    end
+    return nil
 end
 
 -- A row that cannot be leased is refused alone: the fourth result lists each
@@ -461,6 +517,15 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         candidates[tier] = runnable
     end
 
+    local capacity_candidates: table[] = {}
+    for _, tier in ipairs(TIER_ORDER) do
+        for _, job in ipairs(candidates[tier] or {}) do capacity_candidates[#capacity_candidates + 1] = job end
+    end
+    local capacities, capacities_err = capacity_states(capacity_candidates)
+    if capacities_err or not capacities then
+        return nil, boundary.rollback(tx, capacities_err, "claim rollback failed")
+    end
+
     local selected: table[] = {}
     local selected_ids: { [string]: boolean } = {}
     local selected_keys: { [string]: boolean } = {}
@@ -469,10 +534,11 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
     local function add(row: table): boolean
         local id = tostring(row.id)
         local key = row.concurrency_key
-        if selected_ids[id] or (type(key) == "string" and selected_keys[key]) then return false end
+        local declared = (row :: any).capacity ~= nil
+        if selected_ids[id] or (not declared and type(key) == "string" and selected_keys[key]) then return false end
         selected[#selected + 1] = row
         selected_ids[id] = true
-        if type(key) == "string" then selected_keys[key] = true end
+        if not declared and type(key) == "string" then selected_keys[key] = true end
         return true
     end
     local function choose(matches: (table) -> boolean, capacity: integer, shares: table, order: ((table, table) -> boolean)?): ()
@@ -543,14 +609,54 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
     end)
 
     local keys: { string } = {}
+    local resource_keys: { [string]: { string } } = {}
     for _, job in ipairs(selected) do
-        if type(job.concurrency_key) == "string" then keys[#keys + 1] = job.concurrency_key end
+        local state = (job :: any).capacity
+        local job_keys: { string } = {}
+        if state then
+            local group = ((state :: CapacityState).descriptor :: any).group
+            job_keys[#job_keys + 1] = capacity_lock(group, nil)
+            job_keys[#job_keys + 1] = capacity_lock(group, tostring(job.concurrency_key))
+            -- The ordinary key serializes mixed legacy and capacity claims.
+            -- It is not a capacity running-row exclusion, so group members
+            -- retain their declared per-key parallelism.
+            job_keys[#job_keys + 1] = tostring(job.concurrency_key)
+        elseif type(job.concurrency_key) == "string" then
+            job_keys[#job_keys + 1] = job.concurrency_key
+        end
+        resource_keys[tostring(job.id)] = job_keys
+        for _, key in ipairs(job_keys) do keys[#keys + 1] = key end
     end
-    local held, key_err = claim.reserve_keys(function(statement: string, params: table?): (table[]?, error?) return tx:query(statement, params) end, dbtype, keys)
+    local legacy_keys: { string } = {}
+    for _, job in ipairs(selected) do
+        if (job :: any).capacity == nil and type(job.concurrency_key) == "string" then
+            legacy_keys[#legacy_keys + 1] = job.concurrency_key
+        end
+    end
+    local held, key_err = claim.reserve_keys(function(statement: string, params: table?): (table[]?, error?) return tx:query(statement, params) end,
+        dbtype, keys, legacy_keys)
     if key_err then return nil, boundary.rollback(tx, key_err, "claim rollback failed") end
+    local capacity_count_err = running_capacity(tx, capacities)
+    if capacity_count_err then return nil, boundary.rollback(tx, capacity_count_err, "claim rollback failed") end
     local reserved: table[] = {}
     for _, job in ipairs(selected) do
-        if type(job.concurrency_key) ~= "string" or held[job.concurrency_key] then reserved[#reserved + 1] = job end
+        local all_held = true
+        for _, key in ipairs(resource_keys[tostring(job.id)] or {}) do
+            if not held[key] then all_held = false; break end
+        end
+        local state = (job :: any).capacity
+        if all_held and state then
+            local capacity_state = state :: CapacityState
+            local key = tostring(job.concurrency_key)
+            if capacity_state.running >= capacity_state.global_limit
+                or (capacity_state.running_keys[key] or 0) >= capacity_state.concurrency_key_limit then
+                all_held = false
+            else
+                capacity_state.running = capacity_state.running + 1
+                capacity_state.running_keys[key] = (capacity_state.running_keys[key] or 0) + 1
+            end
+        end
+        if all_held then reserved[#reserved + 1] = job end
     end
     local claimed: table[] = {}
     -- Each row leases under its own savepoint. A row-scoped refusal (a lost

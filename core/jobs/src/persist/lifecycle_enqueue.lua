@@ -11,6 +11,7 @@ local thread_fence = require("thread_fence")
 local row_bytes = require("row_bytes")
 local listing = require("listing")
 local sql_boundary = require("sql_boundary")
+local capacity = require("capacity")
 
 local enqueue = {}
 type Executor = sql.DB | sql.Transaction
@@ -261,6 +262,8 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if type(params.concurrency_key) == "string" and params.concurrency_key ~= "" then
         concurrency_key = params.concurrency_key
     end
+    local capacity_descriptor, capacity_err = capacity.admit(params.worker_ref or params.job_type, concurrency_key)
+    if capacity_err then return nil, capacity_err end
     local scheduled_at = params.scheduled_at or now
     if params.scheduled_at ~= nil then
         local instant, parse_err = clock.parse(params.scheduled_at)
@@ -280,6 +283,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         job_type = params.job_type,
         worker_ref = params.worker_ref,
         concurrency_key = concurrency_key,
+        capacity_group = capacity_descriptor and capacity_descriptor.group or nil,
         payload = payload_json,
         status = job_types.JOB_STATE.PENDING,
         priority = math.floor(tonumber(params.priority) or 0),

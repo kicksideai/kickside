@@ -102,3 +102,15 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 22_capacity_groups
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-27T00:00:22Z"
+    source: file://22_capacity_groups.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

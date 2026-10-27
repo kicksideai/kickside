@@ -42,6 +42,25 @@ entries:
     jobs: kickside.core.jobs:jobs
     lifecycle: kickside.core.jobs.persist:lifecycle
     job_fixture: app:job_fixture
+- name: capacity_claim_test
+  kind: function.lua
+  meta:
+    title: Job Capacity Claim
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Settings-backed worker capacity claims preserve legacy key exclusion.
+  source: file://capacity_claim_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    job_fixture: app:job_fixture
 - name: attempt_budget_test
   kind: function.lua
   meta:
