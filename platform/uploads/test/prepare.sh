@@ -2,6 +2,7 @@
 set -eu
 upload_test_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 mkdir -p "$upload_test_dir/src/fixtures"
+cp "$upload_test_dir/../src/uploads.lua" "$upload_test_dir/src/fixtures/uploads.lua"
 cp "$upload_test_dir/../src/uploads_presigned.lua" "$upload_test_dir/src/fixtures/uploads_presigned.lua"
 cp "$upload_test_dir/../src/binding/storage_adapter_default.lua" "$upload_test_dir/src/fixtures/storage_adapter_default.lua"
 cp "$upload_test_dir/../src/binding/storage_location.lua" "$upload_test_dir/src/fixtures/storage_location.lua"

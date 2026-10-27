@@ -1,0 +1,51 @@
+local test = require("test")
+local uploads = require("uploads")
+local records = require("records")
+local tokens = require("tokens")
+local cloud = require("cloud")
+local uuid = require("uuid")
+local time = require("time")
+
+return {run = test.run_cases(function()
+    test.describe("authorized upload delivery", function()
+        local api = uploads
+        local function record(path)
+            local id = uuid.v4()
+            assert(records.create(id, uuid.v4(), 5, "application/pdf", "app:uploads", path,
+                "kickside.uploads:types.generic", {filename = "document.pdf"}, "completed"))
+            return id
+        end
+        test.it("signs the current S3 original with the requested lifetime", function()
+            local id = record("s3://app:objects/document.pdf")
+            local url, err = api.delivery_url(id, {audience = "document.source", expires_in = 300})
+            test.is_nil(err)
+            test.eq("https://objects.example/document.pdf?expiration=300", url)
+            test.eq("https://objects.example/document.pdf?expiration=900", assert(api.delivery_url(id)))
+        end)
+        test.it("issues upload-bound read tokens for relative and packed filesystem paths", function()
+            for _, path in ipairs({"document.pdf", "fs://app:uploads/document.pdf"}) do
+                local id = record(path)
+                local before = time.now():unix()
+                local url, err = api.delivery_url(id, {audience = "document.source", expires_in = 120})
+                test.is_nil(err)
+                local prefix = "/api/v1/uploads/" .. id .. "/raw?token="
+                test.eq(prefix, url:sub(1, #prefix))
+                local payload, token_err = tokens.unpack_read(url:sub(#prefix + 1), {upload_id = id, artifact_id = false})
+                test.is_nil(token_err)
+                test.eq("document.source", payload.audience)
+                test.is_true(payload.expires_at >= before + 120 and payload.expires_at <= time.now():unix() + 120)
+            end
+        end)
+        test.it("returns missing-upload and signing errors without issuing a raw URL", function()
+            local missing, missing_err = api.delivery_url(uuid.v4())
+            test.is_nil(missing)
+            test.not_nil(missing_err)
+            local id = record("s3://app:objects/document.pdf")
+            cloud.fail_sign(true)
+            local url, err = api.delivery_url(id)
+            cloud.fail_sign(false)
+            test.is_nil(url)
+            test.eq(cloud.failed, err)
+        end)
+    end)
+end)}

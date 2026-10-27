@@ -371,6 +371,8 @@ entries:
     imports:
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_response: kickside.uploads.api:upload_response
+      upload_tokens: kickside.uploads.persist:upload_tokens
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_type: kickside.uploads:upload_type
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo

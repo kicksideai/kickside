@@ -885,3 +885,45 @@ entries:
     imports:
       api: app:signed_upload_list_fixture
       http: app:upload_http_probe
+
+  - name: delivery_url_test
+    kind: function.lua
+    source: file://delivery_url_test.lua
+    method: run
+    meta: {type: test, suite: upload_delivery}
+    modules: [uuid, time]
+    imports:
+      test: wippy.test:test
+      uploads: app:delivery_uploads
+      records: kickside.uploads.persist:upload_record_repo
+      tokens: kickside.uploads.persist:upload_tokens
+      cloud: app:packed_cloud_fake
+
+  - name: delivery_uploads
+    kind: library.lua
+    meta:
+      comment: Library for handling file uploads to configured storage backends.
+    source: file://fixtures/uploads.lua
+    modules:
+    - uuid
+    - time
+    - hash
+    - logger
+    imports:
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_read_model: kickside.uploads.persist:upload_read_model
+      upload_type: kickside.uploads:upload_type
+      artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      uploads_events: kickside.uploads.persist:uploads_events
+      types: kickside.uploads:types
+      pipeline_lib: kickside.uploads:pipeline
+      upload_mime: kickside.uploads:uploads_mime
+      uploads_tokens: kickside.uploads:uploads_tokens
+      uploads_presigned: kickside.uploads:uploads_presigned
+      execution_identity: kickside.execution:execution_identity
+      jobs: kickside.core.jobs:jobs
+      process_worker: kickside.uploads.service:process_worker
+      upload_response: app:signed_upload_response
+      upload_tokens: kickside.uploads.persist:upload_tokens

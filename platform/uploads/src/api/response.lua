@@ -43,11 +43,11 @@ local function raw_path(upload_id: string, artifact_id: string?): string
     return path .. "/raw"
 end
 
-local function delivery_url(storage_id: string, storage_path: string, raw_url: string): (string?, any?)
+local function delivery_url(storage_id: string, storage_path: string, raw_url: string?, options: any?): (string?, any?)
     local storage, storage_err = resources.get_storage(storage_id)
     if storage_err then return nil, storage_err end
     if storage.signed_url then
-        local url, _, sign_err = storage:signed_url(storage_path)
+        local url, _, sign_err = storage:signed_url(storage_path, options)
         if sign_err then return nil, sign_err end
         if url then return url, nil end
     end
