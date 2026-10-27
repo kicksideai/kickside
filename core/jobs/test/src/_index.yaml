@@ -19,23 +19,6 @@ entries:
       jobs: kickside.core.jobs:jobs
       job_fixture: app:job_fixture
 
-  - name: public_seams_delayed_test
-    kind: function.lua
-    meta: { type: test, suite: jobs_public_seams_delayed }
-    source: file://public_seams_test.lua
-    method: run
-    modules: [sql, uuid, process, time, security, funcs]
-    imports:
-      channel: app:public_seams_delayed_channel
-      test: wippy.test:test
-      jobs: kickside.core.jobs:jobs
-      job_fixture: app:job_fixture
-
-  - name: public_seams_delayed_channel
-    kind: library.lua
-    source: file://public_seams_delayed_channel.lua
-    modules: [channel]
-
   - name: public_seams_probe
     kind: function.lua
     source: file://public_seams_probe.lua
@@ -2393,7 +2376,6 @@ entries:
   - name: scope_native_source
     kind: library.lua
     source: file://scope_native_source.lua
-    modules: [funcs]
     imports:
       sql: app:scope_native_sql
       config: app:scope_native_config
@@ -2401,7 +2383,7 @@ entries:
       lifecycle_cancel: app:scope_native_lifecycle_cancel
       lifecycle_enqueue: app:scope_native_lifecycle_enqueue
       lease_status: app:scope_native_lease_status
-      wake: app:scope_native_wake
+      wake: app:wake_native_source
       slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:scope_native_clock
       completion: app:scope_native_completion
@@ -2449,12 +2431,6 @@ entries:
       fixture: app:scope_native_fixture
       lifecycle_types: kickside.core.jobs.persist:lifecycle
 
-  - name: scope_native_wake
-    kind: library.lua
-    source: file://scope_native_dependency.lua
-    imports:
-      fixture: app:scope_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: scope_native_clock
     kind: library.lua
@@ -2608,11 +2584,9 @@ entries:
 
   - name: transaction_native_wake
     kind: library.lua
-    source: file://transaction_native_dependency.lua
-    modules: [sql]
+    source: file://facade_wake_dependency.lua
     imports:
       fixture: app:transaction_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: transaction_native_clock
     kind: library.lua
@@ -2681,7 +2655,6 @@ entries:
   - name: transaction_native_source
     kind: library.lua
     source: file://transaction_native_source.lua
-    modules: [funcs]
     imports:
       sql: app:transaction_native_sql
       config: app:transaction_native_config
@@ -2778,11 +2751,9 @@ entries:
 
   - name: health_native_wake
     kind: library.lua
-    source: file://health_native_dependency.lua
-    modules: [sql]
+    source: file://facade_wake_dependency.lua
     imports:
       fixture: app:health_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: health_native_clock
     kind: library.lua
@@ -2851,7 +2822,6 @@ entries:
   - name: health_native_source
     kind: library.lua
     source: file://health_native_source.lua
-    modules: [funcs]
     imports:
       sql: app:health_native_sql
       config: app:health_native_config
@@ -3834,33 +3804,6 @@ entries:
       test: wippy.test:test
       boundary: kickside.core.jobs.persist:sql_boundary
 
-  - name: notification_native_jobs
-    kind: library.lua
-    meta:
-      comment: "Durable jobs API: enqueue, post-commit nudge, slot purge, fenced cancellation, lease validation, completion, listing, retention, and health."
-    source: file://scope_native_source.lua
-    modules:
-      - sql
-      - logger
-    imports:
-      config: kickside.core.jobs:config
-      lifecycle: kickside.core.jobs.persist:lifecycle
-      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
-      lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
-      lease_status: kickside.core.jobs.persist:lease_status
-      wake: app:wake_native_source
-      slot_purge: kickside.core.jobs.persist:slot_purge
-      clock: kickside.core.jobs:clock
-      completion: kickside.core.jobs.persist:completion
-      retention: kickside.core.jobs.persist:retention
-      thread_teardown: kickside.core.jobs.persist:thread_teardown
-      api_scope: kickside.core.jobs.api:scope
-      lease_release: kickside.core.jobs:lease_release
-      claim: kickside.core.jobs.persist:claim
-      error_envelope: kickside.contract:error_envelope
-      committed_error: kickside.contract:committed_error
-      sql_boundary: kickside.core.jobs.persist:sql_boundary
-
   - name: notification_native_test
     kind: function.lua
     meta: { type: test, suite: jobs_notification_native }
@@ -3868,6 +3811,6 @@ entries:
     method: run
     imports:
       test: wippy.test:test
-      jobs: app:notification_native_jobs
+      jobs: app:scope_native_source
       wake: app:wake_native_source
       fixture: app:wake_native_fixture

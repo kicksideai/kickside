@@ -16,6 +16,11 @@ local worker_child = require("worker_child")
 local worker_heartbeat = require("worker_heartbeat")
 local jobs = require("jobs")
 
+type ServiceProbe = {
+    db: sql.DB?, table_created: boolean?, original_version: registry.Version?,
+    pending: table[]?, service_version: registry.Version?,
+}
+
 local function make_thread(db: sql.DB): string
     local id = uuid.v7()
     sql.builder.insert("kickside_thread"):set_map({ id = id, thread_class = "test", component_id = id }):run_with(db):exec()
@@ -54,7 +59,7 @@ local function define_tests()
     -- Every acquired resource is registered before the next setup assertion.
     -- Attempt all cleanup steps before reporting an error, including releasing
     -- the keeper connection when registry restoration or SQL cleanup fails.
-    local function cleanup_service_probe(started: table)
+    local function cleanup_service_probe(started: ServiceProbe)
         local failures: { string } = {}
         local function attempt(fn)
             local ok, err = pcall(fn)
@@ -112,8 +117,8 @@ local function define_tests()
     end
 
     test.describe("jobs.worker loop lifecycle", function()
-        local cleanup_version: any? = nil
-        local probe: table? = nil
+        local cleanup_version: registry.Version? = nil
+        local probe: ServiceProbe? = nil
         local function cleanup_probe()
             local started = probe or {}
             probe = nil
@@ -432,10 +437,10 @@ local function define_tests()
             return table.concat(out, ";")
         end
 
-        local active: table? = nil
+        local active: ServiceProbe? = nil
 
         -- Register cleanup before creating the table or parking pending jobs.
-        local function prepare_upgrade_service(): table
+        local function prepare_upgrade_service(): ServiceProbe
             local db, db_err = sql.get("app:db")
             if not db then error("test database unavailable: " .. tostring(db_err)) end
             active = { db = db }
@@ -451,11 +456,11 @@ local function define_tests()
             local original_version, original_err = registry.current_version()
             test.is_nil(original_err)
             active.original_version = original_version
-            return active :: table
+            return active :: ServiceProbe
         end
 
         -- Run the module's worker code with pre-existing pending jobs parked.
-        local function start_upgrade_service(): table
+        local function start_upgrade_service(): ServiceProbe
             local started = prepare_upgrade_service()
             local snapshot, snapshot_err = registry.snapshot()
             test.is_nil(snapshot_err)
@@ -478,14 +483,14 @@ local function define_tests()
             return started
         end
 
-        local function stop_upgrade_service(started: table): ()
+        local function stop_upgrade_service(started: ServiceProbe): ()
             if active ~= started then return end
             active = nil
             cleanup_service_probe(started)
         end
 
         test.after_each(function()
-            if active then stop_upgrade_service(active :: table) end
+            if active then stop_upgrade_service(active :: ServiceProbe) end
         end)
 
         test.it("cleans partial upgrade setup and restores parked jobs before the next run", function()
@@ -494,7 +499,9 @@ local function define_tests()
                 owner_locator = { kind = "test", id = "loop_test" },
                 key = uuid.v7(), job_type = "app:live_job_probe", immutable_payload = {} })
             test.is_nil(enqueue_err)
-            local scheduled_at = job_row(db, queued.id).scheduled_at
+            local id = queued and queued.id
+            if type(id) ~= "string" or id == "" then error("probe enqueue did not return a job id") end
+            local scheduled_at = job_row(db, id).scheduled_at
             db:release()
             test.not_nil(scheduled_at)
 
@@ -504,17 +511,17 @@ local function define_tests()
             end)
             test.is_false(ok)
             test.is_true(string.find(tostring(setup_err), "forced partial upgrade setup failure", 1, true) ~= nil)
-            local started = active :: table
+            local started = active :: ServiceProbe
             stop_upgrade_service(started)
             stop_upgrade_service(started)
             local check = open_db()
-            local restored_at = job_row(check, queued.id).scheduled_at
+            local restored_at = job_row(check, id).scheduled_at
             check:release()
             test.eq(restored_at, scheduled_at)
 
             local next_run = prepare_upgrade_service()
             stop_upgrade_service(next_run)
-            local _, cancel_err = jobs.cancel(queued.id)
+            local _, cancel_err = jobs.cancel(id)
             test.is_nil(cancel_err)
         end)
 
