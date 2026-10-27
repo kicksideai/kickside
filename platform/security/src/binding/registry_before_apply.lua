@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local trigger_reconcile = require("trigger_reconcile")
 
 -- Keeper calls before_apply observers with the planned registry operations of a
