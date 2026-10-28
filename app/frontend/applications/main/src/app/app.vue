@@ -469,7 +469,7 @@ onUnmounted(() => {
   position: relative;
   height: 100dvh;
   max-height: 100dvh;
-  overflow: hidden;
+  overflow: clip;
   --wippy-layout-splitter-bg: var(--p-content-border-color);
   --wippy-layout-splitter-hover-bg: var(--p-primary-color);
   --wippy-layout-splitter-hit-size: 14px;
@@ -489,5 +489,8 @@ onUnmounted(() => {
 }
 .managed-surface {
   overflow: hidden;
+}
+.managed-app-shell:has(.right-flap-container) .managed-surface {
+  padding-inline-end: 48px;
 }
 </style>
