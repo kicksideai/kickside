@@ -7,13 +7,13 @@ modules:
     - name: kickside/component
       version: 0.0.0
     - name: kickside/contract
-      version: 0.0.0
+      version: 0.3.1
     - name: kickside/core
       version: 0.0.0
     - name: kickside/execution
       version: 0.0.0
     - name: kickside/jobs
-      version: 0.0.0
+      version: 0.1.61
     - name: kickside/realtime
       version: 0.0.0
     - name: kickside/realtime-dispatch
@@ -37,5 +37,5 @@ modules:
       version: 0.4.23
       hash: 94878c4eeabac3337b795087d37ef6fe894458e26a5c7a1dd61012b43fcae366
     - name: wippy/views
-      version: 0.5.12
-      hash: a90c888b6150f1b5fc89f35191a39dce5f644cbdbf069224b22ad524860ce9a0
+      version: 0.5.13
+      hash: b98c1733dfd5aafa628d81a5f587f2a47f78246d55e60ae3d4fd8d2b90853488

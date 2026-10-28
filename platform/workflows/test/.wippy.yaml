@@ -1,9 +1,11 @@
 version: "1.0"
 # The admission suites drive the maintenance checker's ticks themselves; the
 # resident maintenance service would claim the same due runs under them.
+# The automation scope suite claims its own Jobs round.
 override:
   "app:db:file": "${sqlite_path}"
   "kickside.workflows.runs:maintenance.service:lifecycle.auto_start": false
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
 workspace:
   replacements:
     kickside/realtime-dispatch: ../../../core/realtime-dispatch
