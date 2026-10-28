@@ -134,6 +134,7 @@
 @media (min-width: 760px) { .km-2col { grid-template-columns: 1fr 1fr; } }
 .km-loading { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--p-text-muted-color); padding: 24px 0; }
 .km-center { justify-content: center; }
+.km-initial-loading { flex: 1; }
 
 .km .km-btn { display: inline-flex; align-items: center; gap: 6px; }
 
