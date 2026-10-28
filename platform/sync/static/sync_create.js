@@ -1,104 +1,110 @@
-import { u as b, a as P, b as w, e as g, _ as I, W as A, s as M, P as N } from "./styles-ENbzq8HT.js";
-import { computed as f, watch as h, defineComponent as T, ref as c, onMounted as x, openBlock as m, createElementBlock as d, withModifiers as O, toDisplayString as V, createCommentVNode as R, createVNode as j, unref as B } from "vue";
-import { loadByTagName as _, api as F, define as L } from "@wippy-fe/proxy";
+import { u as w, a as P, b as I, e as _, _ as A, W as M, s as N, P as T } from "./styles-BnOsQQko.js";
+import { computed as v, watch as h, defineComponent as x, ref as c, onMounted as O, openBlock as d, createElementBlock as f, withModifiers as V, toDisplayString as R, createCommentVNode as j, createVNode as B, unref as F } from "vue";
+import { loadByTagName as k, api as L, define as U } from "@wippy-fe/proxy";
 import "@iconify/vue";
-function k(n) {
-  if (n == null || n === "") return {};
-  const e = typeof n == "string" ? JSON.parse(n) : n;
-  if (!e || typeof e != "object" || Array.isArray(e)) throw new Error("Install input must be an object.");
-  return e;
+function m(s) {
+  if (s == null || s === "") return {};
+  const t = typeof s == "string" ? JSON.parse(s) : s;
+  if (!t || typeof t != "object" || Array.isArray(t)) throw new Error("Install input must be an object.");
+  return t;
 }
-function U(n) {
-  return f(() => {
-    const e = n.value;
-    return e ? (typeof e.parentId == "string" ? e.parentId : "").trim() : "";
+function z(s) {
+  return v(() => {
+    const t = s.value;
+    return t ? (typeof t.parentId == "string" ? t.parentId : "").trim() : "";
   });
 }
-function z(n, e, r) {
+function G(s, t, i) {
   h(
-    () => n.value?.submitNonce,
-    (s, l) => {
-      s == null || s === "" || s === l || r?.value || e();
+    () => s.value?.submitNonce,
+    (n, l) => {
+      n == null || n === "" || n === l || i?.value || t();
     }
   );
 }
-const G = {
+const H = {
   key: 0,
   class: "kx-2p-r-note"
-}, H = {
+}, K = {
   key: 0,
   class: "kx-alert",
   role: "alert"
-}, K = "kickside.sync:sync", W = "wc-schema-form", D = "kickside-transform-assist", J = /* @__PURE__ */ T({
+}, W = "kickside.sync:sync", D = "wc-schema-form", J = "kickside-transform-assist", Y = /* @__PURE__ */ x({
   __name: "SyncCreate",
-  setup(n) {
-    const e = b(), r = P(), s = w({ managed: !1 }), l = c(!0), u = c(!1);
-    h(u, (o) => r("submit-state", { saving: o }));
-    const i = c(""), p = c(""), v = c(!1);
-    z(e, y, u);
-    const C = f(() => e.value.typeId || K), E = U(e), S = f(() => e.value.generationPolicy);
+  setup(s) {
+    const t = w(), i = P(), n = I({ managed: !1 }), l = c(!0), u = c(!1);
+    h(u, (r) => i("submit-state", { saving: r }));
+    const a = c(""), p = c(""), g = c(!1);
+    G(t, y, u);
+    const C = v(() => t.value.typeId || W), E = z(t), S = v(() => t.value.generationPolicy);
     async function y() {
       if (l.value || u.value) return;
       if (p.value) {
-        r("automation-installed", { success: !1, error: p.value });
+        i("automation-installed", { success: !1, error: p.value });
         return;
       }
-      const o = s.validationError.value;
-      if (o) {
-        i.value = o, r("automation-installed", { success: !1, error: o });
+      const r = n.validationError.value;
+      if (r) {
+        a.value = r, i("automation-installed", { success: !1, error: r });
         return;
       }
-      u.value = !0, i.value = "";
+      u.value = !0, a.value = "";
       try {
-        const { data: t } = await F.post(
+        const { data: e } = await L.post(
           "/api/v1/automations",
-          { type: C.value, parent_id: E.value || void 0, input: s.currentInput() }
+          { type: C.value, parent_id: E.value || void 0, input: n.currentInput() }
         );
-        if (!t?.success) {
-          const a = typeof t?.error == "string" ? t.error : t?.error?.message;
-          throw new Error(a || "install failed");
+        if (!e?.success) {
+          const o = typeof e?.error == "string" ? e.error : e?.error?.message;
+          throw new Error(o || "install failed");
         }
-        r("automation-installed", { success: !0, id: t.id }), r("created", { id: t.id });
-      } catch (t) {
-        const a = g(t, "install failed");
-        i.value = a, r("automation-installed", { success: !1, error: a });
+        i("automation-installed", { success: !0, id: e.id }), i("created", { id: e.id });
+      } catch (e) {
+        const o = _(e, "install failed");
+        a.value = o, i("automation-installed", { success: !1, error: o });
       } finally {
         u.value = !1;
       }
     }
-    return x(async () => {
+    return O(async () => {
       try {
         await Promise.all([
-          _(W, { timeoutMs: 8e3 }),
-          _(D, { timeoutMs: 8e3 })
+          k(D, { timeoutMs: 8e3 }),
+          k(J, { timeoutMs: 8e3 })
         ]);
-        const o = await s.loadCatalog();
-        if (o) throw new Error(o);
-        const t = k(e.value.input);
-        if (typeof t.sink_port == "string") {
-          if (!s.sinks.value.some((a) => a.id === t.sink_port))
-            throw new Error("The selected destination is unavailable.");
-          s.sinkId.value = t.sink_port, s.sinkConfig.value = k(t.sink_config), v.value = !0;
+        const r = await n.loadCatalog();
+        if (r) throw new Error(r);
+        const e = m(t.value.input);
+        if (typeof e.title == "string" && (n.title.value = e.title), e.trigger !== void 0) {
+          const o = m(e.trigger);
+          if (!n.sources.value.some((b) => b.id === o.source))
+            throw new Error("The selected source is unavailable.");
+          n.triggerSeed.value = o;
         }
-      } catch (o) {
-        p.value = g(o, "Unable to initialize the sync form."), i.value = p.value;
+        if (typeof e.sink_port == "string") {
+          if (!n.sinks.value.some((o) => o.id === e.sink_port))
+            throw new Error("The selected destination is unavailable.");
+          n.sinkId.value = e.sink_port, n.sinkConfig.value = m(e.sink_config), g.value = !0;
+        }
+      } catch (r) {
+        p.value = _(r, "Unable to initialize the sync form."), a.value = p.value;
       } finally {
         l.value = !1;
       }
-    }), (o, t) => l.value ? (m(), d("div", G, "Loading catalog…")) : (m(), d("form", {
+    }), (r, e) => l.value ? (d(), f("div", H, "Loading catalog…")) : (d(), f("form", {
       key: 1,
       class: "kx-flow",
-      onSubmit: O(y, ["prevent"])
+      onSubmit: V(y, ["prevent"])
     }, [
-      i.value ? (m(), d("p", H, V(i.value), 1)) : R("", !0),
-      j(I, {
-        form: B(s),
+      a.value ? (d(), f("p", K, R(a.value), 1)) : j("", !0),
+      B(A, {
+        form: F(n),
         "generation-policy": S.value,
-        "destination-locked": v.value
+        "destination-locked": g.value
       }, null, 8, ["form", "generation-policy", "destination-locked"])
     ], 32));
   }
-}), Y = {
+}), $ = {
   type: "object",
   properties: {
     input: { type: "string" },
@@ -109,17 +115,17 @@ const G = {
     "submit-nonce": { type: "string" }
   }
 };
-class $ extends A {
+class q extends M {
   static get wippyConfig() {
     return {
-      propsSchema: Y,
+      propsSchema: $,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: M
+      inlineCss: N
     };
   }
   static get vueConfig() {
-    return { rootComponent: J, plugins: [N] };
+    return { rootComponent: Y, plugins: [T] };
   }
 }
-L(import.meta.url, $);
+U(import.meta.url, q);
 //# sourceMappingURL=sync_create.js.map
