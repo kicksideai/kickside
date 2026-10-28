@@ -2,7 +2,9 @@
 local http = require("http")
 local security = require("security")
 local api_errors = require("api_errors")
-local projection = require("scope_projection")
+local groups = require("groups")
+local execution = require("execution_identity")
+local group_sets = require("group_sets")
 
 local function handler()
     local res, _, context_err = api_errors.context()
@@ -14,9 +16,16 @@ local function handler()
     if not actor or not security.can("access", "kickside.security.api:projection_status.endpoint") then
         return api_errors.write(res, http.STATUS.FORBIDDEN, api_errors.denied())
     end
-    local status, err = projection.group_set(actor:meta().security_groups)
-    if err then return api_errors.write(res, http.STATUS.INTERNAL_ERROR, err) end
-    return api_errors.respond(res, http.STATUS.OK, status)
+    local selected = actor:meta().security_groups
+    local name, name_err = group_sets.name_for(selected)
+    if not name then return api_errors.write(res, http.STATUS.INTERNAL_ERROR, name_err) end
+    local resolved, resolve_err = groups.resolve(selected)
+    if resolve_err then return api_errors.write(res, http.STATUS.INTERNAL_ERROR, resolve_err) end
+    local scope, scope_err = execution.scope_from_groups(resolved.groups, resolved.policy_ids)
+    if scope_err then
+        return api_errors.write(res, http.STATUS.INTERNAL_ERROR, scope_err)
+    end
+    return api_errors.respond(res, http.STATUS.OK, {scope_name = name, current = scope ~= nil})
 end
 
 return {handler = handler}

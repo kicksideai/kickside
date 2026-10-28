@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.64](https://github.com/kicksideai/kickside/compare/jobs-v0.1.63...jobs-v0.1.64) (2026-10-28)
+
+
+### Features
+
+* **jobs:** public post-commit nudge and slot purge on the facade ([#169](https://github.com/kicksideai/kickside/issues/169)) ([365567e](https://github.com/kicksideai/kickside/commit/365567eccb5bfc5abf03e52c1be1628493c25b24))
+
+## [0.1.63](https://github.com/kicksideai/kickside/compare/jobs-v0.1.62...jobs-v0.1.63) (2026-10-28)
+
+
+### Bug Fixes
+
+* **jobs:** bound rows after database normalization ([38beea4](https://github.com/kicksideai/kickside/commit/38beea43703f3376779bbdefd28cf098bd421eab))
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.1.62](https://github.com/kicksideai/kickside/compare/jobs-v0.1.61...jobs-v0.1.62) (2026-10-25)
 
 

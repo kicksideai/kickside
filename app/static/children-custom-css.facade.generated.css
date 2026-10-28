@@ -5,8 +5,8 @@
    On web-host 1.0.44 custom_css and children_custom_css are delivery-equivalent
    (both injected into the SPA host document AND every WC shadow root). The split is
    organizational: PrimeVue .p-* chrome -> custom_css; WC-internal base rules (border
-   reset, .p-hidden-accessible, dark primary-contrast) -> children_custom_css.
-   Assembled from: 00-hidden-accessible.css, 10-border-reset.css, 15-primary-seed-inheritance.css, 20-dark-contrast.css, 20-focus-ring.css
+   reset, .p-hidden-accessible) -> children_custom_css.
+   Assembled from: 00-hidden-accessible.css, 10-border-reset.css, 15-primary-seed-inheritance.css, 20-focus-ring.css
    ===================================================================== */
 
 /* --- children/00-hidden-accessible.css --- */
@@ -59,23 +59,6 @@
 :host :is(.w-theme-light, .w-theme-dark) {
   --p-primary: inherit;
 }
-
-/* --- children/20-dark-contrast.css --- */
-/* Dark-mode primary on-color. theme-config sets dark --p-primary-contrast-color
-   to --p-surface-900 (dark text) — wrong on a green primary CTA (dark-on-green).
-   Force the light on-color so custom --p-primary-color surfaces stay readable in
-   dark. The paired `:root` / `:host` selectors cover pages and WC shadow hosts.
-   This children CSS is delivered to both, so primary CTAs in the
-   shell chrome and inside every WC stay white-on-primary. No !important needed: this
-   children CSS is injected after theme-config, and its dark selectors match
-   the specificity of theme-config's own dark rule, so source order decides in our
-   favour. Replaces the identical per-module @media dark overrides. */
-@media (prefers-color-scheme: dark) {
-  :root:not(.w-theme-light),
-  :host(:not(.w-theme-light)) { --p-primary-contrast-color: var(--p-surface-0); }
-}
-:root.w-theme-dark,
-:host(.w-theme-dark) { --p-primary-contrast-color: var(--p-surface-0); }
 
 /* --- children/20-focus-ring.css --- */
 /* Focus baseline for plain HTML elements inside a web component shadow root.

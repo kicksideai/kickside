@@ -153,7 +153,7 @@ function M.list(args: any): settings_types.ListResponse
                         -- Per-setting JSON-schema for UI rendering + validation.
                         schema = def.schema,
                         title = def.title, category = def.category, order = def.order,
-                        ui = def.ui, owner = def.owner,
+                        ui = def.ui, owner = def.owner, control = def.control,
                         updated_by = updated_by,
                         updated_at = updated_at,
                         error = rec and rec.error or nil,

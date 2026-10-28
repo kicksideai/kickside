@@ -148,6 +148,16 @@ function M.converge_thread(args: any): (any?, error?)
         return M.ensure_thread(args)
     end
 
+    local declared_class = trim(args.thread_class)
+    if declared_class ~= "" and tostring(found.thread_class) ~= declared_class then
+        local updated, update_err = resource_crud.update({
+            thread_id = component_id,
+            thread_class = declared_class,
+        })
+        if update_err or not updated then return nil, update_err end
+        found = (updated :: { [string]: any }).thread
+    end
+
     local db, db_err = open_db()
     if db_err then return nil, db_err end
     local _db = db :: sql.DB

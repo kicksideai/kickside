@@ -332,6 +332,13 @@ entries:
       actions: contract.call
       effect: deny
 
+  - name: round_direct_scope_policy
+    kind: security.policy
+    policy:
+      resources: app:round_direct_scope_policy
+      actions: access
+      effect: allow
+
   - name: drive_repair
     kind: library.lua
     source: file://drive_repair_source.lua

@@ -18,7 +18,7 @@
   "--wippy-host-splitter-color": "#e4e4e7",
 
   "--p-primary-color": "var(--p-primary-600)",
-  "--p-primary-contrast-color": "#fff",
+  "--p-primary-contrast-color": "var(--p-surface-950)",
   "--p-danger-contrast-color": "#fff",
   "--p-success-contrast-color": "#fff",
   "--p-info-contrast-color": "#fff",
@@ -196,13 +196,13 @@
 
   "--p-button-primary-background": "var(--p-primary-color)",
   "--p-button-primary-border-color": "var(--p-primary-color)",
-  "--p-button-primary-color": "#fff",
+  "--p-button-primary-color": "var(--p-primary-contrast-color)",
   "--p-button-primary-hover-background": "var(--p-primary-hover-color)",
   "--p-button-primary-hover-border-color": "var(--p-primary-hover-color)",
-  "--p-button-primary-hover-color": "#fff",
+  "--p-button-primary-hover-color": "var(--p-primary-contrast-color)",
   "--p-button-primary-active-background": "var(--p-primary-active-color)",
   "--p-button-primary-active-border-color": "var(--p-primary-active-color)",
-  "--p-button-primary-active-color": "#fff",
+  "--p-button-primary-active-color": "var(--p-primary-contrast-color)",
   "--p-button-primary-focus-ring-color": "var(--p-primary-color)",
   "--p-button-primary-focus-ring-shadow": "var(--p-focus-ring-shadow)",
 
@@ -317,7 +317,7 @@
     "--wippy-host-splitter-color": "#1e222c",
     "--wippy-host-layout-bg": "#0c0e12",
 
-    "--p-primary-contrast-color": "#fff",
+    "--p-primary-contrast-color": "var(--p-surface-950)",
     "--p-danger-contrast-color": "#fff",
     "--p-success-contrast-color": "#fff",
     "--p-info-contrast-color": "#fff",

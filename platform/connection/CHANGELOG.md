@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/kicksideai/kickside/compare/connection-v0.5.1...connection-v0.5.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.5.1](https://github.com/kicksideai/kickside/compare/connection-v0.5.0...connection-v0.5.1) (2026-10-23)
 
 

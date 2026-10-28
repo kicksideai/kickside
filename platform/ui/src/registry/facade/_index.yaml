@@ -10,6 +10,7 @@ entries:
     modules: [contract, registry, json, fs]
     imports:
       theming_helpers: wippy.facade:theming_helpers
+      ui_types: kickside.ui:types
     security:
       actor:
         id: kickside.ui:facade_resolver

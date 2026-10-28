@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.70](https://github.com/kicksideai/kickside/compare/models-v0.1.69...models-v0.1.70) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.1.69](https://github.com/kicksideai/kickside/compare/models-v0.1.68...models-v0.1.69) (2026-10-22)
 
 

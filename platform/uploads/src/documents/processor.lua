@@ -202,10 +202,11 @@ local function process(params: any): any
         error("file too large after read: " .. tostring(#bytes) .. " bytes")
     end
 
-    -- extract_images is a convert OPTION (second arg), not part of the request.
+    -- Convert options are the second argument. Page markers are hidden comments
+    -- that let readers cite the PDF page or PPTX slide a passage comes from.
     local document, convert_err = doc2md.convert(
         { bytes = bytes },
-        { extract_images = extract_images_enabled(params) }
+        { extract_images = extract_images_enabled(params), page_markers = true }
     )
     if convert_err ~= nil then
         error("document conversion failed: " .. tostring(convert_err))

@@ -47,7 +47,11 @@ entries:
     meta: {private: true, service_only: true}
     policy:
       actions: [funcs.call, security.groups.compose]
-      resources: [kickside.security.binding:classify_membership_effect]
+      # Existing session consumers keep using this bundle when group projection
+      # delegates to Security's source-scope resolver.
+      resources:
+        - kickside.security.binding:classify_membership_effect
+        - kickside.security.runtime:resolve_groups
       effect: allow
   - name: users_runtime_read
     kind: security.policy

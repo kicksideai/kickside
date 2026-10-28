@@ -9,6 +9,8 @@ local M = {}
 type SettingValue = any
 type JsonSchema = any
 
+type ValueControl = { tag: string, props: { [string]: any }? }
+
 type Definition = {
     namespace: string,
     key: string,
@@ -29,6 +31,7 @@ type Definition = {
     category: string?,
     order: number?,
     ui: string?,
+    control: ValueControl?,
     owner: string?,
 }
 
@@ -75,6 +78,7 @@ type SettingListRow = {
     category: string?,
     order: number?,
     ui: string?,
+    control: ValueControl?,
     owner: string?,
 }
 

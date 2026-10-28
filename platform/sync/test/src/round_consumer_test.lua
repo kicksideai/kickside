@@ -362,6 +362,33 @@ local function define_tests(section: string)
                 test.eq(unsafe_failed.prepared_key, delivery_key("empty-unsafe"))
             end)
 
+            test.it("preserves effectful transform failures without caching a null result", function()
+                local out, err = deliver({ item("transform-error", { directive = "transform_error" }) },
+                    declaration("app.fixture:round_record", func_transform(shared)))
+                test.is_nil(err, tostring(err))
+                local failed = by_key(out.failed_items)[delivery_key("transform-error")]
+                test.not_nil(failed, json.encode(out))
+                test.is_true(failed.error.retriable)
+                test.is_true(string.find(failed.error.message, "fixture transform unavailable", 1, true) ~= nil,
+                    json.encode(failed))
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#writes(identity("transform-error")), 0)
+            end)
+
+            test.it("preserves permanent transform errors without preparing or writing", function()
+                local transform = func_transform(shared)
+                transform["function"] = ""
+                local out, err = deliver({ item("invalid-skip", {}) },
+                    declaration("app.fixture:round_record", transform))
+                test.is_nil(err, tostring(err))
+                local failed = by_key(out.failed_items)[delivery_key("invalid-skip")]
+                test.not_nil(failed, json.encode(out))
+                test.is_false(failed.error.retriable)
+                test.eq(failed.error.code, "missing_function")
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#writes(identity("invalid-skip")), 0)
+            end)
+
             test.it("uses one record normalization rule regardless of a legacy flag", function()
                 local config = declaration("app.fixture:round_record", { kind = "expr", expr = "payload.flag" })
                 config.legacy_record = true
@@ -426,6 +453,22 @@ local function define_tests(section: string)
                     end
                 end)
             end
+
+            test.it("retains a legacy null preparation as a visible failure without rerunning its transform", function()
+                local config = declaration("app.fixture:round_record", func_transform(shared))
+                local first, err = deliver({ item("legacy-null", { directive = "flaky" }) }, config)
+                test.is_nil(err, tostring(err))
+                test.is_true(by_key(first.failed_items)[delivery_key("legacy-null")].error.retriable)
+                exec("UPDATE kickside_automation_prepared SET prepared_json='null' WHERE automation_id=$1", { automation_id })
+                local writes_before = #writes(identity("legacy-null"))
+                local second = deliver({ item("legacy-null", { directive = "flaky" }) }, config)
+                local failed = by_key(second.failed_items)[delivery_key("legacy-null")]
+                test.not_nil(failed, json.encode(second))
+                test.is_false(failed.error.retriable)
+                test.eq(failed.error.code, "missing_transform_result")
+                test.eq(transform_calls("legacy-null"), 1)
+                test.eq(#writes(identity("legacy-null")), writes_before)
+            end)
 
             test.it("persists a replay-unsafe transform once and reuses it when the write is retried", function()
                 local config = declaration("app.fixture:round_record", func_transform(shared))

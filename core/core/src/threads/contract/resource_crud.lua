@@ -68,6 +68,12 @@ function M.update(args: any): (any?, error?)
     thread, write_err = M.finish_mutation(_db, thread, write_err, "update thread", "thread_update_result_missing")
     if write_err then return nil, write_err end
 
+    if params.has_thread_class then
+        local _, marker_err = threads_thread_crud.ensure_thread_type(
+            tostring((thread :: table).id), tostring((thread :: table).thread_class))
+        if marker_err then return nil, committed_error.new(marker_err) end
+    end
+
     local emit_err = emit_update(tostring((thread :: table).id), "kickside.threads:thread.updated")
     if emit_err then return nil, committed_error.new(emit_err) end
     return { thread_id = args.thread_id, thread = thread }, nil

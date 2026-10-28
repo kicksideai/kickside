@@ -247,7 +247,8 @@ function user_groups_repo.get_user_with_groups(identifier)
         return nil, err
     end
     local user, err = find_user(db, identifier, normalized, {
-        "user_id", "email", "full_name", "password_hash", "status", "auth_generation", "created_at", "updated_at", user_repo_support.DELEGATION_COLUMN
+        "user_id", "email", "full_name", "password_hash", "status", "auth_generation", "created_at", "updated_at", user_repo_support.DELEGATION_COLUMN,
+        user_repo_support.BOT_ACCOUNT_PREDICATE .. " AS bot_account"
     })
 
     if err then

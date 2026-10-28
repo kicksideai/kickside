@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/users-v0.2.9...users-v0.2.11) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+* **users:** preserve deferred sharing after role consolidation ([102c926](https://github.com/kicksideai/kickside/commit/102c926b2bea879ab25cbf540c364bb7579e7394))
+* **users:** preserve deferred sharing identities after role consolidation ([1ec9d29](https://github.com/kicksideai/kickside/commit/1ec9d293ac22a9f07311ca3c8413cff376852e97))
+* **users:** retain live ACL aliases without mint-time defaults ([488a15b](https://github.com/kicksideai/kickside/commit/488a15b31993452eb4b0a6aafd2de5122f1e2763))
+
+## [0.2.9](https://github.com/kicksideai/kickside/compare/users-v0.2.8...users-v0.2.9) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+* **users:** map live authority to Runtime policies ([2dc0120](https://github.com/kicksideai/kickside/commit/2dc01208793ea8b3779a87b0497b06e70d1d00c2))
+* **users:** omit configured bootstrap passwords from runtime logs ([9bf7a4f](https://github.com/kicksideai/kickside/commit/9bf7a4f34d9d5e8c66888f86fc6dfd9be6dec9c7))
+* **users:** preserve saved login scope metadata during validation ([d7cc51e](https://github.com/kicksideai/kickside/commit/d7cc51e9573b9c6b1d39fcb7780e5b614d336b2e))
+* **users:** preserve session projection resolver access ([#176](https://github.com/kicksideai/kickside/issues/176)) ([6a391ab](https://github.com/kicksideai/kickside/commit/6a391ab8abc3be5c9905f56484a3e2fac50e2d79))
+* **users:** require released source-scope implementations ([a2d5271](https://github.com/kicksideai/kickside/commit/a2d52713ec37a6580dfc56da353532d57659670c))
+* **users:** resolve live source-policy authority through Security ([e7b1fb1](https://github.com/kicksideai/kickside/commit/e7b1fb19655bcca882e71b523c229ac1223d2216))
+
 ## [0.2.8](https://github.com/kicksideai/kickside/compare/users-v0.2.7...users-v0.2.8) (2026-10-22)
 
 

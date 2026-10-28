@@ -89,7 +89,7 @@ function upload_query_repo.get(uuid)
     end
 
     if #uploads == 0 then
-        return nil, "Upload not found"
+        return nil, errors.new({ kind = errors.NOT_FOUND, message = "Upload not found" })
     end
 
     local upload = uploads[1]

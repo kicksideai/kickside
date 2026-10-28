@@ -19,6 +19,7 @@
 --                                  transform's declared resources
 
 local expr = require("expr")
+local failure_classification = require("failure_classification")
 local apply = require("transform_apply")
 local strategies = require("transform_strategies")
 local strategy_reference = require("strategy_reference")
@@ -166,12 +167,12 @@ function M.compute(request: Map): (Map?, any)
     local answer, request_err = apply.apply({ strategy = plan.strategy, config = plan.transform, item = strategy_item(item),
         authorization = plan.authorization })
     if request_err ~= nil or not answer then
-        return nil, { kind = errors.INVALID, retriable = false, message = "transform: " .. tostring(request_err) }
+        return nil, failure_classification.native({ kind = errors.INVALID, retriable = false, message = "transform: " .. tostring(request_err) })
     end
     local a = answer :: Map
     if type(a.error) == "table" then
         local e = a.error :: Map
-        return nil, { kind = e.kind, code = e.code, retriable = e.retriable == true, message = "transform: " .. tostring(e.message) }
+        return nil, failure_classification.native({ kind = e.kind, code = e.code, retriable = e.retriable == true, message = "transform: " .. tostring(e.message) })
     end
     return { present = a.present == true, value = a.value, skip = a.skip }, nil
 end

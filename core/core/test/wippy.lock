@@ -11,7 +11,7 @@ modules:
     - name: kickside/execution
       version: 0.0.0
     - name: kickside/jobs
-      version: 0.0.0
+      version: 0.1.64
     - name: kickside/realtime
       version: 0.0.0
     - name: kickside/realtime-dispatch
@@ -20,8 +20,8 @@ modules:
       version: 0.3.18
       hash: c7e71b358539b450b49b55e725f60f2dac8218e1c596cf3a473ce71e36b10a9b
     - name: wippy/migration
-      version: 0.3.25
-      hash: ba9cc3761c8b85bd0d629b833ea3daffda88fe69bc5ec04de66890564eaf3313
+      version: 0.3.26
+      hash: cf4848ad3f8ba8d31d944b2f3a7274bc2b7cf2888dd80f0db63b2c71a85f89c1
     - name: wippy/relay
       version: 0.3.17
       hash: 3bc0461104725386eb3cb7ebaf7c3edc5896c134a4cc7d69f136609a21a5a2ac

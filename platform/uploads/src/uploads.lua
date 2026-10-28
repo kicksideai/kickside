@@ -392,7 +392,7 @@ end
 function upload_lib.retry_upload(uuid)
     local upload, err = upload_query_repo.get(uuid)
     if err then
-        if err == "Upload not found" then
+        if errors.is(err, errors.NOT_FOUND) then
             return nil, failure("upload not found", errors.NOT_FOUND, "subject")
         end
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")
@@ -419,7 +419,7 @@ end
 function upload_lib.delete_upload(uuid)
     local upload, err = upload_query_repo.get(uuid)
     if err then
-        if err == "Upload not found" then
+        if errors.is(err, errors.NOT_FOUND) then
             return nil, failure("upload not found", errors.NOT_FOUND, "subject")
         end
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")

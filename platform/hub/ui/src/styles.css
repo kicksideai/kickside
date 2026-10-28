@@ -25,18 +25,18 @@
    app button look via --p-* tokens. */
 .km-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 7px 13px; border: 1px solid var(--p-primary-color); border-radius: 8px;
+  padding: 7px 13px; border: 1px solid var(--p-primary-700); border-radius: 8px;
   font: inherit; font-size: 13px; font-weight: 700;
   font-family: 'Outfit', system-ui, sans-serif; letter-spacing: -.005em;
   line-height: 1.2; white-space: nowrap; cursor: pointer;
-  background: var(--p-primary-color); color: var(--p-primary-contrast-color);
+  background: var(--p-primary-700); color: var(--p-primary-contrast-color);
   transition: background .2s, color .2s, border-color .2s, transform .15s;
 }
 .km-btn:disabled { opacity: .55; cursor: default; }
 .km-btn:not(:disabled):hover { transform: translateY(-1px); }
 .km-btn:not(:disabled):active { transform: translateY(0); }
 .km-btn:not(.km-btn-text):not(.km-btn-outlined):not(.km-btn-secondary):not(.km-btn-danger):hover {
-  background: var(--p-primary-hover-color); border-color: var(--p-primary-hover-color);
+  background: var(--p-primary-800); border-color: var(--p-primary-800);
 }
 .km-btn-secondary { background: color-mix(in srgb, var(--p-text-color) 6%, var(--p-content-background)); border-color: var(--p-content-border-color); color: var(--p-text-color); }
 .km-btn-secondary:not(:disabled):hover { background: color-mix(in srgb, var(--p-text-color) 11%, var(--p-content-background)); }
