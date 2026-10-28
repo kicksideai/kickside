@@ -39,7 +39,7 @@
      under — no floating white gap above an edge-to-edge engine surface. */
   border-bottom: 1px solid var(--p-content-border-color);
 }
-.kx-bar-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.kx-bar-l { display: flex; align-items: center; gap: 12px; min-width: 0; max-width: 100%; }
 .kx-bar-r { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .kx-count { font-size: 12.5px; color: var(--p-text-muted-color); display: inline-flex; align-items: center; gap: 5px; }
 .kx-head-title { font-size: 17px; font-weight: 700; color: var(--p-text-color); margin: 0; }
@@ -47,11 +47,13 @@
 .kx-title {
   /* Shorter surface title that truncates rather than wrapping. */
   font-size: 15px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .kx-back {
+  flex: none;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--p-content-border-color);
   background: transparent; color: var(--p-text-color); font: inherit; font-size: 12.5px; cursor: pointer;
@@ -207,6 +209,9 @@
 .kx-cat-empty { font-size: 12.5px; color: var(--p-text-muted-color); padding: 4px 2px; }
 
 @media (max-width: 720px) {
+  .kx-bar-l { width: 100%; flex-wrap: wrap; }
+  .kx-bar-l .kx-title { flex: 1; }
+  .kx-bar-l .kx-header-stats { flex-basis: 100%; order: 1; }
   .kx-2p { grid-template-columns: 1fr; }
   .kx-2p-l { border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
 }
