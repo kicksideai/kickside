@@ -147,7 +147,7 @@ entries:
     meta: { type: test, suite: uploads }
     source: file://shared_upload_access_test.lua
     method: run
-    modules: [uuid, security, funcs, sql, json, fs]
+    modules: [uuid, security, funcs, contract, sql, json, fs]
     imports:
       test: wippy.test:test
       provision: kickside.core.threads:provision
@@ -391,6 +391,8 @@ entries:
       value: app:db
     - name: kickside.uploads:storage_id
       value: app:uploads
+    - name: kickside.uploads:storage_adapter
+      value: app.upload_errors:storage_adapter
     - name: kickside.uploads:env_storage
       value: app:env_storage
     - name: kickside.uploads:api_router

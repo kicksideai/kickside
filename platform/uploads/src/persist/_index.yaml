@@ -79,6 +79,7 @@ entries:
     source: file://upload_query_repo.lua
     modules: [sql]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       uploads_resources: kickside.uploads.binding:uploads_resources
       persisted_json: kickside.contract:persisted_json
 

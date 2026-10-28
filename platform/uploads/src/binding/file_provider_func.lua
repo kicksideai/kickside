@@ -1,3 +1,4 @@
+local binding_errors = require("binding_errors")
 local upload_query_repo = require("upload_query_repo")
 local upload_response = require("upload_response")
 
@@ -12,7 +13,10 @@ function M.get_info(args)
     if type(file_uuid) ~= "string" or file_uuid == "" then
         return nil
     end
-    local upload = upload_query_repo.get(file_uuid)
+    local upload, err = upload_query_repo.get(file_uuid)
+    if err and not errors.is(err, errors.NOT_FOUND) then
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_lookup_failed")
+    end
     if type(upload) ~= "table" then
         return nil
     end

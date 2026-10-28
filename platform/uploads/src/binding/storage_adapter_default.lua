@@ -10,7 +10,8 @@ local M = {}
 local SIGNED_URL_EXPIRATION = 15 * 60
 
 local function invalid(message: string): any
-    return errors.new({ message = message, kind = errors.INVALID, retryable = false })
+    return errors.new({ message = message, kind = errors.INVALID, retryable = false,
+        details = {code = "invalid_storage_operation"} })
 end
 
 local function cloud_open(storage: any, key: string, volume: any, mode: string?): (any?, any?)
@@ -67,7 +68,9 @@ function M.get(storage_id: string, _db_id: string, _staging_id: string, _legacy_
         -- Remove after wippyai/runtime#1018 returns acquisition errors.
         local ok, storage, err = pcall(cloudstorage.get, location.authority)
         if not ok then
-            return nil, nil, nil, errors.new({message = tostring(storage), kind = errors.PERMISSION_DENIED, retryable = false})
+            if type(storage) == "userdata" then return nil, nil, nil, storage end
+            return nil, nil, nil, errors.new({message = tostring(storage), kind = errors.PERMISSION_DENIED, retryable = false,
+                details = {code = "storage_access_denied"}})
         end
         return storage, location.key, location.scheme, err
     end

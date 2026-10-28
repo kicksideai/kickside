@@ -2,7 +2,8 @@
 local M = {}
 
 local function invalid(message: string): any
-    return errors.new({ message = message, kind = errors.INVALID, retryable = false })
+    return errors.new({ message = message, kind = errors.INVALID, retryable = false,
+        details = {code = "invalid_storage_path"} })
 end
 
 function M.parse(storage_id: string, path: any): (any?, any?)

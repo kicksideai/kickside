@@ -2,6 +2,7 @@ local test = require("test")
 local uuid = require("uuid")
 local security = require("security")
 local funcs = require("funcs")
+local contract = require("contract")
 local provision = require("provision")
 local records = require("records")
 local types = require("types")
@@ -13,6 +14,14 @@ local artifacts_repo = require("artifacts")
 local function run_as(id, target, upload_id, args)
     local actor = security.new_actor(id, { security_groups = { "app:uploads_test" } })
     local scope = security.named_scope("wippy.security:process")
+    if target == "kickside.uploads.binding:get_info_func" or target == "kickside.uploads.binding:get_content_func" then
+        local provider, open_err = assert(contract.get("kickside.contract:content_provider"))
+            :with_actor(actor):with_scope(scope):with_context({upload_id = upload_id})
+            :open("kickside.uploads:content_provider")
+        if open_err then return nil, open_err end
+        if target == "kickside.uploads.binding:get_info_func" then return provider:get_info(args or {}) end
+        return provider:get_content(args or {})
+    end
     return funcs.new():with_actor(actor):with_scope(scope):with_context({ upload_id = upload_id }):call(target, args or {})
 end
 
