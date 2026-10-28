@@ -241,26 +241,17 @@ useHostVisibilityRefresh(async () => {
 
 <template>
   <div class="ku">
-    <header class="kx-head">
-      <div class="kx-head-icon"><Icon icon="tabler:users" aria-hidden="true" /></div>
-      <div class="kx-head-text">
-        <h1 class="kx-title">Users</h1>
-        <p class="kx-head-sub">Manage user and bot accounts and their roles.</p>
-      </div>
-      <div class="kx-head-actions">
-        <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
-          <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
-        </Button>
-      </div>
-    </header>
     <Tabs class="ku-tabs" :value="accountTab" @update:value="selectTab($event as 'users' | 'bots')">
-      <TabList aria-label="Account type">
+      <TabList :pt="{ tabList: { 'aria-label': 'Account type' } }">
         <Tab value="users" aria-controls="users-accounts">All users</Tab>
         <Tab value="bots" aria-controls="users-bots">Bots</Tab>
       </TabList>
     </Tabs>
     <div class="ku-bar">
       <span class="ku-count">{{ users.length }} {{ accountTab === 'bots' ? 'bot' : 'user' }}{{ users.length !== 1 ? 's' : '' }}</span>
+      <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
+        <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
+      </Button>
     </div>
 
     <div v-if="error && !editorOpen" role="alert" class="kx-err">{{ error }}</div>
@@ -375,6 +366,7 @@ useHostVisibilityRefresh(async () => {
               </label>
             </div>
           </template>
+          <p class="ku-role-help">Permissions from all assigned roles apply. For restricted access, create a custom role in System → Security and assign it instead of Member.</p>
           <div v-if="error" role="alert" class="kx-err inline">{{ error }}</div>
           <div v-if="rolesError" class="kx-err inline">{{ rolesError }}</div>
         </form>

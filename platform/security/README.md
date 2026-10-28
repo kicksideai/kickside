@@ -47,6 +47,17 @@ commit regenerated tracked assets with the source.
 
 Compose module policies in **System → Security → Roles**, then assign the resulting roles in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Act-as grants** permits selecting an execution principal; it grants no access to that principal’s resources.
 
+New accounts receive **Member**, which provides standard access to installed
+applications. To give someone less access, create a **New role**, add only the
+permissions they need, and assign that role **instead of Member** in Users.
+Permissions from other assigned roles still apply. **Add permissions** on a
+default role affects everyone assigned that role and cannot remove its original
+permissions.
+
+The picker lists permissions published by installed modules. A module permission
+may cover several pages and APIs; it is not a per-page visibility switch. Access to
+an individual component also depends on that component’s sharing rules.
+
 ## Reference
 
 - [Module reference](src/README.md)

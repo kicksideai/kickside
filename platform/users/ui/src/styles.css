@@ -1,7 +1,6 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
-@import "@kickside/ui-kit/kx-head.css";
 @import "@kickside/ui-kit/kx-modal-head.css";
 @import "@kickside/ui-kit/kx-state.css";
 
@@ -21,6 +20,7 @@
    it renders correctly inside the shadow DOM of any Wippy host (no SPA tokens),
    which is also what makes the users implementation swappable per deployment. */
 .ku {
+  --system-surface-gutter: var(--kickside-system-surface-gutter, 24px);
   font-family: inherit;
   color: var(--p-text-color);
   background: var(--p-content-background);
@@ -34,18 +34,18 @@
 .ku-bar {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; width: 100%;
-  margin: 0; padding: 16px 24px 10px; flex-wrap: wrap;
+  margin: 0; padding: 16px var(--system-surface-gutter) 10px; flex-wrap: wrap;
 }
 .ku-count { font-size: 12.5px; color: var(--p-text-muted-color); }
 
-.ku-tabs { padding: 0 24px; }
+.ku-tabs { padding: 0 var(--system-surface-gutter); flex: none; }
 
 .ku-body {
   flex: 1 0 auto;
   min-height: 0;
   width: 100%;
   margin: 0;
-  padding: 6px 24px 20px;
+  padding: 6px var(--system-surface-gutter) 20px;
 }
 .ku-list { border: 1px solid var(--p-content-border-color); border-radius: 14px; overflow-x: auto; }
 .ku-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -69,6 +69,7 @@
 .ku-actions { display: flex; justify-content: flex-end; gap: 6px; }
 
 .ku-form { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.ku-role-help { margin: 0; font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); }
 .ku-field { display: flex; flex-direction: column; gap: 6px; }
 .ku-label { font-size: 12px; font-weight: 600; color: var(--p-text-muted-color); }
 .ku-input {

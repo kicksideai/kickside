@@ -207,7 +207,7 @@ function shortId(id: string): string {
 
 <template>
   <div class="ks">
-    <Tabs :value="activeTab" @update:value="selectTab">
+    <Tabs class="ks-tabs" :value="activeTab" @update:value="selectTab">
       <TabList :pt="{ tabList: { 'aria-label': 'Security administration' } }">
         <Tab value="scopes">Roles</Tab>
         <Tab value="delegations" data-tab="delegations">Act-as grants</Tab>
@@ -263,7 +263,7 @@ function shortId(id: string): string {
           <div class="ks-builder-title">
             <Icon :icon="isOverlay ? 'tabler:stack-2' : 'tabler:shield-lock'" aria-hidden="true" />
             <span>{{ isOverlay ? `Extend ${draft.label || shortId(draft.target)}` : (draft.isNew ? 'New role' : draft.label || draft.slug) }}</span>
-            <Pill v-if="isOverlay" severity="warn">overlay</Pill>
+            <Pill v-if="isOverlay" severity="warn">Additional permissions</Pill>
           </div>
           <div class="ks-builder-acts">
             <Button v-if="!draft.isNew && !isOverlay && selectedScope" variant="soft" small icon="tabler:copy" :disabled="saving" @click="copyScope(selectedScope)">Duplicate</Button>
@@ -274,18 +274,19 @@ function shortId(id: string): string {
 
         <div v-if="isOverlay" class="ks-overlay-warn">
           <Icon icon="tabler:alert-triangle" aria-hidden="true" />
-          <span>Adding permissions to this role grants them to <b>every user with the {{ shortId(draft.target) }} role</b>. The original permissions stay in place.</span>
+          <span>Adding permissions grants them to <b>everyone assigned {{ selectedScope?.label || shortId(draft.target) }}</b>. Original permissions cannot be removed here. To restrict access, create a new role with only the permissions needed.</span>
         </div>
+        <p v-else class="ks-view-note">Choose the permissions this role grants, then assign it in System → Users. To restrict a Member, assign this role instead of Member; other assigned roles may still grant access.</p>
 
         <div class="ks-fields">
-          <FormField v-if="!isOverlay" label="Slug" :help="draft.isNew ? 'Lowercase id; cannot change later.' : undefined">
+          <FormField v-if="!isOverlay" label="Role ID" :help="draft.isNew ? 'Unique identifier; cannot change later.' : undefined">
             <TextInput v-model="draft.slug" :disabled="!draft.isNew" placeholder="reviewer" />
             <span v-if="slugError" class="ks-field-err">{{ slugError }}</span>
           </FormField>
-          <FormField v-else label="Extends">
-            <TextInput :model-value="draft.target" disabled />
+          <FormField v-else label="Role">
+            <TextInput :model-value="selectedScope?.label || draft.target" disabled />
           </FormField>
-          <FormField label="Label">
+          <FormField label="Name">
             <TextInput v-model="draft.label" placeholder="Reviewer" />
           </FormField>
           <FormField label="Description">
@@ -296,21 +297,21 @@ function shortId(id: string): string {
         <div class="ks-panes" :class="{ three: isOverlay }">
           <section v-if="isOverlay" class="ks-pane locked-pane">
             <header class="ks-pane-head">
-              <span>Base policies</span>
+              <span>Original permissions</span>
               <span class="ks-pane-sub">{{ draft.base.length }} · locked</span>
             </header>
             <div class="ks-pane-body">
               <PolicyCard v-for="p in draft.base" :key="p.id" :policy="p" mode="locked" />
-              <div v-if="!draft.base.length" class="ks-pane-empty">No base policies.</div>
+              <div v-if="!draft.base.length" class="ks-pane-empty">No original permissions.</div>
             </div>
           </section>
 
           <section class="ks-pane">
             <header class="ks-pane-head">
-              <span>Available policies</span>
-              <span class="ks-pane-sub">public only · drag or click +</span>
+              <span>Available permissions</span>
+              <span class="ks-pane-sub">Click + to add</span>
             </header>
-            <div class="ks-pane-search"><SearchField v-model="paletteSearch" placeholder="Search policies…" /></div>
+            <div class="ks-pane-search"><SearchField v-model="paletteSearch" placeholder="Search permissions…" /></div>
             <div class="ks-pane-body">
               <PolicyCard
                 v-for="p in palettePolicies"
@@ -319,14 +320,14 @@ function shortId(id: string): string {
                 mode="palette"
                 @add="addPolicy(p.id)"
               />
-              <div v-if="!palettePolicies.length" class="ks-pane-empty">No matching public policies.</div>
+              <div v-if="!palettePolicies.length" class="ks-pane-empty">No matching permissions.</div>
             </div>
           </section>
 
           <section class="ks-pane drop" @dragover.prevent @drop="onPaneDrop">
             <header class="ks-pane-head">
               <span>{{ isOverlay ? 'Added by you' : 'In this role' }}</span>
-              <span class="ks-pane-sub">{{ draft.policies.length }} {{ draft.policies.length === 1 ? 'policy' : 'policies' }}</span>
+              <span class="ks-pane-sub">{{ draft.policies.length }} {{ draft.policies.length === 1 ? 'permission' : 'permissions' }}</span>
             </header>
             <div class="ks-pane-body">
               <div
@@ -339,7 +340,7 @@ function shortId(id: string): string {
               </div>
               <div v-if="!draft.policies.length" class="ks-drop-hint">
                 <Icon icon="tabler:drag-drop" aria-hidden="true" />
-                <span>{{ isOverlay ? 'Drag permissions here to extend this role.' : 'Drag permissions here to grant them to this role.' }}</span>
+                <span>Use + on an available permission, or drag it here.</span>
               </div>
             </div>
           </section>
@@ -352,39 +353,28 @@ function shortId(id: string): string {
           <div class="ks-builder-title">
             <Icon icon="tabler:shield" aria-hidden="true" />
             <span>{{ readOnlyScope.label || shortId(readOnlyScope.id) }}</span>
-                      </div>
+          </div>
           <div class="ks-builder-acts">
             <Button variant="primary" small icon="tabler:stack-2" @click="openOverlay(readOnlyScope)">{{ readOnlyScope.overlay_slug ? 'Edit extension' : 'Add permissions' }}</Button>
             <Button variant="soft" small icon="tabler:copy" @click="copyScope(readOnlyScope)">Copy role</Button>
           </div>
         </div>
         <p class="ks-view-note">
-          Included with the application. You can add permissions or copy it to create your own role.
-
+          Included with the application. Adding permissions affects everyone with this role. For restricted access, create a new role with only the permissions needed and assign it in System → Users instead of this role. Other assigned roles may still grant access.
         </p>
         <div class="ks-pane-body ks-view-list">
-          <div v-for="p in readOnlyScope.policies" :key="p.id" class="ks-view-pol">
-            <span class="ks-view-pol-title">{{ p.title || shortId(p.id) }}</span>
-            <span v-if="p.effect" class="ks-eff" :class="p.effect">{{ p.effect }}</span>
-            <div v-if="p.comment" class="ks-view-pol-comment">{{ p.comment }}</div>
-            <div class="ks-view-pol-id">{{ p.id }}</div>
-          </div>
+          <PolicyCard v-for="p in readOnlyScope.policies" :key="p.id" :policy="p" mode="locked" />
           <div v-if="!readOnlyScope.policies.length" class="ks-pane-empty">No permissions in this role.</div>
         </div>
 
         <div v-if="readOnlyScope.overlay_policies && readOnlyScope.overlay_policies.length" class="ks-ext-block">
           <div class="ks-ext-head">
             <Icon icon="tabler:stack-2" aria-hidden="true" />
-            <span>Extensions</span>
-            <Pill severity="warn">overlay · {{ readOnlyScope.overlay_policies.length }}</Pill>
+            <span>Additional permissions</span>
+            <Pill severity="warn">{{ readOnlyScope.overlay_policies.length }}</Pill>
           </div>
           <div class="ks-pane-body ks-view-list">
-            <div v-for="p in readOnlyScope.overlay_policies" :key="p.id" class="ks-view-pol">
-              <span class="ks-view-pol-title">{{ p.title || shortId(p.id) }}</span>
-              <span v-if="p.effect" class="ks-eff" :class="p.effect">{{ p.effect }}</span>
-              <div v-if="p.comment" class="ks-view-pol-comment">{{ p.comment }}</div>
-              <div class="ks-view-pol-id">{{ p.id }}</div>
-            </div>
+            <PolicyCard v-for="p in readOnlyScope.overlay_policies" :key="p.id" :policy="p" mode="locked" />
           </div>
         </div>
       </div>
@@ -393,7 +383,7 @@ function shortId(id: string): string {
         v-else
         icon="tabler:shield-lock"
         title="Roles"
-        hint="Choose a role to view its permissions, or create a role for your team."
+        hint="Choose a role to view its permissions, or create one with the permissions your team needs. Assign roles in System → Users."
         cta="New role"
         cta-icon="tabler:plus"
         @cta="newScope"
