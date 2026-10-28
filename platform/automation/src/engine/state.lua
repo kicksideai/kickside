@@ -30,6 +30,19 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local offset, offset_err = pagination_int(opts.offset, "offset")
         if offset_err then return nil, offset_err end
 
+        local source_query = opts.source_port ~= nil or opts.source_thread_id ~= nil or opts.source_filter ~= nil
+        local routes: Map? = nil
+        if source_query then
+            if type(opts.source_port) ~= "string" or opts.source_port == ""
+                or type(opts.source_thread_id) ~= "string" or opts.source_thread_id == ""
+                or (opts.source_filter ~= nil and type(opts.source_filter) ~= "string") then
+                return nil, automation_error("source_port and source_thread_id are required; source_filter must be a string", errors.INVALID)
+            end
+            local route_err: any
+            routes, route_err = P.routes_from_source(opts)
+            if route_err then return nil, route_err end
+        end
+
         local component = dependencies.component :: automation_types.ComponentModule
         local registry = dependencies.registry :: automation_types.RegistryModule
 
@@ -41,6 +54,12 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local owned_ids, owned_err = P.owned_automation_ids()
         if owned_err or not owned_ids then return nil, owned_err end
         if #impl_ids == 0 and #owned_ids == 0 then return {}, nil end
+        if routes then
+            owned_ids = {}
+            for id in pairs(routes) do owned_ids[#owned_ids + 1] = id end
+            if #owned_ids == 0 then return {}, nil end
+            impl_ids = nil
+        end
 
         local parent_id = type(opts.parent_id) == "string" and opts.parent_id ~= "" and opts.parent_id or nil
         -- Install stores one scalar meta.class, so a class filter is an exact
@@ -102,6 +121,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 updated_at   = c.updated_at,
                 access_level = c.access_level or 0,
                 parent_id    = c.parent_id,
+                routes       = routes and routes[c.component_id] or nil,
             }
             local impl_id = c.impl_id
             if type(impl_id) == "string" and impl_id ~= "" then
