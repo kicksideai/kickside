@@ -82,7 +82,8 @@
   },
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "test": "vitest run --environment happy-dom"
   },
   "workspaces": [
     "./.wippy/npm/@*/*"

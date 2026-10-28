@@ -6,6 +6,7 @@ import Tag from 'primevue/tag'
 import { api, host, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import KbDialog from './KbDialog.vue'
+import KnowledgeStats from './KnowledgeStats.vue'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import { useComponentProps, useComponentEvents } from '../constants'
 import { errMsg } from '@widgets/app/errMsg'
@@ -334,10 +335,11 @@ useHostVisibilityRefresh(async () => {
       <div class="kx-bar">
         <div class="kx-bar-l">
           <button class="kx-back" @click="closeDetail()"><Icon icon="tabler:arrow-left" aria-hidden="true" /> Back</button>
-          <h1 class="kx-title">{{ detail.name || '(untitled)' }}</h1>
+          <h1 class="kx-title" :title="detail.name || '(untitled)'">{{ detail.name || '(untitled)' }}</h1>
           <Tag v-if="detail.badge" :severity="badgeSeverity(detail.badge.tone)" class="kx-pill kx-tag-caps">
             <Icon :icon="detail.badge.icon" aria-hidden="true" />{{ detail.badge.label }}
           </Tag>
+          <KnowledgeStats :items="detail.stat_items || []" />
           <span
             v-if="detail.auto_summary || detail.auto_description"
             class="kx-summary"
@@ -397,23 +399,11 @@ useHostVisibilityRefresh(async () => {
         </div>
 
         <template v-else>
-          <!-- When the engine owns the detail (manage_ui_id), it renders its own
-               header/stats/summary, so the wrapper chrome stays out of the way and
-               the engine UI gets the full area. -->
           <template v-if="!detailManageTag">
             <div class="kx-detail-meta">
               <div v-if="detail.description" class="kx-detail-desc">{{ detail.description }}</div>
               <div class="kx-stats">
                 <span v-if="detail.embedding_model" class="kx-stat"><Icon icon="tabler:vector" aria-hidden="true" />{{ detail.embedding_model }}</span>
-                <span
-                  v-for="(s, i) in (detail.stat_items || [])"
-                  :key="i"
-                  class="kx-stat"
-                  :title="`${formatCount(s.value)} ${s.label}`"
-                  :aria-label="`${formatCount(s.value)} ${s.label}`"
-                >
-                  <Icon v-if="s.icon" :icon="s.icon" aria-hidden="true" />{{ formatCount(s.value) }}
-                </span>
               </div>
             </div>
 

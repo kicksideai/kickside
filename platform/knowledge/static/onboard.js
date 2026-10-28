@@ -3,7 +3,7 @@ import { defineComponent as V, ref as k, computed as D, onUnmounted as N, openBl
 import { Icon as p } from "@iconify/vue";
 import { api as w, define as j } from "@wippy-fe/proxy";
 import { a as G, s as H } from "./componentRealtime-Bs_cyDpl.js";
-import { s as J } from "./styles-DqTthkup.js";
+import { s as J } from "./styles-Bn0s9kIq.js";
 const Q = { class: "kn-ob" }, X = {
   key: 0,
   class: "kn-ob-err"
