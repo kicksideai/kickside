@@ -1,62 +1,62 @@
-import { hasInjectionContext as J, inject as w, effectScope as G, ref as v, markRaw as q, createApp as Q, onMounted as U, onUnmounted as X, watch as A, defineComponent as Z, onBeforeUnmount as tt, openBlock as V, createElementBlock as P, createElementVNode as x, nextTick as et } from "vue";
-import { addCollection as st } from "@iconify/vue";
-import { config as N, addIcons as it, on as nt, applyThemeMode as E, host as rt, hostCss as ot, loadCss as at, loadByTagName as lt } from "@wippy-fe/proxy";
+import { hasInjectionContext as G, inject as w, effectScope as q, ref as v, markRaw as Q, createApp as X, onMounted as $, onUnmounted as Z, watch as A, defineComponent as tt, onBeforeUnmount as et, openBlock as V, createElementBlock as P, createElementVNode as N, nextTick as st } from "vue";
+import { addCollection as it } from "@iconify/vue";
+import { config as H, addIcons as nt, on as rt, applyThemeMode as E, host as ot, hostCss as at, loadCss as lt, loadByTagName as ct } from "@wippy-fe/proxy";
 var L = "data-wippy-visible";
-function H(t) {
+function j(t) {
   const s = t.getAttribute(L);
   return s === "true" ? !0 : s === "false" ? !1 : null;
 }
-var ct = Object.defineProperty, ut = (t, s, e) => s in t ? ct(t, s, { enumerable: !0, configurable: !0, writable: !0, value: e }) : t[s] = e, h = (t, s, e) => ut(t, typeof s != "symbol" ? s + "" : s, e), ht = [
+var ut = Object.defineProperty, ht = (t, s, e) => s in t ? ut(t, s, { enumerable: !0, configurable: !0, writable: !0, value: e }) : t[s] = e, h = (t, s, e) => ht(t, typeof s != "symbol" ? s + "" : s, e), pt = [
   "themeConfigUrl",
   "primeVueCssUrl",
   "markdownCssUrl",
   "iframeCssUrl"
-], pt = [
+], dt = [
   ":where([data-wippy-theme-root]).w-theme-light",
   ":where([data-wippy-theme-root]).w-theme-dark"
 ].join(`,
 `);
-function j(t) {
+function U(t) {
   const s = t.startsWith("--") ? t : `--${t}`;
   return /^--[-\w\u0080-\uFFFF]+$/.test(s) ? s : null;
 }
-function dt(...t) {
+function ft(...t) {
   const s = /* @__PURE__ */ new Set();
   for (const e of t)
     if (e)
       for (const [i, n] of Object.entries(e)) {
         if ((i === "@light" || i === "@dark") && n && typeof n == "object") {
           for (const [o, l] of Object.entries(n)) {
-            const u = typeof l == "string" ? j(o) : null;
+            const u = typeof l == "string" ? U(o) : null;
             u && s.add(u);
           }
           continue;
         }
-        const r = typeof n == "string" ? j(i) : null;
+        const r = typeof n == "string" ? U(i) : null;
         r && s.add(r);
       }
   return [...s].sort();
 }
-function ft(t) {
+function _t(t) {
   if (t.length === 0)
     return "";
   const s = t.map((e) => `  ${e}: inherit;`).join(`
 `);
-  return `${pt} {
+  return `${dt} {
 ${s}
 }`;
 }
-function _t(t, s) {
-  const e = ft(s);
-  e && $(t, e, "@wippy-fe/css-variables-bridge");
-}
 function mt(t, s) {
-  const i = (s ?? ht).map(async (n) => {
-    const r = ot[n];
+  const e = _t(s);
+  e && B(t, e, "@wippy-fe/css-variables-bridge");
+}
+function bt(t, s) {
+  const i = (s ?? pt).map(async (n) => {
+    const r = at[n];
     if (!r)
       return console.warn(`[wippy-fe/webcomponent-core] hostCss key "${n}" is undefined — skipping. Remove it from hostCssKeys if the CSS was removed.`), null;
     try {
-      return await at(r);
+      return await lt(r);
     } catch (o) {
       return console.warn(`[wippy-fe/webcomponent-core] Failed to load hostCss "${n}" (${r}):`, o), null;
     }
@@ -70,11 +70,11 @@ function mt(t, s) {
     }
   });
 }
-function bt(t, s) {
+function vt(t, s) {
   const e = document.createElement("style");
   e.textContent = s, t.appendChild(e);
 }
-function $(t, s, e) {
+function B(t, s, e) {
   if (typeof CSSStyleSheet < "u" && "replaceSync" in CSSStyleSheet.prototype) {
     const n = new CSSStyleSheet();
     n.replaceSync(s), t.adoptedStyleSheets = [...t.adoptedStyleSheets, n];
@@ -83,16 +83,16 @@ function $(t, s, e) {
   const i = document.createElement("style");
   i.setAttribute("role", e), i.textContent = s, t.appendChild(i);
 }
-function vt(t, s) {
-  $(t, s, "@wippy-fe/custom-css");
+function yt(t, s) {
+  B(t, s, "@wippy-fe/custom-css");
 }
-function B(t) {
+function W(t) {
   return t.__wippyHost ?? null;
 }
-function yt(t) {
+function gt(t) {
   return t.replace(/-([a-z])/g, (s, e) => e.toUpperCase());
 }
-function gt(t, s, e) {
+function Ct(t, s, e) {
   switch (e.type) {
     case "string":
       return { value: s };
@@ -121,17 +121,17 @@ function gt(t, s, e) {
 function R(t, s) {
   const e = {}, i = [];
   for (const [n, r] of Object.entries(s.properties)) {
-    const o = t.getAttribute(n), l = yt(n);
+    const o = t.getAttribute(n), l = gt(n);
     if (o === null) {
       r.default !== void 0 && (e[l] = r.default);
       continue;
     }
-    const u = gt(n, o, r);
+    const u = Ct(n, o, r);
     u.error ? i.push(u.error) : e[l] = u.value;
   }
   return { props: e, errors: i };
 }
-var Ct = class {
+var Et = class {
   constructor(t, s) {
     h(this, "_props"), h(this, "_errors"), h(this, "_content"), h(this, "_hostVisibility"), h(this, "_propsListeners", /* @__PURE__ */ new Set()), h(this, "_contentListeners", /* @__PURE__ */ new Set()), h(this, "_hostVisibilityListeners", /* @__PURE__ */ new Set()), h(this, "_disposed", !1), h(this, "_emitToDom"), h(this, "props"), h(this, "events"), h(this, "content"), h(this, "hostVisibility"), this._props = t.props, this._errors = t.errors, this._content = t.content, this._hostVisibility = t.hostVisibility, this._emitToDom = s;
     const e = this;
@@ -223,9 +223,9 @@ var Ct = class {
     };
     return s?.signal?.addEventListener("abort", e, { once: !0 }), e;
   }
-}, Et = class extends HTMLElement {
+}, wt = class extends HTMLElement {
   constructor() {
-    super(), h(this, "_internals"), h(this, "_contentObserver", null), h(this, "_initialized", !1), h(this, "_container", null), h(this, "_reactive", null), h(this, "_lastProps", null), h(this, "_lastErrors", []), h(this, "_lastContent", null), h(this, "_themeUnsub", null), h(this, "_hostVisible", null), this._internals = this.attachInternals(), this._hostVisible = H(this);
+    super(), h(this, "_internals"), h(this, "_contentObserver", null), h(this, "_initialized", !1), h(this, "_container", null), h(this, "_reactive", null), h(this, "_lastProps", null), h(this, "_lastErrors", []), h(this, "_lastContent", null), h(this, "_themeUnsub", null), h(this, "_hostVisible", null), this._internals = this.attachInternals(), this._hostVisible = j(this);
   }
   /**
    * Override to provide the component's configuration.
@@ -268,7 +268,7 @@ var Ct = class {
    * cases can fall back to `import { host } from '@wippy-fe/proxy'`.
    */
   get host() {
-    return B(this);
+    return W(this);
   }
   /**
    * Emit a CustomEvent that bubbles and crosses shadow DOM boundaries.
@@ -312,7 +312,7 @@ var Ct = class {
         t.validateProps && r.errors.push(...t.validateProps(r.props)), e = r.props, i = r.errors, this._lastProps = e, this._lastErrors = i;
       }
       const n = s ? this._lastContent ?? this._extractContent(t.contentTemplate) : null;
-      s && this._lastContent === null && (this._lastContent = n), this._reactive = new Ct(
+      s && this._lastContent === null && (this._lastContent = n), this._reactive = new Et(
         { props: e, errors: i, content: n, hasContent: s, hostVisibility: this._hostVisible },
         this.emitEvent.bind(this)
       );
@@ -328,27 +328,27 @@ var Ct = class {
       if (s)
         i = this._container;
       else {
-        this.onInit(e), t.inlineCss && bt(e, t.inlineCss);
+        this.onInit(e), t.inlineCss && vt(e, t.inlineCss);
         try {
-          const c = N?.theming, d = dt(
+          const c = H?.theming, p = ft(
             c?.global?.cssVariables,
             c?.children?.cssVariables
           );
-          _t(e, d);
+          mt(e, p);
         } catch {
         }
         if (t.customCss !== !1)
           try {
-            const c = N?.theming, d = [c?.global?.customCSS, c?.children?.customCSS].filter(Boolean).join(`
+            const c = H?.theming, p = [c?.global?.customCSS, c?.children?.customCSS].filter(Boolean).join(`
 `);
-            d && vt(e, d);
+            p && yt(e, p);
           } catch {
           }
-        (t.hostCssKeys === void 0 || t.hostCssKeys.length > 0) && mt(e, t.hostCssKeys), i = document.createElement("div"), i.setAttribute("data-wippy-theme-root", "");
+        (t.hostCssKeys === void 0 || t.hostCssKeys.length > 0) && bt(e, t.hostCssKeys), i = document.createElement("div"), i.setAttribute("data-wippy-theme-root", "");
         const u = t.containerClasses ?? [];
-        u.length > 0 && i.classList.add(...u), e.appendChild(i), this._container = i, it(st);
+        u.length > 0 && i.classList.add(...u), e.appendChild(i), this._container = i, nt(it);
       }
-      this._applyTheme(), this._themeUnsub || (this._themeUnsub = nt("@theme", (u) => this._applyTheme(u)));
+      this._applyTheme(), this._themeUnsub || (this._themeUnsub = rt("@theme", (u) => this._applyTheme(u)));
       const { props: n, errors: r } = R(this, t.propsSchema);
       t.validateProps && r.push(...t.validateProps(n));
       const o = n;
@@ -379,7 +379,7 @@ var Ct = class {
    * No-op for an older proxy without `getThemeMode` — `applyThemeMode` clamps
    * `undefined` to 'auto'.
    */
-  _applyTheme(t = rt.getThemeMode?.()) {
+  _applyTheme(t = ot.getThemeMode?.()) {
     E(t, this), this._container && E(t, this._container);
   }
   disconnectedCallback() {
@@ -389,7 +389,7 @@ var Ct = class {
     if (s === e)
       return;
     if (t === L) {
-      const l = this._hostVisible, u = H(this);
+      const l = this._hostVisible, u = j(this);
       if (u === l)
         return;
       this._hostVisible = u, this.isConnected && this._initialized && (this._reactive?.notifyHostVisibility(u, l), this.onHostVisibilityChanged(u, l));
@@ -431,10 +431,10 @@ var Ct = class {
   onContentChanged(t) {
   }
 };
-function wt(t) {
+function St(t) {
   return t.__wippyHostBus ?? null;
 }
-function St(t) {
+function Vt(t) {
   return t.dataset.wippyPanelId ?? null;
 }
 /*!
@@ -442,17 +442,17 @@ function St(t) {
  * (c) 2026 Eduardo San Martin Morote
  * @license MIT
  */
-let W;
-const k = (t) => W = t, Vt = () => J() && w(D) || W, D = (
+let k;
+const D = (t) => k = t, Pt = () => G() && w(M) || k, M = (
   /* istanbul ignore next */
   Symbol()
 );
-function Pt() {
-  const t = G(!0), s = t.run(() => v({}));
+function Rt() {
+  const t = q(!0), s = t.run(() => v({}));
   let e = [], i = [];
-  const n = q({
+  const n = Q({
     install(r) {
-      k(n), n._a = r, r.provide(D, n), r.config.globalProperties.$pinia = n, i.forEach((o) => e.push(o)), i = [];
+      D(n), n._a = r, r.provide(M, n), r.config.globalProperties.$pinia = n, i.forEach((o) => e.push(o)), i = [];
     },
     use(r) {
       return this._a ? e.push(r) : i.push(r), this;
@@ -465,27 +465,27 @@ function Pt() {
   });
   return n;
 }
-var Rt = Object.defineProperty, At = (t, s, e) => s in t ? Rt(t, s, { enumerable: !0, configurable: !0, writable: !0, value: e }) : t[s] = e, g = (t, s, e) => At(t, typeof s != "symbol" ? s + "" : s, e), M = /* @__PURE__ */ Symbol("wippy:emit"), z = /* @__PURE__ */ Symbol("wippy:props"), Lt = /* @__PURE__ */ Symbol("wippy:props_error"), It = /* @__PURE__ */ Symbol("wippy:content"), Ot = /* @__PURE__ */ Symbol("wippy:panel-id"), Tt = /* @__PURE__ */ Symbol("wippy:layout-bus"), xt = /* @__PURE__ */ Symbol("wippy:host"), F = /* @__PURE__ */ Symbol("wippy:host-visibility");
-function Dt() {
-  const t = w(z);
+var At = Object.defineProperty, Lt = (t, s, e) => s in t ? At(t, s, { enumerable: !0, configurable: !0, writable: !0, value: e }) : t[s] = e, g = (t, s, e) => Lt(t, typeof s != "symbol" ? s + "" : s, e), z = /* @__PURE__ */ Symbol("wippy:emit"), F = /* @__PURE__ */ Symbol("wippy:props"), It = /* @__PURE__ */ Symbol("wippy:props_error"), Ot = /* @__PURE__ */ Symbol("wippy:content"), Tt = /* @__PURE__ */ Symbol("wippy:panel-id"), xt = /* @__PURE__ */ Symbol("wippy:layout-bus"), Nt = /* @__PURE__ */ Symbol("wippy:host"), K = /* @__PURE__ */ Symbol("wippy:host-visibility");
+function Mt() {
+  const t = w(F);
   if (!t)
     throw new Error("useProps() must be called inside a WippyVueElement");
   return t;
 }
-function Mt() {
-  const t = w(M);
+function zt() {
+  const t = w(z);
   if (!t)
     throw new Error("useEvents() must be called inside a WippyVueElement");
   return t;
 }
-function Nt() {
-  const t = w(F);
+function Ht() {
+  const t = w(K);
   if (!t)
     throw new Error("useHostVisibility() must be called inside a WippyVueElement");
   return t;
 }
-function zt(t) {
-  const s = Nt();
+function Ft(t) {
+  const s = Ht();
   let e = !1, i = null, n = !1;
   function r() {
     if (i)
@@ -502,14 +502,14 @@ function zt(t) {
     });
     return i = l, l;
   }
-  return U(() => (e = !0, r())), X(() => {
+  return $(() => (e = !0, r())), Z(() => {
     e = !1, n = !1;
   }), A(s, (o, l) => {
     if (e && l === !1 && o === !0)
       return r();
   }), s;
 }
-var Ft = class extends Et {
+var Kt = class extends wt {
   constructor() {
     super(...arguments), g(this, "_vueApp", null), g(this, "_propsRef", v({})), g(this, "_errorsRef", v([])), g(this, "_contentRef", v(null)), g(this, "_hostVisibilityRef", v(null)), g(this, "_bridgeAbort", null);
   }
@@ -525,10 +525,10 @@ var Ft = class extends Et {
     for (const c of i)
       this.emitEvent("invalid", { message: c });
     const l = new AbortController();
-    this._bridgeAbort = l, this.reactive.props.subscribe((c, d) => {
-      this._propsRef.value = c, this._errorsRef.value = [...d];
-      for (const p of d)
-        this.emitEvent("invalid", { message: p });
+    this._bridgeAbort = l, this.reactive.props.subscribe((c, p) => {
+      this._propsRef.value = c, this._errorsRef.value = [...p];
+      for (const d of p)
+        this.emitEvent("invalid", { message: d });
     }, { signal: l.signal }), this.reactive.content && this.reactive.content.subscribe((c) => {
       this._contentRef.value = c;
     }, { signal: l.signal }), this.reactive.hostVisibility.subscribe((c) => {
@@ -537,28 +537,28 @@ var Ft = class extends Et {
     const u = (c) => {
       if (l.signal.aborted)
         return;
-      const d = Vt(), p = Q(c.rootComponent);
-      this._vueApp = p;
-      const b = Pt();
+      const p = Pt(), d = X(c.rootComponent);
+      this._vueApp = d;
+      const b = Rt();
       if (c.piniaPlugins)
         for (const y of c.piniaPlugins)
           b.use(y);
-      if (p.use(b), c.plugins)
+      if (d.use(b), c.plugins)
         for (const y of c.plugins)
-          p.use(y);
-      p.provide(z, this._propsRef), p.provide(Lt, this._errorsRef), p.provide(M, this.emitEvent.bind(this)), p.provide(It, this._contentRef), p.provide(F, this._hostVisibilityRef), p.provide(Ot, St(this)), p.provide(Tt, wt(this)), p.provide(xt, B(this)), c.providers && c.providers(p, this), p.mount(s), d && k(d);
+          d.use(y);
+      d.provide(F, this._propsRef), d.provide(It, this._errorsRef), d.provide(z, this.emitEvent.bind(this)), d.provide(Ot, this._contentRef), d.provide(K, this._hostVisibilityRef), d.provide(Tt, Vt(this)), d.provide(xt, St(this)), d.provide(Nt, W(this)), c.providers && c.providers(d, this), d.mount(s), p && D(p);
     };
     if (o.rootComponent)
       u(o);
     else if (o.lazyConfig) {
       const c = document.createElement("wippy-loading");
-      c.setAttribute("no-bg", ""), s.appendChild(c), o.lazyConfig().then((d) => {
-        l.signal.aborted || (c.remove(), u(d));
-      }).catch((d) => {
+      c.setAttribute("no-bg", ""), s.appendChild(c), o.lazyConfig().then((p) => {
+        l.signal.aborted || (c.remove(), u(p));
+      }).catch((p) => {
         if (l.signal.aborted)
           return;
-        const p = d instanceof Error ? d.message : String(d), b = document.createElement("wippy-error");
-        b.setAttribute("title", "Failed to load"), b.setAttribute("message", p), c.replaceWith(b), this.emitEvent("error", { message: p });
+        const d = p instanceof Error ? p.message : String(p), b = document.createElement("wippy-error");
+        b.setAttribute("title", "Failed to load"), b.setAttribute("message", d), c.replaceWith(b), this.emitEvent("error", { message: d });
       });
     } else
       throw new Error("WippyVueElement vueConfig must provide rootComponent or lazyConfig");
@@ -567,11 +567,11 @@ var Ft = class extends Et {
     this._bridgeAbort?.abort(), this._bridgeAbort = null, this._vueApp && (this._vueApp.unmount(), this._vueApp = null);
   }
 };
-const Ht = { class: "kx-wcmount" }, jt = {
+const jt = { class: "kx-wcmount" }, Ut = {
   key: 0,
   class: "kx-wcmount-fail",
   role: "alert"
-}, Ut = /* @__PURE__ */ Z({
+}, $t = /* @__PURE__ */ tt({
   __name: "WcMount",
   props: {
     tag: {},
@@ -582,7 +582,7 @@ const Ht = { class: "kx-wcmount" }, jt = {
     label: {},
     attrs: {}
   },
-  emits: ["change", "created", "close", "error"],
+  emits: ["change", "select", "created", "close", "error"],
   setup(t, { emit: s }) {
     const e = t, i = s, n = v(null), r = v(!1);
     let o = null, l = 0;
@@ -590,17 +590,20 @@ const Ht = { class: "kx-wcmount" }, jt = {
     function c(a) {
       a.composedPath()[0] === o && (a.stopPropagation(), i("change", a.detail));
     }
-    function d(a) {
+    function p(a) {
       return a.composedPath()[0] !== o ? !1 : (a.stopPropagation(), !0);
     }
-    function p(a) {
-      d(a) && i("created", a.detail);
+    function d(a) {
+      p(a) && i("select", a.detail);
     }
     function b(a) {
-      d(a) && i("close", a.detail);
+      p(a) && i("created", a.detail);
     }
     function y(a) {
-      d(a) && i("error", a.detail);
+      p(a) && i("close", a.detail);
+    }
+    function I(a) {
+      p(a) && i("error", a.detail);
     }
     function C(a) {
       if (typeof a == "string") return a;
@@ -610,7 +613,7 @@ const Ht = { class: "kx-wcmount" }, jt = {
         return null;
       }
     }
-    function I() {
+    function O() {
       if (!o) return;
       const a = C(e.config);
       if (a !== null && o.setAttribute("config", a), e.schema !== void 0 && e.schema !== null) {
@@ -627,42 +630,42 @@ const Ht = { class: "kx-wcmount" }, jt = {
         (!(f in m) || m[f] == null) && (o.removeAttribute(f), u.delete(f));
       for (const [f, _] of Object.entries(m)) {
         if (_ == null) continue;
-        const T = typeof _ == "object" ? C(_) : String(_);
-        T !== null && (o.setAttribute(f, T), u.add(f));
+        const x = typeof _ == "object" ? C(_) : String(_);
+        x !== null && (o.setAttribute(f, x), u.add(f));
       }
     }
-    function O(a = o) {
-      a && (a.removeEventListener("config-changed", c), a.removeEventListener("change", c), a.removeEventListener("created", p), a.removeEventListener("close", b), a.removeEventListener("error", y), a === o && (o = null), u.clear());
+    function T(a = o) {
+      a && (a.removeEventListener("config-changed", c), a.removeEventListener("change", c), a.removeEventListener("select", d), a.removeEventListener("created", b), a.removeEventListener("close", y), a.removeEventListener("error", I), a === o && (o = null), u.clear());
     }
-    async function K(a) {
+    async function Y(a) {
       if (!customElements.get(a))
         try {
-          await lt(a, { timeoutMs: 8e3 });
+          await ct(a, { timeoutMs: 8e3 });
         } catch {
         }
     }
     async function S() {
       const a = ++l, m = n.value, f = e.tag;
-      if (r.value = !1, !!m && (O(), m.innerHTML = "", !!f))
+      if (r.value = !1, !!m && (T(), m.innerHTML = "", !!f))
         try {
-          if (await K(f), a !== l || n.value !== m || e.tag !== f) return;
+          if (await Y(f), a !== l || n.value !== m || e.tag !== f) return;
           const _ = document.createElement(f);
-          _.classList.add("kx-wcmount-surface"), o = _, I(), _.addEventListener("config-changed", c), _.addEventListener("change", c), _.addEventListener("created", p), _.addEventListener("close", b), _.addEventListener("error", y), _.style.display = "block", m.appendChild(_), r.value = !customElements.get(f);
+          _.classList.add("kx-wcmount-surface"), o = _, O(), _.addEventListener("config-changed", c), _.addEventListener("change", c), _.addEventListener("select", d), _.addEventListener("created", b), _.addEventListener("close", y), _.addEventListener("error", I), _.style.display = "block", m.appendChild(_), r.value = !customElements.get(f);
         } catch {
           a === l && (r.value = !0);
         }
     }
-    async function Y() {
-      r.value = !1, await et(), await S();
+    async function J() {
+      r.value = !1, await st(), await S();
     }
-    return U(S), A(() => e.tag, S), A(() => [e.config, e.schema, e.meta, e.provider, e.label, e.attrs], I, { deep: !0 }), tt(() => {
-      l += 1, O();
-    }), (a, m) => (V(), P("div", Ht, [
-      r.value ? (V(), P("div", jt, [
-        m[0] || (m[0] = x("span", null, "This setup panel couldn’t load.", -1)),
-        x("button", {
+    return $(S), A(() => e.tag, S), A(() => [e.config, e.schema, e.meta, e.provider, e.label, e.attrs], O, { deep: !0 }), et(() => {
+      l += 1, T();
+    }), (a, m) => (V(), P("div", jt, [
+      r.value ? (V(), P("div", Ut, [
+        m[0] || (m[0] = N("span", null, "This setup panel couldn’t load.", -1)),
+        N("button", {
           type: "button",
-          onClick: Y
+          onClick: J
         }, "Try again")
       ])) : (V(), P("div", {
         key: 1,
@@ -671,13 +674,13 @@ const Ht = { class: "kx-wcmount" }, jt = {
       }, null, 512))
     ]));
   }
-}), $t = (t, s) => {
+}), Bt = (t, s) => {
   const e = t.__vccOpts || t;
   for (const [i, n] of s)
     e[i] = n;
   return e;
-}, Kt = /* @__PURE__ */ $t(Ut, [["__scopeId", "data-v-3ec70c11"]]);
-function Yt(t, s) {
+}, Yt = /* @__PURE__ */ Bt($t, [["__scopeId", "data-v-3d6a00f1"]]);
+function Jt(t, s) {
   if (t && typeof t == "object") {
     const e = t, i = e.response?.data?.error;
     if (typeof i == "string") return i;
@@ -688,12 +691,12 @@ function Yt(t, s) {
   return s;
 }
 export {
-  Kt as W,
-  $t as _,
-  Mt as a,
-  Ft as b,
-  zt as c,
-  Yt as e,
-  Dt as u
+  Yt as W,
+  Bt as _,
+  zt as a,
+  Kt as b,
+  Ft as c,
+  Jt as e,
+  Mt as u
 };
-//# sourceMappingURL=errMsg-CFwf-kA2.js.map
+//# sourceMappingURL=errMsg-BT807vrI.js.map
