@@ -1,5 +1,6 @@
 local user_groups_repo = require("user_groups_repo")
 local consts = require("consts")
+local bot_accounts = require("bot_accounts_repo")
 
 -- Privileged half of kickside.contract:scope_resolver. The resolver decides
 -- whether a caller may reach a subject; this reads that subject. It runs under
@@ -52,7 +53,10 @@ local function lookup(args: any, credential: boolean?): any
     if authority_err then return failure(subject_id, tostring(authority_err), errors.UNAVAILABLE, "infrastructure", true) end
     local config = consts.get_config()
     local authority_only = type(args) == "table" and args.authority_only == true
-    local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, true, credential == true or not authority_only)
+    -- Deferred user frames keep signed-in sharing identities. An authority-only
+    -- bot lookup carries only its explicitly selected groups.
+    local include_baseline = credential == true or not authority_only or not bot_accounts.is_bot(user)
+    local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, true, include_baseline)
     if scope_err then return failure(subject_id, tostring(scope_err), errors.UNAVAILABLE, "infrastructure", true) end
 
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
