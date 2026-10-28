@@ -43,7 +43,6 @@ entries:
     source: file://get_info_func.lua
     modules: [security, ctx]
     imports:
-      upload_response: kickside.uploads.api:upload_response
       component: kickside.component:component
       types: kickside.uploads:types
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo

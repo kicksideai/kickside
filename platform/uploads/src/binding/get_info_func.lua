@@ -5,7 +5,6 @@ local component = require("component")
 local upload_types = require("types")
 local ctx = require("ctx")
 local metadata_sanitizer = require("metadata_sanitizer")
-local upload_response = require("upload_response")
 
 local function handle()
     local upload_id, err = ctx.get("upload_id")
@@ -60,7 +59,6 @@ local function handle()
         content_type = content_type,
         size = size,
         filename = filename,
-        view_url = upload_response.format_get_upload(upload).view_url,
         created_at = upload.created_at,
         metadata = metadata,
         artifact_id = artifact_id,
