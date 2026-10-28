@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.23](https://github.com/kicksideai/kickside/compare/kickside-v0.2.22...kickside-v0.2.23) (2026-10-28)
+
+
+### Features
+
+* **settings:** support shared picker value controls ([#177](https://github.com/kicksideai/kickside/issues/177)) ([8a883eb](https://github.com/kicksideai/kickside/commit/8a883eb7122f80e24c09c9f0ebce0f3b68cf4ced))
+
+
+### Bug Fixes
+
+* **app:** keep hosted surface controls clear of the chat handle ([#172](https://github.com/kicksideai/kickside/issues/172)) ([2c074da](https://github.com/kicksideai/kickside/commit/2c074da2adc3a97072043647aa800e535a9eec45))
+
 ## [0.2.22](https://github.com/kicksideai/kickside/compare/kickside-v0.2.21...kickside-v0.2.22) (2026-10-28)
 
 

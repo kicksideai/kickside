@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.15](https://github.com/kicksideai/kickside/compare/security-v0.2.14...security-v0.2.15) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** read projection readiness from native authority ([#178](https://github.com/kicksideai/kickside/issues/178)) ([ec25552](https://github.com/kicksideai/kickside/commit/ec255523e03a42f89eccb7871053c29724e7d3a5))
+
 ## [0.2.14](https://github.com/kicksideai/kickside/compare/security-v0.2.13...security-v0.2.14) (2026-10-28)
 
 

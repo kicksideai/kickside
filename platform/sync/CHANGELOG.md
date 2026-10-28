@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.88](https://github.com/kicksideai/kickside/compare/sync-v0.1.87...sync-v0.1.88) (2026-10-28)
+
+
+### Bug Fixes
+
+* **sync:** preserve preparation errors across function calls ([#181](https://github.com/kicksideai/kickside/issues/181)) ([7daae2f](https://github.com/kicksideai/kickside/commit/7daae2ff86cf35f0d20141dbe9f3641af3bba2a6))
+* **sync:** stop automatic retries of missing prepared results ([#182](https://github.com/kicksideai/kickside/issues/182)) ([fcea5be](https://github.com/kicksideai/kickside/commit/fcea5bee10b4be7134962d9301beb7db0ccca5df))
+
 ## [0.1.87](https://github.com/kicksideai/kickside/compare/sync-v0.1.86...sync-v0.1.87) (2026-10-28)
 
 

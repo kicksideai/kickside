@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.52](https://github.com/kicksideai/kickside/compare/widgets-v0.1.51...widgets-v0.1.52) (2026-10-28)
+
+
+### Features
+
+* **settings:** support shared picker value controls ([#177](https://github.com/kicksideai/kickside/issues/177)) ([8a883eb](https://github.com/kicksideai/kickside/commit/8a883eb7122f80e24c09c9f0ebce0f3b68cf4ced))
+
 ## [0.1.51](https://github.com/kicksideai/kickside/compare/widgets-v0.1.50...widgets-v0.1.51) (2026-10-28)
 
 
