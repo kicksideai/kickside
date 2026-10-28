@@ -11,6 +11,8 @@ local session_index = require("session_index")
 local scope_store = require("scope_store")
 local trigger_reconcile = require("trigger_reconcile")
 local funcs = require("funcs")
+local http_client = require("http_client")
+local json = require("json")
 
 local function define_tests()
     test.describe("source policy session authority", function()
@@ -77,6 +79,27 @@ local function define_tests()
                 if policy:id() == source then selected = true end
             end
             test.is_true(selected, "session retains its selected source policy id")
+        end)
+
+        test.it("resolves source scopes through the existing session projection policy", function()
+            local policy = assert(security.policy("kickside.users.security:session_group_set_projection"))
+            local scope = assert(security.new_scope({policy}))
+            local actor = assert(security.new_actor("session-projection-consumer", {}))
+            test.eq(scope:evaluate(actor, "funcs.call", "kickside.users.api:create_user"), "undefined")
+            test.eq(scope:evaluate(actor, "db.get", "app:db"), "undefined")
+            test.eq(scope:evaluate(actor, "security.token.create", "kickside.users.security:tokens"), "undefined")
+
+            local gateway = assert(registry.get("app:gateway"))
+            local port = assert(tostring(gateway.data.addr):match(":(%d+)$"))
+            local response, request_err = http_client.post("http://127.0.0.1:" .. port .. "/api/public/test/session-scope-projection", {
+                headers = {["Content-Type"] = "application/json"},
+                body = json.encode({groups = {group}}),
+            })
+            test.is_nil(request_err)
+            test.eq(response.status_code, 200, response.body)
+            local resolved = assert(json.decode(response.body))
+            test.eq(#resolved.policy_ids, 1)
+            test.eq(resolved.policy_ids[1], source)
         end)
 
         test.it("refreshes an indexed source-policy token after its authority epoch changes", function()

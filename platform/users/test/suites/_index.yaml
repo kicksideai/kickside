@@ -387,6 +387,22 @@ entries:
     imports:
       scope_store: kickside.security.persist:scope_store
 
+  - name: session_scope_projection_probe
+    kind: function.lua
+    source: file://session_scope_projection_probe.lua
+    method: resolve
+    modules: [funcs, http]
+    security:
+      actor: {id: kickside.users:session_scope_projection_probe}
+      policies: [kickside.users.security:session_group_set_projection]
+
+  - name: session_scope_projection_probe.endpoint
+    kind: http.endpoint
+    meta: {router: app:api.public}
+    method: POST
+    path: /test/session-scope-projection
+    func: session_scope_projection_probe
+
   - name: source_scope_epoch_test
     kind: function.lua
     meta:
@@ -397,7 +413,7 @@ entries:
       actor: { id: app:test_runner }
       policies: [app:test_runtime]
     method: run
-    modules: [registry, security, funcs]
+    modules: [registry, security, funcs, http_client, json]
     imports:
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_store: kickside.security.persist:scope_store
