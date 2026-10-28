@@ -47,7 +47,8 @@
       "properties": {
         "route": {
           "type": "string",
-          "description": "Path after the Uploads navigation base: empty for the list, or an upload UUID for its preview."
+          "description": "Path after the Uploads navigation base: empty for the list, or an upload UUID for its preview.",
+          "default": ""
         }
       }
     },
