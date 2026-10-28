@@ -180,7 +180,7 @@ function consts.get_config()
 end
 
 -- Keep the primary scope label and return every group for effective composition.
-function consts.with_baseline_group(config, groups)
+local function membership_groups(config, groups, signed_in)
     local out, seen = {}, {}
     local function append(id)
         if type(id) == "string" and id ~= "" and not seen[id] then
@@ -190,7 +190,7 @@ function consts.with_baseline_group(config, groups)
         return false
     end
     for _, group in ipairs(groups or {}) do append(group) end
-    append(config.baseline_group_id)
+    if signed_in then append(config.baseline_group_id) end
     -- Keep retired role IDs valid in existing record ACLs and sessions. These
     -- are authority aliases, not additional account memberships or roles.
     local changed = true
@@ -204,6 +204,14 @@ function consts.with_baseline_group(config, groups)
         end
     end
     return out
+end
+
+function consts.with_baseline_group(config, groups)
+    return membership_groups(config, groups, true)
+end
+
+function consts.with_role_aliases(config, groups)
+    return membership_groups(config, groups, false)
 end
 
 function consts.derive_scope(config, security_groups)
@@ -225,9 +233,12 @@ function consts.derive_scope(config, security_groups)
     return scope_id, is_admin, scope_groups
 end
 
-function consts.resolve_scope(config, groups, authority_only)
+function consts.resolve_scope(config, groups, authority_only, signed_in)
     local primary, is_admin, effective = consts.derive_scope(config, groups)
-    local resolved, err = funcs.call("kickside.security.runtime:resolve_groups", {groups = authority_only == true and (groups or {}) or effective})
+    if authority_only == true then
+        effective = membership_groups(config, groups, signed_in == true)
+    end
+    local resolved, err = funcs.call("kickside.security.runtime:resolve_groups", {groups = effective})
     if err then return nil, is_admin, effective, err end
     if type(resolved) ~= "table" or type(resolved.groups) ~= "table" or type(resolved.policy_ids) ~= "table" then
         return nil, is_admin, effective, errors.new({kind = errors.UNAVAILABLE, retryable = true,
