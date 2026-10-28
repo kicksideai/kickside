@@ -159,6 +159,16 @@ export function useKnowledgeDetail({ detail, detailUnsub, kbs, engines, engineFo
     try { detailEl?.setAttribute('config', detailConfigJson()) } catch { /* noop */ }
   }
 
+  function backDetail() {
+    const id = detail.value?.id
+    if (!id || !innerRoute.value) { closeDetail(); return }
+    const base = `/knowledge/${encodeURIComponent(id)}`
+    const history = window.parent.history
+    const previous = history.state?.back
+    if (typeof previous === 'string' && (previous === base || previous.startsWith(base + '/'))) history.back()
+    else pushRoute(id)
+  }
+
   function closeDetail(pushUrl = true) {
     detailRequestSeq++
     unmountDetailWc()
@@ -202,7 +212,7 @@ export function useKnowledgeDetail({ detail, detailUnsub, kbs, engines, engineFo
 
   return {
     detailLoading, detailError, detailHost, detailManageTag, detailViews, detailHasViews,
-    detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail,
+    detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail, backDetail,
     applyRoute, pushRoute, unmountDetailWc,
   }
 }
