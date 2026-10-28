@@ -14,6 +14,7 @@ entries:
       policies:
         - kickside.automation.security:round_worker_defer
         - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
     imports:
       round_runner: kickside.automation:round_runner
 
@@ -205,6 +206,7 @@ entries:
       policies:
         - kickside.automation.security:round_worker_defer
         - kickside.automation.security:round_worker_actor
+        - kickside.automation.security:execution_scope
     imports:
       automations_lib: kickside.automation:automation
       execution_identity: kickside.execution:execution_identity
