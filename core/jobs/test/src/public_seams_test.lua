@@ -1,0 +1,227 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local sql = require("sql")
+local uuid = require("uuid")
+local process = require("process")
+local channel = require("channel")
+local time = require("time")
+local security = require("security")
+local funcs = require("funcs")
+local jobs = require("jobs")
+local job_fixture = require("job_fixture")
+
+type SlotParams = {
+    namespace: string, scope: string, key: string,
+    owner_locator: { kind: string, id: string }, job_type: string,
+    immutable_payload: table, slot: boolean, parked: boolean,
+}
+
+local function job_id(row: table?): string
+    local id = row and row.id
+    if type(id) ~= "string" or id == "" then error("expected a job with a nonempty id") end
+    return id
+end
+
+local function constrained(operation: string, params: table?): (integer?, error?)
+    local policy = assert(security.policy("app:public_seams_scope"))
+    local actor = security.new_actor("principal:group:jobs-owner", {})
+    local scope = security.new_scope({ policy })
+    test.eq(scope:evaluate(actor, "funcs.call", "kickside.core.jobs.persist:pool_nudge"), "undefined")
+    test.eq(scope:evaluate(actor, "process.send", "*"), "undefined")
+    local count, err = funcs.new():with_actor(actor):with_scope(scope):call("app:public_seams_probe",
+        { operation = operation, params = params })
+    if count == nil then return nil, err end
+    if type(count) ~= "number" or count < 0 or count == math.huge or count ~= math.floor(count) then
+        error("expected a nonnegative integer operation count")
+    end
+    return math.floor(count) :: integer, err
+end
+
+local function params(scope: string, key: string): SlotParams
+    return { namespace = "public-seams", scope = scope, key = key,
+        owner_locator = { kind = "test", id = scope },
+        job_type = "app:generic_job_target", immutable_payload = {}, slot = true, parked = true }
+end
+
+local function seed_history(job_id: string, owner: string, settled: integer, unsettled: boolean?)
+    local db = assert(sql.get("app:db"))
+    local tx = assert(db:begin())
+    for seq = 1, settled + (unsettled and 1 or 0) do
+        local running = seq > settled
+        local _, err = sql.builder.insert("kickside_job_run"):set_map({
+            id = uuid.v7(), job_id = job_id, owner_kind = "test", owner_id = owner,
+            job_type = "app:generic_job_target", attempt_no = 1, execution_seq = seq,
+            status = running and "running" or "completed", lease_token = "history-fixture",
+            started_at = "2026-10-01T00:00:00Z",
+            finished_at = not running and "2026-10-01T00:00:01Z" or nil,
+        }):run_with(tx):exec()
+        test.is_nil(err)
+    end
+    local _, err = tx:commit()
+    db:release()
+    test.is_nil(err)
+end
+
+local function history_count(job_id: string): integer
+    local db = assert(sql.get("app:db"))
+    local rows, err = db:query("SELECT COUNT(*) AS n FROM kickside_job_run WHERE job_id=$1", { job_id })
+    db:release()
+    test.is_nil(err)
+    return tonumber(rows[1].n) :: integer
+end
+
+local function continuation(input: table, needs_continue: boolean, wait_for: string?, deleted: integer)
+    local removed, err = constrained("purge", input)
+    test.is_nil(removed)
+    test.is_true(errors.is(err, errors.CONFLICT), tostring(err))
+    test.is_true(err:retryable())
+    test.not_nil(err:details())
+    test.is_true(err:details().cleanup_pending)
+    test.eq(err:details().needs_continue, needs_continue)
+    test.eq(err:details().wait_for, wait_for)
+    test.eq(err:details().deleted_runs, deleted)
+end
+
+local function define_tests()
+    test.describe("Jobs public owner operations", function()
+        test.it("nudges the pool after caller-owned enqueue commits without persistence grants", function()
+            local db = assert(sql.get("app:db"))
+            local tx = assert(db:begin())
+            local mailbox = assert(process.listen("kickside.core.jobs:wake", { message = true }))
+            assert(process.registry.register("kickside.core.jobs.worker_pool", nil, process.registry.CONSISTENT))
+            local input = params(uuid.v7(), "transaction")
+            input.parked = false
+            local queued, enqueue_err = jobs.enqueue_tx(tx, tostring(db:type()), input)
+            local before = channel.select({ mailbox:case_receive(), default = true })
+            local _, commit_err = tx:commit()
+            local sent, nudge_err = constrained("nudge")
+            local after = channel.select({ mailbox:case_receive(), time.after("5s"):case_receive() })
+            process.registry.unregister("kickside.core.jobs.worker_pool", process.registry.CONSISTENT)
+            process.unlisten(mailbox)
+            db:release()
+            test.is_nil(enqueue_err)
+            test.not_nil(queued)
+            test.is_nil(commit_err)
+            test.is_true(before.default, "enqueue_tx must leave notification to the transaction owner")
+            test.is_nil(nudge_err, tostring(nudge_err))
+            test.eq(sent, 1)
+            test.eq(after.channel, mailbox)
+            local row, read_err = jobs.get_job(job_id(queued))
+            test.is_nil(read_err)
+            test.eq(row.id, job_id(queued))
+            test.eq(row.status, "pending")
+        end)
+
+        test.it("returns zero when no pool is registered", function()
+            local sent, err = constrained("nudge")
+            test.is_nil(err, tostring(err))
+            test.eq(sent, 0)
+        end)
+
+        test.it("purges only the exact slot identity and is idempotent without persistence grants", function()
+            local owner = uuid.v7()
+            local target = params(owner, "target")
+            local queued = assert(jobs.enqueue(target))
+            local neighbors = { params(owner, "other"), params(uuid.v7(), "target"), params(owner, "target") }
+            neighbors[3].namespace = "another-namespace"
+            local ids: { string } = {}
+            for _, neighbor in ipairs(neighbors) do ids[#ids + 1] = job_id(assert(jobs.enqueue(neighbor))) end
+            local removed, err = constrained("purge", target)
+            test.is_nil(err, tostring(err))
+            test.eq(removed, 1)
+            local missing, read_err = jobs.get_job(job_id(queued))
+            test.is_nil(read_err)
+            test.is_nil(missing)
+            for _, id in ipairs(ids) do
+                local row, neighbor_err = jobs.get_job(id)
+                test.is_nil(neighbor_err)
+                test.not_nil(row)
+            end
+            local again, retry_err = constrained("purge", target)
+            test.is_nil(retry_err)
+            test.eq(again, 0)
+        end)
+
+        test.it("retains the running lease fence and removes settled history", function()
+            local input = params(uuid.v7(), "lease")
+            local queued = assert(jobs.enqueue(input))
+            local db = assert(sql.get("app:db"))
+            local leased, lease_err = job_fixture.lease_own(db, tostring(db:type()), job_id(queued))
+            db:release()
+            test.is_nil(lease_err)
+            test.not_nil(leased)
+            local removed, err = constrained("purge", input)
+            test.is_nil(removed)
+            test.is_true(errors.is(err, errors.CONFLICT), tostring(err))
+            test.is_true(err:retryable())
+            test.is_true(err:details().cleanup_pending)
+            test.eq(err:details().wait_for, "lease_release")
+            local _, complete_err = jobs.complete(job_id(queued),
+                { token = leased.lease_token, execution_seq = tonumber(leased.execution_seq) },
+                { record = { status = "completed" } })
+            test.is_nil(complete_err)
+            local count, purge_err = constrained("purge", input)
+            test.is_nil(purge_err)
+            test.eq(count, 1)
+            test.eq(history_count(job_id(queued)), 0)
+        end)
+
+        test.it("pages settled history through the public owner seam before deleting the slot", function()
+            local input = params(uuid.v7(), "pages")
+            local queued = assert(jobs.enqueue(input))
+            seed_history(job_id(queued), input.scope, 201)
+            for _, remaining in ipairs({ 101, 1 }) do
+                continuation(input, true, nil, 100)
+                test.eq(history_count(job_id(queued)), remaining)
+                local row, err = jobs.get_job(job_id(queued))
+                test.is_nil(err)
+                test.not_nil(row)
+            end
+            local removed, err = constrained("purge", input)
+            test.is_nil(err)
+            test.eq(removed, 1)
+            test.eq(history_count(job_id(queued)), 0)
+            local row, read_err = jobs.get_job(job_id(queued))
+            test.is_nil(read_err)
+            test.is_nil(row)
+        end)
+
+        test.it("waits for unsettled history through the public owner seam before deleting the slot", function()
+            local input = params(uuid.v7(), "settlement")
+            local queued = assert(jobs.enqueue(input))
+            seed_history(job_id(queued), input.scope, 2, true)
+            continuation(input, true, nil, 2)
+            test.eq(history_count(job_id(queued)), 1)
+            continuation(input, false, "run_history_settlement", 0)
+            test.eq(history_count(job_id(queued)), 1)
+            local row, read_err = jobs.get_job(job_id(queued))
+            test.is_nil(read_err)
+            test.not_nil(row)
+            local db = assert(sql.get("app:db"))
+            local _, settle_err = sql.builder.update("kickside_job_run")
+                :set_map({ status = "completed", finished_at = "2026-10-01T00:00:01Z" })
+                :where(sql.builder.eq({ job_id = job_id(queued), status = "running" })):run_with(db):exec()
+            db:release()
+            test.is_nil(settle_err)
+            local removed, err = constrained("purge", input)
+            test.is_nil(err)
+            test.eq(removed, 1)
+            test.eq(history_count(job_id(queued)), 0)
+            local missing, missing_err = jobs.get_job(job_id(queued))
+            test.is_nil(missing_err)
+            test.is_nil(missing)
+        end)
+
+        test.it("preserves purge input validation", function()
+            for _, input in ipairs({ {}, { namespace = "test", scope = "owner" },
+                { namespace = "test", scope = "owner", key = "" } }) do
+                local value, err = constrained("purge", input)
+                test.is_nil(value)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                test.is_false(err:retryable())
+            end
+        end)
+    end)
+end
+
+return { run = test.run_cases(define_tests) }
