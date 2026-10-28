@@ -45,6 +45,13 @@ never the reverse:
 | GET | `/security/policies` | public policy catalog (`?include_private` to include private) |
 | GET | `/security/projection` | current scope resolution status |
 
+`GET /security/projection` resolves the caller's native groups and live selected
+policy IDs through the same resolver and scope constructor as Users. `current`
+reports whether that authority is available without writing registry entries or
+registering a legacy group set. `scope_name` keeps the stable group-set identifier;
+readiness does not require a materialized union scope. Resolution errors propagate
+through the API error response.
+
 Custom-scope writes fence affected users and persist the DB selection. The
 projection service updates their `security.scope` catalog entries on reconcile.
 
