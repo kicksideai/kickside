@@ -1,4 +1,4 @@
-import { defineComponent as q, reactive as te, watch as O, openBlock as d, createElementBlock as p, createElementVNode as m, createVNode as I, unref as h, createTextVNode as re, withDirectives as g, vModelText as A, Fragment as S, renderList as M, toDisplayString as x, vModelSelect as U, vModelCheckbox as ne, createCommentVNode as T, ref as E, useId as oe, computed as V, nextTick as R, withCtx as se, normalizeClass as ie } from "vue";
+import { defineComponent as q, reactive as te, watch as O, openBlock as d, createElementBlock as p, createElementVNode as m, createVNode as I, unref as k, createTextVNode as re, withDirectives as _, vModelText as A, Fragment as S, renderList as M, toDisplayString as $, vModelSelect as U, vModelCheckbox as ne, createCommentVNode as T, ref as E, useId as oe, computed as V, nextTick as R, withCtx as se, normalizeClass as ie } from "vue";
 import { Icon as N } from "@iconify/vue";
 import { f as le } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
 const L = 2, ae = ["once", "interval", "ticker", "cron"], ce = /* @__PURE__ */ new Set(["v", "source", "config", "schedule", "backfill", "filter", "poll", "delivery"]), ue = /* @__PURE__ */ new Set(["expr"]);
@@ -8,7 +8,7 @@ function j(e) {
 function de(e) {
   return typeof e == "number" && Number.isInteger(e) && e > 0;
 }
-function v(e) {
+function g(e) {
   return { error: { code: "invalid_spec", message: e } };
 }
 function K(e, t) {
@@ -30,11 +30,11 @@ function kt(e, t = []) {
     const c = K(r, s), l = s[0];
     let i;
     for (const a of s) {
-      const _ = a.config_schema;
-      if (_) {
+      const x = a.config_schema;
+      if (x) {
         i || (i = {});
-        for (const [$, C] of Object.entries(_))
-          $ in i || (i[$] = C);
+        for (const [h, P] of Object.entries(x))
+          h in i || (i[h] = P);
       }
     }
     o.push({
@@ -144,17 +144,17 @@ function be(e) {
   };
 }
 function he(e) {
-  return e.backfill != null ? v(`History imports a source's existing items — "On a schedule" has no source.`) : e.schedule ? e.poll != null ? v("Poll settings apply only to a collection source.") : { resolution: { mode: "timer", spec: e } } : v("How often is required — pick a schedule.");
+  return e.backfill != null ? g(`History imports a source's existing items — "On a schedule" has no source.`) : e.schedule ? e.poll != null ? g("Poll settings apply only to a collection source.") : { resolution: { mode: "timer", spec: e } } : g("How often is required — pick a schedule.");
 }
 function ke(e) {
   if (e.schedule)
-    return v("This source runs on each incoming event — a schedule does not apply.");
-  if (e.poll != null) return v("Poll settings apply only to a collection source.");
+    return g("This source runs on each incoming event — a schedule does not apply.");
+  if (e.poll != null) return g("Poll settings apply only to a collection source.");
   const t = e.backfill;
-  return t == null ? v("History is required for this source — choose all or only new.") : t === "all" || t === "none" ? { resolution: { mode: "watch", spec: e } } : v('This is an events source — History can be "All" (from the start) or "Only new".');
+  return t == null ? g("History is required for this source — choose all or only new.") : t === "all" || t === "none" ? { resolution: { mode: "watch", spec: e } } : g('This is an events source — History can be "All" (from the start) or "Only new".');
 }
 function ve(e) {
-  return e.backfill == null ? v("History is required for this source — choose all, only new, a number of days, or a start date.") : e.schedule ? { resolution: { mode: "poll", spec: e } } : v("How often is required for this source — pick a cadence.");
+  return e.backfill == null ? g("History is required for this source — choose all, only new, a number of days, or a start date.") : e.schedule ? { resolution: { mode: "poll", spec: e } } : g("How often is required for this source — pick a cadence.");
 }
 function vt(e, t) {
   const n = be(e);
@@ -162,10 +162,10 @@ function vt(e, t) {
   const o = n.spec;
   if (!o.source) return he(o);
   const r = K(o.source, t);
-  return r ? r.hasTrigger ? ke(o) : r.hasPull ? ve(o) : v("This source announces no events and cannot be checked for items.") : { error: { code: "source_not_found", message: "This source is not available." } };
+  return r ? r.hasTrigger ? ke(o) : r.hasPull ? ve(o) : g("This source announces no events and cannot be checked for items.") : { error: { code: "source_not_found", message: "This source is not available." } };
 }
-function P(e) {
-  return e === null || typeof e != "object" ? JSON.stringify(e) ?? "null" : Array.isArray(e) ? `[${e.map(P).join(",")}]` : `{${Object.keys(e).sort().filter((o) => e[o] !== void 0).map((o) => `${JSON.stringify(o)}:${P(e[o])}`).join(",")}}`;
+function w(e) {
+  return e === null || typeof e != "object" ? JSON.stringify(e) ?? "null" : Array.isArray(e) ? `[${e.map(w).join(",")}]` : `{${Object.keys(e).sort().filter((o) => e[o] !== void 0).map((o) => `${JSON.stringify(o)}:${w(e[o])}`).join(",")}}`;
 }
 const J = "ticker", gt = {
   type: "object",
@@ -259,7 +259,7 @@ function B(e, t = "custom") {
     customCron: s?.custom || (s?.preset === "custom" ? o : "")
   };
 }
-function we(e) {
+function Ce(e) {
   if (!e.specificTimes) {
     const s = W(e.periodicEvery);
     return s == null ? null : {
@@ -289,10 +289,10 @@ function xt(e) {
 function _t(e) {
   return !e || e.type === "once" ? null : { type: e.type === "cron" ? "cron" : "interval", expression: e.expression };
 }
-const Pe = {
+const we = {
   class: "kx-tc-field",
   "data-test": "tc-schedule"
-}, Ce = { class: "kx-tc-lbl" }, Ee = { class: "kx-tc-row" }, Oe = ["disabled"], Ie = ["disabled"], Ae = ["value"], Me = { class: "kx-tc-check" }, je = ["disabled"], Ve = {
+}, Pe = { class: "kx-tc-lbl" }, Ee = { class: "kx-tc-row" }, Oe = ["disabled"], Ie = ["disabled"], Ae = ["value"], Me = { class: "kx-tc-check" }, je = ["disabled"], Ve = {
   key: 0,
   class: "kx-tc-specific"
 }, Ne = ["disabled"], Ue = ["value"], De = ["disabled"], He = ["value"], Fe = ["disabled"], Re = ["disabled"], Le = {
@@ -308,17 +308,17 @@ const Pe = {
   emits: ["update:modelValue"],
   setup(e, { emit: t }) {
     const n = e, o = t, r = te(B(n.modelValue, n.defaultPreset));
-    let s = P(n.modelValue);
+    let s = w(n.modelValue);
     O(() => n.modelValue, (l) => {
-      P(l) !== s && (s = P(l), Object.assign(r, B(l, n.defaultPreset)));
+      w(l) !== s && (s = w(l), Object.assign(r, B(l, n.defaultPreset)));
     });
     function c() {
-      const l = we(r);
-      s = P(l), o("update:modelValue", l);
+      const l = Ce(r);
+      s = w(l), o("update:modelValue", l);
     }
-    return (l, i) => (d(), p("div", Pe, [
-      m("span", Ce, [
-        I(h(N), {
+    return (l, i) => (d(), p("div", we, [
+      m("span", Pe, [
+        I(k(N), {
           icon: "tabler:repeat",
           "aria-hidden": "true"
         }),
@@ -326,7 +326,7 @@ const Pe = {
       ]),
       m("label", Ee, [
         i[9] || (i[9] = m("span", null, "Runs every", -1)),
-        g(m("input", {
+        _(m("input", {
           "onUpdate:modelValue": i[0] || (i[0] = (a) => r.periodicEvery = a),
           class: "kx-tc-input kx-tc-num",
           "data-test": "tc-periodic-n",
@@ -344,7 +344,7 @@ const Pe = {
             { number: !0 }
           ]
         ]),
-        g(m("select", {
+        _(m("select", {
           "onUpdate:modelValue": i[1] || (i[1] = (a) => r.periodicUnit = a),
           class: "kx-tc-select kx-tc-unit",
           "data-test": "tc-periodic-unit",
@@ -352,16 +352,16 @@ const Pe = {
           disabled: e.disabled || r.specificTimes,
           onChange: c
         }, [
-          (d(!0), p(S, null, M(h(_e), (a) => (d(), p("option", {
+          (d(!0), p(S, null, M(k(_e), (a) => (d(), p("option", {
             key: a.value,
             value: a.value
-          }, x(a.label), 9, Ae))), 128))
+          }, $(a.label), 9, Ae))), 128))
         ], 40, Ie), [
           [U, r.periodicUnit]
         ])
       ]),
       m("label", Me, [
-        g(m("input", {
+        _(m("input", {
           "onUpdate:modelValue": i[2] || (i[2] = (a) => r.specificTimes = a),
           "data-test": "tc-specific-toggle",
           type: "checkbox",
@@ -373,7 +373,7 @@ const Pe = {
         i[10] || (i[10] = m("span", null, "At specific times", -1))
       ]),
       r.specificTimes ? (d(), p("div", Ve, [
-        g(m("select", {
+        _(m("select", {
           "onUpdate:modelValue": i[3] || (i[3] = (a) => r.cronPreset = a),
           class: "kx-tc-select",
           "data-test": "tc-cron-preset",
@@ -381,15 +381,15 @@ const Pe = {
           disabled: e.disabled,
           onChange: c
         }, [
-          (d(!0), p(S, null, M(h($e), (a) => (d(), p("option", {
+          (d(!0), p(S, null, M(k($e), (a) => (d(), p("option", {
             key: a.value,
             value: a.value
-          }, x(a.label), 9, Ue))), 128))
+          }, $(a.label), 9, Ue))), 128))
         ], 40, Ne), [
           [U, r.cronPreset]
         ]),
         r.cronPreset !== "custom" ? (d(), p(S, { key: 0 }, [
-          r.cronPreset === "weekly" ? g((d(), p("select", {
+          r.cronPreset === "weekly" ? _((d(), p("select", {
             key: 0,
             "onUpdate:modelValue": i[4] || (i[4] = (a) => r.cronWeekday = a),
             class: "kx-tc-select",
@@ -398,14 +398,14 @@ const Pe = {
             disabled: e.disabled,
             onChange: c
           }, [
-            (d(!0), p(S, null, M(h(xe), (a) => (d(), p("option", {
+            (d(!0), p(S, null, M(k(xe), (a) => (d(), p("option", {
               key: a.value,
               value: a.value
-            }, x(a.label), 9, He))), 128))
+            }, $(a.label), 9, He))), 128))
           ], 40, De)), [
             [U, r.cronWeekday]
           ]) : T("", !0),
-          r.cronPreset === "monthly" ? g((d(), p("input", {
+          r.cronPreset === "monthly" ? _((d(), p("input", {
             key: 1,
             "onUpdate:modelValue": i[5] || (i[5] = (a) => r.cronMonthday = a),
             class: "kx-tc-input",
@@ -421,7 +421,7 @@ const Pe = {
               { number: !0 }
             ]
           ]) : T("", !0),
-          g(m("input", {
+          _(m("input", {
             "onUpdate:modelValue": i[6] || (i[6] = (a) => r.cronTime = a),
             class: "kx-tc-input",
             "data-test": "tc-cron-time",
@@ -434,7 +434,7 @@ const Pe = {
           ])
         ], 64)) : (d(), p("label", Le, [
           i[11] || (i[11] = m("span", { class: "kx-tc-lbl" }, "Custom cron expression", -1)),
-          g(m("input", {
+          _(m("input", {
             "onUpdate:modelValue": i[7] || (i[7] = (a) => r.customCron = a),
             class: "kx-tc-input kx-tc-code",
             "data-test": "tc-custom-cron",
@@ -488,16 +488,16 @@ const Pe = {
   },
   emits: ["update:modelValue", "search", "more"],
   setup(e, { emit: t }) {
-    const n = e, o = t, r = E(null), s = E(null), c = E(!1), l = E(""), i = E(0), a = oe(), _ = V(() => {
+    const n = e, o = t, r = E(null), s = E(null), c = E(!1), l = E(""), i = E(0), a = oe(), x = V(() => {
       const u = l.value.trim().toLowerCase(), y = /* @__PURE__ */ new Map();
       for (const f of n.items) {
         if (!n.remote && u && ![f.title, f.subtitle, f.id, f.group].some((ee) => ee?.toLowerCase().includes(u))) continue;
-        const k = f.group || "Other", w = y.get(k);
-        w ? w.push(f) : y.set(k, [f]);
+        const v = f.group || "Other", C = y.get(v);
+        C ? C.push(f) : y.set(v, [f]);
       }
       let b = 0;
-      return [...y.entries()].sort((f, k) => f[0].localeCompare(k[0])).map(([f, k]) => ({ group: f, items: k.map((w) => ({ item: w, index: b++ })) }));
-    }), $ = V(() => _.value.flatMap((u) => u.items)), C = V(() => n.items.find((u) => u.id === n.modelValue)), D = V(() => $.value[i.value] ? `${a}-${i.value}` : void 0);
+      return [...y.entries()].sort((f, v) => f[0].localeCompare(v[0])).map(([f, v]) => ({ group: f, items: v.map((C) => ({ item: C, index: b++ })) }));
+    }), h = V(() => x.value.flatMap((u) => u.items)), P = V(() => n.items.find((u) => u.id === n.modelValue)), D = V(() => h.value[i.value] ? `${a}-${i.value}` : void 0);
     O(l, () => {
       i.value = 0;
     }), O([c, l], ([u, y]) => {
@@ -509,7 +509,7 @@ const Pe = {
         r.value?.focus();
         return;
       }
-      l.value = "", i.value = Math.max(0, $.value.findIndex(({ item: y }) => y.id === n.modelValue)), await R(), s.value?.focus();
+      l.value = "", i.value = Math.max(0, h.value.findIndex(({ item: y }) => y.id === n.modelValue)), await R(), s.value?.focus();
     });
     function H(u) {
       n.disabled || n.loading || (o("update:modelValue", u.id), c.value = !1);
@@ -525,11 +525,11 @@ const Pe = {
         return;
       }
       if (u.key === "Enter") {
-        const f = $.value[i.value];
+        const f = h.value[i.value];
         f && H(f.item);
         return;
       }
-      const y = $.value.length - 1;
+      const y = h.value.length - 1;
       i.value = u.key === "Home" ? 0 : u.key === "End" ? y : Math.max(0, Math.min(y, i.value + (u.key === "ArrowDown" ? 1 : -1))), await R(), r.value?.getRootNode()?.querySelector(`[id="${D.value}"]`)?.scrollIntoView({ block: "nearest" });
     }
     return (u, y) => (d(), p(S, null, [
@@ -541,24 +541,24 @@ const Pe = {
         role: "combobox",
         "aria-haspopup": "listbox",
         "aria-expanded": c.value,
-        "aria-controls": h(a),
+        "aria-controls": k(a),
         "aria-label": e.ariaLabel,
         disabled: e.disabled,
         onClick: y[0] || (y[0] = (b) => c.value = !c.value),
         onKeydown: F
       }, [
         m("span", Be, [
-          C.value ? (d(), p("span", qe, [
-            I(h(N), {
-              icon: C.value.icon || "tabler:point",
+          P.value ? (d(), p("span", qe, [
+            I(k(N), {
+              icon: P.value.icon || "tabler:point",
               class: "kx-ps-val-ico",
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
-            m("span", Ke, x(C.value.title), 1)
-          ])) : (d(), p("span", Ye, x(e.placeholder || "Select…"), 1))
+            m("span", Ke, $(P.value.title), 1)
+          ])) : (d(), p("span", Ye, $(e.placeholder || "Select…"), 1))
         ]),
         m("span", Je, [
-          I(h(N), {
+          I(k(N), {
             icon: "tabler:chevron-down",
             "aria-hidden": "true"
           })
@@ -572,14 +572,14 @@ const Pe = {
         default: se(() => [
           m("div", Ge, [
             m("div", Qe, [
-              g(m("input", {
+              _(m("input", {
                 ref_key: "search",
                 ref: s,
                 "onUpdate:modelValue": y[1] || (y[1] = (b) => l.value = b),
                 type: "search",
                 class: "p-inputtext p-select-filter",
                 "aria-label": `Search ${e.ariaLabel || e.placeholder || "options"}`,
-                "aria-controls": h(a),
+                "aria-controls": k(a),
                 "aria-activedescendant": D.value,
                 onKeydown: F
               }, null, 40, Xe), [
@@ -587,38 +587,38 @@ const Pe = {
               ])
             ]),
             m("ul", {
-              id: h(a),
+              id: k(a),
               class: "p-select-list kx-ps-options",
               role: "listbox",
               "aria-label": e.ariaLabel || e.placeholder || "Options"
             }, [
-              (d(!0), p(S, null, M(_.value, (b) => (d(), p(S, {
+              (d(!0), p(S, null, M(x.value, (b) => (d(), p(S, {
                 key: b.group
               }, [
-                m("li", et, x(b.group), 1),
-                (d(!0), p(S, null, M(b.items, ({ item: f, index: k }) => (d(), p("li", {
-                  id: `${h(a)}-${k}`,
+                m("li", et, $(b.group), 1),
+                (d(!0), p(S, null, M(b.items, ({ item: f, index: v }) => (d(), p("li", {
+                  id: `${k(a)}-${v}`,
                   key: f.id,
-                  class: ie(["p-select-option kx-ps-option", { "p-select-option-selected": f.id === e.modelValue, "p-focus": k === i.value }]),
+                  class: ie(["p-select-option kx-ps-option", { "p-select-option-selected": f.id === e.modelValue, "p-focus": v === i.value }]),
                   role: "option",
                   "aria-selected": f.id === e.modelValue,
-                  onClick: (w) => H(f),
-                  onMousemove: (w) => i.value = k
+                  onClick: (C) => H(f),
+                  onMousemove: (C) => i.value = v
                 }, [
-                  I(h(N), {
+                  I(k(N), {
                     icon: f.icon || "tabler:point",
                     class: "kx-ps-opt-ico",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"]),
                   m("span", rt, [
-                    m("span", nt, x(f.title), 1),
-                    f.subtitle ? (d(), p("span", ot, x(f.subtitle), 1)) : T("", !0)
+                    m("span", nt, $(f.title), 1),
+                    f.subtitle ? (d(), p("span", ot, $(f.subtitle), 1)) : T("", !0)
                   ])
                 ], 42, tt))), 128))
               ], 64))), 128)),
-              e.loading ? (d(), p("li", st, "Loading…")) : !$.value.length && !e.error ? (d(), p("li", it, "No matches")) : T("", !0)
+              e.loading ? (d(), p("li", st, "Loading…")) : !h.value.length && !e.error ? (d(), p("li", it, "No matches")) : T("", !0)
             ], 8, Ze),
-            e.error ? (d(), p("div", lt, x(e.error), 1)) : T("", !0),
+            e.error ? (d(), p("div", lt, $(e.error), 1)) : T("", !0),
             e.more ? (d(), p("button", {
               key: 1,
               type: "button",
@@ -644,12 +644,12 @@ function X(e, t = "ports") {
   const n = Q(e);
   if (!n) return null;
   const o = [];
-  for (const [a, _] of Object.entries(n))
-    ct(_) && o.push([a, _]);
+  for (const [x, h] of Object.entries(n))
+    ct(h) && o.push([x, h]);
   if (o.length === 0) return null;
-  o.length > 1 && console.error(`${t}: port schema declares multiple picker fields`, o.map(([a]) => a));
-  const [r, s] = o[0], c = typeof s.title == "string" ? s.title : "", l = typeof s.detail == "string" ? s.detail : "", i = typeof s.delete_endpoint == "string" ? s.delete_endpoint : "";
-  return { key: r, tag: s.picker ?? "", title: c, schema: { properties: { [r]: s } }, detail: l, deleteEndpoint: i };
+  o.length > 1 && console.error(`${t}: port schema declares multiple picker fields`, o.map(([x]) => x));
+  const [r, s] = o[0], c = typeof s.class == "string" ? s.class : "", l = typeof s.title == "string" ? s.title : "", i = typeof s.detail == "string" ? s.detail : "", a = typeof s.delete_endpoint == "string" ? s.delete_endpoint : "";
+  return { key: r, tag: s.picker ?? "", threadClass: c, title: l, schema: { properties: { [r]: s } }, detail: i, deleteEndpoint: a };
 }
 function ut(e, t = "ports") {
   const n = Q(e);
@@ -674,22 +674,22 @@ function pt(e) {
   return !!(t && t.properties && Object.keys(t.properties).length);
 }
 const Tt = "wc-schema-form", ft = "wc-component-picker", Z = "trigger-config";
-function wt(e) {
+function Ct(e) {
   return e ? X({ config_schema: e.fields }, Z) : null;
 }
-function Pt(e, t) {
+function wt(e, t) {
   const n = e?.key || "";
   return n ? String(t[n] || "") : "";
 }
 function mt(e) {
   return e ? ut({ config_schema: e.fields }, Z) : null;
 }
-function Ct(e, t) {
+function Pt(e, t) {
   return !!t && pt(mt(e));
 }
 function Et(e, t) {
   if (t?.tag !== ft) return;
-  const n = e?.class || "";
+  const n = t.threadClass;
   if (n)
     return {
       type: "thread",
@@ -708,16 +708,16 @@ export {
   pt as b,
   dt as c,
   $t as d,
-  wt as e,
+  Ct as e,
   xt as f,
   kt as g,
-  Ct as h,
-  Pt as i,
-  P as j,
+  Pt as h,
+  wt as i,
+  w as j,
   mt as o,
   X as p,
   vt as r,
   ut as s,
   _t as t
 };
-//# sourceMappingURL=source-instance-BWCuScFJ.js.map
+//# sourceMappingURL=source-instance-3CT9YsFn.js.map

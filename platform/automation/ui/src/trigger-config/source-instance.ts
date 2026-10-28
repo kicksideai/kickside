@@ -29,11 +29,12 @@ export function hasOptions(source: GroupedSource | null, primary: PrimaryField):
   return !!primary && schemaHasProps(optionsSchemaOf(source))
 }
 
-// The component picker needs the thread class it selects within; other picker
-// tags carry their own contract and take no meta.
+// The component picker reads its stored thread class from the picker field. A
+// source's catalog class groups ports for presentation and does not identify the
+// thread components that the field selects.
 export function pickerMetaOf(source: { class?: string; component?: unknown } | null, primary: PrimaryField) {
   if (primary?.tag !== COMPONENT_PICKER_TAG) return undefined
-  const cls = source?.class || ''
+  const cls = primary.threadClass
   if (!cls) return undefined
   return {
     type: 'thread',

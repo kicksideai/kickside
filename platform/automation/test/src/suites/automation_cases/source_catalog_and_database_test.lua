@@ -224,6 +224,7 @@ local function define_tests()
                     local up = by_binding["kickside.uploads:uploads_component"]
                     test.eq(up.surface, "events")
                     test.eq(up.event, "kickside.uploads.events:upload.completed")
+                    test.eq(up.config_schema.thread_id.class, "kickside.test.uploads")
                     -- The events port output face is derived from the event entry's schema.
                     test.not_nil(up.output_schema)
                 end)
