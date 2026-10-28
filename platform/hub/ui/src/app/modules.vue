@@ -16,7 +16,7 @@ import ModuleDetailView from './ModuleDetailView.vue'
 const page = useModulesPage()
 const {
   LABEL, HUB_PORTAL, UNINSTALL_MIGRATION_OPTIONS,
-  accessDenied, statusBanner,
+  initialLoading, accessDenied, statusBanner,
   hubConnected, hubStatus, hubToken, showTokenPanel, hubConnecting, hubError,
   hubOrgs, hubIdentity, hubTokenStored, hubTokenExpired, hubTokenIcon,
   hubTokenButtonLabel, hubExpiry, saveHubToken, clearHubToken,
@@ -51,7 +51,11 @@ const anchorEl = ref<HTMLElement | null>(null)
   <div class="km">
     <div v-if="statusBanner" class="km-banner" :class="statusBanner.kind === 'ok' ? 'km-banner-ok' : 'km-banner-err'">{{ statusBanner.message }}</div>
 
-    <div v-if="accessDenied" class="km-denied">
+    <div v-if="initialLoading" class="km-loading km-center km-initial-loading" role="status" aria-live="polite">
+      <Icon icon="tabler:loader-2" class="km-i spin" aria-hidden="true" /> Loading modules…
+    </div>
+
+    <div v-else-if="accessDenied" class="km-denied">
       <div class="km-denied-box">
         <Icon icon="tabler:lock" class="km-denied-icon" aria-hidden="true" />
         <p class="km-denied-title">Admins only</p>

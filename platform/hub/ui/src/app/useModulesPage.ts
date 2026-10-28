@@ -44,6 +44,7 @@ const UNINSTALL_MIGRATION_OPTIONS = [
 
 export function useModulesPage() {
   const hub = keeperHub(api)
+  const initialLoading = ref(true)
 
   const statusBanner = ref<{ kind: 'ok' | 'error'; message: string } | null>(null)
   const hubAuth = useModuleHubAuth({ hub, loadCatalog })
@@ -317,16 +318,21 @@ export function useModulesPage() {
     void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).catch(() => {})
   })
   useHostVisibilityRefresh(async () => {
-    await loadAuth()
-    if (!isAdmin.value) return
-    await loadHubAuth()
-    await refreshAll()
+    try {
+      await loadAuth()
+      if (!isAdmin.value) return
+      await loadHubAuth()
+      await refreshAll()
+    } finally {
+      initialLoading.value = false
+    }
   })
 
   return {
     LABEL,
     HUB_PORTAL,
     UNINSTALL_MIGRATION_OPTIONS,
+    initialLoading,
     accessDenied,
     statusBanner,
     hubConnected,
