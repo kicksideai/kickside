@@ -395,6 +395,9 @@ function M.complete(db: DB, thread_id: string, params: table, actor_id: string?,
     end
     local declaration_err = M.apply_thread_declaration(db, thread_id, params.impl_id, identity)
     if declaration_err then return declaration_err end
+    -- Output-authorized emits and audit writes intentionally skip public markers.
+    -- Keep their retained-thread path free of the marker lookup as well.
+    if params.trusted_audit == true or maintenance == true then return nil end
 
     local rows, read_err = db:query("SELECT thread_class FROM kickside_thread WHERE id = $1", { thread_id })
     if read_err then return errors.wrap(read_err, "read completed thread") end
