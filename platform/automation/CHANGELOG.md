@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/kicksideai/kickside/compare/automation-v0.2.3...automation-v0.2.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.2.3](https://github.com/kicksideai/kickside/compare/automation-v0.2.2...automation-v0.2.3) (2026-10-25)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/kickside-v0.2.21...kickside-v0.2.22) (2026-10-28)
+
+
+### Bug Fixes
+
+* **app:** check page stylesheet fonts before release ([#166](https://github.com/kicksideai/kickside/issues/166)) ([4812e02](https://github.com/kicksideai/kickside/commit/4812e020e47d4a9b590060e83b3319b2a63a6e27))
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/kickside-v0.2.20...kickside-v0.2.21) (2026-10-23)
 
 

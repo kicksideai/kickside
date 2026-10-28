@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.14](https://github.com/kicksideai/kickside/compare/security-v0.2.13...security-v0.2.14) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** omit deleted policies from registry previews ([819712e](https://github.com/kicksideai/kickside/commit/819712e42935b0e8cc027add0dd32ba0ee1cd91d))
+* **security:** project module access in the same registry version as an install ([20152e2](https://github.com/kicksideai/kickside/commit/20152e288a994e4c48e59b43ca1bd89b55444be0))
+* **security:** project module access in the same registry version as an install ([049ff9e](https://github.com/kicksideai/kickside/commit/049ff9e6ccf9666d95274d0faebe669e2008c7e6))
+
 ## [0.2.13](https://github.com/kicksideai/kickside/compare/security-v0.2.12...security-v0.2.13) (2026-10-26)
 
 

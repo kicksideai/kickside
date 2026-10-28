@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.87](https://github.com/kicksideai/kickside/compare/sync-v0.1.86...sync-v0.1.87) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+* **sync:** allow editing legacy syncs without reconcile flag ([#174](https://github.com/kicksideai/kickside/issues/174)) ([bf72f38](https://github.com/kicksideai/kickside/commit/bf72f38dedaa7b2300615de190008f0fc6b38638))
+
 ## [0.1.86](https://github.com/kicksideai/kickside/compare/sync-v0.1.85...sync-v0.1.86) (2026-10-23)
 
 
