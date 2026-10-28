@@ -83,7 +83,10 @@ local function get_handler()
         return
     end
 
-    local public = upload_response.format_get_upload(upload)
+    -- Navigation is optional presentation metadata. A host without this page
+    -- can still use the authorized file API and its delivery URLs.
+    local base = upload_response.view_base()
+    local public = upload_response.format_get_upload(upload, base)
     local url, delivery_err = upload_response.delivery_url(upload.storage_id, upload.storage_path, public.raw_url)
     if delivery_err then
         res:set_status(http_errors.classify(delivery_err))
