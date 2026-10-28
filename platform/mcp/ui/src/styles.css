@@ -55,6 +55,7 @@
   /* The actions sit at rest rather than on hover, so the name reserves their width. */
   padding-right: 64px;
 }
+.kx-card-meta { flex-wrap: wrap; }
 
 /* edit/delete: subtle, top-right, always shown so delete is discoverable */
 .kx-card-actions {
