@@ -42,7 +42,7 @@ local function handle(request_dto)
                 -- A delete stage may itself return NOT_FOUND while retaining the
                 -- upload. Only an absent upload proves a concurrent teardown.
                 local remaining, read_err = upload_query_repo.get(tostring((u :: any).uuid))
-                if remaining or read_err ~= "Upload not found" then
+                if remaining or not errors.is(read_err, errors.NOT_FOUND) then
                     return { success = false, error = del_err, deleted = deleted }
                 end
             end

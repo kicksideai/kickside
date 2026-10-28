@@ -38,6 +38,7 @@ entries:
     imports:
       test: wippy.test:test
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      upload_types: kickside.uploads:types
 
   - name: update_consistency_test
     kind: function.lua

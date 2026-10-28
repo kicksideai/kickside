@@ -143,7 +143,7 @@ local function run(input: any): (any, any?)
 
     local upload, err = upload_query_repo.get(upload_id)
     if err then
-        if err == "Upload not found" then
+        if errors.is(err, errors.NOT_FOUND) then
             log:info("upload missing; treating job as cancelled", { upload_id = upload_id })
             return { skipped = true, cancelled = true, upload_id = upload_id }, nil
         end

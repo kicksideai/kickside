@@ -28,6 +28,8 @@ entries:
     source: file://get_content_func.lua
     modules: [security, ctx]
     imports:
+      component: kickside.component:component
+      types: kickside.uploads:types
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
       upload_query_repo: kickside.uploads.persist:upload_query_repo
@@ -41,6 +43,8 @@ entries:
     source: file://get_info_func.lua
     modules: [security, ctx]
     imports:
+      component: kickside.component:component
+      types: kickside.uploads:types
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
       upload_query_repo: kickside.uploads.persist:upload_query_repo

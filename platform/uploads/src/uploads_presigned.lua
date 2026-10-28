@@ -158,7 +158,7 @@ local function attach(upload_lib, deps)
         -- Get the pending upload record
         local upload, err = deps.upload_query_repo.get(upload_id)
         if err then
-            if err == "Upload not found" then
+            if errors.is(err, errors.NOT_FOUND) then
                 return nil, failure("upload not found", errors.NOT_FOUND, "subject")
             end
             return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "Failed to retrieve upload record: ")

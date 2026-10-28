@@ -4,6 +4,7 @@ local security = require("security")
 local sql = require("sql")
 local uuid = require("uuid")
 local artifact_content_repo = require("artifact_content_repo")
+local upload_types = require("upload_types")
 
 local DB = "app:db"
 local CALLBACK = "kickside.knowledge.injection:on_upload_complete"
@@ -274,13 +275,26 @@ local function define_tests()
             local upload_id = "binary-primary-" .. uuid.v4()
             seed_kb(component_id, owner)
             seed_upload_without_primary(upload_id, owner)
+            -- Content providers enforce the same component READ boundary as the
+            -- upload API. Give this upload its ordinary owner-held component so
+            -- the test reaches binary-content validation under that boundary.
+            local actor = security.new_actor(owner, {})
+            local uploads_component_id = upload_types.component_id_for_owner(owner)
+            if not uploads_component_id then error("Upload owner component ID is required") end
+            local registered, register_err = funcs.new():with_actor(actor):with_scope(scope())
+                :call("kickside.component.binding:register_component_func", {
+                    component_id = uploads_component_id,
+                    impl_id = upload_types.IMPL,
+                })
+            test.is_nil(register_err, tostring(register_err))
+            test.not_nil(registered)
+            test.is_true(registered.success, tostring(registered.error))
             local artifact, artifact_err = artifact_content_repo.create_artifact({
                 upload_id = upload_id, kind = "markdown", role = "primary", mime_type = "image/png",
                 label = "binary.png", ordinal = 1, content = "binary image bytes", storage_id = "app:uploads", metadata = {},
             })
             test.is_nil(artifact_err)
             test.not_nil(artifact)
-            local actor = security.new_actor(owner, {})
             local refusal, probe_err = funcs.new():with_actor(actor):with_scope(scope()):call("app:ingest_upload_probe", {
                 upload_id = upload_id, kb_id = component_id,
             })
@@ -297,6 +311,7 @@ local function define_tests()
             test.eq("2", meta_value(d, component_id, "document_count"))
             d:release()
             cleanup_upload(upload_id)
+            cleanup(uploads_component_id)
             cleanup(component_id)
         end)
 
