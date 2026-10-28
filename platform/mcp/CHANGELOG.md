@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/mcp-v0.2.6...mcp-v0.2.7) (2026-10-28)
+
+
+### Bug Fixes
+
+* **mcp:** keep credential badges inside cards ([#194](https://github.com/kicksideai/kickside/issues/194)) ([1cc3071](https://github.com/kicksideai/kickside/commit/1cc307141f19e97cb8bba98a75a7169038a43574))
+
 ## 0.2.6 (2026-10-17)
 
 - Refresh packaged frontend assets and documentation.

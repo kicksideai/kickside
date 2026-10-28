@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.89](https://github.com/kicksideai/kickside/compare/sync-v0.1.88...sync-v0.1.89) (2026-10-28)
+
+
+### Features
+
+* **automation:** list automations by event source ([#184](https://github.com/kicksideai/kickside/issues/184)) ([742f652](https://github.com/kicksideai/kickside/commit/742f6522c05fc90bb08e3f91a8f3158825a3793b))
+
 ## [0.1.88](https://github.com/kicksideai/kickside/compare/sync-v0.1.87...sync-v0.1.88) (2026-10-28)
 
 

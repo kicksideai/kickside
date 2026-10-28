@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/users-v0.2.11...users-v0.2.12) (2026-10-28)
+
+
+### Bug Fixes
+
+* align System account and permission administration ([#197](https://github.com/kicksideai/kickside/issues/197)) ([fb19352](https://github.com/kicksideai/kickside/commit/fb1935229cba380343c98b252e132cf7ecbce6f3))
+* **users:** read profile membership configuration with owner authority ([#200](https://github.com/kicksideai/kickside/issues/200)) ([2c19801](https://github.com/kicksideai/kickside/commit/2c19801d06efc6975ccee28637f06a03d2e96ffd))
+
 ## [0.2.11](https://github.com/kicksideai/kickside/compare/users-v0.2.9...users-v0.2.11) (2026-10-28)
 
 

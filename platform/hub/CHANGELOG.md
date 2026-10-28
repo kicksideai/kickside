@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.69](https://github.com/kicksideai/kickside/compare/hub-v0.1.68...hub-v0.1.69) (2026-10-28)
+
+
+### Bug Fixes
+
+* **hub:** retain scans for current plan artifacts ([#189](https://github.com/kicksideai/kickside/issues/189)) ([2800797](https://github.com/kicksideai/kickside/commit/2800797a860a01057ae91413e395b61963450c14))
+* **hub:** show loading throughout initial module discovery ([#199](https://github.com/kicksideai/kickside/issues/199)) ([e30a0b0](https://github.com/kicksideai/kickside/commit/e30a0b00036f7a31e5c2866e9ad6c8c626faeddb))
+
 ## [0.1.68](https://github.com/kicksideai/kickside/compare/hub-v0.1.67...hub-v0.1.68) (2026-10-28)
 
 
