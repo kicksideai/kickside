@@ -14,9 +14,8 @@ entries:
     meta:
       comment: Shared durable execution, nesting, parking, signaling, and recovery engine.
     component: wippy/dataflow
-    # The application lock must pin Dataflow at 0.7.8 or newer for resume
-    # reconstruction, nil-absent named inputs, and the reserved max_iterations input.
-    version: '*'
+    # Typed flow/parked-signal inspection is introduced by Dataflow 0.7.31.
+    version: '>=0.7.31'
 
   - name: dep.kickside.contract
     kind: ns.dependency
@@ -167,7 +166,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      destination: kickside.blocks:signal_destination
+      destination: kickside.blocks.internal:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: resume_under_identity
@@ -180,7 +179,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      destination: kickside.blocks:signal_destination
+      destination: kickside.blocks.internal:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: process_host
@@ -199,17 +198,6 @@ entries:
     imports:
       dataflow_repo: userspace.dataflow.persist:dataflow_repo
 
-  - name: signal_destination
-    kind: library.lua
-    meta: { private: true }
-    source: file://signal_destination.lua
-    modules: [sql, json]
-    imports:
-      consts: userspace.dataflow:consts
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
-      data_reader: userspace.dataflow.persist:data_reader
-      error_envelope: kickside.contract:error_envelope
-
   - name: authorize_arm
     kind: function.lua
     meta:
@@ -218,4 +206,4 @@ entries:
     method: authorize
     modules: [security]
     imports:
-      destination: kickside.blocks:signal_destination
+      destination: kickside.blocks.internal:signal_destination

@@ -10,7 +10,7 @@ The source implements one closed `kickside.block/v1` declaration contract:
 - `await.lua` is the native durable wait node; `resume.lua` resumes it under the Flow's
   frozen execution identity.
 - `authorize_arm.lua` exposes the current actor's authority over an owned parked
-  signal; `signal_destination.lua` keeps destination inspection inside Blocks.
+  signal; `internal/signal_destination.lua` maps the Dataflow-owned inspection API to the Blocks error contract.
 
 There is no runtime declaration lookup, wrapper execution tool, graph-builder return
 value, compatibility alias, or alternate Block dialect.

@@ -5,31 +5,20 @@ entries:
   - name: destination_fixture
     kind: library.lua
     source: file://destination_fixture.lua
-    imports:
-      consts: userspace.dataflow:consts
 
   - name: destination_subject
     kind: library.lua
     source: file://destination_subject.lua
-    modules: [sql, json]
     imports:
       consts: userspace.dataflow:consts
-      dataflow_repo: app.blocks_suites:destination_fixture
-      data_reader: app.blocks_suites:destination_reader_fixture
+      inspection: app.blocks_suites:destination_fixture
       error_envelope: kickside.contract:error_envelope
-
-  - name: destination_reader_fixture
-    kind: library.lua
-    source: file://resume_dependency.lua
-    imports:
-      fixture: app.blocks_suites:destination_fixture
 
   - name: destination_test
     kind: function.lua
     meta: { type: test, suite: blocks, group: KickSide Blocks }
     source: file://destination_test.lua
     method: run
-    modules: [json]
     imports:
       test: wippy.test:test
       subject: app.blocks_suites:destination_subject
@@ -82,7 +71,7 @@ entries:
     kind: library.lua
     source: file://resume_fixture.lua
     imports:
-      destination: kickside.blocks:signal_destination
+      destination: kickside.blocks.internal:signal_destination
 
   - name: resume_subject
     kind: library.lua

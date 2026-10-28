@@ -1,1 +1,1 @@
-../../src/signal_destination.lua
+../../src/internal/signal_destination.lua

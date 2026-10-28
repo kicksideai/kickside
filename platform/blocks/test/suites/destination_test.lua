@@ -1,115 +1,74 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
-local json = require("json")
 local subject = require("subject")
 local fixture = require("fixture")
 local consts = require("consts")
-
-local function yield_record(content: any): any
-    return {node_id = "wait-node", type = consts.DATA_TYPE.NODE_YIELD, content = content}
-end
-
 local function cases()
-    test.describe("Blocks persisted destination validation", function()
-        local invalid_waits = {
-            {field = "yield_context", values = {{}, {value = "broken"}, {value = 7}, {value = false}, {value = true}}},
-            {field = "signal_id", values = {{}, {value = ""}, {value = 7}, {value = false}, {value = true}, {value = {}}}},
-            {field = "wait_for_signal", values = {{}, {value = false}, {value = ""}, {value = "true"}, {value = 1}, {value = {}}}},
-        }
-        for _, field in ipairs(invalid_waits) do
-            for index, row in ipairs(field.values) do
-                for _, encoding in ipairs({"table", "JSON"}) do
-                    test.it("rejects invalid " .. field.field .. " case " .. index .. " as " .. encoding, function()
-                        local value = {yield_id = "yield-1", yield_context = {wait_for_signal = true, signal_id = "review"}}
-                        if field.field == "yield_context" then
-                            value.yield_context = row.value
-                        else
-                            value.yield_context[field.field] = row.value
-                        end
-                        fixture.records = {yield_record(encoding == "JSON" and json.encode(value) or value)}
-                        local ok, result, err = pcall(subject.pending, "flow", "review", {status = consts.STATUS.RUNNING})
-                        test.is_true(ok, tostring(result))
-                        test.is_nil(result)
-                        test.is_true(errors.is(err, errors.INTERNAL), tostring(err))
-                        test.eq(err:details().code, "BLOCK_SIGNAL_STATE_INVALID")
-                        test.eq(err:retryable(), false)
-                    end)
-                end
-            end
-        end
-
-        for _, encoding in ipairs({"table", "JSON"}) do
-            test.it("accepts a valid wait and distinguishes another signal as " .. encoding, function()
-                local value = {yield_id = "yield-1", yield_context = {wait_for_signal = true, signal_id = "review"}}
-                fixture.records = {yield_record(encoding == "JSON" and json.encode(value) or value)}
-                local node, err = subject.pending("flow", "review", {status = consts.STATUS.RUNNING})
-                test.is_nil(err)
-                test.eq(node.node_id, "wait-node")
-                local absent, absent_err = subject.pending("flow", "other", {status = consts.STATUS.RUNNING})
-                test.is_nil(absent)
-                test.is_true(errors.is(absent_err, errors.NOT_FOUND), tostring(absent_err))
-                test.eq(absent_err:details().code, "BLOCK_SIGNAL_NOT_FOUND")
-            end)
-        end
-
-        for index, row in ipairs({{}, {value = 7}, {value = false}, {value = true}}) do
-            test.it("rejects non-string non-table yield content case " .. index, function()
-                fixture.records = {yield_record(row.value)}
-                local ok, result, err = pcall(subject.pending, "flow", "review", {status = consts.STATUS.RUNNING})
-                test.is_true(ok, tostring(result))
+    test.describe("Blocks Dataflow inspection boundary", function()
+        test.before_each(function() fixture.state = {} end)
+        test.it("delegates flow reads to Dataflow", function()
+            fixture.state.flow = {actor_id = "owner", metadata = {run_id = "run"}}
+            local row, err = subject.get("flow")
+            test.is_nil(err)
+            test.eq(row.actor_id, "owner")
+            test.eq(row.metadata.run_id, "run")
+            test.eq(fixture.state.flow_id, "flow")
+        end)
+        test.it("uses Dataflow's signal lookup for the exact Await node type", function()
+            fixture.state.node = {node_id = "parked"}
+            local node, err = subject.pending("flow", "signal", {status = consts.STATUS.RUNNING})
+            test.is_nil(err)
+            test.eq(node.node_id, "parked")
+            test.eq(fixture.state.flow_id, "flow")
+            test.eq(fixture.state.signal_id, "signal")
+            test.eq(fixture.state.node_type, "kickside.blocks:await")
+        end)
+        for _, case in ipairs({
+            {source = "DATAFLOW_FLOW_NOT_FOUND", target = "BLOCK_FLOW_NOT_FOUND", kind = errors.NOT_FOUND, flow = true},
+            {source = "DATAFLOW_FLOW_METADATA_INVALID", target = "BLOCK_FLOW_METADATA_INVALID", kind = errors.INTERNAL, flow = true},
+            {source = "DATAFLOW_SIGNAL_NOT_FOUND", target = "BLOCK_SIGNAL_NOT_FOUND", kind = errors.NOT_FOUND},
+            {source = "DATAFLOW_SIGNAL_STATE_INVALID", target = "BLOCK_SIGNAL_STATE_INVALID", kind = errors.INTERNAL},
+        }) do
+            test.it("maps the owner-confirmed " .. case.source, function()
+                fixture.state.failure = errors.new({message = "owner failure", kind = case.kind,
+                    retryable = false, details = {code = case.source}})
+                local result, err
+                if case.flow then result, err = subject.get("flow")
+                else result, err = subject.pending("flow", "signal", {status = consts.STATUS.RUNNING}) end
                 test.is_nil(result)
-                test.is_true(errors.is(err, errors.INTERNAL), tostring(err))
-                test.eq(err:details().code, "BLOCK_SIGNAL_STATE_INVALID")
+                test.is_true(errors.is(err, case.kind))
+                test.eq(err:details().code, case.target)
                 test.eq(err:retryable(), false)
             end)
         end
-
-        local invalid_ids = {{}, {id = ""}, {id = 7}, {id = false}, {id = {}}}
-        for index, row in ipairs(invalid_ids) do
-            for _, field in ipairs({"key", "discriminator", "yield_id"}) do
-                test.it("rejects invalid " .. field .. " case " .. index, function()
-                    local value = {yield_id = "yield-1", yield_context = {wait_for_signal = true, signal_id = "review"}}
-                    fixture.records = {yield_record(value)}
-                    if field == "yield_id" then
-                        value.yield_id = row.id
-                    else
-                        local result = {type = consts.DATA_TYPE.NODE_YIELD_RESULT}
-                        result[field] = row.id
-                        fixture.records[2] = result
-                    end
-                    local ok, result, err = pcall(subject.pending, "flow", "review", {status = consts.STATUS.RUNNING})
-                    test.is_true(ok, tostring(result))
+        for _, case in ipairs({
+            {kind = errors.NOT_FOUND, code = "database_resource_missing", retryable = false},
+            {kind = errors.PERMISSION_DENIED, code = "database_denied", retryable = false},
+            {kind = errors.UNAVAILABLE, code = "database_temporarily_unavailable", retryable = true},
+        }) do
+            test.it("does not mistake " .. case.code .. " for an absent destination", function()
+                fixture.state.failure = errors.new({message = "read failed", kind = case.kind,
+                    retryable = case.retryable, details = {code = case.code, provider = "fixture"}})
+                for _, call in ipairs({
+                    function() return subject.get("flow") end,
+                    function() return subject.pending("flow", "signal", {status = consts.STATUS.RUNNING}) end,
+                }) do
+                    local result, err = call()
                     test.is_nil(result)
-                    test.is_true(errors.is(err, errors.INTERNAL), tostring(err))
-                    test.eq(err:details().code, "BLOCK_SIGNAL_STATE_INVALID")
-                    test.eq(err:retryable(), false)
-                end)
-            end
-        end
-
-        for _, content in ipairs({'{}', '[]', '42', '"text"', 'null', 'true', '{"yield_id":"","yield_context":{"wait_for_signal":true,"signal_id":"review"}}'}) do
-            test.it("rejects structurally invalid yield JSON " .. content, function()
-                fixture.records = {yield_record(content)}
-                local result, err = subject.pending("flow", "review", {status = consts.STATUS.RUNNING})
-                test.is_nil(result)
-                test.is_true(errors.is(err, errors.INTERNAL), tostring(err))
-                test.eq(err:details().code, "BLOCK_SIGNAL_STATE_INVALID")
-                test.eq(err:retryable(), false)
+                    test.is_true(errors.is(err, case.kind))
+                    test.eq(err:details().code, case.code)
+                    test.eq(err:details().provider, "fixture")
+                    test.eq(err:retryable(), case.retryable)
+                end
             end)
         end
-
-        for _, field in ipairs({"key", "discriminator"}) do
-            test.it("recognizes a valid result " .. field .. " as closed", function()
-                local result = {type = consts.DATA_TYPE.NODE_YIELD_RESULT}
-                result[field] = "yield-1"
-                fixture.records = {yield_record('{"yield_id":"yield-1","yield_context":{"wait_for_signal":true,"signal_id":"review"}}'), result}
-                local node, err = subject.pending("flow", "review", {status = consts.STATUS.RUNNING})
-                test.is_nil(node)
-                test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
-                test.eq(err:details().code, "BLOCK_SIGNAL_NOT_FOUND")
-            end)
-        end
+        test.it("recognizes a terminal flow without another read", function()
+            local node, err = subject.pending("flow", "signal", {status = consts.STATUS.COMPLETED_SUCCESS})
+            test.is_nil(node)
+            test.is_true(errors.is(err, errors.NOT_FOUND))
+            test.eq(err:details().code, "BLOCK_SIGNAL_NOT_FOUND")
+            test.eq(fixture.state.calls, nil)
+        end)
     end)
 end
-
 return {run = test.run_cases(cases)}

@@ -111,6 +111,11 @@ or a recorded resume handler does not prove the destination is closed; retain
 the undelivered result and handle the dependency failure by kind/code without
 matching messages.
 
+Blocks requires Dataflow >=0.7.31 and uses its public `userspace.dataflow:inspection` library for flow and
+parked-wait inspection. Dataflow owns SQL, metadata decoding and yield-episode
+ordering; Blocks owns actor authorization and its public error codes. The new
+private adapter is `kickside.blocks.internal:signal_destination`.
+
 ## Reference
 
 - [Module reference](src/README.md)

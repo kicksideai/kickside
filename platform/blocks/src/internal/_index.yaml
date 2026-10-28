@@ -1,0 +1,12 @@
+version: "1.0"
+namespace: kickside.blocks.internal
+
+entries:
+  - name: signal_destination
+    kind: library.lua
+    meta: { private: true }
+    source: file://signal_destination.lua
+    imports:
+      inspection: userspace.dataflow:inspection
+      consts: userspace.dataflow:consts
+      error_envelope: kickside.contract:error_envelope
