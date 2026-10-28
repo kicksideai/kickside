@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.64](https://github.com/kicksideai/kickside/compare/jobs-v0.1.63...jobs-v0.1.64) (2026-10-28)
+
+
+### Features
+
+* **jobs:** public post-commit nudge and slot purge on the facade ([#169](https://github.com/kicksideai/kickside/issues/169)) ([365567e](https://github.com/kicksideai/kickside/commit/365567eccb5bfc5abf03e52c1be1628493c25b24))
+
 ## [0.1.63](https://github.com/kicksideai/kickside/compare/jobs-v0.1.62...jobs-v0.1.63) (2026-10-28)
 
 

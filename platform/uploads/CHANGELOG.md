@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/kicksideai/kickside/compare/uploads-v0.3.3...uploads-v0.3.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **uploads:** enforce component read access in content providers ([#171](https://github.com/kicksideai/kickside/issues/171)) ([a6bc32c](https://github.com/kicksideai/kickside/commit/a6bc32c25f3217100d78de0bf03d502f91ea5c95))
+
 ## [0.3.3](https://github.com/kicksideai/kickside/compare/uploads-v0.3.2...uploads-v0.3.3) (2026-10-28)
 
 
