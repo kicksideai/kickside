@@ -300,6 +300,7 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
     put_if_present(metadata, "original_filename", original_filename)
     put_if_present(metadata, "original_upload_id", first_value(metadata.original_upload_id, upload_id))
     put_if_present(metadata, "original_size", first_value(metadata.original_size, file.size))
+    put_if_present(metadata, "relative_path", first_value(metadata.relative_path, upload_meta.relative_path))
 
     local source_ref = shallow_copy(metadata.source_ref)
     strip_upload_locators(source_ref)

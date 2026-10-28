@@ -116,6 +116,16 @@ local function cleanup_upload(upload_id: string): ()
 end
 
 local function seed_upload_without_primary(upload_id: string, owner: string, mime_type: string?, storage_path: string?): ()
+    local uploads_component_id = upload_types.component_id_for_owner(owner)
+    if not uploads_component_id then error("Upload owner component ID is required") end
+    local registered, register_err = funcs.new():with_actor(security.new_actor(owner, {})):with_scope(scope())
+        :call("kickside.component.binding:register_component_func", {
+            component_id = uploads_component_id, impl_id = upload_types.IMPL,
+        })
+    test.is_nil(register_err, tostring(register_err))
+    test.not_nil(registered)
+    test.is_true(registered.success, tostring(registered.error))
+    fixtures[#fixtures + 1] = uploads_component_id
     local d = db()
     local _, err = sql.builder.insert("kickside_uploads")
         :set_map({
@@ -154,8 +164,13 @@ end
 
 local function define_tests()
     test.describe("Knowledge upload/meta boundary", function()
+        test.after_each(function()
+            for _, id in ipairs(fixtures) do fixture_cleanup.cleanup(id) end
+            fixtures = {}
+        end)
+
         test.it("does not mutate KB public meta when an upload callback reports failure", function()
-            local owner = "upload-boundary-" .. uuid.v4()
+            local owner = uuid.v4()
             local component_id = uuid.v7()
             cleanup(component_id)
             seed_kb(component_id, owner)
@@ -184,7 +199,7 @@ local function define_tests()
         end)
 
         test.it("acks terminal upload failures even when a response target is provided", function()
-            local owner = "upload-failed-waiter-" .. uuid.v4()
+            local owner = uuid.v4()
             local component_id = uuid.v7()
             local topic = "kb.upload.failed." .. uuid.v4()
             cleanup(component_id)
@@ -215,7 +230,7 @@ local function define_tests()
         end)
 
         test.it("acks completed uploads with no primary content artifact without touching KB meta", function()
-            local owner = "upload-no-primary-" .. uuid.v4()
+            local owner = uuid.v4()
             local component_id = uuid.v7()
             local upload_id = "no-primary-" .. uuid.v4()
             cleanup(component_id)
@@ -250,7 +265,7 @@ local function define_tests()
         end)
 
         test.it("acks completed uploads with empty primary content without touching KB meta", function()
-            local owner = "upload-empty-primary-" .. uuid.v4()
+            local owner = uuid.v4()
             local component_id = uuid.v7()
             local upload_id = "empty-primary-" .. uuid.v4()
             cleanup(component_id)
@@ -285,25 +300,12 @@ local function define_tests()
         end)
 
         test.it("rejects binary primary artifacts before document ingestion", function()
-            local owner = "upload-binary-" .. uuid.v4()
+            local owner = uuid.v4()
             local component_id = uuid.v7()
             local upload_id = "binary-primary-" .. uuid.v4()
             seed_kb(component_id, owner)
             seed_upload_without_primary(upload_id, owner)
-            -- Content providers enforce the same component READ boundary as the
-            -- upload API. Give this upload its ordinary owner-held component so
-            -- the test reaches binary-content validation under that boundary.
             local actor = security.new_actor(owner, {})
-            local uploads_component_id = upload_types.component_id_for_owner(owner)
-            if not uploads_component_id then error("Upload owner component ID is required") end
-            local registered, register_err = funcs.new():with_actor(actor):with_scope(scope())
-                :call("kickside.component.binding:register_component_func", {
-                    component_id = uploads_component_id,
-                    impl_id = upload_types.IMPL,
-                })
-            test.is_nil(register_err, tostring(register_err))
-            test.not_nil(registered)
-            test.is_true(registered.success, tostring(registered.error))
             local artifact, artifact_err = artifact_content_repo.create_artifact({
                 upload_id = upload_id, kind = "markdown", role = "primary", mime_type = "image/png",
                 label = "binary.png", ordinal = 1, content = "binary image bytes", storage_id = "app:uploads", metadata = {},
@@ -326,21 +328,16 @@ local function define_tests()
             test.eq("2", meta_value(d, component_id, "document_count"))
             d:release()
             cleanup_upload(upload_id)
-            cleanup(uploads_component_id)
             cleanup(component_id)
         end)
 
-        test.after_each(function()
-            for _, id in ipairs(fixtures) do fixture_cleanup.cleanup(id) end
-            fixtures = {}
-        end)
 
         test.it("requires both an opted-in engine and an upload reference for textless appends", function()
             for _, entry in ipairs({
                 { impl_id = "test.kb:embeddable", source_ref = { kind = "upload", upload_id = "file" } },
                 { impl_id = "app:test_engine_files", source_ref = {} },
             }) do
-                local owner, component_id = "file-validation-" .. uuid.v4(), uuid.v7()
+                local owner, component_id = uuid.v4(), uuid.v7()
                 fixtures[#fixtures + 1] = component_id
                 seed_kb(component_id, owner, entry.impl_id)
                 local result, err = funcs.new():with_actor(security.new_actor(owner, {})):with_scope(scope())
@@ -360,7 +357,7 @@ local function define_tests()
             { name = "extracted text", mime = "text/markdown", content = "# Extracted text", has_text = true },
         }) do
             test.it("admits " .. case.name .. " through the canonical upload event for a file engine", function()
-                local owner = "file-admission-" .. uuid.v4()
+                local owner = uuid.v4()
                 local component_id, upload_id = uuid.v7(), uuid.v7()
                 fixtures[#fixtures + 1] = component_id
                 seed_kb(component_id, owner, "app:test_engine_files")
@@ -394,13 +391,13 @@ local function define_tests()
 
                 local admission, admission_err = funcs.new():with_actor(actor):with_scope(actor_scope):call("app:ingest_upload_probe", {
                     upload_id = upload_id, kb_id = component_id,
-                    file = { mime_type = original_mime, size = 12, metadata = { filename = "attachment" } },
+                    file = { mime_type = original_mime, size = 12, metadata = { filename = "attachment", relative_path = "records/attachment" } },
                 })
                 test.is_nil(admission_err)
                 test.not_nil(admission.result, admission.error)
                 local result, call_err = funcs.new():with_actor(actor):with_scope(actor_scope):call(CALLBACK, {
                     upload_id = upload_id, status = "completed", mime_type = original_mime,
-                    size = 12, metadata = { filename = "attachment" }, params = { kb_id = component_id },
+                    size = 12, metadata = { filename = "attachment", relative_path = "records/attachment" }, params = { kb_id = component_id },
                 })
                 test.is_nil(call_err)
                 test.eq(result.success, true)
@@ -431,6 +428,7 @@ local function define_tests()
                 test.eq(body.metadata.filename, "attachment")
                 test.eq(body.metadata.original_mime_type, original_mime)
                 test.eq(body.metadata.original_size, 12)
+                test.eq(body.metadata.relative_path, "records/attachment")
                 test.is_nil(body.metadata.storage_path)
                 test.is_nil(body.source_ref.storage_id)
                 if case.original then
@@ -445,7 +443,7 @@ local function define_tests()
         end
 
         test.it("treats upload callbacks for a deleted KB as a handled cancellation", function()
-            local owner = "upload-cancel-" .. uuid.v4()
+            local owner = uuid.v4()
             local deleted_kb = uuid.v7()
 
             local actor = security.new_actor(owner, {})
