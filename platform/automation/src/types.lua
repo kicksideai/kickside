@@ -236,6 +236,7 @@ type InstalledAutomation = {
     public_state: Map?,
     drive_status: Map?,
     availability: Map?,
+    routes: {Map}?,
 }
 
 type ListInstalledOptions = {
@@ -244,6 +245,9 @@ type ListInstalledOptions = {
     parent_id: string?,
     limit: number?,
     offset: number?,
+    source_port: string?,
+    source_thread_id: string?,
+    source_filter: string?,
 }
 
 type InstallTypeResult = {

@@ -118,6 +118,29 @@ function part.attach(M: any, dependencies: any, P: any): ()
         return result, err
     end
 
+    function P.routes_from_source(opts: any): (Map?, any)
+        return read_executor(function(db: any): (any?, any)
+            local rows, err = (dependencies.drive :: any).by_source(db, opts.source_thread_id)
+            if err then return nil, err end
+            local out: Map = {}
+            for _, row in ipairs(rows) do
+                local action = row.action or {}
+                local declaration = row.applied and row.applied.declaration or {}
+                local trigger = declaration.trigger or {}
+                local filter = trigger.filter and trigger.filter.expr or nil
+                if action.source_ref == opts.source_port
+                    and (opts.source_filter == nil or filter == opts.source_filter) then
+                    local id = tostring(row.automation_id)
+                    out[id] = out[id] or {}
+                    table.insert(out[id], {drive_key = row.drive_key, source_port = action.source_ref,
+                        source_thread_id = row.source_thread_id, source_filter = filter,
+                        sink_port = declaration.sink_port, sink_config = declaration.sink_config})
+                end
+            end
+            return out, nil
+        end)
+    end
+
     function P.owned_automation_ids(): ({ string }?, any)
         return read_executor(function(db: any): ({ string }?, any)
             return (dependencies.command :: any).ids(db)

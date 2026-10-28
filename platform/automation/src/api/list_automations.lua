@@ -25,6 +25,11 @@ local function handler()
         actor_id = actor:id(),
         class = req:query("class"),
         parent_id = req:query("parent_id"),
+        limit = req:query("limit"),
+        offset = req:query("offset"),
+        source_port = req:query("source_port"),
+        source_thread_id = req:query("source_thread_id"),
+        source_filter = req:query("source_filter"),
     })
     if err then
         local status, payload = api_errors.status(err, "automation_list_failed", "could not list automations")
