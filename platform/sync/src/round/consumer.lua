@@ -97,7 +97,9 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
         if not plan.replay_safe then unsent.prepared_key = keys.idempotency_key end
         local transformed, transform_err = plan_lib.transform(plan, d, item, keys)
         if transform_err ~= nil or not transformed then
-            unsent.error = failure(transform_err)
+            unsent.error = failure(transform_err or { kind = errors.INVALID, retriable = false,
+                code = "missing_transform_result",
+                message = "transform returned no result; review its effects before replaying this item" })
             return "failed_items", unsent
         end
         local t = transformed :: Map

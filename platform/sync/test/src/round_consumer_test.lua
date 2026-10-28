@@ -454,6 +454,22 @@ local function define_tests(section: string)
                 end)
             end
 
+            test.it("retains a legacy null preparation as a visible failure without rerunning its transform", function()
+                local config = declaration("app.fixture:round_record", func_transform(shared))
+                local first, err = deliver({ item("legacy-null", { directive = "flaky" }) }, config)
+                test.is_nil(err, tostring(err))
+                test.is_true(by_key(first.failed_items)[delivery_key("legacy-null")].error.retriable)
+                exec("UPDATE kickside_automation_prepared SET prepared_json='null' WHERE automation_id=$1", { automation_id })
+                local writes_before = #writes(identity("legacy-null"))
+                local second = deliver({ item("legacy-null", { directive = "flaky" }) }, config)
+                local failed = by_key(second.failed_items)[delivery_key("legacy-null")]
+                test.not_nil(failed, json.encode(second))
+                test.is_false(failed.error.retriable)
+                test.eq(failed.error.code, "missing_transform_result")
+                test.eq(transform_calls("legacy-null"), 1)
+                test.eq(#writes(identity("legacy-null")), writes_before)
+            end)
+
             test.it("persists a replay-unsafe transform once and reuses it when the write is retried", function()
                 local config = declaration("app.fixture:round_record", func_transform(shared))
                 local first, err = deliver({ item("unsafe", { directive = "flaky" }) }, config)
