@@ -6,7 +6,7 @@
   "core/jobs": "0.1.64",
   "platform/agents": "0.2.7",
   "platform/automation": "0.2.5",
-  "platform/blocks": "0.1.41",
+  "platform/blocks": "0.1.42",
   "platform/channel": "0.2.6",
   "platform/connection": "0.5.2",
   "platform/dm": "0.1.32",
