@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local error_envelope = require("error_envelope")
 local M = {}
 
