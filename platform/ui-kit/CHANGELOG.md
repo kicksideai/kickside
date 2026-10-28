@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/kicksideai/kickside/compare/ui-kit-v1.6.1...ui-kit-v1.6.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **ui:** derive primary action contrast ([#190](https://github.com/kicksideai/kickside/issues/190)) ([30058be](https://github.com/kicksideai/kickside/commit/30058be3701af2b5c6e9a47af1b111db22538f90))
+
 ## [1.6.1](https://github.com/kicksideai/kickside/compare/ui-kit-v1.6.0...ui-kit-v1.6.1) (2026-10-28)
 
 

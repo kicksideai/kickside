@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/users-v0.2.9...users-v0.2.11) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+* **users:** preserve deferred sharing after role consolidation ([102c926](https://github.com/kicksideai/kickside/commit/102c926b2bea879ab25cbf540c364bb7579e7394))
+* **users:** preserve deferred sharing identities after role consolidation ([1ec9d29](https://github.com/kicksideai/kickside/commit/1ec9d293ac22a9f07311ca3c8413cff376852e97))
+* **users:** retain live ACL aliases without mint-time defaults ([488a15b](https://github.com/kicksideai/kickside/commit/488a15b31993452eb4b0a6aafd2de5122f1e2763))
+
 ## [0.2.9](https://github.com/kicksideai/kickside/compare/users-v0.2.8...users-v0.2.9) (2026-10-28)
 
 
