@@ -33,22 +33,34 @@ return { run = test.run_cases(function()
             end
         end)
         for name, handler in pairs({list = list_api.list_handler, get = get_api.get_handler}) do
-            test.it(name .. " classifies navigation failures in the HTTP response", function()
-                for _, row in ipairs({{errors.UNAVAILABLE, 503}, {errors.PERMISSION_DENIED, 403}}) do
+            test.it(name .. " preserves authorized file reads when optional navigation is unavailable", function()
+                for _, failure in ipairs({
+                    errors.new({kind = errors.UNAVAILABLE, message = "registry read failed"}),
+                    errors.new({kind = errors.PERMISSION_DENIED, message = "navigation not visible"}),
+                }) do
                     nav.entry = nil
-                    nav.err = errors.new({kind = row[1], message = "registry read failed"})
+                    nav.err = failure
                     http.reset()
                     handler()
-                    test.eq(row[2], http.status)
-                    test.eq(false, http.body.success)
-                    test.is_nil(http.body.uploads)
-                    test.is_nil(http.body.upload)
+                    test.eq(200, http.status)
+                    test.eq(true, http.body.success)
+                    if name == "list" then
+                        test.eq(2, #http.body.uploads)
+                        for _, upload in ipairs(http.body.uploads) do
+                            test.is_nil(upload.view_url)
+                            test.not_nil(upload.raw_url)
+                        end
+                    else
+                        test.not_nil(http.body.upload)
+                        test.is_nil(http.body.upload.view_url)
+                        test.not_nil(http.body.upload.raw_url)
+                    end
                 end
                 nav.err = nil
                 http.reset()
                 handler()
-                test.eq(500, http.status)
-                test.eq(false, http.body.success)
+                test.eq(200, http.status)
+                test.eq(true, http.body.success)
             end)
         end
         test.it("resolves the navigation base once for every list response", function()
