@@ -30,7 +30,7 @@ def digest(data):
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
-def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest):
+def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest, architecture):
     version = read_file(source / "app/version.txt", 128).decode().strip()
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) or tag != "kickside-v" + version:
         raise ValueError("the source must match the application release tag")
@@ -40,6 +40,8 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest)
         raise ValueError("the runtime version is invalid")
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", runtime_digest):
         raise ValueError("the runtime digest is invalid")
+    if architecture not in ("amd64", "arm64"):
+        raise ValueError("the deployment architecture is invalid")
     lock = read_file(source / "app/wippy.lock", 4 << 20)
     config = read_file(source / "app/.wippy.yaml", 4 << 20)
     pack = read_file(snapshot, MAX_BUNDLE_BYTES - (1 << 20))
@@ -49,6 +51,7 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest)
         "tag": tag,
         "source_commit": commit,
         "version": version,
+        "architecture": architecture,
         "runtime_version": runtime_version,
         "runtime_digest": runtime_digest,
         "lock_digest": digest(lock),
@@ -73,11 +76,11 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest)
 
 def main():
     parser = argparse.ArgumentParser()
-    for name in ("source", "snapshot", "tag", "commit", "runtime-version", "runtime-digest", "output"):
+    for name in ("source", "snapshot", "tag", "commit", "runtime-version", "runtime-digest", "architecture", "output"):
         parser.add_argument("--" + name, required=True)
     args = parser.parse_args()
     bundle = build_bundle(pathlib.Path(args.source), pathlib.Path(args.snapshot), args.tag, args.commit,
-                          args.runtime_version, args.runtime_digest)
+                          args.runtime_version, args.runtime_digest, args.architecture)
     with pathlib.Path(args.output).open("xb") as output:
         output.write(bundle)
 

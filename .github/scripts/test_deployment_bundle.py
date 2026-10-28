@@ -26,7 +26,7 @@ class DeploymentBundleTests(unittest.TestCase):
 
     def build(self, **overrides):
         args = dict(source=self.root, snapshot=self.snapshot, tag="kickside-v0.2.24", commit="a" * 40,
-                    runtime_version="0.3.54a", runtime_digest="sha256:" + "b" * 64)
+                    runtime_version="0.3.54a", runtime_digest="sha256:" + "b" * 64, architecture="amd64")
         args.update(overrides)
         return build_bundle(**args)
 
@@ -44,7 +44,7 @@ class DeploymentBundleTests(unittest.TestCase):
 
     def test_wrong_release_or_unbounded_identity_is_rejected(self):
         for changed in ({"tag": "kickside-v0.2.25"}, {"commit": "main"},
-                        {"runtime_version": "latest"}, {"runtime_digest": "unknown"}):
+                        {"runtime_version": "latest"}, {"runtime_digest": "unknown"}, {"architecture": "aarch64"}):
             with self.assertRaises(ValueError):
                 self.build(**changed)
 

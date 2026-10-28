@@ -39,13 +39,16 @@ def fetch(url, limit):
     return data
 
 
-def install(version, destination):
+def install(version, destination, architecture="amd64"):
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+[a-z]?", version):
         raise ValueError("runtime version is invalid")
-    url = SOURCE + "v" + version + "/wippy-linux-amd64"
+    if architecture not in ("amd64", "arm64"):
+        raise ValueError("runtime architecture is invalid")
+    url = SOURCE + "v" + version + "/wippy-linux-" + architecture
     data = fetch(url, MAX_BINARY_BYTES)
     signature = base64.b64decode(fetch(url + ".sig", 256).strip(), validate=True)
-    if len(signature) != 64 or len(data) < 20 or data[:6] != b"\x7fELF\x02\x01" or struct.unpack_from("<H", data, 18)[0] != 62:
+    machine = 62 if architecture == "amd64" else 183
+    if len(signature) != 64 or len(data) < 20 or data[:6] != b"\x7fELF\x02\x01" or struct.unpack_from("<H", data, 18)[0] != machine:
         raise ValueError("runtime platform or signature is invalid")
     destination.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=destination.parent) as directory:
@@ -68,5 +71,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
     parser.add_argument("--output", type=pathlib.Path, required=True)
+    parser.add_argument("--architecture", choices=("amd64", "arm64"), required=True)
     args = parser.parse_args()
-    print(install(args.version, args.output))
+    print(install(args.version, args.output, args.architecture))

@@ -14,7 +14,15 @@ on:
 permissions: {}
 jobs:
   bundle:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - architecture: amd64
+          runner: ubuntu-24.04
+        - architecture: arm64
+          runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -23,6 +31,7 @@ jobs:
     env:
       RUNTIME_VERSION: 0.3.54a
       SOURCE_TAG: ${{ inputs.source_tag }}
+      TARGET_ARCHITECTURE: ${{ matrix.architecture }}
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -62,7 +71,7 @@ jobs:
       run: |
         set -euo pipefail
         binary="$RUNNER_TEMP/verified-wippy/wippy"
-        digest=$(python3 control/.github/scripts/deployment_runtime.py --version "$RUNTIME_VERSION" --output "$binary")
+        digest=$(python3 control/.github/scripts/deployment_runtime.py --version "$RUNTIME_VERSION" --architecture "$TARGET_ARCHITECTURE" --output "$binary")
         printf 'digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
         printf '%s\n' "${binary%/*}" >> "$GITHUB_PATH"
     - name: Build the locked application snapshot
@@ -88,23 +97,23 @@ jobs:
         python3 control/.github/scripts/deployment_bundle.py \
           --source source --snapshot output/kickside.wapp --tag "$SOURCE_TAG" --commit "$commit" \
           --runtime-version "$RUNTIME_VERSION" --runtime-digest "$RUNTIME_DIGEST" \
-          --output output/kickside-deployment.tar.gz
+          --architecture "$TARGET_ARCHITECTURE" --output "output/kickside-deployment-linux-$TARGET_ARCHITECTURE.tar.gz"
     - name: Attest the deployment archive
       id: attest
       uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
       with:
-        subject-path: output/kickside-deployment.tar.gz
+        subject-path: output/kickside-deployment-linux-${{ matrix.architecture }}.tar.gz
     - name: Retain the archive and publisher proof
       shell: bash
       env:
         PUBLISHER_PROOF: ${{ steps.attest.outputs.bundle-path }}
-      run: cp "$PUBLISHER_PROOF" output/kickside-deployment.sigstore.json
+      run: cp "$PUBLISHER_PROOF" "output/kickside-deployment-linux-$TARGET_ARCHITECTURE.sigstore.json"
     - name: Upload the verified deployment archive
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
-        name: kickside-deployment-${{ inputs.source_tag }}
+        name: kickside-deployment-${{ inputs.source_tag }}-${{ matrix.architecture }}
         path: |
-          output/kickside-deployment.tar.gz
-          output/kickside-deployment.sigstore.json
+          output/kickside-deployment-linux-${{ matrix.architecture }}.tar.gz
+          output/kickside-deployment-linux-${{ matrix.architecture }}.sigstore.json
         if-no-files-found: error
         retention-days: 30
