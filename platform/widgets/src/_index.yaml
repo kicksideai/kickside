@@ -105,7 +105,7 @@ entries:
         capability:
           type: string
           default: "generate"
-          description: Capability filter — "generate" (default), "embed", or any model capability tag such as "vision". Classes include those whose resolved model matches the filter and the declared vocabulary for that capability.
+          description: Capability filter — "generate" (default), "embed" (models only), or any model capability tag such as "vision". Classes include those whose resolved model matches the filter and the declared vocabulary for that capability.
         mode:
           type: string
           default: ""

@@ -51,7 +51,7 @@ const options = computed<{ group: string; items: OptionRow[] }[]>(() => {
   const available = new Set(models.value.map(m => m.name))
   // A class resolves to its first ranked member. Only offer it for a capability
   // filter when that effective model matches; a lower-ranked match is insufficient.
-  const matchingClasses = classes.value.filter(c =>
+  const matchingClasses = capability.value === 'embed' ? [] : classes.value.filter(c =>
     c.capability === capability.value || (c.models[0] && available.has(c.models[0].name)))
   if (matchingClasses.length) {
     out.push({
@@ -80,7 +80,11 @@ async function loadData() {
   try {
     const [ml, cl] = await Promise.all([
       api.get(`/api/v1/models/list?capability=${encodeURIComponent(requestedCapability)}`),
-      api.get('/api/v1/models/classes'),
+      // Embedding selection remains model-only. Classes enrich the other
+      // pickers; their availability must not hide a successful model list.
+      requestedCapability === 'embed'
+        ? Promise.resolve(null)
+        : api.get('/api/v1/models/classes').catch(() => null),
     ])
     if (generation !== loadGeneration || requestedCapability !== capability.value) return
     models.value = ml?.data?.success ? (ml.data.models || []) : []

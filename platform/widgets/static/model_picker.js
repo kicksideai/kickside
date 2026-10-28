@@ -1,18 +1,18 @@
 import { u as D, a as $, W as B } from "./index-C70m2Vvt.js";
 import { s as I, P as A } from "./index-CJFLFuiV.js";
-import { defineComponent as W, ref as b, computed as t, watch as L, onMounted as R, onBeforeUnmount as q, openBlock as d, createBlock as F, unref as l, withCtx as g, createElementVNode as i, createElementBlock as w, Fragment as S, createVNode as y, createTextVNode as E, toDisplayString as x, createCommentVNode as K, normalizeClass as O } from "vue";
+import { defineComponent as W, ref as b, computed as s, watch as L, onMounted as R, onBeforeUnmount as q, openBlock as d, createBlock as F, unref as l, withCtx as u, createElementVNode as i, createElementBlock as w, Fragment as S, createVNode as y, createTextVNode as P, toDisplayString as x, createCommentVNode as K, normalizeClass as O } from "vue";
 import { Icon as k } from "@iconify/vue";
-import { api as P, define as T } from "@wippy-fe/proxy";
+import { api as E, define as T } from "@wippy-fe/proxy";
 const G = () => D(), H = () => $(), J = { class: "mp-val" }, Q = { class: "mp-opt" }, X = { class: "mp-opt-body" }, Y = { class: "mp-opt-title" }, Z = {
   key: 0,
   class: "mp-opt-sub"
 }, rr = { class: "mp-empty" }, ar = /* @__PURE__ */ W({
   __name: "ModelPicker",
   setup(M) {
-    const u = G(), N = H(), s = b(!1), p = b([]), m = b([]);
+    const g = G(), N = H(), n = b(!1), p = b([]), m = b([]);
     let c = 0, f = !1;
-    const n = t(() => u.value?.capability || "generate"), z = t(() => u.value?.mode === "classes"), v = t(() => {
-      const r = u.value?.value;
+    const t = s(() => g.value?.capability || "generate"), z = s(() => g.value?.mode === "classes"), v = s(() => {
+      const r = g.value?.value;
       return typeof r == "string" ? r : "";
     });
     function C(r) {
@@ -21,11 +21,11 @@ const G = () => D(), H = () => $(), J = { class: "mp-val" }, Q = { class: "mp-op
     function _(r) {
       return r && r.charAt(0).toUpperCase() + r.slice(1);
     }
-    const U = t(() => {
+    const U = s(() => {
       const r = v.value;
       return r ? C(r) ? _(r.slice(6)) : p.value.find((o) => o.name === r)?.title || r : "Default model";
-    }), V = t(() => C(v.value) ? "tabler:category" : "tabler:cpu"), j = t(() => {
-      const r = [], o = new Set(p.value.map((a) => a.name)), e = m.value.filter((a) => a.capability === n.value || a.models[0] && o.has(a.models[0].name));
+    }), V = s(() => C(v.value) ? "tabler:category" : "tabler:cpu"), j = s(() => {
+      const r = [], o = new Set(p.value.map((a) => a.name)), e = t.value === "embed" ? [] : m.value.filter((a) => a.capability === t.value || a.models[0] && o.has(a.models[0].name));
       return e.length && r.push({
         group: "Classes",
         items: e.map((a) => ({
@@ -40,23 +40,25 @@ const G = () => D(), H = () => $(), J = { class: "mp-val" }, Q = { class: "mp-op
       }), r;
     });
     async function h() {
-      const r = ++c, o = n.value;
-      s.value = !0;
+      const r = ++c, o = t.value;
+      n.value = !0;
       try {
         const [e, a] = await Promise.all([
-          P.get(`/api/v1/models/list?capability=${encodeURIComponent(o)}`),
-          P.get("/api/v1/models/classes")
+          E.get(`/api/v1/models/list?capability=${encodeURIComponent(o)}`),
+          // Embedding selection remains model-only. Classes enrich the other
+          // pickers; their availability must not hide a successful model list.
+          o === "embed" ? Promise.resolve(null) : E.get("/api/v1/models/classes").catch(() => null)
         ]);
-        if (r !== c || o !== n.value) return;
+        if (r !== c || o !== t.value) return;
         p.value = e?.data?.success ? e.data.models || [] : [], m.value = a?.data?.success ? a.data.classes || [] : [];
       } catch {
-        r === c && o === n.value && (p.value = [], m.value = []);
+        r === c && o === t.value && (p.value = [], m.value = []);
       } finally {
-        r === c && (s.value = !1);
+        r === c && (n.value = !1);
       }
     }
-    return L(n, () => {
-      c += 1, p.value = [], m.value = [], s.value = !1, f && h();
+    return L(t, () => {
+      c += 1, p.value = [], m.value = [], n.value = !1, f && h();
     }), R(() => {
       f = !0, h();
     }), q(() => {
@@ -74,12 +76,12 @@ const G = () => D(), H = () => $(), J = { class: "mp-val" }, Q = { class: "mp-op
       checkmark: "",
       "filter-placeholder": z.value ? "Search classes…" : "Search models…",
       placeholder: "Default model",
-      loading: s.value,
+      loading: n.value,
       "aria-label": "Choose model",
       onBeforeShow: h,
       "onUpdate:modelValue": o[0] || (o[0] = (e) => l(N)("select", e ?? ""))
     }, {
-      value: g(() => [
+      value: u(() => [
         i("span", J, [
           y(l(k), {
             icon: V.value,
@@ -91,7 +93,7 @@ const G = () => D(), H = () => $(), J = { class: "mp-val" }, Q = { class: "mp-op
           }, x(U.value), 3)
         ])
       ]),
-      option: g(({ option: e }) => [
+      option: u(({ option: e }) => [
         i("span", Q, [
           y(l(k), {
             icon: e.icon,
@@ -104,21 +106,21 @@ const G = () => D(), H = () => $(), J = { class: "mp-val" }, Q = { class: "mp-op
           ])
         ])
       ]),
-      empty: g(() => [
+      empty: u(() => [
         i("span", rr, [
-          s.value ? (d(), w(S, { key: 0 }, [
+          n.value ? (d(), w(S, { key: 0 }, [
             y(l(k), {
               icon: "tabler:loader-2",
               class: "spin",
               "aria-hidden": "true"
             }),
-            o[1] || (o[1] = E(" Loading…", -1))
+            o[1] || (o[1] = P(" Loading…", -1))
           ], 64)) : (d(), w(S, { key: 1 }, [
-            E("No models…")
+            P("No models…")
           ], 64))
         ])
       ]),
-      emptyfilter: g(() => [...o[2] || (o[2] = [
+      emptyfilter: u(() => [...o[2] || (o[2] = [
         i("span", { class: "mp-empty" }, "No models…", -1)
       ])]),
       _: 1
