@@ -8,7 +8,7 @@ entries:
     meta:
       type: test
       suite: round_delivery_identity
-    modules: [json, security, funcs, contract, uuid, time]
+    modules: [json, security, funcs, contract, uuid, time, registry]
     imports:
       test: wippy.test:test
       h: kickside.automation:round_harness
@@ -16,3 +16,6 @@ entries:
       component: kickside.component:component
       execution_identity: kickside.execution:execution_identity
       ledger: kickside.automation:round_ledger
+      slot: kickside.automation:slot
+      drive: kickside.automation:drive
+      scope_resolver: app:scope_resolver_stub

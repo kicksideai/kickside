@@ -107,6 +107,7 @@ entries:
     modules: [contract, json, registry, security, funcs]
     imports:
       test: wippy.test:test
+      ui_types: kickside.ui:types
 
   - name: dependency_seam_test
     kind: function.lua

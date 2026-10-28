@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.24](https://github.com/kicksideai/kickside/compare/kickside-v0.2.23...kickside-v0.2.24) (2026-10-28)
+
+
+### Bug Fixes
+
+* **app:** require deferred sharing continuity in Users ([d09914e](https://github.com/kicksideai/kickside/commit/d09914efe05fc7057679cec19666a5a33d3c718d))
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+* **ui:** derive primary action contrast ([#190](https://github.com/kicksideai/kickside/issues/190)) ([30058be](https://github.com/kicksideai/kickside/commit/30058be3701af2b5c6e9a47af1b111db22538f90))
+* **users:** preserve deferred sharing after role consolidation ([102c926](https://github.com/kicksideai/kickside/commit/102c926b2bea879ab25cbf540c364bb7579e7394))
+
 ## [0.2.23](https://github.com/kicksideai/kickside/compare/kickside-v0.2.22...kickside-v0.2.23) (2026-10-28)
 
 

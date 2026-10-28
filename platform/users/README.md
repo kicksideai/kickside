@@ -45,7 +45,7 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-**System → Users** manages accounts and group memberships. Users management is a separate policy from directory discovery and the signed-in user’s profile. Bots are ordinary User principals classified as bots; they cannot authenticate or own credentials. Configure their group access and grant an operator selection authority separately.
+**System → Users** manages accounts and role assignments. KickSide’s default roles are Administrator and Member. Signed-in application access is applied during authentication; it is not stored as a separate User role. Users management is a separate policy from directory discovery and the signed-in user’s profile. Bots are ordinary User principals classified as bots; they cannot authenticate or own credentials. Configure their group access and grant an operator selection authority separately.
 
 ## Reference
 

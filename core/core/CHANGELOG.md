@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/kicksideai/kickside/compare/core-v0.3.5...core-v0.3.6) (2026-10-28)
+
+
+### Bug Fixes
+
+* **core:** converge retained thread declarations ([#187](https://github.com/kicksideai/kickside/issues/187)) ([262c781](https://github.com/kicksideai/kickside/commit/262c7810cc7fe702e79d0bdf278ac7c1480693de))
+
 ## [0.3.5](https://github.com/kicksideai/kickside/compare/core-v0.3.4...core-v0.3.5) (2026-10-28)
 
 

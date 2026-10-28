@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.16](https://github.com/kicksideai/kickside/compare/security-v0.2.15...security-v0.2.16) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+
 ## [0.2.15](https://github.com/kicksideai/kickside/compare/security-v0.2.14...security-v0.2.15) (2026-10-28)
 
 

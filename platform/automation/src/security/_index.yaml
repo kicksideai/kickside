@@ -18,7 +18,7 @@ entries:
     kind: security.policy
     policy:
       resources: '*'
-      actions: security.policy_group.get
+      actions: [security.policy_group.get, security.policy.get, security.scope.create]
       effect: allow
 
   - name: declaration_writer

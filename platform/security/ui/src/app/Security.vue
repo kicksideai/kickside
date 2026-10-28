@@ -178,7 +178,7 @@ async function save() {
   })
   if (ok) {
     selectedId.value = target || `kickside.security.scopes:${slug}`
-    flashSaved(`Saved “${label}”. New scopes appear in user assignment after a moment.`)
+    flashSaved(`Saved “${label}”. The role will be available when assigning users.`)
   }
 }
 
@@ -186,10 +186,10 @@ async function askDelete() {
   if (!draft.value || draft.value.isNew) return
   const overlay = isOverlay.value
   const ok = await host.confirm({
-    header: overlay ? 'Remove extension?' : 'Delete scope?',
+    header: overlay ? 'Remove extension?' : 'Delete role?',
     message: overlay
-      ? 'The scope reverts to platform defaults. Users keep their base policies; only the added extensions are removed.'
-      : 'This removes the custom scope and its projected security.scope entry.',
+      ? 'This removes the added permissions. Users keep the role’s original permissions.'
+      : 'This removes the custom role and its permissions.',
     icon: 'tabler:trash',
     acceptLabel: overlay ? 'Remove extension' : 'Delete',
     rejectLabel: 'Cancel',
@@ -200,9 +200,6 @@ async function askDelete() {
   if (deleted) { draft.value = null; selectedId.value = null }
 }
 
-function sourceSeverity(src: string): '' | 'info' | 'secondary' {
-  return src === 'custom' ? '' : src === 'builtin' ? 'info' : 'secondary'
-}
 function shortId(id: string): string {
   return id.includes(':') ? id.split(':').slice(-1)[0]! : id
 }
@@ -212,7 +209,7 @@ function shortId(id: string): string {
   <div class="ks">
     <Tabs :value="activeTab" @update:value="selectTab">
       <TabList :pt="{ tabList: { 'aria-label': 'Security administration' } }">
-        <Tab value="scopes">Scopes</Tab>
+        <Tab value="scopes">Roles</Tab>
         <Tab value="delegations" data-tab="delegations">Act-as grants</Tab>
       </TabList>
     </Tabs>
@@ -224,15 +221,15 @@ function shortId(id: string): string {
 
     <Shell v-else v-show="activeTab === 'scopes'">
       <template #rail>
-        <RailHeader title="Scopes" :count="scopes.length">
+        <RailHeader title="Roles" :count="scopes.length">
           <template #actions>
-            <IconButton icon="tabler:plus" label="New scope" :disabled="saving" @click="newScope" />
+            <IconButton icon="tabler:plus" label="New role" :disabled="saving" @click="newScope" />
             <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading" :spin="loading" @click="store.load" />
           </template>
         </RailHeader>
 
         <div class="ks-rail-search">
-          <SearchField v-model="railSearch" placeholder="Filter scopes…" />
+          <SearchField v-model="railSearch" placeholder="Find a role…" />
         </div>
 
         <div class="ks-rail-list">
@@ -245,13 +242,9 @@ function shortId(id: string): string {
             @click="selectScope(s)"
           >
             <span class="ks-scope-name">{{ s.label || shortId(s.id) }}</span>
-            <span class="ks-scope-meta">
-              <Pill :severity="sourceSeverity(s.source)">{{ s.source }}</Pill>
-              <span class="ks-scope-count">{{ s.policies.length }}</span>
-            </span>
           </button>
 
-          <div class="ks-rail-group">Built-in</div>
+          <div class="ks-rail-group">Default</div>
           <button
             v-for="s in filteredScopes.builtin"
             :key="s.id"
@@ -260,10 +253,6 @@ function shortId(id: string): string {
             @click="selectScope(s)"
           >
             <span class="ks-scope-name">{{ s.label || shortId(s.id) }}</span>
-            <span class="ks-scope-meta">
-              <Pill :severity="sourceSeverity(s.source)">{{ s.source }}</Pill>
-              <span class="ks-scope-count">{{ s.policies.length }}</span>
-            </span>
           </button>
         </div>
       </template>
@@ -273,19 +262,19 @@ function shortId(id: string): string {
         <div class="ks-builder-head">
           <div class="ks-builder-title">
             <Icon :icon="isOverlay ? 'tabler:stack-2' : 'tabler:shield-lock'" aria-hidden="true" />
-            <span>{{ isOverlay ? `Extend ${draft.label || shortId(draft.target)}` : (draft.isNew ? 'New scope' : draft.label || draft.slug) }}</span>
+            <span>{{ isOverlay ? `Extend ${draft.label || shortId(draft.target)}` : (draft.isNew ? 'New role' : draft.label || draft.slug) }}</span>
             <Pill v-if="isOverlay" severity="warn">overlay</Pill>
           </div>
           <div class="ks-builder-acts">
             <Button v-if="!draft.isNew && !isOverlay && selectedScope" variant="soft" small icon="tabler:copy" :disabled="saving" @click="copyScope(selectedScope)">Duplicate</Button>
             <Button v-if="!draft.isNew" variant="danger" small icon="tabler:trash" :disabled="saving" @click="askDelete">{{ isOverlay ? 'Remove extension' : 'Delete' }}</Button>
-            <Button variant="primary" small icon="tabler:device-floppy" :loading="saving" :disabled="!canSave" @click="save">{{ isOverlay ? 'Save extension' : 'Save scope' }}</Button>
+            <Button variant="primary" small icon="tabler:device-floppy" :loading="saving" :disabled="!canSave" @click="save">{{ isOverlay ? 'Save extension' : 'Save role' }}</Button>
           </div>
         </div>
 
         <div v-if="isOverlay" class="ks-overlay-warn">
           <Icon icon="tabler:alert-triangle" aria-hidden="true" />
-          <span>Extending a platform scope grants the added policies to <b>every user with the {{ shortId(draft.target) }} role</b>. Base policies stay in place — extensions only add access, they can't remove it.</span>
+          <span>Adding permissions to this role grants them to <b>every user with the {{ shortId(draft.target) }} role</b>. The original permissions stay in place.</span>
         </div>
 
         <div class="ks-fields">
@@ -336,7 +325,7 @@ function shortId(id: string): string {
 
           <section class="ks-pane drop" @dragover.prevent @drop="onPaneDrop">
             <header class="ks-pane-head">
-              <span>{{ isOverlay ? 'Added by you' : 'In this scope' }}</span>
+              <span>{{ isOverlay ? 'Added by you' : 'In this role' }}</span>
               <span class="ks-pane-sub">{{ draft.policies.length }} {{ draft.policies.length === 1 ? 'policy' : 'policies' }}</span>
             </header>
             <div class="ks-pane-body">
@@ -350,7 +339,7 @@ function shortId(id: string): string {
               </div>
               <div v-if="!draft.policies.length" class="ks-drop-hint">
                 <Icon icon="tabler:drag-drop" aria-hidden="true" />
-                <span>{{ isOverlay ? 'Drag policies here to extend this scope.' : 'Drag policies here to grant them to this scope.' }}</span>
+                <span>{{ isOverlay ? 'Drag permissions here to extend this role.' : 'Drag permissions here to grant them to this role.' }}</span>
               </div>
             </div>
           </section>
@@ -363,16 +352,15 @@ function shortId(id: string): string {
           <div class="ks-builder-title">
             <Icon icon="tabler:shield" aria-hidden="true" />
             <span>{{ readOnlyScope.label || shortId(readOnlyScope.id) }}</span>
-            <Pill :severity="sourceSeverity(readOnlyScope.source)">{{ readOnlyScope.source }}</Pill>
-          </div>
+                      </div>
           <div class="ks-builder-acts">
-            <Button variant="primary" small icon="tabler:stack-2" @click="openOverlay(readOnlyScope)">{{ readOnlyScope.overlay_slug ? 'Edit extension' : 'Extend scope' }}</Button>
-            <Button variant="soft" small icon="tabler:copy" @click="copyScope(readOnlyScope)">Copy to custom scope</Button>
+            <Button variant="primary" small icon="tabler:stack-2" @click="openOverlay(readOnlyScope)">{{ readOnlyScope.overlay_slug ? 'Edit extension' : 'Add permissions' }}</Button>
+            <Button variant="soft" small icon="tabler:copy" @click="copyScope(readOnlyScope)">Copy role</Button>
           </div>
         </div>
         <p class="ks-view-note">
-          {{ readOnlyScope.source === 'builtin' ? 'Built-in role — composed from the policies that list its group. You can extend it (add policies) via an overlay; base policies can only change in the owning package.' : 'Registry-declared scope.' }}
-          <span class="ks-view-id">{{ readOnlyScope.id }}</span>
+          Included with the application. You can add permissions or copy it to create your own role.
+
         </p>
         <div class="ks-pane-body ks-view-list">
           <div v-for="p in readOnlyScope.policies" :key="p.id" class="ks-view-pol">
@@ -381,7 +369,7 @@ function shortId(id: string): string {
             <div v-if="p.comment" class="ks-view-pol-comment">{{ p.comment }}</div>
             <div class="ks-view-pol-id">{{ p.id }}</div>
           </div>
-          <div v-if="!readOnlyScope.policies.length" class="ks-pane-empty">No policies in this scope.</div>
+          <div v-if="!readOnlyScope.policies.length" class="ks-pane-empty">No permissions in this role.</div>
         </div>
 
         <div v-if="readOnlyScope.overlay_policies && readOnlyScope.overlay_policies.length" class="ks-ext-block">
@@ -404,9 +392,9 @@ function shortId(id: string): string {
       <EmptyState
         v-else
         icon="tabler:shield-lock"
-        title="Scopes & roles"
-        hint="Select a scope to inspect it, or create a custom scope by composing public policies."
-        cta="New scope"
+        title="Roles"
+        hint="Choose a role to view its permissions, or create a role for your team."
+        cta="New role"
         cta-icon="tabler:plus"
         @cta="newScope"
       />

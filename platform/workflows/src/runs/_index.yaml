@@ -166,6 +166,7 @@ entries:
     method: run
     security:
       policies:
+        - kickside.workflows.security:maintenance_wake
         - kickside.workflows.security:maintenance_store
         - kickside.workflows.security:maintenance_db
         - kickside.workflows.security:maintenance_threads

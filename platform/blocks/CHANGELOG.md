@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.42](https://github.com/kicksideai/kickside/compare/blocks-v0.1.41...blocks-v0.1.42) (2026-10-28)
+
+
+### Bug Fixes
+
+* **blocks:** preserve resume errors and validate arm ownership ([#168](https://github.com/kicksideai/kickside/issues/168)) ([81919a8](https://github.com/kicksideai/kickside/commit/81919a8c3c0220fb523f21e2c9965ea2402c0d17))
+
 ## [0.1.41](https://github.com/kicksideai/kickside/compare/blocks-v0.1.40...blocks-v0.1.41) (2026-10-28)
 
 

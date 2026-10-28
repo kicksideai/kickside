@@ -14,6 +14,7 @@ local registry = require("registry")
 local json = require("json")
 local fs = require("fs")
 local theming_helpers = require("theming_helpers")
+local ui_types = require("ui_types")
 
 local SETTINGS_CONTRACT = "kickside.settings:settings"
 local SETTINGS_NS = "kickside.ui"
@@ -25,6 +26,45 @@ local CSS_VARIABLES_REQUIREMENT = "wippy.facade:css_variables"
 local CONTENT_FS_REQUIREMENT = "wippy.facade:content_fs"
 
 local PRIMARY_VARIABLE = "--p-primary"
+local PRIMARY_CONTRAST_VARIABLE = "--p-primary-contrast-color"
+local LIGHT_SURFACE_FOREGROUND = "var(--p-surface-0)"
+local DARK_SURFACE_FOREGROUND = "var(--p-surface-950)"
+local WHITE_LUMINANCE = ui_types.tone_rel_luminance(255, 255, 255)
+local DARK_SURFACE_LUMINANCE = ui_types.tone_rel_luminance(6, 7, 9)
+
+local function hex_channels(value: string): (number, number, number)
+    return tonumber(value:sub(2, 3), 16) :: number,
+        tonumber(value:sub(4, 5), 16) :: number,
+        tonumber(value:sub(6, 7), 16) :: number
+end
+
+local function mixed_luminance(r: number, g: number, b: number, primary_share: number, target: number): number
+    local target_share = 1 - primary_share
+    return ui_types.tone_rel_luminance(
+        math.floor(r * primary_share + target * target_share + 0.5),
+        math.floor(g * primary_share + target * target_share + 0.5),
+        math.floor(b * primary_share + target * target_share + 0.5)
+    )
+end
+
+local function foreground_for_primary_role(r: number, g: number, b: number, primary_share: number, target: number): string
+    local background = mixed_luminance(r, g, b, primary_share, target)
+    local light_contrast = ui_types.tone_contrast(background, WHITE_LUMINANCE)
+    local dark_contrast = ui_types.tone_contrast(background, DARK_SURFACE_LUMINANCE)
+    if light_contrast >= dark_contrast then return LIGHT_SURFACE_FOREGROUND end
+    return DARK_SURFACE_FOREGROUND
+end
+
+local function set_primary_palette(variables: { [string]: any }, r: number, g: number, b: number, dark: boolean)
+    local target = dark and 255 or 0
+    local base_share = dark and 0.70 or 0.88
+    local hover_share = dark and 0.45 or 0.72
+    local active_share = dark and 0.25 or 0.55
+    variables[PRIMARY_CONTRAST_VARIABLE] = foreground_for_primary_role(r, g, b, base_share, target)
+    variables["--p-button-primary-color"] = variables[PRIMARY_CONTRAST_VARIABLE]
+    variables["--p-button-primary-hover-color"] = foreground_for_primary_role(r, g, b, hover_share, target)
+    variables["--p-button-primary-active-color"] = foreground_for_primary_role(r, g, b, active_share, target)
+end
 
 local function normalize_hex(value: string): string?
     local hex = value:gsub("%s", ""):gsub("^#", "")
@@ -34,6 +74,11 @@ local function normalize_hex(value: string): string?
     if #hex ~= 6 then return nil end
     if not hex:match("^%x%x%x%x%x%x$") then return nil end
     return "#" .. hex:lower()
+end
+
+local function normalized_primary(value: any): string?
+    if type(value) ~= "string" then return nil end
+    return normalize_hex(value)
 end
 
 local function static_css_variables(): (any?, any?)
@@ -108,16 +153,24 @@ local function resolve(_input: any): (any?, any?)
     local light = ensure_light_scope(merged)
     local raw, color_err = read_primary_color()
     if color_err then return nil, color_err end
-    if raw ~= "" then
-        local base = normalize_hex(raw :: string)
-        if not base then
-            return nil, errors.new({kind = errors.INVALID, message = "primary_color must be a hexadecimal color"})
-        end
-        merged[PRIMARY_VARIABLE] = base
-        light[PRIMARY_VARIABLE] = base
-        local dark = merged["@dark"]
-        if type(dark) == "table" then dark[PRIMARY_VARIABLE] = base end
+    local override = raw ~= "" and normalize_hex(raw :: string) or nil
+    if raw ~= "" and not override then
+        return nil, errors.new({kind = errors.INVALID, message = "primary_color must be a hexadecimal color"})
     end
+
+    local function apply_palette(variables: { [string]: any }, fallback: string?, dark: boolean)
+        local seed = override or normalized_primary(variables[PRIMARY_VARIABLE]) or fallback
+        if not seed then return nil end
+        local r, g, b = hex_channels(seed)
+        if override then variables[PRIMARY_VARIABLE] = seed end
+        set_primary_palette(variables, r, g, b, dark)
+        return seed
+    end
+
+    local base_seed = apply_palette(merged, nil, false)
+    apply_palette(light, base_seed, false)
+    local dark = merged["@dark"]
+    if type(dark) == "table" then apply_palette(dark, base_seed, true) end
     local encoded, encode_err = json.encode(merged)
     if encode_err then return nil, encode_err end
     return {css_variables = encoded}, nil
