@@ -10,6 +10,9 @@ local json = require("json")
 local execution_identity = require("execution_identity")
 local time = require("time")
 local ledger = require("ledger")
+local slot = require("slot")
+local drive = require("drive")
+local registry = require("registry")
 
 type Map = { [string]: any }
 local STORE = "kickside.automation.round.fixture:store"
@@ -108,6 +111,67 @@ end
 
 return test.run_cases(function()
     test.describe("original delivery execution identity",function()
+        local live_worker: string? = nil
+        local scoped_owner: string? = nil
+
+        test.after_each(function()
+            if live_worker then h.stop_worker(live_worker); live_worker=nil end
+            if scoped_owner then
+                h.exec("DELETE FROM round_scope_policy WHERE principal_id=$1",{scoped_owner})
+                scoped_owner=nil
+            end
+        end)
+
+        test.before_all(function() h.await_migrations() end)
+
+        test.it("runs a worker delivery when the live scope includes a direct policy",function()
+            local round=registry.get("kickside.automation:round")
+            test.not_nil(round)
+            local policies=round.data.security.policies
+            local has_execution_scope=false
+            for _,policy in ipairs(policies) do
+                if policy == "kickside.automation.security:execution_scope" then has_execution_scope=true end
+            end
+            test.is_true(has_execution_scope)
+            local authority=registry.get("kickside.automation:round_authority")
+            test.not_nil(authority)
+            local authority_has_execution_scope=false
+            for _,policy in ipairs(authority.data.security.policies) do
+                if policy == "kickside.automation.security:execution_scope" then authority_has_execution_scope=true end
+            end
+            test.is_true(authority_has_execution_scope)
+            local execution_scope=registry.get("kickside.automation.security:execution_scope")
+            test.not_nil(execution_scope)
+            local allows_policy_get=false
+            for _,action in ipairs(execution_scope.data.policy.actions) do
+                if action == "security.policy.get" then allows_policy_get=true end
+            end
+            test.is_true(allows_policy_get)
+            local env=h.setup("direct_scope_policy")
+            scoped_owner=env.owner
+            h.exec("INSERT INTO round_scope_policy (principal_id,policy_id) VALUES ($1,$2)",
+                {env.owner,"app:round_direct_scope_policy"})
+            local db=h.db()
+            local tx=db:begin()
+            local _,insert_err=drive.insert_tx(tx,{automation_id=env.automation_id,drive_key="direct_scope",source_kind="event",
+                source_thread_id=env.thread_id,action={source_ref="fixture:live",event_type=h.EVENT_TYPE},
+                applied={declaration={sink_port=STORE},policy=h.drive_policy(nil)}})
+            if insert_err then tx:rollback() else tx:commit() end
+            db:release()
+            test.is_nil(insert_err,tostring(insert_err))
+            env.append("direct scope")
+            local job_id,provision_err=slot.provision(env.automation_id,"direct_scope")
+            test.is_nil(provision_err,tostring(provision_err))
+            test.not_nil(job_id)
+            local probe_key=h.probe_key_for(job_id :: string)
+            live_worker=h.start_worker()
+            h.await_worker_pass(probe_key,job_id)
+            local job=h.query("SELECT last_error FROM kickside_job WHERE id=$1",{job_id})[1]
+            test.is_nil(job.last_error,tostring(job.last_error))
+            test.eq(#h.log_rows(env.automation_id,"transform"),1)
+            test.eq(h.read_drive(env.automation_id,"direct_scope").phase,"active")
+        end)
+
         test.it("redelivers unresolved work under its admitted identity after replacement",function()
             local env=h.setup("ledger_provenance")
             local key="unresolved"

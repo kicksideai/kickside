@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: automation_scope_create_test
+    kind: function.lua
+    meta: {type: test, suite: workflows_live_1_engine}
+    source: file://automation_scope_create_test.lua
+    method: run
+    modules: [funcs, security, uuid, json, sql, time]
+    imports:
+      test: wippy.test:test
+      users: kickside.users.persist:user_repo
+      groups: kickside.users.persist:user_groups_repo
+      repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      publish: kickside.workflows.repo:version_publish
+      automation: kickside.automation:automation
+  - name: automation_scope_create_exercise
+    kind: function.lua
+    meta: {type: test_helper, private: true, environment: test}
+    source: file://automation_scope_create_test.lua
+    method: exercise
+    modules: [funcs, security, uuid, json, sql, time]
+    imports:
+      test: wippy.test:test
+      users: kickside.users.persist:user_repo
+      groups: kickside.users.persist:user_groups_repo
+      repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      publish: kickside.workflows.repo:version_publish
+      automation: kickside.automation:automation
+  - name: automation_delivery_member
+    kind: security.policy
+    groups: [automation_delivery_member, automation_delivery_extra]
+    policy:
+      resources: '*'
+      actions:
+        - access
+        - registry.*
+        - funcs.*
+        - contract.*
+        - db.*
+        - process.*
+        - env.*
+        - fs.*
+        - events.*
+        - component.*
+        - threads.*
+        - kickside.*
+        - security.actor.create
+        - security.policy_group.get
+      effect: allow
+  - name: automation_delivery_authored
+    kind: security.scope
+    groups: []
+    policies: [kickside.workflows.security:maintenance_actor]
