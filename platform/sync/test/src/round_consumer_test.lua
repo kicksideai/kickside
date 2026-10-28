@@ -362,6 +362,33 @@ local function define_tests(section: string)
                 test.eq(unsafe_failed.prepared_key, delivery_key("empty-unsafe"))
             end)
 
+            test.it("preserves effectful transform failures without caching a null result", function()
+                local out, err = deliver({ item("transform-error", { directive = "transform_error" }) },
+                    declaration("app.fixture:round_record", func_transform(shared)))
+                test.is_nil(err, tostring(err))
+                local failed = by_key(out.failed_items)[delivery_key("transform-error")]
+                test.not_nil(failed, json.encode(out))
+                test.is_true(failed.error.retriable)
+                test.is_true(string.find(failed.error.message, "fixture transform unavailable", 1, true) ~= nil,
+                    json.encode(failed))
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#writes(identity("transform-error")), 0)
+            end)
+
+            test.it("preserves permanent transform errors without preparing or writing", function()
+                local transform = func_transform(shared)
+                transform["function"] = ""
+                local out, err = deliver({ item("invalid-skip", {}) },
+                    declaration("app.fixture:round_record", transform))
+                test.is_nil(err, tostring(err))
+                local failed = by_key(out.failed_items)[delivery_key("invalid-skip")]
+                test.not_nil(failed, json.encode(out))
+                test.is_false(failed.error.retriable)
+                test.eq(failed.error.code, "missing_function")
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#writes(identity("invalid-skip")), 0)
+            end)
+
             test.it("uses one record normalization rule regardless of a legacy flag", function()
                 local config = declaration("app.fixture:round_record", { kind = "expr", expr = "payload.flag" })
                 config.legacy_record = true
