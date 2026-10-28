@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.68](https://github.com/kicksideai/kickside/compare/hub-v0.1.67...hub-v0.1.68) (2026-10-28)
+
+
+### Bug Fixes
+
+* **hub:** preflight all module updates as one batch ([#167](https://github.com/kicksideai/kickside/issues/167)) ([dff3e0a](https://github.com/kicksideai/kickside/commit/dff3e0a6c7963d2f1a2441171de44097d6d13da5))
+
 ## [0.1.67](https://github.com/kicksideai/kickside/compare/hub-v0.1.66...hub-v0.1.67) (2026-10-26)
 
 
