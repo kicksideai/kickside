@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.67](https://github.com/kicksideai/kickside/compare/inbox-v0.1.66...inbox-v0.1.67) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/inbox-v0.1.65...inbox-v0.1.66) (2026-10-25)
 
 

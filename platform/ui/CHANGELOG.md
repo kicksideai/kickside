@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/kicksideai/kickside/compare/ui-v0.2.3...ui-v0.2.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.2.3](https://github.com/kicksideai/kickside/compare/ui-v0.2.2...ui-v0.2.3) (2026-10-22)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.63](https://github.com/kicksideai/kickside/compare/jobs-v0.1.62...jobs-v0.1.63) (2026-10-28)
+
+
+### Bug Fixes
+
+* **jobs:** bound rows after database normalization ([38beea4](https://github.com/kicksideai/kickside/commit/38beea43703f3376779bbdefd28cf098bd421eab))
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.1.62](https://github.com/kicksideai/kickside/compare/jobs-v0.1.61...jobs-v0.1.62) (2026-10-25)
 
 

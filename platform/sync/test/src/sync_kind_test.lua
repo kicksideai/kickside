@@ -354,6 +354,30 @@ local function define_tests()
     end)
 
     test.describe("kickside.sync reconfigure", function()
+        test.it("edits a legacy sync with no stored reconcile flag", function()
+            local installed = install_ok(declaration({ enabled = false }))
+            local db, db_err = sql.get(DB)
+            test.is_nil(db_err)
+            local rows, read_err = db:query("SELECT private_context FROM kickside_components WHERE component_id = $1", { installed.id })
+            test.is_nil(read_err)
+            local state = rows[1].private_context
+            if type(state) == "string" then state = json.decode(state) end
+            state.reconcile = nil
+            local _, write_err = db:execute("UPDATE kickside_components SET private_context = $1, context_revision = context_revision + 1 WHERE component_id = $2", { json.encode(state), installed.id })
+            db:release()
+            test.is_nil(write_err)
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ title = "Legacy sync edited", enabled = false }) })
+            test.is_nil(err, tostring(err))
+            test.not_nil(result)
+            local saved, saved_err = automations_lib.read_state(installed.id)
+            test.is_nil(saved_err)
+            test.eq(saved.title, "Legacy sync edited")
+            test.eq(saved.reconcile, false)
+            test.is_nil(read_drive(installed.id, "reconcile"))
+            test.eq((read_drive(installed.id, "main") :: Map).enabled, false)
+        end)
+
         test.it("refuses opaque edits without holding a source change pending", function()
             local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
                 resource_id = uuid.v7(), config = { resource = "first" } }

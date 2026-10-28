@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/kicksideai/kickside/compare/core-v0.3.4...core-v0.3.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.3.4](https://github.com/kicksideai/kickside/compare/core-v0.3.3...core-v0.3.4) (2026-10-23)
 
 
