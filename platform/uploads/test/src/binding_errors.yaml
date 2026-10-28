@@ -1,0 +1,34 @@
+version: "1.0"
+namespace: app.upload_errors
+entries:
+  - name: storage_adapter
+    kind: library.lua
+    source: file://binding_error_storage.lua
+    imports:
+      adapter: kickside.uploads.binding:storage_adapter_default
+
+  - name: deny_database
+    kind: security.policy
+    policy:
+      resources: app:db
+      actions: db.get
+      effect: deny
+
+  - name: owner_only
+    kind: security.policy
+    policy:
+      resources: uploads
+      actions: view_all
+      effect: deny
+
+  - name: test
+    kind: function.lua
+    source: file://binding_errors_test.lua
+    method: run
+    meta: {type: test, suite: uploads_binding_errors}
+    modules: [contract, security, sql, uuid, fs]
+    imports:
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
+      provision: kickside.core.threads:provision
+      types: kickside.uploads:types

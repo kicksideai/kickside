@@ -1,5 +1,5 @@
+local binding_errors = require("binding_errors")
 local security = require("security")
-local json = require("json")
 local upload_query_repo = require("upload_query_repo")
 
 local function handle(args)
@@ -8,14 +8,14 @@ local function handle(args)
     -- Get current actor
     local actor = security.actor()
     if not actor then
-        return nil, "No authenticated actor found"
+        return nil, binding_errors.new(errors.PERMISSION_DENIED, "No authenticated actor found", "actor_required")
     end
 
     local actor_id = actor:id()
     local can_view_all = security.can("view_all", "uploads")
 
     if not can_view_all and not actor_id then
-        return nil, "Access denied"
+        return nil, binding_errors.new(errors.PERMISSION_DENIED, "Access denied", "access_denied")
     end
 
     -- Extract filters
@@ -30,7 +30,7 @@ local function handle(args)
     -- Get count from repo
     local count, err = upload_query_repo.count_with_filters(repo_options)
     if err then
-        return nil, "Failed to count uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_count_failed", "Failed to count uploads")
     end
 
     return {

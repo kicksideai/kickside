@@ -1,3 +1,4 @@
+local binding_errors = require("binding_errors")
 local upload_query_repo = require("upload_query_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local security = require("security")
@@ -9,29 +10,30 @@ local metadata_sanitizer = require("metadata_sanitizer")
 local function handle()
     local upload_id, err = ctx.get("upload_id")
     if err then
-        return nil, "Failed to get upload_id from context: " .. err
+        return nil, binding_errors.new(errors.INVALID, "Failed to get upload_id from context: " .. tostring(err), "upload_id_required", false, err)
     end
 
-    if not upload_id or upload_id == "" then
-        return nil, "upload_id is required in context"
+    if type(upload_id) ~= "string" or upload_id == "" then
+        return nil, binding_errors.new(errors.INVALID, "upload_id is required in context", "upload_id_required")
     end
 
     local upload, err = upload_query_repo.get(upload_id)
     if err then
-        return nil, err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE,
+            errors.is(err, errors.NOT_FOUND) and "upload_not_found" or "upload_lookup_failed")
     end
 
     local actor = security.actor()
     if not actor then
-        return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "No authenticated actor found" })
+        return nil, binding_errors.new(errors.PERMISSION_DENIED, "No authenticated actor found", "actor_required")
     end
 
     local component_id = upload_types.component_id_for_owner(upload.actor_id)
     if not component_id then
-        return nil, errors.new({ kind = errors.INTERNAL, message = "Upload owner is invalid" })
+        return nil, binding_errors.new(errors.INTERNAL, "Upload owner is invalid", "upload_owner_invalid")
     end
     local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
-    if access_err then return nil, access_err end
+    if access_err then return nil, binding_errors.from(access_err, errors.PERMISSION_DENIED, "access_denied") end
 
     local content_type = upload.mime_type
     local size = upload.size

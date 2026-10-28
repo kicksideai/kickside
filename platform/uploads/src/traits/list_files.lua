@@ -57,7 +57,7 @@ local function handle(args)
     -- Call list_resources method
     local result, err = instance:list(request)
     if err then
-        return nil, errors.new({ message = tostring("Failed to list files: " .. err), kind = errors.INTERNAL })
+        return nil, errors.wrap(err, "Failed to list files")
     end
 
     local items = result.items or {}
