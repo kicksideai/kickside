@@ -5,6 +5,19 @@ local test = require("test")
 local registry = require("registry")
 local time = require("time")
 
+-- Each attempt rebuilds an owned fixture write from a fresh snapshot. Other
+-- registry writers may advance the head; all other errors remain test failures.
+local function fixture_write(write)
+    local result, err
+    for _ = 1, 5 do
+        result, err = write()
+        if not errors.is(err, errors.CONFLICT) or err:retryable() ~= true then return result, err end
+        local details = err:details() or {}
+        if details.plan_version == nil or details.current_version == nil then return result, err end
+    end
+    return result, err
+end
+
 local function declaration()
     return {
         id = "example:approval",
@@ -72,17 +85,18 @@ local function define_tests()
             local invalid = declaration()
             invalid.id = "app:invalid_block_" .. tostring(time.now():unix_nano())
             invalid.data.block.config = nil
-            local snapshot, snapshot_err = registry.snapshot()
-            test.is_nil(snapshot_err)
-            local changes = snapshot:changes()
-            changes:create(invalid)
-            local _, apply_err = changes:apply()
+            local _, apply_err = fixture_write(function()
+                local changes = assert(registry.snapshot()):changes()
+                changes:create(invalid)
+                return changes:apply()
+            end)
             test.is_nil(apply_err)
             local catalog, err = blocks.catalog()
-            local cleanup_snapshot = registry.snapshot()
-            local cleanup = cleanup_snapshot:changes()
-            cleanup:delete(invalid.id)
-            local _, cleanup_err = cleanup:apply()
+            local _, cleanup_err = fixture_write(function()
+                local cleanup = assert(registry.snapshot()):changes()
+                cleanup:delete(invalid.id)
+                return cleanup:apply()
+            end)
             test.is_nil(cleanup_err)
             test.is_nil(catalog)
             test.is_true(errors.is(err, errors.INTERNAL))
