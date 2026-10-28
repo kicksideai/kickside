@@ -53,7 +53,9 @@ jobs:
       with:
         node-version: '22'
     - name: Test the deployment archive
-      run: python3 -m unittest discover -s control/.github/scripts -p test_deployment_bundle.py
+      run: |
+        python3 -m unittest discover -s control/.github/scripts -p test_deployment_bundle.py
+        ruby control/.github/scripts/test_deployment_config.rb
     - name: Verify and prepare Wippy
       id: runtime
       shell: bash
@@ -68,6 +70,8 @@ jobs:
       run: |
         set -euo pipefail
         mkdir -p output
+        ruby control/.github/scripts/deployment_config.rb source/app/.wippy.yaml output/published-config.json
+        cp output/published-config.json source/app/.wippy.yaml
         version="${SOURCE_TAG#kickside-v}"
         make -C source/app release-build VERSION="$version" WIPPY_BIN=wippy
         cd source/app

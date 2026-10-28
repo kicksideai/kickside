@@ -20,6 +20,7 @@ class DeploymentBundleTests(unittest.TestCase):
         (self.root / "app").mkdir()
         (self.root / "app/version.txt").write_text("0.2.24\n")
         (self.root / "app/wippy.lock").write_text("locked module digests\n")
+        (self.root / "app/.wippy.yaml").write_text("version: '1.0'\n")
         self.snapshot = self.root / "snapshot.wapp"
         self.snapshot.write_bytes(b"locked snapshot")
 
@@ -37,6 +38,7 @@ class DeploymentBundleTests(unittest.TestCase):
             metadata = json.load(archive.extractfile("deployment-manifest.json"))
         self.assertEqual(metadata["snapshot_digest"], digest(self.snapshot.read_bytes()))
         self.assertEqual(metadata["lock_digest"], digest((self.root / "app/wippy.lock").read_bytes()))
+        self.assertEqual(metadata["config_digest"], digest((self.root / "app/.wippy.yaml").read_bytes()))
         (self.root / "app/wippy.lock").write_text("a different lock\n")
         self.assertNotEqual(bundle, self.build())
 

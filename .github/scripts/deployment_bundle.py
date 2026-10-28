@@ -41,6 +41,7 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest)
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", runtime_digest):
         raise ValueError("the runtime digest is invalid")
     lock = read_file(source / "app/wippy.lock", 4 << 20)
+    config = read_file(source / "app/.wippy.yaml", 4 << 20)
     pack = read_file(snapshot, MAX_BUNDLE_BYTES - (1 << 20))
     metadata = {
         "format": "kickside-deployment-bundle-v1",
@@ -51,6 +52,8 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest)
         "runtime_version": runtime_version,
         "runtime_digest": runtime_digest,
         "lock_digest": digest(lock),
+        "config_digest": digest(config),
+        "workspace_policy": "published-modules-only-v1",
         "snapshot_digest": digest(pack),
     }
     encoded = json.dumps(metadata, sort_keys=True, separators=(",", ":")).encode()
