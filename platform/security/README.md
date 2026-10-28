@@ -45,7 +45,7 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-Compose module policies in **System → Security → Scopes**, then assign the resulting groups in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Act-as grants** permits selecting an execution principal; it grants no access to that principal’s resources.
+Compose module policies in **System → Security → Roles**, then assign the resulting roles in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Act-as grants** permits selecting an execution principal; it grants no access to that principal’s resources.
 
 ## Reference
 

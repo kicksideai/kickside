@@ -17,8 +17,8 @@ modules:
     - name: kickside/core
       version: 0.0.0
     - name: kickside/doc2md
-      version: 0.8.14
-      hash: 76754d9e6c3255d7a46feba23d38c3e086bbb836de41e7f02d197f04c4202a6c
+      version: 0.8.15
+      hash: bb4f0f7f0bd1b4e693ae5242722eebb4b41388f03448a497048278f0e0d7e73a
     - name: kickside/execution
       version: 0.2.7
     - name: kickside/identity

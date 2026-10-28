@@ -29,7 +29,7 @@ local function failure(subject_id: string, message: string, kind: string, error_
     }
 end
 
-function M.lookup(args: any): any
+local function lookup(args: any, credential: boolean?): any
     local subject_id = trim(type(args) == "table" and (args :: any).subject_id or nil)
     if subject_id == "" then
         return failure("", "subject_id is required", errors.INVALID, "declaration", false)
@@ -52,11 +52,11 @@ function M.lookup(args: any): any
     if authority_err then return failure(subject_id, tostring(authority_err), errors.UNAVAILABLE, "infrastructure", true) end
     local config = consts.get_config()
     local authority_only = type(args) == "table" and args.authority_only == true
-    local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, authority_only)
+    local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, true, credential == true or not authority_only)
     if scope_err then return failure(subject_id, tostring(scope_err), errors.UNAVAILABLE, "infrastructure", true) end
 
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
-    local live_groups = user.security_groups or {}
+    local live_groups = effective_groups
     local metadata = session_metadata.actor(user, authority_epochs, stored_meta.scope_id or scope_name,
         live_groups, stored_meta.login_time, stored_meta)
 
@@ -72,6 +72,10 @@ function M.lookup(args: any): any
     }
 end
 
+function M.lookup(args: any): any
+    return lookup(args, false)
+end
+
 function M.lookup_credential(args: any): (any?, error?)
     local eligibility = require("credential_eligibility")
     local subject_id = trim(type(args) == "table" and args.subject_id or nil)
@@ -81,7 +85,9 @@ function M.lookup_credential(args: any): (any?, error?)
         return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
             message = "credential eligibility lookup returns no decision"}) :: error)
     end
-    local result = M.lookup(args)
+    -- Live credentials keep signed-in access and retired-role ACL references,
+    -- but never inherit the session-mint default when membership is empty.
+    local result = lookup(args, true)
     if result.success ~= false then
         -- Runtime's trusted subject lookup consumes groups and policies.
         -- Keep the scope descriptor used by KickSide's resolver separate.

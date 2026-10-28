@@ -7,6 +7,8 @@ namespace: app.composition
 # select several bundles; Hub de-duplicates the combined package queue.
 
 entries:
+  # Compatibility for existing sessions and custom scope references. New
+  # accounts receive the canonical Member role directly.
   - name: default_members
     kind: registry.entry
     meta: {type: kickside.security.group_composition}
@@ -29,16 +31,11 @@ entries:
       - kickside.renderers.security:module_access
       - kickside.widgets.security:module_access
 
-  - name: default_member_enrollment
+  - name: member_access
     kind: registry.entry
-    meta: {type: kickside.users.default_membership}
-    group_id: app.security:members
-    new_users: true
-
-  - name: core_member_enrollment
-    kind: registry.entry
-    meta: {type: kickside.users.default_membership}
-    group_id: app.security:user
+    meta: {type: kickside.security.group_composition}
+    group_id: kickside.security.groups:members
+    groups: [app.security:user]
 
   - name: onboarding_profile.knowledge
     kind: registry.entry

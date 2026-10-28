@@ -33,7 +33,7 @@ end
 
 local function replacement_groups(group_ids)
     local desired, seen = {}, {}
-    for _, group_id in ipairs(consts.with_baseline_group(consts.get_config(), group_ids)) do
+    for _, group_id in ipairs(group_ids) do
         if group_id and group_id ~= "" then
             if seen[group_id] then
                 return nil, consts.ERROR.INVALID_FIELD_VALUE .. "duplicate group_id"
@@ -102,7 +102,15 @@ function M.preflight_membership_change(db, user_id, prepare)
     local after_groups, context, prepare_err = prepare(db, before_groups, before_sources)
     if prepare_err then return nil, prepare_err end
     after_groups = group_set(after_groups)
-    local decision, decision_err = classify_membership_effect(before_groups, after_groups)
+    local account, account_err = bot_accounts.find_in(db, user_id)
+    if account_err then return nil, account_err end
+    local before_authority, after_authority = before_groups, after_groups
+    if not account or not bot_accounts.is_bot(account) then
+        local config = consts.get_config()
+        before_authority = consts.with_baseline_group(config, before_groups)
+        after_authority = consts.with_baseline_group(config, after_groups)
+    end
+    local decision, decision_err = classify_membership_effect(before_authority, after_authority)
     if decision_err then return nil, decision_err end
     return { before_groups = before_groups, before_sources = before_sources, after_groups = after_groups, context = context,
         effect = decision.effect, revision = decision.revision, fence_groups = decision.fence_groups }, nil
@@ -214,6 +222,80 @@ function M.initialize_default_group(group_id, enrollment_id)
     if commit_err then return fail(commit_err) end
     db:release()
     return { initialized = true, groups_added = added }, nil
+end
+
+-- Retire an application's former default role without enrolling restricted
+-- accounts into its replacement. Signed-in access is supplied by derive_scope,
+-- so ordinary accounts no longer need to store it as a separate membership.
+-- Bots retain their explicitly selected authority and are not enrolled here.
+function M.upgrade_memberships(from_group, to_group)
+    if type(from_group) ~= "string" or from_group == ""
+        or type(to_group) ~= "string" or to_group == "" or from_group == to_group then
+        return nil, "membership upgrade requires distinct source and destination groups"
+    end
+    local baseline = consts.get_config().baseline_group_id
+    if from_group == baseline or to_group == baseline then
+        return nil, "membership upgrade cannot replace signed-in access"
+    end
+    local db, db_err = get_db()
+    if db_err then return nil, db_err end
+    local accounts, list_err = db:query("SELECT DISTINCT app_users.user_id FROM app_users"
+        .. " INNER JOIN app_user_groups g ON g.user_id=app_users.user_id"
+        .. " WHERE NOT " .. user_repo_support.BOT_ACCOUNT_PREDICATE
+        .. " AND (g.group_id=$1 OR g.group_id=$2) ORDER BY app_users.user_id", {from_group, baseline or ""})
+    db:release()
+    if list_err then return nil, list_err end
+    local upgraded = 0
+    for _, account in ipairs(accounts or {}) do
+        local result, upgrade_err = support.retry_membership_change(function()
+            local db, db_err = get_db()
+            if db_err then return nil, db_err end
+            local changed = false
+            local preflight, preflight_err = M.preflight_membership_change(db, account.user_id, function(_, before)
+                local after, seen = {}, {}
+                for _, group in ipairs(before) do
+                    local target = group == from_group and to_group or group
+                    if group == baseline then
+                        changed = true
+                    elseif not seen[target] then
+                        after[#after + 1], seen[target] = target, true
+                    end
+                    if group == from_group then changed = true end
+                end
+                return after, {}, nil
+            end)
+            if preflight_err then db:release(); return nil, preflight_err end
+            if not changed then db:release(); return false, nil end
+            -- A host may have extended its old role. Refuse to drop any of that
+            -- authority; the application must preserve it in its replacement.
+            if preflight.effect ~= "unchanged" then
+                db:release()
+                return nil, "membership upgrade changes effective access for " .. account.user_id
+            end
+            local tx, tx_err = db:begin()
+            if tx_err or not tx then db:release(); return nil, tx_err or "membership upgrade transaction unavailable" end
+            local change, change_err = M.apply_membership_change_in(tx, account.user_id, preflight, function()
+                local _, insert_err = tx:execute([[
+                    INSERT INTO app_user_groups (user_id, group_id, source, created_at)
+                    SELECT user_id, $1, source, created_at FROM app_user_groups WHERE user_id=$2 AND group_id=$3
+                    ON CONFLICT (user_id, group_id) DO NOTHING
+                ]], {to_group, account.user_id, from_group})
+                if insert_err then return nil, insert_err end
+                local _, delete_err = tx:execute("DELETE FROM app_user_groups WHERE user_id=$1 AND (group_id=$2 OR group_id=$3)",
+                    {account.user_id, from_group, baseline or ""})
+                if delete_err then return nil, delete_err end
+                return true, nil
+            end)
+            if change_err then tx:rollback(); db:release(); return nil, change_err end
+            local _, commit_err = tx:commit()
+            if commit_err then tx:rollback(); db:release(); return nil, commit_err end
+            db:release()
+            return true, nil
+        end)
+        if upgrade_err then return nil, upgrade_err end
+        if result then upgraded = upgraded + 1 end
+    end
+    return {upgraded = upgraded}, nil
 end
 
 function M.preflight_replace(db, user_id, group_ids)
@@ -491,7 +573,6 @@ function M.complete_passwordless_provisioning(identifier, default_group, source,
 
         local defaults, defaults_err = default_groups.resolve(default_group)
         if defaults_err then return nil, defaults_err end
-        defaults = consts.with_baseline_group(consts.get_config(), defaults)
         local desired, wanted = {}, {}
         for _, group_id in ipairs(group_ids) do
             if type(group_id) == "string" and group_id ~= "" and not wanted[group_id] then
