@@ -338,7 +338,7 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
               <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" @click="c.skipScan()">
                 <Icon icon="tabler:player-skip-forward" class="km-i" aria-hidden="true" /> Skip scan
               </button>
-              <button class="km-btn km-btn-sm" @click="c.runScanNow()">
+              <button class="km-btn km-btn-sm" :disabled="!c.planCurrent.value" @click="c.runScanNow()">
                 <Icon icon="tabler:shield-check" class="km-i" aria-hidden="true" /> Run scan
               </button>
             </div>
@@ -346,7 +346,7 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
             <div v-else-if="c.scan.value.status === 'skipped'" class="km-msg km-msg-info">
               <Icon icon="tabler:shield-off" class="km-i" aria-hidden="true" />
               Security scan skipped. Install can continue without spending reviewer tokens.
-              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt" @click="c.runScanNow()"><Icon icon="tabler:shield-check" class="km-i" aria-hidden="true" /> Run scan</button>
+              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt" :disabled="!c.planCurrent.value" @click="c.runScanNow()"><Icon icon="tabler:shield-check" class="km-i" aria-hidden="true" /> Run scan</button>
             </div>
 
             <div v-else-if="c.scan.value.status === 'scanning'" class="km-scan-run">
@@ -361,13 +361,13 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
 
             <div v-else-if="c.scan.value.status === 'error'" class="km-msg km-msg-err">
               Scan failed: {{ c.scan.value.error }}
-              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt" @click="c.runScanNow()"><Icon icon="tabler:refresh" class="km-i" aria-hidden="true" /> Retry</button>
+              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt" :disabled="!c.planCurrent.value" @click="c.runScanNow()"><Icon icon="tabler:refresh" class="km-i" aria-hidden="true" /> Retry</button>
             </div>
 
             <div v-else-if="c.scan.value.status === 'unavailable'" class="km-msg km-msg-info">
               <Icon icon="tabler:shield-off" class="km-i" aria-hidden="true" />
               Security scan unavailable
-              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt" @click="c.runScanNow()"><Icon icon="tabler:refresh" class="km-i" aria-hidden="true" /> Retry</button>
+              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt" :disabled="!c.planCurrent.value" @click="c.runScanNow()"><Icon icon="tabler:refresh" class="km-i" aria-hidden="true" /> Retry</button>
             </div>
 
             <template v-else>
