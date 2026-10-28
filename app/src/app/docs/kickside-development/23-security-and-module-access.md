@@ -75,7 +75,7 @@ them to every member.
 
 ## Connect the policy to member groups
 
-The platform-owned Members group is
+The platform Member role uses the scope
 `kickside.security.groups:members`. A normal module declares its member-scope
 requirement with the canonical platform default and a declared value kind:
 
@@ -100,8 +100,8 @@ capability. Retain published requirement ids and targets when adding a policy,
 then append the new policy target. This lets an installation updated from an
 earlier release retain its existing binding.
 
-The default above is the platform Members group, not an application-owned host
-value. Other host requirements declare their `meta.value_kind` and receive their
+The default above selects the platform Member scope. Other host requirements
+declare their `meta.value_kind` and receive their
 resource from the host binding; module source does not set an `app:*` default.
 See [Settings And Environment](16-conventions.md#settings-and-environment) for
 that pattern.

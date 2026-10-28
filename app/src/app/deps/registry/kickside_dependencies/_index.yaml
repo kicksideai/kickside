@@ -193,7 +193,7 @@ entries:
     - name: kickside.ui.security:admin_scope
       value: app.security:admin
 
-  - version: ">=0.2.10"
+  - version: ">=0.2.11"
     name: kickside_users
     kind: ns.dependency
     meta: {}

@@ -249,7 +249,7 @@ entries:
     security:
       actor: {id: app:test_runner}
       policies: [app:test_runtime]
-    modules: [registry, security]
+    modules: [registry, security, sql, uuid, funcs]
     imports:
       test: wippy.test:test
       user_repo: kickside.users.persist:user_repo
@@ -260,6 +260,15 @@ entries:
       user_consts: kickside.users:consts
       session: kickside.users:session
       directory: kickside.users.directory:directory_lib
+      subject_lookup: kickside.users.binding:subject_lookup
+  - name: membership_upgrade_acl_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://membership_upgrade_acl_probe.lua
+    method: read
+    modules: [security]
+    imports:
+      reader: kickside.component.persist:component_reader
   - name: runtime_env_test
     kind: function.lua
     meta: {type: test, suite: users}
