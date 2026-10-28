@@ -1076,6 +1076,7 @@ jobs:
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
             make install MOD=settings
+            ( cd platform/settings/ui && npx --no-install vitest run --config vitest.control.config.ts --maxWorkers=2 )
             make build MOD=settings
             make -C platform/settings lockrefresh
             cd platform/settings/test
@@ -1479,6 +1480,7 @@ jobs:
             export TMPDIR="$source_root/.scratch"
             mkdir -p "$TMPDIR"
             make install MOD=widgets
+            ( cd platform/widgets/ui && npx --no-install vitest run --config vitest.control.config.ts --maxWorkers=2 )
             make build MOD=widgets
             make -C platform/widgets lockrefresh
             cd platform/widgets/test
