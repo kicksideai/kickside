@@ -2,6 +2,14 @@ version: "1.0"
 namespace: kickside.users.security
 
 entries:
+  - name: membership_config_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      resources: kickside.users:membership_config
+      actions: registry.get
+      effect: allow
+
   - name: run_as_candidate_endpoint_access
     kind: security.policy
     meta: {private: true}
