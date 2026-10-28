@@ -8,15 +8,24 @@ interface InstallSecurityScanOptions {
   props: InstallDialogProps
   hub: ReturnType<typeof import('../keeper-hub.ts').keeperHub>
   plan: Ref<{ graph?: unknown[] } | null>
+  planCurrent: Ref<boolean>
   versionArg: () => string | undefined
 }
 
-export function useInstallSecurityScan({ props, hub, plan, versionArg }: InstallSecurityScanOptions) {
+function planArtifactFingerprint(graph: unknown[]): string {
+  return graph.map(node => {
+    const item = node as Record<string, unknown>
+    return [item.module, item.version || '', item.constraint || ''].join('\u0000')
+  }).sort().join('\u0001')
+}
+
+export function useInstallSecurityScan({ props, hub, plan, planCurrent, versionArg }: InstallSecurityScanOptions) {
   // ── Security scan ────────────────────────────────────────────────────────
   const scan = ref<ScanResult>(emptyScan())
   const acknowledged = ref<Set<string>>(new Set())
   const criticalConfirmed = ref(false)
   let scanGen = 0
+  let scanPlanFingerprint: string | null = null
   const softFindings = computed(() => scan.value.findings.filter(isSoftFinding))
   const unacknowledgedSoft = computed(() => softFindings.value.filter(f => !acknowledged.value.has(f.id)))
   function acknowledge(f: ScanFinding) {
@@ -28,15 +37,18 @@ export function useInstallSecurityScan({ props, hub, plan, versionArg }: Install
     acknowledged.value = next
   }
 
-  function resetScanForPlan(graphSize = 0) {
+  function resetScanForPlan(graph?: unknown[]) {
+    const fingerprint = graph ? planArtifactFingerprint(graph) : null
+    if (fingerprint === scanPlanFingerprint) return
     scanGen++
-    scan.value = { ...emptyScan(), total: graphSize }
+    scanPlanFingerprint = fingerprint
+    scan.value = { ...emptyScan(), total: graph?.length || 0 }
     acknowledged.value = new Set()
     criticalConfirmed.value = false
   }
 
   async function runScanNow() {
-    if (!hub || !props.component) return
+    if (!hub || !props.component || !planCurrent.value) return
     const graph = plan.value?.graph || []
     const gen = ++scanGen
     acknowledged.value = new Set()
