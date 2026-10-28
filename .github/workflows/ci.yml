@@ -19,6 +19,10 @@ name: CI
         description: Optional published application tag for a verified deployment archive
         type: string
         default: ''
+      deployment_runtime_version:
+        description: Exact Wippy release version for the deployment archive
+        type: string
+        default: 0.3.55a
 permissions:
   contents: read
 concurrency:
@@ -44,6 +48,7 @@ jobs:
     uses: ./.github/workflows/deployment-bundle.yml
     with:
       source_tag: ${{ inputs.deployment_bundle_tag }}
+      runtime_version: ${{ inputs.deployment_runtime_version }}
   secret-scan:
     if: github.event_name != 'workflow_dispatch' || inputs.deployment_bundle_tag == ''
     uses: kicksideai/.github/.github/workflows/secret-scan.yml@5401fa65bed7d8648125957520e94206ed1ffd0b

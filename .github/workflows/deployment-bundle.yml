@@ -7,12 +7,19 @@ on:
       source_tag:
         type: string
         required: true
+      runtime_version:
+        type: string
+        default: 0.3.55a
   workflow_dispatch:
     inputs:
       source_tag:
         description: Published application release tag
         type: string
         required: true
+      runtime_version:
+        description: Exact Wippy release version
+        type: string
+        default: 0.3.55a
 permissions: {}
 jobs:
   bundle:
@@ -31,7 +38,7 @@ jobs:
       id-token: write
       attestations: write
     env:
-      RUNTIME_VERSION: 0.3.54a
+      RUNTIME_VERSION: ${{ inputs.runtime_version }}
       SOURCE_TAG: ${{ inputs.source_tag }}
       TARGET_ARCHITECTURE: ${{ matrix.architecture }}
       PYTHONDONTWRITEBYTECODE: '1'

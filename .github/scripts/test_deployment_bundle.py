@@ -48,6 +48,15 @@ class DeploymentBundleTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.build(**changed)
 
+    def test_runtime_upgrade_binds_a_separate_archive(self):
+        previous = self.build()
+        upgraded = self.build(runtime_version="0.3.55a", runtime_digest="sha256:" + "c" * 64)
+        self.assertNotEqual(previous, upgraded)
+        with tarfile.open(fileobj=io.BytesIO(upgraded), mode="r:gz") as archive:
+            metadata = json.load(archive.extractfile("deployment-manifest.json"))
+        self.assertEqual(metadata["runtime_version"], "0.3.55a")
+        self.assertEqual(metadata["runtime_digest"], "sha256:" + "c" * 64)
+
     def test_symlink_and_empty_snapshot_are_rejected(self):
         self.snapshot.write_bytes(b"")
         with self.assertRaises(ValueError):
