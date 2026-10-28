@@ -18,36 +18,54 @@ entries:
     kind: ns.dependency
     version: '*'
     component: kickside/component
-  - name: delegation_validator
-    kind: ns.requirement
-    default: ""
-    meta:
-      value_kind: function.lua
-      description: Optional host validation of live ordinary-user delegation targets and execution roots; empty keeps generated saves unavailable.
-    targets:
-      - entry: kickside.security:delegation_config
-        path: .meta.validator
-      - entry: kickside.security:delegation_validate_call
-        path: ".policy.resources +="
-  - name: delegation_validate_call
-    kind: security.policy
-    meta: {private: true, service_only: true}
-    policy:
-      actions: funcs.call
-      resources: []
-      effect: allow
-  - name: delegation_config
-    kind: registry.entry
-    meta: {validator: ""}
   - name: delegation
     kind: library.lua
     source: file://delegation.lua
-    modules: [registry, security, funcs, time]
+    modules: [registry, security, contract, time]
     imports:
       execution_identity: kickside.execution:execution_identity
       component: kickside.component:component
       scope_catalog: kickside.security.api:scope_catalog
       trigger_reconcile: kickside.security:trigger_reconcile
+  # A save reads its target's live status through the principal directory.
+  # Each contract authorization step stays a separate save-only grant:
+  # definition/get, canonical binding/open, and groups/call.
+  - name: delegation_directory_get
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: contract.get
+      resources: kickside.contract:directory
+      effect: allow
+  - name: delegation_directory_open
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: contract.open
+      resources: kickside.users.directory:directory_binding
+      effect: allow
+  - name: delegation_directory_groups
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: contract.call
+      resources: groups
+      effect: allow
+  - name: delegation_component_config
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: registry.get
+      resources: kickside.component:db_config
+      effect: allow
+  # Component rows live in the host database that target_db binds.
+  - name: delegation_component_db
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: db.get
+      resources: []
+      effect: allow
   - name: policy_composition
     kind: library.lua
     source: file://policy_composition.lua
@@ -147,6 +165,8 @@ entries:
       - entry: kickside.security:db_config
         path: .meta.db_id
       - entry: kickside.security.service:group_set_db
+        path: ".policy.resources +="
+      - entry: kickside.security:delegation_component_db
         path: ".policy.resources +="
 
   - name: process_host

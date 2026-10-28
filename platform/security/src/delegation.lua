@@ -1,12 +1,14 @@
 local registry = require("registry")
 local security = require("security")
-local funcs = require("funcs")
+local contract = require("contract")
 local time = require("time")
 local identity = require("execution_identity")
 local catalog = require("scope_catalog")
 local reconcile = require("trigger_reconcile")
 local component = require("component")
 local M = {}
+
+local DIRECTORY = "kickside.contract:directory"
 
 local function failure(kind, message, retryable)
     return errors.new({kind = kind, message = message, retryable = retryable == true})
@@ -33,17 +35,23 @@ local function normalize(args, operation)
     return {operation = operation, principal = principal, root = args.root, groups = groups}, nil
 end
 
-local function validate_host(request)
-    local config, config_err = registry.get("kickside.security:delegation_config")
-    if config_err then return nil, config_err end
-    local validator = config and config.meta and config.meta.validator
-    if type(validator) ~= "string" or validator == "" then
-        return nil, failure(errors.UNAVAILABLE, "host delegation validation is unconfigured", true)
+-- The target is a live ordinary user by its canonical id, as the principal
+-- directory answers it, and a component root exists.
+local function validate(request)
+    local directory_def, def_err = contract.get(DIRECTORY)
+    if def_err then return nil, def_err end
+    local directory, open_err = directory_def:open()
+    if open_err then return nil, open_err end
+    local target, target_err = directory:groups({id = request.principal.id})
+    if target_err then return nil, target_err end
+    if type(target) ~= "table" or target.active ~= true then
+        return nil, failure(errors.PERMISSION_DENIED, "delegation target must be an active user by its canonical user ID")
     end
-    local result, call_err = funcs.call(validator, {principal = request.principal, root = request.root})
-    if call_err then return nil, call_err end
-    if type(result) ~= "table" or result.success ~= true then
-        return nil, failure(errors.PERMISSION_DENIED, "host delegation validation refuses target or root")
+    if request.root ~= "*" then
+        local rows, root_err = component.list_system({component_ids = {request.root},
+            include = {meta = false, private_context = false}, limit = 1})
+        if root_err then return nil, root_err end
+        if #rows == 0 then return nil, failure(errors.NOT_FOUND, "delegation root is absent") end
     end
     local available, catalog_err = catalog.scopes()
     if catalog_err then return nil, catalog_err end
@@ -84,7 +92,7 @@ local function mutate(args, operation)
     local snap, snapshot_err = registry.snapshot()
     if snapshot_err then return nil, snapshot_err end
     if operation == "save" then
-        local valid, validation_err = validate_host(request)
+        local valid, validation_err = validate(request)
         if validation_err or not valid then return nil, validation_err end
     end
     local current, current_err = snap:get(policy_id)

@@ -14,8 +14,6 @@ entries:
     value: app:db
   - name: process_host
     value: app:processes
-  - name: kickside.security:delegation_validator
-    value: app.security:delegation_validator
 - name: db
   kind: db.sql.sqlite
   foreign_keys: true

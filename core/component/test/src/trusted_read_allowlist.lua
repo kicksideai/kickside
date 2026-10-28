@@ -41,18 +41,11 @@ M.METHODS = {
 M.SELF_PATH = "core/component/src/component.lua"
 
 M.ALLOW = {
-    ["app/src/app/security/registry/delegation/delegation.lua"] = {
+    ["platform/security/src/delegation.lua"] = {
         list_system = {
             count = 1,
-            why = "the private host delegation validator checks root existence without returning component metadata or private context",
-            entry = "app.security:delegation_validator",
-        },
-    },
-    ["platform/security/test-bot-accounts/src/host_delegation/delegation.lua"] = {
-        list_system = {
-            count = 1,
-            why = "the authenticated HTTP harness binds the production host validator source to verify private root validation through native admission",
-            entry = "app.security:delegation_validator",
+            why = "a run-as grant save checks that its component root exists without returning component metadata or private context",
+            entry = "kickside.security:delegation",
         },
     },
     ["platform/automation/src/declaration_writer.lua"] = {
