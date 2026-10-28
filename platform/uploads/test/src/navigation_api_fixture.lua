@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local M = { ACCESS = { READ = 1 }, rows = {
     {uuid = "first", actor_id = "owner", metadata = {}},
     {uuid = "second", actor_id = "owner", metadata = {}},
