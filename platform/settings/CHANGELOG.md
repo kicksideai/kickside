@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kicksideai/kickside/compare/settings-v0.3.0...settings-v0.3.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.3.0](https://github.com/kicksideai/kickside/compare/settings-v0.2.0...settings-v0.3.0) (2026-10-22)
 
 

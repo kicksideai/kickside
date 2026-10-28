@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.51](https://github.com/kicksideai/kickside/compare/widgets-v0.1.50...widgets-v0.1.51) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.1.50](https://github.com/kicksideai/kickside/compare/widgets-v0.1.49...widgets-v0.1.50) (2026-10-22)
 
 
