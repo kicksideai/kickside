@@ -24,6 +24,7 @@ entries:
       engines: kickside.knowledge:engines
       query_params: kickside.knowledge.api:query_params
       listing_page: kickside.knowledge.api:listing_page
+      stores: kickside.knowledge:stores
       http_errors: kickside.contract:http_errors
     method: handler
 

@@ -10,6 +10,8 @@ local function new(dependencies: any?): any
     local http = deps.http or http
     local security = deps.security or security
     local component = deps.component or component
+    local engines = deps.engines or engines
+    local stores = deps.stores or stores
 
 local function handler()
     local res = http.response()
@@ -76,33 +78,36 @@ local function handler()
         end
     end
 
-    -- Detail/manage needs engine config, which is not public component meta.
-    -- Read only the store row; counts remain owner-maintained public meta.
     local config = nil
+    local statistics = meta
     local store_contract = engine and type(engine.store_contract) == "string" and engine.store_contract or ""
     if store_contract ~= "" then
-        local kb_store = stores.open_engine_store(engine)
-        local store_row = nil
-        local store_err = nil
+        local kb_store, store_err = stores.open_engine_store(engine)
+        local store_row
         if kb_store then
             store_row, store_err = kb_store:get_store({ component_id = kb_id })
         end
-        if not store_err and store_row then
-            embedding_model = store_row.embedding_model or embedding_model
-            config = store_row.config
-            kb_type = store_row.kb_type or kb_type
-            enrichment_agent_id = store_row.enrichment_agent_id
-            if type(kb_type) == "string" and kb_type ~= "" then
-                local row_engine = engines.resolve(kb_type)
-                if row_engine then engine = row_engine end
-            end
+        if store_err or not store_row then
+            local failure = store_err or errors.new({kind = errors.NOT_FOUND, message = "Knowledge store not found"})
+            res:set_status((http_errors.classify(failure)))
+            res:write_json({ success = false, error = tostring(failure) })
+            return
+        end
+        embedding_model = store_row.embedding_model or embedding_model
+        config = store_row.config
+        kb_type = store_row.kb_type or kb_type
+        enrichment_agent_id = store_row.enrichment_agent_id
+        statistics = type(store_row.stats) == "table" and store_row.stats or meta
+        if type(kb_type) == "string" and kb_type ~= "" then
+            local row_engine = engines.resolve(kb_type)
+            if row_engine then engine = row_engine end
         end
     end
 
     -- Badge + stat labels are declared by the resolved engine (meta.ui), not a
     -- per-type map; the engine library formats stat_items from public meta.
     local badge = engine and engine.badge or nil
-    local stat_items = engines.format_stats(meta, engine and engine.stats_spec)
+    local stat_items = engines.format_stats(statistics, engine and engine.stats_spec)
 
     res:set_status(http.STATUS.OK)
     res:write_json({

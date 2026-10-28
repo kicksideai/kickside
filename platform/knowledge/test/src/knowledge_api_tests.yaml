@@ -61,3 +61,15 @@ entries:
     imports:
       test: wippy.test:test
       search: kickside.knowledge.api:search
+
+  - name: store_statistics_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://store_statistics_test.lua
+    method: run
+    modules: [http]
+    imports:
+      test: wippy.test:test
+      get_kb: kickside.knowledge.api:get_kb
+      list_kb: kickside.knowledge.api:list_kb
+      engines: kickside.knowledge:engines

@@ -2,6 +2,7 @@ local http = require("http")
 local security = require("security")
 local component = require("component")
 local engines = require("engines")
+local stores = require("stores")
 local query_params = require("query_params")
 local listing_page = require("listing_page")
 local http_errors = require("http_errors")
@@ -14,6 +15,8 @@ local function new(dependencies: any?): any
     local security = deps.security or security
     local component = deps.component or component
     local engines = deps.engines or engines
+    local stores = deps.stores or stores
+    local listing_page = deps.listing_page or listing_page
 
 -- The list view routes a KB to its engine's store reader by its store_contract
 -- — discovered from the engine registry, never by naming an engine.
@@ -46,7 +49,7 @@ local function handler()
     -- those, ignoring q/limit), `q` is a case-insensitive name/description
     -- substring filter, `limit` caps the rows. With none present the list
     -- returns up to 2000 rows with continuation. Filtering happens
-    -- before the per-KB store reads so a 1200-KB list never opens 1200 stores.
+    -- before the per-KB store reads.
     local q_param = req:query("q")
     local q: string? = (type(q_param) == "string" and q_param ~= "") and string.lower(q_param) or nil
     local ids_param = req:query("ids")
@@ -116,24 +119,39 @@ local function handler()
         local component_engine = engine_for_component(comp, engine_by_type, engine_by_impl)
         local kb_type = meta.kb_type or (component_engine and component_engine.kb_type)
 
-        -- Badge and stat labels are declared by the engine (meta.ui), not a
-        -- per-type map; the engine library formats stat_items from public meta.
         local engine = engine_by_type[kb_type] or component_engine
         local badge = engine and engine.badge or nil
-
-        local stat_items = engines.format_stats(meta, engine and engine.stats_spec)
+        local statistics = meta
+        local status = meta.status or "ready"
+        if engine and type(engine.store_contract) == "string" and engine.store_contract ~= "" then
+            local store, store_err = stores.open_engine_store(engine)
+            local row
+            if store then row, store_err = store:get_store({ component_id = cid }) end
+            if store_err and not errors.is(store_err, errors.NOT_FOUND) then
+                res:set_status((http_errors.classify(store_err)))
+                res:write_json({ success = false, error = tostring(store_err) })
+                return
+            end
+            if not row then
+                statistics = {}
+                status = "missing"
+            elseif type(row.stats) == "table" then
+                statistics = row.stats
+            end
+        end
+        local stat_items = engines.format_stats(statistics, engine and engine.stats_spec)
         -- Numeric projections for the page header rollup (sum across KBs),
         -- read straight off public meta so no stat_items text is re-parsed.
-        local doc_count_raw = tonumber(meta.document_count) or 0
-        local embed_count_raw = tonumber(meta.embedding_count) or 0
-        local claims_count_raw = tonumber(meta.claim_count) or 0
+        local doc_count_raw = tonumber(statistics.document_count) or 0
+        local embed_count_raw = tonumber(statistics.embedding_count) or 0
+        local claims_count_raw = tonumber(statistics.claim_count) or 0
 
         table.insert(items, {
             id = cid,
             name = meta.title or "",
             description = meta.comment or "",
             icon = meta.icon or "tabler:brain",
-            status = meta.status or "ready",
+            status = status,
             auto_summary = meta.auto_summary,
             kb_type = kb_type,
             badge = badge,
