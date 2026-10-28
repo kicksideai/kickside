@@ -40,7 +40,10 @@ local function handle(args)
     local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
     if access_err then return nil, binding_errors.from(access_err, errors.PERMISSION_DENIED, "access_denied") end
 
-    local artifact_content, artifact_err = artifact_parts_repo.read_primary_content(upload_id)
+    local artifact_content, artifact_err
+    if args.format ~= "raw" or args.extracted_only == true then
+        artifact_content, artifact_err = artifact_parts_repo.read_primary_content(upload_id)
+    end
     if args.extracted_only == true then
         if artifact_err or not artifact_content or type(artifact_content.content) ~= "string" then
             return {
