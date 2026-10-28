@@ -14,9 +14,8 @@ entries:
     meta:
       comment: Shared durable execution, nesting, parking, signaling, and recovery engine.
     component: wippy/dataflow
-    # The application lock must pin Dataflow at 0.7.8 or newer for resume
-    # reconstruction, nil-absent named inputs, and the reserved max_iterations input.
-    version: '*'
+    # Typed flow/parked-signal inspection is introduced by Dataflow 0.7.31.
+    version: '>=0.7.31'
 
   - name: dep.kickside.contract
     kind: ns.dependency
@@ -167,7 +166,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      destination: kickside.blocks.internal:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: resume_under_identity
@@ -180,7 +179,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      destination: kickside.blocks.internal:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: process_host
@@ -198,3 +197,13 @@ entries:
     source: file://review_signal.lua
     imports:
       dataflow_repo: userspace.dataflow.persist:dataflow_repo
+
+  - name: authorize_arm
+    kind: function.lua
+    meta:
+      comment: Authorizes an external Block arm under the current actor for an owned pending parked signal.
+    source: file://authorize_arm.lua
+    method: authorize
+    modules: [security]
+    imports:
+      destination: kickside.blocks.internal:signal_destination

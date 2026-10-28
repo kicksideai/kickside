@@ -9,8 +9,7 @@ modules:
     - name: kickside/core
       version: 0.0.0
     - name: kickside/doc2md
-      version: 0.8.14
-      hash: 76754d9e6c3255d7a46feba23d38c3e086bbb836de41e7f02d197f04c4202a6c
+      version: 0.8.15
     - name: kickside/execution
       version: 0.2.7
     - name: kickside/jobs
@@ -54,8 +53,8 @@ modules:
       version: 0.4.6
       hash: aa0c92b85c0dc2c96f00119a7eaa1ced569a2ac8899514d432aef0c910e73e63
     - name: wippy/test
-      version: 0.4.23
-      hash: 94878c4eeabac3337b795087d37ef6fe894458e26a5c7a1dd61012b43fcae366
+      version: 0.4.24
+      hash: b118903b3a239b3cd423169c64f17d89b8b920b5fefbf79f94789cf49f9341b5
     - name: wippy/views
       version: 0.5.13
       hash: b98c1733dfd5aafa628d81a5f587f2a47f78246d55e60ae3d4fd8d2b90853488
