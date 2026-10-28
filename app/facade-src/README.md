@@ -32,8 +32,8 @@ only assembly that reaches the shadows.
 (both reach the host document and every WC shadow). The split is organizational:
 
 - `custom/` — PrimeVue `.p-*` component chrome (dialog, button, input, popover, …).
-- `children/` — WC-internal base rules: the preflight border reset,
-  `.p-hidden-accessible`, and the dark-mode `--p-primary-contrast-color` override.
+- `children/` — WC-internal base rules: the preflight border reset and
+  `.p-hidden-accessible`.
 
 Design tokens (`--p-*`) are separate: `app/static/css-variables.facade.json`
 (`css_variables`), served compiled at `/api/public/facade/variables.css`.
