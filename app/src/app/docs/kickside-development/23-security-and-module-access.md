@@ -115,10 +115,12 @@ own member-scope requirement as in the example.
 
 ## How access is evaluated
 
-An application composes its selected module policies into groups. The default
-Members group includes the platform Members group, while the signed-in baseline
-provides the shell, session, and own-profile capabilities. Administrators assign
-groups to users; a user's effective scope combines the policies from all of
+An application composes its selected module policies into roles. KickSide ships
+two default roles: Administrator and Member. Member uses the platform scope
+`kickside.security.groups:members`; the application adds its core capabilities
+to that role. Signed-in shell and own-profile access is supplied during
+authentication, without a separate User role or stored membership. Administrators
+assign roles to users; a user's effective scope combines the policies from all of
 their groups. A deny takes precedence over an allow.
 
 The same scope controls registry discovery, navigation, pages, views, contract

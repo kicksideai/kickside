@@ -95,6 +95,34 @@ local function define_tests()
             test.eq(scope:evaluate(actor, "access", "unrelated:list.endpoint"), "undefined")
         end)
 
+        test.it("combines host access and module selection declarations for one Member role", function()
+            local ids = {"app:test_multi_core", "app:test_multi_module", "app:test_multi_a_host", "app:test_multi_z_modules"}
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = ids[1], kind = "security.policy", data = {
+                groups = {"app:test_multi_core_group"},
+                policy = {actions = "access", resources = "app:multi_shell", effect = "allow"}}})
+            changes:create({id = ids[2], kind = "security.policy", meta = {intent = "test_multi_module"}, data = {
+                policy = {actions = "access", resources = "app:multi_module", effect = "allow"}}})
+            changes:create({id = ids[3], kind = "registry.entry", meta = {type = "kickside.security.group_composition"},
+                data = {group_id = "app:test_multi_member", groups = {"app:test_multi_core_group"}}})
+            changes:create({id = ids[4], kind = "registry.entry", meta = {type = "kickside.security.group_composition"},
+                data = {group_id = "app:test_multi_member", select = {["meta.intent"] = "test_multi_module"}}})
+            test.is_nil(select(2, changes:apply()))
+            local ok, failure = pcall(function()
+                test.not_nil((trigger_reconcile.trigger()))
+                local scope = assert(source_scope.resolve("app:test_multi_member"))
+                local actor = assert(security.new_actor("multi-member", {}))
+                test.eq(scope:evaluate(actor, "access", "app:multi_shell"), "allow")
+                test.eq(scope:evaluate(actor, "access", "app:multi_module"), "allow")
+                test.eq(scope:evaluate(actor, "access", "app:unrelated_multi"), "undefined")
+            end)
+            changes = assert(registry.snapshot()):changes()
+            for _, id in ipairs(ids) do changes:delete(id) end
+            test.is_nil(select(2, changes:apply()))
+            test.not_nil((trigger_reconcile.trigger()))
+            if not ok then error(failure) end
+        end)
+
         test.it("plans a composed catalog of distinct module grants in time linear in its policies", function()
             local original = assert(registry.current_version())
             local changes = assert(registry.snapshot()):changes()

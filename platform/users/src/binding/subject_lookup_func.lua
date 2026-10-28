@@ -56,7 +56,7 @@ function M.lookup(args: any): any
     if scope_err then return failure(subject_id, tostring(scope_err), errors.UNAVAILABLE, "infrastructure", true) end
 
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
-    local live_groups = user.security_groups or {}
+    local live_groups = authority_only and (user.security_groups or {}) or effective_groups
     local metadata = session_metadata.actor(user, authority_epochs, stored_meta.scope_id or scope_name,
         live_groups, stored_meta.login_time, stored_meta)
 
@@ -81,7 +81,13 @@ function M.lookup_credential(args: any): (any?, error?)
         return nil, (errors.new({kind = errors.INTERNAL, retryable = false,
             message = "credential eligibility lookup returns no decision"}) :: error)
     end
-    local result = M.lookup(args)
+    -- Credential admission has already excluded bots. Ordinary signed-in users
+    -- retain the application's baseline and retired-role ACL aliases during
+    -- live token validation, as they do when their session is minted.
+    local request = {}
+    for key, value in pairs(type(args) == "table" and args or {}) do request[key] = value end
+    request.authority_only = false
+    local result = M.lookup(request)
     if result.success ~= false then
         -- Runtime's trusted subject lookup consumes groups and policies.
         -- Keep the scope descriptor used by KickSide's resolver separate.
