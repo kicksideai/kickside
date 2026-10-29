@@ -25,6 +25,8 @@ entries:
     kind: function.lua
     source: file://admission_provider.lua
     method: get_content
+    modules: [ctx]
+    imports: { test: wippy.test:test }
   - name: admission_content_provider
     kind: contract.binding
     contracts:
@@ -33,36 +35,27 @@ entries:
         methods:
           get_content: app:admission_get_content
           get_info: app:admission_get_content
-  - name: admission_structured_output
+  - name: admission_accept
     kind: function.lua
     source: file://admission_provider.lua
-    method: structured_output
-  - name: admission_driver
+    method: accept
+    modules: [ctx]
+    imports: { test: wippy.test:test }
+  - name: admission_accepting_engine
     kind: contract.binding
     contracts:
-      - contract: wippy.llm:structured_output
+      - contract: kickside.contract:embeddable
+        context_required: [component_id]
         methods:
-          structured_output: app:admission_structured_output
-  - name: admission_provider
-    kind: registry.entry
-    meta: { type: llm.provider, name: admission-test, title: Admission test }
-    driver: { id: app:admission_driver }
-  - name: admission-fast
-    kind: registry.entry
-    meta: { type: llm.model, name: admission-fast, title: Admission fast, capabilities: [structured_output, generate], class: [fast], priority: 100 }
-    max_tokens: 100000
-    output_tokens: 32768
-    providers: [{ id: app:admission_provider, provider_model: admission-fast }]
-  - name: admission-embed
-    kind: registry.entry
-    meta: { type: llm.model, name: admission-embed, title: Admission embed, capabilities: [embed], class: [embed], priority: 100 }
-    dimensions: 512
-    providers: [{ id: app:admission_provider, provider_model: admission-embed }]
+          embed_content: app:admission_accept
+          embed_reference: kickside.knowledge.binding:embed_reference_func
 
   - name: admission_refuse
     kind: function.lua
     source: file://admission_provider.lua
     method: refuse
+    modules: [ctx]
+    imports: { test: wippy.test:test }
   - name: admission_refusing_engine
     kind: contract.binding
     contracts:
