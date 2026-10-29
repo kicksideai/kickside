@@ -57,7 +57,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.55a
+        version: latest
         hub-url: https://hub.wippy.ai
     - name: Verify companion module artifacts
       env:
