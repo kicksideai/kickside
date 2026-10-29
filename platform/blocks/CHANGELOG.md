@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.43](https://github.com/kicksideai/kickside/compare/blocks-v0.1.42...blocks-v0.1.43) (2026-10-29)
+
+
+### Features
+
+* **blocks:** support bounded native retries and execution timeouts ([#231](https://github.com/kicksideai/kickside/issues/231)) ([f71bd38](https://github.com/kicksideai/kickside/commit/f71bd38b1a94eb8549aa78d626976ce1a8523e9c))
+
 ## [0.1.42](https://github.com/kicksideai/kickside/compare/blocks-v0.1.41...blocks-v0.1.42) (2026-10-28)
 
 

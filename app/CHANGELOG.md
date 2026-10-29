@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.25](https://github.com/kicksideai/kickside/compare/kickside-v0.2.24...kickside-v0.2.25) (2026-10-29)
+
+
+### Bug Fixes
+
+* **app:** allow canonical usage tracking for signed-in sessions ([#223](https://github.com/kicksideai/kickside/issues/223)) ([aef425c](https://github.com/kicksideai/kickside/commit/aef425c8d732615dcbfeb19e29c1b98074f16459))
+* **app:** keep overflowing navigation and account menus usable ([#217](https://github.com/kicksideai/kickside/issues/217)) ([1d9c3c4](https://github.com/kicksideai/kickside/commit/1d9c3c4c2873c36c57be4ddba559557cba60351e))
+* **app:** limit chat flap clicks to the visible tab ([#203](https://github.com/kicksideai/kickside/issues/203)) ([59cdc12](https://github.com/kicksideai/kickside/commit/59cdc12044d771ead56f529aeac011264314d900))
+* preserve composed scopes across chat and Inbox review ([#220](https://github.com/kicksideai/kickside/issues/220)) ([8c16715](https://github.com/kicksideai/kickside/commit/8c167155d4f77d81948b3148284d1f0bd34f30c2))
+* **release:** require companion artifacts before application publication ([#224](https://github.com/kicksideai/kickside/issues/224)) ([f76687b](https://github.com/kicksideai/kickside/commit/f76687bf122da7a913e1bfb5bc2402b8b6ca8d54))
+
 ## [0.2.24](https://github.com/kicksideai/kickside/compare/kickside-v0.2.23...kickside-v0.2.24) (2026-10-28)
 
 
