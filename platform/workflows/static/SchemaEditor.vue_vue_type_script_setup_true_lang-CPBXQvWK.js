@@ -1,10 +1,10 @@
-import { resolveDirective as ye, withDirectives as we, openBlock as b, createElementBlock as h, mergeProps as T, createElementVNode as m, renderSlot as q, normalizeClass as xe, createCommentVNode as P, toDisplayString as C, resolveComponent as Se, Fragment as W, renderList as ke, createBlock as G, createSlots as Ae, withCtx as M, defineComponent as se, ref as x, onMounted as Oe, watch as Y, onBeforeUnmount as ue, nextTick as Ee, computed as F, unref as $, createVNode as B, withKeys as Le, withModifiers as $e, createTextVNode as te } from "vue";
+import { resolveDirective as ye, withDirectives as we, openBlock as g, createElementBlock as v, mergeProps as $, createElementVNode as y, renderSlot as W, normalizeClass as xe, createCommentVNode as B, toDisplayString as P, resolveComponent as Se, Fragment as G, renderList as ke, createBlock as Y, createSlots as Ae, withCtx as M, defineComponent as se, ref as S, onMounted as Oe, watch as Z, onBeforeUnmount as ue, nextTick as Ee, computed as H, unref as L, createVNode as I, withKeys as Le, withModifiers as $e, createTextVNode as te } from "vue";
 import { b as de, a as Te, s as ze } from "./index-I_-ROi8M.js";
-import { B as X, R as ce, l as Z, f as ne, t as H, y as j } from "./index-B9KLaL2S.js";
-import { Y as Ve, s as J } from "./pickerselect-Bt8Nl0Ia.js";
+import { B as X, R as ce, l as ee, f as ne, t as J, y as j } from "./index-B9KLaL2S.js";
+import { Z as Ve, s as U } from "./pickerselect-BuC_5yaD.js";
 import { Icon as oe } from "@iconify/vue";
 import { loadByTagName as Ie, api as Be } from "@wippy-fe/proxy";
-import { A as Pe } from "./http-error-DV_DxI6h.js";
+import { A as Pe } from "./http-error-B4DMrBUB.js";
 var Ce = `
     .p-togglebutton {
         display: inline-flex;
@@ -248,7 +248,7 @@ var fe = {
       return this.hasLabel ? this.d_value ? this.onLabel : this.offLabel : " ";
     },
     dataP: function() {
-      return Z(Re({
+      return ee(Re({
         checked: this.active,
         invalid: this.$invalid
       }, this.size, this.size));
@@ -260,7 +260,7 @@ var fe = {
 }, Me = ["tabindex", "disabled", "aria-pressed", "aria-label", "aria-labelledby", "data-p-checked", "data-p-disabled", "data-p"], Fe = ["data-p"];
 function He(e, n, t, o, c, a) {
   var l = ye("ripple");
-  return we((b(), h("button", T({
+  return we((g(), v("button", $({
     type: "button",
     class: e.cx("root"),
     tabindex: e.tabindex,
@@ -278,22 +278,22 @@ function He(e, n, t, o, c, a) {
     "data-p-checked": a.active,
     "data-p-disabled": e.disabled,
     "data-p": a.dataP
-  }), [m("span", T({
+  }), [y("span", $({
     class: e.cx("content")
   }, a.getPTOptions("content"), {
     "data-p": a.dataP
-  }), [q(e.$slots, "default", {}, function() {
-    return [q(e.$slots, "icon", {
+  }), [W(e.$slots, "default", {}, function() {
+    return [W(e.$slots, "icon", {
       value: e.d_value,
       class: xe(e.cx("icon"))
     }, function() {
-      return [e.onIcon || e.offIcon ? (b(), h("span", T({
+      return [e.onIcon || e.offIcon ? (g(), v("span", $({
         key: 0,
         class: [e.cx("icon"), e.d_value ? e.onIcon : e.offIcon]
-      }, a.getPTOptions("icon")), null, 16)) : P("", !0)];
-    }), m("span", T({
+      }, a.getPTOptions("icon")), null, 16)) : B("", !0)];
+    }), y("span", $({
       class: e.cx("label")
-    }, a.getPTOptions("label")), C(a.label), 17)];
+    }, a.getPTOptions("label")), P(a.label), 17)];
   })], 16, Fe)], 16, Me)), [[l]]);
 }
 fe.render = He;
@@ -420,9 +420,9 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   } };
 }
 function Ye(e) {
-  return Ze(e) || Xe(e) || pe(e) || Qe();
+  return Xe(e) || Qe(e) || pe(e) || Ze();
 }
-function Qe() {
+function Ze() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
@@ -433,10 +433,10 @@ function pe(e, n) {
     return t === "Object" && e.constructor && (t = e.constructor.name), t === "Map" || t === "Set" ? Array.from(e) : t === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? Q(e, n) : void 0;
   }
 }
-function Xe(e) {
+function Qe(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
-function Ze(e) {
+function Xe(e) {
   if (Array.isArray(e)) return Q(e);
 }
 function Q(e, n) {
@@ -474,7 +474,7 @@ var be = {
         if (this.multiple)
           if (a) {
             if (s = this.d_value.filter(function(i) {
-              return !H(i, l, c.equalityKey);
+              return !J(i, l, c.equalityKey);
             }), !this.allowEmpty && s.length === 0) return;
           } else
             s = this.d_value ? [].concat(Ye(this.d_value), [l]) : [l];
@@ -496,7 +496,7 @@ var be = {
           try {
             for (c.s(); !(a = c.n()).done; ) {
               var l = a.value;
-              if (H(l, o, this.equalityKey)) {
+              if (J(l, o, this.equalityKey)) {
                 t = !0;
                 break;
               }
@@ -508,7 +508,7 @@ var be = {
           }
         }
       } else
-        t = H(this.d_value, o, this.equalityKey);
+        t = J(this.d_value, o, this.equalityKey);
       return t;
     }
   },
@@ -517,7 +517,7 @@ var be = {
       return this.optionValue ? null : this.dataKey;
     },
     dataP: function() {
-      return Z({
+      return ee({
         invalid: this.$invalid
       });
     }
@@ -531,14 +531,14 @@ var be = {
 }, et = ["aria-labelledby", "data-p"];
 function tt(e, n, t, o, c, a) {
   var l = Se("ToggleButton");
-  return b(), h("div", T({
+  return g(), v("div", $({
     class: e.cx("root"),
     role: "group",
     "aria-labelledby": e.ariaLabelledby
   }, e.ptmi("root"), {
     "data-p": a.dataP
-  }), [(b(!0), h(W, null, ke(e.options, function(s, i) {
-    return b(), G(l, {
+  }), [(g(!0), v(G, null, ke(e.options, function(s, i) {
+    return g(), Y(l, {
       key: a.getOptionRenderKey(s),
       modelValue: a.isSelected(s),
       onLabel: a.getOptionLabel(s),
@@ -556,13 +556,13 @@ function tt(e, n, t, o, c, a) {
     }, [e.$slots.option ? {
       name: "default",
       fn: M(function() {
-        return [q(e.$slots, "option", {
+        return [W(e.$slots, "option", {
           option: s,
           index: i
         }, function() {
-          return [m("span", T({
+          return [y("span", $({
             ref_for: !0
-          }, e.ptm("pcToggleButton").label), C(a.getOptionLabel(s)), 17)];
+          }, e.ptm("pcToggleButton").label), P(a.getOptionLabel(s)), 17)];
         })];
       }),
       key: "0"
@@ -741,7 +741,7 @@ var ge = {
   },
   computed: {
     attrs: function() {
-      return T(this.ptmi("root", {
+      return $(this.ptmi("root", {
         context: {
           filled: this.$filled,
           disabled: this.disabled
@@ -749,7 +749,7 @@ var ge = {
       }), this.formField);
     },
     dataP: function() {
-      return Z(lt({
+      return ee(lt({
         invalid: this.$invalid,
         fluid: this.$fluid,
         filled: this.$variant === "filled"
@@ -758,7 +758,7 @@ var ge = {
   }
 }, ut = ["value", "name", "disabled", "aria-invalid", "data-p"];
 function dt(e, n, t, o, c, a) {
-  return b(), h("textarea", T({
+  return g(), v("textarea", $({
     class: e.cx("root"),
     value: e.d_value,
     name: e.name,
@@ -786,9 +786,9 @@ const ct = { class: "kx-wcmount" }, ft = {
     label: {},
     attrs: {}
   },
-  emits: ["change", "created", "close", "error"],
+  emits: ["change", "select", "created", "close", "error"],
   setup(e, { emit: n }) {
-    const t = e, o = n, c = x(null), a = x(!1);
+    const t = e, o = n, c = S(null), a = S(!1);
     let l = null, s = 0;
     const i = /* @__PURE__ */ new Set();
     function u(r) {
@@ -797,16 +797,19 @@ const ct = { class: "kx-wcmount" }, ft = {
     function k(r) {
       return r.composedPath()[0] !== l ? !1 : (r.stopPropagation(), !0);
     }
+    function T(r) {
+      k(r) && o("select", r.detail);
+    }
     function z(r) {
       k(r) && o("created", r.detail);
     }
-    function V(r) {
+    function R(r) {
       k(r) && o("close", r.detail);
     }
-    function R(r) {
+    function O(r) {
       k(r) && o("error", r.detail);
     }
-    function S(r) {
+    function m(r) {
       if (typeof r == "string") return r;
       try {
         return JSON.stringify(r ?? {});
@@ -814,61 +817,61 @@ const ct = { class: "kx-wcmount" }, ft = {
         return null;
       }
     }
-    function y() {
+    function E() {
       if (!l) return;
-      const r = S(t.config);
+      const r = m(t.config);
       if (r !== null && l.setAttribute("config", r), t.schema !== void 0 && t.schema !== null) {
-        const f = S(t.schema);
+        const f = m(t.schema);
         f !== null && l.setAttribute("schema", f);
       }
       if (t.meta !== void 0 && t.meta !== null) {
-        const f = S(t.meta);
+        const f = m(t.meta);
         f !== null && l.setAttribute("meta", f);
       }
       t.provider && l.setAttribute("provider", t.provider), t.label && l.setAttribute("label", t.label);
-      const v = t.attrs || {};
+      const h = t.attrs || {};
       for (const f of [...i])
-        (!(f in v) || v[f] == null) && (l.removeAttribute(f), i.delete(f));
-      for (const [f, g] of Object.entries(v)) {
-        if (g == null) continue;
-        const I = typeof g == "object" ? S(g) : String(g);
-        I !== null && (l.setAttribute(f, I), i.add(f));
+        (!(f in h) || h[f] == null) && (l.removeAttribute(f), i.delete(f));
+      for (const [f, b] of Object.entries(h)) {
+        if (b == null) continue;
+        const C = typeof b == "object" ? m(b) : String(b);
+        C !== null && (l.setAttribute(f, C), i.add(f));
       }
     }
-    function E(r = l) {
-      r && (r.removeEventListener("config-changed", u), r.removeEventListener("change", u), r.removeEventListener("created", z), r.removeEventListener("close", V), r.removeEventListener("error", R), r === l && (l = null), i.clear());
+    function A(r = l) {
+      r && (r.removeEventListener("config-changed", u), r.removeEventListener("change", u), r.removeEventListener("select", T), r.removeEventListener("created", z), r.removeEventListener("close", R), r.removeEventListener("error", O), r === l && (l = null), i.clear());
     }
-    async function L(r) {
+    async function V(r) {
       if (!customElements.get(r))
         try {
           await Ie(r, { timeoutMs: 8e3 });
         } catch {
         }
     }
-    async function A() {
-      const r = ++s, v = c.value, f = t.tag;
-      if (a.value = !1, !!v && (E(), v.innerHTML = "", !!f))
+    async function w() {
+      const r = ++s, h = c.value, f = t.tag;
+      if (a.value = !1, !!h && (A(), h.innerHTML = "", !!f))
         try {
-          if (await L(f), r !== s || c.value !== v || t.tag !== f) return;
-          const g = document.createElement(f);
-          g.classList.add("kx-wcmount-surface"), l = g, y(), g.addEventListener("config-changed", u), g.addEventListener("change", u), g.addEventListener("created", z), g.addEventListener("close", V), g.addEventListener("error", R), g.style.display = "block", v.appendChild(g), a.value = !customElements.get(f);
+          if (await V(f), r !== s || c.value !== h || t.tag !== f) return;
+          const b = document.createElement(f);
+          b.classList.add("kx-wcmount-surface"), l = b, E(), b.addEventListener("config-changed", u), b.addEventListener("change", u), b.addEventListener("select", T), b.addEventListener("created", z), b.addEventListener("close", R), b.addEventListener("error", O), b.style.display = "block", h.appendChild(b), a.value = !customElements.get(f);
         } catch {
           r === s && (a.value = !0);
         }
     }
-    async function O() {
-      a.value = !1, await Ee(), await A();
+    async function F() {
+      a.value = !1, await Ee(), await w();
     }
-    return Oe(A), Y(() => t.tag, A), Y(() => [t.config, t.schema, t.meta, t.provider, t.label, t.attrs], y, { deep: !0 }), ue(() => {
-      s += 1, E();
-    }), (r, v) => (b(), h("div", ct, [
-      a.value ? (b(), h("div", ft, [
-        v[0] || (v[0] = m("span", null, "This setup panel couldn’t load.", -1)),
-        m("button", {
+    return Oe(w), Z(() => t.tag, w), Z(() => [t.config, t.schema, t.meta, t.provider, t.label, t.attrs], E, { deep: !0 }), ue(() => {
+      s += 1, A();
+    }), (r, h) => (g(), v("div", ct, [
+      a.value ? (g(), v("div", ft, [
+        h[0] || (h[0] = y("span", null, "This setup panel couldn’t load.", -1)),
+        y("button", {
           type: "button",
-          onClick: O
+          onClick: F
         }, "Try again")
-      ])) : (b(), h("div", {
+      ])) : (g(), v("div", {
         key: 1,
         ref_key: "host",
         ref: c
@@ -880,7 +883,7 @@ const ct = { class: "kx-wcmount" }, ft = {
   for (const [o, c] of n)
     t[o] = c;
   return t;
-}, gt = /* @__PURE__ */ bt(pt, [["__scopeId", "data-v-3ec70c11"]]);
+}, gt = /* @__PURE__ */ bt(pt, [["__scopeId", "data-v-3d6a00f1"]]);
 function K(e) {
   const n = e.trim();
   if (!n) return { value: null, error: "" };
@@ -910,7 +913,7 @@ const mt = 11e4;
 function yt(e) {
   return "schema" in e;
 }
-const ie = vt, U = "The assistant couldn’t draft a schema.";
+const ie = vt, q = "The assistant couldn’t draft a schema.";
 async function wt(e, n, t = {}, o) {
   const c = { intent: e };
   n != null && (c.current_schema = n);
@@ -923,16 +926,16 @@ async function wt(e, n, t = {}, o) {
       signal: o
     })).data;
   } catch (u) {
-    const k = String(u?.code || ""), z = String(u?.name || "");
-    if (k === "ERR_CANCELED" || z === "CanceledError" || z === "AbortError")
+    const k = String(u?.code || ""), T = String(u?.name || "");
+    if (k === "ERR_CANCELED" || T === "CanceledError" || T === "AbortError")
       return { error: "Draft cancelled." };
     if (Pe(u) === 404) return { error: ie, unavailable: !0 };
-    const V = u?.response?.data;
-    return V ? { error: le(V, u instanceof Error && u.message ? u.message : U) } : { error: u instanceof Error && u.message ? u.message : U };
+    const z = u?.response?.data;
+    return z ? { error: le(z, u instanceof Error && u.message ? u.message : q) } : { error: u instanceof Error && u.message ? u.message : q };
   }
   if (!l || typeof l != "object") return { error: ie, unavailable: !0 };
   const s = l;
-  if (s.success === !1) return { error: le(s, U) };
+  if (s.success === !1) return { error: le(s, q) };
   const i = s.schema;
   return !i || typeof i != "object" || Array.isArray(i) ? { error: "The assistant returned no schema." } : { schema: i, notes: s.notes != null ? String(s.notes) : void 0 };
 }
@@ -969,135 +972,135 @@ const xt = { class: "wf-sed" }, St = { class: "wf-sed-bar" }, kt = {
   },
   emits: ["update:modelValue", "change", "clear", "valid"],
   setup(e, { emit: n }) {
-    const t = e, o = n, c = F(() => t.mode !== "value"), a = F(() => t.mode === "value" && Ve(t.schema)), l = x("code"), s = [
+    const t = e, o = n, c = H(() => t.mode !== "value"), a = H(() => t.mode === "value" && Ve(t.schema)), l = S("code"), s = [
       { label: "Form", value: "form" },
       { label: "JSON", value: "code" }
-    ], i = x(""), u = x("");
+    ], i = S(""), u = S("");
     function k() {
       const p = t.modelValue;
-      p && typeof p == "object" ? i.value = JSON.stringify(p, null, 2) : t.allowEmpty ? i.value = "" : i.value = JSON.stringify(c.value ? { type: "object", properties: {} } : {}, null, 2), u.value = "", I(), a.value || (l.value = "code"), o("valid", !0);
+      p && typeof p == "object" ? i.value = JSON.stringify(p, null, 2) : t.allowEmpty ? i.value = "" : i.value = JSON.stringify(c.value ? { type: "object", properties: {} } : {}, null, 2), u.value = "", b(), a.value || (l.value = "code"), o("valid", !0);
+    }
+    function T() {
+      b();
+      const p = !i.value.trim(), { value: d, error: x } = K(i.value);
+      u.value = x, o("valid", !x), !(p || x || !d) && o("update:modelValue", d);
     }
     function z() {
-      I();
-      const p = !i.value.trim(), { value: d, error: w } = K(i.value);
-      u.value = w, o("valid", !w), !(p || w || !d) && o("update:modelValue", d);
-    }
-    function V() {
       if (t.allowEmpty && !i.value.trim()) {
-        u.value = "", I(), o("valid", !0), o("clear");
+        u.value = "", b(), o("valid", !0), o("clear");
         return;
       }
       const { value: p, error: d } = K(i.value);
-      u.value = d, o("valid", !d), !(d || !p) && (I(), o("update:modelValue", p), o("change", p));
+      u.value = d, o("valid", !d), !(d || !p) && (b(), o("update:modelValue", p), o("change", p));
     }
     function R(p) {
       if (!p || typeof p != "object") return;
       const d = { ...t.modelValue || {}, ...p };
       i.value = JSON.stringify(d, null, 2), o("update:modelValue", d), o("change", d);
     }
-    const S = x(""), y = x(!1), E = x(""), L = x(!1), A = x(""), O = x(null), r = F(() => O.value !== null);
-    let v = null, f = 0;
-    function g() {
-      f++, v?.abort(), v = null, y.value = !1;
+    const O = S(""), m = S(!1), E = S(""), A = S(!1), V = S(""), w = S(null), F = H(() => w.value !== null);
+    let r = null, h = 0;
+    function f() {
+      h++, r?.abort(), r = null, m.value = !1;
     }
-    function I() {
-      O.value = null, A.value = "", E.value = "";
+    function b() {
+      w.value = null, V.value = "", E.value = "";
     }
-    async function ee() {
-      if (y.value) {
-        g();
+    async function C() {
+      if (m.value) {
+        f();
         return;
       }
-      const p = S.value.trim();
-      if (!p || L.value) return;
-      const d = new AbortController(), w = ++f;
-      v = d, y.value = !0, E.value = "";
+      const p = O.value.trim();
+      if (!p || A.value) return;
+      const d = new AbortController(), x = ++h;
+      r = d, m.value = !0, E.value = "";
       const me = K(i.value).value, _ = await wt(p, me, { surface: t.surface, sample: t.sample }, d.signal);
-      d.signal.aborted || v !== d || w !== f || (v = null, y.value = !1, yt(_) ? (O.value = i.value, i.value = JSON.stringify(_.schema, null, 2), A.value = _.notes || "Drafted from your description — accept it or undo.", u.value = "", S.value = "") : (_.unavailable && (L.value = !0), E.value = _.error));
+      d.signal.aborted || r !== d || x !== h || (r = null, m.value = !1, yt(_) ? (w.value = i.value, i.value = JSON.stringify(_.schema, null, 2), V.value = _.notes || "Drafted from your description — accept it or undo.", u.value = "", O.value = "") : (_.unavailable && (A.value = !0), E.value = _.error));
     }
     function ve() {
       const { value: p, error: d } = K(i.value);
-      u.value = d, o("valid", !d), !(d || !p) && (o("update:modelValue", p), o("change", p), O.value = null, A.value = "");
+      u.value = d, o("valid", !d), !(d || !p) && (o("update:modelValue", p), o("change", p), w.value = null, V.value = "");
     }
     function he() {
-      O.value !== null && (i.value = O.value, O.value = null, A.value = "", u.value = "", o("valid", !0));
+      w.value !== null && (i.value = w.value, w.value = null, V.value = "", u.value = "", o("valid", !0));
     }
-    return Y(() => t.resetKey, () => {
-      g(), k();
-    }, { immediate: !0 }), ue(g), (p, d) => (b(), h("div", xt, [
-      m("div", St, [
-        e.label ? (b(), h("span", kt, C(e.label), 1)) : P("", !0),
-        d[3] || (d[3] = m("span", { class: "wf-sed-spacer" }, null, -1)),
-        a.value ? (b(), G($(be), {
+    return Z(() => t.resetKey, () => {
+      f(), k();
+    }, { immediate: !0 }), ue(f), (p, d) => (g(), v("div", xt, [
+      y("div", St, [
+        e.label ? (g(), v("span", kt, P(e.label), 1)) : B("", !0),
+        d[3] || (d[3] = y("span", { class: "wf-sed-spacer" }, null, -1)),
+        a.value ? (g(), Y(L(be), {
           key: 1,
           modelValue: l.value,
-          "onUpdate:modelValue": d[0] || (d[0] = (w) => l.value = w),
+          "onUpdate:modelValue": d[0] || (d[0] = (x) => l.value = x),
           class: "wf-sed-views",
           options: s,
           "option-label": "label",
           "option-value": "value",
           "aria-label": "Editor view"
-        }, null, 8, ["modelValue"])) : P("", !0)
+        }, null, 8, ["modelValue"])) : B("", !0)
       ]),
-      a.value && l.value === "form" ? (b(), G(gt, {
+      a.value && l.value === "form" ? (g(), Y(gt, {
         key: 0,
         tag: Vt,
         schema: e.schema,
         config: e.modelValue || {},
         onChange: R
-      }, null, 8, ["schema", "config"])) : (b(), h(W, { key: 1 }, [
-        B($(ge), {
+      }, null, 8, ["schema", "config"])) : (g(), v(G, { key: 1 }, [
+        I(L(ge), {
           modelValue: i.value,
-          "onUpdate:modelValue": d[1] || (d[1] = (w) => i.value = w),
+          "onUpdate:modelValue": d[1] || (d[1] = (x) => i.value = x),
           class: "wf-textarea wf-mono wf-sed-code",
           rows: e.rows,
           spellcheck: "false",
           placeholder: e.placeholder,
           "aria-label": e.label || (c.value ? "JSON schema" : "JSON value"),
-          onInput: z,
-          onChange: V
+          onInput: T,
+          onChange: z
         }, null, 8, ["modelValue", "rows", "placeholder", "aria-label"]),
-        u.value ? (b(), h("p", At, C(u.value), 1)) : P("", !0)
+        u.value ? (g(), v("p", At, P(u.value), 1)) : B("", !0)
       ], 64)),
-      c.value ? (b(), h(W, { key: 2 }, [
-        m("div", Ot, [
-          B($(ze), {
-            modelValue: S.value,
-            "onUpdate:modelValue": d[2] || (d[2] = (w) => S.value = w),
+      c.value ? (g(), v(G, { key: 2 }, [
+        y("div", Ot, [
+          I(L(ze), {
+            modelValue: O.value,
+            "onUpdate:modelValue": d[2] || (d[2] = (x) => O.value = x),
             class: "wf-input wf-sed-intent",
             type: "text",
             placeholder: "Describe the expected fields — e.g. a lead with email and company",
             "aria-label": "Describe the expected fields",
-            disabled: L.value,
-            onKeydown: Le($e(ee, ["prevent"]), ["enter"])
+            disabled: A.value,
+            onKeydown: Le($e(C, ["prevent"]), ["enter"])
           }, null, 8, ["modelValue", "disabled", "onKeydown"]),
-          B($(J), {
+          I(L(U), {
             type: "button",
             class: "wf-sed-go",
-            disabled: L.value || !y.value && !S.value.trim(),
-            title: L.value ? "AI assist unavailable" : y.value ? "Cancel this draft" : "Draft the fields with AI",
-            onClick: ee
+            disabled: A.value || !m.value && !O.value.trim(),
+            title: A.value ? "AI assist unavailable" : m.value ? "Cancel this draft" : "Draft the fields with AI",
+            onClick: C
           }, {
             default: M(() => [
-              B($(oe), {
-                icon: y.value ? "tabler:x" : "tabler:wand",
+              I(L(oe), {
+                icon: m.value ? "tabler:x" : "tabler:wand",
                 "aria-hidden": "true"
               }, null, 8, ["icon"]),
-              m("span", null, C(y.value ? "Cancel" : "Draft with AI"), 1)
+              y("span", null, P(m.value ? "Cancel" : "Draft with AI"), 1)
             ]),
             _: 1
           }, 8, ["disabled", "title"])
         ]),
-        r.value ? (b(), h("div", Et, [
-          m("div", Lt, [
-            B($(oe), {
+        F.value ? (g(), v("div", Et, [
+          y("div", Lt, [
+            I(L(oe), {
               icon: "tabler:sparkles",
               "aria-hidden": "true"
             }),
-            m("span", null, C(A.value), 1)
+            y("span", null, P(V.value), 1)
           ]),
-          m("div", $t, [
-            B($(J), {
+          y("div", $t, [
+            I(L(U), {
               type: "button",
               class: "wf-sed-undo",
               severity: "secondary",
@@ -1109,7 +1112,7 @@ const xt = { class: "wf-sed" }, St = { class: "wf-sed-bar" }, kt = {
               ])]),
               _: 1
             }),
-            B($(J), {
+            I(L(U), {
               type: "button",
               class: "wf-sed-accept",
               onClick: ve
@@ -1120,9 +1123,9 @@ const xt = { class: "wf-sed" }, St = { class: "wf-sed-bar" }, kt = {
               _: 1
             })
           ])
-        ])) : P("", !0),
-        L.value ? (b(), h("p", Tt, "AI assist isn’t available here yet.")) : E.value ? (b(), h("p", zt, C(E.value), 1)) : P("", !0)
-      ], 64)) : P("", !0)
+        ])) : B("", !0),
+        A.value ? (g(), v("p", Tt, "AI assist isn’t available here yet.")) : E.value ? (g(), v("p", zt, P(E.value), 1)) : B("", !0)
+      ], 64)) : B("", !0)
     ]));
   }
 });
@@ -1131,7 +1134,6 @@ export {
   gt as W,
   Rt as _,
   ge as a,
-  bt as b,
   le as h,
   be as s
 };

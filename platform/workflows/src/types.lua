@@ -79,6 +79,8 @@ M.RUN_COMPLETED_FUNC = "kickside.workflows.runs:run_completed"
 -- This table is the single description of the kind vocabulary: the command
 -- validator gates `kind` against it, the compiler reads its config fields, and
 -- the agent catalog projects it. A kind added here reaches all three at once.
+M.RETRY_FIELDS = { "retry_policy", "start_to_close_timeout", "schedule_to_close_timeout" }
+
 M.NODE_KIND_SPEC = {
     -- Interface boundaries are authored on the canvas but compile to routing and
     -- schemas only. They are never executable Dataflow nodes.
@@ -106,6 +108,11 @@ M.NODE_KIND_SPEC = {
         role = "step",
         summary = "Runs one catalog Block. Set node.ref to the Block's exact id; every executable step is this kind.",
         requires_ref = true,
+        fields = {
+            retry_policy = { type = "object", about = "Function/tool retry policy; replaces the declared policy as a whole. False resets to the Block default." },
+            start_to_close_timeout = { type = "duration", about = "Per-attempt timeout; duration string or milliseconds. False resets to the Block default." },
+            schedule_to_close_timeout = { type = "duration", about = "Total execution window; duration string or milliseconds. False resets to the Block default." },
+        },
         config = "block",
         ports = "block",
     },
