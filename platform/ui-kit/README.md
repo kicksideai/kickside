@@ -46,7 +46,8 @@ served runtime bundle.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Materialization requires the
+For repository validation, use the Wippy release pinned in
+[CI](../../.github/workflows/ci.yml). Materialization requires the
 runtime artifact command. Consumers use Node.js 22, npm, and Make. SQLite and
 PostgreSQL are host persistence choices; the UI kit has no SQL storage.
 

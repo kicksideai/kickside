@@ -21,7 +21,8 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](../../.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 Host persistence uses SQLite or PostgreSQL. This module has no standalone SQL dialect matrix.
 Frontend development also uses Node.js 22, npm, and Make.
