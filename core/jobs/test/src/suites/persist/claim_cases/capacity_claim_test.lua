@@ -34,6 +34,43 @@ end
 
 local function define_tests()
     test.describe("jobs capacity claims", function()
+        for _, worker in ipairs({ "app:capacity_worker_a", "test.legacy.capacity" }) do
+            test.it("reports dispatchable keyed backlog for " .. worker, function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    local key = "backlog-" .. worker
+                    enqueue(db, dbtype, worker, key, 1)
+                    local first, first_err = claim.claim_batch(db, dbtype, 1)
+                    test.is_nil(first_err)
+                    test.eq(#first, 1)
+                    enqueue(db, dbtype, worker, key, 2)
+                    local backlog, backlog_err = claim.due_backlog(db, dbtype, 0)
+                    test.is_nil(backlog_err)
+                    local expected = worker == "app:capacity_worker_a" and 1 or 0
+                    test.eq(backlog.count, expected,
+                        "backlog must agree with claim admission for a second keyed job")
+                    local next_jobs, next_err = claim.claim_batch(db, dbtype, 1)
+                    test.is_nil(next_err)
+                    test.eq(#next_jobs, expected)
+                end)
+            end)
+        end
+
+        test.it("does not report saturated capacity as dispatchable backlog", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                enqueue(db, dbtype, "app:capacity_worker_a", "saturated-key", 1)
+                enqueue(db, dbtype, "app:capacity_worker_a", "saturated-key", 2)
+                local running, claim_err = claim.claim_batch(db, dbtype, 2)
+                test.is_nil(claim_err)
+                test.eq(#running, 2)
+                enqueue(db, dbtype, "app:capacity_worker_a", "saturated-key", 3)
+                local backlog, backlog_err = claim.due_backlog(db, dbtype, 0)
+                test.is_nil(backlog_err)
+                test.eq(backlog.count, 0, "saturated capacity is not dispatchable backlog")
+            end)
+        end)
+
         test.it("upgrades an existing queue without rewriting jobs or run history", function()
             with_db(function(db: sql.DB)
                 local statements = {}
