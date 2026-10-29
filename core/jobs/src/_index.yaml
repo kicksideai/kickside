@@ -54,7 +54,7 @@ entries:
     defaults:
       worker:
         count_sqlite: 2
-        count_postgres: 20
+        count_postgres: 4
         awaited_slots: 1
         claim_batch: 16
       lease:
@@ -75,7 +75,7 @@ entries:
       wake:
         fanout_batch: 200
       proc:
-        max_execution: 60m
+        max_execution: 10m
       health:
         overdue_grace: 120s
       limits:

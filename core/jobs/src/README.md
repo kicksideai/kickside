@@ -111,12 +111,12 @@ platform settings store, to administer this policy:
   includes future scheduled work and excludes parked slots. This is durable
   applied state, not a process-liveness probe.
 
-The editable paths are `worker.count_postgres` (default **20**, range 1–256),
+The editable paths are `worker.count_postgres` (default **4**, range 1–256),
 `worker.count_sqlite` (1–2), `worker.awaited_slots` (1–256),
 `worker.claim_batch` (1–256), `fairness.shares` (0–1000 per tier, nonzero total),
 `lease.timeout`, `lease.heartbeat`, `retry.max_attempts` (1–1000000),
 `retry.retry_after_ms` (1–86400000), `retry.max_delay_ms` (1000–86400000), and
-`proc.max_execution` (default **60m**). All flow through `config.resolve`. Durations are positive;
+`proc.max_execution` (default **10m**). All flow through `config.resolve`. Durations are positive;
 lease timeout is at least one whole second and heartbeat is strictly shorter.
 
 Overrides and a monotonically increasing revision commit in one SQL transaction.
