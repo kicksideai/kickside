@@ -6,6 +6,7 @@ local identity = require("execution_identity")
 local catalog = require("scope_catalog")
 local reconcile = require("trigger_reconcile")
 local component = require("component")
+local funcs = require("funcs")
 local M = {}
 
 local DIRECTORY = "kickside.contract:directory"
@@ -48,10 +49,9 @@ local function validate(request)
         return nil, failure(errors.PERMISSION_DENIED, "delegation target must be an active user by its canonical user ID")
     end
     if request.root ~= "*" then
-        local rows, root_err = component.list_system({component_ids = {request.root},
-            include = {meta = false, private_context = false}, limit = 1})
+        local exists, root_err = funcs.call("kickside.component.system:exists", request.root)
         if root_err then return nil, root_err end
-        if #rows == 0 then return nil, failure(errors.NOT_FOUND, "delegation root is absent") end
+        if not exists then return nil, failure(errors.NOT_FOUND, "delegation root is absent") end
     end
     local available, catalog_err = catalog.scopes()
     if catalog_err then return nil, catalog_err end

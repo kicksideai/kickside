@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
@@ -157,6 +157,7 @@ const canSave = computed(() => !!draft.value && draft.value.slug.trim() !== '' &
 // alone left it ambiguous whether the change persisted.
 const savedMsg = ref('')
 let savedTimer: ReturnType<typeof setTimeout> | null = null
+onUnmounted(() => { if (savedTimer) clearTimeout(savedTimer) })
 function flashSaved(msg: string) {
   savedMsg.value = msg
   if (savedTimer) clearTimeout(savedTimer)

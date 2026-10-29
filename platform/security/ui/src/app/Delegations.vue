@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { api, host } from '@wippy-fe/proxy'
+import Chip from 'primevue/chip'
+import SelectButton from 'primevue/selectbutton'
 import WcMount from '@widgets/app/WcMount.vue'
 import type { Scope } from '../types.ts'
 import { Button, FormField, IconButton, Notice, Pill, Spinner } from './shared'
@@ -18,6 +20,7 @@ const formOpen = ref(false)
 const user = ref('')
 const root = ref('')
 const anyComponent = ref(true)
+const componentChoices = [{ label: 'Any component', value: true }, { label: 'One component', value: false }]
 const groups = ref<{ id: string; label: string }[]>([])
 const locked = computed(() => saving.value || !!pending.value)
 const canSave = computed(() => !!user.value && groups.value.length > 0 && (anyComponent.value || !!root.value))
@@ -109,7 +112,7 @@ defineExpose({ load: store.load })
       </div>
       <div class="ks-runas-acts">
         <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading || locked" :spin="loading" @click="store.load" />
-        <Button v-if="!formOpen" variant="primary" small icon="tabler:plus" @click="openForm">New permission</Button>
+        <Button v-if="!formOpen" variant="primary" small icon="tabler:plus" :disabled="locked" @click="openForm">New permission</Button>
       </div>
     </header>
 
@@ -119,7 +122,7 @@ defineExpose({ load: store.load })
     <form v-if="formOpen" class="ks-runas-form" @submit.prevent="save">
       <div class="ks-runas-form-head">
         <span>New run-as permission</span>
-        <IconButton icon="tabler:x" label="Cancel" :disabled="saving" @click="formOpen = false" />
+        <IconButton icon="tabler:x" label="Cancel" :disabled="locked" @click="formOpen = false" />
       </div>
       <fieldset :disabled="locked" :inert="locked">
         <ol class="ks-runas-steps">
@@ -133,27 +136,22 @@ defineExpose({ load: store.load })
               <WcMount tag="wc-principal-picker" :attrs="{ kinds: 'group', placeholder: 'Add a group…' }" :config="{}" @change="choice($event, 'group')" @error="pickerError" />
             </FormField>
             <div v-if="groups.length" class="ks-runas-chips" aria-label="Selected groups">
-              <span v-for="group in groups" :key="group.id" class="ks-runas-chip">
-                {{ group.label }}
-                <button type="button" :aria-label="`Remove group ${group.label}`" @click="groups = groups.filter(value => value.id !== group.id)">
-                  <Icon icon="tabler:x" aria-hidden="true" />
-                </button>
-              </span>
+              <Chip v-for="group in groups" :key="group.id" :label="group.label" :removable="!locked"
+                :pt="{ removeIcon: { 'aria-label': `Remove group ${group.label}` } }"
+                @remove="groups = groups.filter(value => value.id !== group.id)" />
             </div>
           </li>
           <li>
             <FormField label="On which components" help="The person choosing the account must also be able to manage the component.">
-              <div class="ks-runas-seg" role="radiogroup" aria-label="On which components">
-                <button type="button" role="radio" :aria-checked="anyComponent" :class="{ on: anyComponent }" @click="anyComponent = true">Any component</button>
-                <button type="button" role="radio" :aria-checked="!anyComponent" :class="{ on: !anyComponent }" @click="anyComponent = false">One component</button>
-              </div>
+              <SelectButton v-model="anyComponent" :options="componentChoices" option-label="label" option-value="value"
+                :allow-empty="false" :disabled="locked" size="small" aria-label="On which components" />
             </FormField>
             <WcMount v-if="!anyComponent" class="ks-runas-component" tag="wc-component-picker" :attrs="{ source: '/api/v1/security/delegations/roots', title: 'Component', placeholder: 'Choose a component you manage…' }" :config="root ? { thread_id: root } : {}" @change="componentChoice" @error="pickerError" />
           </li>
         </ol>
       </fieldset>
       <div class="ks-runas-form-foot">
-        <Button variant="ghost" small :disabled="saving" @click="formOpen = false">Cancel</Button>
+        <Button variant="ghost" small :disabled="locked" @click="formOpen = false">Cancel</Button>
         <Button variant="primary" small icon="tabler:device-floppy" :disabled="!canSave || locked" :loading="saving" @click="save">Save permission</Button>
       </div>
     </form>

@@ -114,6 +114,8 @@ entries:
     meta: {}
     component: kickside/security
     parameters:
+      - name: kickside.security:delegation_validator
+        value: app.security:delegation_validator
       - name: kickside.security:sessions_invalidator
         value: kickside.users.persist:session_revoker
       - name: api_router

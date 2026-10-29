@@ -766,12 +766,6 @@
 .ks-runas-steps > li { counter-increment: step; position: relative; padding-left: 34px; display: flex; flex-direction: column; gap: 8px; }
 .ks-runas-steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; color: var(--p-primary-color); background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); }
 .ks-runas-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.ks-runas-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; border: 1px solid var(--p-content-border-color); background: var(--p-content-background); font-size: 12px; }
-.ks-runas-chip button { display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 999px; background: transparent; color: var(--p-text-muted-color); cursor: pointer; }
-.ks-runas-chip button:hover { background: var(--kx-overlay-hover); color: var(--p-text-color); }
-.ks-runas-seg { display: inline-flex; padding: 2px; border-radius: var(--kx-radius-8); border: 1px solid var(--p-content-border-color); background: var(--p-content-background); align-self: flex-start; }
-.ks-runas-seg button { border: 0; border-radius: 6px; padding: 5px 12px; background: transparent; color: var(--p-text-muted-color); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-.ks-runas-seg button.on { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color); }
 .ks-runas-pending { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
 
 .ks-runas-list { display: flex; flex-direction: column; gap: 8px; }

@@ -112,7 +112,8 @@ separate compatibility decision.
 The native writer shares Execution's canonical policy IDs/resources and the existing
 native group evaluator. A save requires an active ordinary user, named by its
 canonical user ID through `kickside.contract:directory`, and an existing
-component root (or `*`). Security administration and per-policy native registry-write
+component root (or `*`). Component checks existence in its own configured database
+and returns only a boolean. Security administration and per-policy native registry-write
 authority are both required. POST/DELETE `/security/delegations` accept a
 principal, root and explicit operator groups; GET returns safe provenance. A failed
 request returns its error and the same request can be sent again. Revocation retains policy IDs and composed references without granting

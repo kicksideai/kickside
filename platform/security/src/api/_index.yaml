@@ -32,7 +32,7 @@ entries:
     security:
       policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_directory_get,
         kickside.security:delegation_directory_open, kickside.security:delegation_directory_groups,
-        kickside.security:delegation_component_config, kickside.security:delegation_component_db]
+        kickside.security:delegation_component_read]
     imports:
       delegation: kickside.security:delegation
       api_errors: kickside.security.api:errors

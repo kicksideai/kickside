@@ -16,12 +16,12 @@ entries:
     component: kickside/execution
   - name: dep.kickside.component
     kind: ns.dependency
-    version: '*'
+    version: '>=0.3.4'
     component: kickside/component
   - name: delegation
     kind: library.lua
     source: file://delegation.lua
-    modules: [registry, security, contract, time]
+    modules: [registry, security, contract, time, funcs]
     imports:
       execution_identity: kickside.execution:execution_identity
       component: kickside.component:component
@@ -51,20 +51,12 @@ entries:
       actions: contract.call
       resources: groups
       effect: allow
-  - name: delegation_component_config
+  - name: delegation_component_read
     kind: security.policy
     meta: {private: true, service_only: true}
     policy:
-      actions: registry.get
-      resources: kickside.component:db_config
-      effect: allow
-  # Component rows live in the host database that target_db binds.
-  - name: delegation_component_db
-    kind: security.policy
-    meta: {private: true, service_only: true}
-    policy:
-      actions: db.get
-      resources: []
+      actions: [funcs.call, funcs.security]
+      resources: kickside.component.system:exists
       effect: allow
   - name: policy_composition
     kind: library.lua
@@ -166,8 +158,6 @@ entries:
         path: .meta.db_id
       - entry: kickside.security.service:group_set_db
         path: ".policy.resources +="
-      - entry: kickside.security:delegation_component_db
-        path: ".policy.resources +="
 
   - name: process_host
     kind: ns.requirement
@@ -232,8 +222,9 @@ entries:
       type: view.component
       name: security_view
       title: Security
-      description: Roles and scopes admin web component (no props). Lists built-in and registry scopes read-only and lets admins compose DB-backed custom scopes from public policies in a two-pane builder; saved scopes are projected as security.scope registry entries.
+      description: Security administration without props. Roles composes permissions published by installed modules; Users assigns roles to accounts. Run as grants groups permission to select an execution account on managed components, using the shared account, group and component pickers.
       announced: true
+      auto_register: true
       tag_name: kickside-security
       base_path: kickside-security
       entry_point: index.js
