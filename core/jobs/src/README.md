@@ -25,6 +25,11 @@ resolves the identity held by its own owner record.
 Sits below `kickside/core`: core depends on jobs (thread append publishes demand through the jobs wake
 library); jobs depends on no core entry.
 
+PostgreSQL migration 04 creates the Jobs-owned `updated_at` trigger function, so
+Jobs can initialize its database without Core migrations. Migration 23 rebinds
+legacy installations to that function without changing Core's function. Undoing
+23 retains the Jobs trigger; undoing 04 removes its tables and function.
+
 ## Dependency interface
 
 The host must supply `target_db`; it is injected into both the jobs migration and the
