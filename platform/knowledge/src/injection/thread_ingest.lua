@@ -7,6 +7,7 @@ local json = require("json")
 local component = require("component")
 local security = require("security")
 local contract = require("contract")
+local engines = require("engines")
 local M = {
     EVENT_CONTENT_UPSERTED = base.EVENT_CONTENT_UPSERTED,
     EVENT_CONTENT_DELETED = base.EVENT_CONTENT_DELETED,
@@ -300,7 +301,11 @@ function M.append_content(kb_id, params)
     params = type(params) == "table" and params or {}
 
     local content = params.content
-    if type(content) ~= "string" or content == "" then
+    if content ~= nil and type(content) ~= "string" then
+        return nil, "content is required"
+    end
+    local has_text = type(content) == "string" and content ~= ""
+    if not has_text and trim(source_input(params, params.metadata).upload_id) == "" then
         return nil, "content is required"
     end
 
@@ -309,15 +314,24 @@ function M.append_content(kb_id, params)
     metadata.kb_id = kb_id
     metadata.source = trim(metadata.source) ~= "" and metadata.source or "manual"
 
-    local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
+
+    if not has_text then
+        local engine, engine_err = engines.by_impl(kb.impl_id)
+        if engine_err then return nil, engine_err end
+        if not engine or not engine.accepts_files then return nil, "content is required" end
+        content = nil
+    end
 
     local external_id = external_id_for(params, metadata)
     local external_version = external_version_for(params, metadata, content)
     metadata.external_source = EXTERNAL_SOURCE
     metadata.external_id = external_id
     metadata.external_version = external_version
-    metadata.content_hash = trim(metadata.content_hash) ~= "" and metadata.content_hash or external_version
+    if has_text then
+        metadata.content_hash = trim(metadata.content_hash) ~= "" and metadata.content_hash or external_version
+    end
     local event_trace, trace_err = trace_for("kb.ingest", kb_id, external_id, params.trace_context)
     if trace_err then return nil, trace_err end
 
@@ -348,6 +362,10 @@ function M.append_content(kb_id, params)
         source_ref = source_ref,
         actor_id = actor_id,
     }
+    if not has_text then
+        body.content = nil
+        body.has_text = false
+    end
     local event = {
         type = M.EVENT_CONTENT_UPSERTED,
         role = "system",
@@ -363,7 +381,7 @@ function M.append_content(kb_id, params)
     -- Preserve every previously accepted inline event. Core owns the row limit:
     -- only its typed, rolled-back size refusal permits an artifact-only retry.
     -- Infrastructure/access errors must never change the stored representation.
-    if append_err and errors.is(append_err, errors.INVALID)
+    if has_text and append_err and errors.is(append_err, errors.INVALID)
         and trim(source_ref.upload_id) ~= "" and trim(source_ref.artifact_id) ~= "" then
         local details = (append_err :: error):details()
         if type(details) == "table" and details.reason == "row_too_large"

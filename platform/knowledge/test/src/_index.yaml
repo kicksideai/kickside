@@ -117,6 +117,37 @@ entries:
         chunk_overlap: 0
         summary_max_chars: 0
 
+  - name: test_engine_files
+    kind: contract.binding
+    meta:
+      type: kickside.kb_engine
+      kb_type: files
+      title: File harness engine
+      store_contract: shared:kb_store
+      accepts_files: true
+      events:
+        output:
+          - type: kickside.knowledge.events:content.upserted
+          - type: kickside.knowledge.events:content.deleted
+      projections:
+        - kind: knowledge.injection.source
+          projection_key: source
+          cursor_key: source
+          worker_ref: "proc://kickside.kb10.injection:source_worker_proc"
+          input_mode: prefetch_events
+          batch_size: 1
+          events:
+            input:
+              - type: "kickside.knowledge.events:content.upserted"
+              - type: "kickside.knowledge.events:content.deleted"
+
+    contracts:
+      - contract: kickside.contract:embeddable
+        context_required: [component_id]
+        methods:
+          embed_content: test.kb:embed_content
+          embed_reference: test.kb:embed_reference
+
   - name: test_engine_no_maintenance
     kind: registry.entry
     meta:
