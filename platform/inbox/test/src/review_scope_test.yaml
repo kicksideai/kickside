@@ -1,0 +1,32 @@
+version: "1.0"
+namespace: app
+entries:
+  - name: review_scope_test
+    kind: function.lua
+    meta: {type: test, suite: inbox_review_scope}
+    source: file://review_scope_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      identity: kickside.execution:execution_identity
+  - name: review_scope_restore
+    kind: function.lua
+    source: file://review_scope_test.lua
+    method: restore
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      identity: kickside.execution:execution_identity
+  - name: review_probe_call
+    kind: security.policy
+    policy:
+      resources: app:review_scope_restore
+      actions: [funcs.call, funcs.security]
+      effect: allow
+  - name: review_subject_access
+    kind: security.policy
+    policy:
+      resources: app:review_subject
+      actions: read
+      effect: allow
