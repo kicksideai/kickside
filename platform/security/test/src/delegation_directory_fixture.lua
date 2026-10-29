@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local registry = require("registry")
 return {groups = function(args)
     local fixture, err = registry.get("app:delegation_validation_state")
