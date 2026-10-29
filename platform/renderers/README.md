@@ -65,3 +65,5 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
+
+Image embeds accept `--rv-image-padding`; the default is `16px`. Compact image previews can set it to `0` alongside `--rv-pad`.
