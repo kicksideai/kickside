@@ -89,3 +89,16 @@ entries:
       migration: wippy.migration:migration
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
     method: migrate
+
+  - name: 23_jobs_updated_at
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Jobs owns its updated_at trigger function.
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-28T00:00:23Z"
+    source: file://23_jobs_updated_at.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
