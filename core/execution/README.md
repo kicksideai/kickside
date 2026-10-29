@@ -22,7 +22,7 @@ Host resources and security groups bind through the install plan.
 ## Requirements
 
 For repository validation, use the Wippy release pinned in
-[CI](../../.github/workflows/ci.yml). Use current Hub dependencies
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The identity and trace harness has no SQL storage. Its PostgreSQL profile
 selects the execution authority gate; database behavior belongs to consumers.

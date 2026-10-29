@@ -22,7 +22,7 @@ Host resources and security groups bind through the install plan.
 ## Requirements
 
 For repository validation, use the Wippy release pinned in
-[CI](../../.github/workflows/ci.yml). Use current Hub dependencies
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Development uses Make and the Wippy CLI.

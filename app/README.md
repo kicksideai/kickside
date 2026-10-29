@@ -212,7 +212,7 @@ that type or use `app:documentation` for list/read convenience.
 ## Requirements
 
 For repository validation, use the Wippy release pinned in
-[CI](../.github/workflows/ci.yml). Use current Hub dependencies
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 SQLite or PostgreSQL supplies application persistence. Frontend builds use
 Node.js 22, npm, and Make.

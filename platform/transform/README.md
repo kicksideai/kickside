@@ -63,7 +63,7 @@ metadata remains stored; it does not change item-runtime orchestration.
 ## Requirements
 
 For repository validation, use the Wippy release pinned in
-[CI](../../.github/workflows/ci.yml). Use current Hub dependencies
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
