@@ -118,6 +118,7 @@ local function handler()
         success = true,
         thread_id = result.thread_id,
         projection_id = result.projection_id,
+        run_id = result.run_id,
         cursor_id = result.cursor_id,
         external_source = result.external_source,
         external_id = result.external_id,
