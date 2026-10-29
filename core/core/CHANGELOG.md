@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.7](https://github.com/kicksideai/kickside/compare/core-v0.3.6...core-v0.3.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* **core:** converge thread declarations after concurrent creation ([#232](https://github.com/kicksideai/kickside/issues/232)) ([115401c](https://github.com/kicksideai/kickside/commit/115401c09445cbe8d806e89c45184340b2017f1f))
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
 ## [0.3.6](https://github.com/kicksideai/kickside/compare/core-v0.3.5...core-v0.3.6) (2026-10-28)
 
 

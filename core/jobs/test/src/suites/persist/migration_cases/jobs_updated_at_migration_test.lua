@@ -99,6 +99,17 @@ local function trigger_definition()
         WHERE tgrelid='kickside_job'::regclass AND tgname='trg_kickside_job_updated_at']])[1].definition
 end
 
+local function historical_installation()
+    installation(false)
+    if not postgres() then return end
+    -- The released pre-23 schema points at Core. Recreate that persisted state
+    -- explicitly now that fresh migration 04 creates the Jobs-owned function.
+    execute("DROP TRIGGER trg_kickside_job_updated_at ON kickside_job")
+    execute([[CREATE TRIGGER trg_kickside_job_updated_at BEFORE UPDATE ON kickside_job
+        FOR EACH ROW EXECUTE FUNCTION core_set_updated_at()]])
+    execute("DROP FUNCTION IF EXISTS kickside_jobs_set_updated_at()")
+end
+
 local function core_definition()
     return query("SELECT pg_get_functiondef('core_set_updated_at()'::regprocedure) AS definition")[1].definition
 end
@@ -143,9 +154,30 @@ return test.run_cases(function()
     test.describe("Jobs owns its updated_at trigger", function()
         test.after_each(drop)
 
+        test.it("installs Jobs without Core and keeps its trigger across migration rollback", function()
+            reset()
+            migrate("kickside.core.jobs.migrations:04_jobs")
+            if postgres() then
+                assert_owner("kickside_jobs_set_updated_at")
+                test.eq(#query([[SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                    WHERE n.nspname=current_schema() AND p.proname='core_set_updated_at']]), 0)
+            end
+            local id = insert_job()
+            assert_update(id)
+            migrate(MIGRATION)
+            migrate(MIGRATION, "down")
+            if postgres() then assert_owner("kickside_jobs_set_updated_at") end
+            assert_update(id)
+            migrate("kickside.core.jobs.migrations:04_jobs", "down")
+            if postgres() then
+                test.eq(#query([[SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                    WHERE n.nspname=current_schema() AND p.proname='kickside_jobs_set_updated_at']]), 0)
+            end
+        end)
+
         test.it("upgrades Jobs at 21, repeats up, and preserves Core's function and job rows", function()
             reset()
-            installation(false)
+            historical_installation()
             local id = insert_job()
             local original
             if postgres() then
@@ -170,19 +202,17 @@ return test.run_cases(function()
             assert_update(insert_job())
         end)
 
-        test.it("restores the exact historical trigger on down and converges on up", function()
+        test.it("keeps Jobs functional on down without restoring the Core dependency", function()
             reset()
-            installation(false)
+            historical_installation()
             local id = insert_job()
-            local legacy
-            if postgres() then legacy = trigger_definition() end
+            local original_core
+            if postgres() then original_core = core_definition() end
             migrate(MIGRATION)
             migrate(MIGRATION, "down")
             if postgres() then
-                assert_owner("core_set_updated_at")
-                test.eq(trigger_definition(), legacy)
-                test.eq(#query([[SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-                    WHERE n.nspname=current_schema() AND p.proname='kickside_jobs_set_updated_at']]), 0)
+                assert_owner("kickside_jobs_set_updated_at")
+                test.eq(core_definition(), original_core)
             end
             assert_update(id)
             migrate(MIGRATION)

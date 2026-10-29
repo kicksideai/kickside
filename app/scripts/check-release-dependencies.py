@@ -6,34 +6,25 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import tempfile
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
+from release_artifacts import companion_modules, installed_artifacts
 
 
 def check(repository, paths, wippy):
-    catalog = json.loads((repository / '.github/modules.json').read_text())['modules']
-    versions = json.loads((repository / '.release-please-manifest.json').read_text())
-    if not isinstance(paths, list) or not paths or any(not isinstance(path, str) for path in paths):
-        raise ValueError('Release Please must supply the released paths')
-    modules = []
-    for path in sorted(set(paths) - {'app'}):
-        module = catalog[path]
-        modules.append({'name': module['organization'] + '/' + module['module'], 'version': versions[path]})
+    modules = companion_modules(repository, paths)
     if not modules:
         print('No companion modules in this release')
         return
-    # A fresh native install verifies exact versions and artifact digests without
-    # resolving against checkout replacements or executing module code.
-    with tempfile.TemporaryDirectory(prefix='kickside-release-dependencies-') as directory:
-        root = Path(directory)
-        (root / 'empty').mkdir()
-        lock = root / 'wippy.lock'
-        lock.write_text(json.dumps({'directories': {'src': str(root / 'empty'), 'modules': str(root / 'modules')},
-                                    'modules': modules}))
-        config = root / '.wippy.yaml'
-        config.write_text(json.dumps({'version': '1.0', 'registry': {
-            'dependency_lock_path': str(lock), 'dependency_vendor_dir': str(root / 'modules/vendor')},
-            'workspace': {'include_host_dependencies': False}}))
-        subprocess.run([wippy, '--config', str(config), 'install'], cwd=root, check=True)
+    try:
+        with installed_artifacts(modules, wippy):
+            pass
+        print('Verified ' + str(len(modules)) + ' companion module artifacts')
+    except subprocess.CalledProcessError as error:
+        print(error.stdout or '', file=sys.stderr)
+        print(error.stderr or '', file=sys.stderr)
+        raise
 
 
 if __name__ == '__main__':

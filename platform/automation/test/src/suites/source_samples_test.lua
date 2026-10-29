@@ -21,7 +21,9 @@ local function fixture(surface: string, result: any, failure: any): (any, Map)
         seen.target, seen.input = target, input
         return result, failure
     end } end }
-    return harness.new({ registry = registry, funcs = funcs }), seen
+    return harness.new({ registry = registry, funcs = funcs, component = { ACCESS = { READ = 1 }, query = function(args)
+        return { { component_id = args.component_ids[1], impl_id = binding.id } }, nil
+    end } }), seen
 end
 
 return { run = test.run_cases(function()

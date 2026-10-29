@@ -27,7 +27,8 @@ gates history reads and edits, and workflow deletion removes its history.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -93,3 +94,52 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
 
 Synchronous execution results and run detail responses expose optional `error_details` from Dataflow alongside the existing error message. Run detail reads these diagnostics from its existing engine snapshot and applies the same secret redaction. Stored run rows and routed Error output shapes remain unchanged.
+
+## Retry policies and execution timeouts
+
+Function Blocks accept optional `execution.retry_policy`,
+`execution.start_to_close_timeout`, and `execution.schedule_to_close_timeout`.
+Agent and wait executions reject these fields. Dataflow's shared retry library owns
+validation and execution; without a policy a function makes one attempt.
+
+```lua
+execution = {
+    kind = "function", function_id = "example:run",
+    retry_policy = {
+        initial_interval = "1s", backoff_coefficient = 2,
+        maximum_interval = "30s", maximum_attempts = 3,
+        non_retryable_error_types = { "Invalid" },
+    },
+    start_to_close_timeout = "10s",
+    schedule_to_close_timeout = "2m",
+}
+```
+
+Durations accept positive duration strings or milliseconds. With a policy, omitted
+values default to a 1s initial interval, coefficient 2, a maximum interval 100 times
+the initial interval, three attempts (including the first attempt), and no excluded
+error kinds. Cancellation and errors explicitly
+marked non-retryable stop retries. The per-attempt timeout limits each call; the
+total window includes attempts and backoff. An explicit `maximum_attempts = 0`
+removes the count limit only when a positive `schedule_to_close_timeout` bounds the
+overall retry window.
+
+Opting into retries can repeat external side effects after a lost response or
+interrupted call. Retry-enabled function context includes `attempt` and a stable
+`idempotency_key`; functions that write externally should use that key to deduplicate
+repeated attempts. Calls without a retry policy retain their existing context.
+
+A canvas `block` node carries these three optional fields at the top level, beside
+`ref` and `config`. They never enter the Block's `config_schema`. Function and tool
+steps support them; agent, wait, and structural steps reject retry configuration.
+`node.add` and `node.update` carry the fields through WorkflowsManage and the HTTP
+command API. In commands, `false` clears an override and restores the Block default;
+omitting a field retains its current value. The stored document omits cleared fields.
+
+The inspector's Retries section shows the Block defaults and lets authors override
+or reset the policy and each timeout separately. Invalid policies refuse publication
+with Dataflow's validation message attached to the node. Publication freezes the
+policy and timeouts into the native commands; each run retains those values when
+it assigns fresh node ids. Existing published versions remain unchanged. An
+idempotent forward migration adds optional draft-node storage without rewriting
+existing definitions, publications, events, or runs.

@@ -4,7 +4,7 @@
 
 import { api } from '@wippy-fe/proxy'
 import type { NodeKind } from '../types'
-import { KINDS, registerBlocks, type BlockDef, type ExtPort } from '../domain/node-policy'
+import { KINDS, registerBlocks, type BlockDef, type BlockExecution, type ExtPort } from '../domain/node-policy'
 import { titleCase } from '../domain/labels'
 
 export interface CatalogItem {
@@ -96,6 +96,7 @@ function toBlockDef(r: Record<string, unknown>): BlockDef {
     source_kind: str(r.source_kind) === 'tool' ? 'tool' : 'block',
     tool: r.tool === true || str(r.source_kind) === 'tool',
     public: r.public === true,
+    execution: r.execution as BlockExecution | undefined,
   }
 }
 
@@ -213,7 +214,7 @@ export function groupCatalog(items: CatalogItem[], query: string, knownOrder: re
 }
 
 export async function loadCatalog(): Promise<CatalogResult> {
-  const blocks = await sweep('/api/v1/workflows/blocks?fields=blurb,input_schema,config_schema,config_wc,output_schema,error_schema,ports', 'blocks')
+  const blocks = await sweep('/api/v1/workflows/blocks?fields=blurb,input_schema,config_schema,config_wc,output_schema,error_schema,ports,execution', 'blocks')
 
   const blockDefs = blocks.rows.map(toBlockDef).filter((d) => d.id && d.public === true)
   registerBlocks(blockDefs)

@@ -89,7 +89,7 @@ local function do_catalog(args: Map): (any, error?)
     for kind, spec in pairs(types.NODE_KIND_SPEC) do
         local item = spec :: Map
         rows[#rows + 1] = catalog_row("node_kinds", tostring(kind), { kind = kind, label = item.summary, role = item.role,
-            summary = item.summary, ports = item.ports, requires_ref = item.requires_ref == true and true or nil, config = item.config })
+            summary = item.summary, ports = item.ports, requires_ref = item.requires_ref == true and true or nil, config = item.config, fields = item.fields })
     end
     for _, name in pairs(types.COMMAND) do
         rows[#rows + 1] = catalog_row("commands", tostring(name), { label = name, type = name })
