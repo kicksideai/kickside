@@ -113,8 +113,11 @@ local function run()
             test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
         end)
         test.it("does not grant the internal reader authority when it is called directly", function()
-            local scope = assert(security.new_scope({assert(security.policy("app:resolver_boundary_calls"))}))
-            local result, err = funcs.new():with_actor(assert(security.new_actor("resolver-client"))):with_scope(scope):call(
+            local scope = assert(security.new_scope({assert(security.policy("app:resolver_boundary_calls")),
+                assert(security.policy("app:resolver_boundary_reader_call"))}))
+            local actor = assert(security.new_actor("resolver-client"))
+            test.eq(scope:evaluate(actor, "funcs.call", "kickside.security.runtime:read_groups"), "allow")
+            local result, err = funcs.new():with_actor(actor):with_scope(scope):call(
                 "kickside.security.runtime:read_groups", {groups = {"kickside.security.scopes:" .. slug}})
             test.is_nil(result)
             test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
