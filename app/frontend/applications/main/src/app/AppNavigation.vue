@@ -43,7 +43,8 @@ const emit = defineEmits<{
 const route = useRoute()
 const categoryMenu = ref<InstanceType<typeof Menu> | null>(null)
 const profileMenu = ref<InstanceType<typeof Menu> | null>(null)
-const activeCategory = ref<NavCategory | null>(null)
+const activeCategoryKey = ref<string | null>(null)
+const activeCategory = computed(() => renderableCategories.value.find(category => category.key === activeCategoryKey.value))
 const profileOpen = ref(false)
 const categoryItems = computed<MenuItem[]>(() => (activeCategory.value?.items || []).map(item => ({
   label: item.label,
@@ -67,7 +68,7 @@ function toggleCategory(event: MouseEvent, category: NavCategory) {
   if (activeCategory.value?.key === category.key) {
     categoryMenu.value?.hide()
   } else {
-    activeCategory.value = category
+    activeCategoryKey.value = category.key
     categoryMenu.value?.show(event)
   }
 }
@@ -80,6 +81,9 @@ function toggleProfile(event: MouseEvent) {
 watch(layout, () => {
   categoryMenu.value?.hide()
   profileMenu.value?.hide()
+})
+watch(activeCategory, category => {
+  if (!category) categoryMenu.value?.hide()
 })
 
 function isActive(item: NavItem): boolean {
@@ -329,7 +333,7 @@ function userInitials(user: { email: string; full_name: string }): string {
     </div>
   </aside>
   <Menu id="app-category-menu" ref="categoryMenu" :model="categoryItems" popup
-    :aria-label="activeCategory?.label" @hide="activeCategory = null">
+    :aria-label="activeCategory?.label" @hide="activeCategoryKey = null">
     <template #item="{ item, props: itemProps }">
       <a v-bind="itemProps.action" class="app-nav-menu-item" :class="{ 'is-active': item.active }">
         <Icon v-if="item.icon" :icon="item.icon" class="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
