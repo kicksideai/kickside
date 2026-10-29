@@ -132,7 +132,6 @@ entries:
     imports:
       util: kickside.knowledge:util
       component: kickside.component:component
-      thread_ingest: kickside.knowledge.injection:thread_ingest
 
   - name: delete_content
     kind: function.lua

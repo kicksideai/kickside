@@ -19,6 +19,8 @@ workspace:
     kickside/core: ../../../core/core
     kickside/jobs: ../../../core/jobs
     kickside/knowledge: ..
+    kickside/memory: ../../../../providers/memory
+    kickside/search-index: ../../../../providers/search-index
     kickside/uploads: ../../uploads
     kickside/users: ../../users
     kickside/security: ../../security

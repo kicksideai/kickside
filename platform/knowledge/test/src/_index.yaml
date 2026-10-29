@@ -83,6 +83,9 @@ entries:
       comment: Test API router.
       server: gateway
     prefix: /api
+    middleware: [token_auth]
+    options:
+      token_store: kickside.users.security:tokens
 
   - name: test_engine_wiki
     kind: registry.entry
@@ -174,6 +177,7 @@ entries:
       comment: Permissive scope the knowledge suites run their scoped actors under.
     groups:
       - kb_test
+      - app:user
     policy:
       resources: '*'
       actions: '*'
@@ -520,3 +524,13 @@ entries:
     - {name: ui_server, value: app:gateway}
     - {name: target_db, value: app:db}
     - {name: process_host, value: app:processes}
+
+  - name: dep.kickside.memory
+    kind: ns.dependency
+    component: kickside/memory
+    version: '*'
+    parameters:
+      - { name: kickside.memory:target_db, value: app:db }
+      - { name: kickside.memory:api_router, value: app:api }
+      - { name: kickside.memory:ui_server, value: app:gateway }
+      - { name: kickside.memory.security:user_security_scope, value: app:user }
