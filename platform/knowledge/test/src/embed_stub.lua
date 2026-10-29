@@ -31,9 +31,6 @@ local function handle(request: any): any
     end
 
     local content = req.content
-    if type(content) ~= "string" or trim(content) == "" then
-        return { success = false, error = "content is required" }
-    end
 
     local content_type = trim(req.content_type)
     if content_type == "" then content_type = "text/plain" end

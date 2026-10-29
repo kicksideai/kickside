@@ -9,7 +9,7 @@ entries:
     method: run
     security:
       actor: { id: "system:knowledge-tests" }
-    modules: [sql, uuid, json, funcs, security, contract, http_client, registry]
+    modules: [sql, uuid, json, funcs, security, contract, http_client, system]
     imports:
       test: wippy.test:test
       session: kickside.users:session
