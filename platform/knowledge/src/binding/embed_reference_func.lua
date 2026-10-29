@@ -4,13 +4,8 @@ local contract = require("contract")
 local security = require("security")
 local component = require("component")
 local canonical_json = require("canonical_json")
-local thread_ingest = require("thread_ingest")
 local source_ref_builder = require("source_ref_builder")
 
--- Generic embeddable-reference handler shared by every KB engine binding. It
--- pulls content from a content provider, then queues a canonical KB-owned thread
--- event. Engine-agnostic; lives in knowledge so kb10 and future engines reuse
--- one durable ingestion path.
 local trim = util.trim
 
 local function shallow_copy(input)
@@ -75,7 +70,7 @@ local function handle(request)
         return { success = false, error = "content provider returned failure" }
     end
 
-    local _, access_err = component.validate_access(component_id, component.ACCESS.WRITE)
+    local engine, access_err = component.open(component_id, component.ACCESS.WRITE, "kickside.contract:embeddable")
     if access_err then
         return { success = false, error = "cannot access KB: " .. tostring(access_err) }
     end
@@ -115,7 +110,8 @@ local function handle(request)
         return { success = false, error = "invalid source_ref: " .. tostring(ref_err) }
     end
 
-    local queued, ingest_err = thread_ingest.append_content(component_id, {
+    assert(engine, "embeddable binding required")
+    local queued, ingest_err = engine:embed_content({
         content = content_result.content,
         content_type = content_result.content_type or "text/plain",
         title = content_result.title or metadata.title,
@@ -124,7 +120,8 @@ local function handle(request)
         external_version = external_version,
         source_ref = source_ref,
     })
-    if ingest_err or not queued then
+    if ingest_err or not queued or queued.success ~= true then
+        ingest_err = ingest_err or (queued and queued.error)
         return { success = false, error = "failed to queue reference ingest: " .. tostring(ingest_err) }
     end
 
@@ -134,6 +131,7 @@ local function handle(request)
         kb_id = component_id,
         thread_id = queued.thread_id,
         projection_id = queued.projection_id,
+        run_id = queued.run_id,
         external_id = queued.external_id,
         external_version = queued.external_version,
         trace_context = queued.trace_context,

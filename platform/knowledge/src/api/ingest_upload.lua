@@ -3,7 +3,6 @@ local artifact_parts_repo = require("artifact_parts_repo")
 local contract = require("contract")
 local security = require("security")
 local errors = require("errors")
-local thread_ingest = require("thread_ingest")
 local upload_query_repo = require("upload_query_repo")
 local engines = require("engines")
 
@@ -181,6 +180,7 @@ local function ingest_archive_children(kb_id: string, upload_id: string, file: a
                     external_id = result.external_id,
                     thread_id = result.thread_id,
                     projection_id = result.projection_id,
+                    run_id = result.run_id,
                 }
             end
         end
@@ -326,7 +326,10 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
     put_if_present(metadata, "external_version", external_version)
     put_if_present(source_ref, "external_version", external_version)
 
-    local result, ingest_err = thread_ingest.append_content(kb_id, {
+    local engine, open_err = component.open(kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable")
+    if open_err then return nil, open_err end
+    assert(engine, "embeddable binding required")
+    local result, ingest_err = engine:embed_content({
         content = content,
         content_type = content_type,
         metadata = metadata,
@@ -337,7 +340,8 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
         trace_context = file.trace_context,
     })
 
-    if ingest_err or not result then
+    if ingest_err or not result or result.success ~= true then
+        ingest_err = ingest_err or (result and result.error)
         return nil, "failed to queue upload artifact: " .. tostring(ingest_err)
     end
 

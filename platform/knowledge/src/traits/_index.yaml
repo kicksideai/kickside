@@ -220,6 +220,7 @@ entries:
             "upload_id": {"type": "string", "description": "Present only when an uploaded file was ingested via upload_id"},
             "thread_id": {"type": "string", "description": "Durable ingestion thread id for this enqueue"},
             "projection_id": {"type": "string", "description": "Id of the projection worker materializing the event"},
+            "run_id": {"type": "string", "description": "Derive run id when supplied by the bound engine"},
             "external_id": {"type": "string", "description": "Stable external content id used for idempotent replacement"},
             "external_version": {"type": "string", "description": "Source version recorded for this content"},
             "trace_context": {"type": "object", "description": "Trace context propagated into the durable KB event"},
@@ -233,7 +234,6 @@ entries:
     imports:
       util: kickside.knowledge:util
       component: kickside.component:component
-      thread_ingest: kickside.knowledge.injection:thread_ingest
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       ingest_upload: kickside.knowledge.api:ingest_upload
 

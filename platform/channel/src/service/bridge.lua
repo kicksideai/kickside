@@ -164,6 +164,18 @@ local function main(args: any)
         release_first_turn()
         error("bridge run-as identity has no actor for " .. key)
     end
+    local source_author: Map
+    local thread_role = trim((thread :: any).role)
+    if thread_role == "channel" then
+        source_author = { kind = "system", id = user_id }
+    elseif thread_role == "dm" then
+        source_author = { kind = "user", id = user_id }
+    else
+        health("thread_role_invalid", "bridge thread role is invalid")
+        logger:error("bridge thread role is invalid", { key = key, role = thread_role })
+        release_first_turn()
+        error("bridge thread role is invalid for " .. key)
+    end
 
     -- Ensure the audit thread for this conversation (under the run-as frame).
     local thread_id = state and state.thread_id or nil
@@ -437,7 +449,7 @@ local function main(args: any)
         agent_failed = false
         current_reply_trace = turn_trace
         reply_config.reply_proof = reply_proof
-        local sent, send_err = send_session_message(pid, body, attachments, file_uuids)
+        local sent, send_err = send_session_message(pid, body, attachments, file_uuids, source_author)
         if not sent then
             health("agent_dispatch_failed", send_err)
             error(tostring(send_err))

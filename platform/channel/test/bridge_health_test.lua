@@ -3,12 +3,13 @@ local bridge = require("bridge")
 local test_state = require("test_state")
 local health_reporter = require("health_reporter")
 
-local function drive(event_type, event_payload, send_error, lazy, upgrade)
+local function drive(event_type, event_payload, send_error, lazy, upgrade, thread_role): (any, { any }, integer, { any })
     local inbox, events, idle = {}, {}, {}
     for _, ch in ipairs({ inbox, events, idle }) do ch.case_receive = function() return ch end end
     local count = 0
     local notifications = {}
     local dispatched = 0
+    local dispatch_authors: { any } = {}
     local handover: any = nil
     local options: any = nil
     local activations, threads, replies = 0, 0, {}
@@ -53,12 +54,16 @@ local function drive(event_type, event_payload, send_error, lazy, upgrade)
         support = {
             trim = function(v) return type(v) == "string" and v or "" end,
             canonical_provider = function(v) return v end,
-            actor_id = function(actor) return actor:id() end,
+            actor_id = function() return "principal-1" end,
             runtime_idle_ms = function() return 60000 end,
             resolve_active_traits = function() return nil, nil end,
             ensure_session = function() return true, nil end,
             spawn_session_process = function() return "session-pid", nil end,
-            send_session_message = function() dispatched = dispatched + 1; return true, nil end,
+            send_session_message = function(_, _, _, _, author)
+                dispatched = dispatched + 1
+                dispatch_authors[#dispatch_authors + 1] = author
+                return true, nil
+            end,
             prepare_session_turn = function(args) return { body = args.inbound.text, attachments = {}, file_uuids = {} }, nil end,
             SESSION_ACTIVATED = "session.activated", SESSION_COMPLETED = "session.completed",
         },
@@ -84,7 +89,7 @@ local function drive(event_type, event_payload, send_error, lazy, upgrade)
         start = { component_id = "auto-1", agent_id = "agent-1",
             response_policy = lazy and { mode = "lazy" } or {} },
         inbound = { text = "<@bot-1> question" }, reply_proof = upgrade and "first-proof" or nil,
-        reply = { component_id = "conn-1", resource_id = "chan-1" }, thread = {} } })
+        reply = { component_id = "conn-1", resource_id = "chan-1" }, thread = { role = thread_role or "channel" } } })
     if upgrade then
         test.is_true(options.upgradable)
         test.not_nil(handover)
@@ -104,13 +109,25 @@ local function drive(event_type, event_payload, send_error, lazy, upgrade)
         test.eq(proofs[1], "first-proof")
     end
     local writes = test_state.state.set_meta_calls
-    return writes[#writes] and writes[#writes].fields or {}, notifications, dispatched
+    return writes[#writes] and writes[#writes].fields or {}, notifications, dispatched, dispatch_authors
 end
 local function define_tests()
     test.describe("responder asynchronous health", function()
         test.before_each(function() test_state.reset() end)
         test.it("upgrades an active turn without replaying input or losing buffered output", function()
             drive(nil, nil, nil, false, true)
+        end)
+        test.it("records the bridge subject as the author for channel turns", function()
+            local _, _, dispatched, authors = drive(nil, nil, nil, false, false)
+            test.eq(1, dispatched)
+            test.eq(authors[1].kind, "system")
+            test.eq(authors[1].id, "principal-1")
+        end)
+        test.it("records the linked principal as the author for direct-message turns", function()
+            local _, _, dispatched, authors = drive(nil, nil, nil, false, false, "dm")
+            test.eq(1, dispatched)
+            test.eq(authors[1].kind, "user")
+            test.eq(authors[1].id, "principal-1")
         end)
         test.it("dispatches the queued turn and reports an assessor outage", function()
             test_state.state.assessment_error = errors.new({ kind = errors.UNAVAILABLE, message = "assessor unavailable" })

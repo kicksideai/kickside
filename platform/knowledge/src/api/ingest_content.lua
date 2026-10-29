@@ -3,7 +3,6 @@ local json = require("json")
 local security = require("security")
 local component = require("component")
 local http_errors = require("http_errors")
-local thread_ingest = require("thread_ingest")
 
 local function shallow_copy(input: any): { [string]: any }
     local out: { [string]: any } = {}
@@ -48,7 +47,7 @@ local function handler()
         return
     end
 
-    local _, access_err = component.validate_access(kb_id, component.ACCESS.WRITE)
+    local engine, access_err = component.open(kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable")
     if access_err then
         local status = http_errors.classify(access_err)
         local msg = tostring(access_err or "access denied")
@@ -96,7 +95,8 @@ local function handler()
     put_default(source_ref, "title", title)
     put_default(source_ref, "content_type", content_type)
 
-    local result, ingest_err = thread_ingest.append_content(kb_id, {
+    assert(engine, "embeddable binding required")
+    local result, ingest_err = engine:embed_content({
         content = body.content,
         content_type = content_type,
         metadata = metadata,
@@ -106,7 +106,8 @@ local function handler()
         source_ref = source_ref,
     })
 
-    if ingest_err or not result then
+    if ingest_err or not result or result.success ~= true then
+        ingest_err = ingest_err or (result and result.error)
         res:set_status((http_errors.classify(ingest_err)))
         res:write_json({ success = false, error = "failed to queue content ingest: " .. tostring(ingest_err) })
         return
@@ -117,6 +118,7 @@ local function handler()
         success = true,
         thread_id = result.thread_id,
         projection_id = result.projection_id,
+        run_id = result.run_id,
         cursor_id = result.cursor_id,
         external_source = result.external_source,
         external_id = result.external_id,

@@ -31,9 +31,6 @@ local function handle(request: any): any
     end
 
     local content = req.content
-    if type(content) ~= "string" or trim(content) == "" then
-        return { success = false, error = "content is required" }
-    end
 
     local content_type = trim(req.content_type)
     if content_type == "" then content_type = "text/plain" end
@@ -49,6 +46,8 @@ local function handle(request: any): any
         title = title ~= "" and title or nil,
         external_id = req.external_id,
         external_version = req.external_version,
+        source_ref = req.source_ref,
+        trace_context = req.trace_context,
     })
     if ingest_err or not queued then
         return { success = false, error = "ingest enqueue failed: " .. tostring(ingest_err) }
@@ -59,6 +58,10 @@ local function handle(request: any): any
         status = "queued",
         kb_id = component_id,
         thread_id = queued.thread_id,
+        projection_id = queued.projection_id,
+        cursor_id = queued.cursor_id,
+        external_source = queued.external_source,
+        trace_context = queued.trace_context,
         external_id = queued.external_id,
         external_version = queued.external_version,
         source_ref = queued.source_ref,

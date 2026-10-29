@@ -2,7 +2,6 @@ local util = require("util")
 local component = require("component")
 local ctx = require("ctx")
 local security = require("security")
-local thread_ingest = require("thread_ingest")
 local upload_query_repo = require("upload_query_repo")
 local ingest_upload = require("ingest_upload")
 
@@ -113,7 +112,7 @@ local function handle(args: any, context: any)
         return nil, errors.new({ message = tostring("knowledge base not found: " .. tostring(comp_err)), kind = errors.NOT_FOUND })
     end
 
-    local _, access_err = component.open(
+    local engine, access_err = component.open(
         kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable"
     )
     if access_err then
@@ -145,6 +144,7 @@ local function handle(args: any, context: any)
             upload_id = upload_id,
             thread_id = result.thread_id,
             projection_id = result.projection_id,
+            run_id = result.run_id,
             external_id = result.external_id,
             external_version = result.external_version,
             trace_context = result.trace_context,
@@ -162,7 +162,8 @@ local function handle(args: any, context: any)
     metadata.source = trim(metadata.source) ~= "" and metadata.source or "trait.kb_embed"
     if trim(args.title) ~= "" then metadata.title = args.title end
     local title = trim(args.title or metadata.title or metadata.filename or metadata.source_url)
-    local result, ingest_err = thread_ingest.append_content(kb_id, {
+    assert(engine, "embeddable binding required")
+    local result, ingest_err = engine:embed_content({
         content = args.content,
         content_type = content_type,
         title = title ~= "" and title or nil,
@@ -172,7 +173,8 @@ local function handle(args: any, context: any)
         source_ref = source_ref_for(args, metadata, content_type, title),
     })
 
-    if ingest_err then
+    if ingest_err or not result or result.success ~= true then
+        ingest_err = ingest_err or (result and result.error)
         return nil, errors.new({ message = tostring("ingest enqueue failed: " .. tostring(ingest_err)), kind = errors.INTERNAL })
     end
 
@@ -186,6 +188,7 @@ local function handle(args: any, context: any)
         kb_id = kb_id,
         thread_id = result and result.thread_id,
         projection_id = result and result.projection_id,
+        run_id = result and result.run_id,
         external_id = result and result.external_id,
         external_version = result and result.external_version,
         trace_context = result and result.trace_context,
