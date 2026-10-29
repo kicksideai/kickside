@@ -129,6 +129,30 @@ local function define_tests()
             end)
         end)
 
+        for _, existing in ipairs({
+            { label = "keyed jobs", columns = "" },
+            { label = "unkeyed jobs", columns = ",concurrency_key=NULL" },
+            { label = "jobs without worker references", columns = ",worker_ref=NULL" },
+        }) do
+            test.it("counts existing running " .. existing.label .. " against the group limit", function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    for ordinal, key in ipairs({ "existing-a", "existing-b" }) do
+                        local id = enqueue(db, dbtype, "app:capacity_worker_a", key, ordinal)
+                        local _, err = db:execute("UPDATE kickside_job SET status='running',capacity_group=NULL"
+                            .. existing.columns .. " WHERE id=$1", { id })
+                        test.is_nil(err, tostring(err))
+                    end
+                    local pending = enqueue(db, dbtype, "app:capacity_worker_b", "new-work", 3)
+                    local claimed, err = claim.claim_batch(db, dbtype, 1)
+                    test.is_nil(err, tostring(err))
+                    test.eq(#claimed, 0)
+                    local rows = assert(db:query("SELECT status FROM kickside_job WHERE id=$1", { pending }))
+                    test.eq(rows[1].status, job_types.JOB_STATE.PENDING)
+                end)
+            end)
+        end
+
         test.it("excludes capacity-declared and descriptorless work sharing a concurrency key", function()
             with_db(function(db: sql.DB)
                 local dbtype = tostring(db:type())

@@ -400,19 +400,29 @@ local function running_capacity(tx: sql.Transaction, states: { [string]: Capacit
     table.sort(groups)
     local marks: { string } = {}
     for index in ipairs(groups) do marks[#marks + 1] = "$" .. tostring(index) end
-    local rows, query_err = tx:query("SELECT capacity_group,concurrency_key,COUNT(*) AS n FROM kickside_job"
-        .. " WHERE status='running' AND capacity_group IN (" .. table.concat(marks, ",") .. ")"
-        .. " GROUP BY capacity_group,concurrency_key", groups)
+    local rows, query_err = tx:query("SELECT capacity_group,worker_ref,job_type,concurrency_key,COUNT(*) AS n FROM kickside_job"
+        .. " WHERE status='running' AND (capacity_group IN (" .. table.concat(marks, ",") .. ") OR capacity_group IS NULL)"
+        .. " GROUP BY capacity_group,worker_ref,job_type,concurrency_key", groups)
     rows, query_err = boundary.bounded_rows(rows, query_err, "claim capacity count failed", "capacity", 0, nil, response_error)
     if query_err then return query_err end
     for _, row in ipairs(rows or {}) do
         local group, key = row.capacity_group, row.concurrency_key
+        if group == nil then
+            local descriptor, descriptor_err = capacity.descriptor(row.worker_ref or row.job_type)
+            if descriptor_err then return descriptor_err end
+            group = descriptor and descriptor.group or nil
+        end
         local state = type(group) == "string" and states[group] or nil
-        local count, count_err = boundary.number_value(row.n, "capacity.n", 1, true, false, response_error)
-        if count_err then return count_err end
-        if not state or type(key) ~= "string" then return response_error("capacity.group") end
-        state.running = state.running + (count :: integer)
-        state.running_keys[key] = (state.running_keys[key] or 0) + (count :: integer)
+        if state then
+            local count, count_err = boundary.number_value(row.n, "capacity.n", 1, true, false, response_error)
+            if count_err then return count_err end
+            state.running = state.running + (count :: integer)
+            if type(key) == "string" then
+                state.running_keys[key] = (state.running_keys[key] or 0) + (count :: integer)
+            elseif key ~= nil or row.capacity_group ~= nil then
+                return response_error("capacity.group")
+            end
+        end
     end
     return nil
 end
