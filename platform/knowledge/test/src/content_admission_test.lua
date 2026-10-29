@@ -165,7 +165,7 @@ local function define_tests()
                 test.eq(#rows("SELECT id FROM kickside_event WHERE thread_id = $1 AND type = 'kickside.knowledge.events:content.upserted'", { id }), 0)
             end)
         end
-        for _, engine in ipairs({ "document", "memory" }) do
+        for _, engine in ipairs({ "document", "wiki", "memory" }) do
             for _, caller in ipairs({ "content", "upload", "reference", "ingest_trait", "trait" }) do
                 test.it("admits " .. caller .. " through the " .. engine .. " binding", function()
                     local user = owner()
@@ -173,8 +173,13 @@ local function define_tests()
                     local result = admit(user, id, caller)
                     test.is_true(result.success, assert(json.encode(result)))
                     test.eq(result.thread_id, id)
+                    if engine == "memory" then
+                        test.not_nil(result.run_id)
+                    else
+                        test.is_nil(result.run_id)
+                    end
                     local events = rows("SELECT body, external_id FROM kickside_event WHERE thread_id = $1 AND type = 'kickside.knowledge.events:content.upserted'", { id })
-                    if engine == "document" then
+                    if engine ~= "memory" then
                         test.not_nil(result.projection_id)
                         test.eq(#events, 1)
                         local body = assert(json.decode(events[1].body))

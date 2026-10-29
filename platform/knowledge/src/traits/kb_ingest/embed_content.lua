@@ -98,6 +98,7 @@ local function handle(args)
         kb_id = kb_id,
         thread_id = result and result.thread_id,
         projection_id = result and result.projection_id,
+        run_id = result and result.run_id,
         external_id = result and result.external_id,
         external_version = result and result.external_version,
         trace_context = result and result.trace_context,

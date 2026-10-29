@@ -131,6 +131,7 @@ local function handle(request)
         kb_id = component_id,
         thread_id = queued.thread_id,
         projection_id = queued.projection_id,
+        run_id = queued.run_id,
         external_id = queued.external_id,
         external_version = queued.external_version,
         trace_context = queued.trace_context,
