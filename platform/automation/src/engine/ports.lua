@@ -87,23 +87,23 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local input_schema = schema_or_nil(entry_field(port_entry, "input_schema"))
         local input_mode = entry_field(port_entry, "input_mode")
 
-        -- A component-picker selector picks an instance of the port's own binding,
-        -- so the binding's thread_class is the picker's listing filter. Carry it onto
-        -- the field (the schema form forwards a field's `class` to the picker) on a
-        -- copy, since the registry entry is shared. A binding that declares no
-        -- thread_class yields an unfiltered picker: that is a missing declaration on
-        -- the binding, not something to infer here.
+        -- A port selects instances of its binding's stored implementation. Several
+        -- kinds can share a thread class, so the class alone cannot scope a picker.
         local config_schema = entry_field(port_entry, "config_schema")
         local binding_thread_class = tostring(binding_meta.thread_class or "")
-        if type(config_schema) == "table" and binding_thread_class ~= "" then
+        local impl_id = trim(binding_meta.impl_id)
+        if impl_id == "" then impl_id = binding end
+        if type(config_schema) == "table" then
             local enriched: Map = {}
             for field_key, field_value in pairs(config_schema :: Map) do
                 if type(field_value) == "table"
-                    and tostring((field_value :: Map).picker or "") == "wc-component-picker"
-                    and (field_value :: Map).class == nil then
+                    and tostring((field_value :: Map).picker or "") == "wc-component-picker" then
                     local field_copy: Map = {}
                     for k, v in pairs(field_value :: Map) do field_copy[k] = v end
-                    field_copy.class = binding_thread_class
+                    field_copy.impl_id = impl_id
+                    if field_copy.class == nil and binding_thread_class ~= "" then
+                        field_copy.class = binding_thread_class
+                    end
                     enriched[field_key] = field_copy
                 else
                     enriched[field_key] = field_value
@@ -114,6 +114,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local desc: Map = {
             id = typed_port.id,
             binding = binding,
+            impl_id = impl_id,
             class = first_class(binding_meta),
             config_schema = config_schema,
             title = (type(port_meta.title) == "string" and port_meta.title ~= "" and port_meta.title) or typed_port.id,
@@ -297,7 +298,22 @@ function part.attach(M: any, dependencies: any, P: any): ()
     -- selected one, or the installing actor's one instance of a picker-less
     -- per-user source.
     function M.source_thread(endpoint: Map, thread_id: string?): (string?, error?)
-        if thread_id and thread_id ~= "" then return thread_id, nil end
+        if thread_id and thread_id ~= "" then
+            local component = dependencies.component :: automation_types.ComponentModule
+            local rows, read_err = component.query({ component_ids = { thread_id }, access_mask = component.ACCESS.READ })
+            if read_err then return nil, read_err end
+            local selected = rows and rows[1]
+            if not selected then
+                return nil, errors.new({kind = errors.NOT_FOUND, retryable = false,
+                    message = "source component not found", details = {code = "source_instance_missing", field = "trigger.config.thread_id"}})
+            end
+            if selected.impl_id ~= endpoint.impl_id then
+                return nil, errors.new({kind = errors.INVALID, retryable = false,
+                    message = "selected component does not belong to the source kind",
+                    details = {code = "source_kind_mismatch", field = "trigger.config.thread_id"}})
+            end
+            return thread_id, nil
+        end
         for _, field in pairs(type(endpoint.config_schema) == "table" and (endpoint.config_schema :: Map) or {}) do
             local picker = type(field) == "table" and (field :: Map).picker or nil
             if type(picker) == "string" and picker ~= "" and picker ~= "wc-schema-form" then
