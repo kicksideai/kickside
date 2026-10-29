@@ -152,6 +152,8 @@ jobs:
         cd source/app
         wippy install
         cmp wippy.lock ../../locked/wippy.lock
+        wippy pack --list ../../output/inventory.wapp > ../../output/filesystems.txt
+        ruby ../../control/.github/scripts/deployment_filesystems.rb ../../output/filesystems.txt
         wippy pack --module kickside/kickside --embed app:app_fs ../../output/kickside.wapp
         ruby ../../control/.github/scripts/deployment_dependencies.rb . ../../output/dependencies.json ../../output/kickside.wapp
     - name: Build the fixed workspace launcher

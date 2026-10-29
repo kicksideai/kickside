@@ -2,13 +2,13 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -76,7 +76,15 @@ func launch() error {
 	if err = os.Chdir(workspace); err != nil {
 		return err
 	}
-	if err = os.Setenv("WIPPY_CACHE_DIR", filepath.Join(workspace, ".wippy/cache")); err != nil {
+	cache, guard, err := preparePodCache("/data", os.Getenv("WIPPY_POD_UID"))
+	if err != nil {
+		return err
+	}
+	defer guard.Close()
+	if _, _, code := syscall.Syscall(syscall.SYS_FCNTL, guard.Fd(), syscall.F_SETFD, 0); code != 0 {
+		return code
+	}
+	if err = os.Setenv("WIPPY_CACHE_DIR", cache); err != nil {
 		return err
 	}
 	arguments := []string{"wippy", "run", "--config", filepath.Join(workspace, ".wippy.yaml")}
@@ -133,26 +141,38 @@ func prepareWorkspace(bundle, volume string) (string, error) {
 	}
 	defer data.Close()
 	const directory = ".wippy/deployments"
-	if err = data.MkdirAll(directory, 0700); err != nil {
+	private, err := privateDirectory(data, ".wippy")
+	if err != nil {
 		return "", err
 	}
-	parent, err := data.OpenRoot(directory)
+	defer private.Close()
+	parent, err := privateDirectory(private, "deployments")
 	if err != nil {
 		return "", err
 	}
 	defer parent.Close()
 	identity := strings.TrimPrefix(checksum(raw), "sha256:")
+	guard, err := preparationGuard(parent, "."+identity+".lock")
+	if err != nil {
+		return "", err
+	}
+	defer guard.Close()
+	if err = syscall.Flock(int(guard.Fd()), syscall.LOCK_EX); err != nil {
+		return "", err
+	}
 	destination := filepath.Join(volume, directory, identity)
 	if _, err = parent.Lstat(identity); err == nil {
-		return destination, verifyPrepared(parent, identity, source, manifest, raw)
+		if err = verifyPrepared(parent, identity, source, manifest, raw); err != nil {
+			return "", err
+		}
+		return destination, syncDirectory(parent, ".")
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}
-	var random [16]byte
-	if _, err = rand.Read(random[:]); err != nil {
+	stage := identity + ".prepare"
+	if err = parent.RemoveAll(stage); err != nil {
 		return "", err
 	}
-	stage := ".prepare-" + hex.EncodeToString(random[:])
 	if err = parent.Mkdir(stage, 0700); err != nil {
 		return "", err
 	}
@@ -162,8 +182,14 @@ func prepareWorkspace(bundle, volume string) (string, error) {
 		return "", err
 	}
 	err = populateWorkspace(workspace, source, manifest, raw)
+	if err == nil {
+		err = syncWorkspace(workspace)
+	}
 	workspace.Close()
 	if err != nil {
+		return "", err
+	}
+	if err = syncDirectory(parent, "."); err != nil {
 		return "", err
 	}
 	if err = parent.Rename(stage, identity); err != nil {
@@ -171,7 +197,91 @@ func prepareWorkspace(bundle, volume string) (string, error) {
 			return "", verifyErr
 		}
 	}
-	return destination, nil
+	return destination, syncDirectory(parent, ".")
+}
+
+func preparationGuard(parent *os.Root, name string) (*os.File, error) {
+	file, err := parent.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0600)
+	if err == nil {
+		return file, nil
+	}
+	if !errors.Is(err, os.ErrExist) {
+		return nil, err
+	}
+	info, err := parent.Lstat(name)
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() {
+		return nil, errors.New("the preparation guard is not a regular file")
+	}
+	file, err = parent.OpenFile(name, os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+	actual, err := file.Stat()
+	if err != nil || !os.SameFile(info, actual) {
+		file.Close()
+		return nil, errors.New("the preparation guard changed during preparation")
+	}
+	return file, nil
+}
+
+func privateDirectory(parent *os.Root, name string) (*os.Root, error) {
+	info, err := parent.Lstat(name)
+	if errors.Is(err, os.ErrNotExist) {
+		if mkdirErr := parent.Mkdir(name, 0700); mkdirErr != nil && !errors.Is(mkdirErr, os.ErrExist) {
+			return nil, mkdirErr
+		}
+		info, err = parent.Lstat(name)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return nil, errors.New("a reserved directory is not a private directory")
+	}
+	root, err := parent.OpenRoot(name)
+	if err != nil {
+		return nil, err
+	}
+	actual, err := root.Stat(".")
+	if err != nil || !os.SameFile(info, actual) {
+		root.Close()
+		return nil, errors.New("a reserved directory changed during preparation")
+	}
+	return root, nil
+}
+
+func syncDirectory(root *os.Root, name string) error {
+	file, err := root.Open(name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return file.Sync()
+}
+
+func syncWorkspace(root *os.Root) error {
+	directories := []string{}
+	err := fs.WalkDir(root.FS(), ".", func(name string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			directories = append(directories, name)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for index := len(directories) - 1; index >= 0; index-- {
+		if err = syncDirectory(root, directories[index]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func boundFiles(manifest deploymentManifest) []struct{ source, destination, digest string } {
@@ -210,7 +320,15 @@ func populateWorkspace(workspace, source *os.Root, manifest deploymentManifest, 
 			return err
 		}
 	}
-	return workspace.WriteFile("deployment-manifest.json", raw, 0400)
+	file, err := workspace.OpenFile("deployment-manifest.json", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0400)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if _, err = file.Write(raw); err != nil {
+		return err
+	}
+	return file.Sync()
 }
 
 func copyVerified(workspace, source *os.Root, destination, name, digest string) (int64, error) {
@@ -225,15 +343,18 @@ func copyVerified(workspace, source *os.Root, destination, name, digest string) 
 	}
 	hash := sha256.New()
 	count, err := io.Copy(io.MultiWriter(output, hash), io.LimitReader(input, maximumFileBytes+1))
-	closeErr := output.Close()
 	if err != nil {
+		output.Close()
 		return 0, err
 	}
-	if closeErr != nil {
-		return 0, closeErr
-	}
 	if count > maximumFileBytes || "sha256:"+hex.EncodeToString(hash.Sum(nil)) != digest {
+		output.Close()
 		return 0, errors.New("an artifact differs from the frozen deployment")
+	}
+	syncErr := output.Sync()
+	closeErr := output.Close()
+	if syncErr != nil || closeErr != nil {
+		return 0, errors.Join(syncErr, closeErr)
 	}
 	return count, nil
 }
@@ -275,6 +396,9 @@ func verifyPrepared(parent *os.Root, name string, source *os.Root, manifest depl
 		return err
 	}
 	defer workspace.Close()
+	if err = verifyWorkspaceLayout(workspace, manifest); err != nil {
+		return err
+	}
 	if err = verifyFile(workspace, "deployment-manifest.json", checksum(raw)); err != nil {
 		return err
 	}
@@ -293,6 +417,33 @@ func verifyPrepared(parent *os.Root, name string, source *os.Root, manifest depl
 		}
 	}
 	return nil
+}
+
+func verifyWorkspaceLayout(root *os.Root, manifest deploymentManifest) error {
+	allowed := map[string]bool{".": true, "src": true, "deployment-manifest.json": false,
+		"wippy.lock.runtime.lock": false, ".wippy/runtime.lock": false}
+	add := func(name string) {
+		allowed[name] = false
+		for parent := filepath.Dir(name); parent != "."; parent = filepath.Dir(parent) {
+			allowed[parent] = true
+		}
+	}
+	for _, file := range boundFiles(manifest) {
+		add(file.destination)
+	}
+	for _, dependency := range manifest.Dependencies {
+		add(strings.TrimSuffix(dependency.Path, ".sha256-"+dependency.SHA256+".wapp") + ".wapp")
+	}
+	return fs.WalkDir(root.FS(), ".", func(name string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		directory, exists := allowed[name]
+		if !exists || directory != entry.IsDir() || (!directory && !entry.Type().IsRegular()) {
+			return fmt.Errorf("the workspace contains an unfrozen entry: %s", name)
+		}
+		return nil
+	})
 }
 
 func verifyWorkspace(workspace, bundle string) error {

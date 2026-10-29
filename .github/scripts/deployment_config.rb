@@ -2,6 +2,7 @@
 
 require 'yaml'
 require 'json'
+require_relative 'deployment_filesystems'
 
 def published_configuration(text)
   document = YAML.parse_stream(text)
@@ -21,6 +22,11 @@ def published_configuration(text)
   raise 'application config must be a map' unless config.is_a?(Hash)
 
   config.delete('workspace')
+  overrides = config.fetch('override', {})
+  raise 'application overrides must be a map' unless overrides.is_a?(Hash)
+  DeploymentFilesystems::DIRECTORIES.each { |entry, path| overrides[entry + ':directory'] = path }
+  overrides['keeper.state:db:file'] = '/data/.wippy/state_reflect.db'
+  config['override'] = overrides
   JSON.pretty_generate(config)
 end
 
