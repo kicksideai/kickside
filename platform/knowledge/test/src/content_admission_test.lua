@@ -7,7 +7,7 @@ local funcs = require("funcs")
 local security = require("security")
 local contract = require("contract")
 local http_client = require("http_client")
-local registry = require("registry")
+local system = require("system")
 local session = require("session")
 local groups = require("groups")
 local component = require("component")
@@ -97,8 +97,9 @@ local function admit(user: string, id: string, caller: string, refused: boolean?
     local args = { kb_id = id, content = CONTENT, content_type = "text/plain", title = "Reference", external_id = "admission:" .. caller, external_version = "v1" }
     if caller == "content" then
         local token = assert(session.mint(assert(groups.get_user_with_groups(user)))).token
-        local gateway = assert(registry.get("app:gateway"))
-        local port = assert(tostring(gateway.data.addr):match(":(%d+)$"))
+        local gateway, gateway_err = system.supervisor.state("app:gateway")
+        test.is_nil(gateway_err, tostring(gateway_err))
+        local port = assert(gateway.details:match(":(%d+)$"))
         local response, err = http_client.request("POST", "http://127.0.0.1:" .. port .. "/api/knowledge/" .. id .. "/ingest", {
             headers = { Authorization = "Bearer " .. token, ["Content-Type"] = "application/json" }, body = assert(json.encode(args)),
         })
