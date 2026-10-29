@@ -2,6 +2,12 @@ version: "1.0"
 namespace: kickside.contract
 
 entries:
+  - name: result_window
+    kind: library.lua
+    meta:
+      comment: Compatibility for published tool wrappers. Preserves native results and pagination.
+    source: file://result_window.lua
+
   - name: capacity_executor
     kind: library.lua
     source: file://capacity_executor.lua

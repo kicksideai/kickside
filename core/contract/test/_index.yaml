@@ -2,6 +2,22 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: result_window_legacy_tool
+    kind: library.lua
+    source: file://result_window_legacy_tool.lua
+    imports:
+      tool_results: kickside.contract:result_window
+
+  - name: result_window_compat_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_contract }
+    source: file://result_window_compat_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      legacy_tool: app:result_window_legacy_tool
+      result_window: kickside.contract:result_window
+
   - name: writable_sink_test
     kind: function.lua
     meta: { type: test, suite: kickside_contract }
