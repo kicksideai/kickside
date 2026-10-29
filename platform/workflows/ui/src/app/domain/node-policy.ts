@@ -7,7 +7,7 @@
 // reads the human label and the "how this works" blurb below. Logic blocks are
 // productized — Condition, Loop, Combine, For each — never their raw kind string.
 
-import type { NodeKind } from '../types'
+import type { RetryFields, NodeKind } from '../types'
 
 export interface OutPort {
   // Handle id — becomes the edge's source_port. A Branch's arms are 'true'/'false';
@@ -164,7 +164,12 @@ export interface ExtPort {
   schema?: unknown
 }
 
+export interface BlockExecution extends RetryFields {
+  kind: string
+}
+
 export interface BlockDef {
+  execution?: BlockExecution
   id: string
   label: string
   category?: string

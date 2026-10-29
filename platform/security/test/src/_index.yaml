@@ -812,6 +812,12 @@ entries:
       actions: [funcs.call, funcs.security, registry.get]
       resources: app:resolver_boundary_client
       effect: allow
+  - name: resolver_boundary_reader_call
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: kickside.security.runtime:read_groups
+      effect: allow
   - name: resolver_boundary_test
     kind: function.lua
     meta: {type: test, suite: kickside_security}

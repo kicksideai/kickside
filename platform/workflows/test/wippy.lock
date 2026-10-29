@@ -35,8 +35,8 @@ modules:
       version: 0.3.18
       hash: c7e71b358539b450b49b55e725f60f2dac8218e1c596cf3a473ce71e36b10a9b
     - name: wippy/dataflow
-      version: 0.7.31
-      hash: 3da1680082e954d25915adfd2d3633df1716f4dc8040ebed9bbf856c0975572b
+      version: 0.7.33
+      hash: 94af0f43e560d0daaa2a47c40f07de2ea20c392d519237ae71c4b8c0ea828094
     - name: wippy/llm
       version: 0.5.12
       hash: 4a6aa0e035b639b83add7120b331032b56312f794978988d92ec52a640e565e8

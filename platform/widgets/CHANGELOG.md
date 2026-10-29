@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.54](https://github.com/kicksideai/kickside/compare/widgets-v0.1.53...widgets-v0.1.54) (2026-10-29)
+
+
+### Bug Fixes
+
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
 ## [0.1.53](https://github.com/kicksideai/kickside/compare/widgets-v0.1.52...widgets-v0.1.53) (2026-10-28)
 
 

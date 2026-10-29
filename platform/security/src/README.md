@@ -73,7 +73,10 @@ function carries its own configured database and registry authority. Users
 neither imports Security persistence nor takes its private DB policy, so the
 modules can use different databases. The resolver reads all held custom-scope
 selections in one primary-key query, checking target and enabled state before
-using each row. Memberships without DB selections require no SQL query. Native token
+using each row. Internal reads use only Security's database and registry policies;
+the caller's inspection denials remain on its own execution scope. Calling the
+internal reader directly grants no additional authority.
+Memberships without DB selections require no SQL query. Native token
 validation unions these source IDs with current native group policies and applies the credential ceiling. Existing stored sessions use the
 same live lookup and keep their bearer tokens.
 

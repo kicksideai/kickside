@@ -12,6 +12,7 @@ local thread_fence = require("thread_fence")
 local row_bytes = require("row_bytes")
 local listing = require("listing")
 local sql_boundary = require("sql_boundary")
+local capacity = require("capacity")
 
 local enqueue = {}
 type Executor = sql.DB | sql.Transaction
@@ -214,6 +215,27 @@ local function converge_wake_key(exec: Executor, existing: table, params: Enqueu
     return nil
 end
 
+local function converge_capacity_group(exec: Executor, existing: table, descriptor: table?,
+        max_row_bytes: integer): error?
+    if not descriptor or existing.capacity_group == descriptor.group then return nil end
+    if existing.capacity_group ~= nil then
+        return (errors.new({ message = "active job capacity declaration does not match admitted group",
+            kind = errors.INVALID, retryable = false }) :: error)
+    end
+    local size_err = row_bytes.check_update(exec, "kickside_job", existing.id,
+        { capacity_group = descriptor.group }, max_row_bytes, "enqueue_job")
+    if size_err then return size_err end
+    local updated, update_err = sql.builder.update("kickside_job"):set("capacity_group", descriptor.group)
+        :where(sql.builder.eq({ id = existing.id })):where("capacity_group IS NULL")
+        :where("status IN ('pending','running')"):run_with(exec):exec()
+    local count, count_err = sql_boundary.single_row_count(updated, update_err,
+        "job capacity admission update failed", "capacity_group.rows_affected", response_error)
+    if count_err then return count_err end
+    if count ~= 1 then return response_error("capacity_group.rows_affected") end
+    existing.capacity_group = descriptor.group
+    return nil
+end
+
 local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: EnqueueParams): (string?, error?, boolean?)
     local carried_err = carried_identity_error(params)
     if carried_err then return nil, carried_err end
@@ -243,7 +265,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     local job_identity, identity_err = identity_parts(params, id)
     if identity_err then return nil, identity_err end
     local owner = params.owner_locator
-    local existing_rows, existing_err = sql.builder.select("id", "job_type", "worker_ref", "payload", "owner_kind", "owner_id", "slot", "wake_key")
+    local existing_rows, existing_err = sql.builder.select("id", "job_type", "worker_ref", "payload", "owner_kind", "owner_id", "slot", "wake_key", "concurrency_key", "capacity_group")
         :from("kickside_job")
         :where(sql.builder.eq({ job_identity = job_identity }))
         :where("status IN ('pending','running')")
@@ -257,6 +279,10 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if already then
         local mismatch = matching_existing(already, params, payload :: table)
         if mismatch then return nil, mismatch end
+        local descriptor, descriptor_err = capacity.group(already)
+        if descriptor_err then return nil, descriptor_err end
+        local capacity_err = converge_capacity_group(db_or_tx, already, descriptor, (policy :: any).max_row_bytes)
+        if capacity_err then return nil, capacity_err end
         local key_err = converge_wake_key(db_or_tx, already, params, (policy :: any).max_row_bytes)
         if key_err then return nil, key_err end
         return tostring(already.id), nil, false
@@ -267,6 +293,8 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if type(params.concurrency_key) == "string" and params.concurrency_key ~= "" then
         concurrency_key = params.concurrency_key
     end
+    local capacity_descriptor, capacity_err = capacity.admit(params.worker_ref or params.job_type, concurrency_key)
+    if capacity_err then return nil, capacity_err end
     local scheduled_at = params.scheduled_at or now
     if params.scheduled_at ~= nil then
         local instant, parse_err = clock.parse(params.scheduled_at)
@@ -286,6 +314,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         job_type = params.job_type,
         worker_ref = params.worker_ref,
         concurrency_key = concurrency_key,
+        capacity_group = capacity_descriptor and capacity_descriptor.group or nil,
         payload = payload_json,
         status = job_types.JOB_STATE.PENDING,
         priority = math.floor(tonumber(params.priority) or 0),
@@ -319,7 +348,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if proof_err then return nil, proof_err end
     if inserted_count == nil then return nil, response_error("insert.count") end
     if inserted_count < 1 then
-        local rows, lookup_err = sql.builder.select("id", "job_type", "worker_ref", "payload", "owner_kind", "owner_id", "slot", "wake_key")
+        local rows, lookup_err = sql.builder.select("id", "job_type", "worker_ref", "payload", "owner_kind", "owner_id", "slot", "wake_key", "concurrency_key", "capacity_group")
             :from("kickside_job")
             :where(sql.builder.eq({ job_identity = job_identity }))
             :where("status IN ('pending','running')")
@@ -335,6 +364,10 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         end
         local mismatch = matching_existing(existing, params, payload :: table)
         if mismatch then return nil, mismatch end
+        local descriptor, descriptor_err = capacity.group(existing)
+        if descriptor_err then return nil, descriptor_err end
+        local capacity_err = converge_capacity_group(db_or_tx, existing, descriptor, (policy :: any).max_row_bytes)
+        if capacity_err then return nil, capacity_err end
         local key_err = converge_wake_key(db_or_tx, existing, params, (policy :: any).max_row_bytes)
         if key_err then return nil, key_err end
         return tostring(existing.id), nil, false

@@ -31,7 +31,9 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:21_retire_upload_intent_slot
         path: .meta.target_db
-      - entry: kickside.core.jobs.migrations:22_policy_overrides
+      - entry: kickside.core.jobs.migrations:22_capacity_groups
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:24_policy_overrides
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:23_jobs_updated_at
         path: .meta.target_db
@@ -152,6 +154,15 @@ entries:
       comment: Job classes declared on worker entries (meta.job_class); awaited types own reserved worker slots.
     source: file://job_class.lua
     modules: [registry]
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: capacity
+    kind: library.lua
+    meta:
+      comment: Optional worker capacity declarations backed by instance Settings.
+    source: file://capacity.lua
+    modules: [contract, registry]
     imports:
       job_types: kickside.core.jobs:types
 

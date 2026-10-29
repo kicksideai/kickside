@@ -84,6 +84,7 @@ entries:
       row_bytes: kickside.core.jobs.persist:row_bytes
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: kickside.core.jobs:capacity
 
   - name: thread_fence
     kind: library.lua
@@ -126,6 +127,16 @@ entries:
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types
 
+  - name: eligibility
+    kind: library.lua
+    meta:
+      comment: Shared running-key eligibility and SQL-aggregated dispatchable backlog.
+    source: file://eligibility.lua
+    modules: [sql]
+    imports:
+      capacity: kickside.core.jobs:capacity
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
   - name: claim
     kind: library.lua
     meta:
@@ -145,6 +156,8 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       row_bytes: kickside.core.jobs.persist:row_bytes
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: kickside.core.jobs:capacity
+      eligibility: kickside.core.jobs.persist:eligibility
 
   - name: reclaim
     kind: library.lua
