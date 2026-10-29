@@ -50,6 +50,19 @@ describe('Retry inspector', () => {
     await wrapper.get('[aria-label="Override retry policy"]').trigger('click')
     expect(wrapper.emitted('update-node')!.at(-1)![0]).toEqual({ retry_policy: {} })
   })
+  it('shows the bounded default when the policy omits an attempt count', () => {
+    const wrapper = mount(RetryPolicyPanel, { props: { node, execution: { kind: 'function', retry_policy: {} } } })
+    expect((wrapper.get('[aria-label="Maximum attempts"]').element as HTMLInputElement).value).toBe('3')
+    expect(wrapper.text()).toContain('Block default: 3')
+  })
+  it('requires a total window for a zero attempt limit', async () => {
+    const wrapper = mount(RetryPolicyPanel, { props: { node: { ...node, retry_policy: { maximum_attempts: 0 } }, execution: { kind: 'function' } } })
+    expect(wrapper.get('[aria-label="Total window"]').attributes('aria-required')).toBe('true')
+    expect(wrapper.get('[role="alert"]').text()).toContain('total window')
+    await wrapper.setProps({ node: { ...node, retry_policy: { maximum_attempts: 0 }, schedule_to_close_timeout: '30s' } })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect((wrapper.get('[aria-label="Maximum attempts"]').element as HTMLInputElement).value).toBe('0')
+  })
   it('ships retry layout with the inline shadow stylesheet and shares inspector controls', () => {
     const component = readFileSync(resolve('src/app/panels/RetryPolicyPanel.vue'), 'utf8')
     const panels = readFileSync(resolve('src/styles/panels.css'), 'utf8')

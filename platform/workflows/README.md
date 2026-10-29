@@ -116,10 +116,12 @@ execution = {
 
 Durations accept positive duration strings or milliseconds. With a policy, omitted
 values default to a 1s initial interval, coefficient 2, a maximum interval 100 times
-the initial interval, unlimited attempts (`maximum_attempts = 0`), and no excluded
+the initial interval, three attempts (including the first attempt), and no excluded
 error kinds. Attempts include the first call. Cancellation and errors explicitly
 marked non-retryable stop retries. The per-attempt timeout limits each call; the
-total window includes attempts and backoff.
+total window includes attempts and backoff. An explicit `maximum_attempts = 0`
+removes the count limit only when a positive `schedule_to_close_timeout` bounds the
+overall retry window.
 
 A canvas `block` node carries these three optional fields at the top level, beside
 `ref` and `config`. They never enter the Block's `config_schema`. Function and tool

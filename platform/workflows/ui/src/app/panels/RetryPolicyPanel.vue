@@ -12,6 +12,9 @@ const props = defineProps<{ node: WfNode; execution: BlockExecution }>()
 const emit = defineEmits<{ (e: 'update-node', patch: Partial<WfNode>): void }>()
 const policy = computed(() => props.node.retry_policy || props.execution.retry_policy || undefined)
 const declared = computed(() => props.execution.retry_policy || undefined)
+const requiresTotalWindow = computed(() => policy.value?.maximum_attempts === 0)
+const missingTotalWindow = computed(() => requiresTotalWindow.value
+  && !durationText(props.node.schedule_to_close_timeout || props.execution.schedule_to_close_timeout).trim())
 // Wippy errors constants; UNKNOWN is empty and is not a valid retry error type.
 const errorKinds = ['NotFound', 'AlreadyExists', 'Invalid', 'PermissionDenied', 'Unavailable', 'Internal', 'Canceled', 'Conflict', 'Timeout', 'RateLimited']
 const durations = [
@@ -42,12 +45,12 @@ function inputValue(event: Event): string {
       <Button v-if="!node.retry_policy" label="Override" aria-label="Override retry policy" size="small" text @click="emit('update-node', { retry_policy: { ...declared } })" />
       <Button v-else label="Reset" aria-label="Reset retry policy" size="small" text @click="emit('update-node', { retry_policy: false })" />
     </div>
-    <p class="wf-panel-hint">{{ policy ? 'Maximum attempts includes the first attempt; 0 means unlimited.' : 'One attempt. Override the retry policy to retry failed attempts.' }}</p>
+    <p class="wf-panel-hint">{{ policy ? 'Maximum attempts includes the first attempt and defaults to 3. A zero attempt limit requires a total window.' : 'One attempt. Override the retry policy to retry failed attempts.' }}</p>
     <template v-if="policy">
       <div class="wf-retry-field">
         <label class="wf-retry-label" for="wf-retry-attempts">Maximum attempts</label>
-        <InputNumber input-id="wf-retry-attempts" class="wf-input" input-class="wf-input" :model-value="policy.maximum_attempts ?? 0" aria-label="Maximum attempts" :use-grouping="false" :min="0" @update:model-value="(v) => updatePolicy('maximum_attempts', v ?? undefined)" />
-        <p class="wf-panel-hint">Block default: {{ declared ? declared.maximum_attempts ?? 0 : 'one attempt' }}</p>
+        <InputNumber input-id="wf-retry-attempts" class="wf-input" input-class="wf-input" :model-value="policy.maximum_attempts ?? 3" aria-label="Maximum attempts" :use-grouping="false" :min="0" :max="Number.MAX_SAFE_INTEGER" :max-fraction-digits="0" @update:model-value="(v) => updatePolicy('maximum_attempts', v ?? undefined)" />
+        <p class="wf-panel-hint">Block default: {{ declared ? declared.maximum_attempts ?? 3 : 'one attempt' }}</p>
       </div>
       <div v-for="item in durations" :key="item.field" class="wf-retry-field">
         <label class="wf-retry-label" :for="`wf-retry-${item.field}`">{{ item.label }}</label>
@@ -70,7 +73,8 @@ function inputValue(event: Event): string {
         <label class="wf-retry-label" :for="`wf-retry-${item.field}`">{{ item.label }}</label>
         <Button v-if="node[item.field] !== undefined && node[item.field] !== false" label="Reset" :aria-label="`Reset ${item.label.toLowerCase()}`" text size="small" @click="emit('update-node', { [item.field]: false })" />
       </div>
-      <InputText :id="`wf-retry-${item.field}`" class="wf-input" :model-value="durationText(node[item.field] || execution[item.field])" :aria-label="item.label" placeholder="No timeout" @change="(e) => emit('update-node', { [item.field]: inputValue(e) || false })" />
+      <InputText :id="`wf-retry-${item.field}`" class="wf-input" :model-value="durationText(node[item.field] || execution[item.field])" :aria-label="item.label" :aria-required="item.field === 'schedule_to_close_timeout' && requiresTotalWindow" :invalid="item.field === 'schedule_to_close_timeout' && missingTotalWindow" placeholder="No timeout" @change="(e) => emit('update-node', { [item.field]: inputValue(e) || false })" />
+      <p v-if="item.field === 'schedule_to_close_timeout' && missingTotalWindow" class="wf-panel-hint" role="alert">A zero attempt limit requires a positive total window.</p>
       <p class="wf-panel-hint">Block default: {{ durationText(execution[item.field]) || 'no timeout' }}. Use durations such as 500ms or 30s.</p>
     </div>
   </section>

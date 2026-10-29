@@ -74,6 +74,7 @@ local function define_tests()
         end)
         test.it("uses Dataflow validation messages for declarations and overrides", function()
             for _, config in ipairs({ { retry_policy = { maximum_attempts = -1 } },
+                { retry_policy = { maximum_attempts = 0 } },
                 { retry_policy = { maximum_interval = "1ms", initial_interval = "1s" } },
                 { start_to_close_timeout = 0 }, { schedule_to_close_timeout = "bad" } }) do
                 local _, expected = retry.validate(config, "func")

@@ -1525,6 +1525,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=workflows
             make typecheck MOD=workflows
+            make -C platform/workflows test-ui
             make build MOD=workflows
             make -C platform/workflows lockrefresh
             cd platform/workflows/test

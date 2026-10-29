@@ -164,6 +164,7 @@ local function run()
         end)
         test.it("refuses publication with shared validation errors attached to the node", function()
             for _, fields in ipairs({ { retry_policy = { maximum_attempts = -1 } },
+                { retry_policy = { maximum_attempts = 0 } },
                 { start_to_close_timeout = 0 }, { schedule_to_close_timeout = "bad" } }) do
                 local _, expected = retry.validate(fields, "func")
                 local id = create(fields)

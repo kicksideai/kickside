@@ -87,7 +87,8 @@
     "type-check": "vue-tsc --build --force",
     "prebuild": "node ../scripts/generate-vocabulary.mjs --check",
     "pretest": "node ../scripts/generate-vocabulary.mjs --check",
-    "pretype-check": "node ../scripts/generate-vocabulary.mjs --check"
+    "pretype-check": "node ../scripts/generate-vocabulary.mjs --check",
+    "test": "vitest run"
   },
   "workspaces": [
     "./.wippy/npm/@*/*"
