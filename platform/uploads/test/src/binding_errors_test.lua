@@ -8,6 +8,7 @@ local fs = require("fs")
 local records = require("records")
 local provision = require("provision")
 local types = require("types")
+local artifacts = require("artifacts")
 
 local owner, stranger, delete_owner, corrupt_owner, cleanup_owner
 local owner_component, delete_component, corrupt_component, cleanup_component
@@ -248,6 +249,60 @@ return {run = test.run_cases(function()
             check(value.error, errors.NOT_FOUND, "artifact_read_failed")
             test.eq(value.error:message(), "extracted text is not available: primary content artifact not found")
         end)
+        for _, fixture in ipairs({
+            { name = "blob", content = "derived bytes", metadata = {size = 101, original_size = 102, file_size = 103} },
+            { name = "empty blob", content = "", metadata = {size = 101} },
+            { name = "blobless size", metadata = {size = 101} },
+            { name = "blobless original_size", metadata = {original_size = 102} },
+            { name = "blobless file_size", metadata = {file_size = 103} },
+            { name = "blobless absent size", metadata = {} },
+        }) do
+            test.it("content metadata uses canonical fields for " .. fixture.name, function()
+                seed(fixture.name)
+                local id = uploads[fixture.name]
+                assert(volume:writefile(id, "bytes"))
+                update(id, "mime_type", "application/pdf")
+                fixture.metadata.mime_type = "image/png"
+                fixture.metadata.checksum = string.rep("0", 64)
+                local artifact = assert(artifacts.create_artifact({
+                    upload_id = id, kind = "text", role = "primary", mime_type = "text/plain",
+                    content = fixture.content, locator = {type = "upload.original"},
+                    metadata = fixture.metadata,
+                }))
+                local info, info_err = invoke("get_info", {upload_id = id})
+                test.is_nil(info_err, tostring(info_err))
+                test.eq(info.artifact_id, artifact.artifact_id)
+                test.eq(info.content_type, artifact.mime_type)
+                test.eq(info.checksum, artifact.checksum)
+                if fixture.content ~= nil then
+                    test.eq(info.size, #fixture.content)
+                else
+                    test.is_nil(info.size, "blobless artifacts have no recorded byte size")
+                end
+                for _, args in ipairs({{}, {extracted_only = true}}) do
+                    local content, content_err = invoke("get_content", {upload_id = id}, nil, args)
+                    test.is_nil(content_err, tostring(content_err))
+                    test.is_true(content.success)
+                    test.eq(content.content_type, artifact.mime_type)
+                    if fixture.content ~= nil then
+                        test.eq(content.content, fixture.content)
+                    else
+                        test.eq(content.content, "bytes")
+                    end
+                    if not args.extracted_only then test.eq(content.checksum, artifact.checksum) end
+                end
+                local blob
+                if artifact.blob_id then blob = assert(artifacts.get_blob(artifact.blob_id)) end
+                local db = assert(sql.get("app:db"))
+                assert(db:execute("DELETE FROM kickside_upload_artifacts WHERE artifact_id=$1", {artifact.artifact_id}))
+                if blob then
+                    assert(db:execute("DELETE FROM kickside_upload_artifact_blobs WHERE blob_id=$1", {blob.blob_id}))
+                end
+                db:release()
+                if blob then assert(volume:remove(blob.storage_path)) end
+                assert(volume:remove(id))
+            end)
+        end
         test.it("session file provider keeps invalid and absent attachments optional", function()
             local provider = assert(open("wippy.session:file_provider"))
             for _, args in ipairs({{}, {file_uuid = ""}, {file_uuid = 123}, {file_uuid = uuid.v4()}}) do

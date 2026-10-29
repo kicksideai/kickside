@@ -48,8 +48,8 @@ local function handle(args)
         end
         if artifact then
             local artifact_meta = artifact.metadata or {}
-            content_type = artifact.mime_type or content_type
-            size = artifact.size or artifact_meta.size or artifact_meta.original_size or artifact_meta.file_size or size
+            content_type = artifact.mime_type
+            size = artifact.size
             metadata = artifact_meta
             artifact_id = artifact.artifact_id
             checksum = artifact.checksum

@@ -63,7 +63,7 @@ local function handle(args)
             content = content:sub(1, limit),
             content_truncated = #content > limit,
             total_size = #content,
-            content_type = artifact_content.mime_type or "text/markdown",
+            content_type = artifact_content.mime_type,
             filename = metadata_sanitizer.public(upload.metadata).filename or "attachment",
             artifact_id = artifact.artifact_id,
             source_ref = { kind = "upload", upload_id = upload_id, artifact_id = artifact.artifact_id },
@@ -106,7 +106,7 @@ local function handle(args)
     return {
         success = true,
         content = content,
-        content_type = artifact_content.mime_type or upload.mime_type,
+        content_type = artifact_content.mime_type,
         size = #content,
         metadata = metadata_sanitizer.public(artifact_content.metadata),
         artifact_id = artifact.artifact_id,
