@@ -41,7 +41,7 @@ import { useWorkflowCanvasRealtime } from './useWorkflowCanvasRealtime'
 import WorkflowCanvasView from './WorkflowCanvasView.vue'
 
 const props = defineProps<{ workflowId: string }>()
-const emit = defineEmits<{ (e: 'back'): void; (e: 'open-workflow', id: string): void }>()
+const emit = defineEmits<{ (e: 'back'): void; (e: 'open-workflow', id: string): void; (e: 'published', reference: {kind: 'flow'; id: string; version: number}): void }>()
 
 const engine = new SyncEngine()
 const rev = ref(0)
@@ -183,6 +183,7 @@ const {
   publishIssues,
   rebuild,
   select,
+  published: (version) => emit('published', {kind: 'flow', id: props.workflowId, version}),
 })
 
 // VueFlow's NodeComponent typing is stricter than a plain SFC; the runtime only
@@ -202,7 +203,7 @@ let didInitialFit = false
 onNodesInitialized(() => {
   if (didInitialFit || loading.value) return
   didInitialFit = true
-  nextTick(() => fit())
+  nextTick(() => fitView(canvasFitOptions()))
 })
 
 const inspector = useCanvasInspectorState({

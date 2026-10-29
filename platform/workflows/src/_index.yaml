@@ -256,6 +256,9 @@ entries:
           type: string
           default: ""
           description: Workspace folder the create popup places the workflow under; empty places it at root.
+        source-context:
+          type: string
+          description: Optional Automation source/config/filter context as JSON. The server resolves its output_schema.
         submit-nonce:
           type: string
           default: ""
@@ -280,6 +283,15 @@ entries:
           type: string
           default: "{}"
           description: Current configuration as JSON containing the pinned published workflow reference.
+        source-context:
+          type: string
+          description: Optional Automation source/config/filter context for creating a seeded Workflow.
+        source-schema:
+          type: string
+          description: Source item schema as JSON for binding preview; creation resolves its schema on the server.
+        return-route:
+          type: string
+          description: Canonical shell route to resume after publishing.
         schema:
           type: string
           default: ""
@@ -446,9 +458,7 @@ entries:
         type: object
         title: Workflow
         required: true
-        picker: wc-component-picker
-        source: /api/v1/workflows/published
-        value_field: flow_ref
+        picker: wc-workflow-picker
         additionalProperties: false
         properties:
           kind: { type: string, const: flow, required: true }

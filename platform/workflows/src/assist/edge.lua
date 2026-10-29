@@ -170,7 +170,7 @@ end
 -- Start input at the cross-module boundary.
 function M.assist_binding(args: any, opts: any?): Map
     local a = type(args) == "table" and (args :: Map) or {}
-    return M.assist_edge({
+    local result = M.assist_edge({
         edge = { surface = "binding", target = "Start" },
         upstream_schema = a.source_context_schema,
         downstream_schema = a.target_start_schema,
@@ -178,6 +178,13 @@ function M.assist_binding(args: any, opts: any?): Map
         downstream_sample = a.target_start_sample,
         intent = a.intent,
     }, opts)
+    if result.success == true and a.source_root ~= nil then
+        if type(a.source_root) ~= "string" then return {success = false, error = "source_root must be an expression identifier"} end
+        local lowered, err = I.mapping.engine_expr(result.transform, a.source_root)
+        if err then return {success = false, error = err} end
+        result.transform = lowered
+    end
+    return result
 end
 
 return {

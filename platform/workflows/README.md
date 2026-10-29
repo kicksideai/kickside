@@ -27,7 +27,7 @@ gates history reads and edits, and workflow deletion removes its history.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+Wippy 0.3.x; repository validation uses 0.3.55a. Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -52,6 +52,28 @@ commit regenerated tracked assets with the source.
 ## Use
 
 Create a Workflow draft, add and connect Blocks, validate, and publish an immutable version. Launch or trigger that exact version and inspect its run history. A durable wait resumes under the run’s saved execution identity; the reviewer supplies a decision rather than becoming its executor.
+
+For an Automation source, `POST /api/v1/workflows` and `WorkflowsManage`
+`action=create` accept optional `source_context: {source, config, filter}`.
+`source` is the source port ID; `config` selects its instance, including
+`thread_id` when required; `filter` uses the trigger's `{expr}` shape.
+The server resolves the source's declared item schema through Automation and
+creates Start and Finish, with Start's `input_schema` set to that schema.
+Schemas inside `source_context` are rejected; a top-level client `input_schema`
+does not override the source contract. Creation without source context retains
+its existing behavior.
+
+Read the selected source with `AutomationsRead action=catalog_entry`,
+`direction=source`, `id=<source port>`, and `config`. Create the Workflow with
+that context, read its draft before adding steps, build and publish it, then
+install Data Sync with the same trigger and the Run Workflow sink's exact
+`flow_ref: {kind: flow, id, version}`. Agents, MCP, and the UI use these same
+contracts. The destination picker offers **New workflow** for the selected
+source and returns to setup after publication with its binding selected.
+
+Binding assist accepts optional `source_root` to lower its expression for the
+consumer's environment, such as `payload` for Data Sync. Omitting it preserves
+the Workflow authoring expression contract.
 
 ## Reference
 

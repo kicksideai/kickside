@@ -235,7 +235,7 @@ entries:
           "properties": {
             "action": {
               "type": "string",
-              "description": "Each action takes only its own fields. create: title (parent_id optional). import: flow (bindings optional). apply: id, commands. publish: id. restore: id, version. delete: id. run: id, version (input optional).",
+              "description": "Each action takes only its own fields. create: title (parent_id and source_context optional). import: flow (bindings optional). apply: id, commands. publish: id. restore: id, version. delete: id. run: id, version (input optional).",
               "enum": [
                 "create",
                 "import",
@@ -253,6 +253,20 @@ entries:
             "parent_id": {
               "type": "string",
               "minLength": 1
+            },
+            "source_context": {
+              "type": "object",
+              "description": "create: seed Start from an Automation source's server-resolved output_schema. Read it with AutomationsRead catalog_entry with direction=source and config first, create for that source, build and publish, then install Data Sync with the same trigger, Run Workflow sink and exact flow_ref.",
+              "required": ["source"],
+              "additionalProperties": false,
+              "properties": {
+                "source": {"type": "string", "minLength": 1},
+                "config": {"type": "object"},
+                "filter": {
+                  "type": "object", "required": ["expr"], "additionalProperties": false,
+                  "properties": {"expr": {"type": "string", "minLength": 1}}
+                }
+              }
             },
             "flow": {
               "$ref": "#/$defs/flow_artifact"
@@ -1150,7 +1164,7 @@ entries:
           "required": ["success"]
         }
       llm_alias: WorkflowsManage
-      llm_description: "Build and publish workflows, including Lua scripts with the Run Code Block from WorkflowsRead catalog. For recurring tasks (every minute, hourly, or cron), publish first then schedule its exact {kind: flow, id, version} with RecurringTasks from the Automations Manager capability. Manage workflows: create a draft, import a portable Flow artifact (from flows_read export) as a new unpublished draft, apply a definition command batch through the workflow writer, publish an immutable version, restore a frozen version as a new draft, delete, or run a published version (returns run_id at once; the run continues, including while it waits for an Inbox review, and WorkflowsRead run_detail follows it). Writes carry the same validation and realtime broadcast as the editor. Failures return no result and a typed tool error with a clear message."
+      llm_description: "For an event source, read its output_schema with AutomationsRead catalog_entry (direction=source, config), create with source_context {source, config, filter} to seed Start and Finish (read the draft before applying steps), build and publish, then install Data Sync with that trigger, sink_port kickside.workflows:run_sink and sink_config.flow_ref {kind: flow, id, version}. Build and publish workflows, including Lua scripts with the Run Code Block from WorkflowsRead catalog. For recurring tasks (every minute, hourly, or cron), publish first then schedule its exact {kind: flow, id, version} with RecurringTasks from the Automations Manager capability. Manage workflows: create a draft, import a portable Flow artifact (from flows_read export) as a new unpublished draft, apply a definition command batch through the workflow writer, publish an immutable version, restore a frozen version as a new draft, delete, or run a published version (returns run_id at once; the run continues, including while it waits for an Inbox review, and WorkflowsRead run_detail follows it). Writes carry the same validation and realtime broadcast as the editor. Failures return no result and a typed tool error with a clear message."
       mcp:
         required_scopes: [state.write]
     source: file://flows_manage.lua
