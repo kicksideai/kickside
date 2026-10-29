@@ -180,6 +180,7 @@ local function ingest_archive_children(kb_id: string, upload_id: string, file: a
                     external_id = result.external_id,
                     thread_id = result.thread_id,
                     projection_id = result.projection_id,
+                    run_id = result.run_id,
                 }
             end
         end

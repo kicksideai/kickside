@@ -53,6 +53,7 @@ entries:
             "upload_id": {"type": "string", "description": "Upload id when the URL resolved to a binary/PDF file"},
             "thread_id": {"type": "string", "description": "Durable ingestion thread id"},
             "projection_id": {"type": "string", "description": "Id of the projection worker materializing the event"},
+            "run_id": {"type": "string", "description": "Derive run id when supplied by the bound engine"},
             "cursor_id": {"type": "string", "description": "Ingestion cursor id (processed-upload path)"},
             "external_source": {"type": "string", "description": "External source identifier (processed-upload path)"},
             "external_id": {"type": "string", "description": "Stable external content id for idempotent replacement"},
@@ -75,7 +76,6 @@ entries:
       llm: wippy.llm:llm
       prompt: wippy.llm:prompt
       net_safety: kickside.uploads:net_safety
-      thread_ingest: kickside.knowledge.injection:thread_ingest
 
   - name: embed_content
     kind: function.lua
@@ -118,6 +118,7 @@ entries:
             "kb_id": {"type": "string", "description": "Target KB id the content was queued into"},
             "thread_id": {"type": "string", "description": "Durable ingestion thread id for this enqueue"},
             "projection_id": {"type": "string", "description": "Id of the projection worker materializing the event"},
+            "run_id": {"type": "string", "description": "Derive run id when supplied by the bound engine"},
             "external_id": {"type": "string", "description": "Stable external content id used for idempotent replacement"},
             "external_version": {"type": "string", "description": "Source version recorded for this content"},
             "trace_context": {"type": "object", "description": "Trace context propagated into the durable KB event"},
