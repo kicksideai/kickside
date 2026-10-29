@@ -70,6 +70,15 @@ local function define_tests()
             test.is_nil(ordinary.config_maintenance)
         end)
 
+        test.it("discovers file admission only when the descriptor opts in", function()
+            local files, files_err = engines.resolve("files")
+            test.is_nil(files_err)
+            test.eq(files.accepts_files, true)
+            local text, text_err = engines.resolve("wiki")
+            test.is_nil(text_err)
+            test.eq(text.accepts_files, false)
+        end)
+
         test.it("applies descriptor defaults under explicit config without mutation", function()
             local defaults = { summary_model = "class:fast", chunk_size = 1000, enabled = true }
             local config: any = { chunk_size = 500, name = "custom" }

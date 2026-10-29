@@ -27,6 +27,19 @@ end
 local function define_tests()
     test.describe("Composed member HTTP endpoints", function()
         test.before_all(function() test.not_nil((projection.reconcile())) end)
+        test.it("allows the canonical usage tracker without registry mutation or unrelated functions", function()
+            for _, id in ipairs({"wippy.usage:usage_tracker_binding", "wippy.usage:usage_tracker",
+                "wippy.usage:token_usage_repo", "wippy.usage:target_db"}) do
+                test.eq(decision("app.security:user", "registry.get", id), "allow", id)
+                test.eq(decision("app.security:user", "registry.update", id), "undefined", id)
+                test.eq(decision("app.security:stranger", "registry.get", id), "undefined", id)
+            end
+            for _, id in ipairs({"wippy.usage:usage_tracker_binding", "wippy.usage:usage_tracker"}) do
+                test.eq(decision("app.security:user", "contract.open", id), "allow", id)
+            end
+            test.eq(decision("app.security:user", "funcs.call", "wippy.usage:usage_tracker"), "allow")
+            test.eq(decision("app.security:user", "funcs.call", "wippy.usage:unrelated"), "undefined")
+        end)
         test.it("requires listed module authority and retains the Core baseline and retains the Core baseline", function()
             test.eq(decision("app.security:members", "access", "unrelated.catalog:list.endpoint"), "undefined")
             test.eq(decision("app.security:user", "access", "unrelated.catalog:list.endpoint"), "undefined")

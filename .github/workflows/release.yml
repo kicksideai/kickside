@@ -16,6 +16,7 @@ jobs:
       app_created: ${{ steps.release.outputs['app--release_created'] }}
       app_version: ${{ steps.release.outputs['app--version'] }}
       app_tag: ${{ steps.release.outputs['app--tag_name'] }}
+      released_paths: ${{ steps.release.outputs.paths_released }}
     permissions:
       contents: write
       issues: write
@@ -56,8 +57,13 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.52a
+        version: 0.3.55a
         hub-url: https://hub.wippy.ai
+    - name: Verify companion module artifacts
+      env:
+        RELEASE_PATHS_JSON: ${{ needs.release-please.outputs.released_paths }}
+        WIPPY_TOKEN: ${{ secrets.WIPPY_HUB_TOKEN }}
+      run: make -C app release-dependencies WIPPY=wippy
     - name: Build and verify application package
       env:
         APP_VERSION: ${{ needs.release-please.outputs.app_version }}

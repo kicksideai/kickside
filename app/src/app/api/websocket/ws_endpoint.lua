@@ -63,12 +63,22 @@ function handler()
         return
     end
 
+    local scope = security.scope()
+    if not scope then
+        res:set_status(http.STATUS.UNAUTHORIZED)
+        res:write_json({error = "Invalid authentication scope", message = "Authenticated security scope is required"})
+        return
+    end
+    local policy_ids = {}
+    for _, policy in ipairs(scope:policies()) do policy_ids[#policy_ids + 1] = policy:id() end
+
     local relay_config = {
         target_pid = central_hub_pid,
         metadata = {
             user_id = user_id,
             user_metadata = actor_meta,
             scope_id = scope_id,
+            scope_policy_ids = policy_ids,
             auth_time = os.time(),
         }
     }

@@ -174,7 +174,7 @@
 /* ── Image ──────────────────────────────────────────────────────────────── */
 .imgv {
   display: flex; align-items: center; justify-content: center;
-  padding: 16px; border-radius: 10px;
+  padding: var(--rv-image-padding, 16px); border-radius: 10px;
   background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
   border: 1px solid var(--rv-border);
 }

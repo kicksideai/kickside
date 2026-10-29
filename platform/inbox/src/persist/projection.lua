@@ -53,6 +53,7 @@ local function apply(items: any, ev: any): any?
             metadata = md,
             metadata_json = encoded,
             source_id = body.source_id,
+            aggregate_key = body.aggregate_key,
             status = inbox_types.STATUS.PENDING,
             priority = body.priority or inbox_types.PRIORITY.NORMAL,
             actor_id = body.actor_id,
@@ -66,6 +67,13 @@ local function apply(items: any, ev: any): any?
     elseif etype == EV.VERSION then
         local it = items[id]
         if it then
+            if body.aggregate_key ~= nil and body.aggregate_key == it.aggregate_key and body.source_id == it.source_id then
+                it.status = body.status or inbox_types.STATUS.PENDING
+                it.version_event_id = (ev :: any).id
+                it.resolved_at = it.status == inbox_types.STATUS.RESOLVED and body.resolved_at or nil
+                it.action, it.form, it.resolution_id, it.resolved_by, it.resolved_event_id = nil, nil, nil, nil, nil
+                if it.status == inbox_types.STATUS.RESOLVED then return nil end
+            end
             it.item_type = body.item_type or it.item_type
             it.title = body.title or it.title
             it.content = body.content
@@ -79,6 +87,7 @@ local function apply(items: any, ev: any): any?
     elseif etype == EV.RESOLVED then
         local it = items[id]
         if it and it.status == inbox_types.STATUS.PENDING then
+            if it.aggregate_key ~= nil and body.resolution_id ~= inbox_types.resolution_id(it) then return nil end
             it.status = body.status or inbox_types.STATUS.APPROVED
             it.resolved_at = body.resolved_at
             it.form = type(body.form) == "table" and object_fields.object(body.form) or nil

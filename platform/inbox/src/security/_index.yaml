@@ -37,7 +37,7 @@ entries:
     kind: security.policy
     policy:
       resources: '*'
-      actions: [security.actor.create, security.policy_group.get]
+      actions: [security.actor.create, security.policy_group.get, security.policy.get, security.scope.create]
       effect: allow
 
   # The review arm validates one explicit assignee before it publishes the

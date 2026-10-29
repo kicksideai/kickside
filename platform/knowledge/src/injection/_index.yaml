@@ -84,6 +84,7 @@ entries:
       - json
       - time
     imports:
+      engines: kickside.knowledge:engines
       util: kickside.knowledge:util
       thread_ingest_base: kickside.knowledge.injection:thread_ingest_base
       thread_ingest_status: kickside.knowledge.injection:thread_ingest_status

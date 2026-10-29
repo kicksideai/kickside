@@ -476,7 +476,4 @@ onUnmounted(() => {
 .managed-surface {
   overflow: hidden;
 }
-.managed-app-shell:has(.right-flap-container) .managed-surface {
-  padding-inline-end: 48px;
-}
 </style>

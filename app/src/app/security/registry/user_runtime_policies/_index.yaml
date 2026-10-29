@@ -156,3 +156,20 @@ entries:
         - field: resource
           operator: matches
           value: '^dataflow[.][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+
+  - name: user.usage_tracking
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.runtime.usage
+      intent: trusted_product_runtime
+      comment: Authenticated runtime calls may record usage through the canonical tracker; its binding and database requirement remain readable.
+    groups: [app.security:user]
+    policy:
+      resources:
+        - wippy.usage:usage_tracker_binding
+        - wippy.usage:usage_tracker
+        - wippy.usage:token_usage_repo
+        - wippy.usage:target_db
+      actions: [registry.get, registry.find, contract.get, contract.open, contract.call, contract.implementations, contract.security, funcs.call, funcs.security]
+      effect: allow

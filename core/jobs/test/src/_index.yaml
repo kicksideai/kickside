@@ -50,6 +50,11 @@ entries:
     foreign_keys: true
     file: ":memory:"
 
+  - name: jobs_migration_db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
   - name: private_queue_claim_fence_test
     kind: db.sql.sqlite
     foreign_keys: true

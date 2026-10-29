@@ -306,6 +306,10 @@ entries:
           type: string
           default: ""
           description: Component class to scope the instance list to (meta.thread_class).
+        impl-id:
+          type: string
+          default: ""
+          description: Stored component implementation binding to scope the instance list to.
         meta:
           type: string
           default: ""

@@ -36,6 +36,7 @@ local M = {}
 --   store_binding  the binding of store_contract that serves this engine's rows;
 --                  empty opens the contract's default binding.
 --   is_default     default engine used when create callers omit kb_type.
+--   accepts_files  admits upload references without extracted text.
 -- Badge tones map to the semantic palette in CSS; an engine that declares an
 -- unknown tone falls back to neutral so registry data can never inject a raw color.
 local VALID_TONE: { [string]: boolean } = {
@@ -110,6 +111,7 @@ local function shape(entry: any): (any, string?)
         store_binding = m.store_binding,
         is_default = m.default == true,
         is_graph = m.is_graph == true,
+        accepts_files = m.accepts_files == true,
         create_ui_id = create_tag,
         manage_ui_id = manage_tag,
         -- Optional view modes the manage UI renders for this type. The host owns

@@ -31,7 +31,7 @@ return {run = test.run_cases(function()
         end)
         test.it("uses the shared resolver at every persistence boundary", function()
             local slug = "configuration_scope_read"
-            test.not_nil(assert(scopes.upsert({slug = slug, policies = {}})))
+            test.not_nil(assert(scopes.upsert({slug = slug, policies = {}}, "database-config-test")))
             test.not_nil(assert(trigger_reconcile.trigger()))
             local original = consts.db_id
             local source = errors.new({kind = errors.UNAVAILABLE, retryable = true,
@@ -41,7 +41,7 @@ return {run = test.run_cases(function()
                 for index, read in ipairs({
                     function() return scopes.list() end,
                     function() return scopes.get("configured") end,
-                    function() return scopes.upsert({slug = "configured", policies = {}}) end,
+                    function() return scopes.upsert({slug = "configured", policies = {}}, "database-config-test") end,
                     function() return scopes.delete("configured") end,
                     function() return group_resolver.resolve({"kickside.security.scopes:" .. slug}) end,
                 }) do

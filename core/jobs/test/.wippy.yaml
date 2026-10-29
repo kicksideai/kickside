@@ -33,6 +33,13 @@ vars:
 profiles:
   postgres:
     override:
+      "app:jobs_migration_db:kind": db.sql.postgres
+      "app:jobs_migration_db:host": "${pg_host}"
+      "app:jobs_migration_db:port": "${pg_port}"
+      "app:jobs_migration_db:database": "${pg_database}_jobs_mig"
+      "app:jobs_migration_db:username": "${pg_username}"
+      "app:jobs_migration_db:password": "${pg_password}"
+      "app:jobs_migration_db:options.sslmode": disable
       "app:db:kind": db.sql.postgres
       "app:db:host": "${pg_host}"
       "app:db:port": "${pg_port}"
