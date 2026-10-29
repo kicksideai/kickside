@@ -13,6 +13,7 @@ local process = require("process")
 
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local lifecycle = require("lifecycle")
 local row_bytes = require("row_bytes")
 local proc_supervisor = require("proc_supervisor")
@@ -31,7 +32,7 @@ local HEARTBEAT_PROCESS_ID = "kickside.core.jobs.persist:lease_heartbeat"
 -- false once a guarded update affects no rows (lease lost / job no longer
 -- running).
 local function extend_lease(db: sql.DB, dbtype: string, job_id: string, lease_token: string,
-        execution_seq: integer): (boolean, error?, string?)
+        execution_seq: integer, timeout_seconds: number?): (boolean, error?, string?)
     if type(execution_seq) ~= "number" or execution_seq < 1 or execution_seq ~= math.floor(execution_seq) then
         return false, (errors.new({ message = "lease execution_seq is required", kind = errors.INVALID }) :: error)
     end
@@ -39,7 +40,12 @@ local function extend_lease(db: sql.DB, dbtype: string, job_id: string, lease_to
     if policy_err then return false, policy_err end
     if type(policy) ~= "table" then return false, response_error("policy") end
     local now = lifecycle.now_string(dbtype)
-    local lease_until = lifecycle.future_string(dbtype, (policy :: any).lease_timeout_seconds)
+    if not timeout_seconds then
+        local captured, err = execution_policy.load_from(db, {id = job_id, execution_seq = execution_seq})
+        if err then return false, err end
+        timeout_seconds = captured.lease_timeout_seconds
+    end
+    local lease_until = lifecycle.future_string(dbtype, timeout_seconds :: number)
     local tx, begin_err = sql_boundary.begin(db, "lease begin failed", "transaction", response_error)
     if begin_err then return false, begin_err end
     local size_err = row_bytes.check_update(tx, "kickside_job", job_id,
@@ -75,7 +81,7 @@ function lease.validate_for_dispatch(db: sql.DB, dbtype: string, job: table): (b
         or seq < 1 or seq ~= math.floor(seq) then
         return false, (errors.new({ message = "dispatch requires a fenced lease", kind = errors.INVALID }) :: error)
     end
-    local policy, policy_err = cfg.policy()
+    local policy, policy_err = execution_policy.read(job)
     if policy_err then return false, policy_err end
     if type(policy) ~= "table" then return false, response_error("policy") end
     local ts = dbtype == sql.type.POSTGRES and "CAST($5 AS TIMESTAMPTZ)" or "$5"
@@ -102,7 +108,7 @@ function lease.validate_for_dispatch(db: sql.DB, dbtype: string, job: table): (b
     local deadline = row.lease_until
     if type(deadline) ~= "string" or deadline == "" then return false, response_error("read.lease_until") end
     if renewal == 1 then
-        local renewed, renew_err, renewed_until = extend_lease(db, dbtype, tostring(job.id), token, seq :: integer)
+        local renewed, renew_err, renewed_until = extend_lease(db, dbtype, tostring(job.id), token, seq :: integer, policy.lease_timeout_seconds)
         if renew_err then return false, renew_err end
         if not renewed then
             return false, job_types.lease_lost_error("dispatch lease lost during renewal")
@@ -121,15 +127,15 @@ function lease.start(job: table, deadline: string?): (string?, error?)
     if job_id == "" or lease_token == "" or execution_seq == nil then
         return nil, (errors.new({ message = "job id, lease_token and execution_seq required for heartbeat", kind = errors.INVALID }) :: error)
     end
-    local policy, policy_err = cfg.policy()
+    local policy, policy_err = execution_policy.read(job)
     if policy_err then return nil, policy_err end
     if type(policy) ~= "table" then return nil, response_error("policy") end
     local pid, spawn_err = process.spawn_linked_monitored(HEARTBEAT_PROCESS_ID, cfg.process_host(), {
         job_id = job_id,
         lease_token = lease_token,
         execution_seq = execution_seq,
-        interval_ms = (policy :: any).lease_heartbeat_ms,
-        lease_timeout_seconds = (policy :: any).lease_timeout_seconds,
+        interval_ms = policy.lease_heartbeat_ms,
+        lease_timeout_seconds = policy.lease_timeout_seconds,
         lease_until = deadline or job.lease_until,
     })
     if spawn_err then return nil, errors.wrap(spawn_err, "failed to spawn lease heartbeat") end
@@ -182,7 +188,7 @@ local function main(args: table): ()
     local interval_ms = tonumber(args.interval_ms)
     local timeout_seconds = tonumber(args.lease_timeout_seconds)
     if not interval_ms or not timeout_seconds then
-        local policy, policy_err = cfg.policy()
+        local policy, policy_err = execution_policy.load_from(db, {id = job_id, execution_seq = execution_seq})
         if policy_err then finish_heartbeat(db, policy_err); return end
         if type(policy) ~= "table" then finish_heartbeat(db, response_error("policy")); return end
         interval_ms = (policy :: any).lease_heartbeat_ms
@@ -211,7 +217,7 @@ local function main(args: table): ()
                 return
             end
         elseif result.channel == tick then
-            local alive, extend_err, lease_until = extend_lease(db, dbtype, job_id, lease_token, execution_seq :: integer)
+            local alive, extend_err, lease_until = extend_lease(db, dbtype, job_id, lease_token, execution_seq :: integer, timeout_seconds)
             if extend_err then
                 logger:warn("lease_heartbeat extend failed job=" .. job_id .. ": " .. tostring(extend_err))
                 failures = failures + 1

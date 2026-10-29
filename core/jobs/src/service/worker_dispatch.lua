@@ -10,6 +10,7 @@ local security = require("security")
 
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local error_envelope = require("error_envelope")
 local lifecycle = require("lifecycle")
 local wake = require("wake")
@@ -345,7 +346,7 @@ local function run_supervised_proc(db: sql.DB?, dbtype: string, job: table, bind
         if not db then
             return nil, (errors.new({ message = "db is required for live proc supervision", kind = errors.INTERNAL }) :: error), nil
         end
-        local policy, policy_err = cfg.policy()
+        local policy, policy_err = execution_policy.read(job)
         if policy_err then return nil, policy_err, nil end
         local built, build_err = build_proc_hooks(db, dbtype, job, binding, run_id, policy)
         if build_err then return nil, build_err, nil end

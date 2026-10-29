@@ -8,6 +8,7 @@ local process = require("process")
 
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local lease_status = require("lease_status")
 local lifecycle_cancel = require("lifecycle_cancel")
 local worker_fence = require("worker_fence")
@@ -31,7 +32,7 @@ end
 -- Returns (err, control, retire): retire reports that the supervising loop's
 -- code became outdated while the execution ran to its own end.
 local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: string?, lifecycle_events: any?): (error?, string?, boolean)
-    local policy, policy_err = cfg.policy()
+    local policy, policy_err = execution_policy.read(job)
     if policy_err or not policy then return policy_err, nil, false end
     local max_execution_ms, duration_err = worker_dispatch.resolve_max_execution_ms(job, policy)
     if duration_err then return duration_err, nil, false end

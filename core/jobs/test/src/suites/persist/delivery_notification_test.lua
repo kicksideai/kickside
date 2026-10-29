@@ -1,3 +1,4 @@
+local job_fixture = require("job_fixture")
 local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
@@ -20,28 +21,7 @@ local function make_thread(db): string
 end
 
 local function make_running_job(db, dbtype: string): table
-    local id = uuid.v7()
-    local token = uuid.v7()
-    local _, err = sql.builder.insert("kickside_job")
-        :set_map({
-            id = id,
-            owner_kind = "test",
-            owner_id = "delivery_notification_test",
-            job_identity = "7:oneshot" .. tostring(#id) .. ":" .. id .. tostring(#id) .. ":" .. id,
-            thread_id = make_thread(db),
-            job_type = "test.job",
-            payload = "{}",
-            status = job_types.JOB_STATE.RUNNING,
-            attempts = 1,
-            max_attempts = 3,
-            queue_tier = job_types.QUEUE_TIER.LIVE,
-            lease_token = token,
-            execution_seq = 1,
-            lease_until = lifecycle.future_string(dbtype, 60),
-        })
-        :run_with(db):exec()
-    if err then error("delivery notification job setup failed: " .. tostring(err)) end
-    return { id = id, lease_token = token, execution_seq = 1 }
+    return assert(job_fixture.running_job(db, dbtype, make_thread(db), 1, 3, "delivery_notification_test"))
 end
 
 local function with_registered_pool(fn)

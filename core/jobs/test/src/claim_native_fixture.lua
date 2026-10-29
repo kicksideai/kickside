@@ -1,3 +1,4 @@
+local config = require("config")
 local M: any = {FAIRNESS_TIERS = {"live", "backfill", "maintenance"}}
 function M.reset(route, phase, source)
     M.route, M.phase, M.source = route, phase, source
@@ -53,4 +54,6 @@ function M.database(): any
     function db:begin() return M.result("begin", M.database()) end
     return db
 end
+M.capture = config.capture
+M.resolve_from = M.policy
 return M

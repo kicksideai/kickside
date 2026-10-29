@@ -49,4 +49,10 @@ M.heartbeat = M.check
 M.complete = M.check
 M.fail = M.check
 function M.clear(...) local _, err = M.result("marker", true); return err end
+function M.resolve_from(...) return M.policy() end
+function M.read(job)
+    if job and type(job.lease_policy) == "table" then return job.lease_policy, nil end
+    return M.policy()
+end
+function M.load_from(_, job) return M.read(job) end
 return M

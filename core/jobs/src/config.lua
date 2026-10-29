@@ -1,6 +1,6 @@
 -- The jobs runtime configuration (design §8): one registry entry,
--- kickside.core.jobs:policy, whose meta carries the worker, lease, retry,
--- proc and health shapes. A host overrides any value through .wippy.yaml
+-- kickside.core.jobs:policy, whose data carries defaults and whose meta
+-- carries explicit host overrides. A host overrides any value through .wippy.yaml
 -- "kickside.core.jobs:policy:meta.<path>". resolve validates the shape into the
 -- runtime values; a malformed policy is a declaration fault and never falls
 -- back to a code default.
@@ -9,6 +9,7 @@ local time = require("time")
 local registry = require("registry")
 local job_types = require("job_types")
 local registry_version = require("registry_version")
+local policy_fields = require("policy_fields")
 
 local M = {}
 
@@ -40,7 +41,7 @@ function M.process_host(): string
 end
 
 local function invalid(message: string): error
-    return (errors.new({ message = "kickside.core.jobs:policy " .. message, kind = errors.INVALID, retryable = false }) :: error)
+    return (errors.new({ message = "kickside.core.jobs:policy " .. message, kind = errors.INVALID, retryable = false, details = {code = "jobs_policy_invalid"} }) :: error)
 end
 
 local function section(meta: any, name: string): (table?, error?)
@@ -78,6 +79,11 @@ M.FAIRNESS_TIERS = FAIRNESS_TIERS
 
 function M.validate_shares(value: any): (table?, error?)
     if type(value) ~= "table" then return nil, invalid("fairness.shares must be an object") end
+    for key in pairs(value) do
+        if key ~= "live" and key ~= "backfill" and key ~= "maintenance" then
+            return nil, invalid("fairness.shares contains an unknown tier")
+        end
+    end
     local shares: table = {}
     local total = 0
     for _, tier in ipairs(FAIRNESS_TIERS) do
@@ -157,6 +163,9 @@ function M.resolve(meta: any): (Resolved?, error?)
     if e3 then return nil, e3 end
     local heartbeat_ms, e4 = duration_ms(l.heartbeat, "lease.heartbeat")
     if e4 then return nil, e4 end
+    if (timeout_ms :: integer) < 1000 or (timeout_ms :: integer) % 1000 ~= 0 then
+        return nil, invalid("lease.timeout must be a whole number of seconds, at least 1s")
+    end
     if (heartbeat_ms :: integer) >= (timeout_ms :: integer) then
         return nil, invalid("lease.heartbeat must be shorter than lease.timeout")
     end
@@ -247,6 +256,92 @@ end
 
 M.POLICY = "kickside.core.jobs:policy"
 
+-- Copies isolate both callers and the registry's declaration tables.
+function M.copy(value: any): any
+    if type(value) ~= "table" then return value end
+    local result = {}
+    for key, item in pairs(value) do result[key] = M.copy(item) end
+    return result
+end
+
+local function at(meta: any, key: string): any
+    local group, field = key:match("^([^.]+)%.(.+)$")
+    return type(meta) == "table" and type(meta[group]) == "table" and meta[group][field] or nil
+end
+local function merge(defaults: any, host: any): table
+    local out = type(defaults) == "table" and M.copy(defaults) or {}
+    for key, value in pairs(host or {}) do
+        if type(value) == "table" and type(out[key]) == "table" then
+            out[key] = merge(out[key], value)
+        else
+            out[key] = M.copy(value)
+        end
+    end
+    return out
+end
+
+function M.editable(key: any): boolean
+    for _, field in ipairs(policy_fields) do if field.key == key then return true end end
+    return false
+end
+
+-- Registry meta contains only explicit host values. Presence determines
+-- provenance even when a host selects the shipped default.
+local function layers(host: any, defaults: any, overrides: table): (any?, error?)
+    if type(host) ~= "table" then return nil, invalid("meta must be an object") end
+    local fallback = merge(defaults, host)
+    local meta = M.copy(fallback)
+    for key, value in pairs(overrides) do
+        if not M.editable(key) then return nil, invalid("key is not live-editable: " .. tostring(key)) end
+        local group, field = key:match("^([^.]+)%.(.+)$")
+        if type(meta[group]) ~= "table" then return nil, invalid(group .. " is required") end
+        meta[group][field] = M.copy(value)
+    end
+    local resolved, err = M.resolve(meta)
+    if err then return nil, err end
+    return {policy = resolved, meta = meta, fallback = fallback}, nil
+end
+
+function M.effective(host: any, defaults: any, overrides: table): (table?, error?)
+    local result, err = layers(host, defaults, overrides)
+    if err then return nil, err end
+    local meta, fallback, resolved = result.meta, result.fallback, result.policy
+    local fields = {}
+    for _, definition in ipairs(policy_fields) do
+        local key = definition.key
+        local source = at(host, key) ~= nil and "host" or "default"
+        if overrides[key] ~= nil then source = "admin" end
+        fields[key] = { value = M.copy(at(meta, key)), source = source,
+            default = M.copy(at(defaults, key)), fallback = M.copy(at(fallback, key)),
+            min = definition.min, max = definition.max, unit = definition.unit }
+    end
+    return { policy = resolved, fields = fields }, nil
+end
+
+function M.declaration(): (any?, error?)
+    local entry, err = registry.get(M.POLICY)
+    if err then return nil, errors.wrap(err, "Jobs policy lookup failed") end
+    if not entry then return nil, invalid("is not registered") end
+    return entry, nil
+end
+
+-- The owner resolves committed editable values once per revision. Runtime
+-- snapshots contain no settings metadata and are never mutated after capture.
+function M.runtime(overrides: table): (Resolved?, error?)
+    local entry, err = M.declaration()
+    if err then return nil, err end
+    local result, resolve_err = layers(entry.meta, entry.data and entry.data.defaults, overrides)
+    return result and result.policy, resolve_err
+end
+
+-- An execution carries only the editable values it consumes. Fixed limits
+-- retain their registry-version-cached semantics in each engine primitive.
+function M.capture(policy: any): table
+    return {lease_timeout_seconds = policy.lease_timeout_seconds, lease_heartbeat_ms = policy.lease_heartbeat_ms,
+        proc_max_execution_ms = policy.proc_max_execution_ms, retry_after_ms = policy.retry_after_ms,
+        retry_max_delay_ms = policy.retry_max_delay_ms}
+end
+
 local cached_version: string? = nil
 local cached_policy: Resolved? = nil
 
@@ -259,18 +354,15 @@ local function policy_copy(value: Resolved): Resolved
     return out :: Resolved
 end
 
--- Only successful validation is cached, under the current registry version.
--- Callers retain independent values, including their fairness shares.
+-- Fixed policy reads retain the registry-version cache, with no SQL, stores,
+-- override decoding or editor metadata on the runtime path.
 function M.policy(): (Resolved?, error?)
-    local id, version_err = registry_version.id(registry)
+    local version, version_err = registry_version.id(registry)
     if version_err then return nil, errors.wrap(version_err, "Jobs policy registry version unavailable") end
-    if id == cached_version and cached_policy then return policy_copy(cached_policy), nil end
-    local entry, get_err = registry.get(M.POLICY)
-    if get_err then return nil, errors.wrap(get_err, "Jobs policy lookup failed") end
-    if not entry then return nil, invalid("is not registered") end
-    local resolved, err = M.resolve((entry :: any).meta)
-    if err or not resolved then return nil, err end
-    cached_version, cached_policy = id, resolved
+    if version == cached_version and cached_policy then return policy_copy(cached_policy), nil end
+    local resolved, err = M.runtime({})
+    if err or not resolved then return nil, err or response_error("policy") end
+    cached_version, cached_policy = version, resolved
     return policy_copy(resolved), nil
 end
 
