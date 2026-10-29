@@ -20,8 +20,9 @@ engine. The smoke scenario `bot_accounts_delegation_http` provides fresh
 resolution, engine setup, evidence and database cleanup.
 
 The existing Security CI jobs run this HTTP matrix under both database layouts.
-The authority checks also verify that a direct private-reader call cannot obtain
-Component's database grant and that a caller's denied owner dispatch stays denied.
+Component's own native authority tests verify that a direct private-reader call
+cannot obtain its database grant and that a caller's denied owner dispatch stays
+denied.
 
 RA-H06/07/26/31/45/50/51 cover admission, native policy evaluation, authenticated
 provenance, list privacy, retained revocation and live account-read

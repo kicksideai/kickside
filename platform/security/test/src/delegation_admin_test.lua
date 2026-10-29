@@ -175,7 +175,7 @@ return {run = test.run_cases(function()
             test.is_nil(save_err)
             test.eq(saved.success, true)
         end)
-        test.it("RA-H06 an authorized administrator needs no component database or directory capability", function()
+        test.it("RA-H06 a Security database reader needs no Component or directory grants", function()
             local call_id = "app:narrow_delegation_call_" .. target
             local read_id = "app:narrow_delegation_reads_" .. target
             local admin_id = "app:narrow_delegation_admin_" .. target
@@ -192,7 +192,15 @@ return {run = test.run_cases(function()
             owned[#owned + 1] = writer_id
             replace({id = writer_id, kind = "security.policy", data = {policy = {
                 actions = "registry.apply", resources = identity.delegation_policy_id("user", target, root), effect = "allow"}}})
-            local caller = {call_id, read_id, writer_id, admin_id}
+            -- The catalog reads Security's own custom roles. This harness shares
+            -- its DB with Component; the split-DB HTTP fixture separately proves
+            -- that this grant does not authorize reads from Component's DB.
+            local db_id = "app:narrow_delegation_security_db_" .. target
+            owned[#owned + 1] = db_id
+            local config = assert(registry.get("kickside.security:db_config"))
+            replace({id = db_id, kind = "security.policy", data = {policy = {
+                actions = "db.get", resources = config.meta.db_id, effect = "allow"}}})
+            local caller = {call_id, read_id, writer_id, admin_id, db_id}
             local saved, save_err = invoke(request(), caller)
             test.is_nil(save_err)
             test.eq(saved.success, true)

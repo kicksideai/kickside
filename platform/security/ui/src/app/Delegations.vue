@@ -167,8 +167,8 @@ defineExpose({ load: store.load })
         <Icon class="ks-runas-grant-icon" icon="tabler:user-shield" aria-hidden="true" />
         <div class="ks-runas-grant-body">
           <div class="ks-runas-grant-line">
-            <span class="ks-runas-who">{{ grant.groups.map(id => groupLabel[id] || id).join(', ') }}</span>
-            <span class="ks-runas-verb">can run as</span>
+            <span v-if="grant.active" class="ks-runas-who">{{ grant.groups.map(id => groupLabel[id] || id).join(', ') }}</span>
+            <span class="ks-runas-verb">{{ grant.active ? 'can run as' : 'Permission to run as' }}</span>
             <span class="ks-runas-who">{{ accountLabel[grant.principal.id] || grant.principal.id }}</span>
           </div>
           <div class="ks-runas-grant-meta">
