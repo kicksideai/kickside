@@ -48,13 +48,6 @@ M.ALLOW = {
             entry = "app.security:delegation_validator",
         },
     },
-    ["platform/security/test-bot-accounts/src/host_delegation/delegation.lua"] = {
-        list_system = {
-            count = 1,
-            why = "the authenticated HTTP harness binds the production host validator source to verify private root validation through native admission",
-            entry = "app.security:delegation_validator",
-        },
-    },
     ["platform/automation/src/declaration_writer.lua"] = {
         get_private_context = {
             count = 1,
