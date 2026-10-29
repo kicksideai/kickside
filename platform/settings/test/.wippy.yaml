@@ -1,9 +1,17 @@
 version: "1.0"
 override:
+  "kickside.settings.api:get_performance:modules": [json]
+  "kickside.settings.api:get_performance:imports.http": app:performance_http
+  "kickside.settings.api:put_performance:modules": [json]
+  "kickside.settings.api:put_performance:imports.http": app:performance_http
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "app:db:file": "${sqlite_path}"
 workspace:
   replacements:
     kickside/settings: ..
+    kickside/jobs: ../../../core/jobs
+    kickside/execution: ../../../core/execution
+    kickside/contract: ../../../core/contract
 vars:
   sqlite_path: ":memory:"
   pg_host: localhost

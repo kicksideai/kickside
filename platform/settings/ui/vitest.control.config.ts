@@ -6,5 +6,5 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src'), '@wippy-fe/proxy': resolve(__dirname, 'node_modules/@wippy-fe/proxy') }, dedupe: ['vue'] },
-  test: { environment: 'happy-dom', include: ['src/app/settings-control.test.ts'] },
+  test: { environment: 'happy-dom', css: { include: /styles\.css/ }, include: ['src/app/settings-control.test.ts', 'src/app/performance.test.ts'] },
 })

@@ -1,0 +1,21 @@
+local test = require("test")
+local registry = require("registry")
+local security = require("security")
+return {run = test.run_cases(function()
+    test.describe("Performance endpoint authorization", function()
+        test.it("grants only the two exact endpoints to performance administrators", function()
+            local declaration = assert(registry.get("kickside.settings.security:performance_admin"))
+            local policy = assert(security.policy(tostring(declaration.id)))
+            local member = assert(security.policy("kickside.settings.security:module_runtime"))
+            local actor = security.new_actor("performance-test", {})
+            test.eq(#declaration.data.policy.resources, 2)
+            for _, id in ipairs({"kickside.settings.api:get_performance.endpoint", "kickside.settings.api:put_performance.endpoint"}) do
+                test.eq(policy:evaluate(actor, "access", id), "allow")
+                test.neq(member:evaluate(actor, "access", id), "allow")
+                local endpoint = assert(registry.get(id))
+                test.not_nil(endpoint.meta.router)
+            end
+            test.neq(policy:evaluate(actor, "access", "kickside.settings.api:future_performance.endpoint"), "allow")
+        end)
+    end)
+end)}

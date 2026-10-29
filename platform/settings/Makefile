@@ -27,3 +27,7 @@ publish: build
 .PHONY: lockrefresh
 lockrefresh:
 	cd test && wippy update $(WIPPY_UPDATE_ARGS)
+
+.PHONY: ui-test
+ui-test:
+	cd ui && ./node_modules/.bin/vitest run --config vitest.control.config.ts --maxWorkers=2

@@ -53,3 +53,27 @@ entries:
     - funcs.call
     - funcs.security
     effect: allow
+- name: performance_admin
+  kind: security.policy
+  meta:
+    comment: "Performance admin."
+    title: Performance administration
+    surface: kickside.settings.performance
+    intent: admin_access
+    includes:
+    - kickside.settings.security:performance_policy_write
+  groups: []
+  policy:
+    resources:
+    - kickside.settings.api:get_performance.endpoint
+    - kickside.settings.api:put_performance.endpoint
+    actions: access
+    effect: allow
+- name: performance_policy_write
+  kind: security.policy
+  meta: {comment: "Performance policy write.", private: true}
+  groups: []
+  policy:
+    resources: kickside.core.jobs:policy
+    actions: jobs.policy.write
+    effect: allow

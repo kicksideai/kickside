@@ -24,6 +24,7 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         provider: resolve(__dirname, 'src/provider.ts'),
         about: resolve(__dirname, 'src/about.ts'),
+        performance: resolve(__dirname, 'src/performance.ts'),
       },
       name: 'KicksideSettings',
       formats: ['es'],
@@ -34,6 +35,7 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         provider: resolve(__dirname, 'src/provider.ts'),
         about: resolve(__dirname, 'src/about.ts'),
+        performance: resolve(__dirname, 'src/performance.ts'),
       },
       external: ['vue', '@iconify/vue', '@wippy-fe/proxy'],
       output: {

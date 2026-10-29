@@ -63,3 +63,37 @@ entries:
     method: PUT
     func: put_settings
     path: /settings
+
+  - name: get_performance
+    meta: {comment: "Returns effective policy sources and live owner state."}
+    kind: function.lua
+    source: file://performance.lua
+    method: get
+    modules: [http, json]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      error_envelope: kickside.contract:error_envelope
+
+  - name: get_performance.endpoint
+    kind: http.endpoint
+    meta: {comment: "Routes authenticated policy and pool-status reads."}
+    method: GET
+    func: get_performance
+    path: /settings/performance
+
+  - name: put_performance
+    meta: {comment: "Commits validated policy edits and requests owner application."}
+    kind: function.lua
+    source: file://performance.lua
+    method: put
+    modules: [http, json]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      error_envelope: kickside.contract:error_envelope
+
+  - name: put_performance.endpoint
+    kind: http.endpoint
+    meta: {comment: "Routes authenticated policy override writes."}
+    method: PUT
+    func: put_performance
+    path: /settings/performance

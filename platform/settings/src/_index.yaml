@@ -42,6 +42,10 @@ entries:
         path: .meta.router
       - entry: kickside.settings.api:get_about.endpoint
         path: .meta.router
+      - entry: kickside.settings.api:get_performance.endpoint
+        path: .meta.router
+      - entry: kickside.settings.api:put_performance.endpoint
+        path: .meta.router
 
   # ─── Override cache (store.memory) ───────────────────────────────────
   - name: cache
@@ -430,3 +434,34 @@ entries:
     meta:
       comment: Migration framework for the module read-model tables.
     component: wippy/migration
+
+  - name: block.performance
+    kind: registry.entry
+    meta: {comment: "Mounts the live Jobs performance editor in Settings.", type: kickside.settings:block}
+    key: performance
+    title: Performance
+    group: Application
+    order: 40
+    icon: tabler:gauge
+    component_tag: kickside-settings-performance
+
+  - name: performance_view
+    kind: registry.entry
+    meta:
+      comment: "Defines the bespoke Jobs performance settings component."
+      type: view.component
+      name: KickSide Performance Settings
+      title: Performance Settings
+      description: Configures live Jobs capacity and shows queue activity.
+      announced: true
+      tag_name: kickside-settings-performance
+      base_path: kickside-settings
+      entry_point: performance.js
+      auto_register: false
+      secure: false
+
+  - name: dep.kickside.jobs
+    meta: {comment: "Dep kickside jobs."}
+    kind: ns.dependency
+    version: '*'
+    component: kickside/jobs

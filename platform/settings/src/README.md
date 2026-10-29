@@ -87,3 +87,41 @@ An unset owner displays the block title for its namespace, or the namespace.
 
 - `target_db` — required database backing `kickside_settings`.
 - `api_router` — required firewall-protected router for the admin API.
+
+## Performance
+
+The `performance` Settings block mounts `kickside-settings-performance`, built
+and served with this module as `performance.js`. Its four groups cover workers,
+claiming and fairness, leases and retries, and execution limits. Source badges,
+inline validation, proportional queue shares, and deferred per-field reset use
+one atomic save. Reset removes the Admin override and reveals Host configuration
+when present. Realtime refresh preserves unsaved drafts and coalesces notifications into one active refresh and one pending refresh.
+Retry delays display and edit as durations while the API stores milliseconds.
+The active database's worker count appears first; the other count stays editable
+and is marked as unused by this installation.
+The shared Settings toolbar supplies save/discard controls and inline saved
+feedback. All Settings components use the UI kit's body and heading font tokens.
+The shipped execution limit is 60m; a job's declared limit takes precedence.
+
+`GET /api/v1/settings/performance` returns effective Jobs policy fields with
+sources and live pool state. `PUT /api/v1/settings/performance` accepts
+`{ values: { "worker.count_postgres": 20 }, unset: ["worker.claim_batch"] }`.
+The authenticated router firewall checks the two exact endpoint resources;
+handlers do no endpoint permission checks. The selectable `performance_admin` policy grants only those
+two endpoint identities and includes the Jobs policy write capability. Member
+module access grants neither endpoint. Jobs also enforces its write capability
+for direct library callers.
+
+Jobs owns the override table and revision, validation, singleton runtime
+snapshot and notification path. These values never enter `kickside_settings`. The UI subscribes to
+`kickside.jobs.performance.changed` and `kickside.jobs.policy.changed` before its first load and refetches the GET
+endpoint on notifications and host visibility changes. PUT responses supply the authoritative fields. Rejected HTTP responses retain
+native classification and committed fields. The editor shows **Applying** until
+SQL's `applied_revision` reaches the committed revision, and displays the recorded
+native apply error. A failed GET preserves that pending state; a realtime refresh
+clears it after application succeeds. Saves never wait for the owner and there
+is no empty-write retry action. Status reads persisted owner state and queue
+counts without process messaging. No toolbar action is enabled before the first
+baseline. The editor uses no polling.
+Busy surplus slots finish before retirement; lease timing and execution changes
+apply to subsequent executions. No restart is required.
