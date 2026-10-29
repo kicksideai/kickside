@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRefs, watch } from 'vue'
+import { computed, nextTick, ref, toRefs, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import Avatar from 'primevue/avatar'
@@ -63,13 +63,19 @@ const profileItems = computed<MenuItem[]>(() => [
   { label: 'Sign out', icon: 'tabler:logout', command: () => emit('logout') },
 ])
 
-function toggleCategory(event: MouseEvent, category: NavCategory) {
+async function toggleCategory(event: MouseEvent, category: NavCategory) {
+  const target = event.currentTarget
   profileMenu.value?.hide()
   if (activeCategory.value?.key === category.key) {
     categoryMenu.value?.hide()
   } else {
+    if (activeCategory.value) {
+      categoryMenu.value?.hide()
+      await nextTick()
+    }
     activeCategoryKey.value = category.key
-    categoryMenu.value?.show(event)
+    await nextTick()
+    categoryMenu.value?.show(event, target)
   }
 }
 
