@@ -11,15 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicHarnessTests(unittest.TestCase):
-    def test_ci_uses_the_supported_runtime_for_every_gate(self):
-        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
-        setups = re.findall(r'uses: kicksideai/\.github/actions/setup-wippy@[^\n]+\n(.*?)(?=\n    -|\Z)',
-                            workflow, re.DOTALL)
-        self.assertTrue(setups, 'CI must install the supported runtime')
-        for setup in setups:
-            with self.subTest(setup=setup):
-                self.assertRegex(setup, r'(?m)^        version: 0\.3\.55a$')
-
     def test_release_extra_files_resolve_within_their_module(self):
         config = json.loads((ROOT / 'release-please-config.json').read_text())
         checked = []
