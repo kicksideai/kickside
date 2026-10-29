@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.69](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.68...knowledge-v0.1.69) (2026-10-28)
+
+
+### Features
+
+* **knowledge:** show engine statistics in the shared header ([#185](https://github.com/kicksideai/kickside/issues/185)) ([029161b](https://github.com/kicksideai/kickside/commit/029161bc66d8bf0f2e30f233733664a080b9c394))
+
 ## [0.1.68](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.67...knowledge-v0.1.68) (2026-10-28)
 
 

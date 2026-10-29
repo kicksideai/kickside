@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.6](https://github.com/kicksideai/kickside/compare/automation-v0.2.5...automation-v0.2.6) (2026-10-28)
+
+
+### Features
+
+* **automation:** list automations by event source ([#184](https://github.com/kicksideai/kickside/issues/184)) ([742f652](https://github.com/kicksideai/kickside/commit/742f6522c05fc90bb08e3f91a8f3158825a3793b))
+
+
+### Bug Fixes
+
+* **automation:** select picker thread classes ([#186](https://github.com/kicksideai/kickside/issues/186)) ([edbd416](https://github.com/kicksideai/kickside/commit/edbd4164434a0041f2d577ca886172d40140332f))
+
 ## [0.2.5](https://github.com/kicksideai/kickside/compare/automation-v0.2.4...automation-v0.2.5) (2026-10-28)
 
 

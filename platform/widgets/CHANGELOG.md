@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.53](https://github.com/kicksideai/kickside/compare/widgets-v0.1.52...widgets-v0.1.53) (2026-10-28)
+
+
+### Bug Fixes
+
+* **automation:** select picker thread classes ([#186](https://github.com/kicksideai/kickside/issues/186)) ([edbd416](https://github.com/kicksideai/kickside/commit/edbd4164434a0041f2d577ca886172d40140332f))
+
 ## [0.1.52](https://github.com/kicksideai/kickside/compare/widgets-v0.1.51...widgets-v0.1.52) (2026-10-28)
 
 

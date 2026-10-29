@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.36](https://github.com/kicksideai/kickside/compare/renderers-v0.1.35...renderers-v0.1.36) (2026-10-28)
+
+
+### Bug Fixes
+
+* **renderers:** preserve PDF page and text layer proportions ([#201](https://github.com/kicksideai/kickside/issues/201)) ([37cfaa6](https://github.com/kicksideai/kickside/commit/37cfaa6b1e65f1e2ff1a3a52e4e542c686038232))
+
 ## 0.1.33 (2026-10-08)
 
 - build: rebuild bundles from source (6c884fef9)

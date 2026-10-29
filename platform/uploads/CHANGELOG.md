@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.5](https://github.com/kicksideai/kickside/compare/uploads-v0.3.4...uploads-v0.3.5) (2026-10-28)
+
+
+### Features
+
+* **uploads:** add preview deep links ([#170](https://github.com/kicksideai/kickside/issues/170)) ([4bebf64](https://github.com/kicksideai/kickside/commit/4bebf64776be18aea2b203a8de044741a73ffb0d))
+
+
+### Bug Fixes
+
+* **uploads:** return native errors from provider bindings ([#202](https://github.com/kicksideai/kickside/issues/202)) ([1ce679f](https://github.com/kicksideai/kickside/commit/1ce679f4c11adebfc53cbe491c5cb97056a2c33c))
+
 ## [0.3.4](https://github.com/kicksideai/kickside/compare/uploads-v0.3.3...uploads-v0.3.4) (2026-10-28)
 
 

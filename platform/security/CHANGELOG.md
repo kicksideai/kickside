@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/security-v0.2.16...security-v0.2.17) (2026-10-28)
+
+
+### Bug Fixes
+
+* align System account and permission administration ([#197](https://github.com/kicksideai/kickside/issues/197)) ([fb19352](https://github.com/kicksideai/kickside/commit/fb1935229cba380343c98b252e132cf7ecbce6f3))
+
 ## [0.2.16](https://github.com/kicksideai/kickside/compare/security-v0.2.15...security-v0.2.16) (2026-10-28)
 
 
