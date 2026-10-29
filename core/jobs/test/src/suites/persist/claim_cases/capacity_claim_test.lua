@@ -53,8 +53,8 @@ local function define_tests()
                     local id = status == "done" and completed or uuid.v7()
                     local _, err = db:execute([[INSERT INTO kickside_job
                         (id,job_type,worker_ref,job_identity,owner_kind,owner_id,status,concurrency_key,payload)
-                        VALUES($1,'app:capacity_worker_a','app:capacity_worker_a',$4,'test','upgrade',$2,$2,$3)]],
-                        { id, status, '{"retained":true}', id })
+                        VALUES($1,'app:capacity_worker_a','app:capacity_worker_a',$2,'test','upgrade',$3,$3,$4)]],
+                        { id, id, status, '{"retained":true}' })
                     test.is_nil(err, tostring(err))
                 end
                 local _, history_err = db:execute([[INSERT INTO kickside_job_run
