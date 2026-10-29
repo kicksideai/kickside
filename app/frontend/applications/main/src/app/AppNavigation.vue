@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { toRefs } from 'vue'
+import { computed, nextTick, ref, toRefs, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import Avatar from 'primevue/avatar'
+import Menu from 'primevue/menu'
+import type { MenuItem } from 'primevue/menuitem'
 import { badgeStyle, badgeVisible, canRender, type NavBadge, type NavCategory, type NavItem } from '../composables/useSurfaces'
 import { normalizePath } from '../router/path'
 import type { AccountItem } from './useShellAccount'
@@ -20,30 +22,75 @@ const props = defineProps<{
   navError: unknown
   railCollapsed: boolean
   collapsedCats: Set<string>
-  openMenu: string | null
-  profileOpen: boolean
   currentUser: { email: string; full_name: string } | null
   accountItems: AccountItem[]
 }>()
 const {
   layout, appTitle, markUrl, isNewChatRoute, renderableCategories, navItems,
-  loaded, navError, railCollapsed, collapsedCats, openMenu, profileOpen,
+  loaded, navError, railCollapsed, collapsedCats,
   currentUser, accountItems,
 } = toRefs(props)
 const emit = defineEmits<{
   (event: 'new-chat'): void
   (event: 'navigate', path: string): void
-  (event: 'toggle-menu', key: string): void
-  (event: 'close-menus'): void
   (event: 'toggle-collapsed'): void
   (event: 'expand'): void
   (event: 'toggle-cat', key: string): void
-  (event: 'toggle-profile'): void
   (event: 'open-profile'): void
   (event: 'account-open', tag: string): void
   (event: 'logout'): void
 }>()
 const route = useRoute()
+const categoryMenu = ref<InstanceType<typeof Menu> | null>(null)
+const profileMenu = ref<InstanceType<typeof Menu> | null>(null)
+const activeCategoryKey = ref<string | null>(null)
+const activeCategory = computed(() => renderableCategories.value.find(category => category.key === activeCategoryKey.value))
+const profileOpen = ref(false)
+const categoryItems = computed<MenuItem[]>(() => (activeCategory.value?.items || []).map(item => ({
+  label: item.label,
+  icon: item.icon,
+  disabled: !canRender(item),
+  active: isActive(item),
+  badge: item.badge,
+  command: () => emit('navigate', item.path),
+})))
+const profileItems = computed<MenuItem[]>(() => [
+  { label: 'Profile', icon: 'tabler:user', command: () => emit('open-profile') },
+  ...accountItems.value.map(item => ({
+    label: item.label, icon: item.icon, command: () => emit('account-open', item.component_tag),
+  })),
+  { separator: true },
+  { label: 'Sign out', icon: 'tabler:logout', command: () => emit('logout') },
+])
+
+async function toggleCategory(event: MouseEvent, category: NavCategory) {
+  const target = event.currentTarget
+  profileMenu.value?.hide()
+  if (activeCategory.value?.key === category.key) {
+    categoryMenu.value?.hide()
+  } else {
+    if (activeCategory.value) {
+      categoryMenu.value?.hide()
+      await nextTick()
+    }
+    activeCategoryKey.value = category.key
+    await nextTick()
+    categoryMenu.value?.show(event, target)
+  }
+}
+
+function toggleProfile(event: MouseEvent) {
+  categoryMenu.value?.hide()
+  profileMenu.value?.toggle(event)
+}
+
+watch(layout, () => {
+  categoryMenu.value?.hide()
+  profileMenu.value?.hide()
+})
+watch(activeCategory, category => {
+  if (!category) categoryMenu.value?.hide()
+})
 
 function isActive(item: NavItem): boolean {
   const path = normalizePath(item.path || '/')
@@ -69,11 +116,11 @@ function userInitials(user: { email: string; full_name: string }): string {
     aria-label="App navigation"
     class="shrink-0 w-full border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 flex items-center gap-2 px-3 min-h-14 grow"
   >
-    <span class="flex items-center gap-2.5 mr-2 shrink-0">
-      <img :src="markUrl" :alt="appTitle" class="h-7 w-7 rounded-lg" />
-      <span class="text-base font-bold tracking-tight text-surface-900 dark:text-surface-0">{{ appTitle }}</span>
+    <span class="flex items-center gap-2.5 mr-2 shrink-0 min-w-0 max-w-[30%]">
+      <img :src="markUrl" :alt="appTitle" class="h-7 w-7 rounded-lg shrink-0" />
+      <span class="text-base font-bold tracking-tight text-surface-900 dark:text-surface-0 truncate" :title="appTitle">{{ appTitle }}</span>
     </span>
-    <nav aria-label="Main navigation" class="flex-1 flex items-center gap-1 min-w-0">
+    <nav aria-label="Main navigation" class="flex-1 flex items-center gap-1 min-w-0 overflow-x-auto">
       <button
         class="app-nav-item flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors"
         :class="isNewChatRoute && 'is-active'"
@@ -105,40 +152,25 @@ function userInitials(user: { email: string; full_name: string }): string {
         </template>
 
         <!-- Category: a dropdown menu that packs its surfaces. -->
-        <div v-else class="h-cat">
+        <div v-else class="shrink-0">
           <button
             class="flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition-colors"
-            :class="openMenu === category.key
+            :class="activeCategory?.key === category.key
               ? 'bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300'
               : 'text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
-            :aria-expanded="openMenu === category.key"
-            @click.stop="emit('toggle-menu', category.key)"
+            aria-haspopup="menu"
+            aria-controls="app-category-menu"
+            :aria-expanded="activeCategory?.key === category.key"
+            @click.stop="toggleCategory($event, category)"
           >
             <Icon :icon="category.icon || 'tabler:folder'" class="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
             <span class="nav-label">{{ category.label }}</span>
-            <template v-if="showRollup(category, openMenu !== category.key)">
+            <template v-if="showRollup(category, activeCategory?.key !== category.key)">
               <span v-if="category.rollup!.style === 'dot'" class="nav-dot" :style="{ background: badgeStyle(category.rollup!).color }" aria-hidden="true" />
               <span v-else class="nav-badge" :style="badgeStyle(category.rollup!)">{{ category.rollup!.value }}</span>
             </template>
-            <Icon icon="tabler:chevron-down" class="h-cat-caret shrink-0" :class="openMenu === category.key && 'h-cat-caret-open'" aria-hidden="true" />
+            <Icon icon="tabler:chevron-down" class="h-cat-caret shrink-0" :class="activeCategory?.key === category.key && 'h-cat-caret-open'" aria-hidden="true" />
           </button>
-          <div v-show="openMenu === category.key" class="h-cat-menu" @click.stop>
-            <button
-              v-for="item in category.items"
-              :key="item.id"
-              class="h-cat-item"
-              :class="isActive(item) && 'h-cat-item-active'"
-              :disabled="!canRender(item)"
-              @click="emit('navigate', item.path); emit('close-menus')"
-            >
-              <Icon :icon="item.icon" class="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
-              <span class="flex-1 text-left nav-label">{{ item.label }}</span>
-              <template v-if="showBadge(item.badge)">
-                <span v-if="item.badge!.style === 'dot'" class="nav-dot" :style="{ background: badgeStyle(item.badge!).color }" aria-hidden="true" />
-                <span v-else class="nav-badge" :style="badgeStyle(item.badge!)">{{ item.badge!.value }}</span>
-              </template>
-            </button>
-          </div>
         </div>
       </template>
     </nav>
@@ -148,31 +180,13 @@ function userInitials(user: { email: string; full_name: string }): string {
         aria-haspopup="menu"
         :aria-expanded="profileOpen"
         title="Account"
-        @click.stop="emit('toggle-profile')"
+        aria-label="Account"
+        aria-controls="app-account-menu"
+        @click.stop="toggleProfile"
       >
         <Avatar :label="userInitials(currentUser)" shape="circle" class="profile-avatar text-xs font-semibold" :title="currentUser.full_name || currentUser.email" />
         <Icon icon="tabler:chevron-down" class="w-4 h-4 text-surface-400" aria-hidden="true" />
       </button>
-      <div
-        v-if="profileOpen"
-        class="absolute top-full right-0 mt-2 min-w-[12rem] rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 shadow-lg overflow-hidden z-50"
-        role="menu"
-        @click.stop
-      >
-        <div class="px-3 py-2.5 border-b border-surface-200 dark:border-surface-700">
-          <div class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">{{ currentUser.full_name || currentUser.email }}</div>
-          <div v-if="currentUser.full_name" class="text-[11px] text-surface-600 dark:text-surface-300 truncate">{{ currentUser.email }}</div>
-        </div>
-        <button class="acct-item w-full flex items-center gap-2.5 px-3 py-2 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors" role="menuitem" @click="emit('open-profile')">
-          <Icon icon="tabler:user" class="w-[18px] h-[18px]" aria-hidden="true" /> Profile
-        </button>
-        <button v-for="item in accountItems" :key="item.key" class="acct-item w-full flex items-center gap-2.5 px-3 py-2 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors" role="menuitem" @click="emit('account-open', item.component_tag)">
-          <Icon :icon="item.icon" class="w-[18px] h-[18px]" aria-hidden="true" /> {{ item.label }}
-        </button>
-        <button class="acct-item w-full flex items-center gap-2.5 px-3 py-2 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors" role="menuitem" @click="emit('logout')">
-          <Icon icon="tabler:logout" class="w-[18px] h-[18px]" aria-hidden="true" /> Sign out
-        </button>
-      </div>
     </div>
   </header>
 
@@ -304,7 +318,9 @@ function userInitials(user: { email: string; full_name: string }): string {
           aria-haspopup="menu"
           :aria-expanded="profileOpen"
           :title="railCollapsed ? (currentUser.full_name || currentUser.email) : 'Account'"
-          @click.stop="emit('toggle-profile')"
+          aria-label="Account"
+          aria-controls="app-account-menu"
+          @click.stop="toggleProfile"
         >
           <Avatar :label="userInitials(currentUser)" shape="circle" class="profile-avatar text-xs font-semibold shrink-0" />
           <template v-if="!railCollapsed">
@@ -315,26 +331,6 @@ function userInitials(user: { email: string; full_name: string }): string {
             <Icon icon="tabler:selector" class="w-4 h-4 text-surface-400 shrink-0" aria-hidden="true" />
           </template>
         </button>
-        <div
-          v-if="profileOpen"
-          class="absolute bottom-full mb-2 left-3 min-w-[12rem] rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 shadow-lg overflow-hidden z-50"
-          role="menu"
-          @click.stop
-        >
-          <div class="px-3 py-2.5 border-b border-surface-200 dark:border-surface-700">
-            <div class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">{{ currentUser.full_name || currentUser.email }}</div>
-            <div v-if="currentUser.full_name" class="text-[11px] text-surface-600 dark:text-surface-300 truncate">{{ currentUser.email }}</div>
-          </div>
-          <button class="acct-item w-full flex items-center gap-2.5 px-3 py-2 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors" role="menuitem" @click="emit('open-profile')">
-            <Icon icon="tabler:user" class="w-[18px] h-[18px]" aria-hidden="true" /> Profile
-          </button>
-          <button v-for="item in accountItems" :key="item.key" class="acct-item w-full flex items-center gap-2.5 px-3 py-2 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors" role="menuitem" @click="emit('account-open', item.component_tag)">
-            <Icon :icon="item.icon" class="w-[18px] h-[18px]" aria-hidden="true" /> {{ item.label }}
-          </button>
-          <button class="acct-item w-full flex items-center gap-2.5 px-3 py-2 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors" role="menuitem" @click="emit('logout')">
-            <Icon icon="tabler:logout" class="w-[18px] h-[18px]" aria-hidden="true" /> Sign out
-          </button>
-        </div>
       </template>
       <div v-else class="flex items-center gap-2 text-[11px] text-surface-400" :class="railCollapsed ? 'justify-center' : ''">
         <Icon icon="tabler:circle-filled" class="w-2 h-2 text-primary" aria-hidden="true" />
@@ -342,6 +338,34 @@ function userInitials(user: { email: string; full_name: string }): string {
       </div>
     </div>
   </aside>
+  <Menu id="app-category-menu" ref="categoryMenu" :model="categoryItems" popup
+    :aria-label="activeCategory?.label" @hide="activeCategoryKey = null">
+    <template #item="{ item, props: itemProps }">
+      <a v-bind="itemProps.action" class="app-nav-menu-item" :class="{ 'is-active': item.active }">
+        <Icon v-if="item.icon" :icon="item.icon" class="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
+        <span class="flex-1 nav-label">{{ item.label }}</span>
+        <template v-if="showBadge(item.badge)">
+          <span v-if="item.badge.style === 'dot'" class="nav-dot" :style="{ background: badgeStyle(item.badge).color }" aria-hidden="true" />
+          <span v-else class="nav-badge" :style="badgeStyle(item.badge)">{{ item.badge.value }}</span>
+        </template>
+      </a>
+    </template>
+  </Menu>
+  <Menu id="app-account-menu" ref="profileMenu" :model="profileItems" popup aria-label="Account"
+    @show="profileOpen = true" @hide="profileOpen = false">
+    <template v-if="currentUser" #start>
+      <div class="px-3 py-2.5 border-b border-surface-200 dark:border-surface-700">
+        <div class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">{{ currentUser.full_name || currentUser.email }}</div>
+        <div v-if="currentUser.full_name" class="text-[11px] text-surface-600 dark:text-surface-300 truncate">{{ currentUser.email }}</div>
+      </div>
+    </template>
+    <template #item="{ item, props: itemProps }">
+      <a v-bind="itemProps.action">
+        <Icon v-if="item.icon" :icon="item.icon" class="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
+        <span>{{ item.label }}</span>
+      </a>
+    </template>
+  </Menu>
 </template>
 
 <style scoped>
@@ -404,31 +428,10 @@ function userInitials(user: { email: string; full_name: string }): string {
   background: var(--kx-wash-primary);
 }
 
-/* Horizontal-layout category dropdowns. The button itself reuses the same flat
-   nav-item utility classes (in the template), so it is a true peer of the
-   surfaces beside it; only the caret + dropdown panel are styled here. */
-.h-cat { position: relative; }
+/* Popup placement, focus and dismissal are owned by PrimeVue Menu. */
 .h-cat-caret { width: 14px; height: 14px; opacity: .65; transition: transform .15s; }
 .h-cat-caret-open { transform: rotate(180deg); }
-.h-cat-menu {
-  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
-  width: max-content; min-width: min(220px, calc(100vw - 16px)); max-width: calc(100vw - 16px); padding: 6px;
-  background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-14);
-  box-shadow: var(--kx-shadow-lg); display: flex; flex-direction: column; gap: 2px;
-}
-.h-cat-item {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  padding: 8px 10px; border: none; background: transparent; border-radius: var(--kx-radius-8);
-  font: inherit; font-size: 13px; color: var(--p-text-muted-color);
-  cursor: pointer; transition: background .15s, color .15s;
-}
-.h-cat-item:hover { background: var(--kx-surface-2); color: var(--p-text-color); }
-.h-cat-item-active { background: var(--kx-wash-primary); color: var(--ac-fg); font-weight: 600; }
-.h-cat-item:disabled { opacity: .5; cursor: default; }
-.h-cat-item :deep(svg) { color: inherit; }
-
-/* Account/profile dropdown menu items share the one control radius (8px). */
-.acct-item { border-radius: var(--kx-radius-8); }
+.app-nav-menu-item.is-active { background: var(--kx-wash-primary); color: var(--ac-fg); font-weight: 600; }
 
 /* Nav typography stays on the body face (Inter); these only unify the scale —
    items at 13px, category section headers as the smaller uppercase group label —
