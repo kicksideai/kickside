@@ -8,12 +8,16 @@ local claim = require("claim")
 local lifecycle = require("lifecycle")
 local job_fixture = require("job_fixture")
 local funcs = require("funcs")
+local channel = require("channel")
+local time = require("time")
 
 local function with_db(fn)
     local db, _, err = job_fixture.private_queue("app:private_queue_capacity_claim_test")
     if err or not db then error("capacity queue unavailable: " .. tostring(err)) end
-    fn(db)
-    db:release()
+    local ok, run_err = pcall(fn, db)
+    local _, release_err = db:release()
+    if not ok then error(run_err) end
+    if release_err then error(release_err) end
 end
 
 local function enqueue(db: sql.DB, dbtype: string, worker: string, key: string, ordinal: integer,
@@ -70,6 +74,169 @@ local function define_tests()
                 test.eq(backlog.count, 0, "saturated capacity is not dispatchable backlog")
             end)
         end)
+
+        for _, worker in ipairs({"func://app:capacity_worker_a", " \tfunc:// \napp:capacity_worker_a \r"}) do
+            test.it("keeps URI admission and backlog consistent for " .. worker, function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    enqueue(db, dbtype, worker, "uri-key", 1)
+                    local first, first_err = claim.claim_batch(db, dbtype, 1)
+                    test.is_nil(first_err)
+                    test.eq(#first, 1)
+                    local second = enqueue(db, dbtype, worker, "uri-key", 2)
+                    local backlog, backlog_err = claim.due_backlog(db, dbtype, 0)
+                    test.is_nil(backlog_err)
+                    test.eq(backlog.count, 1)
+                    local next_jobs, next_err = claim.claim_batch(db, dbtype, 1)
+                    test.is_nil(next_err)
+                    test.eq(next_jobs[1].id, second)
+                    enqueue(db, dbtype, worker, "uri-other", 3)
+                    local saturated, saturated_err = claim.due_backlog(db, dbtype, 0)
+                    test.is_nil(saturated_err)
+                    test.eq(saturated.count, 0)
+                end)
+            end)
+        end
+
+        test.it("excludes a saturated group even when the pending key differs", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                enqueue(db, dbtype, "app:capacity_worker_a", "global-a", 1)
+                enqueue(db, dbtype, "app:capacity_worker_b", "global-b", 2)
+                local running, err = claim.claim_batch(db, dbtype, 2)
+                test.is_nil(err)
+                test.eq(#running, 2)
+                enqueue(db, dbtype, "app:capacity_worker_a", "global-c", 3)
+                local backlog, backlog_err = claim.due_backlog(db, dbtype, 0)
+                test.is_nil(backlog_err)
+                test.eq(backlog.count, 0)
+            end)
+        end)
+
+        test.it("excludes a saturated key while another key in its group remains available", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                enqueue(db, dbtype, "app:capacity_key_worker", "key-limit-a", 1)
+                local first, first_err = claim.claim_batch(db, dbtype, 1)
+                test.is_nil(first_err)
+                test.eq(#first, 1)
+                enqueue(db, dbtype, "app:capacity_key_worker", "key-limit-a", 2)
+                local available = enqueue(db, dbtype, "app:capacity_key_worker", "key-limit-b", 3)
+                local backlog, backlog_err = claim.due_backlog(db, dbtype, 0)
+                test.is_nil(backlog_err)
+                test.eq(backlog.count, 1)
+                local next_jobs, next_err = claim.claim_batch(db, dbtype, 2)
+                test.is_nil(next_err)
+                test.eq(#next_jobs, 1)
+                test.eq(next_jobs[1].id, available)
+                local saturated, saturated_err = claim.due_backlog(db, dbtype, 0)
+                test.is_nil(saturated_err)
+                test.eq(saturated.count, 0)
+            end)
+        end)
+
+        for _, blocked in ipairs({1, 8}) do
+            test.it("claims other work past " .. tostring(blocked) .. " saturated candidates", function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    enqueue(db, dbtype, "app:capacity_worker_a", "running-a", 1)
+                    enqueue(db, dbtype, "app:capacity_worker_a", "running-b", 2)
+                    local running, running_err = claim.claim_batch(db, dbtype, 2)
+                    test.is_nil(running_err)
+                    test.eq(#running, 2)
+                    for ordinal = 1, blocked do
+                        enqueue(db, dbtype, "app:capacity_worker_a", "waiting-" .. tostring(ordinal), ordinal)
+                    end
+                    local available = enqueue(db, dbtype, "test.legacy.capacity", "other-worker", 1,
+                        "2000-01-01T00:00:01Z")
+                    local claimed, err = claim.claim_batch(db, dbtype, 1)
+                    test.is_nil(err)
+                    test.eq(#claimed, 1, "saturated work must not occupy the candidate scan or batch budget")
+                    test.eq(claimed[1].id, available)
+                end)
+            end)
+        end
+
+        test.it("fills the batch after the available group capacity is selected", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                for ordinal = 1, 3 do
+                    enqueue(db, dbtype, "app:capacity_worker_a", "group-" .. tostring(ordinal), ordinal)
+                end
+                local available = enqueue(db, dbtype, "test.legacy.capacity", "batch-other", 1,
+                    "2000-01-01T00:00:01Z")
+                local claimed, err = claim.claim_batch(db, dbtype, 3)
+                test.is_nil(err)
+                test.eq(#claimed, 3)
+                local found = false
+                for _, job in ipairs(claimed) do if job.id == available then found = true end end
+                test.is_true(found, "group limit must leave the remaining batch slot for other work")
+            end)
+        end)
+
+        test.it("uses a general slot when awaited candidates share the remaining group budget", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                enqueue(db, dbtype, "app:capacity_worker_a", "awaited-running", 1)
+                local running, running_err = claim.claim_batch(db, dbtype, 1)
+                test.is_nil(running_err)
+                test.eq(#running, 1)
+                for ordinal = 1, 2 do
+                    enqueue(db, dbtype, "app:capacity_worker_a", "awaited-" .. tostring(ordinal), ordinal)
+                end
+                local general = enqueue(db, dbtype, "test.legacy.capacity", "general", 1)
+                local claimed, err = claim.claim_batch(db, dbtype, 2, nil, nil, nil, nil,
+                    {awaited_types = {"app:capacity_worker_a"}, general_capacity = 1, tier_step = 0})
+                test.is_nil(err)
+                test.eq(#claimed, 2)
+                local found = false
+                for _, job in ipairs(claimed) do if job.id == general then found = true end end
+                test.is_true(found)
+            end)
+        end)
+
+        for _, spec in ipairs({
+            {worker = "app:capacity_worker_a", label = "group", limit = 2, same_key = false},
+            {worker = "app:capacity_key_worker", label = "key", limit = 1, same_key = true},
+        }) do
+            test.it("preserves the " .. spec.label .. " limit under concurrent claims", function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    for ordinal = 1, 8 do
+                        enqueue(db, dbtype, spec.worker, spec.same_key and "shared" or "key-" .. tostring(ordinal), ordinal)
+                    end
+                    local done = channel.new(4)
+                    local start = channel.new(4)
+                    for _ = 1, 4 do
+                        coroutine.spawn(function()
+                            start:receive()
+                            local batch, err = claim.claim_batch(db, dbtype, 2)
+                            done:send({batch = batch, err = err})
+                        end)
+                    end
+                    for _ = 1, 4 do start:send(true) end
+                    local completed = {}
+                    for _ = 1, 4 do
+                        local selected = channel.select({done:case_receive(), time.after("15s"):case_receive()})
+                        test.eq(selected.channel, done, "concurrent claim does not finish")
+                        completed[#completed + 1] = selected.value
+                    end
+                    local claimed = 0
+                    for _, result in ipairs(completed) do
+                        test.is_nil(result.err, tostring(result.err))
+                        claimed = claimed + #result.batch
+                    end
+                    test.is_true(claimed > 0)
+                    test.is_true(claimed <= spec.limit, "concurrent claims oversubscribe capacity")
+                    -- A skipped lock may leave a slot for the next dispatch.
+                    local next_jobs, next_err = claim.claim_batch(db, dbtype, 2)
+                    test.is_nil(next_err)
+                    test.eq(claimed + #next_jobs, spec.limit)
+                    local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_job WHERE status='running'"))
+                    test.eq(tonumber(rows[1].n), spec.limit)
+                end)
+            end)
+        end
 
         test.it("upgrades an existing queue without rewriting jobs or run history", function()
             with_db(function(db: sql.DB)
@@ -181,6 +348,9 @@ local function define_tests()
                         test.is_nil(err, tostring(err))
                     end
                     local pending = enqueue(db, dbtype, "app:capacity_worker_b", "new-work", 3)
+                    local backlog, backlog_err = claim.due_backlog(db, dbtype, 0)
+                    test.is_nil(backlog_err)
+                    test.eq(backlog.count, 0, "pre-upgrade running work consumes group capacity")
                     local claimed, err = claim.claim_batch(db, dbtype, 1)
                     test.is_nil(err, tostring(err))
                     test.eq(#claimed, 0)

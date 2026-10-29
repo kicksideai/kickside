@@ -230,12 +230,11 @@ entries:
     kind: function.lua
     meta:
       comment: Capacity-declared worker fixture A.
-      job_capacity:
-        group: app.capacity
-        settings:
-          namespace: app.capacity
-          global_limit_key: global_limit
-          concurrency_key_limit_key: concurrency_key_limit
+      job_capacity: app.capacity
+      job_capacity_settings:
+        namespace: app.capacity
+        global_limit_key: global_limit
+        concurrency_key_limit_key: concurrency_key_limit
     source: file://generic_job_target.lua
     method: run
     modules: [security, time, channel, sql, json]
@@ -249,12 +248,29 @@ entries:
     kind: function.lua
     meta:
       comment: Capacity-declared worker fixture B.
-      job_capacity:
-        group: app.capacity
-        settings:
-          namespace: app.capacity
-          global_limit_key: global_limit
-          concurrency_key_limit_key: concurrency_key_limit
+      job_capacity: app.capacity
+      job_capacity_settings:
+        namespace: app.capacity
+        global_limit_key: global_limit
+        concurrency_key_limit_key: concurrency_key_limit
+    source: file://generic_job_target.lua
+    method: run
+    modules: [security, time, channel, sql, json]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: capacity_key_worker
+    kind: function.lua
+    meta:
+      comment: Capacity-declared worker fixture B.
+      job_capacity: app.key_capacity
+      job_capacity_settings:
+        namespace: app.key_capacity
+        global_limit_key: global_limit
+        concurrency_key_limit_key: concurrency_key_limit
     source: file://generic_job_target.lua
     method: run
     modules: [security, time, channel, sql, json]
@@ -3387,6 +3403,14 @@ entries:
       row_bytes: app:claim_native_row_bytes
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       capacity: app:capacity_native_adapter
+      eligibility: app:eligibility_native_source
+  - name: eligibility_native_source
+    kind: library.lua
+    source: file://eligibility_native_source.lua
+    modules: [sql]
+    imports:
+      capacity: app:capacity_native_adapter
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
   - name: capacity_native_adapter
     kind: library.lua
     source: file://capacity_native_adapter.lua

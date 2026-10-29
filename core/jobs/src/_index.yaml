@@ -146,6 +146,8 @@ entries:
       comment: Optional worker capacity declarations backed by instance Settings.
     source: file://capacity.lua
     modules: [contract, registry]
+    imports:
+      job_types: kickside.core.jobs:types
 
   - name: clock
     kind: library.lua

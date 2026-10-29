@@ -65,12 +65,11 @@ entries:
 
 ```yaml
 meta:
-  job_capacity:
-    group: app.capacity
-    settings:
-      namespace: app.capacity
-      global_limit_key: global_limit
-      concurrency_key_limit_key: concurrency_key_limit
+  job_capacity: app.capacity
+  job_capacity_settings:
+    namespace: app.capacity
+    global_limit_key: global_limit
+    concurrency_key_limit_key: concurrency_key_limit
 ```
 
 Workers in one group declare the same Settings values. Jobs for a declared
