@@ -17,16 +17,12 @@ modules:
       version: 0.1.64
     - name: kickside/knowledge
       version: 0.0.0
-    - name: kickside/memory
-      version: 0.0.0
     - name: kickside/models
       version: 0.0.0
     - name: kickside/realtime
       version: 0.0.0
     - name: kickside/realtime-dispatch
       version: 0.0.0
-    - name: kickside/search-index
-      version: 0.1.1
     - name: kickside/security
       version: 0.2.16
     - name: kickside/settings

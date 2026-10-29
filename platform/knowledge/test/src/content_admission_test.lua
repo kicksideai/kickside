@@ -56,18 +56,10 @@ local function owner(): string
 end
 
 local function target(user: string, engine: string): string
-    if engine == "memory" then
-        local def = assert(contract.get("kickside.knowledge:knowledge_bases"))
-        local kb = assert(def:with_actor(security.new_actor(user, {})):with_scope(security.named_scope("wippy.security:process")):open())
-        local result, err = kb:create({ name = "Admission test", kb_type = "memory", embedding_model = "admission-embed", config = { extraction_model = "admission-fast" } })
-        test.is_nil(err, tostring(err))
-        test.not_nil(result)
-        targets[#targets + 1] = result.component_id
-        return result.component_id
-    end
     local id = uuid.v7()
     targets[#targets + 1] = id
-    execute("INSERT INTO kickside_components (component_id, impl_id, private_context, created_at, updated_at) VALUES ($1, 'test.kb:embeddable', '{}', 0, 0)", { id })
+    local impl_id = engine == "receipt" and "app:admission_accepting_engine" or "test.kb:embeddable"
+    execute("INSERT INTO kickside_components (component_id, impl_id, private_context, created_at, updated_at) VALUES ($1, $2, '{}', 0, 0)", { id, impl_id })
     execute("INSERT INTO kickside_component_access (access_id, subject_id, subject_type, component_id, source_component_id, access_mask, inherited, created_at) VALUES ($1, $2, 'user', $3, $4, 15, 0, 0)", { uuid.v7(), user, id, id })
     for k, v in pairs({ class = "knowledge_base", kb_type = "wiki", status = "ready", title = "Admission test" }) do
         execute("INSERT INTO kickside_component_meta (meta_id, component_id, key, value, created_at, updated_at) VALUES ($1, $2, $3, $4, 0, 0)", { uuid.v7(), id, k, v })
@@ -180,7 +172,7 @@ local function define_tests()
                 test.eq(#rows("SELECT id FROM kickside_event WHERE thread_id = $1 AND type = 'kickside.knowledge.events:content.upserted'", { id }), 0)
             end)
         end
-        for _, engine in ipairs({ "document", "wiki", "memory" }) do
+        for _, engine in ipairs({ "document", "wiki", "receipt" }) do
             for _, caller in ipairs({ "content", "upload", "archive", "callback", "existing_upload", "reference", "ingest_trait", "trait" }) do
                 test.it("admits " .. caller .. " through the " .. engine .. " binding", function()
                     local user = owner()
@@ -188,13 +180,14 @@ local function define_tests()
                     local result = admit(user, id, caller)
                     test.is_true(result.success, assert(json.encode(result)))
                     test.eq(result.thread_id, id)
-                    if engine == "memory" then
-                        test.not_nil(result.run_id)
+                    if engine == "receipt" then
+                        test.eq(result.run_id, "run:" .. id)
+                        test.eq(result.external_id, "admitted:" .. id)
                     else
                         test.is_nil(result.run_id)
                     end
                     local events = rows("SELECT body, external_id FROM kickside_event WHERE thread_id = $1 AND type = 'kickside.knowledge.events:content.upserted'", { id })
-                    if engine ~= "memory" then
+                    if engine ~= "receipt" then
                         test.not_nil(result.projection_id)
                         test.eq(#events, 1)
                         local body = assert(json.decode(events[1].body))
@@ -204,13 +197,7 @@ local function define_tests()
                         if caller ~= "archive" then test.not_nil(result.trace_context) end
                     else
                         test.eq(#events, 0)
-                        local runs = rows("SELECT input FROM kickside_memory_runs WHERE component_id = $1 AND run_type = 'derive'", { id })
-                        test.eq(#runs, 1)
-                        local input = assert(json.decode(runs[1].input))
-                        test.eq(input.span[1].role, "document")
-                        test.eq(input.span[1].author.kind, "document")
-                        test.is_nil(input.span[1].author.id)
-                        test.contains(input.span[1].text, CONTENT)
+                        test.is_nil(result.projection_id)
                     end
                 end)
             end
