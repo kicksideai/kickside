@@ -82,36 +82,27 @@ local function finish(db: any, tx: any?, primary: error?, committed: boolean): e
     return primary
 end
 
-local function write_attempt(workflow_id: string, items: any, actor: any, from_commands: boolean,
+local function write_tx(tx: any, workflow_id: string, items: any, actor: any, from_commands: boolean,
         runtime_policy: any, history_action: string?): (any?, error?)
-    local db, db_err = store.open_db()
-    if db_err then return nil, db_err end
-    if not db then return nil, errors.new({message = "workflow database unavailable", kind = errors.INTERNAL, retryable = false}) end
-    local tx, tx_err = db:begin()
-    if tx_err then return nil, finish(db, nil, errors.wrap(tx_err, "workflow begin failed"), false) end
-    local function abort(err: error?): (any?, error?)
-        return nil, finish(db, tx, err, false)
-    end
-
     local lock_err = store.lock_history(tx, workflow_id)
-    if lock_err then return abort(lock_err) end
+    if lock_err then return nil, lock_err end
     local tracker, history_err = store.read_history(tx, workflow_id)
-    if history_err then return abort(history_err) end
+    if history_err then return nil, history_err end
     local entry: any = nil
     if history_action == "undo" then
         entry = undo.take_undo(tracker)
-        if not entry then return abort(errors.new({message = "nothing to undo", kind = errors.INVALID, retryable = false})) end
+        if not entry then return nil, errors.new({message = "nothing to undo", kind = errors.INVALID, retryable = false}) end
         items = entry.inverse
     elseif history_action == "redo" then
         entry = undo.take_redo(tracker)
-        if not entry then return abort(errors.new({message = "nothing to redo", kind = errors.INVALID, retryable = false})) end
+        if not entry then return nil, errors.new({message = "nothing to redo", kind = errors.INVALID, retryable = false}) end
         items = entry.forward
     end
 
     local pre_state, rerr = store.read_state(tx, workflow_id)
-    if rerr then return abort(rerr) end
+    if rerr then return nil, rerr end
     local published, published_err = store.latest_published_interface(tx, workflow_id)
-    if published_err then return abort(published_err) end
+    if published_err then return nil, published_err end
     if type(published) == "table" and type((published :: any).interface) == "table" then
         pre_state._published_interface = true
     end
@@ -119,9 +110,9 @@ local function write_attempt(workflow_id: string, items: any, actor: any, from_c
     local events, verr = workflow_state.pipeline(items, pre_state, from_commands,
         { command_bytes = runtime_policy.command_bytes })
     if verr then
-        if type(verr) ~= "string" then return abort(verr) end
-        return abort(errors.new({ message = verr, kind = errors.INVALID, retryable = false,
-            details = { reason = "invalid_command_batch" } }))
+        if type(verr) ~= "string" then return nil, verr end
+        return nil, errors.new({ message = verr, kind = errors.INVALID, retryable = false,
+            details = { reason = "invalid_command_batch" } })
     end
 
     -- Total document size cap (apply-side, same limit publish enforces): fold the
@@ -131,17 +122,15 @@ local function write_attempt(workflow_id: string, items: any, actor: any, from_c
         for _, e in ipairs(events :: { any }) do workflow_state.apply_event(folded, tostring(e.type or ""), e.body) end
         local doc_cap = runtime_policy.document_bytes
         if encoded_size(M.build(folded, 0)) > doc_cap then
-            return abort(errors.new({message = "document_too_large: the workflow document exceeds the " .. tostring(doc_cap) .. "-byte cap",
-                kind = errors.INVALID, retryable = false, details = {reason = "document_too_large"}}))
+            return nil, errors.new({message = "document_too_large: the workflow document exceeds the " .. tostring(doc_cap) .. "-byte cap",
+                kind = errors.INVALID, retryable = false, details = {reason = "document_too_large"}})
         end
     end
 
     local head, herr = store.head_seq(tx, workflow_id)
-    if herr then return abort(herr) end
+    if herr then return nil, herr end
 
     if #(events :: { any }) == 0 and not history_action then
-        local cleanup_err = finish(db, tx, nil, false)
-        if cleanup_err then return nil, cleanup_err end
         return { workflow_id = workflow_id, events = {}, head_seq = head, state = M.build(pre_state, head),
             pre_state = pre_state, can_undo = undo.can_undo(tracker), can_redo = undo.can_redo(tracker) }, nil
     end
@@ -151,9 +140,9 @@ local function write_attempt(workflow_id: string, items: any, actor: any, from_c
         head = head + 1
         e.actor = actor
         local aerr = store.append_event(tx, workflow_id, head, tostring(e.type or ""), e.body, actor)
-        if aerr then return abort(aerr) end
+        if aerr then return nil, aerr end
         local perr = store.project_event(tx, workflow_id, e, head)
-        if perr then return abort(errors.wrap(perr, "workflow projection failed")) end
+        if perr then return nil, errors.wrap(perr, "workflow projection failed") end
         stored[#stored + 1] = { seq = head, type = e.type, body = e.body }
     end
 
@@ -169,23 +158,34 @@ local function write_attempt(workflow_id: string, items: any, actor: any, from_c
         undo.record(tracker, forward, workflow_inverse.build_inverse(pre_state, events))
     end
     local save_err = store.write_history(tx, workflow_id, tracker)
-    if save_err then return abort(save_err) end
+    if save_err then return nil, save_err end
 
+    return {workflow_id = workflow_id, events = stored, head_seq = head, pre_state = pre_state,
+        can_undo = undo.can_undo(tracker), can_redo = undo.can_redo(tracker)}, nil
+end
+
+local function write_attempt(workflow_id: string, items: any, actor: any, from_commands: boolean,
+        runtime_policy: any, history_action: string?): (any?, error?)
+    local db, db_err = store.open_db()
+    if db_err then return nil, db_err end
+    if not db then return nil, errors.new({message = "workflow database unavailable", kind = errors.INTERNAL, retryable = false}) end
+    local tx, tx_err = db:begin()
+    if tx_err then return nil, finish(db, nil, errors.wrap(tx_err, "workflow begin failed"), false) end
+    local result, write_err = write_tx(tx, workflow_id, items, actor, from_commands, runtime_policy, history_action)
+    if write_err then return nil, finish(db, tx, write_err, false) end
+    if #result.events == 0 and not history_action then
+        local cleanup_err = finish(db, tx, nil, false)
+        if cleanup_err then return nil, cleanup_err end
+        return result, nil
+    end
     local _, commit_err = tx:commit()
     -- SQL commit consumes the transaction even when it returns an error.
     if commit_err then return nil, finish(db, nil, errors.wrap(commit_err, "workflow commit failed"), false) end
-
     local post, prerr = store.read_state(db, workflow_id)
     local completion_err = finish(db, nil, prerr, true)
     if completion_err then return nil, completion_err end
-    return {
-        workflow_id = workflow_id,
-        events = stored,
-        head_seq = head,
-        state = M.build(post, head),
-        pre_state = pre_state,
-        can_undo = undo.can_undo(tracker), can_redo = undo.can_redo(tracker),
-    }, nil
+    result.state = M.build(post, result.head_seq)
+    return result, nil
 end
 
 local function write(workflow_id: string, items: any, actor: any, from_commands: boolean, history_action: string?): (any?, error?)
@@ -204,6 +204,14 @@ end
 -- result = { events (with seq), head_seq, state, pre_state }.
 function M.apply(workflow_id: string, commands: any, actor: any): (any?, any?)
     return write(workflow_id, commands, actor, true)
+end
+
+-- The caller owns the transaction and commits definition writes with its component.
+function M.apply_tx(tx: any, workflow_id: string, commands: any, actor: any): (any?, error?)
+    if not is_str(workflow_id) then return nil, errors.new({message = "workflow id required", kind = errors.INVALID, retryable = false}) end
+    local runtime_policy, policy_err = policy.policy()
+    if policy_err or not runtime_policy then return nil, policy_err end
+    return write_tx(tx, workflow_id, commands, actor, true, runtime_policy)
 end
 
 -- apply_events(workflow_id, events, actor) -> (result, err). Applies already-formed

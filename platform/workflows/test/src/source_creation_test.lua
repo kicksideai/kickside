@@ -18,6 +18,35 @@ local scaffold = require("scaffold").new({
 })
 
 local function exercise(args: any): any
+    if args.atomic then
+        local store = require("store")
+        local original_project = store.project_event
+        local failed_id = nil
+        store.project_event = function(tx, id, event, seq)
+            failed_id = id
+            local err = original_project(tx, id, event, seq)
+            if err then return err end
+            return errors.new({kind = errors.INTERNAL, message = "injected seed projection failure"})
+        end
+        local key = uuid.v4()
+        local _, failure = repo.create("Atomic source workflow", nil, key, args.source_context)
+        store.project_event = original_project
+        if not failed_id then return nil, "seed projection does not run" end
+        local rows, query_err = repo._component_query({component_ids = {failed_id}, limit = 1})
+        if query_err then return nil, query_err end
+        local failed_state, state_err = workflow.state(failed_id)
+        if state_err then return nil, state_err end
+        local created, create_err = repo.create("Atomic source workflow", nil, key, args.source_context)
+        if create_err then return nil, create_err end
+        local replay, replay_err = repo.create("Replay", nil, key, args.source_context)
+        if replay_err then return nil, replay_err end
+        local state, read_err = workflow.state(replay.id)
+        if read_err then return nil, read_err end
+        local _, delete_err = repo.delete(created.id)
+        if delete_err then return nil, delete_err end
+        return {failure = tostring(failure), remaining = #rows, failed_head = failed_state.head_seq,
+            created = created, replay = replay, state = state}
+    end
     local created, err
     if args.agent then
         local answer
@@ -84,6 +113,24 @@ end
 
 local function define_tests()
     test.describe("source-seeded workflow creation", function()
+        test.it("rolls back failed seeds and replays the same seeded workflow", function()
+            local actor = security.new_actor("source-atomic-" .. uuid.v4(), {})
+            local scope = security.new_scope({security.policy("app:workflows_suite_policy")})
+            local result, err = funcs.new():with_actor(actor):with_scope(scope):call("app:source_creation_exercise", {
+                atomic = true, source_context = {source = "app:source.customer_changed", config = {}},
+            })
+            test.is_nil(err, tostring(err))
+            test.not_nil(result)
+            test.is_true(result.failure:find("injected seed projection failure", 1, true) ~= nil)
+            test.eq(result.remaining, 0, "failed seeding leaves no component")
+            test.eq(result.failed_head, 0, "failed seeding leaves no definition events")
+            test.eq(result.replay.id, result.created.id)
+            test.is_true(result.replay.replayed)
+            test.eq(result.state.counts.nodes, 2)
+            local start = result.state.nodes[1]
+            test.eq(start.kind, "start")
+            test.eq(canonical_json.encode(start.config.input_schema.required), canonical_json.encode({"customer_id", "region"}))
+        end)
         test.it("lowers binding assist into the destination expression environment", function()
             local result = require("assist").assist_binding({
                 source_context_schema = {type = "object", properties = {customer_id = {type = "string"}}},

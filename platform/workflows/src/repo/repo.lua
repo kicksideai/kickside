@@ -14,6 +14,7 @@ local envelope = require("envelope")
 local automation = require("automation")
 local workflow = require("workflow")
 local schema_validate = require("schema_validate")
+local register = require("register")
 
 local M = {}
 type Map = { [string]: any }
@@ -221,16 +222,30 @@ function M.create(title: any, parent_id: any?, supplied_key: any?, source_contex
         if existing then return existing, nil end
     end
 
-    local svc, err = M._open_service()
-    if not svc then return nil, err end
     local name = display_title(title)
-    local res, reg_err = (svc :: any):register({
+    local request = {
         impl_id = types.WORKFLOW_IMPL,
         meta = { title = name, icon = "tabler:route" },
         private_context = {},
         parent_id = (type(parent_id) == "string" and parent_id ~= "") and parent_id or nil,
         component_id = component_id,
-    })
+    }
+    local res, reg_err
+    if input_schema then
+        res = register.handle(request, function(tx: any, _db: any, id: string): (boolean, error?)
+            local _, seed_err = workflow.apply_tx(tx, id, {
+                {type = "node.add", body = {id = "start", kind = "start", title = "Start", config = {input_schema = input_schema}}},
+                {type = "node.add", body = {id = "finish", kind = "finish", title = "Finish", config = {output_schema = {type = "object"}}}},
+                {type = "layout.set-position", body = {node_id = "start", x = 240, y = 80}},
+                {type = "layout.set-position", body = {node_id = "finish", x = 240, y = 340}},
+            }, actor_id())
+            return seed_err == nil, seed_err
+        end)
+    else
+        local svc, err = M._open_service()
+        if not svc then return nil, err end
+        res, reg_err = (svc :: any):register(request)
+    end
     if reg_err or not res or (res :: any).success == false then
         if component_id then
             local existing, existing_err = existing_idempotent_workflow(component_id)
@@ -250,15 +265,6 @@ function M.create(title: any, parent_id: any?, supplied_key: any?, source_contex
         return nil, errors.new({ kind = errors.INTERNAL, message = "workflow create returned no id" })
     end
     local id = tostring(res.component_id)
-    if input_schema then
-        local _, seed_err = workflow.apply(id, {
-            {type = "node.add", body = {id = "start", kind = "start", title = "Start", config = {input_schema = input_schema}}},
-            {type = "node.add", body = {id = "finish", kind = "finish", title = "Finish", config = {output_schema = {type = "object"}}}},
-            {type = "layout.set-position", body = {node_id = "start", x = 240, y = 80}},
-            {type = "layout.set-position", body = {node_id = "finish", x = 240, y = 340}},
-        }, actor_id())
-        if seed_err then return nil, seed_err end
-    end
     return { id = id, title = name }, nil
 end
 

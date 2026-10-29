@@ -13,6 +13,7 @@ entries:
       component: kickside.component:component
       store: kickside.workflows.store:store
       envelope: kickside.component:envelope
+      register: kickside.component.binding:register_component_func
       automation: kickside.automation:automation
       workflow: kickside.workflows:workflow
       schema_validate: kickside.workflows.schema:schema_validate

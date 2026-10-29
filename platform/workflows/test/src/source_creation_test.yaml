@@ -10,6 +10,7 @@ entries:
     modules: [funcs, security, uuid, time]
     imports:
       test: wippy.test:test
+      store: kickside.workflows.store:store
       repo: kickside.workflows.repo:repo
       workflow: kickside.workflows:workflow
       automation: kickside.automation:automation
@@ -33,6 +34,7 @@ entries:
     modules: [funcs, security, uuid, time]
     imports:
       test: wippy.test:test
+      store: kickside.workflows.store:store
       repo: kickside.workflows.repo:repo
       workflow: kickside.workflows:workflow
       automation: kickside.automation:automation
