@@ -25,6 +25,12 @@ function writer.delete(id: string, idempotency_key: string?): (any, any?)
     return data, nil
 end
 
+function writer.resolve_aggregate(params: any): (any, any?)
+    local id, err, outcome = events().resolve_aggregate(params)
+    if not id then return nil, err end
+    return { id = id, outcome = outcome }, nil
+end
+
 -- Discard pending items whose metadata contains every supplied key/value. This is
 -- a lifecycle cleanup seam for owners that created correlated inbox work (for
 -- example, a deleted import session). It folds the owner's current projection and

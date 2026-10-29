@@ -61,6 +61,42 @@ Modules can also enqueue in-process via the `inbox_writer` library. Terminal
 resolution always goes through `inbox_resolve`, which owns action validation and
 callbacks before committing the event.
 
+### Aggregate notices
+
+The writable sink accepts optional `input.aggregate_key` and `input.source_id`
+(also available in destination config). `source_id` names a component. One item
+belongs to the tuple `(source_id, aggregate_key, ambient actor)` across deliveries.
+The actor needs live READ access to that component on every write and read;
+revoked or deleted sources hide their aggregate items from Inbox responses.
+Items without `aggregate_key` keep their existing identity and resolution behavior.
+
+An upsert with `status: pending` (the default) refreshes the title, body, priority
+and metadata and reopens the aggregate. An upsert with `status: resolved`
+explicitly closes it without requiring content. Both use existing `item.version`
+events; resolution returns the writable contract's `updated` receipt. Resolving
+an absent aggregate does not create an item. Replaying a delivery key has no new
+effect, including after a later reopen. Supply a new `idempotency_key` for each
+new snapshot and retain it for retries.
+
+For example, call `kickside.inbox.sink:inbox_sink` through
+`kickside.data:writable.write` with:
+
+```lua
+{ config = {}, sink_op = "upsert", origin = "review-source",
+  idempotency_key = "review-snapshot-3",
+  input = { source_id = component_id, aggregate_key = "pending-review",
+    content = "3 files need review", metadata = { count = 3, link = "/review" } } }
+```
+
+When no work remains, send the same source and key with `status = "resolved"`
+and a new delivery key. Inbox does not infer lifecycle from extension metadata.
+In-process owners can use `inbox_writer.create({ aggregate_key = ..., source_id = ...,
+item_type = ..., title = ..., ... })` and `inbox_writer.resolve_aggregate({
+aggregate_key = ..., source_id = ..., idempotency_key = ... })`.
+Source lifecycle resolution does not invoke human action callbacks. Human
+actions still go through `inbox_resolve`; each refreshed aggregate version has
+its own resolution identity so reopened work can receive a new decision.
+
 Cross-user review delivery requires `inbox.assign` on `user:<assignee>`.
 The application binds `kickside.inbox.security:assignment_security_scope` to its
 administrator group. The default assigner group has no application members.

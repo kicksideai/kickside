@@ -144,7 +144,7 @@ local function external_event(event_type: string, external_id: string, opener: a
     return type(found) == "table" and found.event or nil, nil
 end
 
-function M.resolution_event(id: string, opener: any?): (any?, any?)
+function M.resolution_event(id: string, opener: any?, resolution_id: string?): (any?, any?)
     local owner = actor_id()
     if not owner then return nil, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED, retryable = false }) end
     local thread_id, thread_err = find_thread(owner, opener)
@@ -154,7 +154,7 @@ function M.resolution_event(id: string, opener: any?): (any?, any?)
     if open_err then return nil, open_err end
     local found, err = run:find_event_by_external({
         thread_id = thread_id, event_type = EV.RESOLVED,
-        external_source = M.EXTERNAL_SOURCE, external_id = "resolve:" .. id,
+        external_source = M.EXTERNAL_SOURCE, external_id = resolution_id or ("resolve:" .. id),
         external_version = "1",
     })
     if err then return nil, err end
@@ -221,6 +221,33 @@ function M.claim_delivery(key: string, operation: string, item_id: string, paylo
     return false, errors.new({ message = "idempotency key already used for a different write", kind = errors.CONFLICT, retryable = false })
 end
 
+local function aggregate_identity(source_id: any, key: any): (string?, any?)
+    local owner = actor_id()
+    if not owner then return nil, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED }) end
+    if type(source_id) ~= "string" or source_id == "" or type(key) ~= "string" or key == "" then
+        return nil, errors.new({ message = "aggregate_key and source_id component are required", kind = errors.INVALID })
+    end
+    local _, access_err = component.validate_access(source_id, 1)
+    if access_err then return nil, access_err end
+    -- Length prefixes make the tuple unambiguous even when its parts contain separators.
+    return "aggregate:" .. tostring(#owner) .. ":" .. owner .. ":" .. tostring(#source_id) .. ":" .. source_id .. ":" .. key, nil
+end
+
+function M.resolve_aggregate(params: any): (string?, any?, string?)
+    local id, identity_err = aggregate_identity(params.source_id, params.aggregate_key)
+    if identity_err then return nil, identity_err end
+    local key = type(params.idempotency_key) == "string" and params.idempotency_key ~= "" and params.idempotency_key or uuid.v4()
+    local body = { id = id, source_id = params.source_id, aggregate_key = params.aggregate_key,
+        status = inbox_types.STATUS.RESOLVED, delivery_key = key, resolved_at = os.time() }
+    local claimed, claim_err = M.claim_delivery(key, "resolve", id, {
+        source_id = params.source_id, aggregate_key = params.aggregate_key,
+    })
+    if not claimed then return nil, claim_err end
+    local _, err = append(EV.VERSION, body, "delivery:" .. key, params.trace_context)
+    if err then return nil, err end
+    return id, nil, "updated"
+end
+
 function M.create(params: any, deps: any?): (string?, any?, string?)
     local owner = actor_id()
     if not owner then return nil, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED }) end
@@ -232,14 +259,23 @@ function M.create(params: any, deps: any?): (string?, any?, string?)
     if not declared_type then return nil, type_err end
 
     local id = (type(params.id) == "string" and params.id ~= "") and params.id or uuid.v4()
+    local aggregate_key = params.aggregate_key
+    if aggregate_key ~= nil then
+        local identity_err
+        id, identity_err = aggregate_identity(params.source_id, aggregate_key)
+        if identity_err then return nil, identity_err end
+    end
     local body: { [string]: any } = {
         id = id, item_type = item_type, title = title, content = params.content,
         metadata = type(params.metadata) == "table" and params.metadata or {},
         source_id = params.source_id,
         priority = type(params.priority) == "string" and params.priority or inbox_types.PRIORITY.NORMAL,
         actor_id = owner, created_at = os.time(),
+        aggregate_key = aggregate_key,
+        status = aggregate_key ~= nil and inbox_types.STATUS.PENDING or nil,
     }
     local delivery_key = type(params.idempotency_key) == "string" and params.idempotency_key or ""
+    if aggregate_key ~= nil and delivery_key == "" then delivery_key = uuid.v4() end
     if delivery_key == "" then
         local _, err = append(EV.CREATED, body, "item:" .. id, params.trace_context)
         if err then return nil, err end
@@ -249,6 +285,7 @@ function M.create(params: any, deps: any?): (string?, any?, string?)
     local claimed, claim_err = M.claim_delivery(delivery_key, "upsert", id, {
         item_type = item_type, title = title, content = params.content,
         metadata = body.metadata, source_id = body.source_id, priority = body.priority,
+        aggregate_key = aggregate_key,
     }, opener)
     if not claimed then return nil, claim_err end
     local genesis, genesis_err = external_event(EV.CREATED, "item:" .. id, opener)
@@ -287,13 +324,12 @@ function M._commit_resolution(id: string, status: string, meta: any?): (boolean,
     local resolution_id = type(meta) == "table" and type((meta :: any).resolution_id) == "string"
         and (meta :: any).resolution_id or ""
     if resolution_id == "" then return false, "resolution_id is required", nil end
-    if resolution_id ~= "resolve:" .. id then return false, "resolution_id does not match item id", nil end
-
     local owner = actor_id()
     if not owner then return false, "authenticated actor required", nil end
     local item, gerr = M.get(id)
     if gerr then return false, gerr, nil end
     if not item then return false, inbox_types.ERROR.NOT_FOUND, nil end
+    if resolution_id ~= inbox_types.resolution_id(item) then return false, "resolution_id does not match item version", nil end
     if item.status ~= inbox_types.STATUS.PENDING then return false, inbox_types.ERROR.ALREADY_RESOLVED, nil end
 
     local trace_context = copy_trace_context((item :: any).trace_context)
@@ -370,8 +406,23 @@ function M.reduce(): ({ [string]: any }, any?, any?)
     local items = type(body) == "table" and (body :: any).items or nil
     local counts = type(body) == "table" and (body :: any).counts or nil
     if type(items) == "table" then
-        for _, item in pairs(items) do
-            if type(item) == "table" then object_fields.item(item) end
+        for id, item in pairs(items) do
+            if type(item) == "table" then
+                local access_err
+                if item.aggregate_key ~= nil then
+                    local _
+                    _, access_err = component.validate_access(item.source_id, 1)
+                end
+                if access_err then
+                    if not errors.is(access_err, errors.PERMISSION_DENIED) and not errors.is(access_err, errors.NOT_FOUND) then
+                        return {}, access_err
+                    end
+                    items[id] = nil
+                    counts = nil
+                else
+                    object_fields.item(item)
+                end
+            end
         end
     end
     return (type(items) == "table" and items or {}) :: { [string]: any }, nil,
