@@ -3,15 +3,23 @@ local endpoints = require("endpoints")
 local state = require("state")
 local flow = require("flow")
 local sql = require("sql")
+local json = require("json")
 local oauth_repo = require("oauth_repo")
 local create = require("create")
 local update = require("update")
+local repo = require("repo")
+local dispatcher = require("dispatcher")
+local subjects = require("subjects")
+local funcs = require("funcs")
+local security = require("security")
 
 local function define_tests()
     test.describe("MCP OAuth HTTP authorization", function()
         local client: any
         local extra_clients: { string } = {}
         local code: string?
+        local context_owner: string?
+        local context_credential_id: string?
         local function params(redirect: string): any
             return { response_type = "code", client_id = client.client_id, redirect_uri = redirect,
                 code_challenge = flow.pkce_challenge(string.rep("v", 48)), code_challenge_method = "S256" }
@@ -34,8 +42,14 @@ local function define_tests()
                 local _, err = db:execute("DELETE FROM kickside_mcp_oauth_codes WHERE code_hash=$1", { oauth_repo.code_hash(code) })
                 test.is_nil(err)
             end
+            if context_credential_id then
+                local _, credential_err = db:execute("DELETE FROM kickside_mcp_credentials WHERE credential_id=$1",
+                    { context_credential_id })
+                test.is_nil(credential_err)
+            end
             db:release()
             test.is_nil(delete_err)
+            if context_owner then subjects.remove(context_owner) end
         end)
         test.it("rejects invalid authorize queries before rendering consent or redirect controls", function()
             for _, query in ipairs({ params("https://attacker.example/callback"), {} }) do
@@ -93,6 +107,32 @@ local function define_tests()
                 test.eq(state.result().status, 404, raw)
                 test.eq(state.result().payload.error, "credential not found")
             end
+        end)
+        test.it("passes credential context from management creation to tool calls", function()
+            context_owner = "management-context-" .. client.client_id
+            subjects.put(context_owner, subjects.STATUS.ACTIVE, {})
+            local body = json.encode({
+                label = "tool context",
+                allowed_tool_ids = { "app:dummy_tool" },
+                context = { dropzone_ids = { "cluster-fixture" } },
+            })
+            local owner = security.new_actor(context_owner, { user_id = context_owner, security_groups = {} })
+            local scope = security.new_scope({ security.policy("app:mcp_suite_policy") })
+            local result, call_err = funcs.new():with_actor(owner):with_scope(scope):call("app:credential_context_http_probe", { body = body })
+            test.is_nil(call_err)
+            test.eq(result.status, 200)
+            local credential = result.payload.credential
+            context_credential_id = credential.credential_id
+            local principal, principal_err = repo.resolve_token(credential.token)
+            test.is_nil(principal_err)
+            test.eq(principal.context.dropzone_ids[1], "cluster-fixture")
+
+            local response, status = dispatcher.handle(json.encode({
+                jsonrpc = "2.0", id = 1, method = "tools/call",
+                params = { name = "dummy", arguments = table.create(0, 1) },
+            }), "Bearer " .. credential.token, "management-context")
+            test.eq(status, 200)
+            test.is_false(response.result.isError, response.result.content[1].text)
         end)
         test.it("prevents caching across credential and OAuth response paths", function()
             local function assert_headers(handler: any, query: any, body: any, status: number)
