@@ -79,7 +79,7 @@ local function target(user: string, engine: string): string
     return id
 end
 
-local function upload(user: string): string
+local function upload(user: string, original_only: boolean?): string
     local actor = security.new_actor(user, {})
     local _, provision_err = provision.ensure_user(actor, security.named_scope("wippy.security:process"), user)
     test.is_nil(provision_err, tostring(provision_err))
@@ -87,6 +87,7 @@ local function upload(user: string): string
     upload_ids[#upload_ids + 1] = id
     local _, err = upload_records.create(id, user, #CONTENT, "text/plain", "app:uploads", id .. ".txt", "documents", { filename = "reference.txt" }, "completed")
     test.is_nil(err, tostring(err))
+    if original_only then return id end
     local artifact, artifact_err = artifacts.create_artifact({ upload_id = id, kind = "text", role = "primary", mime_type = "text/plain", content = CONTENT, storage_id = "app:uploads" })
     test.is_nil(artifact_err, tostring(artifact_err))
     test.not_nil(artifact)
@@ -95,20 +96,34 @@ end
 
 local function admit(user: string, id: string, caller: string, refused: boolean?): any
     local args = { kb_id = id, content = CONTENT, content_type = "text/plain", title = "Reference", external_id = "admission:" .. caller, external_version = "v1" }
-    if caller == "content" then
+    if caller == "content" or caller == "existing_upload" then
         local token = assert(session.mint(assert(groups.get_user_with_groups(user)))).token
         local gateway, gateway_err = system.supervisor.state("app:gateway")
         test.is_nil(gateway_err, tostring(gateway_err))
         local port = assert(gateway.details:match(":(%d+)$"))
-        local response, err = http_client.request("POST", "http://127.0.0.1:" .. port .. "/api/knowledge/" .. id .. "/ingest", {
+        local path = "/ingest"
+        if caller == "existing_upload" then
+            path = "/ingest-upload"
+            args = { upload_id = upload(user) }
+        end
+        local response, err = http_client.request("POST", "http://127.0.0.1:" .. port .. "/api/knowledge/" .. id .. path, {
             headers = { Authorization = "Bearer " .. token, ["Content-Type"] = "application/json" }, body = assert(json.encode(args)),
         })
         test.is_nil(err, tostring(err))
-        test.eq(response.status_code, refused and 500 or 200, response.body)
-        return assert(json.decode(response.body))
-    elseif caller == "upload" then
-        local upload_id = upload(user)
-        local result, err = executor(user):call("app:ingest_upload_probe", { kb_id = id, upload_id = upload_id })
+        test.eq(response.status_code, refused and caller == "content" and 500 or 200, response.body)
+        local body = assert(json.decode(response.body))
+        return caller == "existing_upload" and body.results[1] or body
+    elseif caller == "callback" then
+        local result, err = executor(user):call("kickside.knowledge.injection:on_upload_complete", { upload_id = upload(user), params = { kb_id = id } })
+        if refused then
+            test.is_nil(result)
+            test.contains(tostring(err), "content admission refused")
+        else test.is_nil(err, tostring(err)) end
+        return result
+    elseif caller == "upload" or caller == "archive" then
+        local upload_id = upload(user, caller == "archive")
+        local file = caller == "archive" and { metadata = { child_upload_ids = { upload(user) } } } or nil
+        local result, err = executor(user):call("app:ingest_upload_probe", { kb_id = id, upload_id = upload_id, file = file })
         test.is_nil(err, tostring(err))
         if refused then
             test.is_nil(result.result)
@@ -116,7 +131,7 @@ local function admit(user: string, id: string, caller: string, refused: boolean?
         else
             test.not_nil(result.result, result.error)
         end
-        return result.result
+        return caller == "archive" and result.result and result.result.results[1] or result.result
     elseif caller == "reference" then
         args.reference = { component_id = "app:admission_content_provider", context = {} }
         local result, err = executor(user, { component_id = id }):call("kickside.knowledge.binding:embed_reference_func", args)
@@ -152,13 +167,13 @@ local function define_tests()
             end
             users = {}
         end)
-        for _, caller in ipairs({ "content", "upload", "reference", "ingest_trait", "trait" }) do
+        for _, caller in ipairs({ "content", "upload", "archive", "callback", "existing_upload", "reference", "ingest_trait", "trait" }) do
             test.it("returns the binding's refusal for " .. caller, function()
                 local user = owner()
                 local id = target(user, "document")
                 execute("UPDATE kickside_components SET impl_id = 'app:admission_refusing_engine' WHERE component_id = $1", { id })
                 local result = admit(user, id, caller, true)
-                if caller == "content" or caller == "reference" then
+                if caller == "content" or caller == "reference" or caller == "existing_upload" then
                     test.is_false(result.success)
                     test.contains(result.error, "content admission refused")
                 end
@@ -166,7 +181,7 @@ local function define_tests()
             end)
         end
         for _, engine in ipairs({ "document", "wiki", "memory" }) do
-            for _, caller in ipairs({ "content", "upload", "reference", "ingest_trait", "trait" }) do
+            for _, caller in ipairs({ "content", "upload", "archive", "callback", "existing_upload", "reference", "ingest_trait", "trait" }) do
                 test.it("admits " .. caller .. " through the " .. engine .. " binding", function()
                     local user = owner()
                     local id = target(user, engine)
@@ -186,7 +201,7 @@ local function define_tests()
                         test.eq(body.content, CONTENT)
                         test.eq(events[1].external_id, result.external_id)
                         test.not_nil(body.source_ref)
-                        test.not_nil(result.trace_context)
+                        if caller ~= "archive" then test.not_nil(result.trace_context) end
                     else
                         test.eq(#events, 0)
                         local runs = rows("SELECT input FROM kickside_memory_runs WHERE component_id = $1 AND run_type = 'derive'", { id })

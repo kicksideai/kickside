@@ -15,7 +15,6 @@ local uuid = require("uuid")
 local llm = require("llm")
 local prompt = require("prompt")
 local net_safety = require("net_safety")
-local thread_ingest = require("thread_ingest")
 
 local TEXT_TYPES = { "text/html", "text/plain", "text/markdown", "text/csv" }
 local UPLOAD_WAIT_TIMEOUT = "120s"
@@ -148,7 +147,7 @@ local function handle(args)
 
     -- Gate KB access before touching the network, so the tool cannot be used as
     -- an SSRF probe against a KB the caller has no write access to.
-    local _, access_err = component.open(
+    local engine, access_err = component.open(
         kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable"
     )
     if access_err then
@@ -219,7 +218,7 @@ local function handle(args)
             local source_ref = source_ref_for(args, metadata, stored_content_type, title)
             put_default(metadata, "external_id", source_ref.external_id)
             put_default(metadata, "external_version", source_ref.external_version)
-            local queued, ingest_err = thread_ingest.append_content(kb_id, {
+            local queued, ingest_err = assert(engine, "embeddable binding required"):embed_content({
                 content = content,
                 content_type = stored_content_type,
                 title = title,
@@ -228,8 +227,9 @@ local function handle(args)
                 external_version = source_ref.external_version,
                 source_ref = source_ref,
             })
-            if ingest_err then
-                return nil, errors.new({ message = tostring("fetched but ingest enqueue failed: " .. ingest_err), kind = errors.INTERNAL })
+            if ingest_err or not queued or queued.success ~= true then
+                ingest_err = ingest_err or (queued and queued.error)
+                return nil, errors.new({ message = "fetched but ingest enqueue failed: " .. tostring(ingest_err), kind = errors.INTERNAL })
             end
 
             return {
@@ -241,6 +241,7 @@ local function handle(args)
                 kb_id = kb_id,
                 thread_id = queued and queued.thread_id,
                 projection_id = queued and queued.projection_id,
+                run_id = queued and queued.run_id,
                 external_id = queued and queued.external_id,
                 external_version = queued and queued.external_version,
                 trace_context = queued and queued.trace_context,
@@ -357,6 +358,7 @@ local function handle(args)
         kb_id = kb_id,
         thread_id = queued.thread_id,
         projection_id = queued.projection_id,
+        run_id = queued.run_id,
         cursor_id = queued.cursor_id,
         external_source = queued.external_source,
         external_id = queued.external_id or upload_metadata.external_id,
