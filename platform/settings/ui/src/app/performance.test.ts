@@ -27,7 +27,7 @@ let database: string
 beforeEach(() => {
   vi.clearAllMocks(); hooks.listeners.clear(); database = 'sqlite'
   fields = {
-    'worker.count_postgres': { value: 20, source: 'default', fallback: 20 },
+    'worker.count_postgres': { value: 4, source: 'default', fallback: 4 },
     'worker.count_sqlite': { value: 1, source: 'host', fallback: 1 },
     'worker.awaited_slots': { value: 2, source: 'admin', fallback: 1 },
     'worker.claim_batch': { value: 16, source: 'default', fallback: 16 },
@@ -37,7 +37,7 @@ beforeEach(() => {
     'retry.max_attempts': { value: 3, source: 'default', fallback: 3 },
     'retry.retry_after_ms': { value: 1000, source: 'default', fallback: 1000 },
     'retry.max_delay_ms': { value: 900000, source: 'default', fallback: 900000 },
-    'proc.max_execution': { value: '60m', source: 'default', fallback: '60m' },
+    'proc.max_execution': { value: '10m', source: 'default', fallback: '10m' },
   }
   vi.mocked(api.get).mockImplementation(async () => ({ data: { success: true, fields, revision: 1,
     pool: { database, applied_revision: 1, online: true, total: 3, busy: 1, idle: 2, awaited: 1,
@@ -67,7 +67,7 @@ describe('Performance settings', () => {
     expect(wrapper.find('.ap-bar [data-icon="tabler:device-floppy"]').exists()).toBe(true)
     expect(wrapper.get('.ap-bar').find('.kx-btn').exists()).toBe(false)
     expect(wrapper.get('.perf-status .ap-sub').text()).toBe('Tune job throughput, queue fairness and execution limits.')
-    expect(wrapper.get('#proc-max_execution').element).toHaveProperty('value', '60m')
+    expect(wrapper.get('#proc-max_execution').element).toHaveProperty('value', '10m')
     await wrapper.get('#worker-count_postgres').setValue('35')
     await button('Save').trigger('click'); await flushPromises()
     expect(wrapper.get('.ap-bar .ks-saved').text()).toContain('Saved')
@@ -162,7 +162,7 @@ describe('Performance settings', () => {
   it('installs committed fields on a rejected nudge without offering a no-op retry', async () => {
     await render(); await wrapper.get('#worker-count_postgres').setValue('35')
     fields = structuredClone(fields)
-    fields['worker.count_postgres'] = { value: 35, source: 'admin', fallback: 20 }
+    fields['worker.count_postgres'] = { value: 35, source: 'admin', fallback: 4 }
     vi.mocked(api.put).mockRejectedValueOnce({ response: { data: { success: false, committed: true, fields, revision: 2, error: 'notification unavailable' } } })
     await button('Save').trigger('click'); await flushPromises()
     expect(wrapper.text()).toContain('Settings are saved; owner notification failed: notification unavailable')
@@ -229,7 +229,7 @@ describe('Performance settings', () => {
     expect(wrapper.text()).toContain('Pool is unavailable')
     expect(button('Discard').attributes()).toHaveProperty('disabled')
     await button('Reload').trigger('click'); await flushPromises()
-    expect(wrapper.get('#proc-max_execution').element).toHaveProperty('value', '60m')
+    expect(wrapper.get('#proc-max_execution').element).toHaveProperty('value', '10m')
   })
   it('uses shared inputs and only existing accessible descriptions including bounds', async () => {
     await render()
