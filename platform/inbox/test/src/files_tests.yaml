@@ -2,6 +2,19 @@
 version: "1.0"
 namespace: kickside.inbox
 entries:
+  - name: resolve_file_context
+    kind: library.lua
+    source: file://resolve_file_context.lua
+  - name: resolve_files_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }
+    source: file://resolve_files_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      context: kickside.inbox:resolve_file_context
+      subject: kickside.inbox.api:resolve_item
+      files: kickside.inbox:inbox_files
   - name: files_test
     kind: function.lua
     meta: { type: test, suite: kickside_inbox, group: KickSide Inbox }

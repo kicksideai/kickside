@@ -7,7 +7,6 @@ local json = require("json")
 local security = require("security")
 local http_errors = require("http_errors")
 local resolve = require("inbox_resolve")
-local inbox_files = require("inbox_files")
 
 local M = { _modules = {} }
 
@@ -65,13 +64,9 @@ local function handler()
         return
     end
 
-    local visible_files, files_err = inbox_files.list(data.files)
-    if files_err then
-        res:set_status(http_errors.classify(files_err))
-        res:write_json({ success = false, error = tostring(files_err) })
-        return
-    end
-    data.files = visible_files
+    -- The decision is committed. File-provider reads belong to the list API;
+    -- an unavailable preview must not turn this outcome into a failed action.
+    data.files = nil
     res:set_status(h.STATUS.OK)
     res:write_json({ success = true, item = data })
 end
