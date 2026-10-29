@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { api, host } from '@wippy-fe/proxy'
 import Chip from 'primevue/chip'
-import SelectButton from 'primevue/selectbutton'
+import RadioButton from 'primevue/radiobutton'
 import WcMount from '@widgets/app/WcMount.vue'
 import type { Scope } from '../types.ts'
 import { Button, FormField, IconButton, Notice, Pill, Spinner } from './shared'
@@ -20,7 +20,7 @@ const formOpen = ref(false)
 const user = ref('')
 const root = ref('')
 const anyComponent = ref(true)
-const componentChoices = [{ label: 'Any component', value: true }, { label: 'One component', value: false }]
+const componentScopeId = useId()
 const groups = ref<{ id: string; label: string }[]>([])
 const locked = computed(() => saving.value || !!pending.value)
 const canSave = computed(() => !!user.value && groups.value.length > 0 && (anyComponent.value || !!root.value))
@@ -142,10 +142,20 @@ defineExpose({ load: store.load })
             </div>
           </li>
           <li>
-            <FormField label="On which components" help="The person choosing the account must also be able to manage the component.">
-              <SelectButton v-model="anyComponent" :options="componentChoices" option-label="label" option-value="value"
-                :allow-empty="false" :disabled="locked" size="small" aria-label="On which components" />
-            </FormField>
+            <fieldset>
+              <legend class="km-field-label">On which components</legend>
+              <div class="ks-runas-component-options">
+                <label class="ks-runas-component-option" :for="`${componentScopeId}-any`">
+                  <RadioButton v-model="anyComponent" :input-id="`${componentScopeId}-any`" :name="componentScopeId" :value="true" :disabled="locked" />
+                  Any component
+                </label>
+                <label class="ks-runas-component-option" :for="`${componentScopeId}-one`">
+                  <RadioButton v-model="anyComponent" :input-id="`${componentScopeId}-one`" :name="componentScopeId" :value="false" :disabled="locked" />
+                  One component
+                </label>
+              </div>
+              <small class="km-field-help">The person choosing the account must also be able to manage the component.</small>
+            </fieldset>
             <WcMount v-if="!anyComponent" class="ks-runas-component" tag="wc-component-picker" :attrs="{ source: '/api/v1/security/delegations/roots', title: 'Component', placeholder: 'Choose a component you manage…' }" :config="root ? { thread_id: root } : {}" @change="componentChoice" @error="pickerError" />
           </li>
         </ol>
