@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/kicksideai/kickside/compare/component-v0.3.3...component-v0.3.4) (2026-10-29)
+
+
+### Bug Fixes
+
+* **component:** keep trusted existence reads under owner authority ([#240](https://github.com/kicksideai/kickside/issues/240)) ([c998e6c](https://github.com/kicksideai/kickside/commit/c998e6c8da40b5ceacd71bfc9a9d415225977053))
+
 ## [0.3.3](https://github.com/kicksideai/kickside/compare/component-v0.3.2...component-v0.3.3) (2026-10-28)
 
 
