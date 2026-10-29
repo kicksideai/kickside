@@ -761,6 +761,44 @@ local function define_tests()
             test.is_true(errors.is(removed_err, errors.NOT_FOUND))
         end)
 
+        test.it("retains managed delegation attached to an otherwise empty custom group", function()
+            local slug = "managed_delegation_group"
+            local group = consts.CUSTOM_SCOPE_NS .. ":" .. slug
+            local policy_id = "app:projection_managed_delegation"
+            local resource = execution_identity.delegation_bytes("user", "bot-account", "automation-root")
+            local original = assert(registry.current_version())
+            local ok, failure = pcall(function()
+                test.not_nil((store.upsert({slug = slug, policies = {}}, "tester")))
+                test.not_nil((trigger_reconcile.trigger()))
+                local actor = assert(security.new_actor("operator"))
+                test.eq(assert(source_scope.resolve(group)):evaluate(actor, "security.actor.delegate", resource), "undefined")
+                local changes = assert(registry.snapshot()):changes()
+                local declaration = {id = policy_id, kind = "security.policy", meta = {
+                    managed_by = consts.MANAGED_BY, intent = "execution_delegation", active = true},
+                    data = {groups = {group}, policy = {actions = "security.actor.delegate", resources = "*",
+                        effect = "allow", conditions = {{field = "resource", operator = "eq", value = resource}}}}}
+                changes:create(declaration)
+                test.is_nil(select(2, changes:apply()))
+                test.not_nil((trigger_reconcile.trigger()))
+                local scope = assert(source_scope.resolve(group))
+                test.eq(scope:evaluate(actor, "security.actor.delegate", resource), "allow")
+                test.eq(scope:evaluate(actor, "security.actor.delegate", "another-root"), "undefined")
+                test.eq(scope:evaluate(actor, "access", "app:module.endpoint"), "undefined")
+                declaration.meta.active = false
+                declaration.data.policy.conditions[#declaration.data.policy.conditions + 1] = {
+                    field = "resource", operator = "eq", value = ""}
+                changes = assert(registry.snapshot()):changes()
+                changes:update(declaration)
+                test.is_nil(select(2, changes:apply()))
+                test.not_nil((trigger_reconcile.trigger()))
+                test.eq(assert(source_scope.resolve(group)):evaluate(actor, "security.actor.delegate", resource), "undefined")
+            end)
+            test.is_true((store.delete(slug)))
+            test.is_true((registry.apply_version(original)))
+            test.not_nil((trigger_reconcile.trigger()))
+            if not ok then error(failure) end
+        end)
+
         test.it("reconcile projects an enabled DB scope into a security.scope entry", function()
             local res, err = trigger_reconcile.trigger()
             test.is_nil(err)
