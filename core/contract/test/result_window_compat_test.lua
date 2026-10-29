@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local legacy_tool = require("legacy_tool")
 local result_window = require("result_window")
