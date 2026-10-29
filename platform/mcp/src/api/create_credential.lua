@@ -52,6 +52,7 @@ local function handler()
         label = body.label,
         expires_at = body.expires_at,
         policy = policy,
+        context = body.context,
     })
     if not result then
         res:set_status(type(err) == "userdata" and err:kind() == errors.UNAVAILABLE
