@@ -1,7 +1,8 @@
-import { a as ie, u as ue, W as ce, s as me } from "./styles-BCHHd4iE.js";
-import { W, s as pe, a as de, b as Q, P as fe } from "./WcMount-CXaiZg2f.js";
-import { defineComponent as ee, ref as S, computed as q, watch as ve, onMounted as ye, openBlock as o, createElementBlock as r, toDisplayString as b, createCommentVNode as _, Fragment as L, withDirectives as he, vModelText as ke, renderList as H, createElementVNode as m, createBlock as M, resolveDynamicComponent as I, normalizeClass as A, withCtx as V, createTextVNode as X, unref as N, createVNode as R } from "vue";
+import { a as ie, u as ue, W as ce, s as me } from "./styles-DUWI6o6L.js";
+import { s as Q, P as pe } from "./index-GXCRJfhs.js";
+import { defineComponent as ee, ref as S, computed as q, watch as de, onMounted as fe, openBlock as o, createElementBlock as r, toDisplayString as b, createCommentVNode as _, Fragment as L, withDirectives as ve, vModelText as ye, renderList as H, createElementVNode as m, createBlock as M, resolveDynamicComponent as I, normalizeClass as A, withCtx as V, createTextVNode as X, unref as N, createVNode as R } from "vue";
 import { Icon as K } from "@iconify/vue";
+import { W, s as he, a as ke } from "./WcMount-BnlU48df.js";
 import { api as F, define as ge } from "@wippy-fe/proxy";
 const _e = () => ie();
 function be(f) {
@@ -265,10 +266,10 @@ const we = { class: "ks-form" }, xe = {
     async function se() {
       await T();
     }
-    return ve(() => [v.namespace, v.all], T), ye(T), (e, n) => (o(), r("div", we, [
+    return de(() => [v.namespace, v.all], T), fe(T), (e, n) => (o(), r("div", we, [
       w.value ? (o(), r("div", xe, b(w.value), 1)) : _("", !0),
       g.value ? (o(), r("div", Ce, "Loading…")) : k.value.length ? (o(), r(L, { key: 3 }, [
-        f.all ? he((o(), r("input", {
+        f.all ? ve((o(), r("input", {
           key: 0,
           "onUpdate:modelValue": n[0] || (n[0] = (l) => j.value = l),
           type: "search",
@@ -276,7 +277,7 @@ const we = { class: "ks-form" }, xe = {
           "aria-label": "Search settings",
           placeholder: "Search settings"
         }, null, 512)), [
-          [ke, j.value]
+          [ye, j.value]
         ]) : _("", !0),
         (o(!0), r(L, null, H(p.value, (l) => (o(), r("section", {
           key: l.name,
@@ -347,12 +348,12 @@ const we = { class: "ks-form" }, xe = {
                                 tag: t.control.tag,
                                 attrs: { ...t.control.props, value: Y(t, u.value[a(t)]) },
                                 onSelect: (s) => ne(t, s)
-                              }, null, 8, ["tag", "attrs", "onSelect"])) : t.value_type === "bool" ? (o(), M(N(pe), {
+                              }, null, 8, ["tag", "attrs", "onSelect"])) : t.value_type === "bool" ? (o(), M(N(he), {
                                 key: 1,
                                 "model-value": !!u.value[a(t)],
                                 "aria-label": C(t),
                                 "onUpdate:modelValue": (s) => u.value[a(t)] = s
-                              }, null, 8, ["model-value", "aria-label", "onUpdate:modelValue"])) : O(t) ? (o(), M(N(de), {
+                              }, null, 8, ["model-value", "aria-label", "onUpdate:modelValue"])) : O(t) ? (o(), M(N(ke), {
                                 key: 2,
                                 class: A(["ks-select", { "ks-select-invalid": c.value[a(t)] }]),
                                 "model-value": u.value[a(t)],
@@ -592,7 +593,7 @@ class dt extends ce {
     };
   }
   static get vueConfig() {
-    return { rootComponent: ct, plugins: [fe] };
+    return { rootComponent: ct, plugins: [pe] };
   }
 }
 ge(import.meta.url, dt);
