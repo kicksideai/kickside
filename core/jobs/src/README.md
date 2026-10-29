@@ -83,6 +83,12 @@ global limit and the limit for each concurrency key. Both values are read from
 the declared Settings namespace at claim time. Jobs for workers without this
 declaration retain the ordinary single-flight behavior for a concurrency key.
 
+Declarations and limits are observed once per claim/backlog operation; they are
+not cached between operations. Invalid or unavailable declared Settings fail
+admission rather than removing the limit. The declared group must remain stable
+while its jobs are active. Enable declarations only after every Jobs claimant
+sharing that queue has been upgraded to support capacity enforcement.
+
 `jobs.complete_tx` accepts optional `demand_satisfied = true` when the worker proves under its durable source lock that the completed run covers the source head. It consumes ordinary demand received during that run; independent control wakes still rearm the slot. Omission retains the existing demand behavior.
 
 Failure transitions accept an optional final `{ retry_after_ms = milliseconds }`
