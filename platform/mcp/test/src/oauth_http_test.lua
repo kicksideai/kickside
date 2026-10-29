@@ -114,7 +114,8 @@ local function define_tests()
             local body = json.encode({
                 label = "tool context",
                 allowed_tool_ids = { "app:dummy_tool" },
-                context = { dropzone_ids = { "cluster-fixture" } },
+                context = { dropzone_ids = { "cluster-fixture" }, fixture_context = "management-context",
+                    mcp_session_id = "untrusted-session" },
             })
             local owner = security.new_actor(context_owner, { user_id = context_owner, security_groups = {} })
             local scope = security.new_scope({ security.policy("app:mcp_suite_policy") })
@@ -133,6 +134,10 @@ local function define_tests()
             }), "Bearer " .. credential.token, "management-context")
             test.eq(status, 200)
             test.is_false(response.result.isError, response.result.content[1].text)
+            local tool_result, decode_err = json.decode(response.result.content[1].text)
+            test.is_nil(decode_err)
+            test.eq(tool_result.fixture_context, "management-context")
+            test.eq(tool_result.mcp_session_id, "management-context")
         end)
         test.it("prevents caching across credential and OAuth response paths", function()
             local function assert_headers(handler: any, query: any, body: any, status: number)
