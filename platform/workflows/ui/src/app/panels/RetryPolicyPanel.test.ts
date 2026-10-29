@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+/// <reference types="node" />
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest'
 import SelectButton from 'primevue/selectbutton'

@@ -70,6 +70,12 @@ local function validate_tool_config(descriptor_value: Map, config: any): string?
     return nil
 end
 
+-- Returns validated retry/timeout fields with Block defaults applied independently.
+function M.execution_options(descriptor_value: any, instance: any): (Map?, string?)
+    if type(descriptor_value) ~= "table" then return nil, "Block descriptor is required" end
+    return lower.execution_options(descriptor_value, instance)
+end
+
 function M.plan_descriptor(descriptor_value: any, instance: any): (Map?, string?)
     if type(descriptor_value) ~= "table" then return nil, "Block descriptor is required" end
     local declared = descriptor_value :: Map

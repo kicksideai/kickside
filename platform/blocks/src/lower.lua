@@ -32,6 +32,26 @@ local function text(value: any): string
     return type(value) == "string" and value or ""
 end
 
+-- Blocks owns declaration inheritance; Dataflow owns execution-policy validation.
+function M.execution_options(descriptor: any, instance: any): (Map?, string?)
+    local execution = map(map(descriptor).execution)
+    local row = map(instance)
+    local options: Map = {}
+    for _, field in ipairs({ "retry_policy", "start_to_close_timeout", "schedule_to_close_timeout" }) do
+        local value = row[field]
+        if value == nil then value = execution[field] end
+        options[field] = copy(value)
+    end
+    if type(options.retry_policy) == "table" then
+        options.retry_policy = canonical_json.object(options.retry_policy)
+    end
+    local kind = text(execution.kind)
+    local native_kind = (kind == "function" or kind == "tool") and NODE_TYPE.FUNC or kind
+    local _, err = retry.validate(options, native_kind)
+    if err then return nil, err end
+    return options, nil
+end
+
 function M.plan_descriptor(descriptor: any, instance: any): (Map?, string?)
     local row = map(instance)
     local config = type(row.config) == "table" and row.config or {}
@@ -112,16 +132,9 @@ function M.plan_descriptor(descriptor: any, instance: any): (Map?, string?)
     else
         return nil, "unsupported Block execution kind: " .. kind
     end
-    for _, field in ipairs({ "retry_policy", "start_to_close_timeout", "schedule_to_close_timeout" }) do
-        local value = row[field]
-        if value == nil then value = execution[field] end
-        plan.config[field] = copy(value)
-    end
-    if type(plan.config.retry_policy) == "table" then
-        plan.config.retry_policy = canonical_json.object(plan.config.retry_policy)
-    end
-    local _, retry_err = retry.validate(plan.config, plan.node_type)
-    if retry_err then return nil, retry_err end
+    local options, retry_err = M.execution_options(declared, row)
+    if not options then return nil, retry_err end
+    for field, value in pairs(options) do plan.config[field] = value end
     return plan, nil
 end
 

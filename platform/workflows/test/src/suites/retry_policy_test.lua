@@ -162,6 +162,18 @@ local function run()
             local frozen = version_read.get(id, published.version)
             test.eq(native(frozen.compiled_commands).config.retry_policy.maximum_attempts, 3)
         end)
+        test.it("validates retry bounds after inheriting the Block total window", function()
+            local document = {nodes = {{id = "step", kind = "block", ref = "example:bounded",
+                retry_policy = {maximum_attempts = 0}}}}
+            local catalog = {["example:bounded"] = {execution = {kind = "function",
+                function_id = "example:run", schedule_to_close_timeout = "30s"}}}
+            test.eq(#compiler.validate_config_requirements(document, catalog), 0)
+            catalog["example:bounded"].execution.schedule_to_close_timeout = nil
+            local issues = compiler.validate_config_requirements(document, catalog)
+            test.eq(#issues, 1)
+            test.eq(issues[1].node_id, "step")
+            test.contains(issues[1].message, "requires schedule_to_close_timeout")
+        end)
         test.it("refuses publication with shared validation errors attached to the node", function()
             for _, fields in ipairs({ { retry_policy = { maximum_attempts = -1 } },
                 { retry_policy = { maximum_attempts = 0 } },

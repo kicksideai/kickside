@@ -124,6 +124,11 @@ total window includes attempts and backoff. An explicit `maximum_attempts = 0`
 removes the count limit only when a positive `schedule_to_close_timeout` bounds the
 overall retry window.
 
+Opting into retries can repeat external side effects after a lost response or
+interrupted call. Retry-enabled function context includes `attempt` and a stable
+`idempotency_key`; functions that write externally should use that key to deduplicate
+repeated attempts. Calls without a retry policy retain their existing context.
+
 A canvas `block` node carries these three optional fields at the top level, beside
 `ref` and `config`. They never enter the Block's `config_schema`. Function and tool
 steps support them; agent, wait, and structural steps reject retry configuration.

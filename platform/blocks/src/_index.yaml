@@ -14,8 +14,8 @@ entries:
     meta:
       comment: Shared durable execution, nesting, parking, signaling, and recovery engine.
     component: wippy/dataflow
-    # Typed flow/parked-signal inspection is introduced by Dataflow 0.7.31.
-    version: '>=0.7.31'
+    # Native bounded retries and execution timeouts require Dataflow 0.7.33.
+    version: '>=0.7.33'
 
   - name: dep.kickside.contract
     kind: ns.dependency

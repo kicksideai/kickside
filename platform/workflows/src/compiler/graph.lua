@@ -10,6 +10,7 @@
 
 local conditions = require("conditions")
 local retry = require("retry")
+local blocks_lib = require("blocks")
 local mapping = require("mapping")
 local config_schema = require("config_schema")
 local exact_flow_ref = require("flow_ref")
@@ -137,13 +138,15 @@ function M.validate_config_requirements(document: any, blocks: any): { Err }
         local id = str(node.id)
         local kind = str(node.kind)
         local declared = kind == "block" and catalog[str(node.ref)] or nil
-        local execution = type(declared) == "table" and (declared :: Map).execution or nil
-        local execution_kind = type(execution) == "table" and str((execution :: Map).kind) or kind
-        local native_kind = kind == "block" and (execution_kind == "function" or execution_kind == "tool") and "func" or execution_kind
-        if kind ~= "block" or type(declared) == "table" then
-            local _, retry_err = retry.validate(node, native_kind)
-            if retry_err then err(errors, "node_retry_invalid", retry_err, id) end
+        local retry_err: string? = nil
+        if kind == "block" and type(declared) == "table" then
+            local _, issue = blocks_lib.execution_options(declared, node)
+            retry_err = issue
+        elseif kind ~= "block" then
+            local _, issue = retry.validate(node, kind)
+            retry_err = issue
         end
+        if retry_err then err(errors, "node_retry_invalid", retry_err, id) end
         if id ~= "" and type(declared) == "table" and not BOUNDARY_KINDS[kind] then
             local config = type(node.config) == "table" and (node.config :: Map) or {}
             for _, raw_field in ipairs(required_config_fields(declared)) do

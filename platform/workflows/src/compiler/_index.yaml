@@ -24,6 +24,7 @@ entries:
     source: file://graph.lua
     imports:
       retry: userspace.dataflow:retry
+      blocks: kickside.blocks:blocks
       graph_start: kickside.workflows.compiler:graph_start
       graph_edges: kickside.workflows.compiler:graph_edges
       graph_branch: kickside.workflows.compiler:graph_branch

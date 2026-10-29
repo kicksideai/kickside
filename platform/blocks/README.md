@@ -180,6 +180,14 @@ total window includes attempts and backoff. An explicit `maximum_attempts = 0`
 removes the count limit only when a positive `schedule_to_close_timeout` bounds the
 overall retry window.
 
+Opting into retries can repeat external side effects after a lost response or
+interrupted call. Retry-enabled function context includes `attempt` and a stable
+`idempotency_key`; functions that write externally should use that key to deduplicate
+repeated attempts. Calls without a retry policy retain their existing context.
+
+`execution_options(descriptor, instance)` returns the validated effective retry and
+timeout fields, inheriting each omitted field from the Block declaration.
+
 `plan` and `plan_descriptor` accept the same three optional fields on the instance,
 beside `config`. Each instance field replaces its declaration independently; a
 `retry_policy` replaces the whole object. Tool descriptors also lower these fields
