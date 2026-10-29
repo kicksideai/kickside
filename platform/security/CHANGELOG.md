@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/security-v0.2.18...security-v0.2.19) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** isolate role source reads from caller denials ([#233](https://github.com/kicksideai/kickside/issues/233)) ([3ab6915](https://github.com/kicksideai/kickside/commit/3ab6915c56448b63a525ddcf1f8e1f7c460b4d7a))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/security-v0.2.17...security-v0.2.18) (2026-10-29)
 
 

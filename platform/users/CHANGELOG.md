@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.14](https://github.com/kicksideai/kickside/compare/users-v0.2.13...users-v0.2.14) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** isolate role source reads from caller denials ([#233](https://github.com/kicksideai/kickside/issues/233)) ([3ab6915](https://github.com/kicksideai/kickside/commit/3ab6915c56448b63a525ddcf1f8e1f7c460b4d7a))
+
 ## [0.2.13](https://github.com/kicksideai/kickside/compare/users-v0.2.12...users-v0.2.13) (2026-10-29)
 
 
