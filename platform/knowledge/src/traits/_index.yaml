@@ -233,7 +233,6 @@ entries:
     imports:
       util: kickside.knowledge:util
       component: kickside.component:component
-      thread_ingest: kickside.knowledge.injection:thread_ingest
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       ingest_upload: kickside.knowledge.api:ingest_upload
 
