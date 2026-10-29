@@ -59,7 +59,10 @@ return {run = test.run_cases(function()
                 previous[#previous + 1] = assert(security.policy(oracle_id))
             end
             for _, entry in ipairs(assert(registry.find({[".kind"] = "security.policy"}))) do
-                if tostring(entry.id):sub(1, 13) == "app.security:" then
+                -- This proof covers the compaction's original grants. Usage
+                -- tracking is a later capability with separate grant/denial tests.
+                if tostring(entry.id):sub(1, 13) == "app.security:"
+                    and tostring(entry.id) ~= "app.security:user.usage_tracking" then
                     for _, group in ipairs(entry.data.groups or {}) do
                         if group == "app.security:user" then
                             current[#current + 1] = assert(security.policy(tostring(entry.id)))
