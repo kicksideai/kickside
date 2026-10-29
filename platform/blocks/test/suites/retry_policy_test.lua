@@ -38,6 +38,14 @@ local function define_tests()
             test.eq(plan.config.start_to_close_timeout, "1s")
             test.eq(plan.config.schedule_to_close_timeout, "5s")
         end)
+        test.it("bounds a zero attempt limit with the inherited declaration deadline", function()
+            local entry = declaration({kind = "function", function_id = "example:run",
+                schedule_to_close_timeout = "30s"})
+            local plan, err = lower.plan(entry, {retry_policy = {maximum_attempts = 0}})
+            test.is_nil(err)
+            test.eq(plan.config.retry_policy.maximum_attempts, 0)
+            test.eq(plan.config.schedule_to_close_timeout, "30s")
+        end)
         test.it("applies the same native overrides to public tools", function()
             local plan, err = lower.plan_descriptor({ id = "app:public_tool_table", execution = {
                 kind = "tool", tool_id = "app:public_tool_table" } }, { retry_policy = { maximum_attempts = 2 },
