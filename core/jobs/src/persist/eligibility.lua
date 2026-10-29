@@ -41,7 +41,7 @@ end
 -- The preliminary read is bounded by registered worker references. Settings are
 -- read only for their currently due groups; a group arriving later is observed
 -- on the next operation, just like a job arriving after the count statement.
-function M.pending(db: sql.DB, dbtype: string, at: string?, snapshot: table): (table?, error?)
+function M.pending(db: sql.DB, dbtype: string, at: string?, snapshot: table, job_types: {string}?): (table?, error?)
     local catalog, catalog_err = snapshot.catalog()
     if catalog_err or not catalog then return nil, catalog_err end
     local params: { any } = {}
@@ -69,11 +69,22 @@ function M.pending(db: sql.DB, dbtype: string, at: string?, snapshot: table): (t
         local target = worker_target(nil, dbtype)
         prefix = (prefix ~= "" and prefix .. ", " or "WITH ")
             .. "capacity_workers(worker_ref,capacity_group) AS (VALUES " .. table.concat(values, ",") .. ")"
+        local scope = ""
+        local read_params: { any } = {}
+        for _, value in ipairs(params) do read_params[#read_params + 1] = value end
+        if job_types then
+            local marks: {string} = {}
+            for _, job_type in ipairs(job_types) do
+                read_params[#read_params + 1] = job_type
+                marks[#marks + 1] = "$" .. tostring(#read_params)
+            end
+            scope = #marks > 0 and " AND job_type IN (" .. table.concat(marks, ",") .. ")" or " AND 1=0"
+        end
         local rows, read_err = db:query(prefix .. " SELECT " .. target .. [[ AS worker_ref,
                    MIN(capacity_group) AS admitted_min, MAX(capacity_group) AS admitted_max,
                    MAX(CASE WHEN concurrency_key IS NULL OR concurrency_key='' THEN 1 ELSE 0 END) AS invalid_key
             FROM kickside_job WHERE status='pending' AND scheduled_at <= ]] .. now .. [[
-              AND ]] .. target .. " IN (SELECT worker_ref FROM capacity_workers) GROUP BY " .. target, params)
+              AND ]] .. target .. " IN (SELECT worker_ref FROM capacity_workers)" .. scope .. " GROUP BY " .. target, read_params)
         rows, read_err = boundary.bounded_rows(rows, read_err, "backlog capacity lookup failed",
             "backlog.workers", 0, #workers, response_error)
         if read_err then return nil, read_err end

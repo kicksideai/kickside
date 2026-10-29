@@ -445,7 +445,9 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
     end
     local now = lifecycle.now_string(dbtype)
     local capacity_snapshot = capacity.snapshot()
-    local pending, pending_err = eligibility.pending(db, dbtype, now, capacity_snapshot)
+    local pending_types = job_type_set
+    if reservation and reservation.general_capacity == 0 then pending_types = reservation.awaited_types end
+    local pending, pending_err = eligibility.pending(db, dbtype, now, capacity_snapshot, pending_types)
     if pending_err or not pending then return nil, pending_err end
     local rows, read_err = candidate_rows(db, n, job_type_set, reservation, pending)
     if read_err then return nil, read_err end

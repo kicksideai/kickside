@@ -71,6 +71,8 @@ entries:
     test: wippy.test:test
     job_types: kickside.core.jobs:types
     claim: kickside.core.jobs.persist:claim
+    capacity: kickside.core.jobs:capacity
+    eligibility: kickside.core.jobs.persist:eligibility
     lifecycle: kickside.core.jobs.persist:lifecycle
     job_fixture: app:job_fixture
 - name: attempt_budget_test
