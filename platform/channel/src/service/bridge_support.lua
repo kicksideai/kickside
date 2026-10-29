@@ -182,7 +182,7 @@ end
 
 -- Forward a turn to the session. Provider attachments are retained for trace,
 -- while materialized upload IDs are what the session stores and tools read.
-local function send_session_message(session_pid: string, text: string, attachments: { any }?, file_uuids: { string }?): (boolean, any?)
+local function send_session_message(session_pid: string, text: string, attachments: { any }?, file_uuids: { string }?, author: Map): (boolean, any?)
     local data: Map = { text = text }
     if type(attachments) == "table" and #(attachments :: { any }) > 0 then
         data.attachments = attachments
@@ -190,7 +190,7 @@ local function send_session_message(session_pid: string, text: string, attachmen
     if type(file_uuids) == "table" and #(file_uuids :: { string }) > 0 then
         data.file_uuids = file_uuids
     end
-    return process.send(session_pid, session_consts.TOPICS.MESSAGE :: string, { data = data })
+    return process.send(session_pid, session_consts.TOPICS.MESSAGE :: string, { data = data, author = author })
 end
 
 local function copy_table(value: any): Map
