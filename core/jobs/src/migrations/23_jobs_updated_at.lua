@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 return require("migration").define(function()
     migration("23 Jobs owns updated_at", function()
         database("postgres", function()
