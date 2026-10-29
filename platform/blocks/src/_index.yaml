@@ -14,9 +14,8 @@ entries:
     meta:
       comment: Shared durable execution, nesting, parking, signaling, and recovery engine.
     component: wippy/dataflow
-    # The application lock must pin Dataflow at 0.7.8 or newer for resume
-    # reconstruction, nil-absent named inputs, and the reserved max_iterations input.
-    version: '*'
+    # Native bounded retries and execution timeouts require Dataflow 0.7.33.
+    version: '>=0.7.33'
 
   - name: dep.kickside.contract
     kind: ns.dependency
@@ -50,6 +49,8 @@ entries:
       comment: Strict kickside.block/v1 declaration and instance validation.
     source: file://contract.lua
     modules: [json]
+    imports:
+      retry: userspace.dataflow:retry
 
   - name: flow_contract
     kind: library.lua
@@ -67,6 +68,8 @@ entries:
     source: file://lower.lua
     modules: [registry, json]
     imports:
+      retry: userspace.dataflow:retry
+      canonical_json: kickside.contract:canonical_json
       contract: kickside.blocks:contract
       tool_adapter: kickside.blocks:tool_adapter
 
@@ -167,7 +170,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      destination: kickside.blocks.internal:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: resume_under_identity
@@ -180,7 +183,7 @@ entries:
     modules: [funcs, security]
     imports:
       client: userspace.dataflow:client
-      dataflow_repo: userspace.dataflow.persist:dataflow_repo
+      destination: kickside.blocks.internal:signal_destination
       execution_frame: userspace.dataflow:execution_frame
 
   - name: process_host
@@ -198,3 +201,13 @@ entries:
     source: file://review_signal.lua
     imports:
       dataflow_repo: userspace.dataflow.persist:dataflow_repo
+
+  - name: authorize_arm
+    kind: function.lua
+    meta:
+      comment: Authorizes an external Block arm under the current actor for an owned pending parked signal.
+    source: file://authorize_arm.lua
+    method: authorize
+    modules: [security]
+    imports:
+      destination: kickside.blocks.internal:signal_destination

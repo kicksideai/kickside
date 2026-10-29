@@ -91,6 +91,7 @@ entries:
       user_authority: kickside.users:user_authority
       session_metadata: kickside.users:session_metadata
       credential_eligibility: kickside.users.persist:credential_eligibility
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
 
   - name: credential_subject_lookup
     kind: function.lua
@@ -106,6 +107,7 @@ entries:
         - kickside.users.security:resolve_scope_groups
     imports:
       credential_eligibility: kickside.users.persist:credential_eligibility
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
       consts: kickside.users:consts
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_authority: kickside.users:user_authority

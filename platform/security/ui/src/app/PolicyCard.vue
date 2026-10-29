@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import type { Policy } from '../types.ts'
+import Pill from './shared/Pill.vue'
 
 // A policy card showing title (or short id) + comment. Used in the palette
 // (mode=palette, "+" to add, draggable), inside a scope (mode=selected, "x" to
@@ -31,7 +32,6 @@ function asList(v: unknown): string[] {
 
 const actions = computed(() => asList(props.policy.actions))
 const resources = computed(() => asList(props.policy.resources))
-const hasDetail = computed(() => !!props.policy.effect || actions.value.length > 0 || resources.value.length > 0 || !!props.policy.surface)
 </script>
 
 <template>
@@ -48,29 +48,29 @@ const hasDetail = computed(() => !!props.policy.effect || actions.value.length >
       <div class="ks-pcard-body">
         <div class="ks-pcard-head">
           <span class="ks-pcard-title" :title="policy.title || shortId(policy.id)">{{ policy.title || shortId(policy.id) }}</span>
-          <span v-if="policy.effect" class="ks-eff" :class="policy.effect">{{ policy.effect }}</span>
+          <Pill v-if="policy.effect" :severity="policy.effect === 'allow' ? 'success' : policy.effect === 'deny' ? 'danger' : 'secondary'">{{ policy.effect }}</Pill>
         </div>
         <div v-if="policy.comment" class="ks-pcard-comment">{{ policy.comment }}</div>
-        <div class="ks-pcard-id" :title="policy.id">{{ policy.id }}</div>
       </div>
       <button
-        v-if="hasDetail"
         class="ks-pcard-act detail"
         :class="{ open: expanded }"
-        :aria-label="expanded ? 'Hide details' : 'Show details'"
+        :aria-label="`${expanded ? 'Hide' : 'Show'} details for ${policy.title || shortId(policy.id)}`"
+        :aria-expanded="expanded"
         @click.stop="expanded = !expanded"
       >
         <Icon icon="tabler:chevron-right" aria-hidden="true" />
       </button>
-      <button v-if="mode === 'palette'" class="ks-pcard-act add" aria-label="Add policy" @click.stop="emit('add')">
+      <button v-if="mode === 'palette'" class="ks-pcard-act add" :aria-label="`Add permission ${policy.title || shortId(policy.id)}`" @click.stop="emit('add')">
         <Icon icon="tabler:plus" aria-hidden="true" />
       </button>
-      <button v-else-if="mode === 'selected'" class="ks-pcard-act remove" aria-label="Remove policy" @click.stop="emit('remove')">
+      <button v-else-if="mode === 'selected'" class="ks-pcard-act remove" :aria-label="`Remove permission ${policy.title || shortId(policy.id)}`" @click.stop="emit('remove')">
         <Icon icon="tabler:x" aria-hidden="true" />
       </button>
     </div>
 
     <div v-if="expanded" class="ks-pcard-detail">
+      <div class="ks-pcard-kv"><span>Policy ID</span><code>{{ policy.id }}</code></div>
       <div v-if="policy.surface || policy.intent" class="ks-pcard-kv">
         <span>Surface</span><code>{{ policy.surface || policy.intent }}</code>
       </div>

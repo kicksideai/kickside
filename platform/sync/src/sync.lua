@@ -263,7 +263,8 @@ function M.reconfigure(args: any): (Map?, any)
     local cur = current :: Map
     local cur_sink = type(cur.sink) == "table" and (cur.sink :: Map) or {}
     if cur_sink.port ~= (s.sink :: Map).port then return nil, invalid("destination changes require reinstalling the data sync") end
-    if cur.reconcile ~= s.reconcile then return nil, invalid("reconcile changes require reinstalling the data sync") end
+    -- Legacy event syncs omit this flag; absence means reconciliation is disabled.
+    if (cur.reconcile == true) ~= s.reconcile then return nil, invalid("reconcile changes require reinstalling the data sync") end
     local declaration = copy(input)
     declaration.component_id = nil
     local meta = public_state(p, input.trigger :: Map)

@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.3.6](https://github.com/kicksideai/kickside/compare/uploads-v0.3.5...uploads-v0.3.6) (2026-10-29)
+
+
+### Bug Fixes
+
+* **uploads:** read original upload content and canonical artifact metadata ([#207](https://github.com/kicksideai/kickside/issues/207)) ([55ab0cc](https://github.com/kicksideai/kickside/commit/55ab0cc08dc67de4ddea699880d55e23b0370257))
+
+## [0.3.5](https://github.com/kicksideai/kickside/compare/uploads-v0.3.4...uploads-v0.3.5) (2026-10-28)
+
+
+### Features
+
+* **uploads:** add preview deep links ([#170](https://github.com/kicksideai/kickside/issues/170)) ([4bebf64](https://github.com/kicksideai/kickside/commit/4bebf64776be18aea2b203a8de044741a73ffb0d))
+
+
+### Bug Fixes
+
+* **uploads:** return native errors from provider bindings ([#202](https://github.com/kicksideai/kickside/issues/202)) ([1ce679f](https://github.com/kicksideai/kickside/commit/1ce679f4c11adebfc53cbe491c5cb97056a2c33c))
+
+## [0.3.4](https://github.com/kicksideai/kickside/compare/uploads-v0.3.3...uploads-v0.3.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **uploads:** enforce component read access in content providers ([#171](https://github.com/kicksideai/kickside/issues/171)) ([a6bc32c](https://github.com/kicksideai/kickside/commit/a6bc32c25f3217100d78de0bf03d502f91ea5c95))
+
+## [0.3.3](https://github.com/kicksideai/kickside/compare/uploads-v0.3.2...uploads-v0.3.3) (2026-10-28)
+
+
+### Features
+
+* **uploads:** mark PDF pages and PPTX slides in document markdown ([95a4330](https://github.com/kicksideai/kickside/commit/95a433048cae3e5bfc8904d9d8df91efb4dba001))
+* **uploads:** mark PDF pages and PPTX slides in document markdown ([466fb75](https://github.com/kicksideai/kickside/commit/466fb75c838e675b0c662b8c20d595509ee44ea2))
+
 ## [0.3.2](https://github.com/kicksideai/kickside/compare/uploads-v0.3.1...uploads-v0.3.2) (2026-10-27)
 
 

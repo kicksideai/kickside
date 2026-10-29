@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.2.26](https://github.com/kicksideai/kickside/compare/kickside-v0.2.25...kickside-v0.2.26) (2026-10-29)
+
+
+### Bug Fixes
+
+* **app:** require repaired security and update dependencies ([#238](https://github.com/kicksideai/kickside/issues/238)) ([c7966a4](https://github.com/kicksideai/kickside/commit/c7966a4b271157e544fb5c6251ae289c35f0717e))
+* **release:** publish companion artifacts before the application ([#235](https://github.com/kicksideai/kickside/issues/235)) ([f489bbd](https://github.com/kicksideai/kickside/commit/f489bbde8e55aae216c30d82a15631659197dcbd))
+
+## [0.2.25](https://github.com/kicksideai/kickside/compare/kickside-v0.2.24...kickside-v0.2.25) (2026-10-29)
+
+
+### Bug Fixes
+
+* **app:** allow canonical usage tracking for signed-in sessions ([#223](https://github.com/kicksideai/kickside/issues/223)) ([aef425c](https://github.com/kicksideai/kickside/commit/aef425c8d732615dcbfeb19e29c1b98074f16459))
+* **app:** keep overflowing navigation and account menus usable ([#217](https://github.com/kicksideai/kickside/issues/217)) ([1d9c3c4](https://github.com/kicksideai/kickside/commit/1d9c3c4c2873c36c57be4ddba559557cba60351e))
+* **app:** limit chat flap clicks to the visible tab ([#203](https://github.com/kicksideai/kickside/issues/203)) ([59cdc12](https://github.com/kicksideai/kickside/commit/59cdc12044d771ead56f529aeac011264314d900))
+* preserve composed scopes across chat and Inbox review ([#220](https://github.com/kicksideai/kickside/issues/220)) ([8c16715](https://github.com/kicksideai/kickside/commit/8c167155d4f77d81948b3148284d1f0bd34f30c2))
+* **release:** require companion artifacts before application publication ([#224](https://github.com/kicksideai/kickside/issues/224)) ([f76687b](https://github.com/kicksideai/kickside/commit/f76687bf122da7a913e1bfb5bc2402b8b6ca8d54))
+
+## [0.2.24](https://github.com/kicksideai/kickside/compare/kickside-v0.2.23...kickside-v0.2.24) (2026-10-28)
+
+
+### Bug Fixes
+
+* **app:** require deferred sharing continuity in Users ([d09914e](https://github.com/kicksideai/kickside/commit/d09914efe05fc7057679cec19666a5a33d3c718d))
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+* **ui:** derive primary action contrast ([#190](https://github.com/kicksideai/kickside/issues/190)) ([30058be](https://github.com/kicksideai/kickside/commit/30058be3701af2b5c6e9a47af1b111db22538f90))
+* **users:** preserve deferred sharing after role consolidation ([102c926](https://github.com/kicksideai/kickside/commit/102c926b2bea879ab25cbf540c364bb7579e7394))
+
+## [0.2.23](https://github.com/kicksideai/kickside/compare/kickside-v0.2.22...kickside-v0.2.23) (2026-10-28)
+
+
+### Features
+
+* **settings:** support shared picker value controls ([#177](https://github.com/kicksideai/kickside/issues/177)) ([8a883eb](https://github.com/kicksideai/kickside/commit/8a883eb7122f80e24c09c9f0ebce0f3b68cf4ced))
+
+
+### Bug Fixes
+
+* **app:** keep hosted surface controls clear of the chat handle ([#172](https://github.com/kicksideai/kickside/issues/172)) ([2c074da](https://github.com/kicksideai/kickside/commit/2c074da2adc3a97072043647aa800e535a9eec45))
+
+## [0.2.22](https://github.com/kicksideai/kickside/compare/kickside-v0.2.21...kickside-v0.2.22) (2026-10-28)
+
+
+### Bug Fixes
+
+* **app:** check page stylesheet fonts before release ([#166](https://github.com/kicksideai/kickside/issues/166)) ([4812e02](https://github.com/kicksideai/kickside/commit/4812e020e47d4a9b590060e83b3319b2a63a6e27))
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/kickside-v0.2.20...kickside-v0.2.21) (2026-10-23)
 
 

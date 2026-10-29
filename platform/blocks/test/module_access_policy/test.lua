@@ -11,7 +11,10 @@ local function composed_scope(root: string): any
         assert(not err, tostring(err))
         assert(entry, id)
         policies[#policies + 1] = assert(security.policy(id))
-        for _, child in ipairs(entry.meta.includes or {}) do include(child) end
+        for _, child in ipairs(entry.meta.includes or {}) do
+            if type(child) ~= "string" or child == "" then error("Included policy ID must be a non-empty string") end
+            include(child)
+        end
     end
     include(root)
     return assert(security.new_scope(policies))
@@ -26,7 +29,9 @@ local function define_tests()
             test.not_nil(declaration)
             local expected = {
             }
-            local runtime, runtime_err = registry.get(declaration.meta.includes[1])
+            local runtime_id = declaration.meta.includes[1]
+            if type(runtime_id) ~= "string" or runtime_id == "" then error("Runtime policy ID must be a non-empty string") end
+            local runtime, runtime_err = registry.get(runtime_id)
             test.is_nil(runtime_err)
             test.not_nil(runtime)
             test.is_true(#declaration.data.policy.resources > 0)
@@ -37,7 +42,7 @@ local function define_tests()
             test.eq(#declaration.data.policy.actions, #runtime.data.policy.actions)
             for index, action in ipairs(runtime.data.policy.actions) do
                 test.eq(declaration.data.policy.actions[index], action)
-                test.is_true(action ~= "access", action)
+                test.is_true(action ~= "access", tostring(action))
             end
             test.eq(declaration.data.policy.effect, runtime.data.policy.effect)
             local runtime_policy, runtime_policy_err = security.policy(tostring(runtime.id))

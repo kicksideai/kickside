@@ -21,7 +21,8 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.54a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -76,6 +77,15 @@ Storage integrations use the existing `storage_adapter`, `processing_hooks` and
 granting exact native-resource access to Uploads' reads and processing. It owns
 its Settings policy and endpoints; it does not install by default. Uploads depends
 on neither Settings nor a specific storage extension.
+
+Upload get and list responses also supply optional `view_url`, a stable relative app path
+(`/uploads/<upload UUID>`). The Uploads page opens the existing preview
+drawer directly from this link, including files outside the current list page.
+Opening or closing a preview updates the host URL. Reading a linked file uses
+the same upload READ permission as the upload endpoint. Missing or inaccessible
+files show an unavailable message. If the host navigation entry cannot be read or
+has no usable path, the API omits `view_url` and still returns the authorized file
+data and delivery URLs.
 
 Authorized original and artifact responses supply `raw_url`: an expiring signed
 S3 URL or the authenticated raw endpoint for filesystem content. The existing raw

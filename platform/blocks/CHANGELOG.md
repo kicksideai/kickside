@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.43](https://github.com/kicksideai/kickside/compare/blocks-v0.1.42...blocks-v0.1.43) (2026-10-29)
+
+
+### Features
+
+* **blocks:** support bounded native retries and execution timeouts ([#231](https://github.com/kicksideai/kickside/issues/231)) ([f71bd38](https://github.com/kicksideai/kickside/commit/f71bd38b1a94eb8549aa78d626976ce1a8523e9c))
+
+## [0.1.42](https://github.com/kicksideai/kickside/compare/blocks-v0.1.41...blocks-v0.1.42) (2026-10-28)
+
+
+### Bug Fixes
+
+* **blocks:** preserve resume errors and validate arm ownership ([#168](https://github.com/kicksideai/kickside/issues/168)) ([81919a8](https://github.com/kicksideai/kickside/commit/81919a8c3c0220fb523f21e2c9965ea2402c0d17))
+
+## [0.1.41](https://github.com/kicksideai/kickside/compare/blocks-v0.1.40...blocks-v0.1.41) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.1.40](https://github.com/kicksideai/kickside/compare/blocks-v0.1.39...blocks-v0.1.40) (2026-10-25)
 
 

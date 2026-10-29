@@ -78,6 +78,19 @@ local function define_tests()
         exec = funcs.new():with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE))
     end)
 
+    test.it("rejects a selected component of another source kind through install", function()
+        local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+        local wrong, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:schema_record_feed",
+            external_ref = "wrong-source:" .. uuid.v4(), title = "Other feed kind" })
+        test.is_nil(create_err, tostring(create_err))
+        local result, err = install(declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
+            config = { thread_id = wrong.thread_id }, backfill = "none" } }))
+        test.is_nil(result)
+        test.is_true(errors.is(err, errors.INVALID), tostring(err))
+        test.eq(err:details().code, "source_kind_mismatch")
+        test.eq(err:details().field, "trigger.config.thread_id")
+    end)
+
     test.describe("kickside.sync declarations", function()
         test.it("remains a native Data Sync Automation with its own create surface", function()
             local entry = registry.get("kickside.sync:sync") :: any
@@ -121,12 +134,16 @@ local function define_tests()
         end)
 
         test.it("uses the normalized selected instance for its schema and event source", function()
+            local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:schema_record_feed",
+                external_ref = "normalized-source:" .. uuid.v4(), title = "Schema feed" })
+            test.is_nil(create_err, tostring(create_err))
             local result, err = exec:call("kickside.sync:sync_install", declaration({
                 trigger = { v = 2, source = "app.fixture:selected_schema_record", backfill = "none",
-                    config = { thread_id = "  selected-feed  " } },
+                    config = { thread_id = "  " .. created.thread_id .. "  " } },
             }))
             test.is_nil(err, tostring(err))
-            test.eq(result.source.source_thread_id, "selected-feed")
+            test.eq(result.source.source_thread_id, created.thread_id)
         end)
 
         test.it("keeps destination-configured content in expression mapping validation", function()
@@ -306,7 +323,7 @@ local function define_tests()
 
         test.it("declares an events source as an event drive on its thread from its history boundary", function()
             local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
-            local created, created_err = threads:upsert({ thread_class = "automation", external_ref = "sync-kind:" .. uuid.v4(), title = "Upstream" })
+            local created, created_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed", external_ref = "sync-kind:" .. uuid.v4(), title = "Upstream" })
             test.is_nil(created_err, tostring(created_err))
             local thread_id = tostring(created.thread_id)
             local installed, err = install(declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
@@ -354,6 +371,30 @@ local function define_tests()
     end)
 
     test.describe("kickside.sync reconfigure", function()
+        test.it("edits a legacy sync with no stored reconcile flag", function()
+            local installed = install_ok(declaration({ enabled = false }))
+            local db, db_err = sql.get(DB)
+            test.is_nil(db_err)
+            local rows, read_err = db:query("SELECT private_context FROM kickside_components WHERE component_id = $1", { installed.id })
+            test.is_nil(read_err)
+            local state = rows[1].private_context
+            if type(state) == "string" then state = json.decode(state) end
+            state.reconcile = nil
+            local _, write_err = db:execute("UPDATE kickside_components SET private_context = $1, context_revision = context_revision + 1 WHERE component_id = $2", { json.encode(state), installed.id })
+            db:release()
+            test.is_nil(write_err)
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ title = "Legacy sync edited", enabled = false }) })
+            test.is_nil(err, tostring(err))
+            test.not_nil(result)
+            local saved, saved_err = automations_lib.read_state(installed.id)
+            test.is_nil(saved_err)
+            test.eq(saved.title, "Legacy sync edited")
+            test.eq(saved.reconcile, false)
+            test.is_nil(read_drive(installed.id, "reconcile"))
+            test.eq((read_drive(installed.id, "main") :: Map).enabled, false)
+        end)
+
         test.it("refuses opaque edits without holding a source change pending", function()
             local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
                 resource_id = uuid.v7(), config = { resource = "first" } }

@@ -1,21 +1,21 @@
-import { ax as st, an as at, a0 as it, ap as lt, V as ee, a5 as de, H as Ce, X as ne, ai as rt, aq as ct, ag as ut, af as dt, ah as pt, au as mt, av as ft, aw as bt } from "./styles-Dj1TheLX.js";
-import { ref as z, computed as R, defineComponent as vt, onMounted as gt, onBeforeUnmount as ht, openBlock as b, createElementBlock as v, unref as e, createVNode as I, createElementVNode as n, toDisplayString as m, createCommentVNode as V, Fragment as fe, renderList as ge, createTextVNode as ue, normalizeClass as he, withDirectives as Ve, withKeys as yt, withModifiers as kt, vModelText as Fe, normalizeStyle as je } from "vue";
+import { al as st, ab as at, K as it, ad as lt, u as ee, N as de, q as Ce, w as ne, a6 as rt, ae as ct, a4 as ut, a3 as dt, a5 as mt, ai as pt, aj as ft, ak as bt } from "./styles-DQ3QkZVh.js";
+import { ref as z, computed as R, defineComponent as vt, onMounted as gt, onBeforeUnmount as ht, openBlock as b, createElementBlock as v, unref as e, createVNode as I, createElementVNode as n, toDisplayString as p, createCommentVNode as j, Fragment as fe, renderList as ge, createTextVNode as ue, normalizeClass as he, withDirectives as je, withKeys as yt, withModifiers as kt, vModelText as Fe, normalizeStyle as Ve } from "vue";
 import { Icon as P } from "@iconify/vue";
 import { api as Oe, define as wt } from "@wippy-fe/proxy";
 const _t = () => st();
-function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandidates: t, candidateKey: a, candidateById: p, queuedLabel: u, profileParameters: y, loadInstalled: f, apiMessage: S }) {
+function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandidates: t, candidateKey: a, candidateById: m, queuedLabel: u, profileParameters: y, loadInstalled: f, apiMessage: S }) {
   const g = z([]), h = z(!1), M = z(0), O = z(0), F = z([]), H = /* @__PURE__ */ new Map();
   function J(w) {
     return g.value.some((C) => C.toLowerCase() === a(w));
   }
-  function pe(w) {
+  function me(w) {
     const C = ee(w).trim(), E = C.toLowerCase();
-    !C || !p(C) || h.value || (g.value = J(w) ? g.value.filter((B) => B.toLowerCase() !== E) : [...g.value, C], N());
+    !C || !m(C) || h.value || (g.value = J(w) ? g.value.filter((B) => B.toLowerCase() !== E) : [...g.value, C], N());
   }
   function le(w) {
     const C = [...g.value], E = new Set(C.map((B) => B.toLowerCase()));
     for (const B of w) {
-      const A = p(B);
+      const A = m(B);
       if (!A) continue;
       const T = ee(A).trim(), G = T.toLowerCase();
       !T || E.has(G) || (E.add(G), C.push(T));
@@ -25,7 +25,7 @@ function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandi
   function N() {
     M.value = 0, O.value = 0, F.value = [];
   }
-  function j(w, C, E) {
+  function V(w, C, E) {
     const B = w.toLowerCase();
     F.value = F.value.map((A) => A.component.toLowerCase() === B ? { ...A, status: C, message: E } : A);
   }
@@ -46,7 +46,7 @@ function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandi
       let B = !1;
       g.value = [];
       for (const A of C) {
-        j(A, "installing");
+        V(A, "installing");
         try {
           const T = A.toLowerCase();
           let G = H.get(T);
@@ -55,9 +55,9 @@ function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandi
               component: A,
               run_migrations: !0,
               ...oe?.length ? { parameters: oe } : {}
-            }, me = Date.now() + 15e3;
+            }, pe = Date.now() + 15e3;
             for (; !(await o.securityProjectionStatus()).current; ) {
-              const L = me - Date.now();
+              const L = pe - Date.now();
               if (L <= 0) throw new Error("Security permissions do not become current after installation.");
               await new Promise((K) => setTimeout(K, Math.min(250, L)));
             }
@@ -77,10 +77,10 @@ function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandi
           await lt(o, G), H.delete(T);
         } catch (T) {
           const G = S(T, "Install failed.");
-          j(A, "failed", G), E.push(A);
+          V(A, "failed", G), E.push(A);
           continue;
         }
-        j(A, "installed"), i.value++, M.value++, window.dispatchEvent(new CustomEvent("kickside:modules-changed")), window.dispatchEvent(new CustomEvent("kickside:nav-changed"));
+        V(A, "installed"), i.value++, M.value++, window.dispatchEvent(new CustomEvent("kickside:modules-changed")), window.dispatchEvent(new CustomEvent("kickside:nav-changed"));
         try {
           await f(), q();
         } catch {
@@ -101,7 +101,7 @@ function Ct({ hub: o, installed: l, installedCount: i, error: s, selectableCandi
       });
     }
   }
-  return { queue: g, advancing: h, queueCompleted: M, queueTotal: O, queueLedger: F, toggleQueued: pe, addQueued: le, isQueued: J, resetRunProgress: N, setLedgerStatus: j, reconcileLedgerWithInstalled: q, startQueue: x };
+  return { queue: g, advancing: h, queueCompleted: M, queueTotal: O, queueLedger: F, toggleQueued: me, addQueued: le, isQueued: J, resetRunProgress: N, setLedgerStatus: V, reconcileLedgerWithInstalled: q, startQueue: x };
 }
 const St = [
   { id: "connections", label: "Connect services", terms: ["connection", "integration", "oauth", "provider"] },
@@ -162,17 +162,17 @@ function qt(o, l, i) {
       ...M || O?.version ? { version: M || O?.version } : {},
       relationship: f === "root" || O?.relationship === "root" ? "root" : "transitive"
     });
-  }, p = /* @__PURE__ */ new Set();
+  }, m = /* @__PURE__ */ new Set();
   for (const u of o) {
     if (u.installed === !1) {
-      for (const y of de(u)) p.add(y);
+      for (const y of de(u)) m.add(y);
       continue;
     }
     a(u.component, u.version, u.is_root === !1 ? "transitive" : "root");
   }
   for (const u of l) {
     const y = de({ module: u.name, name: u.name });
-    if (u.installed === !1 || y.some((S) => p.has(S))) continue;
+    if (u.installed === !1 || y.some((S) => m.has(S))) continue;
     const f = u.used_by_count ?? u.used_by?.length ?? 0;
     u.is_root !== !0 && u.transitive === !0 && f === 0 || a(
       u.name,
@@ -228,42 +228,42 @@ function Ot(o, l = []) {
   for (const t of o) {
     const a = de(t);
     if (t.installed === !1) {
-      for (const p of a) s.add(p);
+      for (const m of a) s.add(m);
       continue;
     }
-    for (const p of a) i.add(p);
+    for (const m of a) i.add(m);
   }
   for (const t of l) {
     if (t.installed === !1) continue;
     const a = de({ module: t.name, name: t.name });
-    if (!a.some((p) => s.has(p)))
-      for (const p of a) i.add(p);
+    if (!a.some((m) => s.has(m)))
+      for (const m of a) i.add(m);
   }
   return i;
 }
 function $t(o, l) {
   const i = /* @__PURE__ */ new Map(), s = o.slice().sort((t, a) => {
-    const p = de(t)[0] || "", u = de(a)[0] || "";
-    return X(p, u) || Number(Ce(a)) - Number(Ce(t)) || X(_e(t), _e(a)) || X(ne(t), ne(a)) || X(D(t.description), D(a.description)) || X((t.keywords || []).map(String).sort(X).join("\0"), (a.keywords || []).map(String).sort(X).join("\0")) || Ie(a.total_downloads) - Ie(t.total_downloads) || X(D(t.type), D(a.type)) || X(D(t.latest_version), D(a.latest_version)) || X(D(t.id), D(a.id));
+    const m = de(t)[0] || "", u = de(a)[0] || "";
+    return X(m, u) || Number(Ce(a)) - Number(Ce(t)) || X(_e(t), _e(a)) || X(ne(t), ne(a)) || X(D(t.description), D(a.description)) || X((t.keywords || []).map(String).sort(X).join("\0"), (a.keywords || []).map(String).sort(X).join("\0")) || Ie(a.total_downloads) - Ie(t.total_downloads) || X(D(t.type), D(a.type)) || X(D(t.latest_version), D(a.latest_version)) || X(D(t.id), D(a.id));
   });
   for (const t of s) {
     if (!rt(t) || ct(t)) continue;
-    const a = de(t), p = a[0];
-    !p || a.some((u) => l.has(u)) || i.has(p) || i.set(p, t);
+    const a = de(t), m = a[0];
+    !m || a.some((u) => l.has(u)) || i.has(m) || i.set(m, t);
   }
   return Array.from(i.values());
 }
 function Ue(o, l, i = 5) {
   if (!Array.isArray(o)) return [];
   const s = /* @__PURE__ */ new Map();
-  for (const p of l) {
-    const u = String(p || "").trim();
+  for (const m of l) {
+    const u = String(m || "").trim();
     u && !s.has(u.toLowerCase()) && s.set(u.toLowerCase(), u);
   }
   const t = [], a = /* @__PURE__ */ new Set();
-  for (const p of o) {
-    if (typeof p != "string") continue;
-    const u = p.trim().toLowerCase(), y = s.get(u);
+  for (const m of o) {
+    if (typeof m != "string") continue;
+    const u = m.trim().toLowerCase(), y = s.get(u);
     if (!(!y || a.has(u)) && (a.add(u), t.push(y), t.length >= i))
       break;
   }
@@ -273,8 +273,8 @@ function zt(o, l = 3) {
   const i = [], s = /* @__PURE__ */ new Set();
   for (const t of o)
     for (const a of t.modules) {
-      const p = ee(a).trim(), u = p.toLowerCase();
-      if (!(!p || s.has(u)) && (s.add(u), i.push(p), i.length >= l))
+      const m = ee(a).trim(), u = m.toLowerCase();
+      if (!(!m || s.has(u)) && (s.add(u), i.push(m), i.length >= l))
         return i;
     }
   return i;
@@ -292,12 +292,12 @@ function Re(o, l, i) {
     l
   ), a = [];
   t.length && a.push({ id: "official", title: "Recommended by KickSide", modules: t, private: !1 });
-  const p = /* @__PURE__ */ new Map(), u = i.slice().sort((f, S) => X(D(f.name), D(S.name)) || X(D(f.display_name), D(S.display_name)));
+  const m = /* @__PURE__ */ new Map(), u = i.slice().sort((f, S) => X(D(f.name), D(S.name)) || X(D(f.display_name), D(S.display_name)));
   for (const f of u) {
     const S = D(f.name).toLowerCase();
-    S && !p.has(S) && p.set(S, f);
+    S && !m.has(S) && m.set(S, f);
   }
-  for (const [f, S] of Array.from(p.entries()).sort(([g], [h]) => X(g, h))) {
+  for (const [f, S] of Array.from(m.entries()).sort(([g], [h]) => X(g, h))) {
     const g = Te(
       o.filter((h) => Ce(h) && _e(h).toLowerCase() === f),
       l
@@ -326,7 +326,7 @@ function be(o, l) {
   const i = o.trim().toLowerCase(), s = l.trim().toLowerCase();
   return i < s ? -1 : i > s ? 1 : 0;
 }
-function Vt(o) {
+function jt(o) {
   const l = Se(o);
   return { ...Se(l.data), ...l };
 }
@@ -336,12 +336,12 @@ function Ft(o) {
   const l = se(o, 500);
   return l || null;
 }
-function jt(o) {
+function Vt(o) {
   if (!Array.isArray(o)) return [];
   const l = [], i = /* @__PURE__ */ new Set();
   for (const s of o.slice(0, Dt)) {
-    const t = Se(s), a = se(t.name, 200), p = Ft(t.value);
-    !a || p === null || i.has(a) || (i.add(a), l.push({ name: a, value: p }));
+    const t = Se(s), a = se(t.name, 200), m = Ft(t.value);
+    !a || m === null || i.has(a) || (i.add(a), l.push({ name: a, value: m }));
   }
   return l;
 }
@@ -349,10 +349,10 @@ function Qt(o) {
   if (!Array.isArray(o)) return [];
   const l = [], i = /* @__PURE__ */ new Set();
   for (const s of o.slice(0, Bt)) {
-    const t = typeof s == "string" ? { component: s } : Se(s), a = se(t.component, 200), p = a.toLowerCase();
-    if (!Kt.test(a) || i.has(p)) continue;
-    i.add(p);
-    const u = se(t.title, 100), y = jt(t.parameters);
+    const t = typeof s == "string" ? { component: s } : Se(s), a = se(t.component, 200), m = a.toLowerCase();
+    if (!Kt.test(a) || i.has(m)) continue;
+    i.add(m);
+    const u = se(t.title, 100), y = Vt(t.parameters);
     l.push({
       component: a,
       ...u ? { title: u } : {},
@@ -365,11 +365,11 @@ function Gt(o) {
   if (!Array.isArray(o)) return [];
   const l = [];
   for (const s of o) {
-    const t = Vt(s), a = Se(t.meta);
+    const t = jt(s), a = Se(t.meta);
     if (a.type !== Ye || a.private === !0 || t.enabled === !1) continue;
-    const p = se(t.profile, 80) || se(t.key, 80) || se(t.id, 160), u = se(t.title, 100);
-    !p || !u || l.push({
-      id: p,
+    const m = se(t.profile, 80) || se(t.key, 80) || se(t.id, 160), u = se(t.title, 100);
+    !m || !u || l.push({
+      id: m,
       title: u,
       description: se(t.description, 280),
       icon: se(t.icon, 100) || "tabler:packages",
@@ -391,17 +391,17 @@ function Gt(o) {
 }
 function Ut(o, l, i) {
   const s = [], t = [], a = [];
-  for (const p of o.packages) {
-    const u = p.component.toLowerCase();
-    l.has(u) ? t.push(p) : i.has(u) ? s.push(p) : a.push(p);
+  for (const m of o.packages) {
+    const u = m.component.toLowerCase();
+    l.has(u) ? t.push(m) : i.has(u) ? s.push(m) : a.push(m);
   }
   return { selected: s, installed: t, unavailable: a };
 }
 function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }) {
-  const t = z(!0), a = z(""), p = z(""), u = z([]), y = z(/* @__PURE__ */ new Set()), f = z([]), S = z(/* @__PURE__ */ new Set()), g = z([]), h = z([]), M = z([]), O = z(0), F = R(() => Ge(l.value, /* @__PURE__ */ new Set())), H = R(() => Ge(i.value, /* @__PURE__ */ new Set())), J = R(() => $t(f.value, S.value)), pe = R(() => new Set(J.value.map(W))), le = R(() => new Set(u.value.flatMap((d) => d.packages.map((k) => k.component.toLowerCase())))), N = R(() => f.value.filter((d) => {
+  const t = z(!0), a = z(""), m = z(""), u = z([]), y = z(/* @__PURE__ */ new Set()), f = z([]), S = z(/* @__PURE__ */ new Set()), g = z([]), h = z([]), M = z([]), O = z(0), F = R(() => Ge(l.value, /* @__PURE__ */ new Set())), H = R(() => Ge(i.value, /* @__PURE__ */ new Set())), J = R(() => $t(f.value, S.value)), me = R(() => new Set(J.value.map(W))), le = R(() => new Set(u.value.flatMap((d) => d.packages.map((k) => k.component.toLowerCase())))), N = R(() => f.value.filter((d) => {
     const k = W(d);
-    return pe.value.has(k) || le.value.has(k);
-  })), j = R(() => Re(J.value, [], M.value)), q = R(() => Re(J.value, F.value, M.value)), x = R(() => Re(J.value, H.value, M.value)), w = R(() => x.value.reduce((d, k) => d + k.modules.length, 0)), C = R(() => qt(
+    return me.value.has(k) || le.value.has(k);
+  })), V = R(() => Re(J.value, [], M.value)), q = R(() => Re(J.value, F.value, M.value)), x = R(() => Re(J.value, H.value, M.value)), w = R(() => x.value.reduce((d, k) => d + k.modules.length, 0)), C = R(() => qt(
     g.value,
     h.value,
     f.value
@@ -413,17 +413,17 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
   function W(d) {
     return ee(d).toLowerCase();
   }
-  function me(d) {
+  function pe(d) {
     const k = d.toLowerCase();
     return N.value.find((_) => W(_) === k) || null;
   }
   function re(d) {
-    const k = me(d);
+    const k = pe(d);
     return k ? ne(k) : d;
   }
   function te(d) {
     return d.packages.map((k) => {
-      const _ = me(k.component);
+      const _ = pe(k.component);
       return _ ? ne(_) : k.component.split("/").pop() || k.component;
     }).join(" · ");
   }
@@ -468,9 +468,9 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
           return null;
         }
       }));
-      u.value = Gt(_.filter(Boolean)), p.value = u.value.length ? "" : "No capability bundles are declared. You can still choose packages yourself.";
+      u.value = Gt(_.filter(Boolean)), m.value = u.value.length ? "" : "No capability bundles are declared. You can still choose packages yourself.";
     } catch (d) {
-      u.value = [], p.value = oe(d, "Capability bundles could not be loaded. You can still choose packages yourself.");
+      u.value = [], m.value = oe(d, "Capability bundles could not be loaded. You can still choose packages yourself.");
     }
   }
   async function ie() {
@@ -487,7 +487,7 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
     for (const $ of _) ae($);
   }
   async function ke() {
-    t.value = !0, a.value = "", p.value = "";
+    t.value = !0, a.value = "", m.value = "";
     try {
       const [d] = await Promise.all([
         o.fetchAllByKeyword(["kickside", "kickside-plugin"]),
@@ -512,7 +512,7 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
   return {
     loading: t,
     error: a,
-    profileError: p,
+    profileError: m,
     prompt: l,
     browseQuery: i,
     profiles: u,
@@ -527,7 +527,7 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
     browseTokens: H,
     available: J,
     selectableCandidates: N,
-    catalogGroups: j,
+    catalogGroups: V,
     matchingGroups: q,
     browseGroups: x,
     browseResultCount: w,
@@ -539,7 +539,7 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
     optionalProfileCount: G,
     apiMessage: oe,
     candidateKey: W,
-    candidateById: me,
+    candidateById: pe,
     queuedLabel: re,
     profilePackageLabels: te,
     profileParameters: ce,
@@ -553,7 +553,7 @@ function Xt({ hub: o, prompt: l, browseQuery: i, initializeProfileSelection: s }
     profileUsable: Pe
   };
 }
-function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingGroups: a, workspaceComponents: p, mergeCandidates: u, addQueued: y, apiMessage: f, error: S }) {
+function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingGroups: a, workspaceComponents: m, mergeCandidates: u, addQueued: y, apiMessage: f, error: S }) {
   const g = z(!1), h = z(null);
   let M = null;
   async function O() {
@@ -562,8 +562,8 @@ function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingG
     if (N.length) {
       g.value = !0, S.value = "";
       try {
-        const j = await Promise.all(N.map((w) => o.browseModules({ query: w, pageSize: 100 }).then((C) => C.items || []).catch(() => [])));
-        for (const w of j) u(w);
+        const V = await Promise.all(N.map((w) => o.browseModules({ query: w, pageSize: 100 }).then((C) => C.items || []).catch(() => [])));
+        for (const w of V) u(w);
         const q = t.value.flatMap((w) => w.modules), x = await J(q);
         if (x.status !== "success") {
           h.value = {
@@ -580,8 +580,8 @@ function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingG
           tone: "success",
           message: `${x.ids.length} package${x.ids.length === 1 ? "" : "s"} added to your selection. Review the list, then install when ready.`
         };
-      } catch (j) {
-        h.value = { tone: "warning", message: f(j, "AI recommendations are unavailable.") };
+      } catch (V) {
+        h.value = { tone: "warning", message: f(V, "AI recommendations are unavailable.") };
       } finally {
         g.value = !1;
       }
@@ -590,16 +590,16 @@ function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingG
   function F() {
     return i.value.trim();
   }
-  function H(N, j) {
-    if (Array.isArray(N)) return { status: "success", ids: Ue(N, j) };
+  function H(N, V) {
+    if (Array.isArray(N)) return { status: "success", ids: Ue(N, V) };
     if (!N || typeof N != "object") return { status: "error", ids: [], message: "The recommendation service returned an invalid response." };
     const q = N;
-    if (q.success === !0) return { status: "success", ids: Ue(q.component_ids, j) };
+    if (q.success === !0) return { status: "success", ids: Ue(q.component_ids, V) };
     const x = typeof q.error == "string" && q.error.trim() ? q.error.trim() : "AI recommendations are unavailable.";
     return { status: q.code === "MODEL_UNAVAILABLE" ? "unavailable" : "error", ids: [], message: x };
   }
   async function J(N) {
-    const j = Et(N), q = j.map((w) => w.component);
+    const V = Et(N), q = V.map((w) => w.component);
     if (!q.length) return { status: "error", ids: [], message: "No installable catalog packages are available." };
     M && M.abort();
     const x = new AbortController();
@@ -613,8 +613,8 @@ function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingG
       l("instrumentRecommendations", {
         need: F(),
         candidate_ids: [...q],
-        candidates: j,
-        workspace_context: { configured_components: p.value },
+        candidates: V,
+        workspace_context: { configured_components: m.value },
         signal: x.signal,
         accept: () => {
           C || (E = !0);
@@ -623,7 +623,7 @@ function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingG
       }), E || B({ success: !1, code: "MODEL_UNAVAILABLE", error: "No configured AI model is available for this onboarding session." });
     });
   }
-  function pe() {
+  function me() {
     const N = zt(a.value);
     if (!N.length) {
       h.value = { tone: "info", message: "No catalog packages matched. Try another description or browse packages." };
@@ -637,7 +637,7 @@ function Yt({ hub: o, emit: l, prompt: i, tokens: s, catalogGroups: t, matchingG
   function le() {
     M?.abort(), M = null;
   }
-  return { searching: g, recommendationNotice: h, recommend: O, matchCatalog: pe, abort: le };
+  return { searching: g, recommendationNotice: h, recommend: O, matchCatalog: me, abort: le };
 }
 const Wt = { class: "obm" }, Ht = {
   key: 0,
@@ -661,7 +661,7 @@ const Wt = { class: "obm" }, Ht = {
 }, an = {
   class: "obm-profile-grid",
   "aria-label": "Included capabilities"
-}, ln = { class: "obm-profile-card required" }, rn = { class: "obm-profile-icon" }, cn = { class: "obm-profile-copy" }, un = { class: "obm-profile-title" }, dn = { class: "obm-profile-description" }, pn = { class: "obm-profile-packages" }, mn = {
+}, ln = { class: "obm-profile-card required" }, rn = { class: "obm-profile-icon" }, cn = { class: "obm-profile-copy" }, un = { class: "obm-profile-title" }, dn = { class: "obm-profile-description" }, mn = { class: "obm-profile-packages" }, pn = {
   key: 0,
   class: "obm-profile-warning"
 }, fn = {
@@ -691,7 +691,7 @@ const Wt = { class: "obm" }, Ht = {
 }, Bn = {
   key: 6,
   class: "obm-groups"
-}, Dn = { class: "obm-group-head" }, Kn = { class: "obm-package-list" }, Vn = { class: "obm-package-icon" }, Fn = { class: "obm-package-body" }, jn = { class: "obm-package-title" }, Qn = {
+}, Dn = { class: "obm-group-head" }, Kn = { class: "obm-package-list" }, jn = { class: "obm-package-icon" }, Fn = { class: "obm-package-body" }, Vn = { class: "obm-package-title" }, Qn = {
   key: 0,
   class: "obm-private"
 }, Gn = ["aria-pressed", "aria-label", "disabled", "onClick"], Un = {
@@ -718,7 +718,7 @@ const Wt = { class: "obm" }, Ht = {
 }, ao = { class: "obm-foot" }, io = ["disabled"], lo = /* @__PURE__ */ vt({
   __name: "OnboardRecommendations",
   setup(o) {
-    const l = _t(), i = pt(Oe), s = z(""), t = z(""), a = z(!1), p = z("recommend"), u = Xt({ hub: i, prompt: s, browseQuery: t, initializeProfileSelection: et }), {
+    const l = _t(), i = mt(Oe), s = z(""), t = z(""), a = z(!1), m = z("recommend"), u = Xt({ hub: i, prompt: s, browseQuery: t, initializeProfileSelection: et }), {
       loading: y,
       error: f,
       profileError: S,
@@ -729,10 +729,10 @@ const Wt = { class: "obm" }, Ht = {
       tokens: F,
       selectableCandidates: H,
       catalogGroups: J,
-      matchingGroups: pe,
+      matchingGroups: me,
       browseGroups: le,
       browseResultCount: N,
-      workspaceComponents: j,
+      workspaceComponents: V,
       selectedProfiles: q,
       requiredProfiles: x,
       optionalProfiles: w,
@@ -744,7 +744,7 @@ const Wt = { class: "obm" }, Ht = {
       profilePackageLabels: G,
       profileParameters: oe,
       mergeCandidates: W,
-      loadInstalled: me,
+      loadInstalled: pe,
       load: re,
       profileSelection: te,
       profileUsable: ce
@@ -758,7 +758,7 @@ const Wt = { class: "obm" }, Ht = {
       candidateById: A,
       queuedLabel: T,
       profileParameters: oe,
-      loadInstalled: me,
+      loadInstalled: pe,
       apiMessage: E
     }), {
       queue: L,
@@ -777,8 +777,8 @@ const Wt = { class: "obm" }, Ht = {
       prompt: s,
       tokens: F,
       catalogGroups: J,
-      matchingGroups: pe,
-      workspaceComponents: j,
+      matchingGroups: me,
+      workspaceComponents: V,
       mergeCandidates: W,
       addQueued: Pe,
       apiMessage: E,
@@ -806,7 +806,7 @@ const Wt = { class: "obm" }, Ht = {
       c.has(U.id) ? c.delete(U.id) : c.add(U.id), h.value = c, Le();
     }
     function Be(U) {
-      K.value || (a.value = !0, p.value = U, Z.value = null, h.value = new Set(g.value.filter((c) => c.required).map((c) => c.id)), Le());
+      K.value || (a.value = !0, m.value = U, Z.value = null, h.value = new Set(g.value.filter((c) => c.required).map((c) => c.id)), Le());
     }
     function De() {
       K.value || (a.value = !1, Z.value = null, Le());
@@ -830,26 +830,26 @@ const Wt = { class: "obm" }, Ht = {
           icon: "tabler:alert-triangle",
           "aria-hidden": "true"
         }),
-        n("span", null, m(e(f)), 1),
+        n("span", null, p(e(f)), 1),
         n("button", {
           type: "button",
           onClick: c[0] || (c[0] = (r) => e(L).length ? e(_)() : e(re))
-        }, m(e(L).length ? "Retry failed" : "Try again"), 1)
-      ])) : V("", !0),
+        }, p(e(L).length ? "Retry failed" : "Try again"), 1)
+      ])) : j("", !0),
       e(O) ? (b(), v("div", Jt, [
         I(e(P), {
           icon: "tabler:circle-check",
           "aria-hidden": "true"
         }),
-        n("span", null, m(e(O)) + " module" + m(e(O) === 1 ? "" : "s") + " added to this workspace.", 1)
-      ])) : V("", !0),
+        n("span", null, p(e(O)) + " module" + p(e(O) === 1 ? "" : "s") + " added to this workspace.", 1)
+      ])) : j("", !0),
       e(S) ? (b(), v("div", Zt, [
         I(e(P), {
           icon: "tabler:info-circle",
           "aria-hidden": "true"
         }),
-        n("span", null, m(e(S)), 1)
-      ])) : V("", !0),
+        n("span", null, p(e(S)), 1)
+      ])) : j("", !0),
       e(y) ? (b(), v("div", en, [
         I(e(P), {
           icon: "tabler:loader-2",
@@ -869,10 +869,10 @@ const Wt = { class: "obm" }, Ht = {
             }),
             c[18] || (c[18] = ue(" Profiles", -1))
           ]),
-          n("h2", null, m(p.value === "recommend" ? "Recommend packages" : "Browse packages"), 1),
-          p.value === "browse" ? (b(), v("span", Tn, m(e(N)) + " available", 1)) : V("", !0)
+          n("h2", null, p(m.value === "recommend" ? "Recommend packages" : "Browse packages"), 1),
+          m.value === "browse" ? (b(), v("span", Tn, p(e(N)) + " available", 1)) : j("", !0)
         ]),
-        p.value === "recommend" ? (b(), v("div", {
+        m.value === "recommend" ? (b(), v("div", {
           key: 0,
           class: "obm-prompt",
           "aria-busy": e(Y)
@@ -883,7 +883,7 @@ const Wt = { class: "obm" }, Ht = {
               icon: "tabler:sparkles",
               "aria-hidden": "true"
             }),
-            Ve(n("input", {
+            je(n("input", {
               id: "obm-need",
               "onUpdate:modelValue": c[3] || (c[3] = (r) => s.value = r),
               placeholder: "For example: analyze sales data and create reports",
@@ -906,7 +906,7 @@ const Wt = { class: "obm" }, Ht = {
                 class: he({ spin: e(Y) }),
                 "aria-hidden": "true"
               }, null, 8, ["icon", "class"]),
-              ue(" " + m(e(Y) ? "Finding packages…" : "Recommend packages"), 1)
+              ue(" " + p(e(Y) ? "Finding packages…" : "Recommend packages"), 1)
             ], 8, $n)
           ]),
           c[20] || (c[20] = n("span", null, "AI chooses only from installable packages and adds them to your review list. Nothing installs until you confirm.", -1)),
@@ -915,21 +915,21 @@ const Wt = { class: "obm" }, Ht = {
             class: he(["obm-recommendation-result", `is-${e(Z).tone}`]),
             role: "status"
           }, [
-            n("span", null, m(e(Z).message), 1),
+            n("span", null, p(e(Z).message), 1),
             e(Z).tone === "warning" ? (b(), v("button", {
               key: 0,
               type: "button",
               disabled: e(K),
               onClick: c[6] || (c[6] = //@ts-ignore
               (...r) => e($e) && e($e)(...r))
-            }, "Match catalog instead", 8, zn)) : V("", !0)
-          ], 2)) : V("", !0)
+            }, "Match catalog instead", 8, zn)) : j("", !0)
+          ], 2)) : j("", !0)
         ], 8, Rn)) : (b(), v("div", xn, [
           I(e(P), {
             icon: "tabler:search",
             "aria-hidden": "true"
           }),
-          Ve(n("input", {
+          je(n("input", {
             "onUpdate:modelValue": c[7] || (c[7] = (r) => t.value = r),
             type: "search",
             placeholder: "Search packages",
@@ -947,7 +947,7 @@ const Wt = { class: "obm" }, Ht = {
               icon: "tabler:x",
               "aria-hidden": "true"
             })
-          ])) : V("", !0)
+          ])) : j("", !0)
         ]))
       ], 64)) : (b(), v("section", tn, [
         n("div", nn, [
@@ -955,7 +955,7 @@ const Wt = { class: "obm" }, Ht = {
             n("h2", { id: "obm-profile-title" }, "Choose capabilities"),
             n("p", null, "Your foundation is included. Add any capabilities you need, then review and install everything together.")
           ], -1)),
-          e(C) ? (b(), v("span", on, m(e(C)) + " selected", 1)) : V("", !0)
+          e(C) ? (b(), v("span", on, p(e(C)) + " selected", 1)) : j("", !0)
         ]),
         e(x).length ? (b(), v("div", sn, [
           c[14] || (c[14] = n("div", { class: "obm-menu-label" }, [
@@ -974,22 +974,22 @@ const Wt = { class: "obm" }, Ht = {
                   }, null, 8, ["icon"])
                 ]),
                 n("span", cn, [
-                  n("span", un, m(r.title), 1),
-                  n("span", dn, m(r.description), 1),
-                  n("span", pn, [
+                  n("span", un, p(r.title), 1),
+                  n("span", dn, p(r.description), 1),
+                  n("span", mn, [
                     I(e(P), {
                       icon: "tabler:packages",
                       "aria-hidden": "true"
                     }),
-                    ue(" " + m(e(G)(r)), 1)
+                    ue(" " + p(e(G)(r)), 1)
                   ]),
-                  e(te)(r).unavailable.length ? (b(), v("span", mn, m(e(te)(r).unavailable.length) + " package" + m(e(te)(r).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : V("", !0)
+                  e(te)(r).unavailable.length ? (b(), v("span", pn, p(e(te)(r).unavailable.length) + " package" + p(e(te)(r).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : j("", !0)
                 ]),
                 c[13] || (c[13] = n("span", { class: "obm-profile-state is-included" }, "Included", -1))
               ])
             ]))), 128))
           ])
-        ])) : V("", !0),
+        ])) : j("", !0),
         e(w).length ? (b(), v("div", fn, [
           c[15] || (c[15] = n("div", { class: "obm-menu-label" }, [
             n("span", null, "Add capabilities"),
@@ -1013,27 +1013,27 @@ const Wt = { class: "obm" }, Ht = {
                   }, null, 8, ["icon"])
                 ]),
                 n("span", hn, [
-                  n("span", yn, m(r.title), 1),
-                  n("span", kn, m(r.description), 1),
+                  n("span", yn, p(r.title), 1),
+                  n("span", kn, p(r.description), 1),
                   n("span", wn, [
                     I(e(P), {
                       icon: "tabler:packages",
                       "aria-hidden": "true"
                     }),
-                    ue(" " + m(e(G)(r)), 1)
+                    ue(" " + p(e(G)(r)), 1)
                   ]),
-                  e(te)(r).unavailable.length ? (b(), v("span", _n, m(e(te)(r).unavailable.length) + " package" + m(e(te)(r).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : V("", !0)
+                  e(te)(r).unavailable.length ? (b(), v("span", _n, p(e(te)(r).unavailable.length) + " package" + p(e(te)(r).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : j("", !0)
                 ]),
                 n("span", Cn, [
                   I(e(P), {
                     icon: e(h).has(r.id) ? "tabler:circle-check-filled" : "tabler:circle-plus"
                   }, null, 8, ["icon"]),
-                  ue(" " + m(e(h).has(r.id) ? "Selected" : "Add"), 1)
+                  ue(" " + p(e(h).has(r.id) ? "Selected" : "Add"), 1)
                 ])
               ], 10, vn)
             ]))), 128))
           ])
-        ])) : V("", !0),
+        ])) : j("", !0),
         n("div", Sn, [
           n("ul", An, [
             n("li", null, [
@@ -1083,7 +1083,7 @@ const Wt = { class: "obm" }, Ht = {
           ])
         ])
       ])),
-      a.value && p.value === "browse" && !e(y) && e(le).length ? (b(), v("div", Bn, [
+      a.value && m.value === "browse" && !e(y) && e(le).length ? (b(), v("div", Bn, [
         (b(!0), v(fe, null, ge(e(le), (r) => (b(), v("section", {
           key: r.id,
           class: "obm-group"
@@ -1093,28 +1093,28 @@ const Wt = { class: "obm" }, Ht = {
               icon: r.private ? "tabler:lock" : r.id === "official" ? "tabler:rosette-discount-check" : "tabler:packages",
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
-            n("h2", null, m(r.title), 1),
-            n("span", null, m(r.modules.length), 1)
+            n("h2", null, p(r.title), 1),
+            n("span", null, p(r.modules.length), 1)
           ]),
           n("ul", Kn, [
             (b(!0), v(fe, null, ge(r.modules, (Q) => (b(), v("li", {
               key: e(ee)(Q),
               class: "obm-package-row",
-              style: je({ "--module-accent": e(ut)(Q) })
+              style: Ve({ "--module-accent": e(ut)(Q) })
             }, [
-              n("div", Vn, [
+              n("div", jn, [
                 I(e(P), {
                   icon: e(dt)(Q),
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
               ]),
               n("div", Fn, [
-                n("div", jn, [
-                  n("strong", null, m(e(ne)(Q)), 1),
-                  e(Ce)(Q) ? (b(), v("span", Qn, "private")) : V("", !0)
+                n("div", Vn, [
+                  n("strong", null, p(e(ne)(Q)), 1),
+                  e(Ce)(Q) ? (b(), v("span", Qn, "private")) : j("", !0)
                 ]),
-                n("code", null, m(e(ee)(Q)), 1),
-                n("p", null, m(Q.description || "No description provided."), 1)
+                n("code", null, p(e(ee)(Q)), 1),
+                n("p", null, p(Q.description || "No description provided."), 1)
               ]),
               n("button", {
                 type: "button",
@@ -1128,24 +1128,24 @@ const Wt = { class: "obm" }, Ht = {
                   icon: e(d)(Q) ? "tabler:check" : "tabler:plus",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"]),
-                ue(" " + m(e(d)(Q) ? "Selected" : "Select"), 1)
+                ue(" " + p(e(d)(Q) ? "Selected" : "Select"), 1)
               ], 10, Gn)
             ], 4))), 128))
           ])
         ]))), 128))
-      ])) : a.value && p.value === "browse" && !e(y) && !e(f) ? (b(), v("div", Un, [
+      ])) : a.value && m.value === "browse" && !e(y) && !e(f) ? (b(), v("div", Un, [
         I(e(P), {
           icon: "tabler:package-off",
           "aria-hidden": "true"
         }),
-        n("strong", null, m(t.value ? "No packages match this search" : "Everything available is already installed"), 1),
-        t.value ? (b(), v("span", Xn, "Try another name or clear the search.")) : V("", !0)
-      ])) : V("", !0),
+        n("strong", null, p(t.value ? "No packages match this search" : "Everything available is already installed"), 1),
+        t.value ? (b(), v("span", Xn, "Try another name or clear the search.")) : j("", !0)
+      ])) : j("", !0),
       e(L).length && !e(K) && !e(ie) ? (b(), v("section", Yn, [
         n("div", Wn, [
           n("div", null, [
             c[21] || (c[21] = n("h2", { id: "obm-selection-title" }, "Review your setup", -1)),
-            n("span", null, m(e(L).length) + " package" + m(e(L).length === 1 ? "" : "s") + " ready to install", 1)
+            n("span", null, p(e(L).length) + " package" + p(e(L).length === 1 ? "" : "s") + " ready to install", 1)
           ]),
           I(e(P), {
             icon: "tabler:shopping-bag-check",
@@ -1159,8 +1159,8 @@ const Wt = { class: "obm" }, Ht = {
               "aria-hidden": "true"
             }),
             n("span", null, [
-              n("strong", null, m(e(T)(r)), 1),
-              n("small", null, m(r), 1)
+              n("strong", null, p(e(T)(r)), 1),
+              n("small", null, p(r), 1)
             ])
           ]))), 128))
         ]),
@@ -1176,16 +1176,16 @@ const Wt = { class: "obm" }, Ht = {
               icon: "tabler:download",
               "aria-hidden": "true"
             }),
-            ue(" Install " + m(e(L).length) + " package" + m(e(L).length === 1 ? "" : "s"), 1)
+            ue(" Install " + p(e(L).length) + " package" + p(e(L).length === 1 ? "" : "s"), 1)
           ])
         ])
       ])) : e(K) || e(ie) ? (b(), v("section", Zn, [
         n("div", eo, [
           n("div", null, [
-            n("h2", to, m(We.value), 1),
-            n("span", null, m(e(ye)) + " of " + m(e(ie) || e(L).length) + " complete", 1)
+            n("h2", to, p(We.value), 1),
+            n("span", null, p(e(ye)) + " of " + p(e(ie) || e(L).length) + " complete", 1)
           ]),
-          n("strong", null, m(Ne.value) + "%", 1)
+          n("strong", null, p(Ne.value) + "%", 1)
         ]),
         n("div", {
           class: "obm-queue-progress",
@@ -1196,7 +1196,7 @@ const Wt = { class: "obm" }, Ht = {
           "aria-valuenow": Ne.value
         }, [
           n("span", {
-            style: je({ width: `${Ne.value}%` })
+            style: Ve({ width: `${Ne.value}%` })
           }, null, 4)
         ], 8, no),
         n("ul", oo, [
@@ -1210,11 +1210,11 @@ const Wt = { class: "obm" }, Ht = {
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
             n("span", null, [
-              n("strong", null, m(r.label), 1),
-              n("small", null, m(r.component), 1),
-              r.message ? (b(), v("small", so, m(r.message), 1)) : V("", !0)
+              n("strong", null, p(r.label), 1),
+              n("small", null, p(r.component), 1),
+              r.message ? (b(), v("small", so, p(r.message), 1)) : j("", !0)
             ]),
-            n("em", null, m(r.status), 1)
+            n("em", null, p(r.status), 1)
           ], 2))), 128))
         ]),
         e(L).length && !e(K) ? (b(), v("button", {
@@ -1228,15 +1228,15 @@ const Wt = { class: "obm" }, Ht = {
             icon: Me.value ? "tabler:refresh" : "tabler:download",
             "aria-hidden": "true"
           }, null, 8, ["icon"]),
-          ue(" " + m(He.value), 1)
-        ])) : V("", !0)
-      ])) : V("", !0),
+          ue(" " + p(He.value), 1)
+        ])) : j("", !0)
+      ])) : j("", !0),
       n("div", ao, [
         n("button", {
           type: "button",
           class: "obm-back",
           onClick: nt
-        }, "‹ " + m(a.value ? "Profiles" : "Back"), 1),
+        }, "‹ " + p(a.value ? "Profiles" : "Back"), 1),
         c[23] || (c[23] = n("span", null, null, -1)),
         ze.value ? (b(), v("button", {
           key: 0,
@@ -1244,12 +1244,12 @@ const Wt = { class: "obm" }, Ht = {
           class: "obm-continue",
           disabled: !xe.value,
           onClick: ot
-        }, m(Je.value), 9, io)) : V("", !0)
+        }, p(Je.value), 9, io)) : j("", !0)
       ])
     ]));
   }
 });
-class ro extends mt {
+class ro extends pt {
   static get wippyConfig() {
     return {
       propsSchema: { type: "object", properties: {} },

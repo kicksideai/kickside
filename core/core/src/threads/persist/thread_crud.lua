@@ -232,6 +232,12 @@ function M.ensure_thread_type(component_id: string, thread_class: string?): (boo
     return component.ensure_thread_type(component_id, thread_class)
 end
 
+local function mark_thread_type(thread_id: string, thread_class: string, params: table, maintenance: boolean?): error?
+    if params.trusted_audit == true or maintenance == true then return nil end
+    local _, mark_err = M.ensure_thread_type(thread_id, thread_class)
+    return mark_err
+end
+
 -- remove_thread_component tears the registered component (and with it its thread)
 -- back down when the orchestrator's subsequent thread step fails.
 function M.remove_thread_component(component_id: string?): error?
@@ -366,12 +372,8 @@ local function complete_thread(db: DB, thread_id: string, params: table, actor_i
     -- the thread is complete, its component advertises to the thread list/picker.
     -- Idempotent (a no-op once the marker is set, e.g. a thread-first component
     -- register already set it).
-    if params.trusted_audit ~= true and maintenance ~= true then
-        local _, mark_err = M.ensure_thread_type(thread_id, tostring(thread.thread_class))
-        if mark_err then
-            return nil, mark_err
-        end
-    end
+    local mark_err = mark_thread_type(thread_id, tostring(thread.thread_class), params, maintenance)
+    if mark_err then return nil, mark_err end
 
     return { thread = thread, component_id = thread_id }, nil
 end
@@ -391,7 +393,24 @@ function M.complete(db: DB, thread_id: string, params: table, actor_id: string?,
         local _, complete_err = complete_thread(db, thread_id, params, actor_id, identity, maintenance)
         return complete_err
     end
-    return M.apply_thread_declaration(db, thread_id, params.impl_id, identity)
+    local declaration_err = M.apply_thread_declaration(db, thread_id, params.impl_id, identity)
+    if declaration_err then return declaration_err end
+    -- Output-authorized emits and audit writes intentionally skip public markers.
+    -- Keep their retained-thread path free of the marker lookup as well.
+    if params.trusted_audit == true or maintenance == true then return nil end
+
+    local rows, read_err = db:query("SELECT thread_class FROM kickside_thread WHERE id = $1", { thread_id })
+    if read_err then return errors.wrap(read_err, "read completed thread") end
+    rows, read_err = error_envelope.binding(rows, nil, nil, "read completed thread rows", "completed_thread_result_missing")
+    if read_err then return read_err end
+    local thread = rows[1]
+    if thread == nil then
+        return errors.new({message = "completed thread not found", kind = errors.NOT_FOUND,
+            retryable = false, details = {code = "completed_thread_not_found"}})
+    end
+    thread, read_err = error_envelope.binding(thread, nil, nil, "read completed thread row", "completed_thread_row_invalid")
+    if read_err then return read_err end
+    return mark_thread_type(thread_id, tostring(thread.thread_class), params, maintenance)
 end
 
 -- attach completes the row of a new thread. Failure purges that row before the

@@ -89,9 +89,12 @@ local function list_handler()
     end
 
     -- Format the uploads for frontend use
+    -- Navigation is optional presentation metadata. A host without this page
+    -- can still use the authorized file API and its delivery URLs.
+    local base = upload_response.view_base()
     local formatted_uploads = {}
     for _, upload in ipairs(uploads) do
-        local public = upload_response.format_list_upload(upload)
+        local public = upload_response.format_list_upload(upload, base)
         local url, delivery_err = upload_response.delivery_url(upload.storage_id, upload.storage_path, public.raw_url)
         if delivery_err then
             res:set_status(http_errors.classify(delivery_err))

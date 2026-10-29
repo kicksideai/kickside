@@ -553,7 +553,7 @@ entries:
     meta: { type: test, suite: mcp_oauth_http }
     source: file://oauth_http_test.lua
     method: run
-    modules: [sql]
+    modules: [sql, json, funcs, security]
     security:
       actor: { id: system:mcp_oauth_http_test }
       policies: [app:mcp_suite_policy]
@@ -565,6 +565,16 @@ entries:
       oauth_repo: kickside.mcp.oauth:repo
       create: app:create_http_fixture
       update: app:update_http_fixture
+      repo: kickside.mcp.persist:repo
+      dispatcher: kickside.mcp:mcp_dispatcher
+      subjects: app:subjects
+  - name: credential_context_http_probe
+    kind: function.lua
+    source: file://credential_context_http_probe.lua
+    method: handler
+    imports:
+      create: app:create_http_fixture
+      state: app:oauth_http_state
   - name: create_http_fixture
     kind: library.lua
     source: file://fixtures/create_credential.lua

@@ -108,6 +108,9 @@ entries:
       consts: kickside.users:consts
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_repo: kickside.users.persist:user_repo
+    security:
+      policies:
+        - kickside.users.security:membership_config_read
     method: handler
 
   # kickside.users.api:me.endpoint

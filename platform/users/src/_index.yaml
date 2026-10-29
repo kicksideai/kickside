@@ -44,6 +44,18 @@ entries:
     version: '>=0.2.13'
     component: kickside/security
 
+  - name: membership_aliases
+    kind: ns.requirement
+    default: {}
+    meta:
+      description: Previous role IDs mapped to their replacements; keeps existing shared-resource grants valid after role consolidation.
+    targets:
+      - entry: kickside.users:membership_config
+        path: .meta.aliases
+  - name: membership_config
+    kind: registry.entry
+    meta: {aliases: {}}
+
   - name: baseline_security_scope
     kind: ns.requirement
     default: ""
@@ -64,6 +76,7 @@ entries:
     modules: [registry]
     imports:
       user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      user_consts: kickside.users:consts
 
   - name: definition
     kind: ns.definition
@@ -253,6 +266,7 @@ entries:
       comment: KickSide user system constants and configuration.
     source: file://consts.lua
     modules:
+      - registry
       - env
       - funcs
     method: consts

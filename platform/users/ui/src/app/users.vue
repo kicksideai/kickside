@@ -124,7 +124,7 @@ async function fetchRoles() {
     }))
   } catch (e) {
     roles.value = []
-    rolesError.value = e instanceof Error ? e.message : 'failed to load security groups'
+    rolesError.value = e instanceof Error ? e.message : 'failed to load roles'
   }
 }
 
@@ -241,26 +241,17 @@ useHostVisibilityRefresh(async () => {
 
 <template>
   <div class="ku">
-    <header class="kx-head">
-      <div class="kx-head-icon"><Icon icon="tabler:users" aria-hidden="true" /></div>
-      <div class="kx-head-text">
-        <h1 class="kx-title">Users</h1>
-        <p class="kx-head-sub">Manage user and bot accounts and their security groups.</p>
-      </div>
-      <div class="kx-head-actions">
-        <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
-          <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
-        </Button>
-      </div>
-    </header>
     <Tabs class="ku-tabs" :value="accountTab" @update:value="selectTab($event as 'users' | 'bots')">
-      <TabList aria-label="Account type">
+      <TabList :pt="{ tabList: { 'aria-label': 'Account type' } }">
         <Tab value="users" aria-controls="users-accounts">All users</Tab>
         <Tab value="bots" aria-controls="users-bots">Bots</Tab>
       </TabList>
     </Tabs>
     <div class="ku-bar">
       <span class="ku-count">{{ users.length }} {{ accountTab === 'bots' ? 'bot' : 'user' }}{{ users.length !== 1 ? 's' : '' }}</span>
+      <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
+        <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
+      </Button>
     </div>
 
     <div v-if="error && !editorOpen" role="alert" class="kx-err">{{ error }}</div>
@@ -272,7 +263,7 @@ useHostVisibilityRefresh(async () => {
       <div v-else-if="!users.length" class="ku-empty kx-empty">
         <div class="kx-empty-ico"><Icon :icon="accountTab === 'bots' ? 'tabler:robot' : 'tabler:users'" aria-hidden="true" /></div>
         <div class="kx-empty-title">No {{ accountTab === 'bots' ? 'bots' : 'users' }} yet</div>
-        <div class="kx-empty-sub">{{ accountTab === 'bots' ? 'Create a bot account and choose its security groups.' : 'Create your first user to grant access to the workspace.' }}</div>
+        <div class="kx-empty-sub">{{ accountTab === 'bots' ? 'Create a bot account and choose its roles.' : 'Create your first user to grant access to the workspace.' }}</div>
         <div class="kx-empty-actions">
           <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
             <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
@@ -282,7 +273,7 @@ useHostVisibilityRefresh(async () => {
 
       <div v-else class="ku-list">
         <table class="ku-table" :aria-label="accountTab === 'bots' ? 'Bots' : 'All users'">
-          <thead><tr><th scope="col">Account</th><th scope="col">Status</th><th scope="col">Security groups</th><th scope="col">Created</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+          <thead><tr><th scope="col">Account</th><th scope="col">Status</th><th scope="col">Roles</th><th scope="col">Created</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>
             <tr v-for="user in users" :key="user.user_id" class="ku-row">
               <td>
@@ -334,16 +325,15 @@ useHostVisibilityRefresh(async () => {
               <input id="account-password" v-model="createForm.password" type="password" class="ku-input" placeholder="Minimum 8 characters" autocomplete="new-password" />
             </div>
             <div class="ku-field">
-              <label class="ku-label">Security groups</label>
+              <label class="ku-label">Roles</label>
               <label v-if="!isBotForm" class="ku-check">
-                <input type="checkbox" v-model="useDefaultMembership" aria-label="Use default membership" />
-                <span class="ku-check-label">Use default membership</span>
+                <input type="checkbox" v-model="useDefaultMembership" aria-label="Use the default Member role" />
+                <span class="ku-check-label">Use the default Member role</span>
               </label>
               <template v-if="isBotForm || !useDefaultMembership">
                 <label v-for="sg in roles" :key="sg.id" class="ku-check">
                   <input type="checkbox" v-model="createForm.groups" :value="sg.id" />
                   <span class="ku-check-label">{{ sg.label }}</span>
-                  <span class="ku-check-id">{{ sg.id }}</span>
                 </label>
               </template>
             </div>
@@ -369,14 +359,14 @@ useHostVisibilityRefresh(async () => {
               <input id="account-password" v-model="editForm.password" type="password" class="ku-input" placeholder="Leave empty to keep current" autocomplete="new-password" />
             </div>
             <div class="ku-field">
-              <label class="ku-label">Security groups</label>
+              <label class="ku-label">Roles</label>
               <label v-for="sg in roles" :key="sg.id" class="ku-check">
                 <input type="checkbox" v-model="editForm.groups" :value="sg.id" />
                 <span class="ku-check-label">{{ sg.label }}</span>
-                <span class="ku-check-id">{{ sg.id }}</span>
               </label>
             </div>
           </template>
+          <p class="ku-role-help">Permissions from all assigned roles apply. For restricted access, create a custom role in System → Security and assign it instead of Member.</p>
           <div v-if="error" role="alert" class="kx-err inline">{{ error }}</div>
           <div v-if="rolesError" class="kx-err inline">{{ rolesError }}</div>
         </form>

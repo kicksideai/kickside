@@ -21,7 +21,8 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -45,7 +46,7 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-**System → Users** manages accounts and group memberships. Users management is a separate policy from directory discovery and the signed-in user’s profile. Bots are ordinary User principals classified as bots; they cannot authenticate or own credentials. Configure their group access and grant an operator selection authority separately.
+**System → Users** manages accounts and role assignments. KickSide’s default roles are Administrator and Member. Signed-in application access is applied during authentication; it is not stored as a separate User role. Users management is a separate policy from directory discovery and the signed-in user’s profile. Bots are ordinary User principals classified as bots; they cannot authenticate or own credentials. Configure their group access and grant an operator selection authority separately.
 
 ## Reference
 

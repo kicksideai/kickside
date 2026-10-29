@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.5](https://github.com/kicksideai/kickside/compare/workflows-v0.2.4...workflows-v0.2.5) (2026-10-29)
+
+
+### Features
+
+* **workflows:** configure Block retries and execution timeouts ([#221](https://github.com/kicksideai/kickside/issues/221)) ([57cf0be](https://github.com/kicksideai/kickside/commit/57cf0be55dee41bf1b23a2333827554f015e158f))
+
+## [0.2.4](https://github.com/kicksideai/kickside/compare/workflows-v0.2.3...workflows-v0.2.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* **workflows:** grant maintenance its committed-change wake ([637f9aa](https://github.com/kicksideai/kickside/commit/637f9aa446222d318601e9ac594147c26efe41f8))
+
 ## [0.2.3](https://github.com/kicksideai/kickside/compare/workflows-v0.2.2...workflows-v0.2.3) (2026-10-26)
 
 

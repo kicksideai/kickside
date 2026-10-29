@@ -101,7 +101,19 @@ return require("migration").define(function()
                 ]=])
                 if err then error(err) end
                 local _, err = db:execute([=[
-                    CREATE TRIGGER trg_kickside_job_updated_at BEFORE UPDATE ON kickside_job FOR EACH ROW EXECUTE FUNCTION core_set_updated_at()
+                    CREATE OR REPLACE FUNCTION kickside_jobs_set_updated_at()
+                    RETURNS trigger
+                    LANGUAGE plpgsql
+                    AS $function$
+                    BEGIN
+                    NEW.updated_at = NOW();
+                    RETURN NEW;
+                    END;
+                    $function$
+                ]=])
+                if err then error(err) end
+                local _, err = db:execute([=[
+                    CREATE TRIGGER trg_kickside_job_updated_at BEFORE UPDATE ON kickside_job FOR EACH ROW EXECUTE FUNCTION kickside_jobs_set_updated_at()
                 ]=])
                 if err then error(err) end
                 local _, err = db:execute([=[
@@ -161,6 +173,8 @@ return require("migration").define(function()
                 local _, err = db:execute("DROP TABLE kickside_job_run")
                 if err then error(err) end
                 local _, err = db:execute("DROP TABLE kickside_job")
+                if err then error(err) end
+                local _, err = db:execute("DROP FUNCTION IF EXISTS kickside_jobs_set_updated_at()")
                 if err then error(err) end
             end)
         end)

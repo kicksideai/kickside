@@ -300,6 +300,22 @@ function drive.list_for(executor: any, automation_ids: { string }): ({ Map }?, e
     return out, nil
 end
 
+-- by_source reads the indexed event-source reference; caller authorization owns
+-- which of the matching automation components can be returned.
+function drive.by_source(executor: any, thread_id: string): ({ Map }?, error?)
+    local rows, err = sql.builder.select(table.unpack(COLUMNS)):from(drive.TABLE)
+        :where(sql.builder.eq({source_thread_id = thread_id}))
+        :order_by("automation_id ASC", "drive_key ASC"):run_with(executor):query()
+    if err then return nil, internal("failed to list source drives", err) end
+    local out: { Map } = {}
+    for _, row in ipairs(rows :: { Map }) do
+        local normalized, norm_err = normalize(row)
+        if norm_err then return nil, norm_err end
+        out[#out + 1] = normalized :: Map
+    end
+    return out, nil
+end
+
 -- keys(db_or_tx, automation_id) -> every drive key of the automation, ascending.
 function drive.keys(executor: any, automation_id: string): ({ string }?, error?)
     local rows, err = sql.builder.select("drive_key"):from(drive.TABLE)

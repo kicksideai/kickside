@@ -21,7 +21,8 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -45,7 +46,18 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-Compose module policies in **System → Security → Scopes**, then assign the resulting groups in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Run as** permits selecting an execution account; it grants no access to that principal’s resources.
+Compose module policies in **System → Security → Roles**, then assign the resulting roles in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Run as** permits selecting an execution account; it grants no access to that principal’s resources.
+
+New accounts receive **Member**, which provides standard access to installed
+applications. To give someone less access, create a **New role**, add only the
+permissions they need, and assign that role **instead of Member** in Users.
+Permissions from other assigned roles still apply. **Add permissions** on a
+default role affects everyone assigned that role and cannot remove its original
+permissions.
+
+The picker lists permissions published by installed modules. A module permission
+may cover several pages and APIs; it is not a per-page visibility switch. Access to
+an individual component also depends on that component’s sharing rules.
 
 ## Reference
 

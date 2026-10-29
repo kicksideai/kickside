@@ -30,6 +30,7 @@ const props = defineProps<{
 // its dismissal or failure) so a host reacts without reaching into the element.
 const emit = defineEmits<{
   (e: 'change', value: unknown): void
+  (e: 'select', value: unknown): void
   (e: 'created', value: unknown): void
   (e: 'close', value: unknown): void
   (e: 'error', value: unknown): void
@@ -59,6 +60,9 @@ function consumed(e: Event): boolean {
   if (e.composedPath()[0] !== el) return false
   e.stopPropagation()
   return true
+}
+function onSelect(e: Event) {
+  if (consumed(e)) emit('select', (e as CustomEvent).detail)
 }
 function onCreated(e: Event) {
   if (consumed(e)) emit('created', (e as CustomEvent).detail)
@@ -106,6 +110,7 @@ function detach(target: HTMLElement | null = el) {
   if (!target) return
   target.removeEventListener('config-changed', onChange)
   target.removeEventListener('change', onChange)
+  target.removeEventListener('select', onSelect)
   target.removeEventListener('created', onCreated)
   target.removeEventListener('close', onClose)
   target.removeEventListener('error', onError)
@@ -138,6 +143,7 @@ async function mount() {
     applyAttrs()
     nextEl.addEventListener('config-changed', onChange)
     nextEl.addEventListener('change', onChange)
+    nextEl.addEventListener('select', onSelect)
     nextEl.addEventListener('created', onCreated)
     nextEl.addEventListener('close', onClose)
     nextEl.addEventListener('error', onError)

@@ -42,7 +42,7 @@ local function handle(args)
     -- Call count_resources method
     local result, err = instance:count(request)
     if err then
-        return nil, errors.new({ message = tostring("Failed to count files: " .. err), kind = errors.INTERNAL })
+        return nil, errors.wrap(err, "Failed to count files")
     end
 
     return { success = true, count = result.total_count or 0, filters = filters }

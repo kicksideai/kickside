@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/security-v0.2.18...security-v0.2.19) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** isolate role source reads from caller denials ([#233](https://github.com/kicksideai/kickside/issues/233)) ([3ab6915](https://github.com/kicksideai/kickside/commit/3ab6915c56448b63a525ddcf1f8e1f7c460b4d7a))
+
+## [0.2.18](https://github.com/kicksideai/kickside/compare/security-v0.2.17...security-v0.2.18) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** preserve native delegation through composed roles ([#218](https://github.com/kicksideai/kickside/issues/218)) ([80c8747](https://github.com/kicksideai/kickside/commit/80c87475c238d8782ad422aafef249ea24b12a2b))
+
+## [0.2.17](https://github.com/kicksideai/kickside/compare/security-v0.2.16...security-v0.2.17) (2026-10-28)
+
+
+### Bug Fixes
+
+* align System account and permission administration ([#197](https://github.com/kicksideai/kickside/issues/197)) ([fb19352](https://github.com/kicksideai/kickside/commit/fb1935229cba380343c98b252e132cf7ecbce6f3))
+
+## [0.2.16](https://github.com/kicksideai/kickside/compare/security-v0.2.15...security-v0.2.16) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+
+## [0.2.15](https://github.com/kicksideai/kickside/compare/security-v0.2.14...security-v0.2.15) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** read projection readiness from native authority ([#178](https://github.com/kicksideai/kickside/issues/178)) ([ec25552](https://github.com/kicksideai/kickside/commit/ec255523e03a42f89eccb7871053c29724e7d3a5))
+
+## [0.2.14](https://github.com/kicksideai/kickside/compare/security-v0.2.13...security-v0.2.14) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** omit deleted policies from registry previews ([819712e](https://github.com/kicksideai/kickside/commit/819712e42935b0e8cc027add0dd32ba0ee1cd91d))
+* **security:** project module access in the same registry version as an install ([20152e2](https://github.com/kicksideai/kickside/commit/20152e288a994e4c48e59b43ca1bd89b55444be0))
+* **security:** project module access in the same registry version as an install ([049ff9e](https://github.com/kicksideai/kickside/commit/049ff9e6ccf9666d95274d0faebe669e2008c7e6))
+
 ## [0.2.13](https://github.com/kicksideai/kickside/compare/security-v0.2.12...security-v0.2.13) (2026-10-26)
 
 

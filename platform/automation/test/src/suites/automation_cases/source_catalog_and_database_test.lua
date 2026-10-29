@@ -224,6 +224,7 @@ local function define_tests()
                     local up = by_binding["kickside.uploads:uploads_component"]
                     test.eq(up.surface, "events")
                     test.eq(up.event, "kickside.uploads.events:upload.completed")
+                    test.eq(up.config_schema.thread_id.class, "kickside.test.uploads")
                     -- The events port output face is derived from the event entry's schema.
                     test.not_nil(up.output_schema)
                 end)
@@ -303,6 +304,32 @@ local function define_tests()
                     test.eq(up.surface, "events")
                     test.is_nil(up.store_tier, "store_tier is a store-only field")
                 end)
+            end)
+
+            test.it("scopes component pickers to the binding implementation without mutating declarations", function()
+                with_loaded_modules({ registry = catalog_registry() }, function()
+                    local up, err = automations_lib.resolve_source("kickside.uploads:upload_completed")
+                    test.is_nil(err)
+                    test.eq(up.config_schema.thread_id.impl_id, "kickside.uploads:uploads_component")
+                    test.eq(up.config_schema.thread_id.class, "kickside.test.uploads")
+                    local declarations = catalog_registry().find({ ["meta.type"] = "kickside.automation.port" })
+                    test.is_nil(declarations[4].config_schema.thread_id.impl_id)
+                end)
+            end)
+
+            test.it("uses the stored implementation declared by a binding even without a thread class", function()
+                local registry = catalog_registry()
+                local entries = registry.find({ [".kind"] = "contract.binding" })
+                local original = entries[4].meta
+                entries[4].meta = { class = { "fixture" }, impl_id = "fixture:stored_component" }
+                with_loaded_modules({ registry = registry }, function()
+                    local up, err = automations_lib.resolve_source("kickside.uploads:upload_completed")
+                    test.is_nil(err)
+                    test.eq(up.impl_id, "fixture:stored_component")
+                    test.eq(up.config_schema.thread_id.impl_id, "fixture:stored_component")
+                    test.is_nil(up.config_schema.thread_id.class)
+                end)
+                entries[4].meta = original
             end)
 
             test.it("a source's class is derived from the owning binding's meta.class", function()

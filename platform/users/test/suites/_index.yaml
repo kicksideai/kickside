@@ -223,6 +223,34 @@ entries:
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_group_sources_repo: kickside.users.persist:user_group_sources_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+  - name: membership_upgrade_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://membership_upgrade_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, security, sql, uuid, funcs]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      admin_repo: kickside.users.persist:admin_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_consts: kickside.users:consts
+      session: kickside.users:session
+      directory: kickside.users.directory:directory_lib
+      subject_lookup: kickside.users.binding:subject_lookup
+  - name: membership_upgrade_acl_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://membership_upgrade_acl_probe.lua
+    method: read
+    modules: [security]
+    imports:
+      reader: kickside.component.persist:component_reader
   - name: runtime_env_test
     kind: function.lua
     meta: {type: test, suite: users}
@@ -369,6 +397,22 @@ entries:
     imports:
       scope_store: kickside.security.persist:scope_store
 
+  - name: session_scope_projection_probe
+    kind: function.lua
+    source: file://session_scope_projection_probe.lua
+    method: resolve
+    modules: [funcs, http]
+    security:
+      actor: {id: kickside.users:session_scope_projection_probe}
+      policies: [kickside.users.security:session_group_set_projection]
+
+  - name: session_scope_projection_probe.endpoint
+    kind: http.endpoint
+    meta: {router: app:api.public}
+    method: POST
+    path: /test/session-scope-projection
+    func: session_scope_projection_probe
+
   - name: source_scope_epoch_test
     kind: function.lua
     meta:
@@ -379,7 +423,7 @@ entries:
       actor: { id: app:test_runner }
       policies: [app:test_runtime]
     method: run
-    modules: [registry, security, funcs]
+    modules: [registry, security, funcs, http_client, json]
     imports:
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_store: kickside.security.persist:scope_store

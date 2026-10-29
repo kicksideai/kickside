@@ -16,9 +16,9 @@ entries:
       "platform": "linux/arm64",
       "retention": 10,
       "package_coordinate": "${module.coordinate}",
-      "runtime_url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-arm64",
-      "checksum": "171b81112e54db301e05e18e9a0bc9c43997514d8e38570fb334fecca4385f3d",
-      "signature": "uFCesv545uEhrwepxgxs7U0U6k5l5jAHzcKKP+PleTqlsg1QgxYEsW1xc0k9CUnFxzpn3nZV49Edj0j5EZNnBQ==",
+      "runtime_url": "https://github.com/wippyai/runtime/releases/download/v0.3.55a/wippy-linux-arm64",
+      "checksum": "03afd8534e82acc04cf4aceec05771a1f48d83730a6fc38b6b1a9fd0e1aec412",
+      "signature": "wKHlWBEEpo1Iz36ZHjD2oZ+Q535HyQnEinCOsWSu7EC2UIfNpwahgyGl9Fw/pspqlly8GzMeVCp/e64jKdj2Dg==",
       "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
       "hub_token_secret": {
         "name": "hub-token",
@@ -46,16 +46,16 @@ entries:
           "platform": "auto",
           "runtime_sources": {
             "amd64": {
-              "checksum": "0e2e4d2a1c11075e5ead793e4e32f7b37e838af643211e6e42d3fcfa6afdeb9e",
-              "signature": "U7rwuQJpA43IDB/SXhZFbeVYsl90DOQsaN2vSiQ/w0suMBApgMOvGi/F1lk5Pb/xCLEgtsnkqkKW/EjfP+XmCA==",
+              "checksum": "37d625be1ad04539a5ddbf8f8d3595b581ac0e28b97d3ad5815285082d5fa145",
+              "signature": "5VOTnknvpQxEhEsOW21YlZdjf6uUn8C8O6mQXivF3IFWpVcQmVp8dUJjufLjz/AjIw4qsy7ymUrzKgjwtyMjCQ==",
               "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
-              "url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-amd64"
+              "url": "https://github.com/wippyai/runtime/releases/download/v0.3.55a/wippy-linux-amd64"
             },
             "arm64": {
-              "checksum": "171b81112e54db301e05e18e9a0bc9c43997514d8e38570fb334fecca4385f3d",
-              "signature": "uFCesv545uEhrwepxgxs7U0U6k5l5jAHzcKKP+PleTqlsg1QgxYEsW1xc0k9CUnFxzpn3nZV49Edj0j5EZNnBQ==",
+              "checksum": "03afd8534e82acc04cf4aceec05771a1f48d83730a6fc38b6b1a9fd0e1aec412",
+              "signature": "wKHlWBEEpo1Iz36ZHjD2oZ+Q535HyQnEinCOsWSu7EC2UIfNpwahgyGl9Fw/pspqlly8GzMeVCp/e64jKdj2Dg==",
               "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
-              "url": "https://github.com/wippyai/runtime/releases/download/v0.3.47a/wippy-linux-arm64"
+              "url": "https://github.com/wippyai/runtime/releases/download/v0.3.55a/wippy-linux-arm64"
             }
           },
           "temporal": null

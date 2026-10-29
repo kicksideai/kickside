@@ -71,8 +71,8 @@ entries:
     component: kickside/execution
 
   - name: dep.wippy.dataflow
-    # Iteration body joins require native iteration input routes.
-    version: '>=v0.7.27'
+    # Native bounded retries and execution timeouts require Dataflow 0.7.33.
+    version: '>=0.7.33'
     kind: ns.dependency
     meta:
       comment: Production Workflow compilation and runs directly create and execute Dataflow graphs.
@@ -112,6 +112,8 @@ entries:
       - entry: kickside.workflows.migrations:05_undo_history
         path: .meta.target_db
       - entry: kickside.workflows.migrations:06_iteration_input_routes
+        path: .meta.target_db
+      - entry: kickside.workflows.migrations:07_retry_policy
         path: .meta.target_db
       - entry: kickside.workflows:db_config
         path: .meta.db_id
@@ -382,6 +384,7 @@ entries:
       types: kickside.workflows:types
       mapping: kickside.workflows.execution:mapping
       policy: kickside.workflows:policy_config
+      schema_json: kickside.workflows.schema:schema_json
 
   - name: workflow_inverse
     kind: library.lua

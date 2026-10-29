@@ -55,7 +55,12 @@ local function native_group_policies(snap)
     if read_err then return nil, read_err end
     local effective = {}
     for _, policy in ipairs(native) do
-        if (policy.meta or {}).managed_by ~= consts.MANAGED_BY then
+        local meta = policy.meta or {}
+        -- Security's delegation declarations are source grants too. Exclude
+        -- only derived entries, using the same ownership markers as policy_groups.
+        local projected = meta.managed_by == consts.MANAGED_BY
+            and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
+        if not projected then
             for _, group in ipairs((policy.data or {}).groups or {}) do
                 effective[group] = effective[group] or {}
                 effective[group][tostring(policy.id)] = true
@@ -147,7 +152,15 @@ local function compute(snap: any, fence_groups: any?): (any?, error?)
         local policies, policy_err = composition.expand_available(selected, snapshot_get)
         if policy_err then return nil, policy_err end
         for _, group in ipairs(targets) do
-            group_sources[group] = data.groups or {}
+            group_sources[group] = group_sources[group] or {}
+            local included = {}
+            for _, source in ipairs(group_sources[group]) do included[source] = true end
+            for _, source in ipairs(data.groups or {}) do
+                if not included[source] then
+                    group_sources[group][#group_sources[group] + 1] = source
+                    included[source] = true
+                end
+            end
             group_policies[group] = group_policies[group] or {}
             for _, id in ipairs(policies) do group_policies[group][#group_policies[group] + 1] = id end
         end

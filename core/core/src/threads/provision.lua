@@ -214,7 +214,9 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
                 .select("c.component_id AS component_id")
                 :from("kickside_components c")
                 :left_join("kickside_thread t ON t.id = c.component_id")
-                :where("t.id IS NULL")
+                :left_join("kickside_component_meta type_meta ON type_meta.component_id = c.component_id AND type_meta.key = 'type'")
+                :left_join("kickside_component_meta class_meta ON class_meta.component_id = c.component_id AND class_meta.key = 'thread_class'")
+                :where("(t.id IS NULL OR t.thread_class <> ? OR type_meta.value IS NULL OR type_meta.value <> 'thread' OR class_meta.value IS NULL OR class_meta.value <> t.thread_class)", tostring(kind.class))
                 :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
                 :run_with(_db):query()
             if thread_err then

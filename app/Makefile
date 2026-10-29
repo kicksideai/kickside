@@ -46,7 +46,10 @@ publish: refresh-deps
 # A valid registry pack can otherwise contain only the login/static shell.
 VERSION ?= $(shell cat version.txt)
 HUB_REGISTRY ?= https://hub.wippy.ai
-.PHONY: release-build release-check release-publish
+.PHONY: release-build release-check release-publish release-dependencies
+release-dependencies:
+	python3 scripts/check-release-dependencies.py --repository .. --wippy "$(WIPPY)"
+
 release-build: build
 	node scripts/check-app-bundle.mjs
 

@@ -1,3 +1,4 @@
+local binding_errors = require("binding_errors")
 local sql = require("sql")
 
 local resources = require("uploads_resources")
@@ -64,7 +65,8 @@ end
 -- Get an upload by ID
 function upload_query_repo.get(uuid)
     if not uuid or uuid == "" then
-        return nil, "Upload ID is required"
+        return nil, errors.new({kind = errors.INVALID, message = "Upload ID is required",
+            retryable = false, details = {code = "upload_id_required"}})
     end
 
     local db, err = resources.get_db()
@@ -85,11 +87,12 @@ function upload_query_repo.get(uuid)
     db:release()
 
     if err then
-        return nil, "Failed to get upload: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_lookup_failed", "Failed to get upload")
     end
 
     if #uploads == 0 then
-        return nil, "Upload not found"
+        return nil, errors.new({ kind = errors.NOT_FOUND, message = "Upload not found",
+            retryable = false, details = {code = "upload_not_found"} })
     end
 
     local upload = uploads[1]
@@ -203,7 +206,7 @@ function upload_query_repo.list_by_actor(actor_id, limit, offset, opts)
     db:release()
 
     if err then
-        return nil, "Failed to list uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_list_failed", "Failed to list uploads")
     end
 
     for _, upload in ipairs(uploads) do
@@ -371,7 +374,7 @@ function upload_query_repo.list_with_filters(options)
     db:release()
 
     if err then
-        return nil, "Failed to list uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_list_failed", "Failed to list uploads")
     end
 
     for _, upload in ipairs(uploads) do
@@ -431,7 +434,7 @@ function upload_query_repo.count_with_filters(options)
     db:release()
 
     if err then
-        return nil, "Failed to count uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_count_failed", "Failed to count uploads")
     end
 
     return result[1].count

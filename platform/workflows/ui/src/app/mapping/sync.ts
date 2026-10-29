@@ -1,3 +1,4 @@
+import { RETRY_FIELDS } from '../types'
 // The realtime definition sync engine (Beacon-grade). One reducer serves both
 // planes:
 //   1. optimistic-apply the events an apply/undo/redo POST returns, immediately;
@@ -108,6 +109,9 @@ function normalizeNode(b: Record<string, unknown>): WfNode | null {
   if (b.ref != null) node.ref = String(b.ref)
   if (b.ref_label != null) node.ref_label = String(b.ref_label)
   if (b.config != null) node.config = asRecord(b.config)
+  for (const field of RETRY_FIELDS) {
+    if (b[field] !== undefined && b[field] !== false) (node as unknown as Record<string, unknown>)[field] = b[field]
+  }
   if (b.input_schema !== undefined) node.input_schema = b.input_schema
   if (b.output_schema !== undefined) node.output_schema = b.output_schema
   if (b.config_schema !== undefined) node.config_schema = b.config_schema
@@ -177,6 +181,9 @@ export function applyEvent(doc: WfDoc, ev: WfEvent): ApplyOutcome {
       const patch: Partial<WfNode> = {}
       for (const k of ['kind', 'title', 'ref', 'ref_label', 'config', 'input_schema', 'output_schema', 'config_schema', 'icon', 'pinned', 'deletable', 'boundary', 'child_interface', 'ports'] as const) {
         if (k in b) (patch as Record<string, unknown>)[k] = b[k]
+      }
+      for (const field of RETRY_FIELDS) {
+        if (field in b) (patch as Record<string, unknown>)[field] = b[field] === false ? undefined : b[field]
       }
       doc.nodes = { ...doc.nodes, [id]: { ...existing, ...patch } }
       return { changed: true, unknown: false }

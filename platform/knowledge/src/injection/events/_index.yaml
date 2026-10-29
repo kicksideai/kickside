@@ -15,6 +15,7 @@ entries:
       properties:
         kb_id: { type: string }
         content: { type: string }
+        has_text: { type: boolean }
         content_omitted: { type: boolean }
         content_bytes: { type: integer, minimum: 0 }
         content_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
@@ -26,6 +27,15 @@ entries:
       required: [kb_id, content_type, source_ref]
       anyOf:
         - required: [content]
+        - required: [has_text]
+          properties:
+            has_text: { const: false }
+            source_ref:
+              type: object
+              required: [kind, upload_id]
+              properties:
+                kind: { const: upload }
+                upload_id: { type: string, minLength: 1 }
         - required: [content_omitted, content_bytes, content_sha256]
           properties:
             content_omitted: { const: true }

@@ -9,6 +9,7 @@
    (wiki, uploads, inbox). Each viewer element fills the box its host gives it. */
 :host {
   display: block;
+  min-width: 0;
   --rv-text: var(--p-text-color);
   --rv-muted: var(--p-text-muted-color);
   --rv-faint: color-mix(in srgb, var(--p-text-color) 45%, transparent);
@@ -144,7 +145,7 @@
   max-height: min(82vh, 900px);
 }
 .pdfv-pages { display: flex; flex-direction: column; align-items: center; width: 100%; }
-.pdfv-page { position: relative; background: var(--rv-document-canvas); max-width: 100%; }
+.pdfv-page { position: relative; background: var(--rv-document-canvas); max-width: 100%; container-type: inline-size; }
 .pdfv-page + .pdfv-page { border-top: 1px solid var(--rv-border); }
 /* Cap to the viewer width so a wide/scanned page never scrolls horizontally. */
 .pdfv-page canvas { display: block; max-width: 100%; height: auto; }
@@ -152,17 +153,28 @@
   position: absolute; inset: 0; overflow: clip; opacity: 1; line-height: 1;
   text-align: initial; transform-origin: 0 0; forced-color-adjust: none;
   text-size-adjust: none;
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  transform: scale(calc(100cqw / var(--pdf-width))) var(--pdf-rotation, translate(0));
 }
+.textLayer[data-main-rotation="90"] { --pdf-rotation: rotate(90deg) translateY(-100%); }
+.textLayer[data-main-rotation="180"] { --pdf-rotation: rotate(180deg) translate(-100%, -100%); }
+.textLayer[data-main-rotation="270"] { --pdf-rotation: rotate(270deg) translateX(-100%); }
 .textLayer span, .textLayer br {
   position: absolute; white-space: pre; color: transparent;
   transform-origin: 0 0; cursor: text;
 }
+.textLayer > :not(.markedContent), .textLayer .markedContent span:not(.markedContent) {
+  font-size: calc(var(--total-scale-factor) * var(--min-font-size) * var(--font-height));
+  transform: rotate(var(--rotate, 0deg)) scaleX(var(--scale-x, 1)) scale(calc(1 / var(--min-font-size)));
+}
+.textLayer .markedContent { display: contents; }
 .textLayer ::selection { background: color-mix(in srgb, var(--p-primary-color) 35%, transparent); }
 
 /* ── Image ──────────────────────────────────────────────────────────────── */
 .imgv {
   display: flex; align-items: center; justify-content: center;
-  padding: 16px; border-radius: 10px;
+  padding: var(--rv-image-padding, 16px); border-radius: 10px;
   background: color-mix(in srgb, var(--p-text-color) 4%, transparent);
   border: 1px solid var(--rv-border);
 }

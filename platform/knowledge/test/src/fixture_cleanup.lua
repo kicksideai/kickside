@@ -5,7 +5,7 @@ local test = require("test")
 
 local function cleanup(id: string): ()
     local released, release_err = component.system_delete(id)
-    test.is_true(released)
+    test.is_true(released, tostring(release_err))
     if release_err then test.is_true(release_err:details().cleanup_pending) end
     local db, db_err = sql.get("app:db")
     test.is_nil(db_err)

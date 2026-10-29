@@ -38,6 +38,27 @@ end
 
 local function define_tests()
     test.describe("KickSide Settings", function()
+        test.it("lists a value control and preserves type validation and reset", function()
+            local s = open_settings()
+            local function row(): any
+                for _, item in ipairs(s:list({ namespace = NS }).settings) do
+                    if item.key == "picker" then return item end
+                end
+                error("picker setting is missing")
+            end
+            test.not_nil(row().control)
+            test.eq(row().control.tag, "wc-model-picker")
+            test.eq(row().control.props.capability, "vision")
+            test.eq(s:set({ namespace = NS, key = "picker", value = false }).success, false)
+            test.eq(s:set({ namespace = NS, key = "picker", value = "model-one" }).success, true)
+            test.eq(row().value, "model-one")
+            test.eq(row().updated_by, "admin")
+            test.eq(row().is_default, false)
+            test.eq(s:unset({ namespace = NS, key = "picker" }).success, true)
+            test.eq(row().value, "class:fast")
+            test.eq(row().is_default, true)
+        end)
+
         test.it("get returns the declared default when there is no override", function()
             local r = open_settings():get({ namespace = NS, key = "max_items" })
             test.eq(r.success, true)

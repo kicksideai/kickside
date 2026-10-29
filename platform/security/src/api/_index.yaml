@@ -15,7 +15,9 @@ entries:
       policies: [kickside.security.service:group_set_registry_read, kickside.security.service:group_set_db]
     imports:
       api_errors: kickside.security.api:errors
-      scope_projection: kickside.security.service:scope_projection
+      groups: kickside.security.runtime:groups
+      execution_identity: kickside.execution:execution_identity
+      group_sets: kickside.security.persist:group_sets
   - name: projection_status.endpoint
     kind: http.endpoint
     method: GET

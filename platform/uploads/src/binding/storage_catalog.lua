@@ -13,11 +13,11 @@ function M.get_upload(id: string): (Upload?, any?)
     local rows, query_err = db:query("SELECT uuid,actor_id,storage_state FROM kickside_uploads WHERE uuid=$1", {id})
     db:release()
     if query_err then return nil, query_err end
-    if #rows == 0 then return nil, errors.new({message="Upload not found",kind=errors.NOT_FOUND,retryable=false}) end
+    if #rows == 0 then return nil, errors.new({message="Upload not found",kind=errors.NOT_FOUND,retryable=false,details={code="upload_not_found"}}) end
     return rows[1] :: Upload, nil
 end
 function M.objects(db_id: string, upload_id: string): ({ Object }?, any?)
-    if db_id ~= env.get("kickside.uploads.env:database_resource") then return nil, errors.new({message="Storage catalog database mismatch",kind=errors.INVALID}) end
+    if db_id ~= env.get("kickside.uploads.env:database_resource") then return nil, errors.new({message="Storage catalog database mismatch",kind=errors.INVALID,retryable=false,details={code="storage_database_mismatch"}}) end
     local db, err = sql.get(db_id)
     if err then return nil, err end
     local rows, query_err = db:query([[SELECT storage_id,storage_path,mime_type FROM kickside_uploads WHERE uuid=$1

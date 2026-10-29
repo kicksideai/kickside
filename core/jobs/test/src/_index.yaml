@@ -8,6 +8,31 @@ namespace: app
 # isolation. Excluded from publish (see wippy.yaml).
 
 entries:
+  - name: public_seams_test
+    kind: function.lua
+    meta: { type: test, suite: jobs_public_seams }
+    source: file://public_seams_test.lua
+    method: run
+    modules: [sql, uuid, process, channel, time, security, funcs]
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      job_fixture: app:job_fixture
+
+  - name: public_seams_probe
+    kind: function.lua
+    source: file://public_seams_probe.lua
+    method: run
+    imports:
+      jobs: kickside.core.jobs:jobs
+
+  - name: public_seams_scope
+    kind: security.policy
+    policy:
+      resources: [app:public_seams_probe, 'kickside.core.jobs:*', app:db]
+      actions: [funcs.call, registry.get, db.get]
+      effect: allow
+
   - name: dep.wippy.test
     kind: ns.dependency
     component: wippy/test
@@ -21,6 +46,11 @@ entries:
     file: "${sqlite_path}"
 
   - name: private_queue_attempt_budget_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: jobs_migration_db
     kind: db.sql.sqlite
     foreign_keys: true
     file: ":memory:"
@@ -2358,7 +2388,8 @@ entries:
       lifecycle_cancel: app:scope_native_lifecycle_cancel
       lifecycle_enqueue: app:scope_native_lifecycle_enqueue
       lease_status: app:scope_native_lease_status
-      wake: app:scope_native_wake
+      wake: app:wake_native_source
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:scope_native_clock
       completion: app:scope_native_completion
       retention: app:scope_native_retention
@@ -2405,12 +2436,6 @@ entries:
       fixture: app:scope_native_fixture
       lifecycle_types: kickside.core.jobs.persist:lifecycle
 
-  - name: scope_native_wake
-    kind: library.lua
-    source: file://scope_native_dependency.lua
-    imports:
-      fixture: app:scope_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: scope_native_clock
     kind: library.lua
@@ -2564,11 +2589,9 @@ entries:
 
   - name: transaction_native_wake
     kind: library.lua
-    source: file://transaction_native_dependency.lua
-    modules: [sql]
+    source: file://facade_wake_dependency.lua
     imports:
       fixture: app:transaction_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: transaction_native_clock
     kind: library.lua
@@ -2644,6 +2667,7 @@ entries:
       lifecycle_cancel: app:transaction_native_lifecycle_cancel
       lifecycle_enqueue: app:transaction_native_lifecycle_enqueue
       wake: app:transaction_native_wake
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:transaction_native_clock
       completion: app:transaction_native_completion
       lease_status: app:transaction_native_lease_status
@@ -2732,11 +2756,9 @@ entries:
 
   - name: health_native_wake
     kind: library.lua
-    source: file://health_native_dependency.lua
-    modules: [sql]
+    source: file://facade_wake_dependency.lua
     imports:
       fixture: app:health_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: health_native_clock
     kind: library.lua
@@ -2812,6 +2834,7 @@ entries:
       lifecycle_cancel: app:health_native_lifecycle_cancel
       lifecycle_enqueue: app:health_native_lifecycle_enqueue
       wake: app:health_native_wake
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:health_native_clock
       completion: app:health_native_completion
       lease_status: app:health_native_lease_status
@@ -3785,3 +3808,14 @@ entries:
     imports:
       test: wippy.test:test
       boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: notification_native_test
+    kind: function.lua
+    meta: { type: test, suite: jobs_notification_native }
+    source: file://notification_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      jobs: app:scope_native_source
+      wake: app:wake_native_source
+      fixture: app:wake_native_fixture

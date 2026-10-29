@@ -42,10 +42,10 @@ local RECONCILE_DRIVE = "reconcile"
 -- and the round itself runs when a worker claims the drive's slot.
 local ROUND_QUEUED = "queued"
 
--- The parked phases resume releases (design v5 §4.4): an explicit pause, and
--- a deterministic declaration, access or identity failure the operator has
--- corrected. The round re-evaluates authority on its next stamp and parks
--- again if the cause remains. A deleted source never resumes.
+-- Resume releases every resumable phase, including an explicit pause. Run now
+-- and resync release a deterministic declaration, access or identity failure
+-- after an authorized operator corrects it. The round re-evaluates authority
+-- on its next stamp and parks again if the cause remains.
 local function resumable_phases(PHASE: Map): { [string]: boolean }
     return { [PHASE.PAUSED] = true, [PHASE.BLOCKED_DECLARATION] = true,
         [PHASE.BLOCKED_ACCESS] = true, [PHASE.BLOCKED_IDENTITY] = true }
@@ -70,6 +70,13 @@ function part.attach(M: any, dependencies: any, P: any): ()
     local function set(tx: any, automation_id: string, drive_key: string, fields: Map): error?
         local _, err = (dependencies.drive :: any).update_cas_tx(tx, automation_id, drive_key, {}, fields)
         return err
+    end
+
+    local function reactivate_recoverable(d: Map, fields: Map): Map
+        if d.phase ~= (dependencies.drive :: any).PHASE.PAUSED and RESUMABLE_PHASES[tostring(d.phase)] then
+            fields.phase = (dependencies.drive :: any).PHASE.ACTIVE
+        end
+        return fields
     end
 
     -- restart_reconcile_tx starts the automation's reconcile pass afresh and
@@ -173,7 +180,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
         end
         if control == "run_now" then
             local now = drive_mod.utc_now()
-            local fields: Map = { next_run_at = now }
+            local fields: Map = reactivate_recoverable(d, { next_run_at = now })
             if d.source_kind == drive_mod.SOURCE_KIND.MANUAL then
                 fields.event_seq = math.max(d.event_seq :: integer, d.last_committed_occurrence_seq :: integer,
                     (d.occurrence_seq or 0) :: integer) + 1
@@ -187,8 +194,9 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if control == "discard" then return discard_tx(tx, d, args.keys) end
         -- resync of a drive without a source thread: restart its cursor under a
         -- new delivery revision (A37), so re-pulled items are new deliveries.
-        local fields: Map = { cursor = (dependencies.sql :: any).NULL, rewind_generation = (d.rewind_generation :: integer) + 1,
-            delivery_revision = (d.delivery_revision :: integer) + 1, pass_pages = 0, pass_items = 0 }
+        local fields: Map = reactivate_recoverable(d, { cursor = (dependencies.sql :: any).NULL,
+            rewind_generation = (d.rewind_generation :: integer) + 1,
+            delivery_revision = (d.delivery_revision :: integer) + 1, pass_pages = 0, pass_items = 0 })
         if d.source_kind == drive_mod.SOURCE_KIND.COLLECTION or d.source_kind == drive_mod.SOURCE_KIND.TIMER then
             fields.next_run_at = drive_mod.utc_now()
         end
@@ -291,10 +299,10 @@ function part.attach(M: any, dependencies: any, P: any): ()
             local locked, lock_err = (dependencies.drive :: any).lock_tx(tx, pending.automation_id, pending.drive_keys)
             if lock_err then return nil, lock_err end
             local d = (locked :: { [string]: Map })[drive_key]
-            local set_err = set(tx, pending.automation_id, drive_key, {
+            local set_err = set(tx, pending.automation_id, drive_key, reactivate_recoverable(d, {
                 event_seq = input.target, rewind_generation = (d.rewind_generation :: integer) + 1,
                 delivery_revision = (d.delivery_revision :: integer) + 1,
-            })
+            }))
             if set_err then return nil, set_err end
             for _, key in ipairs(pending.drive_keys or {}) do
                 if key == RECONCILE_DRIVE then

@@ -45,6 +45,13 @@ never the reverse:
 | GET | `/security/policies` | public policy catalog (`?include_private` to include private) |
 | GET | `/security/projection` | current scope resolution status |
 
+`GET /security/projection` resolves the caller's native groups and live selected
+policy IDs through the same resolver and scope constructor as Users. `current`
+reports whether that authority is available without writing registry entries or
+registering a legacy group set. `scope_name` keeps the stable group-set identifier;
+readiness does not require a materialized union scope. Resolution errors propagate
+through the API error response.
+
 Custom-scope writes fence affected users and persist the DB selection. The
 projection service updates their `security.scope` catalog entries on reconcile.
 
@@ -66,7 +73,10 @@ function carries its own configured database and registry authority. Users
 neither imports Security persistence nor takes its private DB policy, so the
 modules can use different databases. The resolver reads all held custom-scope
 selections in one primary-key query, checking target and enabled state before
-using each row. Memberships without DB selections require no SQL query. Native token
+using each row. Internal reads use only Security's database and registry policies;
+the caller's inspection denials remain on its own execution scope. Calling the
+internal reader directly grants no additional authority.
+Memberships without DB selections require no SQL query. Native token
 validation unions these source IDs with current native group policies and applies the credential ceiling. Existing stored sessions use the
 same live lookup and keep their bearer tokens.
 

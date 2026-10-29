@@ -95,6 +95,34 @@ local function define_tests()
             test.eq(scope:evaluate(actor, "access", "unrelated:list.endpoint"), "undefined")
         end)
 
+        test.it("combines host access and module selection declarations for one Member role", function()
+            local ids = {"app:test_multi_core", "app:test_multi_module", "app:test_multi_a_host", "app:test_multi_z_modules"}
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = ids[1], kind = "security.policy", data = {
+                groups = {"app:test_multi_core_group"},
+                policy = {actions = "access", resources = "app:multi_shell", effect = "allow"}}})
+            changes:create({id = ids[2], kind = "security.policy", meta = {intent = "test_multi_module"}, data = {
+                policy = {actions = "access", resources = "app:multi_module", effect = "allow"}}})
+            changes:create({id = ids[3], kind = "registry.entry", meta = {type = "kickside.security.group_composition"},
+                data = {group_id = "app:test_multi_member", groups = {"app:test_multi_core_group"}}})
+            changes:create({id = ids[4], kind = "registry.entry", meta = {type = "kickside.security.group_composition"},
+                data = {group_id = "app:test_multi_member", select = {["meta.intent"] = "test_multi_module"}}})
+            test.is_nil(select(2, changes:apply()))
+            local ok, failure = pcall(function()
+                test.not_nil((trigger_reconcile.trigger()))
+                local scope = assert(source_scope.resolve("app:test_multi_member"))
+                local actor = assert(security.new_actor("multi-member", {}))
+                test.eq(scope:evaluate(actor, "access", "app:multi_shell"), "allow")
+                test.eq(scope:evaluate(actor, "access", "app:multi_module"), "allow")
+                test.eq(scope:evaluate(actor, "access", "app:unrelated_multi"), "undefined")
+            end)
+            changes = assert(registry.snapshot()):changes()
+            for _, id in ipairs(ids) do changes:delete(id) end
+            test.is_nil(select(2, changes:apply()))
+            test.not_nil((trigger_reconcile.trigger()))
+            if not ok then error(failure) end
+        end)
+
         test.it("plans a composed catalog of distinct module grants in time linear in its policies", function()
             local original = assert(registry.current_version())
             local changes = assert(registry.snapshot()):changes()
@@ -731,6 +759,44 @@ local function define_tests()
             local removed, removed_err = source_scope.resolve(sid)
             test.is_nil(removed)
             test.is_true(errors.is(removed_err, errors.NOT_FOUND))
+        end)
+
+        test.it("retains managed delegation attached to an otherwise empty custom group", function()
+            local slug = "managed_delegation_group"
+            local group = consts.CUSTOM_SCOPE_NS .. ":" .. slug
+            local policy_id = "app:projection_managed_delegation"
+            local resource = execution_identity.delegation_bytes("user", "bot-account", "automation-root")
+            local original = assert(registry.current_version())
+            local ok, failure = pcall(function()
+                test.not_nil((store.upsert({slug = slug, policies = {}}, "tester")))
+                test.not_nil((trigger_reconcile.trigger()))
+                local actor = assert(security.new_actor("operator"))
+                test.eq(assert(source_scope.resolve(group)):evaluate(actor, "security.actor.delegate", resource), "undefined")
+                local changes = assert(registry.snapshot()):changes()
+                local declaration = {id = policy_id, kind = "security.policy", meta = {
+                    managed_by = consts.MANAGED_BY, intent = "execution_delegation", active = true},
+                    data = {groups = {group}, policy = {actions = "security.actor.delegate", resources = "*",
+                        effect = "allow", conditions = {{field = "resource", operator = "eq", value = resource}}}}}
+                changes:create(declaration)
+                test.is_nil(select(2, changes:apply()))
+                test.not_nil((trigger_reconcile.trigger()))
+                local scope = assert(source_scope.resolve(group))
+                test.eq(scope:evaluate(actor, "security.actor.delegate", resource), "allow")
+                test.eq(scope:evaluate(actor, "security.actor.delegate", "another-root"), "undefined")
+                test.eq(scope:evaluate(actor, "access", "app:module.endpoint"), "undefined")
+                declaration.meta.active = false
+                declaration.data.policy.conditions[#declaration.data.policy.conditions + 1] = {
+                    field = "resource", operator = "eq", value = ""}
+                changes = assert(registry.snapshot()):changes()
+                changes:update(declaration)
+                test.is_nil(select(2, changes:apply()))
+                test.not_nil((trigger_reconcile.trigger()))
+                test.eq(assert(source_scope.resolve(group)):evaluate(actor, "security.actor.delegate", resource), "undefined")
+            end)
+            test.is_true((store.delete(slug)))
+            test.is_true((registry.apply_version(original)))
+            test.not_nil((trigger_reconcile.trigger()))
+            if not ok then error(failure) end
         end)
 
         test.it("reconcile projects an enabled DB scope into a security.scope entry", function()

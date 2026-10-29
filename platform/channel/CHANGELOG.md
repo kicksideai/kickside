@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/kicksideai/kickside/compare/channel-v0.2.5...channel-v0.2.6) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.2.5](https://github.com/kicksideai/kickside/compare/channel-v0.2.4...channel-v0.2.5) (2026-10-22)
 
 

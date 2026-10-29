@@ -51,7 +51,7 @@ local function run(input: any): (any, any?)
 
     local upload, upload_err = upload_query_repo.get(upload_id)
     if upload_err or not upload then
-        if upload_err == "Upload not found" or (not upload and not upload_err) then
+        if errors.is(upload_err, errors.NOT_FOUND) or (not upload and not upload_err) then
             return nil, failure("upload callback target is missing", errors.NOT_FOUND, "subject")
         end
         if type(upload_err) == "userdata" then return nil, upload_err end

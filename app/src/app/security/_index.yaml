@@ -45,10 +45,8 @@ entries:
       test: wippy.test:test
       scope_projection: kickside.security.service:scope_projection
 
-  # Descriptors give the built-in roles (app.security:* groups) human labels and
-  # descriptions in the roles/scopes admin. The security module reads any
-  # registry.entry of meta.type kickside.security.role; custom roles are created
-  # the same way at runtime. Built-in roles cannot be edited from the UI.
+  # The application declares Administrator; the Security package supplies the
+  # canonical Member role. Signed-in session policies are not account roles.
   - name: role_admin
     kind: registry.entry
     meta:
@@ -56,24 +54,6 @@ entries:
       title: Administrator
       comment: Full access to every app, keeper, and management surface. Assign sparingly.
     role_id: app.security:admin
-    protected: true
-
-  - name: role_user
-    kind: registry.entry
-    meta:
-      type: kickside.security.role
-      title: User
-      comment: Core access for every signed-in user. Module access comes from group memberships.
-    role_id: app.security:user
-    protected: true
-
-  - name: role_members
-    kind: registry.entry
-    meta:
-      type: kickside.security.role
-      title: Members
-      comment: Default module access. Remove this membership before assigning narrower groups.
-    role_id: app.security:members
     protected: true
 
   - name: user.profile_runtime

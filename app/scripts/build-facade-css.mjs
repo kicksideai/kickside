@@ -35,7 +35,7 @@ function banner(bundle, files) {
    On web-host 1.0.44 custom_css and children_custom_css are delivery-equivalent
    (both injected into the SPA host document AND every WC shadow root). The split is
    organizational: PrimeVue .p-* chrome -> custom_css; WC-internal base rules (border
-   reset, .p-hidden-accessible, dark primary-contrast) -> children_custom_css.
+   reset, .p-hidden-accessible) -> children_custom_css.
    Assembled from: ${files.join(', ')}
    ===================================================================== */
 `

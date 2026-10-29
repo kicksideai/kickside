@@ -322,3 +322,14 @@ entries:
     default: []
     read_access: admin
     visible: false
+
+  - name: setting_picker
+    kind: registry.entry
+    meta: { type: kickside.settings:definition }
+    namespace: kickside.settings.test
+    key: picker
+    value_type: string
+    default: "class:fast"
+    control:
+      tag: wc-model-picker
+      props: { capability: vision }

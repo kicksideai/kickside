@@ -148,6 +148,16 @@ function M.converge_thread(args: any): (any?, error?)
         return M.ensure_thread(args)
     end
 
+    local declared_class = trim(args.thread_class)
+    if declared_class ~= "" and tostring(found.thread_class) ~= declared_class then
+        local updated, update_err = resource_crud.update({
+            thread_id = component_id,
+            thread_class = declared_class,
+        })
+        if update_err or not updated then return nil, update_err end
+        found = (updated :: { [string]: any }).thread
+    end
+
     local db, db_err = open_db()
     if db_err then return nil, db_err end
     local _db = db :: sql.DB
@@ -301,6 +311,9 @@ local function ensure_thread(args: any, output_target: any?): (any?, error?)
             local found, find_err = lookup_thread(ensured_component_id, true)
             if find_err then return nil, find_err end
             if found then
+                if output_target == nil and is_str(args.impl_id) then
+                    return M.converge_thread(args)
+                end
                 return { thread = found, thread_id = ensured_component_id, created = false, rollback = nil }, nil
             end
         end

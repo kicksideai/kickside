@@ -21,7 +21,8 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -45,7 +46,7 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-Use **System → Modules** to inspect packages, dependencies, and host requirements. To update an installation, choose **Update all**, review and apply the plan, then restart from the same directory. The owning modules ship data migrations; installation-specific data conversion is not part of the update procedure.
+Use **System → Modules** to inspect packages, dependencies, and host requirements. Choose **Scan updates**, then **Update all** to plan the available updates together. If any module lacks required settings, the batch is not applied and the affected rows show which settings need attention. Open that module’s update dialog to configure its requirements. When the combined plan is applicable, Update all submits its returned bindings and dependencies in one install request. Planning does not reserve the registry: Keeper validates again when applying, and migration or bootloader errors can still occur after registry changes commit. Refresh module and migration status after an interrupted request before retrying. The owning modules ship data migrations; installation-specific data conversion is not part of the update procedure.
 
 ## Reference
 

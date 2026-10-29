@@ -8,8 +8,9 @@ import { primaryPicker, schemaFormFields } from '@widgets/app/ports'
 import type { CatalogItem } from '../catalog/catalog'
 import type { WfEdge, WfNode, WfNote } from '../types'
 import FlowPicker from './FlowPicker.vue'
+import RetryPolicyPanel from './RetryPolicyPanel.vue'
 import SchemaEditor from './SchemaEditor.vue'
-import { blockConfigSchema, blockConfigWc, hueClass, kindDef, isBoundaryKind, isToolBlock as isToolBlockRef, BOUNDARY_KINDS } from '../domain/node-policy'
+import { blockDefs, blockConfigSchema, blockConfigWc, hueClass, kindDef, isBoundaryKind, isToolBlock as isToolBlockRef, BOUNDARY_KINDS } from '../domain/node-policy'
 import type { FlowCandidate } from '../nodes/flow-candidate'
 import { isCombineKind } from '../nodes/combine-node'
 import { isForEachKind } from '../nodes/for-each-node'
@@ -70,6 +71,8 @@ function commitConfig(config: Record<string, unknown>) {
 }
 
 const isBlock = computed(() => props.node?.kind === 'block' && !!props.node.ref)
+const execution = computed(() => props.node?.ref ? blockDefs[props.node.ref]?.execution : undefined)
+const supportsRetries = computed(() => isBlock.value && ['function', 'tool'].includes(execution.value?.kind || ''))
 const isToolBlock = computed(() => isBlock.value && isToolBlockRef(props.node?.ref))
 
 const extConfigRow = computed(() => {
@@ -236,6 +239,8 @@ function commitTitle() {
           <WcMount :tag="SCHEMA_FORM_TAG" :schema="extFormSchema" :config="nodeConfig" @change="onConfigChange" />
         </template>
       </template>
+
+      <RetryPolicyPanel v-if="node && supportsRetries && execution" :key="node.id" :node="node" :execution="execution" @update-node="(p) => emit('update-node', p)" />
 
       <!-- Workflow composition: a workflow-aware picker, not the generic component picker. -->
       <template v-if="isFlowKind(node.kind)">

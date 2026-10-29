@@ -110,6 +110,7 @@ entries:
     source: file://round/plan.lua
     modules: [expr]
     imports:
+      failure_classification: kickside.automation:failure_classification
       transform_apply: kickside.transform:apply
       transform_strategies: kickside.transform:strategies
       strategy_reference: kickside.transform:strategy_reference
@@ -399,6 +400,7 @@ entries:
     method: compute
     modules: [expr]
     imports:
+      failure_classification: kickside.automation:failure_classification
       transform_apply: kickside.transform:apply
       transform_strategies: kickside.transform:strategies
       strategy_reference: kickside.transform:strategy_reference

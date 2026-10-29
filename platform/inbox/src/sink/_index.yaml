@@ -72,11 +72,37 @@ entries:
           "item_type": { "type": "string", "description": "Overrides the configured item type." },
           "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "description": "Overrides the configured priority." },
           "title": { "type": "string", "description": "Overrides the derived title." },
-          "source_id": { "type": "string", "description": "Stable source id; defaults to the idempotency key." },
+          "source_id": { "type": "string", "description": "Stable source id; defaults to the record identity. Aggregates require a source component the actor can read." },
+          "aggregate_key": { "type": "string", "minLength": 1, "description": "One item per source component, key and ambient recipient; later writes refresh and reopen it." },
+          "status": { "description": "Aggregate lifecycle: pending (default) or resolved. Resolved explicitly closes an aggregate without requiring content. Ignored without an aggregate key." },
           "metadata": { "type": "object", "description": "Copied onto the item metadata; dedup_key defaults to the idempotency key." }
         },
-        "required": ["content"] }
+        "allOf": [{
+          "if": { "required": ["aggregate_key"] },
+          "then": { "properties": { "status": { "type": "string", "enum": ["pending", "resolved"] } } }
+        }],
+        "anyOf": [
+          { "required": ["content"] },
+          { "required": ["source_id", "aggregate_key", "status"], "properties": { "status": { "const": "resolved" } } }
+        ] }
     config_schema:
+      aggregate_key:
+        picker: wc-schema-form
+        type: string
+        title: Aggregate key
+        description: Optional stable key for one item per source component and recipient. Omit for independent items.
+      source_id:
+        picker: wc-schema-form
+        type: string
+        title: Source component
+        description: Source component ID required for aggregates. The recipient must retain READ access.
+      status:
+        picker: wc-schema-form
+        type: string
+        enum: [pending, resolved]
+        default: pending
+        title: Aggregate status
+        description: Pending refreshes and reopens the aggregate; resolved closes it without a body.
       content:
         picker: wc-schema-form
         type: string

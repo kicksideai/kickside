@@ -96,6 +96,14 @@ onMounted(async () => {
     const catalogError = await form.loadCatalog()
     if (catalogError) throw new Error(catalogError)
     const preset = inputPreset(props.value.input)
+    if (typeof preset.title === 'string') form.title.value = preset.title
+    if (preset.trigger !== undefined) {
+      const trigger = inputPreset(preset.trigger)
+      if (!form.sources.value.some(source => source.id === trigger.source)) {
+        throw new Error('The selected source is unavailable.')
+      }
+      form.triggerSeed.value = trigger
+    }
     if (typeof preset.sink_port === 'string') {
       if (!form.sinks.value.some(sink => sink.id === preset.sink_port)) {
         throw new Error('The selected destination is unavailable.')

@@ -157,6 +157,7 @@ entries:
       comment: Formats public upload API response bodies.
     source: file://response.lua
     modules:
+      - registry
       - time
     imports:
       http_errors: kickside.contract:http_errors

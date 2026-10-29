@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.68](https://github.com/kicksideai/kickside/compare/inbox-v0.1.67...inbox-v0.1.68) (2026-10-29)
+
+
+### Features
+
+* **inbox:** support source-owned aggregate item lifecycle ([#204](https://github.com/kicksideai/kickside/issues/204)) ([de81bc1](https://github.com/kicksideai/kickside/commit/de81bc1c7b8fce8c14b3030193534379b4c40fc9))
+
+
+### Bug Fixes
+
+* preserve composed scopes across chat and Inbox review ([#220](https://github.com/kicksideai/kickside/issues/220)) ([8c16715](https://github.com/kicksideai/kickside/commit/8c167155d4f77d81948b3148284d1f0bd34f30c2))
+
+## [0.1.67](https://github.com/kicksideai/kickside/compare/inbox-v0.1.66...inbox-v0.1.67) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/inbox-v0.1.65...inbox-v0.1.66) (2026-10-25)
 
 

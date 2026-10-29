@@ -9,6 +9,7 @@ entries:
     source: file://resources.lua
     modules: [sql, env, cloudstorage, registry]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       storage_backend: kickside.uploads.binding:storage_adapter_default
 
   - name: count_resources_func
@@ -16,8 +17,9 @@ entries:
     meta:
       comment: Implements kickside.contract:resource_registry.count_resources for uploads.
     source: file://count_resources_func.lua
-    modules: [security, json]
+    modules: [security]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
     method: handle
 
@@ -28,6 +30,9 @@ entries:
     source: file://get_content_func.lua
     modules: [security, ctx]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
+      component: kickside.component:component
+      types: kickside.uploads:types
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
       upload_query_repo: kickside.uploads.persist:upload_query_repo
@@ -41,6 +46,9 @@ entries:
     source: file://get_info_func.lua
     modules: [security, ctx]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
+      component: kickside.component:component
+      types: kickside.uploads:types
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
       upload_query_repo: kickside.uploads.persist:upload_query_repo
@@ -51,8 +59,9 @@ entries:
     meta:
       comment: Implements kickside.contract:resource_registry.list_resources for uploads.
     source: file://list_resources_func.lua
-    modules: [security, json]
+    modules: [security]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
       upload_query_repo: kickside.uploads.persist:upload_query_repo
     method: handle
@@ -64,6 +73,7 @@ entries:
     source: file://file_provider_func.lua
     method: get_info
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       upload_response: kickside.uploads.api:upload_response
 
@@ -78,6 +88,7 @@ entries:
     method: handle
     modules: [ctx]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       component: kickside.component:component
       upload_lib: kickside.uploads:uploads
       upload_query_repo: kickside.uploads.persist:upload_query_repo
@@ -108,3 +119,9 @@ entries:
     - env
     imports:
       storage_location: kickside.uploads.binding:storage_location
+
+  - name: binding_errors
+    kind: library.lua
+    source: file://binding_errors.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope

@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.1.70](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.69...knowledge-v0.1.70) (2026-10-29)
+
+
+### Features
+
+* **knowledge:** admit file references for accepting engines ([#206](https://github.com/kicksideai/kickside/issues/206)) ([fc8c6b2](https://github.com/kicksideai/kickside/commit/fc8c6b218e6a77c45cca9106931d0b5c2f7130ef))
+
+
+### Bug Fixes
+
+* **knowledge:** reuse store statistics in detail responses ([f924751](https://github.com/kicksideai/kickside/commit/f92475169765155b5d3d631e9aebcbbfb191f7b3))
+
+## [0.1.69](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.68...knowledge-v0.1.69) (2026-10-28)
+
+
+### Features
+
+* **knowledge:** show engine statistics in the shared header ([#185](https://github.com/kicksideai/kickside/issues/185)) ([029161b](https://github.com/kicksideai/kickside/commit/029161bc66d8bf0f2e30f233733664a080b9c394))
+
+## [0.1.68](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.67...knowledge-v0.1.68) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
 ## [0.1.67](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.66...knowledge-v0.1.67) (2026-10-25)
 
 
