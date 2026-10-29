@@ -7,6 +7,7 @@ local job_types = require("job_types")
 local claim = require("claim")
 local lifecycle = require("lifecycle")
 local job_fixture = require("job_fixture")
+local funcs = require("funcs")
 
 local function with_db(fn)
     local db, _, err = job_fixture.private_queue("app:private_queue_capacity_claim_test")
@@ -33,6 +34,55 @@ end
 
 local function define_tests()
     test.describe("jobs capacity claims", function()
+        test.it("upgrades an existing queue without rewriting jobs or run history", function()
+            with_db(function(db: sql.DB)
+                local statements = {}
+                if tostring(db:type()) == sql.type.SQLITE then
+                    statements[#statements + 1] = "DROP INDEX uq_kickside_job_running_legacy_concurrency"
+                    statements[#statements + 1] = "DROP INDEX idx_kickside_job_running_capacity"
+                end
+                statements[#statements + 1] = "ALTER TABLE kickside_job DROP COLUMN capacity_group"
+                statements[#statements + 1] = [[CREATE UNIQUE INDEX uq_kickside_job_running_concurrency ON kickside_job(concurrency_key)
+                    WHERE concurrency_key IS NOT NULL AND status='running']]
+                for _, statement in ipairs(statements) do
+                    local _, err = db:execute(statement)
+                    test.is_nil(err, tostring(err))
+                end
+                local completed = uuid.v7()
+                for _, status in ipairs({ "pending", "running", "done" }) do
+                    local id = status == "done" and completed or uuid.v7()
+                    local _, err = db:execute([[INSERT INTO kickside_job
+                        (id,job_type,worker_ref,job_identity,owner_kind,owner_id,status,concurrency_key,payload)
+                        VALUES($1,'app:capacity_worker_a','app:capacity_worker_a',$4,'test','upgrade',$2,$2,$3)]],
+                        { id, status, '{"retained":true}', id })
+                    test.is_nil(err, tostring(err))
+                end
+                local _, history_err = db:execute([[INSERT INTO kickside_job_run
+                    (id,job_id,job_type,owner_kind,owner_id,attempt_no,execution_seq,status)
+                    VALUES($1,$2,'app:capacity_worker_a','test','upgrade',1,1,'success')]], { uuid.v7(), completed })
+                test.is_nil(history_err, tostring(history_err))
+                local jobs_before = assert(db:query("SELECT * FROM kickside_job ORDER BY id"))
+                local history_before = assert(db:query("SELECT * FROM kickside_job_run ORDER BY id"))
+                for _ = 1, 2 do
+                    local result, err = funcs.call("kickside.core.jobs.migrations:22_capacity_groups", {
+                        database_id = "app:private_queue_capacity_claim_test", id = "test:capacity_upgrade_" .. uuid.v4(),
+                    })
+                    test.is_nil(err, tostring(err))
+                    test.eq(result.status, "complete", tostring(result.error))
+                    for table_name, before in pairs({ kickside_job = jobs_before, kickside_job_run = history_before }) do
+                        local after = assert(db:query("SELECT * FROM " .. table_name .. " ORDER BY id"))
+                        test.eq(#after, #before)
+                        for index, row in ipairs(before) do
+                            for key, value in pairs(row) do test.eq(after[index][key], value, key) end
+                        end
+                    end
+                    local rows = assert(db:query("SELECT capacity_group FROM kickside_job"))
+                    test.eq(#rows, 3)
+                    for _, row in ipairs(rows) do test.is_nil(row.capacity_group) end
+                end
+            end)
+        end)
+
         test.it("shares Settings-backed capacity across worker types and permits the declared per-key limit", function()
             with_db(function(db: sql.DB)
                 local dbtype = tostring(db:type())

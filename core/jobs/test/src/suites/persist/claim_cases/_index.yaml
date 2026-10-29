@@ -55,6 +55,7 @@ entries:
   modules:
   - sql
   - uuid
+  - funcs
   imports:
     test: wippy.test:test
     job_types: kickside.core.jobs:types
