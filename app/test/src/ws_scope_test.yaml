@@ -9,6 +9,8 @@ entries:
     modules: [json, security, funcs]
     imports:
       test: wippy.test:test
+      subject: app:ws_scope_subject
+      context: app:ws_scope_context
   - name: ws_scope_probe
     kind: function.lua
     source: file://ws_scope_test.lua
