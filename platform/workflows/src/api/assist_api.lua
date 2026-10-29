@@ -121,6 +121,7 @@ function M.binding()
         target_start_schema = (body :: Map).target_start_schema,
         source_context_sample = (body :: Map).source_context_sample,
         target_start_sample = (body :: Map).target_start_sample,
+        source_root = (body :: Map).source_root,
         intent = (body :: Map).intent,
     })
     write_result(res, result)

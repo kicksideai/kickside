@@ -152,7 +152,18 @@ local function do_catalog_entry(args: Map): (any, error?)
     else ports, err = automations_lib.list_sinks() end
     if err then return nil, err end
     for _, port in ipairs(ports or {}) do
-        if port.id == id then return { success = true, entry = port }, nil end
+        if port.id == id then
+            if direction == "source" and args.config ~= nil then
+                if type(args.config) ~= "table" then return tool_result.fail(errors.INVALID, "config must be an object") end
+                local output_schema, schema_err = automations_lib.source_schema(id :: string, args.config)
+                if schema_err then return nil, schema_err end
+                local selected: Map = {}
+                for key, value in pairs(port :: Map) do selected[key] = value end
+                selected.output_schema = output_schema
+                return {success = true, entry = selected}, nil
+            end
+            return {success = true, entry = port}, nil
+        end
     end
     return tool_result.fail(errors.NOT_FOUND, "catalog entry not found: " .. (id :: string))
 end

@@ -1,4 +1,4 @@
--- POST /api/v1/workflows { title?, parent_id?, idempotency_key? } — create a
+-- POST /api/v1/workflows { title?, parent_id?, idempotency_key?, source_context? } — create a
 -- workflow component for the current user. Repeating a key for the same actor
 -- returns the original draft instead of creating a second one.
 
@@ -31,7 +31,7 @@ local function handler()
         if type(decoded) == "table" then body = decoded end
     end
 
-    local result, err = repo.create(body.title, body.parent_id, body.idempotency_key)
+    local result, err = repo.create(body.title, body.parent_id, body.idempotency_key, body.source_context)
     if err or not result then
         res:set_status(http.STATUS.BAD_REQUEST)
         res:write_json({ success = false, error = tostring(err or "create failed") })

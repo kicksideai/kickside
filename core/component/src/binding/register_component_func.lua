@@ -50,7 +50,8 @@ local function validate_additional_access(additional_access): error?
     return nil
 end
 
-local function handle(request_dto)
+-- A local initializer participates in registration before its transaction commits.
+local function handle(request_dto, initialize)
     if not request_dto or type(request_dto) ~= "table" then
         return envelope.fail(VALIDATION_ERRORS.INVALID_REQUEST, errors.INVALID)
     end
@@ -176,6 +177,11 @@ local function handle(request_dto)
             thread = thread,
         })
         if lifecycle_err then return nil, errors.wrap(lifecycle_err, "Failed to record component lifecycle") end
+        if initialize then
+            local initialized, init_err = initialize(tx, db, component_id)
+            if init_err then return nil, init_err end
+            if initialized ~= true then return nil, component_command.response_error("initialization") end
+        end
         return true, nil
     end)
     if transaction_err then return envelope.from_error(transaction_err) end

@@ -35,9 +35,11 @@ watch(
 )
 
 const route = computed(() => localRoute.value ?? props.value?.route ?? '')
+const parts = computed(() => route.value.replace(/^\//, '').split('/'))
+const returnRoute = computed(() => parts.value[1] === 'return' ? decodeURIComponent(parts.value[2] || '') : '')
 
 const workflowId = computed(() => {
-  const m = /^\/?([^/]+)\/?$/.exec(route.value.trim())
+  const m = /^\/?([^/]+)(?:\/return\/[^/]+)?\/?$/.exec(route.value.trim())
   const id = m ? m[1] : ''
   return id && id !== '/' ? id : ''
 })
@@ -45,6 +47,13 @@ const workflowId = computed(() => {
 function navigate(to: string) {
   localRoute.value = to
   emit('navigate', { route: to })
+}
+function back() {
+  if (returnRoute.value) emit('navigate', {route: returnRoute.value})
+  else navigate('')
+}
+function published() {
+  if (returnRoute.value) emit('navigate', {route: returnRoute.value})
 }
 
 const rootEl = ref<HTMLElement | null>(null)
@@ -55,7 +64,7 @@ const isPreview = computed(() => props.value?.mode === 'preview')
 <template>
   <div ref="rootEl" class="wf">
     <WorkflowPreview v-if="isPreview && workflowId" :workflow-id="workflowId" />
-    <WorkflowCanvas v-else-if="workflowId" :workflow-id="workflowId" @back="navigate('')" @open-workflow="navigate" />
+    <WorkflowCanvas v-else-if="workflowId" :workflow-id="workflowId" @back="back" @open-workflow="navigate" @published="published" />
     <WorkflowList v-else @open="(id: string) => navigate(id)" />
   </div>
 </template>

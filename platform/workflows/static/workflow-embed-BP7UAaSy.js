@@ -1,39 +1,41 @@
-import { defineComponent as y, ref as c, computed as k, onMounted as z, openBlock as f, createElementBlock as w, Fragment as _, toDisplayString as a, createCommentVNode as C, createVNode as d, withCtx as S, createElementVNode as o, unref as p, createTextVNode as M } from "vue";
-import { Icon as m } from "@iconify/vue";
+import { defineComponent as y, ref as c, computed as k, onMounted as z, watch as _, openBlock as p, createElementBlock as m, Fragment as C, toDisplayString as a, createCommentVNode as S, createVNode as d, withCtx as M, createElementVNode as o, unref as b, createTextVNode as E } from "vue";
+import { Icon as g } from "@iconify/vue";
 import "@wippy-fe/proxy";
-import { _ as E, o as N, L as I } from "./pickerselect-Bt8Nl0Ia.js";
-const j = {
+import { _ as N, m as I, J as j } from "./pickerselect-CbBE-k9N.js";
+const F = {
   key: 0,
   class: "wf-embed-note"
-}, F = { class: "wf-embed-ico" }, W = { class: "wf-embed-main" }, B = { class: "wf-embed-title" }, L = { class: "wf-embed-meta" }, V = { class: "wf-embed-io" }, A = /* @__PURE__ */ y({
+}, W = { class: "wf-embed-ico" }, B = { class: "wf-embed-main" }, V = { class: "wf-embed-title" }, L = { class: "wf-embed-meta" }, T = { class: "wf-embed-io" }, A = /* @__PURE__ */ y({
   __name: "EmbedWorkflowPicker",
   props: {
     selected: {}
   },
   emits: ["select"],
-  setup(i, { emit: b }) {
-    const g = i, u = b, n = c(!1), s = c(""), l = c([]), x = k(() => l.value.find((t) => t.id === g.selected?.id)?.title || "Selected workflow");
-    async function h() {
-      n.value = !0, s.value = "";
+  setup(n, { emit: u }) {
+    const f = n, x = u, s = c(!1), l = c(""), i = c([]), h = k(() => i.value.find((e) => e.id === f.selected?.id)?.title || "Selected workflow");
+    async function w() {
+      s.value = !0, l.value = "";
       try {
-        const t = await N({ filter: "published" });
-        l.value = t.map((e) => I(e, {}, [], "")).filter((e) => !!e.published_version);
-      } catch (t) {
-        s.value = t instanceof Error ? t.message : "Could not load Workflows.";
+        const e = await I({ filter: "published" });
+        i.value = e.map((t) => j(t, {}, [], "")).filter((t) => !!t.published_version);
+      } catch (e) {
+        l.value = e instanceof Error ? e.message : "Could not load Workflows.";
       } finally {
-        n.value = !1;
+        s.value = !1;
       }
     }
-    z(h);
-    function v(t, e) {
-      return t.title.toLowerCase().includes(e) || t.id.toLowerCase().includes(e);
+    z(w), _(() => f.selected?.id, (e) => {
+      e && !i.value.some((t) => t.id === e) && w();
+    });
+    function v(e, t) {
+      return e.title.toLowerCase().includes(t) || e.id.toLowerCase().includes(t);
     }
-    return (t, e) => (f(), w(_, null, [
-      i.selected ? (f(), w("p", j, a(x.value) + " · Published v" + a(i.selected.version), 1)) : C("", !0),
-      d(E, {
-        rows: l.value,
-        loading: n.value,
-        error: s.value,
+    return (e, t) => (p(), m(C, null, [
+      n.selected ? (p(), m("p", F, a(h.value) + " · Published v" + a(n.selected.version), 1)) : S("", !0),
+      d(N, {
+        rows: i.value,
+        loading: s.value,
+        error: l.value,
         matches: v,
         placeholder: "Search published Workflows",
         "empty-message": "No published Workflows available.",
@@ -45,26 +47,26 @@ const j = {
         "row-class": "wf-embed-row",
         "quiet-rows": "",
         "empty-class": "wf-embed-empty",
-        onSelect: e[0] || (e[0] = (r) => u("select", r))
+        onSelect: t[0] || (t[0] = (r) => x("select", r))
       }, {
-        row: S(({ item: r }) => [
-          o("span", F, [
-            d(p(m), {
+        row: M(({ item: r }) => [
+          o("span", W, [
+            d(b(g), {
               icon: "tabler:route",
               "aria-hidden": "true"
             })
           ]),
-          o("span", W, [
-            o("span", B, a(r.title), 1),
+          o("span", B, [
+            o("span", V, a(r.title), 1),
             o("span", L, [
               o("span", null, "v" + a(r.published_version), 1),
-              o("span", V, [
-                e[1] || (e[1] = o("strong", null, "In", -1)),
-                M(a(r.input_summary), 1)
+              o("span", T, [
+                t[1] || (t[1] = o("strong", null, "In", -1)),
+                E(a(r.input_summary), 1)
               ])
             ])
           ]),
-          d(p(m), {
+          d(b(g), {
             icon: "tabler:chevron-right",
             class: "wf-embed-go",
             "aria-hidden": "true"

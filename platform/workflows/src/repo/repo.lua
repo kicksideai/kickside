@@ -11,6 +11,10 @@ local component = require("component")
 local types = require("types")
 local store = require("store")
 local envelope = require("envelope")
+local automation = require("automation")
+local workflow = require("workflow")
+local schema_validate = require("schema_validate")
+local register = require("register")
 
 local M = {}
 type Map = { [string]: any }
@@ -181,10 +185,29 @@ local function enrich_rows(rows: { any }): (boolean, error?)
     return true, nil
 end
 
--- create(title, parent_id?, idempotency_key?) -> ({ id, title, replayed? }, err).
+-- create(title, parent_id?, idempotency_key?, source_context?) -> ({ id, title, replayed? }, err).
 -- A caller-supplied key is scoped to its actor and deterministically identifies one
 -- component, so duplicate POSTs replay the original draft instead of minting one.
-function M.create(title: any, parent_id: any?, supplied_key: any?): (any?, error?)
+function M.create(title: any, parent_id: any?, supplied_key: any?, source_context: any?): (any?, error?)
+    local input_schema: any = nil
+    if source_context ~= nil then
+        local context_err = schema_validate.validate({
+            type = "object", required = {"source"}, additionalProperties = false,
+            properties = {
+                source = {type = "string", minLength = 1},
+                config = {type = "object"},
+                filter = {type = "object", required = {"expr"}, additionalProperties = false,
+                    properties = {expr = {type = "string", minLength = 1}}},
+            },
+        }, source_context, "source_context")
+        if context_err then return nil, errors.new({kind = errors.INVALID, message = tostring(context_err)}) end
+        local schema_err
+        input_schema, schema_err = automation.source_schema(source_context.source, source_context.config or {})
+        if schema_err then return nil, schema_err end
+        if type(input_schema) ~= "table" or input_schema.type ~= "object" then
+            return nil, errors.new({kind = errors.INVALID, message = "source must declare an object output_schema"})
+        end
+    end
     local key, key_err = idempotency_key(supplied_key)
     if key_err then return nil, key_err end
     local component_id: string? = nil
@@ -199,16 +222,30 @@ function M.create(title: any, parent_id: any?, supplied_key: any?): (any?, error
         if existing then return existing, nil end
     end
 
-    local svc, err = M._open_service()
-    if not svc then return nil, err end
     local name = display_title(title)
-    local res, reg_err = (svc :: any):register({
+    local request = {
         impl_id = types.WORKFLOW_IMPL,
         meta = { title = name, icon = "tabler:route" },
         private_context = {},
         parent_id = (type(parent_id) == "string" and parent_id ~= "") and parent_id or nil,
         component_id = component_id,
-    })
+    }
+    local res, reg_err
+    if input_schema then
+        res = register.handle(request, function(tx: any, _db: any, id: string): (boolean, error?)
+            local _, seed_err = workflow.apply_tx(tx, id, {
+                {type = "node.add", body = {id = "start", kind = "start", title = "Start", config = {input_schema = input_schema}}},
+                {type = "node.add", body = {id = "finish", kind = "finish", title = "Finish", config = {output_schema = {type = "object"}}}},
+                {type = "layout.set-position", body = {node_id = "start", x = 240, y = 80}},
+                {type = "layout.set-position", body = {node_id = "finish", x = 240, y = 340}},
+            }, actor_id())
+            return seed_err == nil, seed_err
+        end)
+    else
+        local svc, err = M._open_service()
+        if not svc then return nil, err end
+        res, reg_err = (svc :: any):register(request)
+    end
     if reg_err or not res or (res :: any).success == false then
         if component_id then
             local existing, existing_err = existing_idempotent_workflow(component_id)
@@ -227,7 +264,8 @@ function M.create(title: any, parent_id: any?, supplied_key: any?): (any?, error
         end
         return nil, errors.new({ kind = errors.INTERNAL, message = "workflow create returned no id" })
     end
-    return { id = tostring(res.component_id), title = name }, nil
+    local id = tostring(res.component_id)
+    return { id = id, title = name }, nil
 end
 
 -- list(options?) -> ({ workflow }, err). `published_only` is the picker-facing

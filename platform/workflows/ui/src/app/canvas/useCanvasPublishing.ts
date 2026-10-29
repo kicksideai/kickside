@@ -20,6 +20,7 @@ interface CanvasPublishingOptions {
   publishIssues: Ref<Map<string, string>>
   rebuild: () => void
   select: (kind: 'node', id: string) => void
+  published?: (version: number) => void
 }
 
 export function useCanvasPublishing(options: CanvasPublishingOptions) {
@@ -67,6 +68,7 @@ export function useCanvasPublishing(options: CanvasPublishingOptions) {
       notice.value = result.version
         ? `Published version ${result.version}. You can now use it in an Automation, another Workflow, or an agent.`
         : 'Published. You can now use it in an Automation, another Workflow, or an agent.'
+      if (result.version) options.published?.(result.version)
     } catch (cause) {
       error.value = humanError(cause, 'Couldn’t publish this Workflow.')
       // A refusal carries per-node reasons; keep the reason beside the node that needs fixing.
