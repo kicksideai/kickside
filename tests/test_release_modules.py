@@ -18,7 +18,7 @@ publisher = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(publisher)
 
 FAKE_WIPPY = r'''#!/usr/bin/env python3
-import hashlib, json, os, pathlib, sys
+import json, os, pathlib, sys
 args=sys.argv[1:]; state=pathlib.Path(os.environ['RELEASE_TEST_STATE'])
 def option(name): return args[args.index(name)+1]
 def record(value):
@@ -36,15 +36,22 @@ if 'install' in args:
   output=pathlib.Path(cfg['registry']['dependency_vendor_dir'])/organization/(module+'-'+version+'.wapp')
   output.parent.mkdir(parents=True,exist_ok=True); output.write_bytes(stored.read_bytes())
  record({'step':'install'}); sys.exit(0)
-directory=pathlib.Path(option('--config')); item=json.loads((directory/'module.json').read_text())
-if item['build'] and not (directory/'built').exists(): raise RuntimeError('frontend was not built')
-payload=json.dumps({'name':item['name'],'version':option('--version')}).encode()
-if '--dry-run' in args:
- print('  Digest: sha256:'+hashlib.sha256(payload).hexdigest())
+if 'pack' in args:
+ cfg=json.loads(pathlib.Path(option('--config')).read_text())
+ name=option('--module'); directory=pathlib.Path(cfg['workspace']['replacements'][name])
+ item=json.loads((directory/'module.json').read_text())
+ if item['build'] and not (directory/'built').exists(): raise RuntimeError('frontend was not built')
+ lock=json.loads(pathlib.Path(option('--lock-file')).read_text())
+ payload=json.dumps({'name':name,'version':lock['modules'][0]['version'],'envelope':'module-pack'}).encode()
+ pathlib.Path(args[-1]).write_bytes(payload)
  record({'step':'pack','name':item['name']}); sys.exit(0)
+if '--wapp' not in args: raise RuntimeError('publication must use the prepared artifact')
+payload=pathlib.Path(option('--wapp')).read_bytes()
 item=json.loads(payload)
+if item['version'] != option('--version'): raise RuntimeError('wrong version')
 stored=state/(item['name'].replace('/','-')+'-'+item['version'])
 if stored.exists(): raise RuntimeError('immutable version already exists')
+if os.environ.get('RELEASE_TEST_CORRUPT_UPLOAD'): payload += b'changed in transit'
 stored.write_bytes(payload); record({'step':'publish','name':item['name']})
 '''
 
@@ -124,6 +131,11 @@ class ReleasePublication(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 self.run_publication(['platform/page'])
         self.assertEqual(self.events(), [])
+
+    def test_changed_uploaded_bytes_fail_verification(self):
+        with patch.dict(os.environ, {'RELEASE_TEST_CORRUPT_UPLOAD': '1'}):
+            with self.assertRaisesRegex(ValueError, 'Published artifact digest differs'):
+                self.run_publication(['platform/first'])
 
     def test_source_changes_prevent_entire_cohort(self):
         (self.root / 'platform/page/module.json').write_text('{}')
