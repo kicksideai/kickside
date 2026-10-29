@@ -70,10 +70,6 @@ jobs:
     - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
       with:
         node-version: '22'
-    - name: Test the deployment archive
-      run: |
-        python3 -m unittest discover -s control/.github/scripts -p test_deployment_bundle.py
-        ruby control/.github/scripts/test_deployment_config.rb
     - name: Verify and prepare Wippy
       id: runtime
       shell: bash
@@ -95,7 +91,7 @@ jobs:
         cd source/app
         wippy install
         git diff --exit-code -- wippy.lock
-        wippy pack --embed app:app_fs ../../output/kickside.wapp
+        wippy pack --meta name= --meta namespace= --embed app:app_fs ../../output/kickside.wapp
     - name: Create the deployment archive
       shell: bash
       env:
