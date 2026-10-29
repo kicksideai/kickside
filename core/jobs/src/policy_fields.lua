@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The live-editable policy surface. Runtime validation stays in config.resolve.
 return {
     { key = "worker.count_postgres", min = 1, max = 256, unit = "workers" },

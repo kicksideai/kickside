@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 /// <reference types="node" />
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'

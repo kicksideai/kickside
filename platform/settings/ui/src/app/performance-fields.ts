@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 export interface Field { value: unknown; source: 'default' | 'host' | 'admin'; fallback: unknown; default?: unknown; min?: number; max?: number; unit?: string }
 export interface Control { key: string; title: string; help: string; unit: string; durationMilliseconds?: boolean; min?: number; max?: number }
 export const groups: { title: string; help: string; fields: Control[] }[] = [

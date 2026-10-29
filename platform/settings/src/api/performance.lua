@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local http = require("http")
 local json = require("json")
 local jobs = require("jobs")

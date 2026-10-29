@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local ctx = require("ctx")
 local security = require("security")
 return {broadcast = function(args)

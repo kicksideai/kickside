@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 return require("migration").define(function()
     migration("22 Jobs policy overrides", function()
         for _, dialect in ipairs({ "postgres", "sqlite" }) do

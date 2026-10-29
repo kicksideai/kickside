@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local ctx = require("ctx")
 local process = require("process")
 local M = {STATUS = {OK = 200}, CONTENT = {JSON = "application/json"}}

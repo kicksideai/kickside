@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Durable owner state is readable without messaging the singleton process.
 local sql = require("sql")
 local json = require("json")

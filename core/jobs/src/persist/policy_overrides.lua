@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Overrides and their revision commit together; the singleton pool owns runtime policy.
 local sql = require("sql")
 local json = require("json")

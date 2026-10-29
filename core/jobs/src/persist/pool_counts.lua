@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local sql = require("sql")
 local boundary = require("sql_boundary")
 local M = {}

@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 -->
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'

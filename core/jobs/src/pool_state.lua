@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local applied = require("pool_applied")
 local counts = require("pool_counts")
 local cfg = require("config")

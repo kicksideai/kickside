@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local cfg = require("config")
 local overrides = require("policy_overrides")
 local funcs = require("funcs")

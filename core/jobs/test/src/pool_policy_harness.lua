@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local process = require("process")
 local sql = require("sql")
 local pool = require("worker_pool")
