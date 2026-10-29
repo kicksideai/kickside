@@ -8,6 +8,27 @@ import subprocess
 import tempfile
 
 
+@contextmanager
+def prepared_artifact(repository, module, wippy):
+    # Let the native CLI select and pack only this owner. Publish these exact
+    # bytes; a separate `publish --dry-run` produces a different envelope.
+    with tempfile.TemporaryDirectory(prefix='kickside-release-pack-') as directory:
+        root = Path(directory)
+        lock = root / 'wippy.lock'
+        lock.write_text(json.dumps({'directories': {'src': 'empty', 'modules': '.wippy'},
+                                   'modules': [{'name': module['name'], 'version': module['version']}]}))
+        config = root / '.wippy.yaml'
+        config.write_text(json.dumps({'version': '1.0', 'workspace': {'replacements': {
+            module['name']: str(repository / module['path'])}}}))
+        output = root / 'module.wapp'
+        args = [wippy, 'pack', '--lock-file', str(lock), '--config', str(config),
+                '--module', module['name']]
+        for entry in module['embed']:
+            args += ['--embed', entry]
+        subprocess.run([*args, str(output)], cwd=repository, check=True)
+        yield output
+
+
 def companion_modules(repository, paths):
     if not isinstance(paths, list) or not paths or any(not isinstance(path, str) for path in paths):
         raise ValueError('Release Please must supply the released paths')

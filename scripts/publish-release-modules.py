@@ -6,11 +6,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import sys
 
-from release_artifacts import companion_modules, installed_artifacts
+from release_artifacts import companion_modules, installed_artifacts, prepared_artifact
 
 
 def git(repository, *args):
@@ -42,31 +41,25 @@ def publish(repository, paths, wippy):
             subprocess.run(['make', '-C', str(repository / module['path']), 'build'], check=True)
         args = [wippy, 'publish', '--config', str(repository / module['path']), '--version', version,
                 '--module-type', module['type']]
-        for entry in module['embed']:
-            args += ['--embed', entry]
-        packed = subprocess.run([*args, '--dry-run'], cwd=repository, check=True, capture_output=True, text=True)
-        # The pinned native CLI deletes dry-run packs; its emitted digest is the
-        # comparison boundary. Do not recreate its module packing algorithm here.
-        digests = re.findall(r'^\s*Digest: sha256:([a-f0-9]{64})\s*$', packed.stdout + packed.stderr, re.MULTILINE)
-        if len(digests) != 1:
-            raise ValueError('Native dry-run did not report one artifact digest: ' + name)
-        expected = digests[0]
         filename = module['module'] + '-' + version + '.wapp'
-        try:
+        with prepared_artifact(repository, module, wippy) as artifact:
+            expected = digest(artifact)
+            try:
+                with installed_artifacts([module], wippy) as vendor:
+                    published = vendor / module['organization'] / filename
+                    if not published.is_file() or digest(published) != expected:
+                        raise ValueError('Published artifact differs from the prepared release: ' + name + '@' + version)
+                    print('Already published with matching digest: ' + name + '@' + version, flush=True)
+                    continue
+            except subprocess.CalledProcessError as error:
+                missing = 'failed to download module: ' + name + '@' + version + ': module not found'
+                if missing not in (error.stdout or '') + (error.stderr or ''):
+                    raise
+            subprocess.run([*args, '--wapp', str(artifact), '--create', '--module-visibility', module['visibility']],
+                           cwd=repository, check=True)
             with installed_artifacts([module], wippy) as vendor:
-                published = vendor / module['organization'] / filename
-                if not published.is_file() or digest(published) != expected:
-                    raise ValueError('Published artifact differs from the prepared release: ' + name + '@' + version)
-                print('Already published with matching digest: ' + name + '@' + version, flush=True)
-                continue
-        except subprocess.CalledProcessError as error:
-            missing = 'failed to download module: ' + name + '@' + version + ': module not found'
-            if missing not in (error.stdout or '') + (error.stderr or ''):
-                raise
-        subprocess.run([*args, '--create', '--module-visibility', module['visibility']], cwd=repository, check=True)
-        with installed_artifacts([module], wippy) as vendor:
-            if digest(vendor / module['organization'] / filename) != expected:
-                raise ValueError('Published artifact digest differs: ' + name + '@' + version)
+                if digest(vendor / module['organization'] / filename) != expected:
+                    raise ValueError('Published artifact digest differs: ' + name + '@' + version)
         print('Verified ' + name + '@' + version, flush=True)
 
 
