@@ -715,6 +715,9 @@ function pool.main(handover: any?): (any?, error?)
     end
     fail_policy = function(err: error): ()
         policy_error, policy_pending = err, true
+        -- Startup may fail before any slot exists to produce another event.
+        -- Reuse the owner retry deadline for failed reads as well as resizing.
+        size_retry_ns = pool_time.now():unix_nano() + delay_ns
         logger:error("Jobs policy remains pending: " .. tostring(err))
         local write_err = record_state()
         if write_err then logger:error("Jobs applied-state write failed: " .. tostring(write_err)) end

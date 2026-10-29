@@ -7,7 +7,7 @@ local fixture = require("job_fixture")
 local M = {}
 function M.run(steps, setup, handover)
     local function ch() return {case_receive = function(self) return self end} end
-    local ctx: any = {events = ch(), registry = ch(), idle = ch(), wake = ch(), step = 0, spawned = 0,
+    local ctx: any = {events = ch(), registry = ch(), idle = ch(), wake = ch(), step = 0, spawned = 0, now_ns = 0,
         reads = 0, revision_reads = 0, queries = 0, writes = {}, canceled = {}, live = {}, notices = {}, unlistened = 0,
         committed = {revision = 1, values = {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}}}
     if handover then for _, slot in ipairs(handover.slots) do ctx.live[slot.pid] = true end end
@@ -65,7 +65,13 @@ function M.run(steps, setup, handover)
         registry = {current_version = function() return {id = function() return "policy-version" end}, nil end},
         events = {subscribe = function() return {channel = function() return ctx.registry end,
             close = function() ctx.closed = true end}, nil end},
-        time = {now = function() return {unix_nano = function() return 0 end} end, after = ch},
+        time = {now = function() return {unix_nano = function() return ctx.now_ns end} end,
+            after = function(duration)
+                local timer = ch()
+                timer.duration = duration
+                ctx.timer = timer
+                return timer
+            end},
         channel = {select = function(cases)
             if cases.default then
                 if ctx.queued then local queued = ctx.queued; ctx.queued = nil; return {channel = ctx.wake, value = queued} end

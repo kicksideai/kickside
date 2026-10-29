@@ -155,7 +155,7 @@ local function define_tests()
             test.eq(config.db_id(), "app:db")
             local loaded, err = config.policy()
             test.is_nil(err)
-            local expected = config.resolve(policy({worker={count_sqlite=2}}))
+            local expected = config.resolve(policy({worker={count_sqlite=2, count_postgres=4}, proc={max_execution="10m"}}))
             for key, value in pairs(expected :: table) do
                 if key == "fairness_shares" then
                     local actual_shares = (loaded :: any).fairness_shares

@@ -8,6 +8,32 @@ local function failure()
 end
 return {run = test.run_cases(function()
     test.describe("Durable owner policy lifecycle", function()
+        test.it("retries a failed startup policy read without an external event", function()
+            local ctx = harness.run({
+                function(c)
+                    test.eq(c.spawned, 0)
+                    test.not_nil(c.applied.apply_error)
+                    test.not_nil(c.timer, "a failed startup read must arm an owner retry")
+                    c.now_ns = 1000000000
+                    return {channel = c.timer}
+                end,
+                function(c)
+                    test.eq(c.spawned, 0)
+                    test.eq(c.applied.applied_revision, -1)
+                    test.not_nil(c.timer, "a repeated failure must keep a retry armed")
+                    c.read_error = nil
+                    c.now_ns = 2000000000
+                    return {channel = c.timer}
+                end,
+                function(c)
+                    test.eq(c.applied.applied_revision, 1)
+                    test.eq(c.spawned, 2)
+                    test.is_nil(c.applied.apply_error)
+                    return {channel = c.events, value = {kind = process.event.CANCEL}}
+                end,
+            }, function(c) c.read_error = failure() end)
+            test.is_nil(ctx.error)
+        end)
         test.it("reads committed revisions on start and handover without requests", function()
             local ctx = harness.run({
                 function(c)
