@@ -1,4 +1,6 @@
 local json = require("json")
+local retry = require("retry")
+local canonical_json = require("canonical_json")
 local contract = require("contract")
 local registry = require("registry")
 local tool_adapter = require("tool_adapter")
@@ -110,6 +112,16 @@ function M.plan_descriptor(descriptor: any, instance: any): (Map?, string?)
     else
         return nil, "unsupported Block execution kind: " .. kind
     end
+    for _, field in ipairs({ "retry_policy", "start_to_close_timeout", "schedule_to_close_timeout" }) do
+        local value = row[field]
+        if value == nil then value = execution[field] end
+        plan.config[field] = copy(value)
+    end
+    if type(plan.config.retry_policy) == "table" then
+        plan.config.retry_policy = canonical_json.object(plan.config.retry_policy)
+    end
+    local _, retry_err = retry.validate(plan.config, plan.node_type)
+    if retry_err then return nil, retry_err end
     return plan, nil
 end
 

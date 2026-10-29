@@ -23,6 +23,7 @@ entries:
     meta: { comment: "Canvas document -> validated IR — Start entry, reachability, acyclicity, convergence classification, allowlist freeze." }
     source: file://graph.lua
     imports:
+      retry: userspace.dataflow:retry
       graph_start: kickside.workflows.compiler:graph_start
       graph_edges: kickside.workflows.compiler:graph_edges
       graph_branch: kickside.workflows.compiler:graph_branch
@@ -70,8 +71,9 @@ entries:
     kind: library.lua
     meta: { comment: "Facade — compile(document) validates + materializes; remint(commands, gen_id, input) mints fresh per-run ids." }
     source: file://compiler.lua
-    modules: [expr, json]
+    modules: [expr]
     imports:
+      mapping: kickside.workflows.execution:mapping
       graph: kickside.workflows.compiler:graph
       materialize: kickside.workflows.compiler:materialize
       consts: kickside.workflows.compiler:dataflow_consts

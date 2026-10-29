@@ -147,3 +147,17 @@ wc-model-picker { display: block; width: 100%; }
 .wf-drop-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wf-drop-cat { margin-left: auto; font-size: 10.5px; color: var(--wf-muted); flex: none; text-transform: uppercase; letter-spacing: .06em; }
 .wf-drop-empty { padding: 10px; color: var(--wf-muted); font-size: 12.5px; text-align: center; }
+
+.wf-retry-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wf-retry-heading > .wf-panel-label { flex: 1; }
+.wf-retry-field { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.wf-retry-label { color: var(--p-text-color); font-size: var(--wf-fs-body); }
+.wf-retry-field > .wf-panel-hint { margin-top: 0; }
+.wf-retries .wf-input { font-size: var(--wf-fs-body); }
+.wf-retries .wf-retry-kinds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wf-retry-kinds .p-togglebutton { font-size: var(--wf-fs-meta); }
+
+.wf-published-run { padding: 1rem; display: grid; gap: .75rem; border-block-end: 1px solid var(--p-content-border-color); background: var(--p-content-background); }
+.wf-published-run header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.wf-published-run h2, .wf-published-run p { margin: 0; }
+.wf-published-run h2 { font-size: 1rem; }

@@ -49,6 +49,8 @@ entries:
       comment: Strict kickside.block/v1 declaration and instance validation.
     source: file://contract.lua
     modules: [json]
+    imports:
+      retry: userspace.dataflow:retry
 
   - name: flow_contract
     kind: library.lua
@@ -66,6 +68,8 @@ entries:
     source: file://lower.lua
     modules: [registry, json]
     imports:
+      retry: userspace.dataflow:retry
+      canonical_json: kickside.contract:canonical_json
       contract: kickside.blocks:contract
       tool_adapter: kickside.blocks:tool_adapter
 

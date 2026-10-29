@@ -149,3 +149,35 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
+
+## Retry policies and execution timeouts
+
+Function Blocks accept optional `execution.retry_policy`,
+`execution.start_to_close_timeout`, and `execution.schedule_to_close_timeout`.
+Agent and wait executions reject these fields. Dataflow's shared retry library owns
+validation and execution; without a policy a function makes one attempt.
+
+```lua
+execution = {
+    kind = "function", function_id = "example:run",
+    retry_policy = {
+        initial_interval = "1s", backoff_coefficient = 2,
+        maximum_interval = "30s", maximum_attempts = 3,
+        non_retryable_error_types = { "Invalid" },
+    },
+    start_to_close_timeout = "10s",
+    schedule_to_close_timeout = "2m",
+}
+```
+
+Durations accept positive duration strings or milliseconds. With a policy, omitted
+values default to a 1s initial interval, coefficient 2, a maximum interval 100 times
+the initial interval, unlimited attempts (`maximum_attempts = 0`), and no excluded
+error kinds. Attempts include the first call. Cancellation and errors explicitly
+marked non-retryable stop retries. The per-attempt timeout limits each call; the
+total window includes attempts and backoff.
+
+`plan` and `plan_descriptor` accept the same three optional fields on the instance,
+beside `config`. Each instance field replaces its declaration independently; a
+`retry_policy` replaces the whole object. Tool descriptors also lower these fields
+to native function configuration. Agent and wait instances reject overrides.

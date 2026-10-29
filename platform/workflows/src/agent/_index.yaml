@@ -391,6 +391,26 @@ entries:
                           "additionalProperties": true,
                           "description": "Instance config from WorkflowsRead catalog. Boundaries use input_schema/output_schema/error_schema; Run Code uses code."
                         },
+                        "retry_policy": {
+                          "description": "Top-level block node override for function/tool executions. Replaces the entire declared policy. Omit to retain the current value; false clears the override and restores the Block default. Dataflow validates at publish. Fields: initial_interval (duration or ms, default 1s), backoff_coefficient (default 2), maximum_interval (duration or ms, default 100 times initial), maximum_attempts (includes first attempt; 0 unlimited), non_retryable_error_types (array of error kind strings). No policy means one attempt.",
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            {
+                              "const": false
+                            }
+                          ]
+                        },
+                        "start_to_close_timeout": {
+                          "description": "Top-level block node per-attempt timeout for function/tool executions. Positive duration string or milliseconds; false clears to the Block default. Omit to retain the current value.",
+                          "anyOf": [{ "type": "string" }, { "type": "number" }, { "const": false }]
+                        },
+                        "schedule_to_close_timeout": {
+                          "description": "Top-level block node total execution window for function/tool executions. Positive duration string or milliseconds; false clears to the Block default. Omit to retain the current value.",
+                          "anyOf": [{ "type": "string" }, { "type": "number" }, { "const": false }]
+                        },
                         "status": {
                           "type": "string"
                         }
@@ -466,6 +486,26 @@ entries:
                           "type": "object",
                           "additionalProperties": true,
                           "description": "Instance config from WorkflowsRead catalog. Boundaries use input_schema/output_schema/error_schema; Run Code uses code."
+                        },
+                        "retry_policy": {
+                          "description": "Top-level block node override for function/tool executions. Replaces the entire declared policy. Omit to retain the current value; false clears the override and restores the Block default. Dataflow validates at publish. Fields: initial_interval (duration or ms, default 1s), backoff_coefficient (default 2), maximum_interval (duration or ms, default 100 times initial), maximum_attempts (includes first attempt; 0 unlimited), non_retryable_error_types (array of error kind strings). No policy means one attempt.",
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            {
+                              "const": false
+                            }
+                          ]
+                        },
+                        "start_to_close_timeout": {
+                          "description": "Top-level block node per-attempt timeout for function/tool executions. Positive duration string or milliseconds; false clears to the Block default. Omit to retain the current value.",
+                          "anyOf": [{ "type": "string" }, { "type": "number" }, { "const": false }]
+                        },
+                        "schedule_to_close_timeout": {
+                          "description": "Top-level block node total execution window for function/tool executions. Positive duration string or milliseconds; false clears to the Block default. Omit to retain the current value.",
+                          "anyOf": [{ "type": "string" }, { "type": "number" }, { "const": false }]
                         },
                         "status": {
                           "type": "string"

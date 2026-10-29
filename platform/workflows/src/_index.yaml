@@ -113,6 +113,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.workflows.migrations:06_iteration_input_routes
         path: .meta.target_db
+      - entry: kickside.workflows.migrations:07_retry_policy
+        path: .meta.target_db
       - entry: kickside.workflows:db_config
         path: .meta.db_id
 
@@ -382,6 +384,7 @@ entries:
       types: kickside.workflows:types
       mapping: kickside.workflows.execution:mapping
       policy: kickside.workflows:policy_config
+      schema_json: kickside.workflows.schema:schema_json
 
   - name: workflow_inverse
     kind: library.lua

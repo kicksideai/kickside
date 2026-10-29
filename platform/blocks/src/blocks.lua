@@ -90,6 +90,9 @@ function M.plan(args: any): (Map?, any)
     if not normalized then return nil, err end
     return M.plan_descriptor(normalized, {
         def_node_id = row.def_node_id,
+        retry_policy = row.retry_policy,
+        start_to_close_timeout = row.start_to_close_timeout,
+        schedule_to_close_timeout = row.schedule_to_close_timeout,
         config = type(row.config) == "table" and row.config or {},
     })
 end
