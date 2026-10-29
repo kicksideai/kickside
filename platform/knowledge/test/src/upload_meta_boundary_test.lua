@@ -238,6 +238,9 @@ local function define_tests()
             seed_kb(component_id, owner)
             seed_upload_without_primary(upload_id, owner)
 
+            local storage = assert(fs.get("app:uploads"))
+            local _, write_err = storage:writefile("missing-primary.bin", string.rep("\0", 12))
+            test.is_nil(write_err, tostring(write_err))
             local actor = security.new_actor(owner, {})
             local result, call_err = funcs.new():with_actor(actor):with_scope(scope()):call(CALLBACK, {
                 upload_id = upload_id,
@@ -248,6 +251,8 @@ local function define_tests()
                 params = { kb_id = component_id },
             })
 
+            local _, remove_err = storage:remove("missing-primary.bin")
+            test.is_nil(remove_err, tostring(remove_err))
             test.is_nil(call_err)
             test.not_nil(result)
             test.is_true(result.success == true)

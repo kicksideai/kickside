@@ -34,6 +34,8 @@ entries:
     meta: { type: test, suite: knowledge }
     source: file://upload_meta_boundary_test.lua
     method: run
+    security:
+      actor: { id: system:knowledge-upload-boundary-test }
     modules: [funcs, security, sql, uuid, contract, json, fs]
     imports:
       fixture_cleanup: app:fixture_cleanup
