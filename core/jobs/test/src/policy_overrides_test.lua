@@ -115,6 +115,18 @@ return { run = test.run_cases(function()
             test.is_nil(result.value)
             test.eq(result.kind, errors.PERMISSION_DENIED)
         end)
+        for _, invalid in ipairs({
+            {name = "duplicate", keys = {"worker.count_postgres", "worker.count_postgres"}},
+            {name = "sparse", keys = {[1] = "worker.count_postgres", [3] = "worker.count_sqlite"}},
+        }) do
+            test.it("rejects " .. invalid.name .. " reset lists before advancing the revision", function()
+                local before = assert(jobs.get_policy())
+                local result, err = jobs.set_policy_overrides({}, invalid.keys)
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.INVALID))
+                test.eq(assert(jobs.get_policy()).revision, before.revision)
+            end)
+        end
         test.it("commits without waiting for an offline owner and rejects empty writes", function()
             local result, err = jobs.set_policy_overrides({["worker.count_postgres"] = 41})
             test.is_nil(err)

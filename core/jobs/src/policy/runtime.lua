@@ -35,11 +35,17 @@ function M.set(values: any, unset: any?): (table?, error?)
     for key in pairs(values) do
         if not cfg.editable(key) then return nil, errors.new({kind = errors.INVALID, message = "Unknown policy key: " .. tostring(key)}) end
     end
+    local resets, reset_count = {}, 0
     for index, key in pairs(unset or {}) do
         if type(index) ~= "number" or index % 1 ~= 0 or index < 1 or index > #(unset or {})
-            or not cfg.editable(key) or values[key] ~= nil then
+            or not cfg.editable(key) or values[key] ~= nil or resets[key] then
             return nil, errors.new({kind = errors.INVALID, message = "Invalid policy reset key"})
         end
+        resets[key] = true
+        reset_count = reset_count + 1
+    end
+    if reset_count ~= #(unset or {}) then
+        return nil, errors.new({kind = errors.INVALID, message = "Policy resets must be a dense list"})
     end
     local entry, entry_err = cfg.declaration()
     if entry_err then return nil, entry_err end
