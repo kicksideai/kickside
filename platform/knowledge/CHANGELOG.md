@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.71...knowledge-v0.1.72) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** discover externally created libraries in mounted catalogs ([#251](https://github.com/kicksideai/kickside/issues/251)) ([1065e22](https://github.com/kicksideai/kickside/commit/1065e22df386037b92147e42c192dfe365f52ba7))
+
 ## [0.1.71](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.70...knowledge-v0.1.71) (2026-10-30)
 
 
