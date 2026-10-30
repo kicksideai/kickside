@@ -76,6 +76,35 @@ local function define_tests()
             }))
         end)
 
+        test.it("preserves transient registry error details and stops at the failed read", function()
+            for _, capability_type in ipairs({"trait", "tool"}) do
+                local reads = 0
+                local cause = errors.new({kind = errors.UNAVAILABLE, message = "registry offline",
+                    retryable = true, details = {provider = "test-registry"}})
+                local ok, err = capability_visibility.validate_ids({"test:first", "test:second"}, capability_type, function()
+                    reads = reads + 1
+                    return nil, cause
+                end)
+                test.is_false(ok)
+                test.is_true(errors.is(err, errors.UNAVAILABLE), tostring(err))
+                test.is_true(err:retryable())
+                test.eq(err:details().provider, "test-registry")
+                test.contains(tostring(err), "registry offline")
+                test.eq(reads, 1)
+            end
+        end)
+        test.it("keeps missing capabilities as validation errors", function()
+            for _, missing_error in ipairs({false, true}) do
+                local ok, err = capability_visibility.validate_ids({"test:missing"}, "trait", function()
+                    if missing_error then return nil, errors.new({kind = errors.NOT_FOUND, message = "missing entry"}) end
+                    return nil, nil
+                end)
+                test.is_false(ok)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                test.contains(tostring(err), "trait not found: test:missing")
+            end
+        end)
+
         test.it("validates ids through the caller-provided registry seam", function()
             local entries = {
                 ["test:public_trait"] = {
@@ -100,7 +129,7 @@ local function define_tests()
                 },
             }
             local function get_entry(id)
-                if not entries[id] then return nil, "not found" end
+                if not entries[id] then return nil, errors.new({kind = errors.NOT_FOUND, message = "not found"}) end
                 return entries[id], nil
             end
 

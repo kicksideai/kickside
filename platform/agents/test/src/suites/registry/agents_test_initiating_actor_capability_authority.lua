@@ -82,11 +82,13 @@ local function define_tests()
                 local created, err = call(user_exec, "a_create", {
                     name = prefix .. "user_keeper_capability",
                     model = "class:fast",
+                    traits = {},
                     tools = { keeper_tool },
                 })
                 test.is_nil(created)
                 test.not_nil(err)
-                test.ok(tostring(err):find("not found", 1, true), tostring(err))
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+                test.contains(tostring(err), keeper_tool)
             end)
 
             test.it("uses the initiating scope when attaching to an existing agent", function()
@@ -105,7 +107,8 @@ local function define_tests()
                 })
                 test.is_nil(denied)
                 test.not_nil(denied_err)
-                test.ok(tostring(denied_err):find("not found", 1, true), tostring(denied_err))
+                test.is_true(errors.is(denied_err, errors.PERMISSION_DENIED), tostring(denied_err))
+                test.contains(tostring(denied_err), keeper_tool)
 
                 local attached, attach_err = call(admin_exec, "a_attach_tool", {
                     component_id = created.component_id,
