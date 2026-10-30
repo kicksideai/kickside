@@ -43,8 +43,12 @@ function M.contains(db: any, storage_id: string, path: string): (boolean?, any?)
         predicate = "storage_path=$1"
         params = { storage_location.packed(location) }
         -- The legacy logical address and its packed spelling retain the same
-        -- native object. Other cloud resources and local names are unrelated.
-        if location.authority == legacy_cloud_id then
+        -- native object. If the optional mapping is absent, a matching raw
+        -- legacy reference conservatively retains the object. Explicit packed
+        -- paths are never raw legacy keys; known different resources stay distinct.
+        local configured = type(legacy_cloud_id) == "string" and legacy_cloud_id ~= ""
+        if storage_location.is_legacy_key(storage_location.LEGACY_S3, location.key)
+            and (not configured or location.authority == legacy_cloud_id) then
             predicate = predicate .. " OR (storage_id=$2 AND storage_path=$3)"
             params[2], params[3] = storage_location.LEGACY_S3, location.key
         end

@@ -65,6 +65,9 @@ S3 resource and use its filesystem volume for temporary downloads. Explicit pack
 paths retain their own resource; no data rewrite or storage extension is required.
 Cleanup recognizes the configured legacy address and its packed spelling as the
 same object, preserving bytes while either spelling remains referenced.
+If the legacy mapping is absent, a matching raw legacy reference conservatively
+retains the object; packed-only objects still clean normally. Restore the mapping
+before retiring legacy content so its owning resource remains known.
 
 The independently installed `kickside/storage-s3` package adds a universal stage
 at the lowest priority (`-100`). After processing, it copies local originals and

@@ -34,5 +34,6 @@ entries:
       cleanup: app.legacy_storage:cleanup
       adapter: app:packed_cloud_adapter
       cloud: app:packed_cloud_fake
+      artifacts: kickside.uploads.persist:artifact_content_repo
       records: kickside.uploads.persist:upload_record_repo
       resources: kickside.uploads.binding:uploads_resources

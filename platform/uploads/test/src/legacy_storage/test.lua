@@ -5,6 +5,7 @@ local catalog = require("catalog")
 local records = require("records")
 local resources = require("resources")
 local sql = require("sql")
+local artifacts = require("artifacts")
 local configured_env = require("configured_env")
 local cleanup = require("cleanup")
 local adapter = require("adapter")
@@ -17,6 +18,12 @@ local cases = {
     {name = "retains a shared packed blob while its legacy spelling is cleaned", row_storage_id = "app:uploads", row_packed = true, blob = true, lookup_storage_id = "uploads.s3", expected = true},
     {name = "does not alias a different native cloud authority", row_storage_id = "uploads.s3", lookup_storage_id = "app:uploads", lookup_packed = true, lookup_resource = "app:other-objects", expected = false},
     {name = "does not alias a similarly named local file", row_storage_id = "app:uploads", lookup_storage_id = "uploads.s3", expected = false},
+    {name = "retains ambiguous raw references when the mapping is absent", row_storage_id = "uploads.s3", lookup_storage_id = "app:uploads", lookup_packed = true, missing = true, expected = true},
+    {name = "retains ambiguous raw references when the mapping is empty", row_storage_id = "uploads.s3", lookup_storage_id = "app:uploads", lookup_packed = true, empty = true, expected = true},
+    {name = "cleans packed-only objects without a legacy mapping", row_storage_id = "app:uploads", lookup_storage_id = "app:uploads", lookup_packed = true, missing = true, expected = false},
+    {name = "does not mistake a nested S3 URI for a raw legacy key", row_storage_id = "uploads.s3", nested = "s3", lookup_storage_id = "app:uploads", expected = false},
+    {name = "does not mistake a nested filesystem URI for a raw legacy key", row_storage_id = "uploads.s3", nested = "fs", lookup_storage_id = "app:uploads", expected = false},
+    {name = "recognizes an explicitly packed legacy-ID row in its own authority", row_storage_id = "uploads.s3", row_packed = true, lookup_storage_id = "app:uploads", lookup_packed = true, expected = true},
 }
 return {run = test.run_cases(function()
     test.describe("legacy and packed physical references", function()
@@ -26,13 +33,28 @@ return {run = test.run_cases(function()
                 if case.literal then key = key .. "/note://source" end
                 local row_path = case.row_packed and "s3://app:objects/" .. key or key
                 local lookup_path = case.lookup_packed and "s3://" .. (case.lookup_resource or "app:objects") .. "/" .. key or key
+                if case.nested then
+                    row_path = case.nested .. "://app:other-objects/" .. key
+                    lookup_path = "s3://app:objects/" .. row_path
+                end
+                if case.missing then configured_env.failure = errors.new({kind = errors.NOT_FOUND, message = "optional mapping absent"}) end
+                if case.empty then configured_env.resource_id = "" end
                 local db = assert(resources.get_db())
+                local parents = {}
                 if case.blob then
                     assert(sql.builder.insert("kickside_upload_artifact_blobs"):set_map({
                         blob_id = id, checksum = id, mime_type = "text/plain", size = sql.as.int(1),
                         storage_id = case.row_storage_id, storage_path = row_path, metadata = "{}",
                         created_at = "fixture", updated_at = "fixture",
                     }):run_with(db):exec())
+                    for index = 1, 2 do
+                        local upload_id = uuid.v4()
+                        assert(records.create(upload_id, "shared-blob-owner", 1, "text/plain", "app:uploads",
+                            "shared-parent-" .. upload_id, "generic", {}, "completed"))
+                        assert(artifacts.create_artifact({upload_id = upload_id, blob_id = id, kind = "text",
+                            role = "derived", mime_type = "text/plain", label = "shared", ordinal = index}))
+                        parents[#parents + 1] = upload_id
+                    end
                 else
                     assert(records.create(id, "legacy-reference-owner", 1, "text/plain", case.row_storage_id,
                         row_path, "generic", {}, "completed"))
@@ -42,7 +64,12 @@ return {run = test.run_cases(function()
                     test.is_nil(err, tostring(err))
                     test.eq(present, case.expected)
                 end)
+                configured_env.failure, configured_env.resource_id = nil, "app:objects"
                 if case.blob then
+                    for _, upload_id in ipairs(parents) do
+                        assert(sql.builder.delete("kickside_upload_artifacts"):where("upload_id = ?", upload_id):run_with(db):exec())
+                        assert(records.delete(upload_id))
+                    end
                     assert(sql.builder.delete("kickside_upload_artifact_blobs"):where("blob_id = ?", id):run_with(db):exec())
                 else
                     assert(records.delete(id))
