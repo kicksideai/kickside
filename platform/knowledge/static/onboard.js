@@ -2,7 +2,7 @@ import { W as R } from "./index-D52CRMw6.js";
 import { defineComponent as V, ref as k, computed as D, onUnmounted as N, openBlock as s, createElementBlock as r, createVNode as y, unref as a, createElementVNode as n, toDisplayString as c, createCommentVNode as $, Fragment as _, withModifiers as z, normalizeClass as F, renderList as W, createBlock as C, reactive as I } from "vue";
 import { Icon as p } from "@iconify/vue";
 import { api as w, define as j } from "@wippy-fe/proxy";
-import { a as G, s as H } from "./componentRealtime-Bs_cyDpl.js";
+import { a as G, s as H } from "./componentRealtime-DGbE-Xic.js";
 import { s as J } from "./styles-Bn0s9kIq.js";
 const Q = { class: "kn-ob" }, X = {
   key: 0,

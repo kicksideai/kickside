@@ -1,6 +1,6 @@
-import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
-import { api } from '@wippy-fe/proxy'
-import { subscribeComponentMeta, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
+import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
+import { api, on } from '@wippy-fe/proxy'
+import { componentMetaEvent, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
 import { errMsg } from '@widgets/app/errMsg'
 import { KNOWLEDGE_META_FIELD_TYPES, KNOWLEDGE_COUNT_KEYS } from './meta'
 import type { EmbeddingModel, Engine, KbDetail, KnowledgeBase, StatItem, StatSpec } from './knowledge.types.ts'
@@ -54,11 +54,9 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
         throw new Error(msg)
       }
       kbs.value = (data.items || []) as KnowledgeBase[]
-      syncComponentSubscriptions()
       return true
     } catch (e) {
       if (!preserve) kbs.value = []
-      if (!preserve) syncComponentSubscriptions()
       const msg = errMsg(e, 'could not load knowledge bases')
       if (isEngineMissing(msg)) notice.value = ENGINE_NOTICE
       else error.value = msg
@@ -196,9 +194,6 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     return next
   }
 
-  const componentUnsubs = new Map<string, () => void>()
-  const componentPending = new Set<string>()
-  let componentSubGeneration = 0
   const detailUnsub = ref<(() => void) | null>(null)
 
   function applyComponentMetaEvent(id: string, payload: ComponentMetaEvent) {
@@ -211,38 +206,20 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   }
 
   function clearComponentSubscriptions() {
-    componentSubGeneration++
-    componentPending.clear()
-    for (const off of componentUnsubs.values()) off()
-    componentUnsubs.clear()
+    componentUnsub?.()
     detailUnsub.value?.()
     detailUnsub.value = null
   }
 
-  function syncComponentSubscriptions() {
-    const ids = new Set(kbs.value.map(k => k.id).filter(Boolean))
-    for (const [id, off] of componentUnsubs) {
-      if (!ids.has(id)) {
-        off()
-        componentUnsubs.delete(id)
-      }
+  const componentUnsub = on('@message', message => {
+    const event = componentMetaEvent(message, undefined, KNOWLEDGE_META_FIELD_TYPES)
+    if (!event) return
+    const known = kbs.value.some(k => k.id === event.component_id)
+    applyComponentMetaEvent(event.component_id, event)
+    if (!known && typeof event.meta.kb_type === 'string' && event.meta.kb_type) {
+      void load({ preserve: true })
     }
-    const generation = componentSubGeneration
-    for (const id of ids) {
-      if (componentUnsubs.has(id) || componentPending.has(id)) continue
-      componentPending.add(id)
-      const off = subscribeComponentMeta(id, (event) => applyComponentMetaEvent(id, event), KNOWLEDGE_META_FIELD_TYPES)
-      componentPending.delete(id)
-      if (!off) continue
-      if (generation !== componentSubGeneration || !kbs.value.some(k => k.id === id)) {
-        off()
-        continue
-      }
-      componentUnsubs.set(id, off)
-    }
-  }
-
-  watch(() => kbs.value.map(k => k.id).join('\n'), () => syncComponentSubscriptions())
+  })
   onBeforeUnmount(clearComponentSubscriptions)
 
   return {
