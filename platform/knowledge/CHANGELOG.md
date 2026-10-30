@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.71](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.70...knowledge-v0.1.71) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** return nested views to their previous route ([#209](https://github.com/kicksideai/kickside/issues/209)) ([c62888e](https://github.com/kicksideai/kickside/commit/c62888e42bb0008e6fd512b86145653e2f835635))
+
 ## [0.1.70](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.69...knowledge-v0.1.70) (2026-10-29)
 
 
