@@ -1593,6 +1593,7 @@ jobs:
             mkdir -p "$TMPDIR"
             npm ci --prefix app --no-audit --no-fund
             python3 -m unittest discover -s app/test -p test_documentation_sources.py
+            python3 -m unittest discover -s app/test -p test_module_tree.py
             make -C app lockrefresh
             cd app/test
             mkdir -p .wippy
@@ -1612,6 +1613,7 @@ jobs:
             mkdir -p "$TMPDIR"
             npm ci --prefix app --no-audit --no-fund
             python3 -m unittest discover -s app/test -p test_documentation_sources.py
+            python3 -m unittest discover -s app/test -p test_module_tree.py
             make -C app lockrefresh
             cd app/test
             databases=()
