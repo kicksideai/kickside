@@ -29,7 +29,7 @@ function M.resolve(groups: any): (any?, error?)
     if snapshot_err then return nil, snapshot_err end
     local declared, declaration_err = composition.group_compositions(snap)
     if declaration_err then return nil, declaration_err end
-    local native_sources, native_err = composition.native_group_policies(snap)
+    local native_sources, native_err = composition.native_runtime_group_policies(snap)
     if native_err then return nil, native_err end
     local native, policies, authored, source_policies, slugs, visited, active, live = {}, {}, {}, {}, {}, {}, {}, {}
     local function read(id)

@@ -222,6 +222,86 @@ local function run()
             projector = writer.start_projector()
             if not ok then error(failure) end
         end)
+        test.it("resolves Runtime expression groups with Runtime's exact group spelling", function()
+            local original = assert(registry.current_version())
+            writer.stop_projector(projector)
+            local relative_policy = "app.resolver_expression:relative"
+            local qualified_policy = "app.resolver_expression:qualified"
+            local relative_group = "app.resolver_expression:members"
+            -- Runtime v0.3.55a exposes fully qualified expression groups using
+            -- the same canonical registry ID as ordinary policy groups.
+            local qualified_group = "app.other:members"
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = relative_policy, kind = "security.policy.expr", data = {
+                groups = {"members"}, policy = {actions = "read", resources = "app:expression_relative", expression = "true", effect = "allow"}}})
+            changes:create({id = qualified_policy, kind = "security.policy.expr", data = {
+                groups = {"app.other:members"}, policy = {actions = "read", resources = "app:expression_qualified", expression = "true", effect = "allow"}}})
+            assert(changes:apply())
+            local ok, failure = pcall(function()
+                local actor = assert(security.new_actor("expression-source-member"))
+                for _, selected in ipairs({
+                    {group = relative_group, policy = relative_policy, resource = "app:expression_relative"},
+                    {group = qualified_group, policy = qualified_policy, resource = "app:expression_qualified"},
+                }) do
+                    local native = assert(security.named_scope(selected.group))
+                    test.eq(native:evaluate(actor, "read", selected.resource), "allow")
+                    local scope = assert(source_scope.resolve(selected.group))
+                    test.eq(scope:evaluate(actor, "read", selected.resource), "allow")
+                    local found = false
+                    for _, policy in ipairs(scope:policies()) do if policy:id() == selected.policy then found = true end end
+                    test.is_true(found, "resolver returns the executable expression source ID")
+                end
+                local wrong, wrong_err = source_scope.resolve("app.resolver_expression:app.other:members")
+                test.is_nil(wrong)
+                test.is_true(errors.is(wrong_err, errors.NOT_FOUND), tostring(wrong_err))
+                changes = assert(registry.snapshot()):changes()
+                changes:delete(relative_policy)
+                assert(changes:apply())
+                local retired, retired_err = source_scope.resolve(relative_group)
+                test.is_nil(retired)
+                test.is_true(errors.is(retired_err, errors.NOT_FOUND), tostring(retired_err))
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
+        end)
+        test.it("keeps an expression source after its projected rule composition is removed", function()
+            local original = assert(registry.current_version())
+            local group = "app:resolver_expression_composed"
+            local expression = "app:resolver_expression_composed_expression"
+            local declaration = "app:resolver_expression_composed_declaration"
+            writer.stop_projector(projector)
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = expression, kind = "security.policy.expr", data = {
+                groups = {group}, policy = {actions = "read", resources = "app:expression_composed", expression = "true", effect = "allow"}}})
+            changes:create({id = declaration, kind = "registry.entry",
+                meta = {type = "kickside.security.group_composition"},
+                data = {group_id = group, policies = {"app:module_access"}}})
+            assert(changes:apply())
+            projector = writer.start_projector()
+            assert(trigger.trigger())
+            writer.stop_projector(projector)
+            local ok, failure = pcall(function()
+                local actor = assert(security.new_actor("expression-composed-member"))
+                local before = assert(source_scope.resolve(group))
+                test.eq(before:evaluate(actor, "read", "app:expression_composed"), "allow")
+                test.eq(before:evaluate(actor, "access", "app:module.endpoint"), "allow")
+                changes = assert(registry.snapshot()):changes()
+                changes:delete(declaration)
+                assert(changes:apply())
+                local after = assert(source_scope.resolve(group))
+                test.eq(after:evaluate(actor, "read", "app:expression_composed"), "allow")
+                test.eq(after:evaluate(actor, "access", "app:module.endpoint"), "undefined")
+                local expression_found = false
+                for _, policy in ipairs(after:policies()) do
+                    if policy:id() == expression then expression_found = true end
+                end
+                test.is_true(expression_found)
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
+        end)
         test.it("keeps a pending registry plan valid while resolving live authority", function()
             writer.stop_projector(projector)
             local original = assert(registry.current_version())

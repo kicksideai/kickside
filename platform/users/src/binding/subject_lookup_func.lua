@@ -58,6 +58,9 @@ local function lookup(args: any, credential: boolean?): any
     local include_baseline = credential == true or not authority_only or not bot_accounts.is_bot(user)
     local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, true, include_baseline)
     if scope_err then
+        if errors.is(scope_err, errors.NOT_FOUND) then
+            return failure(subject_id, tostring(scope_err), errors.NOT_FOUND, "subject", false)
+        end
         if errors.is(scope_err, errors.PERMISSION_DENIED) then
             return failure(subject_id, tostring(scope_err), errors.PERMISSION_DENIED, "subject", false)
         end
