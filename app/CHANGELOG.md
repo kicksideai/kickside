@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.29](https://github.com/kicksideai/kickside/compare/kickside-v0.2.28...kickside-v0.2.29) (2026-10-30)
+
+
+### Bug Fixes
+
+* **app:** exclude Node dependencies from module trees ([#253](https://github.com/kicksideai/kickside/issues/253)) ([d4fbcfa](https://github.com/kicksideai/kickside/commit/d4fbcfafef20f127ac56ba72046e22b8b514b512))
+
 ## [0.2.28](https://github.com/kicksideai/kickside/compare/kickside-v0.2.27...kickside-v0.2.28) (2026-10-30)
 
 
