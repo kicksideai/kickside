@@ -23,23 +23,24 @@ end
 
 return {run = test.run_cases(function()
     test.describe("capacity declaration snapshots", function()
-        test.it("does not resolve internal job types as registry workers", function()
+        test.it("does not resolve the built-in wake continuation as a registry worker", function()
             local reads = 0
             local denied = errors.new({kind = errors.PERMISSION_DENIED, message = "worker metadata denied"})
             local lib = capacity.new({registry = {get = function()
                 reads = reads + 1
                 return nil, denied
             end}})
-            for _, job_type in ipairs({"kickside.wake.continuation", "fixture.internal.operation"}) do
-                local descriptor, err = lib.admit(job_type, nil)
-                test.is_nil(err, tostring(err))
-                test.is_nil(descriptor)
-            end
-            test.eq(reads, 0)
-            local descriptor, err = lib.admit("func://fixture:worker", "key")
+            local descriptor, err = lib.group({job_type = "kickside.wake.continuation"})
+            test.is_nil(err, tostring(err))
             test.is_nil(descriptor)
-            test.is_true(errors.is(err, errors.PERMISSION_DENIED))
-            test.eq(reads, 1)
+            test.eq(reads, 0)
+            for index, worker in ipairs({"fixture.worker", "fixture:worker", "func://fixture:worker",
+                    "proc://fixture:worker", "func://kickside.wake.continuation"}) do
+                local descriptor, err = lib.group({job_type = "fixture.operation", worker_ref = worker, concurrency_key = "key"})
+                test.is_nil(descriptor)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED))
+                test.eq(reads, index)
+            end
         end)
         test.it("preserves function and process worker references for undeclared workers", function()
             for _, worker in ipairs({"func://app:generic_job_target", "proc://app:supervision_child"}) do
