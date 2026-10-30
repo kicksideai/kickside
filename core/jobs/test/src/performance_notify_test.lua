@@ -8,7 +8,7 @@ return {run = test.run_cases(function()
         test.it("does not require realtime when the host leaves status publishing unbound", function()
             local original = assert(registry.current_version())
             local wiring = assert(registry.get("kickside.core.jobs.performance:config"))
-            local changes = registry.changes()
+            local changes = assert(registry.snapshot()):changes()
             local meta = {}
             for key, value in pairs(wiring.meta or {}) do meta[key] = value end
             meta.binding_id = ""

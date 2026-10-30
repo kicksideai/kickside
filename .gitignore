@@ -67,3 +67,6 @@ app/static/public/previews/
 /scratchpad/**/promptmap/cache/
 
 .compat/
+
+# Jobs admin generated source maps remain local to the build.
+/platform/jobs-admin/static/*.map
