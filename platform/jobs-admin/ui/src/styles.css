@@ -88,4 +88,3 @@ h1, h2, h3, h4, h5, h6, .ap-h { font-family: var(--kx-font-heading); }
   .perf .ap-dirty { width: 100%; }
   .perf .ap-cards { padding-inline: .75rem; }
 }
-
