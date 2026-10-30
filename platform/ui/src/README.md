@@ -60,6 +60,15 @@ The editor reads `/nav/list` and writes `/nav/config`. Those compatibility route
 are owned by this module; internally, persisted navigation controls live under
 the `kickside.ui` settings namespace.
 
+## Scoped System access
+
+Hosts may compose `kickside.ui.security:system_tabs_access` into a scoped
+administrator role to open System's tab catalog. It is unassigned by default and
+grants only `GET /settings/tabs`; it does not grant Settings, Appearance, user
+management or system onboarding. Each `ui.settings_tab` still requires its own
+declared `access` capability, so a catalog reader cannot open unrelated tabs.
+The application owns choosing which roles receive this navigation capability.
+
 ## Splash
 
 A `ui.splash` registry entry declares optional `meta.presentation`:
