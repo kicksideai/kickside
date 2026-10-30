@@ -27,7 +27,13 @@ function M.objects(db_id: string, upload_id: string): ({ Object }?, any?)
     return rows :: { Object }?, query_err
 end
 function M.contains(db: any, storage_id: string, path: string): (boolean?, any?)
-    local location, location_err = storage_location.parse(storage_id, path)
+    local legacy_cloud_id, config_err
+    if storage_location.is_legacy_key(storage_id, path)
+        or (type(path) == "string" and path:sub(1, 5) == "s3://") then
+        legacy_cloud_id, config_err = env.get("kickside.uploads.env:storage_s3")
+        if config_err and not errors.is(config_err, errors.NOT_FOUND) then return nil, config_err end
+    end
+    local location, location_err = storage_location.parse(storage_id, path, legacy_cloud_id)
     if location_err or not location then return nil, location_err end
     local predicate, params
     if location.scheme == "fs" then
@@ -36,6 +42,12 @@ function M.contains(db: any, storage_id: string, path: string): (boolean?, any?)
     else
         predicate = "storage_path=$1"
         params = { storage_location.packed(location) }
+        -- The legacy logical address and its packed spelling retain the same
+        -- native object. Other cloud resources and local names are unrelated.
+        if location.authority == legacy_cloud_id then
+            predicate = predicate .. " OR (storage_id=$2 AND storage_path=$3)"
+            params[2], params[3] = storage_location.LEGACY_S3, location.key
+        end
     end
     local rows, err = db:query("SELECT 1 AS present FROM kickside_uploads WHERE " .. predicate
         .. " UNION SELECT 1 AS present FROM kickside_upload_artifact_blobs WHERE " .. predicate .. " LIMIT 1", params)
