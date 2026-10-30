@@ -42,9 +42,8 @@ local function validate_trait_contexts(traits: any, trait_contexts: any): error?
 end
 
 local function validate_capability_ids(ids: any, capability_type: string): error?
-    local ok, message = capability_visibility.validate_ids(ids, capability_type, registry.get)
-    if ok then return nil end
-    return fail(errors.INVALID, tostring(message))
+    local _, err = capability_visibility.validate_ids(ids, capability_type, registry.get)
+    return err
 end
 
 local function open_component_service(): (any, error?)

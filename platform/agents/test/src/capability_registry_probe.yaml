@@ -9,3 +9,4 @@ entries:
     modules: [registry]
     imports:
       capability_context: kickside.agents.traits:capability_context
+      user_agents: kickside.agents.binding:user_agents_func
