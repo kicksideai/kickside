@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.28](https://github.com/kicksideai/kickside/compare/kickside-v0.2.27...kickside-v0.2.28) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** return nested views to their previous route ([#209](https://github.com/kicksideai/kickside/issues/209)) ([c62888e](https://github.com/kicksideai/kickside/commit/c62888e42bb0008e6fd512b86145653e2f835635))
+
 ## [0.2.27](https://github.com/kicksideai/kickside/compare/kickside-v0.2.26...kickside-v0.2.27) (2026-10-30)
 
 
