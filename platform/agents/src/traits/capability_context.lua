@@ -276,6 +276,7 @@ end
 function M.error_message(validation: any): string
     if type(validation) ~= "table" or validation.ok == true then return "" end
     local parts: { string } = {}
+    if validation.error then parts[#parts + 1] = tostring(validation.error) end
     if type(validation.missing) == "table" and #validation.missing > 0 then
         parts[#parts + 1] = "missing " .. table.concat(validation.missing, ", ")
     end
@@ -295,7 +296,7 @@ local function trait_id_of(value: any): string
     return ""
 end
 
-function M.validate_trait_contexts(traits: any, trait_contexts: any, get_entry: any): any
+function M.validate_trait_contexts(traits: any, trait_contexts: any, get_entry: any): (any?, error?)
     local missing: { string } = {}
     local mismatched: { any } = {}
     local selected: { [string]: boolean } = {}
@@ -334,7 +335,11 @@ function M.validate_trait_contexts(traits: any, trait_contexts: any, get_entry: 
 
     for _, id in ipairs(ids) do
         local entry, err = get_entry(id)
-        if err or type(entry) ~= "table" then
+        if err and not errors.is(err, errors.NOT_FOUND) then
+            local read_err = (errors.wrap(err, "capability registry read failed: " .. id) :: error)
+            return {ok = false, missing = missing, mismatched = mismatched, error = read_err}, read_err
+        end
+        if type(entry) ~= "table" then
             add_mismatch(mismatched, {
                 field = id,
                 expected = "agent.trait",

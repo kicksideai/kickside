@@ -35,7 +35,8 @@ local function is_str(v: any): boolean
 end
 
 local function validate_trait_contexts(traits: any, trait_contexts: any): error?
-    local validation = capability_context.validate_trait_contexts(traits, trait_contexts, registry.get)
+    local validation, err = capability_context.validate_trait_contexts(traits, trait_contexts, registry.get)
+    if err then return err end
     if validation.ok == true then return nil end
     return fail(errors.INVALID, "capability context invalid: " .. capability_context.error_message(validation))
 end
