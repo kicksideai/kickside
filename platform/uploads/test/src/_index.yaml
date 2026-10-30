@@ -899,7 +899,6 @@ entries:
       test: wippy.test:test
       uploads: app:delivery_uploads
       records: kickside.uploads.persist:upload_record_repo
-      query: kickside.uploads.persist:upload_query_repo
       tokens: kickside.uploads.persist:upload_tokens
       cloud: app:packed_cloud_fake
 

@@ -53,18 +53,14 @@ local function cloud_open(storage: any, key: string, volume: any, mode: string?)
     return handle, nil
 end
 
-function M.get(storage_id: string, _db_id: string, staging_id: string, legacy_cloud_id: string?, _query_db: any?): (any?, any?)
-    local legacy_cloud = storage_id == storage_location.LEGACY_S3
-    if legacy_cloud and (type(staging_id) ~= "string" or staging_id == "") then
-        return nil, invalid("Legacy S3 storage requires a filesystem staging resource")
-    end
-    local volume, volume_err = fs.get(legacy_cloud and staging_id or storage_id)
+function M.get(storage_id: string, _db_id: string, _staging_id: string, _cloud_id: string?, _query_db: any?): (any?, any?)
+    local volume, volume_err = fs.get(storage_id)
     if volume_err then return nil, volume_err end
     local adapter: any = {}
     local function resolve(path: string): (any?, string?, string?, any?)
-        local location, location_err = storage_location.parse(storage_id, path, legacy_cloud_id)
+        local location, location_err = storage_location.parse(storage_id, path)
         if location_err or not location then return nil, nil, nil, location_err end
-        if location.scheme == "fs" and path == location.key then return volume, location.key, location.scheme, nil end
+        if path == location.key then return volume, location.key, location.scheme, nil end
         if location.scheme == "fs" then
             local storage, err = fs.get(location.authority)
             return storage, location.key, location.scheme, err
