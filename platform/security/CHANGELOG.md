@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.20](https://github.com/kicksideai/kickside/compare/security-v0.2.19...security-v0.2.20) (2026-10-30)
+
+
+### Features
+
+* **security:** simplify run-as permission management ([#175](https://github.com/kicksideai/kickside/issues/175)) ([42029e5](https://github.com/kicksideai/kickside/commit/42029e5d756361a8c42cfa8dc737138c2c3079c0))
+
 ## [0.2.19](https://github.com/kicksideai/kickside/compare/security-v0.2.18...security-v0.2.19) (2026-10-29)
 
 
