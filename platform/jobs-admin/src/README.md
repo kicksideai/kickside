@@ -1,8 +1,8 @@
 # Jobs administration
 
-The `kickside/jobs-admin` plugin contributes **Jobs performance** to Settings
-through a `kickside.settings:block` declaration. Generic Settings owns only its
-catalog and mount. Core Jobs owns policy validation, persistence, execution
+The `kickside/jobs-admin` plugin contributes **System → Jobs** through a
+`ui.settings_tab` declaration. The host discovers the tab and checks the declared
+Jobs endpoint permission before showing it. Core Jobs owns policy validation, persistence, execution
 snapshots and pool application; this plugin calls the public Jobs facade and
 owns no SQL resources or migrations.
 

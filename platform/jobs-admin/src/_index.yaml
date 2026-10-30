@@ -6,7 +6,8 @@ entries:
   readme: file://README.md
   meta:
     title: Jobs administration
-    description: Live Jobs policy controls, mounted declaratively in Settings.
+    description: Live Jobs policy controls, mounted as a declarative System settings
+      tab.
 - name: api_router
   kind: ns.requirement
   meta:
@@ -59,14 +60,15 @@ entries:
 - name: settings
   kind: registry.entry
   meta:
-    type: kickside.settings:block
-    comment: Contributes the Jobs admin component to the generic Settings catalog.
-  key: jobs-performance
-  title: Jobs performance
-  group: System
+    type: ui.settings_tab
+    comment: Declares the Jobs-owned System settings tab under its own endpoint permission.
+  key: jobs
+  label: Jobs
   icon: tabler:gauge
-  order: 50
+  order: 60
+  render: component
   component_tag: kickside-jobs-admin
+  access: kickside.jobs_admin.api:get_policy.endpoint
 - name: dep.kickside.jobs
   kind: ns.dependency
   component: kickside/jobs
