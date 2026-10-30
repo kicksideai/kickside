@@ -49,7 +49,10 @@ entries:
     source: file://delegation_probe.lua
     method: save
     security:
-      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_validate_call]
+      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_directory_get,
+        kickside.security:delegation_directory_open, kickside.security:delegation_directory_groups,
+        kickside.security:delegation_component_read,
+        app:delegation_directory_open]
     imports:
       delegation: kickside.security:delegation
   - name: delegation_revoke
@@ -66,20 +69,48 @@ entries:
     method: list
     imports:
       delegation: kickside.security:delegation
-  - name: delegation_validation
+  - name: delegation_directory_groups
     kind: function.lua
-    source: file://delegation_validation_fixture.lua
-    method: check
-    modules: [registry, funcs]
-  - name: delegation_validation_call
+    source: file://delegation_directory_fixture.lua
+    method: groups
+    modules: [registry]
+    security:
+      policies: [app:delegation_directory_state]
+  - name: delegation_directory_unsupported
     kind: function.lua
-    source: file://delegation_validation_fixture.lua
-    method: call
-    modules: [registry, funcs]
+    source: file://delegation_directory_fixture.lua
+    method: unsupported
+    modules: [registry]
+  - name: delegation_directory_binding
+    kind: contract.binding
+    meta: {comment: The principal directory the harness supplies in place of Users; its groups answer reads the fixture state.}
+    contracts:
+      - contract: kickside.contract:directory
+        default: true
+        methods:
+          search: app:delegation_directory_unsupported
+          resolve: app:delegation_directory_unsupported
+          exists: app:delegation_directory_unsupported
+          groups: app:delegation_directory_groups
+  - name: delegation_directory_state
+    kind: security.policy
+    meta: {comment: The fixture directory reads and bumps its own state, whoever calls it.}
+    policy:
+      actions: [registry.get, registry.snapshot, registry.apply]
+      resources: '*'
+      effect: allow
+  - name: delegation_directory_open
+    kind: security.policy
+    meta: {comment: The harness counterpart of Security's open grant on the Users directory binding.}
+    policy:
+      actions: contract.open
+      resources: app:delegation_directory_binding
+      effect: allow
   - name: delegation_admin
     kind: security.policy
+    meta: {comment: A Security administrator with the host user baseline that carries the caller through component ports.}
     policy:
-      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, access]
+      actions: [funcs.call, registry.get, registry.find, registry.snapshot, db.get, access, contract.get, contract.open, contract.call, contract.security]
       resources: '*'
       effect: allow
   - name: delegation_writer
@@ -341,8 +372,6 @@ entries:
       comment: Security mounted as the single package root; this harness supplies every host seam it requires.
     component: kickside/security
     parameters:
-      - name: kickside.security:delegation_validator
-        value: app:delegation_validation
       - name: kickside.security:target_db
         value: app:db
       - name: kickside.security:api_router
@@ -355,6 +384,10 @@ entries:
         value: app:fence_delegations
       - name: kickside.security:process_host
         value: app:processes
+      - name: kickside.component:target_db
+        value: app:db
+      - name: kickside.component:api_router
+        value: app:api
 
   - name: dep.kickside.contract
     kind: ns.dependency

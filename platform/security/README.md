@@ -46,7 +46,7 @@ commit regenerated tracked assets with the source.
 
 ## Use
 
-Compose module policies in **System → Security → Roles**, then assign the resulting roles in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Act-as grants** permits selecting an execution principal; it grants no access to that principal’s resources.
+Compose module policies in **System → Security → Roles**, then assign the resulting roles in **System → Users**. Denies take precedence over allows. Module access and Component ACLs are separate checks. **Run as** permits selecting an execution account; it grants no access to that principal’s resources.
 
 New accounts receive **Member**, which provides standard access to installed
 applications. To give someone less access, create a **New role**, add only the
@@ -70,7 +70,6 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 
 | Requirement | Declared default |
 | --- | --- |
-| [`kickside.security:delegation_validator`](src/_index.yaml) | Empty string |
 | [`kickside.security:sessions_invalidator`](src/_index.yaml) | Empty string |
 | [`kickside.security:delegation_fencer`](src/_index.yaml) | `kickside.users.persist:delegation_fencer` |
 | [`kickside.security:api_router`](src/_index.yaml) | Host supplies the value |
