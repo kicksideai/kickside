@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/jobs-v0.1.65...jobs-v0.1.66) (2026-10-30)
+
+
+### Features
+
+* **jobs:** add settings-backed worker capacity ([#210](https://github.com/kicksideai/kickside/issues/210)) ([d52aa4c](https://github.com/kicksideai/kickside/commit/d52aa4c51140f0cb5c1b5a4829e6207841ac2d12))
+
 ## [0.1.65](https://github.com/kicksideai/kickside/compare/jobs-v0.1.64...jobs-v0.1.65) (2026-10-29)
 
 
