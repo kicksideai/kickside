@@ -20,7 +20,11 @@ local function handle(_request: any): any
         if err or not result or result.success ~= true then
             return { success = false, error = tostring(err or (result and result.error)) }
         end
-        if result.deleted ~= 1 then return { success = false, error = "retention does not complete the delete" } end
+        if result.deleted ~= 0 or result.needs_continue then
+            return { success = false, error = "retention enters an active delete" }
+        end
+        local token = ctx.get("lease_token")
+        if type(token) ~= "string" or token == "" then return { success = false, error = "missing delete lease context" } end
     end
     return { success = true }
 end

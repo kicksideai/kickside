@@ -1028,6 +1028,7 @@ entries:
   - name: pending_delete_native_source
     kind: library.lua
     source: file://pending_delete_native_source.lua
+    modules: [time]
     imports:
       error_envelope: kickside.contract:error_envelope
       sql: app:pending_delete_native_sql_adapter
@@ -1175,6 +1176,7 @@ entries:
     kind: library.lua
     source: file://teardown_cause_source.lua
     modules:
+    - uuid
     - security
     - registry
     - time
@@ -1182,6 +1184,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_cause_sql
       contract: app:teardown_cause_contract
+      component_types: kickside.component:types
       component_ops: app:teardown_cause_fixture
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
@@ -1251,6 +1254,7 @@ entries:
     kind: library.lua
     source: file://cleanup_setup_source.lua
     modules:
+    - uuid
     - sql
     - time
     imports:
@@ -1258,6 +1262,7 @@ entries:
       security: app:cleanup_setup_security
       contract: app:cleanup_setup_contract
       registry: app:cleanup_setup_fixture
+      component_types: kickside.component:types
       component_ops: kickside.component.persist:component_ops
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
@@ -1505,6 +1510,7 @@ entries:
   - name: retry_release_source
     kind: library.lua
     source: file://retry_release_source.lua
+    modules: [time]
     imports:
       error_envelope: kickside.contract:error_envelope
       component_types: kickside.component:types
@@ -1586,6 +1592,7 @@ entries:
     kind: library.lua
     source: file://teardown_tx_cleanup_source.lua
     modules:
+    - uuid
     - security
     - registry
     - time
@@ -1593,6 +1600,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_tx_cleanup_sql
       contract: app:teardown_tx_cleanup_contract
+      component_types: kickside.component:types
       component_ops: app:teardown_tx_cleanup_fixture
       placement: app:teardown_tx_cleanup_placement
       component_lifecycle: app:teardown_tx_cleanup_lifecycle

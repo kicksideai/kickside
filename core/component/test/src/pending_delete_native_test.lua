@@ -27,6 +27,16 @@ local function dependencies()
     end
 end
 local function proofs()
+    test.it("skips a lease claimed after the retention scan without requesting continuation", function()
+        fixture.reset("", nil)
+        fixture.results.owner = {ok = false, busy = true}
+        local count, err, again, blocked = pending.run(1)
+        test.eq(count, 0)
+        test.is_nil(err)
+        test.is_false(again)
+        test.eq(#blocked, 0)
+    end)
+
     for _, route in ipairs({{stage = "database", field = "database"}, {stage = "scan", field = "rows"},
         {stage = "delete", field = "delete"}}) do
         for _, proof in ipairs({{label = "missing"}, {label = "false", value = false},
@@ -67,7 +77,7 @@ local function proofs()
                 test.eq(removed, count)
                 test.eq(again, owner.id == nil and count == 2)
                 test.eq(#blocked, 0)
-                test.eq(fixture.args[owner.id and 2 or 1], 2)
+                test.eq(fixture.args[owner.id and 3 or 2], 2)
                 test.eq(#fixture.deletes, count)
                 test.eq(fixture.releases, 1)
                 for i, call in ipairs(fixture.deletes) do

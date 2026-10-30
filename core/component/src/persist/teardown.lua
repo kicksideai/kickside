@@ -10,6 +10,8 @@ local contract = require("contract")
 local registry = require("registry")
 local security = require("security")
 local time = require("time")
+local uuid = require("uuid")
+local component_types = require("component_types")
 local ops = require("component_ops")
 local placement = require("placement")
 local component_lifecycle = require("component_lifecycle")
@@ -148,7 +150,7 @@ end
 -- run_deletable invokes the impl's deletable.delete (its own backing-data teardown)
 -- when the component kind declares the contract. A declared contract that cannot be
 -- opened is a cleanup failure, so callers retain the component row for a safe retry.
-function M.run_deletable(component: any, actor: any, scope: any, component_id: string, delete_options: any?): (boolean, boolean, any, any)
+function M.run_deletable(component: any, actor: any, scope: any, component_id: string, delete_options: any?, lease_token: string?): (boolean, boolean, any, any)
     local impl_id = type(component) == "table" and (component :: any).impl_id or nil
     if type(impl_id) ~= "string" or impl_id == "" then
         return false, false, nil
@@ -165,6 +167,7 @@ function M.run_deletable(component: any, actor: any, scope: any, component_id: s
         for k, v in pairs((component :: any).private_context :: { [string]: any }) do ctx[k] = v end
     end
     ctx.component_id = component_id
+    ctx.lease_token = lease_token
 
     -- Chain actor/scope only when present: the gated delete always has both; the
     -- trusted system delete may run with no ambient actor, in which case the deletable
@@ -230,9 +233,9 @@ end
 -- component fence refuse every consumer write from here on, so nothing lands in
 -- the backing data the cleanup releases before the row goes. On PostgreSQL the
 -- mark waits for the writes already past the fence.
--- Returns (ok, step?, err?, owns_fence?) with the same step vocabulary as unregister.
+-- Returns (ok, step?, err?, owns_fence?, lease_token?). A busy attempt runs no cleanup.
 
-function M.begin_delete(component_id: string, gate_user_id: string?, child_policy: string?): (boolean, string?, any, boolean?)
+function M.begin_delete(component_id: string, gate_user_id: string?, child_policy: string?): (boolean, string?, any, boolean?, string?)
     local db, db_err = sql.get(ops.db_id())
     if db_err then return false, "connect", db_err end
     local tx, tx_err = db:begin()
@@ -273,34 +276,52 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
         return false, "delete", abort_transaction(db, tx, internal("component delete fence read failed", fence_err or "missing result"))
     end
     local owns_fence = rows[1] ~= nil and rows[1].deleting_at == nil
-    if owns_fence then
-        local mark_err = ops.mark_deleting_tx(tx, component_id, true)
-        if mark_err then
-            return false, "delete", abort_transaction(db, tx, mark_err)
-        end
+    local lease_token = uuid.v7()
+    local mark_err, claimed = ops.mark_deleting_tx(tx, component_id, true, lease_token)
+    if mark_err then return false, "delete", abort_transaction(db, tx, mark_err) end
+    if not claimed then
+        local abort_err = abort_transaction(db, tx, nil)
+        return false, abort_err and "delete" or "busy", abort_err
     end
     local _, commit_err = tx:commit()
     commit_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
         commit_err, "release component teardown database")
     if commit_err then return false, "commit", commit_err, owns_fence end
-    return true, nil, nil, owns_fence
+    return true, nil, nil, owns_fence, lease_token
 end
 
 -- Abandon a begun delete whose deletable cleanup failed: the component lives on
 -- and the fence admits writes to it again.
-function M.abandon_delete(component_id: string): any
+function M.abandon_delete(component_id: string, lease_token: string): any
     local db, db_err = sql.get(ops.db_id())
     if db_err then return db_err end
-    local err = ops.mark_deleting_tx(db, component_id, false)
+    local err = (ops.mark_deleting_tx(db, component_id, false, lease_token) :: error?)
     return error_envelope.cleanup(function(): (any, error?) return db:release() end,
         err, "release component teardown database")
 end
 
--- begin_delete authorizes the command and commits its fence before cleanup.
--- unregister consumes that fence; retention can already remove the grants or
--- finish the component while the caller runs the kind's cleanup. Lock the row
--- before checking the fence so a concurrent abandon cannot admit live writes.
-function M.unregister(component_id: string, child_policy: string?): (any, string?, any)
+local function release_delete_tx(tx: any, component_id: string, lease_token: string): error?
+    local result, err = tx:execute("UPDATE kickside_components SET lease_token=NULL,lease_until=NULL"
+        .. " WHERE component_id=$1 AND lease_token=$2", {component_id, lease_token})
+    if err then return errors.wrap(err, "release component delete lease") end
+    if not result or tonumber(result.rows_affected) == nil then
+        return internal("component delete lease release returned no affected-row count", "missing row proof")
+    end
+    if tonumber(result.rows_affected) == 0 then return component_types.lease_lost_error() end
+    return nil
+end
+
+-- A bounded cleanup page retains its write fence but releases this attempt.
+function M.release_delete(component_id: string, lease_token: string): error?
+    local db, db_err = sql.get(ops.db_id())
+    if db_err then return db_err end
+    local err = release_delete_tx(db, component_id, lease_token)
+    return error_envelope.cleanup(function(): (any, error?) return db:release() end,
+        err, "release component teardown database")
+end
+
+-- Consume only the claimed fence, holding its row lock through unregister.
+function M.unregister(component_id: string, child_policy: string?, lease_token: string): (any, string?, any)
     local db, err_db = sql.get(ops.db_id())
     if err_db then return nil, "connect", err_db end
 
@@ -316,10 +337,13 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
     end
 
     local locked, lock_err = tx:execute("UPDATE kickside_components"
-        .. " SET context_revision=context_revision WHERE component_id=$1", { component_id })
+        .. " SET context_revision=context_revision WHERE component_id=$1 AND lease_token=$2", {component_id, lease_token})
     if lock_err or not locked or tonumber(locked.rows_affected) == nil then
-        return nil, "delete", abort_transaction(db, tx, internal("component unregister lock failed", lock_err or "missing row proof"))
+        lock_err = internal("component unregister lock failed", lock_err or "missing row proof")
+    elseif tonumber(locked.rows_affected) == 0 then
+        lock_err = component_types.lease_lost_error()
     end
+    if lock_err then return nil, "delete", abort_transaction(db, tx, lock_err) end
     local rows, fence_err = tx:query("SELECT deleting_at FROM kickside_components WHERE component_id=$1", { component_id })
     if fence_err or type(rows) ~= "table" then
         return nil, "delete", abort_transaction(db, tx, internal("component unregister fence read failed", fence_err or "missing result"))
@@ -345,6 +369,9 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
         type = ops.COMMAND_TYPES.DELETE_COMPONENT,
         payload = { component_id = component_id, child_policy = child_policy },
     })
+    if not err_delete and delete_result and delete_result.pending then
+        err_delete = release_delete_tx(tx, component_id, lease_token)
+    end
     if err_delete then
         return nil, "delete", abort_transaction(db, tx, err_delete)
     end

@@ -39,7 +39,9 @@ end
 function M.lock_tree() return select(2, M.result("tree", true)) end
 function M.check_user_access() return M.result("access", true) end
 function M.validate_delete_tx() return M.result("validate", true) end
-function M.mark_deleting_tx() return select(2, M.result("mark", true)) end
+function M.mark_deleting_tx(): (error?, boolean?)
+    local claimed, err = M.result("mark", true); return err, claimed
+end
 function M.component_summary_tx() return M.result("summary", {impl_id = "fixture:implementation"}) end
 function M.dispatch()
     M.effects = M.effects + 1

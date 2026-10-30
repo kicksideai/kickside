@@ -13,7 +13,7 @@ entries:
     meta:
       comment: Resume fenced component deletions from their durable delete marks on the existing retention slot.
     source: file://pending_delete.lua
-    modules: [sql]
+    modules: [sql, time]
     imports:
       error_envelope: kickside.contract:error_envelope
       component_types: kickside.component:types
@@ -295,6 +295,7 @@ entries:
         - teardown
     source: file://teardown.lua
     modules:
+      - uuid
       - sql
       - contract
       - registry
@@ -302,6 +303,7 @@ entries:
       - time
     imports:
       error_envelope: kickside.contract:error_envelope
+      component_types: kickside.component:types
       component_ops: kickside.component.persist:component_ops
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle

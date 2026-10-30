@@ -24,7 +24,7 @@ function M.get(): (any, error?) return M.result("database", M.database()) end
 function M.delete(id, policy): (any, error?)
     M.deletes[#M.deletes + 1] = {id = id, policy = policy}
     local result = M.results[id]
-    if result then return result.ok, result.err end
+    if result then return result.ok, result.err, result.busy end
     return M.result("delete", true)
 end
 return M
