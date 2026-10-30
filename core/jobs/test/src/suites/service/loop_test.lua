@@ -83,6 +83,7 @@ local function define_tests()
         local log_subscription = assert(events.subscribe("logs", "logs.entry"))
         local log_channel = log_subscription:channel()
         local recent_logs: {string} = {}
+        local recent_events: {string} = {}
         if started.original_version then
             attempt(function()
                 local _, err = registry.apply_version(started.original_version)
@@ -102,9 +103,14 @@ local function define_tests()
                     if #recent_logs > 50 then table.remove(recent_logs, 1) end
                 else
                     test.eq(selected.channel, proc_events, "probe services did not stop: " .. table.concat(pending, ",")
-                        .. "; shutdown logs=" .. table.concat(recent_logs, " | "))
+                        .. "; shutdown logs=" .. table.concat(recent_logs, " | ")
+                        .. "; lifecycle events=" .. table.concat(recent_events, " | "))
                 end
                 local event = selected.value
+                if selected.channel == proc_events and type(event) == "table" then
+                    recent_events[#recent_events + 1] = "kind=" .. tostring(event.kind) .. ",from=" .. tostring(event.from)
+                    if #recent_events > 50 then table.remove(recent_events, 1) end
+                end
                 if type(event) == "table" and event.kind == process.event.EXIT then
                     roots[tostring(event.from)] = nil
                 end
