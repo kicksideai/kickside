@@ -958,6 +958,11 @@ jobs:
             wippy test --set "vars.sqlite_path=$PWD/.wippy/ci.sqlite" 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
+            cd "$source_root/platform/security/test-bot-accounts"
+            make lockrefresh
+            mkdir -p .wippy
+            make test WIPPY_TEST_ARGS="test app:delegation_http_test --config .wippy.yaml --set vars.sqlite_path=$PWD/.wippy/split-app.sqlite --set vars.security_sqlite_path=$PWD/.wippy/split-security.sqlite"
+            make test WIPPY_TEST_ARGS="test app:delegation_http_test --config .wippy.yaml --profile shared-db --set vars.sqlite_path=$PWD/.wippy/shared.sqlite"
             cd "$source_root"
             version=$(jq -er --arg path platform/security '.[$path]' .release-please-manifest.json)
             wippy publish --config platform/security --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.security:ui_fs
@@ -983,6 +988,19 @@ jobs:
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
+            cd "$source_root/platform/security/test-bot-accounts"
+            make lockrefresh
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_1"
+            createdb "$database"
+            databases+=("$database")
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_2"
+            createdb "$database"
+            databases+=("$database")
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_3"
+            createdb "$database"
+            databases+=("$database")
+            make test WIPPY_TEST_ARGS="test app:delegation_http_test --config .wippy.yaml --profile postgres --set vars.pg_database=${databases[1]} --set vars.pg_security_database=${databases[2]} --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433"
+            make test WIPPY_TEST_ARGS="test app:delegation_http_test --config .wippy.yaml --profile postgres --profile shared-db --set vars.pg_database=${databases[3]} --set vars.pg_security_database=${databases[2]} --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433"
             cd "$source_root"
             version=$(jq -er --arg path platform/security '.[$path]' .release-please-manifest.json)
             wippy publish --config platform/security --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.security:ui_fs
@@ -1525,6 +1543,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=workflows
             make typecheck MOD=workflows
+            make -C platform/workflows test-ui
             make build MOD=workflows
             make -C platform/workflows lockrefresh
             cd platform/workflows/test
@@ -1554,8 +1573,11 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
             createdb "$database"
             databases+=("$database")
-            wippy lint --ns kickside.workflows --ns 'kickside.workflows.*' --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
-            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_1"
+            createdb "$database"
+            databases+=("$database")
+            wippy lint --ns kickside.workflows --ns 'kickside.workflows.*' --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
+            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
             cd "$source_root"
@@ -1626,7 +1648,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.54a
+        version: 0.3.55a
         hub-url: https://hub.wippy.ai
     - name: Check out components module sources
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -1674,10 +1696,12 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.52a
+        version: 0.3.55a
         hub-url: https://hub.wippy.ai
     - name: Test missing and incomplete application bundles
       run: node --test app/scripts/check-app-bundle.test.mjs
+    - name: Test release artifact ordering and recovery
+      run: python3 -m unittest discover -s tests -p test_release_modules.py
     - name: Build, validate and pack the application frontend
       run: |
         set -euo pipefail

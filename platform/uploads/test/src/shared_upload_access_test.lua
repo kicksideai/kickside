@@ -118,20 +118,46 @@ return { run = test.run_cases(function()
             local restored = assert(sql.get("app:db"))
             assert(restored:execute("UPDATE kickside_uploads SET storage_path=$1 WHERE uuid=$2", {id, id}))
             restored:release()
-            for _, who in ipairs({owner, reader}) do
-                local info, info_err = run_as(who, "kickside.uploads.binding:get_info_func", id)
-                test.is_nil(info_err, tostring(info_err))
-                test.eq(info.filename, "notes.txt")
-                local content, content_err = run_as(who, "kickside.uploads.binding:get_content_func", id)
-                test.is_nil(content_err, tostring(content_err))
-                test.eq(content.content, "bytes")
-            end
+                local extracted = assert(artifacts_repo.create_artifact({
+                    upload_id = id,
+                    kind = "markdown",
+                    role = "primary",
+                    mime_type = "text/markdown",
+                    label = "extracted.md",
+                    content = "Derived document text",
+                    metadata = { filename = "extracted.md", original_size = 5 },
+                }))
+                local extracted_blob = assert(artifacts_repo.get_blob(extracted.blob_id))
+                for _, who in ipairs({ owner, reader }) do
+                    local info, info_err = run_as(who, "kickside.uploads.binding:get_info_func", id, { format = "raw" })
+                    test.is_nil(info_err, tostring(info_err))
+                    test.eq(info.filename, "notes.txt")
+                    test.eq(info.size, 5)
+                    test.eq(info.content_type, "text/plain")
+                    test.is_nil(info.artifact_id)
+                    local extracted_info, extracted_info_err = run_as(who, "kickside.uploads.binding:get_info_func", id)
+                    test.is_nil(extracted_info_err, tostring(extracted_info_err))
+                    test.eq(extracted_info.filename, "extracted.md")
+                    test.eq(extracted_info.content_type, "text/markdown")
+                    test.eq(extracted_info.size, #"Derived document text")
+                    test.eq(extracted_info.artifact_id, extracted.artifact_id)
+                    local content, content_err = run_as(who, "kickside.uploads.binding:get_content_func", id)
+                    test.is_nil(content_err, tostring(content_err))
+                    test.eq(content.content, "Derived document text")
+                    local original, original_err =
+                        run_as(who, "kickside.uploads.binding:get_content_func", id, { format = "raw" })
+                    test.is_nil(original_err, tostring(original_err))
+                    test.eq(original.content, "bytes")
+                    test.eq(original.content_type, "text/plain")
+                    test.eq(original.size, 5)
+                end
             local denied_info, denied_info_err = run_as(stranger, "kickside.uploads.binding:get_info_func", id)
             test.is_nil(denied_info)
             test.is_true(errors.is(denied_info_err, errors.PERMISSION_DENIED))
             local denied_content, denied_content_err = run_as(stranger, "kickside.uploads.binding:get_content_func", id)
             test.is_nil(denied_content)
             test.is_true(errors.is(denied_content_err, errors.PERMISSION_DENIED))
+            assert(storage:remove(extracted_blob.storage_path))
             assert(storage:remove(stored_blob.storage_path))
             local cleanup = assert(sql.get("app:db"))
             assert(cleanup:execute("DELETE FROM kickside_upload_artifacts WHERE upload_id=$1", {id}))

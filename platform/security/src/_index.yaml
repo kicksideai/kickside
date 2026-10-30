@@ -14,35 +14,50 @@ entries:
     kind: ns.dependency
     version: '*'
     component: kickside/execution
-  - name: delegation_validator
-    kind: ns.requirement
-    default: ""
-    meta:
-      value_kind: function.lua
-      description: Optional host validation of live ordinary-user delegation targets and execution roots; empty keeps generated saves unavailable.
-    targets:
-      - entry: kickside.security:delegation_config
-        path: .meta.validator
-      - entry: kickside.security:delegation_validate_call
-        path: ".policy.resources +="
-  - name: delegation_validate_call
-    kind: security.policy
-    meta: {private: true, service_only: true}
-    policy:
-      actions: funcs.call
-      resources: []
-      effect: allow
-  - name: delegation_config
-    kind: registry.entry
-    meta: {validator: ""}
+  - name: dep.kickside.component
+    kind: ns.dependency
+    version: '>=0.3.4'
+    component: kickside/component
   - name: delegation
     kind: library.lua
     source: file://delegation.lua
-    modules: [registry, security, funcs, time]
+    modules: [registry, security, contract, time, funcs]
     imports:
       execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
       scope_catalog: kickside.security.api:scope_catalog
       trigger_reconcile: kickside.security:trigger_reconcile
+  # A save reads its target's live status through the principal directory.
+  # Each contract authorization step stays a separate save-only grant:
+  # definition/get, canonical binding/open, and groups/call.
+  - name: delegation_directory_get
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: contract.get
+      resources: kickside.contract:directory
+      effect: allow
+  - name: delegation_directory_open
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: contract.open
+      resources: kickside.users.directory:directory_binding
+      effect: allow
+  - name: delegation_directory_groups
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: contract.call
+      resources: groups
+      effect: allow
+  - name: delegation_component_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [funcs.call, funcs.security]
+      resources: kickside.component.system:exists
+      effect: allow
   - name: policy_composition
     kind: library.lua
     source: file://policy_composition.lua
@@ -112,6 +127,8 @@ entries:
       - entry: kickside.security.api:delegation_revoke.endpoint
         path: .meta.router
       - entry: kickside.security.api:delegation_list.endpoint
+        path: .meta.router
+      - entry: kickside.security.api:delegation_roots.endpoint
         path: .meta.router
 
   - name: ui_server
@@ -205,8 +222,9 @@ entries:
       type: view.component
       name: security_view
       title: Security
-      description: Roles and scopes admin web component (no props). Lists built-in and registry scopes read-only and lets admins compose DB-backed custom scopes from public policies in a two-pane builder; saved scopes are projected as security.scope registry entries.
+      description: Security administration without props. Roles composes permissions published by installed modules; Users assigns roles to accounts. Run as grants groups permission to select an execution account on managed components, using the shared account, group and component pickers.
       announced: true
+      auto_register: true
       tag_name: kickside-security
       base_path: kickside-security
       entry_point: index.js

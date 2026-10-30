@@ -5,6 +5,7 @@ local security = require("security")
 local errors = require("errors")
 local thread_ingest = require("thread_ingest")
 local upload_query_repo = require("upload_query_repo")
+local engines = require("engines")
 
 -- Shared "ingest an upload into a KB" core. One path turns a processed upload
 -- (its primary artifact + original-file provenance) into a KB content event,
@@ -143,7 +144,7 @@ end
 
 local ingest_impl
 
-local function ensure_kb_exists(kb_id: string): any
+local function ensure_kb_exists(kb_id: string): (any, any?)
     local service, svc_err = component.get_service()
     if svc_err or not service then
         return typed(errors.UNAVAILABLE, "component service unavailable: " .. tostring(svc_err))
@@ -152,7 +153,7 @@ local function ensure_kb_exists(kb_id: string): any
     if not comp or not comp.impl_id then
         return typed(errors.NOT_FOUND, "knowledge base not found: " .. tostring(comp_err))
     end
-    return nil
+    return nil, comp
 end
 
 local function ingest_archive_children(kb_id: string, upload_id: string, file: any, seen: { [string]: boolean }): (any, any)
@@ -253,7 +254,7 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
     if seen[upload_id] then return nil, "archive recursion cycle at upload " .. upload_id end
     seen[upload_id] = true
 
-    local kb_err = ensure_kb_exists(kb_id)
+    local kb_err, comp = ensure_kb_exists(kb_id)
     if kb_err then return nil, kb_err end
 
     local primary, content_err = read_upload_content(upload_id)
@@ -265,15 +266,19 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
     end
 
     local content = primary.content or ""
-    if content == "" then
-        return nil, typed(errors.INVALID, "primary upload artifact is empty")
-    end
-
     local artifact = primary.artifact or { artifact_id = primary.artifact_id, checksum = primary.checksum }
     local content_type = primary.content_type or primary.mime_type or "text/plain"
-    if not is_text_content(content_type) then
-        return nil, typed(errors.INVALID,
-            "cannot ingest " .. tostring(content_type) .. " as document content: no text was extracted from this upload")
+    if content == "" or not is_text_content(content_type) then
+        local engine, engine_err = engines.by_impl(comp.impl_id)
+        if engine_err then return nil, engine_err end
+        if not engine or not engine.accepts_files then
+            if content == "" then
+                return nil, typed(errors.INVALID, "primary upload artifact is empty")
+            end
+            return nil, typed(errors.INVALID,
+                "cannot ingest " .. tostring(content_type) .. " as document content: no text was extracted from this upload")
+        end
+        content = nil
     end
     local metadata = shallow_copy(primary.metadata)
     strip_upload_locators(metadata)
@@ -295,6 +300,7 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
     put_if_present(metadata, "original_filename", original_filename)
     put_if_present(metadata, "original_upload_id", first_value(metadata.original_upload_id, upload_id))
     put_if_present(metadata, "original_size", first_value(metadata.original_size, file.size))
+    put_if_present(metadata, "relative_path", first_value(metadata.relative_path, upload_meta.relative_path))
 
     local source_ref = shallow_copy(metadata.source_ref)
     strip_upload_locators(source_ref)
@@ -314,6 +320,7 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
         "upload:" .. upload_id
     )
     local external_version = first_value(metadata.external_version, source_ref.external_version)
+    if content == nil then put_default(metadata, "content_hash", artifact.checksum) end
     metadata.external_id = external_id
     source_ref.external_id = external_id
     put_if_present(metadata, "external_version", external_version)

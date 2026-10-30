@@ -33,6 +33,13 @@ vars:
 profiles:
   postgres:
     override:
+      "app:jobs_migration_db:kind": db.sql.postgres
+      "app:jobs_migration_db:host": "${pg_host}"
+      "app:jobs_migration_db:port": "${pg_port}"
+      "app:jobs_migration_db:database": "${pg_database}_jobs_mig"
+      "app:jobs_migration_db:username": "${pg_username}"
+      "app:jobs_migration_db:password": "${pg_password}"
+      "app:jobs_migration_db:options.sslmode": disable
       "app:db:kind": db.sql.postgres
       "app:db:host": "${pg_host}"
       "app:db:port": "${pg_port}"
@@ -82,6 +89,16 @@ profiles:
       "app:private_queue_concurrency_claim_test:options.search_path": kickside_private_queue_concurrency_claim_test
       "app:private_queue_concurrency_claim_test:pool.max_open": 8
       "app:private_queue_concurrency_claim_test:pool.max_idle": 4
+      "app:private_queue_capacity_claim_test:kind": db.sql.postgres
+      "app:private_queue_capacity_claim_test:host": "${pg_host}"
+      "app:private_queue_capacity_claim_test:port": "${pg_port}"
+      "app:private_queue_capacity_claim_test:database": "${pg_database}"
+      "app:private_queue_capacity_claim_test:username": "${pg_username}"
+      "app:private_queue_capacity_claim_test:password": "${pg_password}"
+      "app:private_queue_capacity_claim_test:options.sslmode": disable
+      "app:private_queue_capacity_claim_test:options.search_path": kickside_private_queue_capacity_claim_test
+      "app:private_queue_capacity_claim_test:pool.max_open": 8
+      "app:private_queue_capacity_claim_test:pool.max_idle": 4
       "app:private_queue_concurrency_test:kind": db.sql.postgres
       "app:private_queue_concurrency_test:host": "${pg_host}"
       "app:private_queue_concurrency_test:port": "${pg_port}"

@@ -1,11 +1,11 @@
 import { u as ue, a as ie, s as w, W as de, P as ce } from "./index-B9KLaL2S.js";
 import { defineComponent as fe, defineAsyncComponent as ve, computed as _, ref as y, onBeforeUnmount as pe, watch as me, openBlock as n, createElementBlock as m, createVNode as d, unref as a, createElementVNode as u, createBlock as v, withCtx as c, createTextVNode as b, toDisplayString as k, withModifiers as be, createCommentVNode as I, Fragment as ye } from "vue";
-import { M as he, Y as we, s as A, o as ke, L as ge, i as _e, X as Ce } from "./pickerselect-Bt8Nl0Ia.js";
+import { M as he, Z as we, s as A, o as ke, L as ge, i as _e, Y as Ce } from "./pickerselect-BuC_5yaD.js";
 import { s as K } from "./index-DRigRSgk.js";
-import { a as Ee, b as Re, C as Se, s as We, _ as z, g as Ie, D as Pe, A as Oe, i as Ae } from "./http-error-DV_DxI6h.js";
+import { a as Ee, b as Re, C as Se, s as We, _ as z, g as Ie, D as Pe, A as Oe, i as Ae } from "./http-error-B4DMrBUB.js";
 import { on as Y, define as je } from "@wippy-fe/proxy";
 import { Icon as j } from "@iconify/vue";
-import { _ as Ve, s as $e } from "./workflow-embed-CqSNuAGR.js";
+import { _ as Ve, s as $e } from "./workflow-embed-DJ9drdSy.js";
 const Le = "Run Workflow";
 function G(t, r) {
   const l = t[r];
@@ -83,10 +83,10 @@ const Be = { class: "wf-embed" }, He = {
 }, Me = { class: "wf-embed-hd" }, qe = { class: "wf-embed-hd-ico" }, Ke = { class: "wf-embed-hd-main" }, ze = { class: "wf-embed-hd-title" }, Ye = { class: "wf-embed-input" }, Ge = {
   key: 3,
   class: "wf-embed-subtle"
-}, Xe = { class: "wf-embed-actions" }, Qe = {
+}, Ze = { class: "wf-embed-actions" }, Qe = {
   key: 1,
   class: "wf-embed-status is-running"
-}, Ze = {
+}, Xe = {
   key: 0,
   class: "wf-embed-runid"
 }, et = {
@@ -107,13 +107,13 @@ const Be = { class: "wf-embed" }, He = {
 }, ot = { class: "wf-embed-actions" }, ut = /* @__PURE__ */ fe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ve(() => import("./SchemaEditor-CO-AzAlt.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = y(null), S = y(!1), C = y(""), P = y({}), H = y(0), L = y(!0), p = y("ready"), V = y(!1), E = y(""), g = y(""), h = y(null);
+    const r = ve(() => import("./SchemaEditor-BLXx3DMB.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = y(null), S = y(!1), C = y(""), P = y({}), H = y(0), L = y(!0), p = y("ready"), V = y(!1), E = y(""), g = y(""), h = y(null);
     let N = null, J = null, x = !1;
-    const X = _(() => o.value ? `/workflows/${o.value.id}` : "");
+    const Z = _(() => o.value ? `/workflows/${o.value.id}` : "");
     function Q() {
       o.value && f("navigate", { route: `/workflows/${o.value.id}` });
     }
-    const F = _(() => o.value?.input_schema), Z = _(() => we(F.value)), ee = _(() => i.value.input !== null), T = _(() => Ue(P.value, F.value)), M = _(() => p.value === "ready" && !V.value && !i.value.inputError && L.value && T.value.ok), $ = _(() => E.value.length > 8 ? E.value.slice(0, 8) : E.value), te = _(() => !i.value.workflowId);
+    const F = _(() => o.value?.input_schema), X = _(() => we(F.value)), ee = _(() => i.value.input !== null), T = _(() => Ue(P.value, F.value)), M = _(() => p.value === "ready" && !V.value && !i.value.inputError && L.value && T.value.ok), $ = _(() => E.value.length > 8 ? E.value.slice(0, 8) : E.value), te = _(() => !i.value.workflowId);
     function U(s, e) {
       return Oe(s) === 403 ? "You don’t have access to this Workflow." : _e(s, e);
     }
@@ -237,7 +237,7 @@ const Be = { class: "wf-embed" }, He = {
           d(a(A), {
             as: "a",
             class: "wf-embed-open",
-            href: X.value,
+            href: Z.value,
             severity: "secondary",
             text: "",
             title: "Open this Workflow in the editor",
@@ -284,7 +284,7 @@ const Be = { class: "wf-embed" }, He = {
               label: "Input",
               icon: "tabler:arrow-right-circle",
               open: !0
-            }, null, 8, ["value"])) : Z.value ? (n(), v(a(r), {
+            }, null, 8, ["value"])) : X.value ? (n(), v(a(r), {
               key: 2,
               mode: "value",
               schema: F.value,
@@ -308,7 +308,7 @@ const Be = { class: "wf-embed" }, He = {
               _: 1
             })) : I("", !0)
           ]),
-          u("div", Xe, [
+          u("div", Ze, [
             d(a(A), {
               type: "button",
               class: "wf-embed-action",
@@ -346,7 +346,7 @@ const Be = { class: "wf-embed" }, He = {
           }),
           u("span", null, [
             e[3] || (e[3] = b("Running…", -1)),
-            $.value ? (n(), m("span", Ze, " · " + k($.value), 1)) : I("", !0)
+            $.value ? (n(), m("span", Xe, " · " + k($.value), 1)) : I("", !0)
           ])
         ])) : p.value === "dispatched" ? (n(), m("div", et, [
           d(a(w), {

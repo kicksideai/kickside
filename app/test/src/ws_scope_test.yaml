@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: ws_scope_test
+    kind: function.lua
+    meta: {type: test, suite: websocket_scope}
+    source: file://ws_scope_test.lua
+    method: run
+    modules: [json, security, funcs]
+    imports:
+      test: wippy.test:test
+      subject: app:ws_scope_subject
+      context: app:ws_scope_context
+  - name: ws_scope_probe
+    kind: function.lua
+    source: file://ws_scope_test.lua
+    method: probe
+    modules: [json, security, funcs]
+    imports:
+      test: wippy.test:test
+      subject: app:ws_scope_subject
+      context: app:ws_scope_context
+  - name: ws_scope_context
+    kind: library.lua
+    source: file://ws_scope_context.lua
+  - name: ws_scope_process
+    kind: library.lua
+    source: file://ws_scope_process.lua
+  - name: ws_scope_subject
+    kind: function.lua
+    source: file://ws_scope_subject.lua
+    method: handler
+    modules: [security, json]
+    imports:
+      http: app:ws_scope_context
+      process: app:ws_scope_process
+  - name: ws_scope_call
+    kind: security.policy
+    policy:
+      resources: app:ws_scope_probe
+      actions: [funcs.call, funcs.security]
+      effect: allow
+  - name: composed_module_access
+    kind: security.policy
+    policy:
+      resources: app:composed_module
+      actions: read
+      effect: allow

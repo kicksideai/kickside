@@ -20,7 +20,27 @@ entries:
     security:
       actor: {id: kickside.security.runtime:resolve_groups}
       policies:
-        - kickside.security.service:group_set_registry_read
-        - kickside.security.service:group_set_db
+        - kickside.security.runtime:resolve_groups_access
+    modules: [security, funcs]
     imports:
       groups: kickside.security.runtime:groups
+  - name: read_groups
+    kind: function.lua
+    meta: {private: true}
+    source: file://resolve_groups.lua
+    method: read
+    modules: [security, funcs]
+    imports:
+      groups: kickside.security.runtime:groups
+  - name: resolve_groups_access
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [security.policy.get, security.scope.create, funcs.security, funcs.call]
+      resources:
+        - kickside.security.service:group_set_registry_read
+        - kickside.security.service:group_set_db
+        - custom
+        - security
+        - kickside.security.runtime:read_groups
+      effect: allow

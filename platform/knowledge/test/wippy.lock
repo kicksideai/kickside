@@ -24,7 +24,7 @@ modules:
     - name: kickside/realtime-dispatch
       version: 0.0.0
     - name: kickside/security
-      version: 0.2.17
+      version: 0.2.16
     - name: kickside/settings
       version: 0.0.0
     - name: kickside/uploads

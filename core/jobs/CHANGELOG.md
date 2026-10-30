@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/jobs-v0.1.65...jobs-v0.1.66) (2026-10-30)
+
+
+### Features
+
+* **jobs:** add settings-backed worker capacity ([#210](https://github.com/kicksideai/kickside/issues/210)) ([d52aa4c](https://github.com/kicksideai/kickside/commit/d52aa4c51140f0cb5c1b5a4829e6207841ac2d12))
+
+## [0.1.65](https://github.com/kicksideai/kickside/compare/jobs-v0.1.64...jobs-v0.1.65) (2026-10-29)
+
+
+### Bug Fixes
+
+* **jobs:** bootstrap PostgreSQL without Core migrations ([8abf7fb](https://github.com/kicksideai/kickside/commit/8abf7fbcb0582126311f0d79e268e059b08e20b1))
+* **jobs:** own the updated_at trigger function ([#212](https://github.com/kicksideai/kickside/issues/212)) ([fd83397](https://github.com/kicksideai/kickside/commit/fd83397e6cda5c956f6362a77f4f7c565d226c5c))
+
 ## [0.1.64](https://github.com/kicksideai/kickside/compare/jobs-v0.1.63...jobs-v0.1.64) (2026-10-28)
 
 

@@ -23,7 +23,7 @@ entries:
     kind: security.policy
     meta: {private: true, service_only: true}
     policy:
-      actions: [security.actor.create, security.policy_group.get, security.scope.create]
+      actions: [security.actor.create, security.policy_group.get, security.policy.get, security.scope.create]
       resources: '*'
       effect: allow
 

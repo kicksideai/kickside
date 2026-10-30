@@ -139,3 +139,15 @@ entries:
     imports:
       flow_contract: kickside.blocks:flow_contract
       test: wippy.test:test
+
+  - name: retry_policy_test
+    kind: function.lua
+    meta: { type: test, suite: blocks-retry, group: Block retry policy }
+    source: file://retry_policy_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      blocks: kickside.blocks:blocks
+      lower: kickside.blocks:lower
+      retry: userspace.dataflow:retry

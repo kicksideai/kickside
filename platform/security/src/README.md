@@ -73,7 +73,10 @@ function carries its own configured database and registry authority. Users
 neither imports Security persistence nor takes its private DB policy, so the
 modules can use different databases. The resolver reads all held custom-scope
 selections in one primary-key query, checking target and enabled state before
-using each row. Memberships without DB selections require no SQL query. Native token
+using each row. Internal reads use only Security's database and registry policies;
+the caller's inspection denials remain on its own execution scope. Calling the
+internal reader directly grants no additional authority.
+Memberships without DB selections require no SQL query. Native token
 validation unions these source IDs with current native group policies and applies the credential ceiling. Existing stored sessions use the
 same live lookup and keep their bearer tokens.
 
@@ -107,14 +110,15 @@ separate compatibility decision.
 ## Generated execution delegation
 
 The native writer shares Execution's canonical policy IDs/resources and the existing
-native group evaluator. Configure the optional `delegation_validator` function to
-validate live ordinary-user targets and execution roots; empty keeps generated
-saves unavailable. Security administration and per-policy native registry-write
+native group evaluator. A save requires an active ordinary user, named by its
+canonical user ID through `kickside.contract:directory`, and an existing
+component root (or `*`). Component checks existence in its own configured database
+and returns only a boolean. Security administration and per-policy native registry-write
 authority are both required. POST/DELETE `/security/delegations` accept a
 principal, root and explicit operator groups; GET returns safe provenance. A failed
 request returns its error and the same request can be sent again. Revocation retains policy IDs and composed references without granting
 native authority. Revocation remains available when a target/root disappears or
-host validation is unavailable. Existing scopes and unmanaged declarations keep their behavior.
+the directory is unavailable. Existing scopes and unmanaged declarations keep their behavior.
 
 The projector uses the existing `delegation_fencer` requirement, which defaults
 to `kickside.users.persist:delegation_fencer`. Hosts can bind another fencing

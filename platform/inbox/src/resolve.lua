@@ -114,7 +114,8 @@ function M.apply(id: string, action: string, form: Map?): (inbox_types.InboxItem
     end
 
     local events_mod = M._events or event_store
-    local prior, lookup_err = events_mod.resolution_event(id)
+    local resolution_id = inbox_types.resolution_id(item)
+    local prior, lookup_err = events_mod.resolution_event(id, nil, resolution_id)
     if lookup_err then return nil, lookup_err end
     if prior then
         return nil, (errors.new({ kind = errors.CONFLICT, message = inbox_types.ERROR.ALREADY_RESOLVED }) :: error)
@@ -143,9 +144,7 @@ function M.apply(id: string, action: string, form: Map?): (inbox_types.InboxItem
     end
 
     local normalized_form = object_fields.object(form)
-    -- The item can have only one terminal resolution. Keeping this identity stable
-    -- across retries lets callbacks deduplicate the callback-before-append window.
-    local resolution_id = "resolve:" .. id
+    -- One resolution identity per work version lets callbacks deduplicate retries.
     local callback_args: Map = {
         item_id = id,
         item = item,

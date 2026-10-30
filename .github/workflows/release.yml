@@ -16,6 +16,7 @@ jobs:
       app_created: ${{ steps.release.outputs['app--release_created'] }}
       app_version: ${{ steps.release.outputs['app--version'] }}
       app_tag: ${{ steps.release.outputs['app--tag_name'] }}
+      released_paths: ${{ steps.release.outputs.paths_released }}
     permissions:
       contents: write
       issues: write
@@ -39,8 +40,36 @@ jobs:
         jq -r '.[].headBranchName' <<<"${RELEASE_PRS:-[]}" | while read -r branch; do
           gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
         done
-  publish-app:
+  publish-modules:
     needs: release-please
+    if: needs.release-please.outputs.released_paths != '' && needs.release-please.outputs.released_paths != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '22'
+    - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
+      with:
+        version: 0.3.55a
+        hub-url: https://hub.wippy.ai
+    - name: Publish companion artifacts from their release tags
+      env:
+        RELEASE_PATHS_JSON: ${{ needs.release-please.outputs.released_paths }}
+        WIPPY_HUB_TOKEN: ${{ secrets.WIPPY_HUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        test -n "$WIPPY_HUB_TOKEN" || { echo 'WIPPY_HUB_TOKEN is required to publish companion modules' >&2; exit 1; }
+        wippy auth login --registry https://hub.wippy.ai --token "$WIPPY_HUB_TOKEN"
+        python3 scripts/publish-release-modules.py --repository . --wippy wippy
+  publish-app:
+    needs: [release-please, publish-modules]
     if: needs.release-please.outputs.app_created == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -56,8 +85,13 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.52a
+        version: 0.3.55a
         hub-url: https://hub.wippy.ai
+    - name: Verify companion module artifacts
+      env:
+        RELEASE_PATHS_JSON: ${{ needs.release-please.outputs.released_paths }}
+        WIPPY_TOKEN: ${{ secrets.WIPPY_HUB_TOKEN }}
+      run: make -C app release-dependencies WIPPY=wippy
     - name: Build and verify application package
       env:
         APP_VERSION: ${{ needs.release-please.outputs.app_version }}

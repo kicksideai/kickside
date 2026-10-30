@@ -2,9 +2,8 @@ version: "1.0"
 namespace: kickside.core.jobs.migrations
 
 # Schema for the durable job engine.
-# The job and run tables reference the core
-# thread / event / projection tables, so they apply after core's 01_thread and
-# 02_projection in global timestamp order. target_db is injected by the module's
+# Jobs owns its tables and trigger function and needs no Core migrations.
+# target_db is injected by the module's
 # kickside.core.jobs:target_db requirement.
 #
 entries:
@@ -88,4 +87,29 @@ entries:
     imports:
       migration: wippy.migration:migration
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    method: migrate
+
+  - name: 23_jobs_updated_at
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Jobs owns its updated_at trigger function.
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-28T00:00:23Z"
+    source: file://23_jobs_updated_at.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 22_capacity_groups
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-10-27T00:00:22Z"
+    source: file://22_capacity_groups.lua
+    imports:
+      migration: wippy.migration:migration
     method: migrate

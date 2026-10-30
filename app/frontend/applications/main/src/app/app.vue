@@ -48,8 +48,8 @@ const { markUrl, appTitle, applyBranding } = useShellBranding(api)
 const toneOverlay = useToneOverlay(contentMain)
 const shellAccount = useShellAccount(api, host, instance)
 const {
-  currentUser, accountItems, profileOpen, profileWcOpen, profileWcHost,
-  toggleProfile, openComponentModal, openProfile, closeProfile,
+  currentUser, accountItems, profileWcOpen, profileWcHost,
+  openComponentModal, openProfile, closeProfile,
   loadAccountItems, userInitials, fetchMe, logout,
 } = shellAccount
 
@@ -313,13 +313,6 @@ function toggleCat(key: string) {
   collapsedCats.value = next
 }
 
-// Horizontal layout renders each category as a dropdown menu (packs more into the
-// top bar). openMenu holds the open category key; a document click closes it.
-const openMenu = ref<string | null>(null)
-function toggleMenu(key: string) { openMenu.value = openMenu.value === key ? null : key }
-
-function closeMenus() { openMenu.value = null; profileOpen.value = false }
-
 onMounted(() => {
   nextTick(() => { portalsReady.value = true })
   narrowSidebarQuery = window.matchMedia('(max-width: 640px)')
@@ -329,7 +322,6 @@ onMounted(() => {
   fetchMe()
   loadAccountItems()
   applyBranding()
-  document.addEventListener('click', closeMenus)
   window.addEventListener('focus', refreshNavOnResume)
   document.addEventListener('visibilitychange', refreshNavOnResume)
   window.addEventListener('kickside:nav-changed', refreshShellRegistryState)
@@ -340,7 +332,6 @@ onUnmounted(() => {
   narrowSidebarQuery?.removeEventListener('change', syncNarrowSidebar)
   narrowSidebarQuery = null
   clearRegistryRefreshTimers()
-  document.removeEventListener('click', closeMenus)
   window.removeEventListener('focus', refreshNavOnResume)
   document.removeEventListener('visibilitychange', refreshNavOnResume)
   window.removeEventListener('kickside:nav-changed', refreshShellRegistryState)
@@ -387,18 +378,13 @@ onUnmounted(() => {
       :nav-error="navError"
       :rail-collapsed="railCollapsed"
       :collapsed-cats="collapsedCats"
-      :open-menu="openMenu"
-      :profile-open="profileOpen"
       :current-user="currentUser"
       :account-items="accountItems"
       @new-chat="newSessionChat"
       @navigate="navigate"
-      @toggle-menu="toggleMenu"
-      @close-menus="closeMenus"
       @toggle-collapsed="toggleCollapsed"
       @expand="expand"
       @toggle-cat="toggleCat"
-      @toggle-profile="toggleProfile"
       @open-profile="openProfile"
       @account-open="openComponentModal"
       @logout="logout"
@@ -489,8 +475,5 @@ onUnmounted(() => {
 }
 .managed-surface {
   overflow: hidden;
-}
-.managed-app-shell:has(.right-flap-container) .managed-surface {
-  padding-inline-end: 48px;
 }
 </style>

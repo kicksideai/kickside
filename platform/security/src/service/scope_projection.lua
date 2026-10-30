@@ -55,7 +55,12 @@ local function native_group_policies(snap)
     if read_err then return nil, read_err end
     local effective = {}
     for _, policy in ipairs(native) do
-        if (policy.meta or {}).managed_by ~= consts.MANAGED_BY then
+        local meta = policy.meta or {}
+        -- Security's delegation declarations are source grants too. Exclude
+        -- only derived entries, using the same ownership markers as policy_groups.
+        local projected = meta.managed_by == consts.MANAGED_BY
+            and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
+        if not projected then
             for _, group in ipairs((policy.data or {}).groups or {}) do
                 effective[group] = effective[group] or {}
                 effective[group][tostring(policy.id)] = true

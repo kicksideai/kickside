@@ -54,6 +54,13 @@ local function metadata_of(input: any, req: any): any
     return metadata
 end
 
+local function write_failure(err: any): any
+    if errors.is(err, errors.CONFLICT) then return fail(tostring(err), "idempotency_conflict", false, "item") end
+    if errors.is(err, errors.PERMISSION_DENIED) then return fail(tostring(err), "permission_denied", false, "item") end
+    if errors.is(err, errors.INVALID) then return fail(tostring(err)) end
+    return fail(tostring(err), "provider_error", true, "provider")
+end
+
 -- delete: remove the item keyed by the source identity. Upsert creates the item
 -- with id = the write's record identity, so the retraction's same key locates it directly;
 -- the declared delete input carries dedup_key as the fallback identity. Deleting
@@ -67,9 +74,7 @@ local function delete_item(req: any, input: any): any
     if id == "" then return fail("delete requires the source item identity (identity_key, idempotency_key or dedup_key)") end
     local _, err = writer.delete(id, trim(req.idempotency_key))
     if err ~= nil and not errors.is(err, errors.NOT_FOUND) then
-        if errors.is(err, errors.CONFLICT) then return fail(tostring(err), "idempotency_conflict", false, "item") end
-        if errors.is(err, errors.PERMISSION_DENIED) then return fail(tostring(err), "permission_denied", false, "item") end
-        return fail(tostring(err), "provider_error", true, "provider")
+        return write_failure(err)
     end
     return receipt(req, "deleted", { item_id = id })
 end
@@ -84,7 +89,23 @@ local function write(req: any): any
     local sink_op = trim(req.sink_op)
     if sink_op == "" then sink_op = "upsert" end
     if sink_op == "delete" then return delete_item(req, input) end
+    local aggregate_key = input.aggregate_key
+    if aggregate_key == nil then aggregate_key = config.aggregate_key end
+    if type(aggregate_key) == "string" then
+        aggregate_key = trim(aggregate_key)
+        if aggregate_key == "" then aggregate_key = nil end
+    end
+    local source_id = trim(input.source_id)
+    if source_id == "" then source_id = trim(config.source_id) end
     if sink_op ~= "upsert" then return fail("unsupported sink operation: " .. sink_op) end
+    local status = aggregate_key ~= nil and (input.status or config.status or "pending") or "pending"
+    if status ~= "pending" and status ~= "resolved" then return fail("status must be pending or resolved") end
+    if status == "resolved" then
+        local data, err = writer.resolve_aggregate({ aggregate_key = aggregate_key, source_id = source_id,
+            idempotency_key = trim(req.idempotency_key), trace_context = req.trace_context })
+        if err then return write_failure(err) end
+        return receipt(req, data.outcome, { item_id = data.id })
+    end
 
     -- Content is the item body. A data flow supplies it as input.content from its
     -- source; a source-less scheduled action (a recurrent action posting a fixed note)
@@ -116,8 +137,7 @@ local function write(req: any): any
     local prefix = type(config.title_prefix) == "string" and config.title_prefix or ""
     if trim(prefix) ~= "" then title = prefix .. title end
 
-    local source_id = trim(input.source_id)
-    if source_id == "" then source_id = record_identity(req) end
+    if source_id == "" and aggregate_key == nil then source_id = record_identity(req) end
 
     local data, err = writer.create({
         id = record_identity(req),
@@ -127,14 +147,13 @@ local function write(req: any): any
         priority = priority,
         metadata = metadata_of(input, req),
         source_id = source_id ~= "" and source_id or nil,
+        aggregate_key = aggregate_key,
         idempotency_key = trim(req.idempotency_key),
         trace_context = type(req.trace_context) == "table" and req.trace_context
             or (type(input.trace_context) == "table" and input.trace_context or nil),
     })
     if err then
-        if errors.is(err, errors.CONFLICT) then return fail(tostring(err), "idempotency_conflict", false, "item") end
-        if errors.is(err, errors.PERMISSION_DENIED) then return fail(tostring(err), "permission_denied", false, "item") end
-        return fail(tostring(err), "provider_error", true, "provider")
+        return write_failure(err)
     end
 
     return receipt(req, data.outcome, { item_id = data.id, item_type = item_type })

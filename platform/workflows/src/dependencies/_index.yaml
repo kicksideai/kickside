@@ -2,7 +2,7 @@ version: "1.0"
 namespace: kickside.workflows
 entries:
   - name: dep.kickside.blocks
-    version: '*'
+    version: ">=0.1.43"
     kind: ns.dependency
     meta:
       comment: Canonical typed DAG builders compiled and rendered by the optional visual Flow editor.

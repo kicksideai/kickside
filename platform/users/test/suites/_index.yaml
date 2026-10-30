@@ -151,24 +151,6 @@ entries:
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
 
-  - name: bot_delegation_host_test
-    kind: function.lua
-    meta: {type: test, suite: users}
-    source: file://bot_delegation_test.lua
-    method: run_host
-    security:
-      actor: {id: app:test_runner}
-      policies: [app:test_runtime]
-    modules: [sql, crypto, funcs, security, registry, store, json]
-    imports:
-      test: wippy.test:test
-      user_repo: kickside.users.persist:user_repo
-      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
-      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
-      component: kickside.component:component
-      execution_identity: kickside.execution:execution_identity
-      trigger_reconcile: kickside.security:trigger_reconcile
-
   - name: bot_selection_test
     kind: function.lua
     meta: {type: test, suite: users}

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/automation-v0.2.6...automation-v0.2.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
 ## [0.2.6](https://github.com/kicksideai/kickside/compare/automation-v0.2.5...automation-v0.2.6) (2026-10-28)
 
 

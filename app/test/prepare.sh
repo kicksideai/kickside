@@ -12,3 +12,5 @@ awk -v wanted="documentation" '
 ' "$app_test_dir/../src/app/registry/documentation/_index.yaml" > "$app_test_dir/src/documentation_tool_fixture.yaml"
 cp "$app_test_dir/../src/app/login/login_jet.lua" "$app_test_dir/src/login_subject.lua"
 cp "$app_test_dir/../src/app/ui/_index.yaml" "$app_test_dir/src/navigation_fixture.yaml"
+
+cp "$app_test_dir/../src/app/api/websocket/ws_endpoint.lua" "$app_test_dir/src/ws_scope_subject.lua"

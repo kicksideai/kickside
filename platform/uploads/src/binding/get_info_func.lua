@@ -7,7 +7,7 @@ local upload_types = require("types")
 local ctx = require("ctx")
 local metadata_sanitizer = require("metadata_sanitizer")
 
-local function handle()
+local function handle(args)
     local upload_id, err = ctx.get("upload_id")
     if err then
         return nil, binding_errors.new(errors.INVALID, "Failed to get upload_id from context: " .. tostring(err), "upload_id_required", false, err)
@@ -41,14 +41,21 @@ local function handle()
     local artifact_id = nil
     local checksum = nil
 
-    local artifact, artifact_err = artifact_parts_repo.get_primary_content_artifact(upload_id)
-    if not artifact_err and artifact then
-        local artifact_meta = artifact.metadata or {}
-        content_type = artifact.mime_type or content_type
-        size = artifact.size or artifact_meta.size or artifact_meta.original_size or artifact_meta.file_size or size
-        metadata = artifact_meta
-        artifact_id = artifact.artifact_id
-        checksum = artifact.checksum
+    if not args or args.format ~= "raw" then
+        local artifact, artifact_err = artifact_parts_repo.get_primary_content_artifact(upload_id)
+        if artifact_err and not errors.is(artifact_err, errors.NOT_FOUND) then
+            return nil, binding_errors.from(artifact_err, errors.UNAVAILABLE, "artifact_read_failed")
+        end
+        if artifact then
+            local artifact_meta = artifact.metadata or {}
+            content_type = artifact.mime_type
+            size = artifact.size
+            metadata = artifact_meta
+            artifact_id = artifact.artifact_id
+            checksum = artifact.checksum
+        end
+    else
+        checksum = upload.content_sha256
     end
 
     metadata = metadata_sanitizer.public(metadata)
