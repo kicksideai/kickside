@@ -18,7 +18,8 @@ return {run = test.run_cases(function()
             for key, value in pairs(binding.data) do data[key] = value end
             local policy = {}
             for key, value in pairs(data.policy) do policy[key] = value end
-            policy.resources = {}
+            -- The optional requirement appends its empty default to the grant list.
+            policy.resources = {""}
             data.policy = policy
             changes:update({id = tostring(binding.id), kind = binding.kind, meta = binding.meta, data = data})
             assert(changes:apply())
