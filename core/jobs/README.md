@@ -80,8 +80,8 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
 
-Admins can tune the live worker pool in Settings → Performance. Postgres uses
-4 general workers by default. See [the runtime policy API](src/README.md#live-performance-policy)
+Hosts can administer the live worker pool through the Jobs library. Postgres
+uses 4 general workers by default. See [the runtime policy API](src/README.md#live-performance-policy)
 for override precedence, bounds, notifications, and graceful slot retirement.
 
 Performance policy edits apply through the singleton owner. Each execution keeps

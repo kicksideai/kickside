@@ -113,8 +113,8 @@ are published before any job row is locked.
 ## Live performance policy
 
 Jobs owns `kickside_job_policy_override`; it contains only admin overrides, as
-JSON values keyed by policy path. Settings uses the Jobs library, never the
-platform settings store, to administer this policy:
+JSON values keyed by policy path. Administration clients use the Jobs library;
+Jobs does not depend on a settings module or a platform settings store:
 
 - `jobs.get_policy()` returns `{ policy, fields, revision }`. Each editable field includes
   `value`, `source` (`default`, `host`, `admin`), `default`, `fallback`, unit and
@@ -168,7 +168,7 @@ Every claim entry point persists its execution snapshot in `kickside_job.lease_p
 and passes it with the assignment. Dispatch, heartbeats, completion, retries,
 cancellation fences and reclaim preserve that snapshot after database reloads;
 live edits cannot shorten a running execution's renewal or termination window.
-Migration 22 leaves pre-upgrade running rows with NULL `lease_policy`. Those jobs
+Migration 24 leaves pre-upgrade running rows with NULL `lease_policy`. Those jobs
 started before admin overrides existed, so the shared execution-policy reader
 resolves NULL to the cached registry/host policy on every execution path. It never
 guesses timing from heartbeat/deadline timestamps or adopts later admin overrides.
@@ -184,6 +184,6 @@ publication watermark or latched delivery error. Coalesced
 A delivery error is reported to the process log; a newer pending event still
 sends its wakeup and otherwise the next owner event retries. The optional
 `kickside.core.jobs.performance:realtime` requirement is unbound by default,
-so backend-only hosts need no realtime implementation. The application binds its
-chosen realtime implementation explicitly. Jobs grants contract-open access only to the
+so backend-only hosts need no realtime implementation. Hosts that need realtime
+notifications bind their chosen implementation explicitly. Jobs grants contract-open access only to the
 selected resource and never depends on its platform.
