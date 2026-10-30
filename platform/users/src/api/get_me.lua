@@ -70,7 +70,7 @@ local function handler()
 
     -- Get actor meta (which should include security groups from login)
     local actor_meta = actor:meta() or {}
-    local session_context = actor_meta.session or {}
+    local session_context = type(actor_meta.session) == "table" and actor_meta.session or {}
 
     -- The token metadata is captured at login and goes stale after a self-edit, so
     -- prefer the live user record for the editable profile fields when available.

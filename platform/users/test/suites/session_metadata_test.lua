@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local json = require("json")
 local registry = require("registry")
@@ -33,6 +34,47 @@ local function define_tests()
             test.is_nil(metadata.ip_address)
             test.is_nil(metadata.user_agent)
             test.eq(metadata.provider_trace, "retained")
+        end)
+
+        test.it("treats non-object session context as absent without reading old top-level facts", function()
+            for _, context in ipairs({{}, {value = false}, {value = true}, {value = 17}, {value = "invalid"}}) do
+                local metadata = session_metadata.actor({user_id = "metadata-user"}, {}, "scope", {}, context.value, {
+                    login_time = "old-time", ip_address = "old-address", user_agent = "old-agent",
+                    session = {login_time = "forged"}, provider_trace = "retained",
+                })
+                test.eq(next(metadata.session), nil)
+                test.is_nil(metadata.login_time)
+                test.is_nil(metadata.ip_address)
+                test.is_nil(metadata.user_agent)
+                test.eq(metadata.provider_trace, "retained")
+            end
+        end)
+
+        test.it("serves a native actor profile with non-object session context", function()
+            local uid = "profile_scalar_session_user"
+            test.not_nil((user_repo.create({user_id = uid, email = uid .. "@example.test",
+                password = "testpass123", status = "active"})))
+            test.not_nil((user_groups_repo.assign_user_to_group(uid, "app.security:user")))
+            for _, value in ipairs({true, 17, "invalid"}) do
+                local changes = assert(registry.snapshot()):changes()
+                local handler = assert(registry.get("kickside.users.api:me"))
+                handler.data.security = {
+                    actor = {id = uid, meta = {session = value, login_time = "old-time",
+                        ip_address = "old-address", user_agent = "old-agent"}},
+                    policies = {"app:test_runtime"},
+                }
+                changes:update(handler)
+                test.is_nil(select(2, changes:apply()))
+                local response, request_err = http_client.get(gateway_url("/api/user/me"))
+                test.is_nil(request_err)
+                test.eq(response.status_code, 200, tostring(response.body))
+                local profile = assert(json.decode(response.body))
+                test.eq(profile.user.id, uid)
+                test.is_nil(profile.session.login_time)
+                test.is_nil(profile.session.ip_address)
+                test.is_nil(profile.session.user_agent)
+            end
+            test.not_nil((user_lifecycle_repo.delete(uid)))
         end)
 
         test.it("mints request facts and preserves them through lookup and profile reads", function()
@@ -74,6 +116,16 @@ local function define_tests()
             for _, key in ipairs({"login_time", "ip_address", "user_agent"}) do
                 test.eq(looked.meta.session[key], metadata.session[key], key)
                 test.is_nil(looked.meta[key], key)
+            end
+            for _, value in ipairs({true, 17, "invalid"}) do
+                local current, current_err = funcs.call("kickside.users.binding:subject_lookup", {
+                    subject_id = uid, actor_meta = {session = value, login_time = "old-time"},
+                })
+                test.is_nil(current_err)
+                test.is_nil(current.error)
+                test.eq(current.subject_id, uid)
+                test.eq(next(current.meta.session), nil)
+                test.is_nil(current.meta.login_time)
             end
             for _, agent in ipairs({"session-test", "changed-agent"}) do
                 local profile_response, profile_err = http_client.get(gateway_url("/api/user/me"), {

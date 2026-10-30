@@ -18,6 +18,7 @@ function M.merge(destination, extra)
 end
 
 function M.actor(user, authority_epochs, scope_id, groups, session_context, extra)
+    session_context = type(session_context) == "table" and session_context or {}
     local metadata = {
         authority_epochs = authority_epochs,
         user_id = user.user_id,
