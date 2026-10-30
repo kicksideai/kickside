@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/kicksideai/kickside/compare/automation-v0.2.7...automation-v0.2.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* make direct grants atomic and select installed task providers ([#256](https://github.com/kicksideai/kickside/issues/256)) ([2e51908](https://github.com/kicksideai/kickside/commit/2e519081e032aabb2137ede2e5f3903e55012566))
+
 ## [0.2.7](https://github.com/kicksideai/kickside/compare/automation-v0.2.6...automation-v0.2.7) (2026-10-29)
 
 
