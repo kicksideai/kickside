@@ -32,7 +32,7 @@ local function define_tests()
             test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
             test.contains(tostring(err), CAPABILITY)
             test.contains(tostring(err), "not allowed to access entry")
-            test.is_nil(tostring(err):find("got missing", 1, true))
+            test.is_nil((tostring(err):find("got missing", 1, true)))
         end)
         for _, operation in ipairs({"create", "update"}) do
             test.it("preserves native capability denial in registry " .. operation, function()
