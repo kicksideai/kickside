@@ -8,6 +8,7 @@ entries:
     modules: [registry]
     imports:
       scope_store: kickside.security.persist:scope_store
+      group_sets: kickside.security.persist:group_sets
       security_consts: kickside.security:security_consts
       scope_key: kickside.security.projection:scope_key
       policy_composition: kickside.security:policy_composition

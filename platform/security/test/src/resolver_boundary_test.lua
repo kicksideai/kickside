@@ -7,6 +7,8 @@ local security = require("security")
 local writer = require("scope_writer")
 local trigger = require("trigger_reconcile")
 local store = require("scope_store")
+local source_scope = require("source_scope")
+local group_sets = require("group_sets")
 local function run()
     test.describe("Security-owned live resolver boundary", function()
         local projector
@@ -29,6 +31,118 @@ local function run()
             test.is_true(result.database_denied)
             test.eq(result.selected.policy_ids[1], "app:module_access")
             test.eq(#result.selected.groups, 0)
+        end)
+        for _, projected in ipairs({false, true}) do
+            test.it("resolves source compositions before projection: " .. tostring(projected), function()
+                local original = assert(registry.current_version())
+                local group = "app:resolver_source_group"
+                local declaration = "app:resolver_source_composition"
+                if not projected then writer.stop_projector(projector) end
+                local changes = assert(registry.snapshot()):changes()
+                changes:create({id = declaration, kind = "registry.entry",
+                    meta = {type = "kickside.security.group_composition"},
+                    data = {group_id = group, policies = {"app:module_access"}}})
+                if projected then
+                    changes:create({id = "app:resolver_source_native", kind = "security.policy", data = {
+                        groups = {group}, policy = {actions = "read", resources = "app:source_record", effect = "allow"}}})
+                end
+                assert(changes:apply())
+                if projected then
+                    assert(trigger.trigger())
+                    writer.stop_projector(projector)
+                end
+                local ok, failure = pcall(function()
+                    if projected then
+                        changes = assert(registry.snapshot()):changes()
+                        changes:update({id = declaration, kind = "registry.entry",
+                            meta = {type = "kickside.security.group_composition"},
+                            data = {group_id = group, policies = {"app.security:user.app_shell_access"}}})
+                        assert(changes:apply())
+                    end
+                    local selected, err = funcs.call("kickside.security.runtime:resolve_groups", {groups = {group}})
+                    test.is_nil(err, tostring(err))
+                    test.eq(#selected.groups, 0, "a composition is not a native policy group")
+                    test.eq(#selected.policy_ids, 2)
+                    test.eq(selected.policy_ids[1], projected and "app.security:user.app_shell_access" or "app:module_access")
+                    local policies = {}
+                    for _, id in ipairs(selected.policy_ids) do policies[#policies + 1] = assert(security.policy(id)) end
+                    local scope = assert(security.new_scope(policies))
+                    local actor = assert(security.new_actor("source-member"))
+                    test.eq(scope:evaluate(actor, "access", "app:module.endpoint"), projected and "undefined" or "allow")
+                    test.eq(scope:evaluate(actor, "read", "app:source_record"), projected and "allow" or "undefined")
+                end)
+                test.is_true(assert(registry.apply_version(original)))
+                projector = writer.start_projector()
+                if not ok then error(failure) end
+            end)
+        end
+        test.it("drops deleted composition grants while retaining native source grants before projection", function()
+            local original = assert(registry.current_version())
+            local group = "app:resolver_removed_group"
+            local declaration = "app:resolver_removed_composition"
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = declaration, kind = "registry.entry",
+                meta = {type = "kickside.security.group_composition"},
+                data = {group_id = group, policies = {"app:module_access"}}})
+            changes:create({id = "app:resolver_removed_native", kind = "security.policy", data = {
+                groups = {group}, policy = {actions = "read", resources = "app:source_record", effect = "allow"}}})
+            assert(changes:apply())
+            assert(trigger.trigger())
+            writer.stop_projector(projector)
+            local ok, failure = pcall(function()
+                local actor = assert(security.new_actor("removed-source-member"))
+                local before = assert(source_scope.resolve(group))
+                test.eq(before:evaluate(actor, "access", "app:module.endpoint"), "allow")
+                changes = assert(registry.snapshot()):changes()
+                changes:delete(declaration)
+                assert(changes:apply())
+                local after = assert(source_scope.resolve(group))
+                test.eq(after:evaluate(actor, "access", "app:module.endpoint"), "undefined")
+                test.eq(after:evaluate(actor, "read", "app:source_record"), "allow")
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
+        end)
+        test.it("drops deleted composition inherited grants while retaining native source grants before projection", function()
+            local original = assert(registry.current_version())
+            local group = "app:resolver_removed_inherited_group"
+            local declaration = "app:resolver_removed_inherited_composition"
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = declaration, kind = "registry.entry",
+                meta = {type = "kickside.security.group_composition"},
+                data = {group_id = group, groups = {"app:inherited_source_group"}}})
+            changes:create({id = "app:inherited_source_policy", kind = "security.policy", data = {
+                groups = {"app:inherited_source_group"}, policy = {actions = "access", resources = "app:module.endpoint", effect = "allow"}}})
+            changes:create({id = "app:resolver_removed_inherited_native", kind = "security.policy", data = {
+                groups = {group}, policy = {actions = "read", resources = "app:source_record", effect = "allow"}}})
+            assert(changes:apply())
+            local set_name = assert(group_sets.save({group}))
+            assert(trigger.trigger())
+            writer.stop_projector(projector)
+            local ok, failure = pcall(function()
+                local actor = assert(security.new_actor("removed-source-member"))
+                local before = assert(source_scope.resolve(group))
+                test.eq(before:evaluate(actor, "access", "app:module.endpoint"), "allow")
+                local legacy_before = assert(source_scope.resolve(set_name))
+                test.eq(legacy_before:evaluate(actor, "access", "app:module.endpoint"), "allow")
+                changes = assert(registry.snapshot()):changes()
+                changes:delete(declaration)
+                assert(changes:apply())
+                local after = assert(source_scope.resolve(group))
+                test.eq(after:evaluate(actor, "access", "app:module.endpoint"), "undefined")
+                test.eq(after:evaluate(actor, "read", "app:source_record"), "allow")
+                local legacy_after = assert(source_scope.resolve(set_name))
+                test.eq(legacy_after:evaluate(actor, "access", "app:module.endpoint"), "undefined")
+                test.eq(legacy_after:evaluate(actor, "read", "app:source_record"), "allow")
+            end)
+            local db = assert(sql.get("app:db"))
+            local _, delete_err = db:execute("DELETE FROM kickside_security_group_sets WHERE scope_name=$1", {set_name})
+            db:release()
+            assert(not delete_err, tostring(delete_err))
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
         end)
         test.it("resolves selected policy IDs when the caller cannot inspect their declarations", function()
             local original = assert(registry.current_version())
