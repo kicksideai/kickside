@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.73...knowledge-v0.1.74) (2026-10-30)
+
+
+### Bug Fixes
+
+* bound upload invalidation reads in file surfaces ([#269](https://github.com/kicksideai/kickside/issues/269)) ([6a90ddf](https://github.com/kicksideai/kickside/commit/6a90ddf86b813f273b1b0bf1609084c453764ecf))
+
 ## [0.1.73](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.72...knowledge-v0.1.73) (2026-10-30)
 
 
