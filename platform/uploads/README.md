@@ -59,11 +59,6 @@ and `s3://<resource-id>/<key>` packed paths. Relative paths use the upload's
 `storage_id`; packed paths identify their native resource directly. Existing
 filesystem records keep their behavior.
 
-Older presigned uploads retain their `uploads.s3` storage ID and plain object key.
-Reads and delivery resolve that existing alias through Uploads' configured native
-S3 resource and use its filesystem volume for temporary downloads. Explicit packed
-paths retain their own resource; no data rewrite or storage extension is required.
-
 The independently installed `kickside/storage-s3` package adds a universal stage
 at the lowest priority (`-100`). After processing, it copies local originals and
 derived blobs, verifies object metadata and returns relocation for Uploads to

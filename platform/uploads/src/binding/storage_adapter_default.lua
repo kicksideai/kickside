@@ -53,31 +53,14 @@ local function cloud_open(storage: any, key: string, volume: any, mode: string?)
     return handle, nil
 end
 
-function M.get(storage_id: string, _db_id: string, staging_id: string, legacy_cloud_id: string?, _query_db: any?): (any?, any?)
-    local legacy_cloud = storage_id == "uploads.s3"
-    if legacy_cloud and (type(staging_id) ~= "string" or staging_id == "") then
-        return nil, invalid("Legacy S3 storage requires a filesystem staging resource")
-    end
-    local volume, volume_err = fs.get(legacy_cloud and staging_id or storage_id)
+function M.get(storage_id: string, _db_id: string, _staging_id: string, _cloud_id: string?, _query_db: any?): (any?, any?)
+    local volume, volume_err = fs.get(storage_id)
     if volume_err then return nil, volume_err end
     local adapter: any = {}
     local function resolve(path: string): (any?, string?, string?, any?)
-        local location, location_err
-        local explicit = type(path) == "string" and
-            (path:sub(1, 5) == "s3://" or path:sub(1, 5) == "fs://")
-        -- Older presigned records keep a literal object key, which may itself
-        -- contain URI-like text. Only explicit packed paths select an authority.
-        if legacy_cloud and type(path) == "string" and not explicit then
-            if type(legacy_cloud_id) ~= "string" or legacy_cloud_id == "" then
-                return nil, nil, nil, errors.new({message = "S3 storage is not configured",
-                    kind = errors.UNAVAILABLE, retryable = false, details = {code = "s3_not_configured"}})
-            end
-            location = {scheme = "s3", authority = legacy_cloud_id, key = path}
-        else
-            location, location_err = storage_location.parse(storage_id, path)
-        end
+        local location, location_err = storage_location.parse(storage_id, path)
         if location_err or not location then return nil, nil, nil, location_err end
-        if location.scheme == "fs" and path == location.key then return volume, location.key, location.scheme, nil end
+        if path == location.key then return volume, location.key, location.scheme, nil end
         if location.scheme == "fs" then
             local storage, err = fs.get(location.authority)
             return storage, location.key, location.scheme, err

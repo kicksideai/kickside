@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.7](https://github.com/kicksideai/kickside/compare/uploads-v0.3.6...uploads-v0.3.7) (2026-10-30)
+
+
+### Bug Fixes
+
+* **uploads:** preserve legacy presigned S3 addresses ([#260](https://github.com/kicksideai/kickside/issues/260)) ([12842ee](https://github.com/kicksideai/kickside/commit/12842ee9f460960707db8b69ed378ad1f599fff7))
+* **uploads:** preserve objects referenced across legacy S3 aliases ([#263](https://github.com/kicksideai/kickside/issues/263)) ([48b2c43](https://github.com/kicksideai/kickside/commit/48b2c438f152b8ef899fe99fd263d9b4f1259237))
+* **uploads:** remove unused S3 alias compatibility ([#265](https://github.com/kicksideai/kickside/issues/265)) ([9758d2c](https://github.com/kicksideai/kickside/commit/9758d2c33146550fb79619d0f03183331376dce6))
+
 ## [0.3.6](https://github.com/kicksideai/kickside/compare/uploads-v0.3.5...uploads-v0.3.6) (2026-10-29)
 
 
