@@ -9,14 +9,14 @@ local security = require("security")
 local function invoke(method, body)
     local responses = process.listen("performance.http.result")
     local policies = {}
-    for _, id in ipairs({"kickside.settings.security:module_runtime", "kickside.core.jobs.security:module_access",
-        "kickside.core.jobs.security:module_runtime", "kickside.settings.security:performance_admin",
-        "kickside.settings.security:performance_policy_write", "app:performance_test_transport", "app:performance_test_database"}) do
+    for _, id in ipairs({"kickside.jobs_admin.security:module_runtime", "kickside.core.jobs.security:module_access",
+        "kickside.core.jobs.security:module_runtime", "kickside.jobs_admin.security:admin_access",
+        "kickside.core.jobs.security:policy_admin", "app:performance_test_transport", "app:performance_test_database"}) do
         policies[#policies + 1] = assert(security.policy(id))
     end
     local _, err = funcs.new():with_actor(security.new_actor("performance-administrator", {}))
         :with_scope(security.new_scope(policies)):with_context({performance_body = body, performance_caller = tostring(process.pid())})
-        :call("kickside.settings.api:" .. (method == "GET" and "get_performance" or "put_performance"))
+        :call("kickside.jobs_admin.api:" .. (method == "GET" and "get_policy" or "put_policy"))
     test.is_nil(err)
     local timeout = time.after("5s")
     local result = channel.select({responses:case_receive(), timeout:case_receive()})
@@ -123,7 +123,7 @@ return {run = test.run_cases(function()
             test.eq(invoke("GET", "").body.revision, initial)
         end)
         test.it("returns a native error when the HTTP context is absent", function()
-            local _, err = funcs.new():with_context({performance_no_response = true}):call("kickside.settings.api:get_performance")
+            local _, err = funcs.new():with_context({performance_no_response = true}):call("kickside.jobs_admin.api:get_policy")
             test.is_true(errors.is(err, errors.INTERNAL))
             test.eq(err:details().code, "http_context_unavailable")
         end)

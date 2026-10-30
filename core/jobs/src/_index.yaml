@@ -132,7 +132,7 @@ entries:
     imports:
       registry_version: kickside.core.jobs:registry_version
       job_types: kickside.core.jobs:types
-      policy_fields: kickside.core.jobs:policy_fields
+      policy_fields: kickside.core.jobs.policy:fields
 
   - name: run_status
     kind: library.lua
@@ -262,8 +262,8 @@ entries:
       - sql
       - logger
     imports:
-      runtime_policy: kickside.core.jobs:runtime_policy
-      pool_state: kickside.core.jobs:pool_state
+      runtime_policy: kickside.core.jobs.policy:runtime
+      pool_state: kickside.core.jobs.persist:pool_state
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
@@ -314,114 +314,8 @@ entries:
     kind: library.lua
     source: file://registry_version.lua
 
-  - name: policy_fields
-    meta: {comment: "Lists editable policy paths and their presentation bounds."}
-    kind: library.lua
-    source: file://policy_fields.lua
-
-  - name: runtime_policy
-    meta: {comment: "Reads committed policy and validates atomic admin override writes."}
-    kind: library.lua
-    source: file://runtime_policy.lua
-    modules: [security, funcs]
-    imports:
-      error_envelope: kickside.contract:error_envelope
-      config: kickside.core.jobs:config
-      policy_overrides: kickside.core.jobs.persist:policy_overrides
-
-  - name: performance_notify
-    meta: {comment: "Publishes coalesced count and policy invalidations through the bound realtime implementation."}
-    kind: function.lua
-    source: file://performance_notify.lua
-    method: run
-    modules: [contract, registry]
-    imports:
-      config: kickside.core.jobs:config
-      error_envelope: kickside.contract:error_envelope
-    security:
-      actor: {id: kickside.core.jobs:performance_notify}
-      policies:
-        - kickside.core.jobs:performance_broadcast
-        - kickside.core.jobs:performance_contract
-        - kickside.core.jobs:performance_binding
-        - kickside.core.jobs:performance_method
-        - kickside.core.jobs:performance_read
-
-  - name: performance_broadcast
-    kind: security.policy
-    meta: {comment: "Grants only the two Jobs invalidation topics.", private: true}
-    policy:
-      resources: [kickside.realtime:kickside.jobs.performance.changed, kickside.realtime:kickside.jobs.policy.changed]
-      actions: realtime.broadcast
-      effect: allow
-
-  - name: pool_state
-    meta: {comment: "Reads durable applied state and persistent queue counts."}
-    kind: library.lua
-    source: file://pool_state.lua
-    imports:
-      config: kickside.core.jobs:config
-      pool_applied: kickside.core.jobs.persist:pool_applied
-      pool_counts: kickside.core.jobs.persist:pool_counts
-
-  - name: performance_contract
-    kind: security.policy
-    meta: {comment: "Performance contract.", private: true}
-    policy:
-      resources: kickside.contract:realtime
-      actions: contract.get
-      effect: allow
-
-  - name: performance_binding
-    kind: security.policy
-    meta: {comment: "Opens only the host-selected realtime implementation.", private: true}
-    policy:
-      resources: ""
-      actions: contract.open
-      effect: allow
-
-  - name: performance_method
-    kind: security.policy
-    meta: {comment: "Calls only the realtime broadcast method.", private: true}
-    policy:
-      resources: broadcast
-      actions: contract.call
-      effect: allow
-
   - name: dep.kickside.contract
     meta: {comment: "Dep kickside contract."}
     kind: ns.dependency
     component: kickside/contract
     version: '*'
-
-  - name: performance_config
-    kind: registry.entry
-    meta:
-      comment: Stores the requirement-bound realtime implementation ID.
-  - name: performance_realtime
-    kind: ns.requirement
-    default: kickside.realtime:realtime_binding
-    meta:
-      value_kind: contract.binding
-      comment: Selects the exact realtime binding used for Jobs invalidations.
-    targets:
-    - entry: kickside.core.jobs:performance_binding
-      path: .policy.resources
-    - entry: kickside.core.jobs:performance_config
-      path: .meta.binding_id
-
-  - name: performance_read
-    kind: security.policy
-    meta: {private: true, comment: Reads only notifier realtime wiring.}
-    policy:
-      resources: kickside.core.jobs:performance_config
-      actions: registry.get
-      effect: allow
-
-  - name: execution_policy
-    kind: library.lua
-    meta: {comment: Reads only the immutable snapshot captured by a claim.}
-    source: file://execution_policy.lua
-    modules: [json]
-    imports:
-      config: kickside.core.jobs:config

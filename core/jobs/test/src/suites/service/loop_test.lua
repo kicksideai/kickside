@@ -90,7 +90,10 @@ local function define_tests()
             local deadline = time.after("15s")
             while next(roots) do
                 local selected = channel.select({ proc_events:case_receive(), deadline:case_receive() })
-                test.eq(selected.channel, proc_events, "probe services did not stop")
+                local pending: {string} = {}
+                for pid in pairs(roots) do pending[#pending + 1] = pid end
+                table.sort(pending)
+                test.eq(selected.channel, proc_events, "probe services did not stop: " .. table.concat(pending, ","))
                 local event = selected.value
                 if type(event) == "table" and event.kind == process.event.EXIT then
                     roots[tostring(event.from)] = nil

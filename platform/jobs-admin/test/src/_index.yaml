@@ -1,0 +1,139 @@
+version: '1.0'
+namespace: app
+entries:
+- name: dep.wippy.test
+  kind: ns.dependency
+  component: wippy/test
+  version: '*'
+- name: db
+  kind: db.sql.sqlite
+  foreign_keys: true
+  meta:
+    comment: Private database for Jobs admin integration tests.
+  file: ${sqlite_path}
+- name: env_storage
+  kind: env.storage.file
+  meta:
+    type: envstorage
+  file_path: ./.wippy/test.env
+  auto_create: true
+- name: processes
+  kind: process.host
+  lifecycle:
+    auto_start: true
+- name: gateway
+  kind: http.service
+  meta:
+    comment: Test HTTP server.
+  addr: :0
+  lifecycle:
+    auto_start: true
+- name: api
+  kind: http.router
+  meta:
+    comment: Test API router.
+    server: gateway
+  prefix: /api
+- name: performance_access_test
+  kind: function.lua
+  meta:
+    comment: Performance access test.
+    type: test
+    suite: jobs_admin
+  source: file://performance_access_test.lua
+  method: run
+  modules:
+  - registry
+  - security
+  imports:
+    test: wippy.test:test
+- name: dep.kickside.jobs
+  meta:
+    comment: Dep kickside jobs.
+  kind: ns.dependency
+  version: '*'
+  component: kickside/jobs
+  parameters:
+  - name: kickside.core.jobs:target_db
+    value: app:db
+  - name: kickside.core.jobs:process_host
+    value: app:processes
+  - name: kickside.core.jobs.performance:realtime
+    value: app:performance_realtime_binding
+- name: performance_http
+  meta:
+    comment: Performance http.
+  kind: library.lua
+  source: file://performance_http.lua
+  modules:
+  - ctx
+  - process
+- name: performance_endpoint_test
+  kind: function.lua
+  meta:
+    comment: Performance endpoint test.
+    type: test
+    suite: jobs_admin
+  source: file://performance_endpoint_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - process
+  - channel
+  - time
+  - json
+  imports:
+    jobs: kickside.core.jobs:jobs
+    test: wippy.test:test
+- name: performance_realtime_binding
+  kind: contract.binding
+  meta:
+    comment: Accepts job pool notifications in the Settings harness.
+  contracts:
+  - contract: kickside.contract:realtime
+    methods:
+      broadcast: app:performance_broadcast
+      notify: app:performance_broadcast
+- name: performance_broadcast
+  kind: function.lua
+  meta:
+    comment: Accepts the exact test notification.
+  source: file://performance_broadcast.lua
+  modules:
+  - ctx
+  - process
+  method: run
+- name: performance_test_transport
+  kind: security.policy
+  meta:
+    private: true
+    comment: Sends captured HTTP responses to the harness process.
+  policy:
+    resources: '*'
+    actions: process.send
+    effect: allow
+- name: performance_test_database
+  kind: security.policy
+  meta:
+    private: true
+    comment: Opens the single harness database.
+  policy:
+    resources: app:db
+    actions: db.get
+    effect: allow
+- name: dep.kickside.jobs-admin
+  kind: ns.dependency
+  component: kickside/jobs-admin
+  version: '*'
+  parameters:
+  - name: kickside.jobs_admin:api_router
+    value: app:api
+  - name: kickside.jobs_admin:ui_server
+    value: app:gateway
+  - name: wippy.bootloader:application_host
+    value: app:processes
+  - name: wippy.bootloader:env_storage
+    value: app:env_storage
+  - name: wippy.migration:app_db
+    value: app:db

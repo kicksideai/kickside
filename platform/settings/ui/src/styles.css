@@ -1,9 +1,6 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
-@import "@kickside/ui-kit/kx-tokens.css";
-@import "@kickside/ui-kit/kx-controls.css";
-@import "@kickside/ui-kit/focus.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -14,8 +11,6 @@
    height, or the inner height:100% chain collapses to content height and the
    surface overflows its slot without scrolling. */
 :host { display: block; height: 100%; min-height: 0; }
-:host, :root { font-family: var(--kx-font-body); }
-h1, h2, h3, h4, h5, h6, .ap-h, .ap-blabel, .ks-title, .ks-group-title, .pv-group-title { font-family: var(--kx-font-heading); }
 :host > div { height: 100%; min-height: 0; }
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -104,7 +99,7 @@ h1, h2, h3, h4, h5, h6, .ap-h, .ap-blabel, .ks-title, .ks-group-title, .pv-group
 }
 .ks-pane-ico svg { width: 22px; height: 22px; }
 .ks-pane-head-text { min-width: 0; }
-.ks-pane-head-text h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: normal; word-spacing: .04em; color: var(--p-text-color); }
+.ks-pane-head-text h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.2px; color: var(--p-text-color); }
 .ks-pane-head-text p { margin: 2px 0 0; font-size: 13px; color: var(--p-text-muted-color); }
 
 .ks-form { display: flex; flex-direction: column; gap: 26px; }
@@ -233,7 +228,7 @@ h1, h2, h3, h4, h5, h6, .ap-h, .ap-blabel, .ks-title, .ks-group-title, .pv-group
 
 .ap-cards { display: flex; flex-direction: column; gap: 16px; padding: 16px var(--system-surface-gutter) 0; }
 .ap-card { background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: 14px; padding: 16px 18px; }
-.ap-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--p-text-color); letter-spacing: normal; word-spacing: .04em; }
+.ap-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--p-text-color); letter-spacing: -.2px; }
 .ap-h svg { width: 17px; height: 17px; color: var(--p-text-muted-color); }
 .ap-sub { font-size: 12.5px; color: var(--p-text-muted-color); margin: 4px 0 12px; }
 .ap-blabel { display: block; font-size: 11.5px; font-weight: 700; color: var(--p-text-muted-color); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 6px; }
@@ -283,57 +278,3 @@ h1, h2, h3, h4, h5, h6, .ap-h, .ap-blabel, .ks-title, .ks-group-title, .pv-group
 .ks-all-table td { padding: 1rem; vertical-align: top; border-top: 1px solid var(--p-content-border-color); }
 .ks-all-table .ks-control { display: table-cell; }
 .ks-all-table .ks-owner { color: var(--p-text-muted-color); }
-
-/* Performance inherits the bespoke Settings card chrome. */
-.perf { --system-surface-gutter: var(--kickside-system-surface-gutter, 1.5rem); container-type: inline-size; }
-.perf-field { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, .65fr); gap: 1.5rem; padding-block: 1.25rem; border-top: 1px solid var(--p-content-border-color); }
-.perf-field-title { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-weight: 600; }
-.perf-bounds { color: var(--p-text-muted-color); font-size: .75rem; margin-top: .5rem; }
-.perf-input-unit { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-.perf-input-unit input { width: min(100%, 12rem); min-width: 0; }
-.perf-input-unit > span { color: var(--p-text-muted-color); font-size: .75rem; }
-.perf-reset { margin-top: .25rem; }
-.perf-status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; padding-top: .5rem; }
-.perf-stat-title { margin: 0 0 .5rem; font-size: .75rem; font-weight: 600; color: var(--p-text-muted-color); }
-.perf-stat-values { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.25rem; margin: 0; }
-.perf-stat-values > div { display: flex; flex-direction: column-reverse; gap: .125rem; }
-.perf-stat-values dt { font-size: .6875rem; color: var(--p-text-muted-color); }
-.perf-stat-values dd, .perf-stat-values strong { margin: 0; font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; color: var(--p-text-color); }
-.perf-capacity .perf-stat-values > span { display: flex; flex-direction: column; gap: .125rem; font-size: .6875rem; color: var(--p-text-muted-color); }
-.perf-capacity-summary { white-space: nowrap; }
-.perf-field-unused .perf-field-title, .perf-field-unused .ks-input { color: var(--p-text-muted-color); }
-.perf-field-unused .ks-input { background: var(--p-content-hover-background); }
-.perf-field-unused:focus-within .ks-input { color: var(--p-text-color); }
-.perf-share-bar { display: flex; gap: 2px; height: .75rem; border-radius: var(--kx-radius-8); overflow: hidden; background: var(--p-content-background); }
-.perf-share-live { background: var(--p-primary-color); }
-.perf-share-backfill { background: var(--kx-surface-4); }
-.perf-share-maintenance { background: var(--p-text-muted-color); }
-.perf-share-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin-top: .75rem; }
-.perf-share-inputs label { display: flex; flex-wrap: wrap; gap: .25rem; font-size: .75rem; margin-bottom: .375rem; }
-.perf-share-inputs label span { color: var(--p-text-muted-color); }
-.perf-share-inputs input { width: 100%; min-width: 0; }
-.perf-invalid { color: var(--p-danger-color); font-size: .8125rem; margin-top: .5rem; }
-.perf [data-source="admin"] { color: var(--p-primary-color); background: var(--kx-wash-primary); }
-@container (max-width: 45rem) {
-  .perf-field { grid-template-columns: minmax(0, 1fr); gap: .75rem; }
-  .perf-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .perf-capacity-summary { white-space: normal; }
-}
-@container (max-width: 24rem) {
-  .perf-share-inputs { grid-template-columns: minmax(0, 1fr); }
-  .perf-share-inputs label { justify-content: space-between; }
-}
-
-@container (max-width: 30rem) {
-  .perf .ap-bar { flex-wrap: wrap; }
-  .perf .ap-dirty { width: 100%; }
-  .perf .ap-cards { padding-inline: .75rem; }
-}
-
-.ks-input:focus-visible, .ap-binput:focus-visible {
-  outline: none; border-color: var(--p-focus-ring-color); box-shadow: var(--p-focus-ring-shadow);
-}
-.ks-nav-item:focus-visible {
-  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
-  outline-offset: var(--p-focus-ring-offset); box-shadow: none;
-}

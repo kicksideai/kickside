@@ -1,0 +1,41 @@
+version: '1.0'
+namespace: kickside.jobs_admin.api
+entries:
+- name: get_policy
+  kind: function.lua
+  meta:
+    comment: Reads Jobs policy and owner status.
+  source: file://policy.lua
+  method: get
+  modules:
+  - http
+  - json
+  imports:
+    jobs: kickside.core.jobs:jobs
+    error_envelope: kickside.contract:error_envelope
+- name: get_policy.endpoint
+  kind: http.endpoint
+  meta:
+    comment: GET Jobs policy administration.
+  method: GET
+  func: get_policy
+  path: /jobs/policy
+- name: put_policy
+  kind: function.lua
+  meta:
+    comment: Commits Jobs policy edits through the Jobs owner.
+  source: file://policy.lua
+  method: put
+  modules:
+  - http
+  - json
+  imports:
+    jobs: kickside.core.jobs:jobs
+    error_envelope: kickside.contract:error_envelope
+- name: put_policy.endpoint
+  kind: http.endpoint
+  meta:
+    comment: PUT Jobs policy administration.
+  method: PUT
+  func: put_policy
+  path: /jobs/policy

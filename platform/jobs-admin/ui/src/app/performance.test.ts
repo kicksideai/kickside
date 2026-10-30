@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import { api } from '@wippy-fe/proxy'
-import Performance from './performance.vue'
+import Performance from './App.vue'
 import styles from '../styles.css?raw'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -93,7 +93,7 @@ describe('Performance settings', () => {
     await wrapper.get('#retry-retry_after_ms').setValue('1.5s')
     await wrapper.get('#retry-max_delay_ms').setValue('20m')
     await button('Save').trigger('click'); await flushPromises()
-    expect(api.put).toHaveBeenCalledWith('/api/v1/settings/performance', { values: { 'retry.retry_after_ms': 1500, 'retry.max_delay_ms': 1200000 }, unset: [] })
+    expect(api.put).toHaveBeenCalledWith('/api/v1/jobs/policy', { values: { 'retry.retry_after_ms': 1500, 'retry.max_delay_ms': 1200000 }, unset: [] })
   })
   it('keeps equivalent duration edits clean and formats reset/discard values', async () => {
     fields['retry.max_delay_ms'] = { value: 1200000, source: 'admin', fallback: 900000 }
@@ -106,7 +106,7 @@ describe('Performance settings', () => {
     expect(wrapper.get('#retry-max_delay_ms').element).toHaveProperty('value', '20m')
     await button('Reset Maximum retry delay to default').trigger('click')
     await button('Save').trigger('click'); await flushPromises()
-    expect(api.put).toHaveBeenCalledWith('/api/v1/settings/performance', { values: {}, unset: ['retry.max_delay_ms'] })
+    expect(api.put).toHaveBeenCalledWith('/api/v1/jobs/policy', { values: {}, unset: ['retry.max_delay_ms'] })
   })
   it('validates retry duration bounds and whole stored milliseconds', async () => {
     await render()
@@ -147,7 +147,7 @@ describe('Performance settings', () => {
   it('resets an admin override to the host/default fallback in the save batch', async () => {
     await render(); await button('Reset Awaited slots to default').trigger('click')
     await button('Save').trigger('click'); await flushPromises()
-    expect(api.put).toHaveBeenCalledWith('/api/v1/settings/performance', { values: {}, unset: ['worker.awaited_slots'] })
+    expect(api.put).toHaveBeenCalledWith('/api/v1/jobs/policy', { values: {}, unset: ['worker.awaited_slots'] })
   })
   it('validates heartbeat, integer bounds and fairness before saving', async () => {
     await render()

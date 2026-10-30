@@ -3,7 +3,7 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
-import SettingsToolbar from './SettingsToolbar.vue'
+import Toolbar from './Toolbar.vue'
 import { api, on } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { boundsLabel, controls, displayValue, equal, groups, inputId, storedValue, tiers, tierTitle, validate, type Control, type Field } from './performance-fields'
@@ -72,7 +72,7 @@ function load(): Promise<void> {
       pending = false
       try {
         const requestedGeneration = generation
-        const { data } = await api.get('/api/v1/settings/performance')
+        const { data } = await api.get('/api/v1/jobs/policy')
         if (disposed) return
         if (generation !== requestedGeneration) { pending = true; continue }
         if (!data?.success || !validFields(data.fields) || !data.pool) throw new Error(data?.error || 'Could not load performance settings.')
@@ -120,7 +120,7 @@ async function save() {
   const values: Record<string, unknown> = {}
   for (const control of controls) if (isDirty(control.key) && !resets.value.has(control.key)) values[control.key] = clone(storedValue(control, draft.value[control.key]))
   try {
-    const { data } = await api.put('/api/v1/settings/performance', { values, unset: [...resets.value] })
+    const { data } = await api.put('/api/v1/jobs/policy', { values, unset: [...resets.value] })
     if (disposed) return
     if (!data?.success) throw { response: { data } }
     if (!validFields(data.fields)) throw new Error('The save response has no policy fields.')
@@ -150,7 +150,7 @@ onUnmounted(() => { disposed = true; pending = false; unsubscribe(); unsubscribe
 <template>
   <div class="ap perf">
     <div class="ap-body">
-      <SettingsToolbar :dirty="dirty" :saving="saving" :disabled="!baseline" :invalid="!!Object.keys(invalid).length" :saved="saved" @discard="discard" @save="save" />
+      <Toolbar :dirty="dirty" :saving="saving" :disabled="!baseline" :invalid="!!Object.keys(invalid).length" :saved="saved" @discard="discard" @save="save" />
       <p v-if="pendingApply" class="ap-hint" role="status">Applying…</p>
       <div v-if="pool?.apply_error" class="ap-msg ap-err" role="alert">{{ pool.apply_error.message }}</div>
       <div v-if="error" class="ap-msg ap-err" role="alert">{{ error }}</div>

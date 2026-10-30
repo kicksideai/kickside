@@ -1,0 +1,35 @@
+version: '1.0'
+override:
+  kickside.jobs_admin.api:get_policy:modules:
+  - json
+  kickside.jobs_admin.api:get_policy:imports.http: app:performance_http
+  kickside.jobs_admin.api:put_policy:modules:
+  - json
+  kickside.jobs_admin.api:put_policy:imports.http: app:performance_http
+  kickside.core.jobs.service:worker.service:lifecycle.auto_start: false
+  app:db:file: ${sqlite_path}
+workspace:
+  replacements:
+    kickside/jobs: ../../../core/jobs
+    kickside/execution: ../../../core/execution
+    kickside/contract: ../../../core/contract
+    kickside/jobs-admin: ..
+vars:
+  sqlite_path: './.wippy/jobs-admin-test.sqlite'
+  pg_host: localhost
+  pg_port: 5433
+  pg_database: kickside_test_jobs_admin
+  pg_username: kickside
+  pg_password: kickside
+profiles:
+  postgres:
+    override:
+      app:db:kind: db.sql.postgres
+      app:db:host: ${pg_host}
+      app:db:port: ${pg_port}
+      app:db:database: ${pg_database}
+      app:db:username: ${pg_username}
+      app:db:password: ${pg_password}
+      app:db:options.sslmode: disable
+      app:db:pool.max_open: 16
+      app:db:pool.max_idle: 8

@@ -165,6 +165,17 @@
         "platform/inbox/ui/node_modules"
       ]
     },
+    "platform/jobs-admin": {
+      "component": "jobs-admin",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "platform/jobs-admin/test",
+        "platform/jobs-admin/ui/node_modules",
+        "platform/jobs-admin/ui/.wippy",
+        "platform/jobs-admin/ui/dist",
+        "platform/jobs-admin/ui/coverage"
+      ]
+    },
     "platform/knowledge": {
       "component": "knowledge",
       "changelog-path": "CHANGELOG.md",

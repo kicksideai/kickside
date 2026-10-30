@@ -31,7 +31,7 @@ entries:
     source: file://worker_fence.lua
     modules: [sql]
     imports:
-      execution_policy: kickside.core.jobs:execution_policy
+      execution_policy: kickside.core.jobs.policy:execution
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -54,7 +54,7 @@ entries:
     source: file://worker_dispatch.lua
     modules: [sql, funcs, registry, logger, time, process, security]
     imports:
-      execution_policy: kickside.core.jobs:execution_policy
+      execution_policy: kickside.core.jobs.policy:execution
       error_envelope: kickside.contract:error_envelope
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -69,7 +69,7 @@ entries:
     source: file://worker_child.lua
     modules: [sql, logger, time, process]
     imports:
-      execution_policy: kickside.core.jobs:execution_policy
+      execution_policy: kickside.core.jobs.policy:execution
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config

@@ -896,4 +896,4 @@ end
 
 return construct({ sql_get = function() return sql.get(cfg.db_id()) end, policy = cfg.policy,
     overrides = overrides, applied = applied,
-    notify = function() return funcs.new():async("kickside.core.jobs:performance_notify") end })
+    notify = function() return funcs.new():async("kickside.core.jobs.performance:notify") end })

@@ -1,77 +1,78 @@
-import { a as z, W as H, s as Y } from "./styles-DUWI6o6L.js";
-import { s as q, P as Q } from "./index-GXCRJfhs.js";
-import { defineComponent as X, computed as c, ref as _, onMounted as Z, openBlock as n, createElementBlock as s, createElementVNode as m, createVNode as f, toDisplayString as i, createCommentVNode as p, unref as y, createTextVNode as O, Fragment as S, renderList as $, createBlock as E, withCtx as ee } from "vue";
-import { Icon as N } from "@iconify/vue";
-import { W as te, s as ae, a as ne } from "./WcMount-BnlU48df.js";
-import { api as V, define as oe } from "@wippy-fe/proxy";
-import { _ as se } from "./SettingsToolbar.vue_vue_type_script_setup_true_lang-BAMz974F.js";
-const le = { class: "ap" }, re = { class: "ap-body" }, ie = {
+import { a as Y, W as q, s as Q } from "./styles-BCHHd4iE.js";
+import { b as I, W as X, s as Z, a as ee, P as te } from "./WcMount-CXaiZg2f.js";
+import { defineComponent as ae, computed as v, ref as _, onMounted as ne, openBlock as n, createElementBlock as o, createElementVNode as y, createCommentVNode as u, createVNode as g, unref as c, withCtx as L, createBlock as S, toDisplayString as p, createTextVNode as R, Fragment as w, renderList as $ } from "vue";
+import { Icon as E } from "@iconify/vue";
+import { api as U, define as oe } from "@wippy-fe/proxy";
+const le = { class: "ap" }, se = { class: "ap-body" }, re = { class: "ap-bar" }, ie = {
+  key: 0,
+  class: "ap-dirty"
+}, ue = {
   key: 0,
   class: "ap-msg ap-err"
-}, ue = {
+}, ce = {
   key: 1,
   class: "ap-loading"
-}, ce = {
+}, pe = {
   key: 2,
   class: "ap-cards"
-}, pe = { class: "ap-card" }, de = { class: "ap-h" }, ve = {
+}, de = { class: "ap-card" }, ve = { class: "ap-h" }, ye = {
   key: 0,
   class: "ap-sub"
 }, me = {
   key: 1,
   class: "ks-empty"
-}, ye = {
+}, ge = {
   key: 0,
   class: "pv-group-title"
-}, ge = { class: "pv-field-head" }, _e = { class: "ap-blabel" }, fe = {
+}, he = { class: "pv-field-head" }, _e = { class: "ap-blabel" }, fe = {
   key: 0,
   class: "ks-tag kx-tag-caps ks-tag-on"
-}, he = {
+}, ke = {
   key: 1,
   class: "ks-tag kx-tag-caps ks-tag-on"
-}, ke = { key: 0 }, be = {
+}, be = { key: 0 }, Ce = {
   key: 2,
   class: "ap-hint"
 }, xe = {
   key: 1,
   class: "ap-toggle-row pv-toggle"
-}, Ce = { class: "ap-toggle-text" }, Se = {
+}, Se = { class: "ap-toggle-text" }, we = {
   key: 0,
   class: "ap-toggle-desc"
-}, we = ["min", "max", "value", "onInput"], Ee = ["placeholder", "value", "onInput"], Ne = ["value", "onInput"], Ve = ["minlength", "maxlength", "value", "onInput"], Ie = {
+}, Ee = ["min", "max", "value", "onInput"], Ne = ["placeholder", "value", "onInput"], Ve = ["value", "onInput"], Ie = ["minlength", "maxlength", "value", "onInput"], Ue = {
   key: 5,
   class: "ap-hint"
-}, B = "General", Ue = /* @__PURE__ */ X({
+}, D = "General", Ae = /* @__PURE__ */ ae({
   __name: "provider",
-  setup(L) {
-    const R = z(), h = c(() => R.value?.config || null), I = c(() => h.value?.namespace || ""), D = c(() => h.value?.title || "Provider"), F = c(() => h.value?.icon || "tabler:plug-connected"), U = c(() => h.value?.help || ""), k = _(!0), d = _(!1), u = _(""), v = _([]), l = _({});
-    function T(t) {
+  setup(F) {
+    const T = Y(), f = v(() => T.value?.config || null), A = v(() => f.value?.namespace || ""), W = v(() => f.value?.title || "Provider"), G = v(() => f.value?.icon || "tabler:plug-connected"), P = v(() => f.value?.help || ""), k = _(!0), i = _(!1), d = _(""), m = _([]), s = _({});
+    function J(t) {
       const a = t.split(/[._\-\s]+/).filter(Boolean);
       return a.length ? a.map((r, e) => e === 0 ? r.charAt(0).toUpperCase() + r.slice(1) : r).join(" ") : t;
     }
-    const g = (t) => t.title && t.title.length ? t.title : T(t.key), A = (t) => Array.isArray(t.schema?.enum) ? t.schema.enum : null, w = c(() => {
+    const h = (t) => t.title && t.title.length ? t.title : J(t.key), j = (t) => Array.isArray(t.schema?.enum) ? t.schema.enum : null, N = v(() => {
       const t = /* @__PURE__ */ new Map();
-      for (const e of v.value) {
-        const o = e.category && e.category.length ? e.category : B;
-        t.has(o) || t.set(o, []), t.get(o).push(e);
+      for (const e of m.value) {
+        const l = e.category && e.category.length ? e.category : D;
+        t.has(l) || t.set(l, []), t.get(l).push(e);
       }
       const a = (e) => typeof e.order == "number" ? e.order : 100, r = [];
-      for (const [e, o] of t)
-        o.sort((x, C) => a(x) - a(C) || g(x).localeCompare(g(C))), r.push({ name: e, items: o });
-      return r.sort((e, o) => {
-        const x = Math.min(...e.items.map(a)), C = Math.min(...o.items.map(a));
-        return x - C || e.name.localeCompare(o.name);
+      for (const [e, l] of t)
+        l.sort((C, x) => a(C) - a(x) || h(C).localeCompare(h(x))), r.push({ name: e, items: l });
+      return r.sort((e, l) => {
+        const C = Math.min(...e.items.map(a)), x = Math.min(...l.items.map(a));
+        return C - x || e.name.localeCompare(l.name);
       }), r;
-    }), W = c(() => w.value.length === 1 && w.value[0].name === B);
-    function P(t, a) {
-      l.value[t.key] = t.value_type === "json" ? JSON.stringify(a, null, 2) : a;
+    }), K = v(() => N.value.length === 1 && N.value[0].name === D);
+    function M(t, a) {
+      s.value[t.key] = t.value_type === "json" ? JSON.stringify(a, null, 2) : a;
     }
-    function j(t) {
-      const a = l.value[t.key];
+    function O(t) {
+      const a = s.value[t.key];
       return t.value_type === "secret" ? String(a ?? "").length > 0 : t.value_type === "json" ? a !== JSON.stringify(t.value, null, 2) : a !== t.value;
     }
-    const G = c(() => v.value.some(j));
-    function M(t, a) {
+    const V = v(() => m.value.some(O));
+    function B(t, a) {
       switch (t.value_type) {
         case "int":
           return Math.trunc(Number(a));
@@ -84,87 +85,108 @@ const le = { class: "ap" }, re = { class: "ap-body" }, ie = {
       }
     }
     async function b() {
-      if (!I.value) {
+      if (!A.value) {
         k.value = !1;
         return;
       }
-      k.value = !0, u.value = "";
+      k.value = !0, d.value = "";
       try {
-        const { data: t } = await V.get(`/api/v1/settings?namespace=${encodeURIComponent(I.value)}`);
+        const { data: t } = await U.get(`/api/v1/settings?namespace=${encodeURIComponent(A.value)}`);
         if (!t?.success) throw new Error(t?.error || "failed to load settings");
-        v.value = Array.isArray(t.settings) ? t.settings : [], l.value = {};
-        for (const a of v.value) P(a, a.value_type === "secret" ? "" : a.value);
+        m.value = Array.isArray(t.settings) ? t.settings : [], s.value = {};
+        for (const a of m.value) M(a, a.value_type === "secret" ? "" : a.value);
       } catch (t) {
-        u.value = t instanceof Error ? t.message : String(t);
+        d.value = t instanceof Error ? t.message : String(t);
       } finally {
         k.value = !1;
       }
     }
-    async function J() {
-      d.value = !0, u.value = "";
+    async function z() {
+      i.value = !0, d.value = "";
       try {
-        for (const t of v.value) {
-          if (!j(t)) continue;
-          const a = M(t, l.value[t.key]), { data: r } = await V.put("/api/v1/settings", { namespace: t.namespace, key: t.key, value: a });
-          if (!r?.success) throw new Error(r?.error || `could not save ${g(t)}`);
+        for (const t of m.value) {
+          if (!O(t)) continue;
+          const a = B(t, s.value[t.key]), { data: r } = await U.put("/api/v1/settings", { namespace: t.namespace, key: t.key, value: a });
+          if (!r?.success) throw new Error(r?.error || `could not save ${h(t)}`);
         }
         await b();
       } catch (t) {
-        u.value = t instanceof Error ? t.message : String(t);
+        d.value = t instanceof Error ? t.message : String(t);
       } finally {
-        d.value = !1;
+        i.value = !1;
       }
     }
-    async function K(t) {
-      d.value = !0, u.value = "";
+    async function H(t) {
+      i.value = !0, d.value = "";
       try {
-        const { data: a } = await V.put("/api/v1/settings", { namespace: t.namespace, key: t.key, value: null });
+        const { data: a } = await U.put("/api/v1/settings", { namespace: t.namespace, key: t.key, value: null });
         if (!a?.success) throw new Error(a?.error || "reset failed");
         await b();
       } catch (a) {
-        u.value = a instanceof Error ? a.message : String(a);
+        d.value = a instanceof Error ? a.message : String(a);
       } finally {
-        d.value = !1;
+        i.value = !1;
       }
     }
-    return Z(b), (t, a) => (n(), s("div", le, [
-      m("div", re, [
-        f(se, {
-          dirty: G.value,
-          saving: d.value,
-          onDiscard: b,
-          onSave: J
-        }, null, 8, ["dirty", "saving"]),
-        u.value ? (n(), s("div", ie, i(u.value), 1)) : p("", !0),
-        k.value ? (n(), s("div", ue, [
-          f(y(N), {
+    return ne(b), (t, a) => (n(), o("div", le, [
+      y("div", se, [
+        y("header", re, [
+          V.value ? (n(), o("span", ie, "Unsaved changes")) : u("", !0),
+          g(c(I), {
+            type: "button",
+            label: "Discard",
+            severity: "secondary",
+            outlined: "",
+            disabled: !V.value || i.value,
+            onClick: b
+          }, null, 8, ["disabled"]),
+          g(c(I), {
+            type: "button",
+            label: i.value ? "Saving…" : "Save",
+            loading: i.value,
+            disabled: !V.value || i.value,
+            onClick: z
+          }, {
+            icon: L(() => [
+              i.value ? u("", !0) : (n(), S(c(E), {
+                key: 0,
+                icon: "tabler:device-floppy",
+                "aria-hidden": "true"
+              }))
+            ]),
+            _: 1
+          }, 8, ["label", "loading", "disabled"])
+        ]),
+        d.value ? (n(), o("div", ue, p(d.value), 1)) : u("", !0),
+        k.value ? (n(), o("div", ce, [
+          g(c(E), {
             icon: "tabler:loader-2",
             class: "spin"
           }),
-          a[0] || (a[0] = O(" Loading…", -1))
-        ])) : (n(), s("div", ce, [
-          m("section", pe, [
-            m("header", de, [
-              f(y(N), {
-                icon: F.value,
+          a[0] || (a[0] = R(" Loading…", -1))
+        ])) : (n(), o("div", pe, [
+          y("section", de, [
+            y("header", ve, [
+              g(c(E), {
+                icon: G.value,
                 "aria-hidden": "true"
               }, null, 8, ["icon"]),
-              O(" " + i(D.value), 1)
+              R(" " + p(W.value), 1)
             ]),
-            U.value ? (n(), s("p", ve, i(U.value), 1)) : p("", !0),
-            v.value.length ? (n(!0), s(S, { key: 2 }, $(w.value, (r) => (n(), s("div", {
+            P.value ? (n(), o("p", ye, p(P.value), 1)) : u("", !0),
+            m.value.length ? (n(!0), o(w, { key: 2 }, $(N.value, (r) => (n(), o("div", {
               key: r.name,
               class: "pv-group"
             }, [
-              W.value ? p("", !0) : (n(), s("h3", ye, i(r.name), 1)),
-              (n(!0), s(S, null, $(r.items, (e) => (n(), s("div", {
+              K.value ? u("", !0) : (n(), o("h3", ge, p(r.name), 1)),
+              (n(!0), o(w, null, $(r.items, (e) => (n(), o("div", {
                 key: e.key,
                 class: "pv-field"
               }, [
-                m("div", ge, [
-                  m("label", _e, i(g(e)), 1),
-                  e.is_secret && e.has_value ? (n(), s("span", fe, "set")) : !e.is_default && !e.is_secret ? (n(), s("span", he, "overridden")) : p("", !0),
-                  e.is_default ? p("", !0) : (n(), E(y(q), {
+                y("div", he, [
+                  y("label", _e, p(h(e)), 1),
+                  e.is_secret && e.has_value ? (n(), o("span", fe, "set")) : !e.is_default && !e.is_secret ? (n(), o("span", ke, "overridden")) : u("", !0),
+                  e.is_default ? u("", !0) : (n(), S(c(I), {
                     key: 2,
                     class: "pv-reset",
                     type: "button",
@@ -173,11 +195,11 @@ const le = { class: "ap" }, re = { class: "ap-body" }, ie = {
                     rounded: "",
                     title: "Reset to default",
                     "aria-label": "Reset to default",
-                    disabled: d.value,
-                    onClick: (o) => K(e)
+                    disabled: i.value,
+                    onClick: (l) => H(e)
                   }, {
-                    icon: ee(() => [
-                      f(y(N), {
+                    icon: L(() => [
+                      g(c(E), {
                         icon: "tabler:rotate",
                         "aria-hidden": "true"
                       })
@@ -185,82 +207,82 @@ const le = { class: "ap" }, re = { class: "ap-body" }, ie = {
                     _: 1
                   }, 8, ["disabled", "onClick"]))
                 ]),
-                e.control ? (n(), s(S, { key: 0 }, [
-                  e.editable === !1 ? (n(), s("span", ke, i(e.value), 1)) : (n(), E(te, {
+                e.control ? (n(), o(w, { key: 0 }, [
+                  e.editable === !1 ? (n(), o("span", be, p(e.value), 1)) : (n(), S(X, {
                     key: 1,
                     tag: e.control.tag,
-                    attrs: { ...e.control.props, value: M(e, l.value[e.key]) },
-                    onSelect: (o) => P(e, o)
+                    attrs: { ...e.control.props, value: B(e, s.value[e.key]) },
+                    onSelect: (l) => M(e, l)
                   }, null, 8, ["tag", "attrs", "onSelect"])),
-                  e.description ? (n(), s("p", be, i(e.description), 1)) : p("", !0)
-                ], 64)) : e.value_type === "bool" ? (n(), s("div", xe, [
-                  m("div", Ce, [
-                    e.description ? (n(), s("span", Se, i(e.description), 1)) : p("", !0)
+                  e.description ? (n(), o("p", Ce, p(e.description), 1)) : u("", !0)
+                ], 64)) : e.value_type === "bool" ? (n(), o("div", xe, [
+                  y("div", Se, [
+                    e.description ? (n(), o("span", we, p(e.description), 1)) : u("", !0)
                   ]),
-                  f(y(ae), {
-                    "model-value": !!l.value[e.key],
-                    "aria-label": g(e),
-                    "onUpdate:modelValue": (o) => l.value[e.key] = o
+                  g(c(Z), {
+                    "model-value": !!s.value[e.key],
+                    "aria-label": h(e),
+                    "onUpdate:modelValue": (l) => s.value[e.key] = l
                   }, null, 8, ["model-value", "aria-label", "onUpdate:modelValue"])
-                ])) : (n(), s(S, { key: 2 }, [
-                  A(e) ? (n(), E(y(ne), {
+                ])) : (n(), o(w, { key: 2 }, [
+                  j(e) ? (n(), S(c(ee), {
                     key: 0,
                     class: "ap-select",
-                    "model-value": l.value[e.key],
-                    options: A(e),
-                    "onUpdate:modelValue": (o) => l.value[e.key] = o
-                  }, null, 8, ["model-value", "options", "onUpdate:modelValue"])) : e.value_type === "int" ? (n(), s("input", {
+                    "model-value": s.value[e.key],
+                    options: j(e),
+                    "onUpdate:modelValue": (l) => s.value[e.key] = l
+                  }, null, 8, ["model-value", "options", "onUpdate:modelValue"])) : e.value_type === "int" ? (n(), o("input", {
                     key: 1,
                     class: "ap-binput",
                     type: "number",
                     min: e.schema?.minimum,
                     max: e.schema?.maximum,
-                    value: l.value[e.key],
-                    onInput: (o) => l.value[e.key] = Number(o.target.value)
-                  }, null, 40, we)) : e.value_type === "secret" ? (n(), s("input", {
+                    value: s.value[e.key],
+                    onInput: (l) => s.value[e.key] = Number(l.target.value)
+                  }, null, 40, Ee)) : e.value_type === "secret" ? (n(), o("input", {
                     key: 2,
                     class: "ap-binput",
                     type: "password",
                     autocomplete: "off",
                     placeholder: e.has_value ? "•••••••• set — type to replace" : "Not set",
-                    value: l.value[e.key],
-                    onInput: (o) => l.value[e.key] = o.target.value
-                  }, null, 40, Ee)) : e.value_type === "json" ? (n(), s("textarea", {
+                    value: s.value[e.key],
+                    onInput: (l) => s.value[e.key] = l.target.value
+                  }, null, 40, Ne)) : e.value_type === "json" ? (n(), o("textarea", {
                     key: 3,
                     class: "ap-binput pv-textarea",
                     rows: "4",
-                    value: l.value[e.key],
-                    onInput: (o) => l.value[e.key] = o.target.value
-                  }, null, 40, Ne)) : (n(), s("input", {
+                    value: s.value[e.key],
+                    onInput: (l) => s.value[e.key] = l.target.value
+                  }, null, 40, Ve)) : (n(), o("input", {
                     key: 4,
                     class: "ap-binput",
                     type: "text",
                     minlength: e.schema?.minLength,
                     maxlength: e.schema?.maxLength,
-                    value: l.value[e.key],
-                    onInput: (o) => l.value[e.key] = o.target.value
-                  }, null, 40, Ve)),
-                  e.description ? (n(), s("p", Ie, i(e.description), 1)) : p("", !0)
+                    value: s.value[e.key],
+                    onInput: (l) => s.value[e.key] = l.target.value
+                  }, null, 40, Ie)),
+                  e.description ? (n(), o("p", Ue, p(e.description), 1)) : u("", !0)
                 ], 64))
               ]))), 128))
-            ]))), 128)) : (n(), s("div", me, "No settings declared."))
+            ]))), 128)) : (n(), o("div", me, "No settings declared."))
           ])
         ]))
       ])
     ]));
   }
-}), Ae = { type: "object", properties: { config: { type: "object" } } };
-class Pe extends H {
+}), Pe = { type: "object", properties: { config: { type: "object" } } };
+class je extends q {
   static get wippyConfig() {
     return {
-      propsSchema: Ae,
+      propsSchema: Pe,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: Y
+      inlineCss: Q
     };
   }
   static get vueConfig() {
-    return { rootComponent: Ue, plugins: [Q] };
+    return { rootComponent: Ae, plugins: [te] };
   }
 }
-oe(import.meta.url, Pe);
+oe(import.meta.url, je);
 //# sourceMappingURL=provider.js.map

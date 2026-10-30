@@ -79,10 +79,3 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
-
-Settings → Performance configures the Jobs pool through its own policy API,
-with source badges, atomic saves, fairness shares and event-driven live status.
-Committed settings show Applying until realtime refresh confirms the persisted
-applied revision; failed application displays the recorded error.
-See [Performance](src/README.md#performance) for endpoint and authorization details.
-Run its UI specifications with `make ui-test`.

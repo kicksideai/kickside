@@ -114,10 +114,10 @@ local function define_tests()
 
         test.it("links realtime with only the existing database and process host requirements", function()
             local expected = "kickside.realtime:realtime_binding"
-            local wiring = registry.get("kickside.core.jobs:performance_config")
+            local wiring = registry.get("kickside.core.jobs.performance:config")
             local meta = wiring.meta or data_value(wiring, "meta") or {}
             test.eq(meta.binding_id, expected)
-            test.eq(data_value(registry.get("kickside.core.jobs:performance_binding"), "policy").resources, expected)
+            test.eq(data_value(registry.get("kickside.core.jobs.performance:binding"), "policy").resources, expected)
             test.eq(entry_kind(registry.get(expected)), "contract.binding")
         end)
 

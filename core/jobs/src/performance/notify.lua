@@ -7,10 +7,14 @@ function M.run(): (table?, error?)
     local function failed(err: error): (table?, error?)
         return nil, envelope.wrap(err, "Jobs performance notification failed", {})
     end
-    local wiring, wiring_err = registry.get("kickside.core.jobs:performance_config")
+    local wiring, wiring_err = registry.get("kickside.core.jobs.performance:config")
     if wiring_err then return failed(wiring_err) end
+    if type(wiring) == "table" and type(wiring.meta) == "table"
+        and (wiring.meta.binding_id == nil or wiring.meta.binding_id == "") then
+        return {success = true}, nil
+    end
     if type(wiring) ~= "table" or type(wiring.meta) ~= "table"
-        or type(wiring.meta.binding_id) ~= "string" or wiring.meta.binding_id == "" then
+        or type(wiring.meta.binding_id) ~= "string" then
         return failed(errors.new({kind = errors.UNAVAILABLE, retryable = false,
             message = "Jobs realtime binding is required", details = {code = "jobs_performance_binding_required"}}))
     end

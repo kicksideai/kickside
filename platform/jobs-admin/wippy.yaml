@@ -1,0 +1,29 @@
+organization: kickside
+module: jobs-admin
+type: plugin
+description: Jobs-owned live policy administration and declarative Settings extension.
+license: LicenseRef-KickSide-Community-1.0
+repository: https://github.com/kicksideai/kickside
+homepage: https://wippy.ai
+keywords:
+- kickside
+- jobs
+- administration
+embed:
+- kickside.jobs_admin:ui_fs
+exclude_meta:
+  type:
+  - test
+  - test_helper
+  - test_support
+exclude:
+- test/**
+- test:**
+- app:**
+- app.**:**
+- ui/node_modules/**
+- ui/.wippy/**
+- ui/dist/**
+- ui/coverage/**
+- static/*.map
+- static/**/*.map

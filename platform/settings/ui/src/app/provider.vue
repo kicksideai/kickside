@@ -7,7 +7,6 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import { useProps } from '@wippy-fe/webcomponent-vue'
 import { api } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
-import SettingsToolbar from './SettingsToolbar.vue'
 
 // A shared, config-driven provider settings card. One element, reused by every
 // connection/tool provider block: it is handed a `config = { namespace, title?,
@@ -184,7 +183,26 @@ onMounted(load)
 <template>
   <div class="ap">
     <div class="ap-body">
-      <SettingsToolbar :dirty="dirty" :saving="saving" @discard="load" @save="save" />
+      <header class="ap-bar">
+        <span v-if="dirty" class="ap-dirty">Unsaved changes</span>
+        <Button
+          type="button"
+          label="Discard"
+          severity="secondary"
+          outlined
+          :disabled="!dirty || saving"
+          @click="load" />
+        <Button
+          type="button"
+          :label="saving ? 'Saving…' : 'Save'"
+          :loading="saving"
+          :disabled="!dirty || saving"
+          @click="save">
+          <template #icon>
+            <Icon v-if="!saving" icon="tabler:device-floppy" aria-hidden="true" />
+          </template>
+        </Button>
+      </header>
 
       <div v-if="error" class="ap-msg ap-err">{{ error }}</div>
       <div v-if="loading" class="ap-loading"><Icon icon="tabler:loader-2" class="spin" /> Loading…</div>

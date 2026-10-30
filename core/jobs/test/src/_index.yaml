@@ -152,7 +152,7 @@ entries:
     source: file://job_fixture.lua
     modules: [json, sql, uuid, process]
     imports:
-      runtime_policy: kickside.core.jobs:runtime_policy
+      runtime_policy: kickside.core.jobs.policy:runtime
       lifecycle: kickside.core.jobs.persist:lifecycle
       config: kickside.core.jobs:config
       wake: kickside.core.jobs.persist:wake
@@ -489,6 +489,8 @@ entries:
       value: app:db
     - name: kickside.core.jobs:process_host
       value: app:processes
+    - name: kickside.core.jobs.performance:realtime
+      value: kickside.realtime:realtime_binding
 
   - name: dep.kickside.core
     version: '*'
@@ -2447,8 +2449,8 @@ entries:
     kind: library.lua
     source: file://scope_native_source.lua
     imports:
-      runtime_policy: kickside.core.jobs:runtime_policy
-      pool_state: kickside.core.jobs:pool_state
+      runtime_policy: kickside.core.jobs.policy:runtime
+      pool_state: kickside.core.jobs.persist:pool_state
       sql: app:scope_native_sql
       config: app:scope_native_config
       lifecycle: app:scope_native_lifecycle
@@ -2728,8 +2730,8 @@ entries:
     kind: library.lua
     source: file://transaction_native_source.lua
     imports:
-      runtime_policy: kickside.core.jobs:runtime_policy
-      pool_state: kickside.core.jobs:pool_state
+      runtime_policy: kickside.core.jobs.policy:runtime
+      pool_state: kickside.core.jobs.persist:pool_state
       sql: app:transaction_native_sql
       config: app:transaction_native_config
       lifecycle: app:transaction_native_lifecycle
@@ -2898,7 +2900,7 @@ entries:
     source: file://health_native_source.lua
     imports:
       runtime_policy: app:health_native_fixture
-      pool_state: kickside.core.jobs:pool_state
+      pool_state: kickside.core.jobs.persist:pool_state
       sql: app:health_native_sql
       config: app:health_native_config
       lifecycle: app:health_native_lifecycle
@@ -3818,7 +3820,7 @@ entries:
     source: file://config_boundary_native_source.lua
     modules: [time]
     imports:
-      policy_fields: kickside.core.jobs:policy_fields
+      policy_fields: kickside.core.jobs.policy:fields
       registry_version: kickside.core.jobs:registry_version
       registry: app:config_boundary_native_fixture
       job_types: kickside.core.jobs:types
@@ -3978,7 +3980,7 @@ entries:
     meta: {comment: "Performance notify caller."}
     kind: security.policy
     policy:
-      resources: kickside.core.jobs:performance_notify
+      resources: kickside.core.jobs.performance:notify
       actions: funcs.call
       effect: allow
 
@@ -4069,7 +4071,7 @@ entries:
     imports:
       test: wippy.test:test
       config: kickside.core.jobs:config
-      runtime_policy: kickside.core.jobs:runtime_policy
+      runtime_policy: kickside.core.jobs.policy:runtime
       claim: kickside.core.jobs.persist:claim
       lease: kickside.core.jobs.persist:lease_heartbeat
       lifecycle: kickside.core.jobs.persist:lifecycle

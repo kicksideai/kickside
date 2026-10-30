@@ -183,7 +183,7 @@ publication watermark or latched delivery error. Coalesced
 `kickside.jobs.performance.changed` invalidations run asynchronously off dispatch.
 A delivery error is reported to the process log; a newer pending event still
 sends its wakeup and otherwise the next owner event retries. The optional
-`performance_realtime` requirement defaults to the platform's canonical
-`kickside.realtime:realtime_binding`; existing hosts need no new parameter. Hosts
-can select another implementation. Jobs grants contract-open access only to the
+`kickside.core.jobs.performance:realtime` requirement is unbound by default,
+so backend-only hosts need no realtime implementation. The application binds its
+chosen realtime implementation explicitly. Jobs grants contract-open access only to the
 selected resource and never depends on its platform.

@@ -1,0 +1,77 @@
+version: '1.0'
+namespace: kickside.jobs_admin
+entries:
+- name: definition
+  kind: ns.definition
+  readme: file://README.md
+  meta:
+    title: Jobs administration
+    description: Live Jobs policy controls, mounted declaratively in Settings.
+- name: api_router
+  kind: ns.requirement
+  meta:
+    value_kind: http.router
+    description: Authenticated router enforcing endpoint access.
+  targets:
+  - entry: kickside.jobs_admin.api:get_policy.endpoint
+    path: .meta.router
+  - entry: kickside.jobs_admin.api:put_policy.endpoint
+    path: .meta.router
+- name: ui_server
+  kind: ns.requirement
+  meta:
+    value_kind: http.service
+    description: HTTP service hosting the Jobs admin component.
+  targets:
+  - entry: kickside.jobs_admin:ui_static
+    path: .meta.server
+- name: ui_fs
+  kind: fs.directory
+  meta:
+    comment: Built Jobs administration web component.
+  directory: ./static
+  auto_init: true
+- name: ui_static
+  kind: http.static
+  meta:
+    comment: Serves the Jobs-owned admin bundle.
+  path: /kickside-jobs-admin
+  fs: kickside.jobs_admin:ui_fs
+  options:
+    cache: no-cache
+    mime_types:
+      .js: application/javascript
+      .css: text/css
+- name: view
+  kind: registry.entry
+  meta:
+    type: view.component
+    name: jobs_admin
+    title: Jobs performance
+    description: Live Jobs worker, lease and retry controls with validation, per-field
+      reset, source labels and applied pool status. Saves require Jobs policy administration.
+    tag_name: kickside-jobs-admin
+    base_path: kickside-jobs-admin
+    entry_point: index.js
+    auto_register: false
+    secure: false
+    announced: true
+- name: settings
+  kind: registry.entry
+  meta:
+    type: kickside.settings:block
+    comment: Contributes the Jobs admin component to the generic Settings catalog.
+  key: jobs-performance
+  title: Jobs performance
+  group: System
+  icon: tabler:gauge
+  order: 50
+  component_tag: kickside-jobs-admin
+- name: dep.kickside.jobs
+  kind: ns.dependency
+  component: kickside/jobs
+  version: '>=0.1.66'
+- name: dep.kickside.contract
+  kind: ns.dependency
+  component: kickside/contract
+  version: '*'
