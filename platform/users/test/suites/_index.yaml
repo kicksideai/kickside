@@ -757,3 +757,19 @@ entries:
       user_groups_repo: kickside.users.persist:user_groups_repo
       session: kickside.users:session_subject
       expiry_time: kickside.users:expiry_time
+
+  - name: session_metadata_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://session_metadata_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, http_client, json, funcs]
+    imports:
+      test: wippy.test:test
+      session_metadata: kickside.users:session_metadata
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo

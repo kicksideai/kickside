@@ -594,8 +594,10 @@ local function define_tests()
             test.eq(metadata.status, "active")
             test.eq(metadata.scope_id, SCOPE_ID)
             test.eq(metadata.security_groups[1], SCOPE_ID)
-            test.neq(metadata.login_time, "forged-time")
-            test.eq(metadata.client_trace, "preserved")
+            test.not_nil(metadata.session.login_time)
+            test.neq(metadata.session.login_time, "forged-time")
+            test.is_nil(metadata.login_time)
+            test.is_nil(metadata.client_trace)
 
             local generation = assert(user_repo.get(USER_ID)).auth_generation
             local changed, change_err = user_group_sources_repo.set_user_groups(USER_ID, { SCOPE_ID })
