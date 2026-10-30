@@ -13,7 +13,7 @@
   "platform/hub": "0.1.69",
   "platform/identity": "0.1.43",
   "platform/inbox": "0.1.68",
-  "platform/knowledge": "0.1.71",
+  "platform/knowledge": "0.1.72",
   "platform/mcp": "0.2.8",
   "platform/models": "0.1.71",
   "platform/oauth": "0.1.42",
@@ -33,7 +33,7 @@
   "platform/uploads": "0.3.6",
   "platform/users": "0.2.14",
   "platform/webhooks": "0.1.39",
-  "platform/widgets": "0.1.54",
+  "platform/widgets": "0.1.55",
   "platform/workflows": "0.2.5",
   "app": "0.2.28"
 }
