@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 version: '1.0'
 namespace: kickside.core.jobs.performance
 entries:
@@ -49,7 +50,7 @@ entries:
     comment: Opens only the host-selected realtime implementation.
     private: true
   policy:
-    resources: ''
+    resources: []
     actions: contract.open
     effect: allow
 - name: method
@@ -73,7 +74,7 @@ entries:
     comment: Selects the exact realtime binding used for Jobs invalidations.
   targets:
   - entry: kickside.core.jobs.performance:binding
-    path: .policy.resources
+    path: ".policy.resources +="
   - entry: kickside.core.jobs.performance:config
     path: .meta.binding_id
 - name: read
