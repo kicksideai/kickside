@@ -862,6 +862,7 @@ entries:
       scope_writer: app:registry_fixture
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_store: kickside.security.persist:scope_store
+      source_scope: app:source_scope
 
   - name: resolver_boundary_own_db
     kind: security.policy

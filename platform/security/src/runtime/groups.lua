@@ -51,9 +51,11 @@ function M.resolve(groups: any): (any?, error?)
         local entry, read_err = read(group)
         if read_err then return read_err end
         local composed = declared.policies[group] ~= nil
+        if composed or projected then
+            for policy in pairs(native_sources[group] or {}) do source_policies[policy] = true end
+        end
         if composed then
             for _, policy in ipairs(declared.policies[group]) do policies[policy] = true end
-            for policy in pairs(native_sources[group] or {}) do source_policies[policy] = true end
             for _, source in ipairs(declared.groups[group] or {}) do
                 local err = visit(source, depth + 1)
                 if err then return err end
@@ -72,7 +74,7 @@ function M.resolve(groups: any): (any?, error?)
                     local err = visit(source, depth + 1)
                     if err then return err end
                 end
-            elseif not composed and native_sources[group] then
+            elseif not composed and not projected and native_sources[group] then
                 native[group] = true
             end
         elseif not projected and not composed then
@@ -81,7 +83,9 @@ function M.resolve(groups: any): (any?, error?)
         if projected then
             local data = projected.data or {}
             if not composed then
-                for _, source in ipairs(data.native_groups or {}) do native[source] = true end
+                for _, source in ipairs(data.native_groups or {}) do
+                    for policy in pairs(native_sources[source] or {}) do source_policies[policy] = true end
+                end
                 for _, source in ipairs(data.groups or {}) do
                     local err = visit(source, depth + 1)
                     if err then return err end
