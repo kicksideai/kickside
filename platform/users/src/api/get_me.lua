@@ -70,6 +70,7 @@ local function handler()
 
     -- Get actor meta (which should include security groups from login)
     local actor_meta = actor:meta() or {}
+    local session_context = actor_meta.session or {}
 
     -- The token metadata is captured at login and goes stale after a self-edit, so
     -- prefer the live user record for the editable profile fields when available.
@@ -109,9 +110,9 @@ local function handler()
             }
         },
         session = {
-            login_time = actor_meta.login_time,
-            ip_address = actor_meta.ip_address,
-            user_agent = actor_meta.user_agent,
+            login_time = session_context.login_time,
+            ip_address = session_context.ip_address,
+            user_agent = session_context.user_agent,
             timestamp = time.now():format_rfc3339()
         }
     }
@@ -120,12 +121,12 @@ local function handler()
     local current_ip = req:remote_addr()
     local current_ua = req:header("User-Agent")
 
-    if current_ip and current_ip ~= actor_meta.ip_address then
+    if current_ip and current_ip ~= session_context.ip_address then
         profile.session.current_ip_address = current_ip
         profile.session.ip_changed = true
     end
 
-    if current_ua and current_ua ~= actor_meta.user_agent then
+    if current_ua and current_ua ~= session_context.user_agent then
         profile.session.current_user_agent = current_ua
         profile.session.user_agent_changed = true
     end
