@@ -1,5 +1,6 @@
 version: '1.0'
 override:
+  app:security_db:file: ${security_sqlite_path}
   kickside.security.api:security_scopes_binding:contracts:
   - contract: kickside.contract:security_scopes
     default: false
@@ -30,15 +31,38 @@ workspace:
     kickside/security: ..
 vars:
   sqlite_path: ':memory:'
+  security_sqlite_path: ':memory:'
   http_port: 19115
   pg_host: localhost
   pg_port: 5433
   pg_database: kickside_test_users
+  pg_security_database: kickside_test_security
   pg_username: kickside
   pg_password: kickside
 profiles:
+  shared-db:
+    override:
+      app:dep.kickside.security:parameters:
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+      app:security_database:policy.resources: app:db
   postgres:
     override:
+      app:security_db:kind: db.sql.postgres
+      app:security_db:host: ${pg_host}
+      app:security_db:port: ${pg_port}
+      app:security_db:database: ${pg_security_database}
+      app:security_db:username: ${pg_username}
+      app:security_db:password: ${pg_password}
+      app:security_db:options.sslmode: disable
+      app:security_db:pool.max_open: 8
+      app:security_db:pool.max_idle: 4
       app:db:kind: db.sql.postgres
       app:db:host: ${pg_host}
       app:db:port: ${pg_port}
