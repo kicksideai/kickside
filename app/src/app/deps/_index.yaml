@@ -336,7 +336,9 @@ entries:
     - name: kickside.core.jobs.performance:realtime
       value: kickside.realtime:realtime_binding
 
-  - version: ">=0.1.0"
+  # This new module has no older published API; 0.0.0 also resolves its
+  # source checkout before Release Please creates the first release.
+  - version: ">=0.0.0"
     name: kickside_jobs_admin
     kind: ns.dependency
     meta:
