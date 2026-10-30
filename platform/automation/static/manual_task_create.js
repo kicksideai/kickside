@@ -2,7 +2,7 @@ import { defineComponent as r, openBlock as t, createBlock as n } from "vue";
 import "@iconify/vue";
 import { define as o } from "@wippy-fe/proxy";
 import { P as a } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
-import { _ as m, T as s } from "./TaskCreate.vue_vue_type_script_setup_true_lang-DCKp5mR6.js";
+import { _ as m, T as s } from "./TaskCreate.vue_vue_type_script_setup_true_lang-CVpjt1q3.js";
 const i = /* @__PURE__ */ r({
   __name: "ManualTaskCreate",
   setup(e) {
