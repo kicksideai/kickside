@@ -519,9 +519,11 @@ entries:
     security:
       actor: {id: app:test_runner}
       policies: [app:test_runtime]
-    modules: [sql, crypto, security]
+    modules: [sql, crypto, security, registry]
     imports:
       test: wippy.test:test
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
       session: kickside.users:session
       session_index: kickside.users.persist:session_index
       subject_lookup: kickside.users.binding:subject_lookup
