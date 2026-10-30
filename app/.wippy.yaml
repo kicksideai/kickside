@@ -162,6 +162,7 @@ workspace:
     kickside/contract: ../core/contract
     kickside/core: ../core/core
     kickside/jobs: ../core/jobs
+    kickside/jobs-admin: ../platform/jobs-admin
     kickside/sso: ../../components/sso
     kickside/sso-google: ../../providers/sso-google
     kickside/pdf2image: ../../converters/pdf2image
