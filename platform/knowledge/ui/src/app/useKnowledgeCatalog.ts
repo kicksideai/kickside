@@ -20,6 +20,10 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   const models = ref<EmbeddingModel[]>([])
   const engines = ref<Engine[]>([])
   const dialogLoadError = ref('')
+  let catalogActive = true
+  let catalogLoadGeneration = 0
+  let discoveryLoading = false
+  let discoveryPending = false
 
   const filtered = computed(() => {
     const q = query.value.trim().toLowerCase()
@@ -39,6 +43,8 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   }
 
   async function load({ preserve = false }: { preserve?: boolean } = {}): Promise<boolean> {
+    if (!catalogActive) return false
+    const generation = ++catalogLoadGeneration
     loading.value = true
     error.value = ''
     notice.value = ''
@@ -47,22 +53,31 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
       if (!data?.success) {
         const msg = data?.error || 'failed to load knowledge bases'
         if (isEngineMissing(msg)) {
-          if (!preserve) kbs.value = []
-          notice.value = ENGINE_NOTICE
+          if (generation === catalogLoadGeneration && catalogActive) {
+            if (!preserve) kbs.value = []
+            notice.value = ENGINE_NOTICE
+          }
           return false
         }
         throw new Error(msg)
       }
-      kbs.value = (data.items || []) as KnowledgeBase[]
+      if (generation === catalogLoadGeneration && catalogActive) {
+        kbs.value = (data.items || []) as KnowledgeBase[]
+      }
       return true
     } catch (e) {
-      if (!preserve) kbs.value = []
       const msg = errMsg(e, 'could not load knowledge bases')
-      if (isEngineMissing(msg)) notice.value = ENGINE_NOTICE
-      else error.value = msg
+      if (generation === catalogLoadGeneration && catalogActive) {
+        if (!preserve) kbs.value = []
+        if (isEngineMissing(msg)) notice.value = ENGINE_NOTICE
+        else error.value = msg
+      }
       return false
     } finally {
-      loading.value = false
+      if (generation === catalogLoadGeneration) {
+        loading.value = false
+        if (catalogActive && discoveryPending && !discoveryLoading) void refreshDiscoveredCatalog()
+      }
     }
   }
 
@@ -206,9 +221,28 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   }
 
   function clearComponentSubscriptions() {
+    catalogActive = false
+    discoveryPending = false
     componentUnsub?.()
     detailUnsub.value?.()
     detailUnsub.value = null
+  }
+
+  async function refreshDiscoveredCatalog() {
+    if (!catalogActive) return
+    if (discoveryLoading || loading.value) {
+      discoveryPending = true
+      return
+    }
+    discoveryLoading = true
+    try {
+      do {
+        discoveryPending = false
+        await load({ preserve: true })
+      } while (catalogActive && discoveryPending)
+    } finally {
+      discoveryLoading = false
+    }
   }
 
   const componentUnsub = on('@message', message => {
@@ -217,7 +251,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     const known = kbs.value.some(k => k.id === event.component_id)
     applyComponentMetaEvent(event.component_id, event)
     if (!known && typeof event.meta.kb_type === 'string' && event.meta.kb_type) {
-      void load({ preserve: true })
+      void refreshDiscoveredCatalog()
     }
   })
   onBeforeUnmount(clearComponentSubscriptions)

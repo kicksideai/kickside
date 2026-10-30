@@ -93,6 +93,74 @@ it('discovers the first library when the mounted catalog is empty', async () => 
   expect(controller.kbs.value.map(kb => kb.id)).toEqual(['first'])
 })
 
+it('serializes discovery refreshes and drops queued work after unmount', async () => {
+  const { controller } = catalog()
+  await controller.load()
+  vi.mocked(api.get).mockClear()
+
+  let resolveFirst!: (value: unknown) => void
+  let resolveSecond!: (value: unknown) => void
+  vi.mocked(api.get)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve }) as never)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveSecond = resolve }) as never)
+  receive({ event: 'component.meta.changed', component_id: 'second', meta: { kb_type: 'records' } })
+  receive({ event: 'component.meta.changed', component_id: 'third', meta: { kb_type: 'records' } })
+  expect(api.get).toHaveBeenCalledTimes(1)
+
+  resolveFirst({ data: { success: true, items: [{ id: 'second', name: 'Second library', kb_type: 'records' }] } })
+  await flushPromises()
+  expect(api.get).toHaveBeenCalledTimes(2)
+
+  receive({ event: 'component.meta.changed', component_id: 'fourth', meta: { kb_type: 'records' } })
+  expect(api.get).toHaveBeenCalledTimes(2)
+  wrapper?.unmount()
+  wrapper = undefined
+  resolveSecond({ data: { success: true, items: [{ id: 'third', name: 'Third library', kb_type: 'records' }] } })
+  await flushPromises()
+  expect(api.get).toHaveBeenCalledTimes(2)
+  expect(controller.kbs.value.map(kb => kb.id)).toEqual(['second'])
+})
+
+it('waits for the initial catalog read before refreshing a discovered library', async () => {
+  const { controller } = catalog()
+  let resolveInitial!: (value: unknown) => void
+  let resolveRefresh!: (value: unknown) => void
+  vi.mocked(api.get)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveInitial = resolve }) as never)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveRefresh = resolve }) as never)
+
+  const initial = controller.load()
+  receive({ event: 'component.meta.changed', component_id: 'second', meta: { kb_type: 'records' } })
+  expect(api.get).toHaveBeenCalledTimes(1)
+
+  resolveInitial({ data: { success: true, items: [{ id: 'first', name: 'First library', kb_type: 'records' }] } })
+  await initial
+  await flushPromises()
+  expect(api.get).toHaveBeenCalledTimes(2)
+  resolveRefresh({ data: { success: true, items: [{ id: 'second', name: 'Second library', kb_type: 'records' }] } })
+  await flushPromises()
+  expect(controller.kbs.value.map(kb => kb.id)).toEqual(['second'])
+})
+
+it('keeps a later manual catalog result over an older discovery response', async () => {
+  const { controller } = catalog()
+  await controller.load()
+  vi.mocked(api.get).mockClear()
+  let resolveDiscovery!: (value: unknown) => void
+  let resolveManual!: (value: unknown) => void
+  vi.mocked(api.get)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveDiscovery = resolve }) as never)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveManual = resolve }) as never)
+
+  receive({ event: 'component.meta.changed', component_id: 'second', meta: { kb_type: 'records' } })
+  const manual = controller.load()
+  resolveManual({ data: { success: true, items: [{ id: 'manual', name: 'Manual refresh', kb_type: 'records' }] } })
+  await manual
+  resolveDiscovery({ data: { success: true, items: [{ id: 'second', name: 'Second library', kb_type: 'records' }] } })
+  await flushPromises()
+  expect(controller.kbs.value.map(kb => kb.id)).toEqual(['manual'])
+})
+
 it('ignores unrelated components and surfaces a failed discovery read', async () => {
   const { controller } = catalog()
   await controller.load()
