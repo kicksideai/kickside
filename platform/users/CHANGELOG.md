@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.15](https://github.com/kicksideai/kickside/compare/users-v0.2.14...users-v0.2.15) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve only live group authority ([402ec62](https://github.com/kicksideai/kickside/commit/402ec625779094efa1df0b57a83bedc0b3e32c55))
+
 ## [0.2.14](https://github.com/kicksideai/kickside/compare/users-v0.2.13...users-v0.2.14) (2026-10-29)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/security-v0.2.21...security-v0.2.22) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve only live group authority ([402ec62](https://github.com/kicksideai/kickside/commit/402ec625779094efa1df0b57a83bedc0b3e32c55))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/security-v0.2.20...security-v0.2.21) (2026-10-30)
 
 
