@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/kicksideai/kickside/compare/automation-v0.2.8...automation-v0.2.9) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
 ## [0.2.8](https://github.com/kicksideai/kickside/compare/automation-v0.2.7...automation-v0.2.8) (2026-10-30)
 
 
