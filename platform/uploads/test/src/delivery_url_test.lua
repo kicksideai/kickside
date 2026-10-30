@@ -2,6 +2,7 @@
 local test = require("test")
 local uploads = require("uploads")
 local records = require("records")
+local query = require("query")
 local tokens = require("tokens")
 local cloud = require("cloud")
 local uuid = require("uuid")
@@ -10,9 +11,9 @@ local time = require("time")
 return {run = test.run_cases(function()
     test.describe("authorized upload delivery", function()
         local api = uploads
-        local function record(path)
+        local function record(path, storage_id)
             local id = uuid.v4()
-            assert(records.create(id, uuid.v4(), 5, "application/pdf", "app:uploads", path,
+            assert(records.create(id, uuid.v4(), 5, "application/pdf", storage_id or "app:uploads", path,
                 "kickside.uploads:types.generic", {filename = "document.pdf"}, "completed"))
             return id
         end
@@ -22,6 +23,17 @@ return {run = test.run_cases(function()
             test.is_nil(err)
             test.eq("https://objects.example/document.pdf?expiration=300", url)
             test.eq("https://objects.example/document.pdf?expiration=900", assert(api.delivery_url(id)))
+        end)
+        test.it("signs an existing presigned record without rewriting its logical address", function()
+            local path = "legacy-" .. uuid.v4() .. ".pdf"
+            local id = record(path, "uploads.s3")
+            local url, err = api.delivery_url(id, {expires_in = 120})
+            test.is_nil(err, tostring(err))
+            test.eq("https://objects.example/" .. path .. "?expiration=120", url)
+            local retained = assert(query.get(id))
+            test.eq(retained.uuid, id)
+            test.eq(retained.storage_id, "uploads.s3")
+            test.eq(retained.storage_path, path)
         end)
         test.it("issues upload-bound read tokens for relative and packed filesystem paths", function()
             for _, path in ipairs({"document.pdf", "fs://app:uploads/document.pdf"}) do
