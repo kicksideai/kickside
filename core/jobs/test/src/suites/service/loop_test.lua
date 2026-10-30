@@ -80,6 +80,9 @@ local function define_tests()
                 end
             end)
         end
+        local log_subscription = assert(events.subscribe("logs", "logs.entry"))
+        local log_channel = log_subscription:channel()
+        local recent_logs: {string} = {}
         if started.original_version then
             attempt(function()
                 local _, err = registry.apply_version(started.original_version)
@@ -89,17 +92,25 @@ local function define_tests()
         attempt(function()
             local deadline = time.after("15s")
             while next(roots) do
-                local selected = channel.select({ proc_events:case_receive(), deadline:case_receive() })
+                local selected = channel.select({ proc_events:case_receive(), log_channel:case_receive(), deadline:case_receive() })
                 local pending: {string} = {}
                 for pid in pairs(roots) do pending[#pending + 1] = pid end
                 table.sort(pending)
-                test.eq(selected.channel, proc_events, "probe services did not stop: " .. table.concat(pending, ","))
+                if selected.channel == log_channel then
+                    local entry = selected.value.data.entry
+                    recent_logs[#recent_logs + 1] = entry.message
+                    if #recent_logs > 50 then table.remove(recent_logs, 1) end
+                else
+                    test.eq(selected.channel, proc_events, "probe services did not stop: " .. table.concat(pending, ",")
+                        .. "; shutdown logs=" .. table.concat(recent_logs, " | "))
+                end
                 local event = selected.value
                 if type(event) == "table" and event.kind == process.event.EXIT then
                     roots[tostring(event.from)] = nil
                 end
             end
         end)
+        log_subscription:close()
         if db then
             if started.table_created then
                 attempt(function()

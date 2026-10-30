@@ -13,9 +13,20 @@ return {run = test.run_cases(function()
             for key, value in pairs(wiring.meta or {}) do meta[key] = value end
             meta.binding_id = ""
             changes:update({id = tostring(wiring.id), kind = wiring.kind, meta = meta, data = wiring.data})
+            local binding = assert(registry.get("kickside.core.jobs.performance:binding"))
+            local data = {}
+            for key, value in pairs(binding.data) do data[key] = value end
+            local policy = {}
+            for key, value in pairs(data.policy) do policy[key] = value end
+            policy.resources = {}
+            data.policy = policy
+            changes:update({id = tostring(binding.id), kind = binding.kind, meta = binding.meta, data = data})
             assert(changes:apply())
             local ok, failure = pcall(function()
                 local actor = security.new_actor("unbound-notifier-caller", {})
+                local unbound = assert(security.policy("kickside.core.jobs.performance:binding"))
+                test.neq(unbound:evaluate(actor, "contract.open", "kickside.realtime:realtime_binding"), "allow")
+                test.neq(unbound:evaluate(actor, "contract.open", "app:another_binding"), "allow")
                 local scope = security.new_scope({assert(security.policy("app:performance_notify_caller"))})
                 local result, err = funcs.new():with_actor(actor):with_scope(scope)
                     :with_context({performance_refused = true}):call("kickside.core.jobs.performance:notify")
