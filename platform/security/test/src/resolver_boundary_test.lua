@@ -185,6 +185,43 @@ local function run()
                 end)
             end
         end
+        test.it("resolves relative native groups in their policy namespace and rejects them after retirement", function()
+            local original = assert(registry.current_version())
+            writer.stop_projector(projector)
+            local changes = assert(registry.snapshot()):changes()
+            for _, namespace in ipairs({"app.relative_first", "app.relative_other"}) do
+                changes:create({id = namespace .. ":grant", kind = "security.policy", data = {
+                    groups = {"members"}, policy = {actions = "read", resources = namespace .. ":record", effect = "allow"}}})
+            end
+            assert(changes:apply())
+            local ok, failure = pcall(function()
+                local actor = assert(security.new_actor("relative-source-member"))
+                local group = "app.relative_first:members"
+                local native = assert(security.named_scope(group))
+                test.eq(native:evaluate(actor, "read", "app.relative_first:record"), "allow")
+                for _, projected in ipairs({false, true}) do
+                    if projected then
+                        projector = writer.start_projector()
+                        assert(trigger.trigger())
+                        writer.stop_projector(projector)
+                    end
+                    local scope = assert(source_scope.resolve(group))
+                    test.eq(scope:evaluate(actor, "read", "app.relative_first:record"), "allow")
+                    test.eq(scope:evaluate(actor, "read", "app.relative_other:record"), "undefined")
+                end
+                changes = assert(registry.snapshot()):changes()
+                changes:delete("app.relative_first:grant")
+                assert(changes:apply())
+                local scope, err = source_scope.resolve(group)
+                test.is_nil(scope)
+                test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
+                local other = assert(source_scope.resolve("app.relative_other:members"))
+                test.eq(other:evaluate(actor, "read", "app.relative_other:record"), "allow")
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
+        end)
         test.it("keeps a pending registry plan valid while resolving live authority", function()
             writer.stop_projector(projector)
             local original = assert(registry.current_version())

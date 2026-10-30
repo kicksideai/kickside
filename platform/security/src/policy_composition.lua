@@ -129,7 +129,10 @@ function M.native_group_policies(snap)
         local projected = meta.managed_by == consts.MANAGED_BY
             and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
         if not projected then
+            local namespace = registry.parse_id(tostring(policy.id)).ns
             for _, group in ipairs((policy.data or {}).groups or {}) do
+                local id = registry.parse_id(group)
+                group = (id.ns ~= "" and id.ns or namespace) .. ":" .. id.name
                 effective[group] = effective[group] or {}
                 effective[group][tostring(policy.id)] = true
             end
