@@ -2,6 +2,7 @@
 -- Runtime composition uses IDs, never policy bodies or a copy of another owner's descriptor.
 local registry = require("registry")
 local store = require("scope_store")
+local group_sets = require("group_sets")
 local consts = require("security_consts")
 local key = require("scope_key")
 local composition = require("policy_composition")
@@ -86,9 +87,15 @@ function M.resolve(groups: any): (any?, error?)
                 for _, source in ipairs(data.native_groups or {}) do
                     for policy in pairs(native_sources[source] or {}) do source_policies[policy] = true end
                 end
-                for _, source in ipairs(data.groups or {}) do
-                    local err = visit(source, depth + 1)
-                    if err then return err end
+                if #(data.groups or {}) > 0 then
+                    -- A deleted composition cannot lend its old memberships.
+                    -- Only a still-registered legacy set owns this fallback.
+                    local registered, registered_err = group_sets.get(group)
+                    if registered_err then return registered_err end
+                    for _, source in ipairs(registered and registered.groups or {}) do
+                        local err = visit(source, depth + 1)
+                        if err then return err end
+                    end
                 end
             end
             for _, source in ipairs(data.scope_sources or {}) do
