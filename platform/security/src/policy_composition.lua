@@ -118,24 +118,41 @@ function M.authorize_mutation(ids: any, gate: string, retained: boolean?): (any?
     end, retained)
 end
 
-function M.native_group_policies(snap)
-    local native, read_err = snap:find({[".kind"] = consts.POLICY_KIND})
-    if read_err then return nil, read_err end
+local function native_group_policies_for(snap, kinds)
     local effective = {}
-    for _, policy in ipairs(native) do
-        local meta = policy.meta or {}
-        -- Security's delegation declarations are source grants too. Exclude
-        -- only derived entries, using the same ownership markers as policy_groups.
-        local projected = meta.managed_by == consts.MANAGED_BY
-            and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
-        if not projected then
-            for _, group in ipairs((policy.data or {}).groups or {}) do
-                effective[group] = effective[group] or {}
-                effective[group][tostring(policy.id)] = true
+    for _, kind in ipairs(kinds) do
+        local native, read_err = snap:find({[".kind"] = kind})
+        if read_err then return nil, read_err end
+        for _, policy in ipairs(native) do
+            local meta = policy.meta or {}
+            -- Security's delegation declarations are source grants too. Exclude
+            -- only derived entries, using the same ownership markers as policy_groups.
+            local projected = meta.managed_by == consts.MANAGED_BY
+                and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
+            if not projected then
+                local namespace = registry.parse_id(tostring(policy.id)).ns
+                for _, group in ipairs((policy.data or {}).groups or {}) do
+                    local id = registry.parse_id(group)
+                    group = (id.ns ~= "" and id.ns or namespace) .. ":" .. id.name
+                    effective[group] = effective[group] or {}
+                    effective[group][tostring(policy.id)] = true
+                end
             end
         end
     end
     return effective, nil
+end
+
+-- Plain rule policies are the only source kind whose bodies flow into
+-- policy_groups and scope_projection.
+function M.native_group_policies(snap)
+    return native_group_policies_for(snap, {consts.POLICY_KIND})
+end
+
+-- Runtime validation accepts both native kinds, but returns IDs only. Expression
+-- bodies never enter the rule-only projection and coverage paths.
+function M.native_runtime_group_policies(snap)
+    return native_group_policies_for(snap, {consts.POLICY_KIND, consts.EXPRESSION_POLICY_KIND})
 end
 
 function M.group_compositions(snap)
