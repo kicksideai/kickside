@@ -27,6 +27,15 @@ entries:
   targets:
   - entry: kickside.jobs_admin:ui_static
     path: .meta.server
+- name: admin_navigation_policy
+  kind: ns.requirement
+  default: []
+  meta:
+    value_kind: security.policy
+    description: Optional host-owned navigation capability composed into the Jobs administration role. API-only hosts leave it unbound.
+  targets:
+  - entry: kickside.jobs_admin.security:admin_access
+    path: .meta.includes +=
 - name: ui_fs
   kind: fs.directory
   meta:

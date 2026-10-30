@@ -342,13 +342,15 @@ entries:
     name: kickside_jobs_admin
     kind: ns.dependency
     meta:
-      comment: Jobs-owned performance controls, contributed to Settings by the plugin.
+      comment: Jobs-owned performance controls, contributed as a System tab by the plugin.
     component: kickside/jobs-admin
     parameters:
     - name: kickside.jobs_admin:api_router
       value: app:api
     - name: kickside.jobs_admin:ui_server
       value: app:gateway
+    - name: kickside.jobs_admin:admin_navigation_policy
+      value: kickside.ui.security:system_tabs_access
 
   - version: ">=0.1.40"
     name: kickside_sso
