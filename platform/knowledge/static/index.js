@@ -440,7 +440,7 @@ function Et({ detail: t }) {
     const n = it(s, void 0, Se);
     if (!n) return;
     const h = k.value.some((e) => e.id === n.component_id);
-    Y(n.component_id, n), !h && typeof n.meta.kb_type == "string" && n.meta.kb_type && Z();
+    (h || t.value?.id === n.component_id) && Y(n.component_id, n), !h && typeof n.meta.kb_type == "string" && n.meta.kb_type && Z();
   });
   return ge(R), {
     loading: u,

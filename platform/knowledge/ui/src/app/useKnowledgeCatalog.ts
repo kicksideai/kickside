@@ -249,7 +249,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     const event = componentMetaEvent(message, undefined, KNOWLEDGE_META_FIELD_TYPES)
     if (!event) return
     const known = kbs.value.some(k => k.id === event.component_id)
-    applyComponentMetaEvent(event.component_id, event)
+    if (known || detail.value?.id === event.component_id) applyComponentMetaEvent(event.component_id, event)
     if (!known && typeof event.meta.kb_type === 'string' && event.meta.kb_type) {
       void refreshDiscoveredCatalog()
     }

@@ -142,32 +142,37 @@ it('waits for the initial catalog read before refreshing a discovered library', 
   expect(controller.kbs.value.map(kb => kb.id)).toEqual(['second'])
 })
 
-it('keeps a later manual catalog result over an older discovery response', async () => {
+it.each(['resolved', 'rejected'])('keeps a later manual catalog result over an older %s discovery response', async outcome => {
   const { controller } = catalog()
   await controller.load()
   vi.mocked(api.get).mockClear()
   let resolveDiscovery!: (value: unknown) => void
+  let rejectDiscovery!: (reason: Error) => void
   let resolveManual!: (value: unknown) => void
   vi.mocked(api.get)
-    .mockImplementationOnce(() => new Promise(resolve => { resolveDiscovery = resolve }) as never)
+    .mockImplementationOnce(() => new Promise((resolve, reject) => { resolveDiscovery = resolve; rejectDiscovery = reject }) as never)
     .mockImplementationOnce(() => new Promise(resolve => { resolveManual = resolve }) as never)
 
   receive({ event: 'component.meta.changed', component_id: 'second', meta: { kb_type: 'records' } })
   const manual = controller.load()
   resolveManual({ data: { success: true, items: [{ id: 'manual', name: 'Manual refresh', kb_type: 'records' }] } })
   await manual
-  resolveDiscovery({ data: { success: true, items: [{ id: 'second', name: 'Second library', kb_type: 'records' }] } })
+  if (outcome === 'resolved') resolveDiscovery({ data: { success: true, items: [{ id: 'second', name: 'Second library', kb_type: 'records' }] } })
+  else rejectDiscovery(new Error('Outdated discovery failed'))
   await flushPromises()
   expect(controller.kbs.value.map(kb => kb.id)).toEqual(['manual'])
+  expect(controller.error.value).toBe('')
 })
 
 it('ignores unrelated components and surfaces a failed discovery read', async () => {
   const { controller } = catalog()
   await controller.load()
   vi.mocked(api.get).mockClear()
+  const unchangedRows = controller.kbs.value
   receive({ event: 'component.meta.changed', component_id: 'agent', meta: { title: 'Agent' } })
   await flushPromises()
   expect(api.get).not.toHaveBeenCalled()
+  expect(controller.kbs.value).toBe(unchangedRows)
 
   vi.mocked(api.get).mockRejectedValue(new Error('Catalog unavailable'))
   receive({ event: 'component.meta.changed', component_id: 'second', meta: { kb_type: 'records' } })
