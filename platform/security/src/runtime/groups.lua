@@ -31,7 +31,7 @@ function M.resolve(groups: any): (any?, error?)
     if declaration_err then return nil, declaration_err end
     local native_sources, native_err = composition.native_group_policies(snap)
     if native_err then return nil, native_err end
-    local native, policies, authored, source_policies, slugs, visited, active = {}, {}, {}, {}, {}, {}, {}
+    local native, policies, authored, source_policies, slugs, visited, active, live = {}, {}, {}, {}, {}, {}, {}, {}
     local function read(id)
         local entry, err = snap:get(id)
         if err and not errors.is(err, errors.NOT_FOUND) then return nil, err end
@@ -52,6 +52,9 @@ function M.resolve(groups: any): (any?, error?)
         local entry, read_err = read(group)
         if read_err then return read_err end
         local composed = declared.policies[group] ~= nil
+        local authored_scope = entry and entry.kind == consts.SCOPE_KIND
+            and (entry.meta or {}).managed_by ~= consts.MANAGED_BY
+        if composed or native_sources[group] then live[group] = true end
         if composed or projected then
             for policy in pairs(native_sources[group] or {}) do source_policies[policy] = true end
         end
@@ -62,10 +65,11 @@ function M.resolve(groups: any): (any?, error?)
                 if err then return err end
             end
         end
-        if entry and entry.kind == consts.SCOPE_KIND and (entry.meta or {}).managed_by ~= consts.MANAGED_BY then
+        if authored_scope then
             local data = entry.data or {}
             local policies_err = list_error(data.policies or {}, "authored scope policies")
             if policies_err then return policies_err end
+            if #(data.policies or {}) > 0 or data.groups ~= nil then live[group] = true end
             for _, policy in ipairs(data.policies or {}) do authored[policy] = true end
             if data.groups ~= nil then
                 local groups_err = list_error(data.groups, "authored scope groups")
@@ -83,16 +87,12 @@ function M.resolve(groups: any): (any?, error?)
         end
         if projected then
             local data = projected.data or {}
-            if not composed then
-                for _, source in ipairs(data.native_groups or {}) do
-                    for policy in pairs(native_sources[source] or {}) do source_policies[policy] = true end
-                end
-                if #(data.groups or {}) > 0 then
-                    -- A deleted composition cannot lend its old memberships.
-                    -- Only a still-registered legacy set owns this fallback.
-                    local registered, registered_err = group_sets.get(group)
-                    if registered_err then return registered_err end
-                    for _, source in ipairs(registered and registered.groups or {}) do
+            if not composed and not authored_scope and #(data.groups or {}) > 0 then
+                local registered, registered_err = group_sets.get(group)
+                if registered_err then return registered_err end
+                if registered then
+                    live[group] = true
+                    for _, source in ipairs(registered.groups) do
                         local err = visit(source, depth + 1)
                         if err then return err end
                     end
@@ -118,7 +118,13 @@ function M.resolve(groups: any): (any?, error?)
     for _, row in ipairs(rows) do
         local group = row.target ~= "" and row.target or consts.CUSTOM_SCOPE_NS .. ":" .. row.slug
         if row.enabled and slugs[row.slug][group] == true then
+            live[group] = true
             for _, policy in ipairs(row.policies) do policies[policy] = true end
+        end
+    end
+    for group in pairs(visited) do
+        if not live[group] then
+            return nil, errors.new({kind = errors.NOT_FOUND, retryable = false, message = "policy group not found"})
         end
     end
     local function ids(set)

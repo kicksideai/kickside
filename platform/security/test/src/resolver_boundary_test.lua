@@ -144,6 +144,61 @@ local function run()
             projector = writer.start_projector()
             if not ok then error(failure) end
         end)
+        for _, kind in ipairs({"native", "composition", "referenced composition", "catalog composition"}) do
+            for _, projected in ipairs({false, true}) do
+                test.it("rejects retired " .. kind .. " groups before reconciliation: " .. tostring(projected), function()
+                    local original = assert(registry.current_version())
+                    local group, declaration = "app:retired_resolver_group", "app:retired_resolver_source"
+                    if not projected then writer.stop_projector(projector) end
+                    local changes = assert(registry.snapshot()):changes()
+                    if kind == "native" then
+                        changes:create({id = declaration, kind = "security.policy", data = {
+                            groups = {group}, policy = {actions = "read", resources = "app:retired_record", effect = "allow"}}})
+                    else
+                        changes:create({id = group, kind = "security.scope", data = {policies = {}}})
+                        changes:create({id = declaration, kind = "registry.entry",
+                            meta = {type = "kickside.security.group_composition"}, data = {
+                                group_id = group, policies = {},
+                                groups = kind == "referenced composition" and {"app.security:user"} or {}}})
+                    end
+                    assert(changes:apply())
+                    if projected then
+                        assert(trigger.trigger())
+                        writer.stop_projector(projector)
+                    end
+                    local ok, failure = pcall(function()
+                        test.not_nil(assert(source_scope.resolve(group)))
+                        changes = assert(registry.snapshot()):changes()
+                        changes:delete(declaration)
+                        if kind ~= "native" and kind ~= "catalog composition" then changes:delete(group) end
+                        assert(changes:apply())
+                        local version = assert(registry.current_version()):id()
+                        local result, err = source_scope.resolve(group)
+                        test.is_nil(result)
+                        test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
+                        test.eq(err:retryable(), false)
+                        test.eq(assert(registry.current_version()):id(), version)
+                    end)
+                    test.is_true(assert(registry.apply_version(original)))
+                    projector = writer.start_projector()
+                    if not ok then error(failure) end
+                end)
+            end
+        end
+        test.it("keeps a pending registry plan valid while resolving live authority", function()
+            writer.stop_projector(projector)
+            local original = assert(registry.current_version())
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = "app:resolver_read_marker", kind = "registry.entry", data = {}})
+            local ok, failure = pcall(function()
+                test.not_nil(assert(source_scope.resolve("app.security:user")))
+                test.eq(assert(registry.current_version()):id(), original:id())
+                assert(changes:apply())
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
+        end)
         test.it("resolves selected policy IDs when the caller cannot inspect their declarations", function()
             local original = assert(registry.current_version())
             local changes = assert(registry.snapshot()):changes()

@@ -69,8 +69,11 @@ snapshot, including before the first projection and during module updates.
 Composed groups contribute source policy IDs rather than native compatibility
 bindings. Live resolution drops removed composition grants while retaining native
 source grants, even before catalog reconciliation. Nested references retain
-bounded cycle detection. The catalog's derived
-policy list is display data and is not an authorization source.
+bounded cycle detection. An empty catalog descriptor does not define executable
+authority without a current composition, native grant, or enabled stored scope.
+Legacy group sets use their persisted source references. Resolution leaves the
+registry unchanged. The catalog's derived policy list is display data and is not
+an authorization source.
 
 Users calls `kickside.security.runtime:resolve_groups`. This Security-owned
 function carries its own configured database and registry authority. Users

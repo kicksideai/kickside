@@ -885,3 +885,4 @@ entries:
       trigger_reconcile: kickside.security:trigger_reconcile
       group_sets: kickside.security.persist:group_sets
       group_resolver: kickside.security.runtime:groups
+      source_scope: app:source_scope
