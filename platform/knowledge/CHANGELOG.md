@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.73](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.72...knowledge-v0.1.73) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
 ## [0.1.72](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.71...knowledge-v0.1.72) (2026-10-30)
 
 
