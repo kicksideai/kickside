@@ -6,6 +6,8 @@ cp "$upload_test_dir/../src/uploads.lua" "$upload_test_dir/src/fixtures/uploads.
 cp "$upload_test_dir/../src/uploads_presigned.lua" "$upload_test_dir/src/fixtures/uploads_presigned.lua"
 cp "$upload_test_dir/../src/binding/storage_adapter_default.lua" "$upload_test_dir/src/fixtures/storage_adapter_default.lua"
 cp "$upload_test_dir/../src/binding/storage_location.lua" "$upload_test_dir/src/fixtures/storage_location.lua"
+cp "$upload_test_dir/../src/binding/storage_catalog.lua" "$upload_test_dir/src/fixtures/storage_catalog.lua"
+cp "$upload_test_dir/../src/persist/relocation_cleanup_repo.lua" "$upload_test_dir/src/fixtures/relocation_cleanup_repo.lua"
 cp "$upload_test_dir/../src/api/list_uploads.lua" "$upload_test_dir/src/fixtures/list_uploads.lua"
 cp "$upload_test_dir/../src/api/response.lua" "$upload_test_dir/src/fixtures/response.lua"
 cp "$upload_test_dir/../src/api/get_upload.lua" "$upload_test_dir/src/fixtures/get_upload.lua"
