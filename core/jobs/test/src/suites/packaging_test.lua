@@ -117,7 +117,9 @@ local function define_tests()
             local wiring = registry.get("kickside.core.jobs.performance:config")
             local meta = wiring.meta or data_value(wiring, "meta") or {}
             test.eq(meta.binding_id, expected)
-            test.eq(data_value(registry.get("kickside.core.jobs.performance:binding"), "policy").resources, {expected})
+            local resources = data_value(registry.get("kickside.core.jobs.performance:binding"), "policy").resources
+            test.eq(#resources, 1)
+            test.eq(resources[1], expected)
             test.eq(entry_kind(registry.get(expected)), "contract.binding")
         end)
 
