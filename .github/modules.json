@@ -300,31 +300,6 @@
       "pg_database": "kickside_test_inbox",
       "extra_tests": []
     },
-    "platform/jobs-admin": {
-      "path": "platform/jobs-admin",
-      "organization": "kickside",
-      "module": "jobs-admin",
-      "type": "plugin",
-      "visibility": "public",
-      "embed": [
-        "kickside.jobs_admin:ui_fs"
-      ],
-      "targets": [
-        "build",
-        "install",
-        "lint",
-        "test",
-        "ui-test",
-        "lockrefresh",
-        "publish"
-      ],
-      "harness": "test",
-      "profiles": [
-        "postgres"
-      ],
-      "pg_database": "kickside_test_jobs_admin",
-      "extra_tests": []
-    },
     "platform/knowledge": {
       "path": "platform/knowledge",
       "organization": "kickside",

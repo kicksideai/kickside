@@ -20,13 +20,13 @@ $(if $(filter app-main app,$(1)),app/frontend/applications/main,$(if $(filter pl
 endef
 # Deployment output belongs to this Make interface, not to Vite config.
 define fe_build_args
-$(if $(filter app-main app,$(1)),-- --outDir ../../../static/app/main --emptyOutDir,$(if $(filter workflows agents jobs-admin,$(1)),-- --outDir ../static --emptyOutDir,))
+$(if $(filter app-main app,$(1)),-- --outDir ../../../static/app/main --emptyOutDir,$(if $(filter workflows agents,$(1)),-- --outDir ../static --emptyOutDir,))
 endef
 
 # Modules that import @kickside/ui-kit. Their build materializes the package
 # first, because it is not in the repo and not on any npm registry - without it
 # the build dies on ENOENT for the import. Add a module here when it adopts.
-UI_KIT_CONSUMERS := app-main jobs-admin agents automation channel connection hub inbox knowledge mcp models renderers security sessions settings skills transform ui uploads users webhooks widgets workflows
+UI_KIT_CONSUMERS := app-main agents automation channel connection hub inbox knowledge mcp models renderers security sessions settings skills transform ui uploads users webhooks widgets workflows
 # These modules typecheck source imported from platform/widgets/ui via the
 # @widgets path alias. TypeScript resolves that source's bare imports from the
 # widgets package directory, so its local dependencies must exist before any

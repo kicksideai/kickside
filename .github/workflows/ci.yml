@@ -1086,52 +1086,6 @@ jobs:
             cd "$source_root"
             version=$(jq -er --arg path platform/sessions '.[$path]' .release-please-manifest.json)
             wippy publish --config platform/sessions --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.sessions:ui_fs
-        - module: platform/jobs-admin
-          engine: sqlite
-          commands: |
-            set -euo pipefail
-            source_root="$PWD"
-            export TMPDIR="$source_root/.scratch"
-            mkdir -p "$TMPDIR"
-            make install MOD=jobs-admin
-            ( cd platform/jobs-admin/ui && npx --no-install vitest run --config vitest.control.config.ts --maxWorkers=2 )
-            make build MOD=jobs-admin
-            make -C platform/jobs-admin ui-test
-            make -C platform/jobs-admin lockrefresh
-            cd platform/jobs-admin/test
-            mkdir -p .wippy
-            wippy lint --ns kickside.settings --ns 'kickside.settings.*' --set "vars.sqlite_path=$PWD/.wippy/ci.sqlite"
-            wippy test --set "vars.sqlite_path=$PWD/.wippy/ci.sqlite" 2>&1 | tee .wippy-test.log
-            sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
-            awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
-            cd "$source_root"
-            version=$(jq -er --arg path platform/jobs-admin '.[$path] // "0.0.0"' .release-please-manifest.json)
-            wippy publish --config platform/jobs-admin --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.jobs_admin:ui_fs
-        - module: platform/jobs-admin
-          engine: postgres
-          commands: |
-            set -euo pipefail
-            source_root="$PWD"
-            export TMPDIR="$source_root/.scratch"
-            mkdir -p "$TMPDIR"
-            make install MOD=jobs-admin
-            make build MOD=jobs-admin
-            make -C platform/jobs-admin ui-test
-            make -C platform/jobs-admin lockrefresh
-            cd platform/jobs-admin/test
-            databases=()
-            cleanup_databases() { for database in "${databases[@]}"; do dropdb "$database"; done; }
-            trap cleanup_databases EXIT
-            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
-            createdb "$database"
-            databases+=("$database")
-            wippy lint --ns kickside.settings --ns 'kickside.settings.*' --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
-            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
-            sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
-            awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
-            cd "$source_root"
-            version=$(jq -er --arg path platform/jobs-admin '.[$path] // "0.0.0"' .release-please-manifest.json)
-            wippy publish --config platform/jobs-admin --version "$version" --dry-run --create --module-visibility public --module-type plugin --embed kickside.jobs_admin:ui_fs
         - module: platform/settings
           engine: sqlite
           commands: |

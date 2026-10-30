@@ -1,7 +1,0 @@
-organization: kickside
-module: jobs-admin-harness
-type: application
-description: Standalone native Jobs admin integration harness.
-directories:
-  modules: .wippy
-  src: .
