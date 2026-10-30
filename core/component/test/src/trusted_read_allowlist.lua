@@ -41,13 +41,6 @@ M.METHODS = {
 M.SELF_PATH = "core/component/src/component.lua"
 
 M.ALLOW = {
-    ["app/src/app/security/registry/delegation/delegation.lua"] = {
-        list_system = {
-            count = 1,
-            why = "the private host delegation validator checks root existence without returning component metadata or private context",
-            entry = "app.security:delegation_validator",
-        },
-    },
     ["platform/automation/src/declaration_writer.lua"] = {
         get_private_context = {
             count = 1,

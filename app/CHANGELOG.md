@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.27](https://github.com/kicksideai/kickside/compare/kickside-v0.2.26...kickside-v0.2.27) (2026-10-30)
+
+
+### Bug Fixes
+
+* **app:** remove the retired run-as validator and require Security 0.2.20 ([#243](https://github.com/kicksideai/kickside/issues/243)) ([8afbc98](https://github.com/kicksideai/kickside/commit/8afbc9850d3af3064baed5bdaf5ba738b32cff31))
+
 ## [0.2.26](https://github.com/kicksideai/kickside/compare/kickside-v0.2.25...kickside-v0.2.26) (2026-10-29)
 
 
