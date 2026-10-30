@@ -94,7 +94,7 @@ end
 -- register_resource(owner, grantee?, group?) -> a component the owner holds
 -- FULL on, with READ granted to the grantee user and to the group when named.
 local function register_resource(owner: string, grantee: string?, group: string?): string
-    local actor = security.new_actor(owner, { security_groups = { "automation_test" } })
+    local actor = security.new_actor(owner, { security_groups = { "app:automation_test" } })
     local policy = security.policy("app:user")
     local svc = contract.get("kickside.component:component_service")
     local inst = (svc :: any):with_actor(actor):with_scope(security.new_scope({ policy })):open()
@@ -133,7 +133,7 @@ local function define_tests(section: string)
             local who = holders or {}
             local caller = funcs.new()
             if who.actor then
-                caller = caller:with_actor(security.new_actor(who.actor, { security_groups = { "automation_test" } }))
+                caller = caller:with_actor(security.new_actor(who.actor, { security_groups = { "app:automation_test" } }))
                     :with_scope(security.new_scope({ security.policy("app:user") }))
             end
             return caller:call(DELIVER, {
@@ -166,7 +166,7 @@ local function define_tests(section: string)
             for _, id in ipairs({ operator, principal }) do
                 local _, create_err = user_repo.create({ user_id = id, email = id .. "@test.local", password = "testpass123", status = "active" })
                 if create_err then error("create user " .. id .. ": " .. tostring(create_err)) end
-                local assigned, group_err = user_groups_repo.assign_user_to_group(id, "automation_test")
+                local assigned, group_err = user_groups_repo.assign_user_to_group(id, "app:automation_test")
                 if group_err or not assigned then error("assign harness scope: " .. tostring(group_err)) end
             end
             local d, db_err = sql.get(DB)
