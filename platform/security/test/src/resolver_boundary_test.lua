@@ -30,6 +30,50 @@ local function run()
             test.eq(result.selected.policy_ids[1], "app:module_access")
             test.eq(#result.selected.groups, 0)
         end)
+        for _, projected in ipairs({false, true}) do
+            test.it("resolves source compositions before projection: " .. tostring(projected), function()
+                local original = assert(registry.current_version())
+                local group = "app:resolver_source_group"
+                local declaration = "app:resolver_source_composition"
+                if not projected then writer.stop_projector(projector) end
+                local changes = assert(registry.snapshot()):changes()
+                changes:create({id = declaration, kind = "registry.entry",
+                    meta = {type = "kickside.security.group_composition"},
+                    data = {group_id = group, policies = {"app:module_access"}}})
+                if projected then
+                    changes:create({id = "app:resolver_source_native", kind = "security.policy", data = {
+                        groups = {group}, policy = {actions = "read", resources = "app:source_record", effect = "allow"}}})
+                end
+                assert(changes:apply())
+                if projected then
+                    assert(trigger.trigger())
+                    writer.stop_projector(projector)
+                end
+                local ok, failure = pcall(function()
+                    if projected then
+                        changes = assert(registry.snapshot()):changes()
+                        changes:update({id = declaration, kind = "registry.entry",
+                            meta = {type = "kickside.security.group_composition"},
+                            data = {group_id = group, policies = {"app.security:user.app_shell_access"}}})
+                        assert(changes:apply())
+                    end
+                    local selected, err = funcs.call("kickside.security.runtime:resolve_groups", {groups = {group}})
+                    test.is_nil(err, tostring(err))
+                    test.eq(#selected.groups, 0, "a composition is not a native policy group")
+                    test.eq(#selected.policy_ids, 2)
+                    test.eq(selected.policy_ids[1], projected and "app.security:user.app_shell_access" or "app:module_access")
+                    local policies = {}
+                    for _, id in ipairs(selected.policy_ids) do policies[#policies + 1] = assert(security.policy(id)) end
+                    local scope = assert(security.new_scope(policies))
+                    local actor = assert(security.new_actor("source-member"))
+                    test.eq(scope:evaluate(actor, "access", "app:module.endpoint"), projected and "undefined" or "allow")
+                    test.eq(scope:evaluate(actor, "read", "app:source_record"), projected and "allow" or "undefined")
+                end)
+                test.is_true(assert(registry.apply_version(original)))
+                projector = writer.start_projector()
+                if not ok then error(failure) end
+            end)
+        end
         test.it("resolves selected policy IDs when the caller cannot inspect their declarations", function()
             local original = assert(registry.current_version())
             local changes = assert(registry.snapshot()):changes()

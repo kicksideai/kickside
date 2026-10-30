@@ -24,9 +24,15 @@ end
 function M.resolve(groups: any): (any?, error?)
     local input_err = list_error(groups, "groups")
     if input_err then return nil, input_err end
-    local native, policies, authored, slugs, visited, active = {}, {}, {}, {}, {}, {}
+    local snap, snapshot_err = registry.snapshot()
+    if snapshot_err then return nil, snapshot_err end
+    local declared, declaration_err = composition.group_compositions(snap)
+    if declaration_err then return nil, declaration_err end
+    local native_sources, native_err = composition.native_group_policies(snap)
+    if native_err then return nil, native_err end
+    local native, policies, authored, source_policies, slugs, visited, active = {}, {}, {}, {}, {}, {}, {}
     local function read(id)
-        local entry, err = registry.get(id)
+        local entry, err = snap:get(id)
         if err and not errors.is(err, errors.NOT_FOUND) then return nil, err end
         return entry, nil
     end
@@ -44,6 +50,15 @@ function M.resolve(groups: any): (any?, error?)
         end
         local entry, read_err = read(group)
         if read_err then return read_err end
+        local composed = declared.policies[group] ~= nil
+        if composed then
+            for _, policy in ipairs(declared.policies[group]) do policies[policy] = true end
+            for policy in pairs(native_sources[group] or {}) do source_policies[policy] = true end
+            for _, source in ipairs(declared.groups[group] or {}) do
+                local err = visit(source, depth + 1)
+                if err then return err end
+            end
+        end
         if entry and entry.kind == consts.SCOPE_KIND and (entry.meta or {}).managed_by ~= consts.MANAGED_BY then
             local data = entry.data or {}
             local policies_err = list_error(data.policies or {}, "authored scope policies")
@@ -57,24 +72,25 @@ function M.resolve(groups: any): (any?, error?)
                     local err = visit(source, depth + 1)
                     if err then return err end
                 end
-            elseif not projected then
+            elseif not composed and native_sources[group] then
                 native[group] = true
             end
-        elseif not projected then
+        elseif not projected and not composed then
             native[group] = true
         end
         if projected then
             local data = projected.data or {}
-            for _, source in ipairs(data.native_groups or {}) do native[source] = true end
-            for _, source in ipairs(data.groups or {}) do
-                local err = visit(source, depth + 1)
-                if err then return err end
+            if not composed then
+                for _, source in ipairs(data.native_groups or {}) do native[source] = true end
+                for _, source in ipairs(data.groups or {}) do
+                    local err = visit(source, depth + 1)
+                    if err then return err end
+                end
             end
             for _, source in ipairs(data.scope_sources or {}) do
                 slugs[source.slug] = slugs[source.slug] or {}
                 slugs[source.slug][source.group_id] = true
             end
-            for _, policy in ipairs(data.direct_policies or {}) do policies[policy] = true end
         end
         active[group], visited[group] = nil, true
         return nil
@@ -100,12 +116,14 @@ function M.resolve(groups: any): (any?, error?)
         table.sort(out)
         return out
     end
-    local expanded, expand_err = composition.expand_available(ids(policies))
+    local function snapshot_get(id: string): (any?, any?) return snap:get(id) end
+    local expanded, expand_err = composition.expand_available(ids(policies), snapshot_get)
     if expand_err then return nil, expand_err end
-    local declared, declaration_err = composition.expand(ids(authored))
-    if declaration_err then return nil, declaration_err end
+    local selected, selection_err = composition.expand(ids(authored), snapshot_get)
+    if selection_err then return nil, selection_err end
     for _, id in ipairs(expanded) do authored[id] = true end
-    for _, id in ipairs(declared) do authored[id] = true end
+    for _, id in ipairs(selected) do authored[id] = true end
+    for id in pairs(source_policies) do authored[id] = true end
     return {groups = ids(native), policy_ids = ids(authored)}, nil
 end
 return M
