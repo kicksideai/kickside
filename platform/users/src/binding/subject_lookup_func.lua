@@ -67,7 +67,7 @@ local function lookup(args: any, credential: boolean?): any
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
     local live_groups = effective_groups
     local metadata = session_metadata.actor(user, authority_epochs, stored_meta.scope_id or scope_name,
-        live_groups, stored_meta.login_time, stored_meta)
+        live_groups, stored_meta.session or {}, stored_meta)
 
     return {
         authority_epochs = authority_epochs,
