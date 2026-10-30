@@ -24,7 +24,7 @@ entries:
       group: KickSide Core / Lifecycle
     source: file://boot_test.lua
     method: run
-    modules: [process, time, channel, registry, events, sql, security, uuid]
+    modules: [process, time, channel, registry, events, sql, security, uuid, logger]
     imports:
       test: wippy.test:test
       provision: kickside.core.threads:provision
