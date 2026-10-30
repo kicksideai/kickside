@@ -3324,6 +3324,7 @@ entries:
     kind: library.lua
     source: file://wake_native_source.lua
     imports:
+      job_types: kickside.core.jobs:types
       sql: app:wake_native_sql
       clock: app:wake_native_clock
       lifecycle: app:wake_native_lifecycle
