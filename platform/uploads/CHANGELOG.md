@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/kicksideai/kickside/compare/uploads-v0.3.7...uploads-v0.3.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* bound upload invalidation reads in file surfaces ([#269](https://github.com/kicksideai/kickside/issues/269)) ([6a90ddf](https://github.com/kicksideai/kickside/commit/6a90ddf86b813f273b1b0bf1609084c453764ecf))
+
 ## [0.3.7](https://github.com/kicksideai/kickside/compare/uploads-v0.3.6...uploads-v0.3.7) (2026-10-30)
 
 

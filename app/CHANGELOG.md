@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.30](https://github.com/kicksideai/kickside/compare/kickside-v0.2.29...kickside-v0.2.30) (2026-10-30)
+
+
+### Bug Fixes
+
+* **users:** keep per-login facts in the session block of actor metadata ([ea23ac2](https://github.com/kicksideai/kickside/commit/ea23ac223ad67b31e3076930223a5d77cd79b007))
+
 ## [0.2.29](https://github.com/kicksideai/kickside/compare/kickside-v0.2.28...kickside-v0.2.29) (2026-10-30)
 
 

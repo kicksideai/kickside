@@ -20,10 +20,11 @@ local function define_tests()
         local slug = "source_epoch_scope"
         local group = "kickside.security.scopes:" .. slug
         local source = "app:source_epoch_grant"
-        local account, tokens, parent_declaration
+        local account, tokens, parent_declaration, successor_id
 
         test.before_each(function()
             parent_declaration = nil
+            successor_id = nil
             assert(trigger_reconcile.trigger())
             local changes = assert(registry.snapshot()):changes()
             changes:create({id = source, kind = "security.policy", data = {
@@ -40,6 +41,7 @@ local function define_tests()
 
         test.after_each(function()
             if tokens then tokens:close() end
+            if successor_id then assert(user_lifecycle_repo.delete(successor_id)) end
             assert(user_lifecycle_repo.delete(uid))
             assert(scope_store.delete(slug))
             assert(trigger_reconcile.trigger())
@@ -168,16 +170,40 @@ local function define_tests()
             test.eq(scope:evaluate(actor, "source.scope", "app:selected"), "undefined")
         end)
 
-        test.it("removes an overlay grant from its previous target before catalog reconciliation", function()
+        test.it("retires an old target before and after catalog reconciliation", function()
             local minted = assert(session.mint(account))
             local before_actor, before_scope = tokens:validate(minted.token)
             test.eq(before_scope:evaluate(before_actor, "source.scope", "app:selected"), "allow")
             assert(scope_store.upsert({slug = slug, target = "app.security:scope_support", policies = {source}}, "tester"))
             local actor, current, err = tokens:validate(minted.token)
-            test.is_nil(err)
-            test.eq(current:evaluate(actor, "source.scope", "app:selected"), "undefined",
-                "a DB selection cannot keep granting through its previous target descriptor")
+            test.is_nil(actor)
+            test.is_nil(current)
+            test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
+            test.is_false(err:retryable())
             assert(trigger_reconcile.trigger())
+            local retired, retired_err = funcs.call("kickside.users.binding:subject_lookup", {subject_id = uid})
+            test.is_nil(retired_err)
+            test.is_false(retired.success)
+            test.eq(retired.error.kind, errors.NOT_FOUND)
+            test.eq(retired.error_kind, "subject")
+            test.is_false(retired.retriable)
+            test.eq(#retired.groups, 0)
+            local retired_actor, retired_scope, token_err = tokens:validate(minted.token)
+            test.is_nil(retired_actor)
+            test.is_nil(retired_scope)
+            test.is_true(errors.is(token_err, errors.NOT_FOUND), tostring(token_err))
+            test.is_false(token_err:retryable())
+
+            successor_id = uid .. "_target"
+            assert(user_repo.create({user_id = successor_id, email = successor_id .. "@test.local",
+                password = "scope-password", status = "active"}))
+            assert(user_group_sources_repo.set_user_groups(successor_id, {"app.security:scope_support"}))
+            local assigned = assert(user_groups_repo.get_user_with_groups(successor_id))
+            local reminted = assert(session.mint(assigned))
+            local assigned_actor, assigned_scope, assigned_err = tokens:validate(reminted.token)
+            test.is_nil(assigned_err)
+            test.eq(assigned_scope:evaluate(assigned_actor, "source.scope", "app:selected"), "allow",
+                "the new target grants only after it is an actual membership")
         end)
 
         test.it("advances only the authority epoch when a custom membership is added", function()

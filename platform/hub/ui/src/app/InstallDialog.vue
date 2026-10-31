@@ -151,15 +151,12 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
 
             <div class="km-field">
               <label class="km-label">Version</label>
-              <div class="km-row-gap">
-                <PickerSelect
-                  v-model="c.version.value"
-                  class="km-sort km-grow"
-                  :items="c.versionOptions.value.map(o => ({ id: o.value, title: o.label }))"
-                  placeholder="latest"
-                  aria-label="Version"
-                />
-              </div>
+              <PickerSelect
+                v-model="c.version.value"
+                :items="c.versionOptions.value.map(o => ({ id: o.value, title: o.label }))"
+                placeholder="latest"
+                aria-label="Version"
+              />
               <div class="km-seg" role="group" aria-label="Version mode">
                 <button class="km-seg-btn" :aria-pressed="c.versionMode.value === 'pin'" :class="{ active: c.versionMode.value === 'pin' }" @click="c.versionMode.value = 'pin'">
                   <Icon icon="tabler:pin" class="km-i-sm" aria-hidden="true" /> Pin {{ c.version.value || 'latest' }}
@@ -423,7 +420,6 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
               <label class="km-label">Migration policy</label>
               <PickerSelect
                 v-model="c.migrationPolicy.value"
-                class="km-sort km-w-full"
                 :items="c.migrationOptions.value.map(o => ({ id: o.value, title: o.label }))"
                 aria-label="Migration policy"
               />

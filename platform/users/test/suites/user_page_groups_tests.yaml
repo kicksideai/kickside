@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.users
+entries:
+  - name: user_page_groups_test
+    kind: function.lua
+    meta: { type: test, suite: users, comment: "Native bounded page membership reads and fail-closed guards." }
+    source: file://user_page_groups_test.lua
+    method: run
+    security:
+      actor: { id: app:test_runner }
+      policies: [app:test_runtime]
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      list_users: kickside.users.api:list_users
