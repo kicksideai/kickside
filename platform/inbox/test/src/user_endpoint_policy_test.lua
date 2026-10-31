@@ -12,6 +12,7 @@ local function define_tests()
                 "kickside.inbox.api:create_item.endpoint",
                 "kickside.inbox.api:delete_item.endpoint",
                 "kickside.inbox.api:list_inbox.endpoint",
+                "kickside.inbox.api:file_content.endpoint",
                 "kickside.inbox.api:list_item_types.endpoint",
                 "kickside.inbox.api:resolve_item.endpoint",
             }) do

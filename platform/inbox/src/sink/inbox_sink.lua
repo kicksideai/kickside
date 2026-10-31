@@ -144,6 +144,7 @@ local function write(req: any): any
         item_type = item_type,
         title = title,
         content = content,
+        files = input.files,
         priority = priority,
         metadata = metadata_of(input, req),
         source_id = source_id ~= "" and source_id or nil,

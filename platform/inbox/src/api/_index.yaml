@@ -10,6 +10,7 @@ entries:
     modules: [http, json, security]
     imports:
       object_fields: kickside.inbox.persist:object_fields
+      inbox_files: kickside.inbox:inbox_files
       inbox_reader: kickside.inbox.persist:inbox_reader
       inbox_types: kickside.inbox:inbox_types
       inbox_events: kickside.inbox.persist:inbox_events
@@ -20,6 +21,7 @@ entries:
     modules: [http, json, security]
     imports:
       object_fields: kickside.inbox.persist:object_fields
+      inbox_files: kickside.inbox:inbox_files
       inbox_reader: kickside.inbox.persist:inbox_reader
       inbox_types: kickside.inbox:inbox_types
       inbox_events: kickside.inbox.persist:inbox_events
@@ -106,3 +108,20 @@ entries:
     method: DELETE
     func: delete_item
     path: /inbox/{id}
+
+  - name: file_content
+    kind: function.lua
+    meta: { comment: Read one attached file through its content provider as the viewer. }
+    source: file://file_content.lua
+    method: handler
+    modules: [http]
+    imports:
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      inbox_files: kickside.inbox:inbox_files
+      http_errors: kickside.contract:http_errors
+
+  - name: file_content.endpoint
+    kind: http.endpoint
+    method: GET
+    path: /inbox/{id}/files/{index}
+    func: file_content

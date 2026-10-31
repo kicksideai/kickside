@@ -63,7 +63,8 @@ local function run()
 
         test.it("enqueues an item under the security actor", function()
             local res, err = executor(TEST_ACTOR_ID):call(TOOL_ID,
-                { title = "Review needed", content = "ctx", priority = "high" })
+                { title = "Review needed", content = "ctx", priority = "high",
+                    files = { { component_id = "example:content", context = { file_id = "document" } } } })
             test.is_nil(err)
             test.is_true(res.success, "submit failed: " .. tostring(res.error))
             test.not_nil(res.id, "no id returned")
@@ -71,6 +72,7 @@ local function run()
             local item_id = tostring(res.id)
             local item = wait_item(TEST_ACTOR_ID, item_id)
             test.not_nil(item, "item not found in inbox")
+            test.eq(item.files[1].context.file_id, "document")
             test.eq((item :: { title: any }).title, "Review needed", "title not persisted")
             test.eq((item :: { priority: any }).priority, "high", "priority not persisted")
             test.eq((item :: { actor_id: any }).actor_id, TEST_ACTOR_ID, "actor_id not persisted")

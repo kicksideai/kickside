@@ -215,6 +215,7 @@ local function run()
                     content = "Review generated plan\n\nStep details.",
                     content_type = "text/plain",
                     metadata = { source = "sink-test" },
+                    files = { { component_id = "example:content", context = { file_id = "document" } } },
                 },
                 idempotency_key = "inbox-sink-idempotent-1",
                 trace_context = trace_context,
@@ -237,6 +238,7 @@ local function run()
             test.eq(item.title, "[Flow] Review generated plan")
             test.eq(item.priority, "high")
             test.eq(item.metadata.source, "sink-test")
+            test.eq(item.files[1].context.file_id, "document")
             test.eq(item.metadata.dedup_key, "inbox-sink-idempotent-1")
             test.eq(item.metadata.content_type, "text/plain")
             test.eq(item.trace_context.trace_id, trace_context.trace_id)

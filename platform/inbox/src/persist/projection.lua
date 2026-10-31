@@ -50,6 +50,7 @@ local function apply(items: any, ev: any): any?
             item_type = body.item_type,
             title = body.title,
             content = body.content,
+            files = body.files,
             metadata = md,
             metadata_json = encoded,
             source_id = body.source_id,
@@ -77,6 +78,7 @@ local function apply(items: any, ev: any): any?
             it.item_type = body.item_type or it.item_type
             it.title = body.title or it.title
             it.content = body.content
+            if body.files ~= nil then it.files = body.files end
             it.priority = body.priority or it.priority
             it.source_id = body.source_id
             it.metadata = object_fields.object(body.metadata)

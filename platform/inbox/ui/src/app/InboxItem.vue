@@ -11,6 +11,7 @@ import Tag from 'primevue/tag'
 import { loadByTagName } from '@wippy-fe/proxy'
 import { relativeTime } from '@widgets/app/datetime'
 import type { Item } from './item'
+import ItemFiles from './ItemFiles.vue'
 import { statusLabel, humanizeItemType } from './labels'
 import { humanizeKey, formatContext, decisionFields, defaultFormValues, missingRequired } from './decision'
 
@@ -244,6 +245,7 @@ watch(() => [props.tag, props.item.id], () => { wcFailed.value = false; void mou
           </div>
         </dl>
       </div>
+      <ItemFiles v-if="item.file_count || item.files?.length" :key="item.id" :item-id="item.id" :files="item.files" :count="item.file_count" :version="item.file_version" />
     </div>
 
     <footer class="kx-detail-foot">

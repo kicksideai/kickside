@@ -43,6 +43,7 @@ entries:
           "type": "object",
           "properties": {
             "title": { "type": "string", "description": "Short summary shown in the inbox" },
+            "files": {"type": "array", "description": "File references resolved by content_provider under the viewer identity.", "items": {"type": "object", "additionalProperties": false, "properties": {"component_id": {"type": "string", "minLength": 1}, "context": {"type": "object"}, "title": {"type": "string"}}, "required": ["component_id"]}},
             "content": { "type": "string", "description": "Detail and context for the reviewer" },
             "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "description": "Defaults to normal" },
             "item_type": { "type": "string", "description": "Declared inbox item type; defaults to notice" },
