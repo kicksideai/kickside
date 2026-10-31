@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       source_tag:
-        description: Published application release tag
+        description: Published application tag with the app release-build target
         type: string
         required: true
       runtime_version:
@@ -56,6 +56,16 @@ jobs:
         ref: ${{ inputs.source_tag }}
         persist-credentials: false
         path: source
+    - name: Verify the source build interface
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${SOURCE_TAG#kickside-v}"
+        if ! make -C source/app --dry-run release-build VERSION="$version" WIPPY_BIN=wippy > "$RUNNER_TEMP/deployment-build-interface.log" 2>&1; then
+          cat "$RUNNER_TEMP/deployment-build-interface.log" >&2
+          echo 'The selected release must provide app/release-build for complete frontend packaging.' >&2
+          exit 1
+        fi
     - name: Freeze compatible application dependencies
       shell: bash
       run: |
