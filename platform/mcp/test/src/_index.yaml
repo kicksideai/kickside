@@ -16,6 +16,7 @@ entries:
     imports:
       test: wippy.test:test
       mcp_repo: kickside.mcp.persist:repo
+      owner_hooks: kickside.core.retention.service:owner_hooks
   - name: dep.wippy.test
     kind: ns.dependency
     component: wippy/test
