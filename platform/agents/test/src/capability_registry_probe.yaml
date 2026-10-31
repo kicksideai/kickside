@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.agents
+entries:
+  - name: capability_registry_probe
+    kind: function.lua
+    source: file://capability_registry_probe.lua
+    method: run
+    modules: [registry]
+    imports:
+      capability_context: kickside.agents.traits:capability_context
+      user_agents: kickside.agents.binding:user_agents_func

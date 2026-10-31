@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/kicksideai/kickside/compare/agents-v0.2.7...agents-v0.2.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* **agents:** preserve capability registry read errors ([#248](https://github.com/kicksideai/kickside/issues/248)) ([7c17773](https://github.com/kicksideai/kickside/commit/7c17773cf1b486c075aa9d59d8dba32978a75570))
+
 ## [0.2.7](https://github.com/kicksideai/kickside/compare/agents-v0.2.6...agents-v0.2.7) (2026-10-28)
 
 

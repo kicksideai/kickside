@@ -43,9 +43,6 @@ function resources.get_storage(storage_id: string?, query_db: any?)
 end
 
 function resources.storage_entry(storage_id: string): (any?, any?)
-    if storage_id == "uploads.s3" then
-        storage_id = select(1, env.get(ENV.STORAGE_S3)) :: string
-    end
     local entry, err = registry.get(storage_id)
     if err then return nil, binding_errors.from(err, errors.UNAVAILABLE, "storage_entry_unavailable") end
     return entry

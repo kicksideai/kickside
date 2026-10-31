@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/users-v0.2.16...users-v0.2.17) (2026-10-31)
+
+
+### Performance Improvements
+
+* **users:** batch memberships for a listed user page ([#271](https://github.com/kicksideai/kickside/issues/271)) ([73e0b19](https://github.com/kicksideai/kickside/commit/73e0b19cd693f5e19f4bc57e43a3ac63f3b33d3f))
+
+## [0.2.16](https://github.com/kicksideai/kickside/compare/users-v0.2.15...users-v0.2.16) (2026-10-30)
+
+
+### Bug Fixes
+
+* **users:** keep per-login facts in the session block of actor metadata ([ea23ac2](https://github.com/kicksideai/kickside/commit/ea23ac223ad67b31e3076930223a5d77cd79b007))
+
+## [0.2.15](https://github.com/kicksideai/kickside/compare/users-v0.2.14...users-v0.2.15) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve only live group authority ([402ec62](https://github.com/kicksideai/kickside/commit/402ec625779094efa1df0b57a83bedc0b3e32c55))
+
 ## [0.2.14](https://github.com/kicksideai/kickside/compare/users-v0.2.13...users-v0.2.14) (2026-10-29)
 
 

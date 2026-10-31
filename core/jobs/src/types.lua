@@ -127,6 +127,9 @@ M.RUN_STATE = {
     PARKED = "parked",
 }
 
+-- Wake fanout instead runs this built-in type, which has no registry worker.
+M.WAKE_CONTINUATION_TYPE = "kickside.wake.continuation"
+
 -- Optional generic job worker URI. A job with worker_ref is executed by the
 -- core job engine under the worker frame; the target resolves the execution
 -- identity held by its own record.

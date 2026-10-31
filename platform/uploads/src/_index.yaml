@@ -442,7 +442,7 @@ entries:
     default: kickside.uploads.binding:storage_adapter_default
     meta:
       value_kind: library.lua
-      description: Optional native file adapter library. get(storage_id, db_id, staging_id, legacy_cloud_id,
+      description: Optional native file adapter library. get(storage_id, db_id, staging_id, cloud_id,
         query_db) returns a filesystem-compatible adapter. The default uses the host filesystem.
     targets:
     - entry: kickside.uploads.binding:uploads_resources

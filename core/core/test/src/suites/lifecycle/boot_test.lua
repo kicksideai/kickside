@@ -9,6 +9,14 @@ local security = require("security")
 local uuid = require("uuid")
 local provision = require("provision")
 local consts = require("lifecycle_consts")
+local logger = require("logger"):named("kickside.lifecycle")
+
+local function log_pid(data: any): string?
+    for _, field in ipairs(data.fields) do
+        if field.key == "pid" then return field.string end
+    end
+    return nil
+end
 
 local function define_tests()
     test.describe("lifecycle boot shutdown", function()
@@ -72,9 +80,12 @@ local function define_tests()
             subscription = assert(events.subscribe("logs", "logs.entry"))
             local logs = subscription:channel()
             local process_events = process.events()
+            -- The shared stream carries resident logs from other processes.
+            logger:info("system lifecycle resident")
             child = assert(process.spawn_monitored("kickside.core.lifecycle:boot_process", "app:processes"))
             local function await_resident()
                 local deadline = time.after("3s")
+                local failed = false
                 while true do
                     local selected = channel.select({ logs:case_receive(), process_events:case_receive(), deadline:case_receive() })
                     if selected.channel == process_events then
@@ -82,10 +93,18 @@ local function define_tests()
                         error("boot exits before convergence can retry: " .. tostring(selected.value.result.value))
                     end
                     test.eq(selected.channel, logs, "boot does not become resident")
-                    if selected.value.data.entry.message == "system lifecycle resident" then return end
+                    local data = selected.value.data
+                    if log_pid(data) == tostring(child) then
+                        if data.entry.message == "system lifecycle convergence failed" then failed = true end
+                        if data.entry.message == "system lifecycle resident" then return failed end
+                    end
                 end
             end
-            await_resident()
+            test.eq(await_resident(), true, "monitored boot reports failed convergence before becoming resident")
+            db = assert(sql.get("app:db"))
+            local refused = assert(db:query("SELECT event_hot_retention_days FROM kickside_retention_policy WHERE thread_id=$1", { id }))
+            db:release()
+            test.eq(tonumber(refused[1].event_hot_retention_days), declared_days + 1)
             drop_refusal()
             original = assert(registry.current_version())
             local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
@@ -93,9 +112,10 @@ local function define_tests()
             local changes = snapshot:changes()
             entry.meta.comment = tostring(entry.meta.comment or "") .. " contract audit " .. uuid.v7()
             changes:update(entry)
+            logger:info("system lifecycle resident")
             local _, upgrade_err = changes:apply()
             test.is_nil(upgrade_err)
-            await_resident()
+            test.eq(await_resident(), false, "upgraded boot converges without failure")
             db = assert(sql.get("app:db"))
             local repaired = assert(db:query("SELECT event_hot_retention_days FROM kickside_retention_policy WHERE thread_id=$1", { id }))
             db:release()
