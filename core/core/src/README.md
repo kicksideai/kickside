@@ -42,7 +42,8 @@ bounded batch, returning `{success = true, deleted = count}` with optional
 `needs_continue`, `blocked` and `deadline_ms` fields.
 
 `deadline_ms` is the owner's earliest remaining eligibility time as a finite,
-nonnegative integer of UTC Unix milliseconds. Recompute the global owner deadline
+nonnegative integer of UTC Unix milliseconds that the runtime timer can represent.
+Recompute the global owner deadline
 on every invocation, including scoped hints; omit it when no owned rows need a
 future wake. Core combines healthy owners' deadlines with its own next deadline
 and uses the existing timer. Owners that omit the field keep their existing

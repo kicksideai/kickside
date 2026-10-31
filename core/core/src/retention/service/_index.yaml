@@ -30,7 +30,7 @@ entries:
     meta:
       comment: Dispatch public retention operations declared by table owners.
     source: file://owner_hooks.lua
-    modules: [registry, funcs, sql]
+    modules: [registry, funcs, sql, time]
     imports:
       migration_repository: wippy.migration:repository
 

@@ -2010,6 +2010,7 @@ entries:
   - name: owner_discovery_native_source
     kind: library.lua
     source: file://owner_discovery_native_source.lua
+    modules: [time]
     imports:
       registry: app:owner_discovery_native_registry_adapter
       sql: app:owner_discovery_native_sql_adapter

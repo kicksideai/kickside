@@ -70,7 +70,7 @@ return {run = test.run_cases(function()
         for _, input in ipairs({{name = "negative", value = -1}, {name = "fraction", value = 1.5},
             {name = "boolean", value = false}, {name = "text", value = "3000"}, {name = "table", value = {}},
             {name = "infinity", value = math.huge}, {name = "negative infinity", value = -math.huge},
-            {name = "NaN", value = 0/0}}) do
+            {name = "NaN", value = 0/0}, {name = "timer overflow", value = 9e18}}) do
             test.it("isolates an invalid deadline and retains a healthy owner's deadline/" .. input.name, function()
                 fixture.reset("", nil, false, nil)
                 fixture.owners = {{id = "fixture:first"}, {id = "fixture:second"}}

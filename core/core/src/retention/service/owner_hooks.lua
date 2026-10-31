@@ -4,6 +4,7 @@ local registry = require("registry")
 local funcs = require("funcs")
 local sql = require("sql")
 local migration_repository = require("migration_repository")
+local time = require("time")
 
 local M = {}
 local META_TYPE = "kickside.retention.owner"
@@ -173,6 +174,15 @@ local function invoke(owner: Owner, definitions: table[], ledgers: { [string]: A
         or deadline ~= math.floor(deadline) or deadline == math.huge) then
         return nil, invalid_response("retention owner " .. owner.id .. " returned invalid deadline",
             "retention.owner.deadline_ms", owner.id)
+    end
+    if deadline ~= nil then
+        local now_ms = math.floor(time.now():unix_nano() / 1000000)
+        local delay_ms = math.max(1, math.ceil(deadline - now_ms))
+        local _, duration_err = time.parse_duration(tostring(delay_ms) .. "ms")
+        if duration_err then
+            return nil, invalid_response("retention owner " .. owner.id .. " returned an unrepresentable deadline",
+                "retention.owner.deadline_ms", owner.id)
+        end
     end
     return math.floor(result.deleted) :: integer, nil, result.needs_continue == true, result.blocked, deadline :: integer?
 end
