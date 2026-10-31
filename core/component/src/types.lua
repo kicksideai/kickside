@@ -8,6 +8,14 @@ local M = {}
 
 M.DB_CONFIG = "kickside.component:db_config"
 
+-- Bound one deletable attempt and unregister; bounded continuations release early.
+M.DELETE_LEASE_SECONDS = 60
+
+function M.lease_lost_error(): error
+    return errors.new({message = "component delete lease lost", kind = errors.CONFLICT,
+        retryable = false, details = {code = "LEASE_LOST"}})
+end
+
 -- Resolve the same requirement-injected resource used by the migrations. Keeping
 -- the value in a registry entry makes namespace dependency remapping authoritative
 -- for both schema setup and every runtime read/write.

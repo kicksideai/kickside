@@ -6,8 +6,8 @@ local cases = {
     {name = "dialect", stage = "dialect", run = function(db) return ops.fence(db, component_id, ops.db_id()) end},
     {name = "fence query", stage = "query", run = function(db) return ops.fence(db, component_id, ops.db_id()) end},
     {name = "summary query", stage = "query", run = function(db) local _, err = ops.component_summary_tx(db, component_id); return err end},
-    {name = "set delete mark", stage = "execute", run = function(db) return ops.mark_deleting_tx(db, component_id, true) end},
-    {name = "clear delete mark", stage = "execute", run = function(db) return ops.mark_deleting_tx(db, component_id, false) end},
+    {name = "set delete mark", stage = "execute", run = function(db) return ops.mark_deleting_tx(db, component_id, true, "lease-token") end},
+    {name = "clear delete mark", stage = "execute", run = function(db) return ops.mark_deleting_tx(db, component_id, false, "lease-token") end},
 }
 return {run = test.run_cases(function()
     test.describe("native component mutation fence dependencies", function()
@@ -72,7 +72,7 @@ return {run = test.run_cases(function()
                             return {{component_id = component_id, deleting_at = nil}}, nil
                         end,
                         execute = function() writes = writes + 1; return {rows_affected = 1}, nil end}
-                    test.is_nil(entry.run(db))
+                    test.is_nil((entry.run(db)))
                     test.eq(queries, entry.stage == "execute" and 0 or 1)
                     test.eq(writes, entry.stage == "execute" and 1 or 0)
                 end)

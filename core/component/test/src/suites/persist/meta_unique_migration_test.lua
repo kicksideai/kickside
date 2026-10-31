@@ -2,14 +2,15 @@ local test = require("test")
 local sql = require("sql")
 local funcs = require("funcs")
 local uuid = require("uuid")
+local registry = require("registry")
 
 local DATABASE = "app:metadata_migration_db"
 local PREFIX = "kickside.component.migrations:"
 local UNIQUE = "13_unique_component_meta"
 
-local function migrate(name: string, direction: string?): any
+local function migrate(name: string, direction: string?, database_id: string?): any
     local result, err = funcs.call(PREFIX .. name, {
-        database_id = DATABASE, id = name, direction = direction or "up",
+        database_id = database_id or DATABASE, id = name, direction = direction or "up",
     })
     test.is_nil(err)
     return result
@@ -105,6 +106,86 @@ local function define_tests()
             execute(db, "DELETE FROM kickside_components")
             db:release()
             test.eq(migrate(UNIQUE).failed, 0)
+        end)
+        test.it("adds delete leases to existing data and resumes a partially applied migration", function()
+            local db = assert(sql.get(DATABASE))
+            local cid = seed(db, 1)
+            local metadata_before = rows(db)
+            execute(db, "UPDATE kickside_components SET deleting_at='2026-01-01T00:00:00Z' WHERE component_id=$1", {cid})
+            local before, read_err = db:query("SELECT * FROM kickside_components WHERE component_id=$1", {cid})
+            test.is_nil(read_err)
+            execute(db, "ALTER TABLE kickside_components ADD COLUMN lease_token TEXT")
+            db:release()
+            test.eq(migrate("14_delete_lease").failed, 0)
+            test.eq(migrate("14_delete_lease").failed, 0)
+            db = assert(sql.get(DATABASE))
+            local after, after_err = db:query("SELECT * FROM kickside_components WHERE component_id=$1", {cid})
+            test.is_nil(after_err)
+            for key, value in pairs(before[1]) do test.eq(after[1][key], value, key) end
+            test.is_nil(after[1].lease_token)
+            test.is_nil(after[1].lease_until)
+            local metadata_after = rows(db)
+            test.eq(#metadata_after, 1)
+            for key, value in pairs(metadata_before[1]) do test.eq(metadata_after[1][key], value, key) end
+            execute(db, "DELETE FROM kickside_component_meta")
+            execute(db, "DELETE FROM kickside_components")
+            db:release()
+        end)
+
+        test.it("resumes delete lease migration on the PostgreSQL table selected by search_path", function()
+            local admin = assert(sql.get(DATABASE))
+            if admin:type() ~= sql.type.POSTGRES then admin:release(); return end
+            local suffix = uuid.v7():gsub("-", "")
+            local empty_schema = "lease_empty_" .. suffix
+            local owner_schema = "lease_owner_" .. suffix
+            local database_id = "app:lease_migration_" .. suffix
+            execute(admin, 'CREATE SCHEMA "' .. empty_schema .. '"')
+            execute(admin, 'CREATE SCHEMA "' .. owner_schema .. '"')
+            local registered = false
+            local isolated: any = nil
+            local ok, failure = pcall(function()
+                execute(admin, 'CREATE TABLE "' .. owner_schema .. '".kickside_components'
+                    .. ' (component_id TEXT PRIMARY KEY, lease_token TEXT)')
+                execute(admin, 'INSERT INTO "' .. owner_schema .. '".kickside_components'
+                    .. " (component_id, lease_token) VALUES ('existing', 'preserved')")
+                local entry = assert(registry.get(DATABASE))
+                entry.id = database_id
+                entry.data.options = entry.data.options or {}
+                entry.data.options.search_path = empty_schema .. "," .. owner_schema
+                local changes = assert(registry.snapshot()):changes()
+                changes:create(entry)
+                local applied, apply_err = changes:apply()
+                test.is_nil(apply_err)
+                test.ok(applied)
+                registered = true
+
+                local migrated = migrate("14_delete_lease", "up", database_id)
+                test.eq(migrated.failed, 0, tostring(migrated.error))
+                isolated = assert(sql.get(database_id))
+                local after, read_err = isolated:query("SELECT component_id, lease_token, lease_until FROM kickside_components")
+                test.is_nil(read_err)
+                test.eq(#after, 1)
+                test.eq(after[1].component_id, "existing")
+                test.eq(after[1].lease_token, "preserved")
+                test.is_nil(after[1].lease_until)
+                -- Exercise the migration body again, rather than a ledger skip.
+                execute(isolated, "DELETE FROM _migrations WHERE id=$1", {"14_delete_lease"})
+                isolated:release()
+                isolated = nil
+                test.eq(migrate("14_delete_lease", "up", database_id).failed, 0)
+            end)
+            if isolated then isolated:release() end
+            if registered then
+                local cleanup = assert(registry.snapshot()):changes()
+                cleanup:delete(database_id)
+                local removed, remove_err = cleanup:apply()
+                test.is_nil(remove_err)
+                test.ok(removed)
+            end
+            execute(admin, 'DROP SCHEMA "' .. empty_schema .. '" CASCADE')
+            execute(admin, 'DROP SCHEMA "' .. owner_schema .. '" CASCADE')
+            admin:release()
+            if not ok then error(failure, 0) end
         end)
     end)
 end

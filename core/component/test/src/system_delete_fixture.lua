@@ -17,13 +17,15 @@ function M.reader()
 end
 function M.begin_delete(id, user, policy)
     M.begins = M.begins + 1; M.user, M.policy = user, policy
+    if M.stage == "busy" then return false, "busy", nil end
     if M.stage == "preflight" then return false, "transaction", M.source, true end
-    return true, nil, nil, true
+    return true, nil, nil, true, "lease-token"
 end
 function M.run_deletable(...) M.cleanups = M.cleanups + 1
     if M.stage == "cleanup" then return true, false, M.source end
     return true, true, nil
 end
+function M.release_delete() return M.abandon_source end
 function M.abandon_delete(...) M.abandons = M.abandons + 1; return M.abandon_source end
 function M.unregister(...) M.unregisters = M.unregisters + 1
     if M.stage == "unregister" then return nil, "transaction", M.source end

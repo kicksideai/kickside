@@ -41,6 +41,12 @@ return {run = test.run_cases(function()
                 end)
             end
         end
+        test.it("returns busy without cleanup when another attempt holds the lease", function()
+            fixture.reset("busy", nil)
+            local ok, err, busy = component.system_delete("component")
+            test.is_false(ok); test.is_nil(err); test.is_true(busy)
+            test.eq(fixture.cleanups, 0); test.eq(fixture.unregisters, 0); test.eq(fixture.abandons, 0)
+        end)
         test.it("absent component remains an idempotent no-op", function()
             fixture.reset("", nil); fixture.absent = true; local ok, err = component.system_delete("component", "reparent_root")
             test.is_true(ok); test.is_nil(err); test.eq(fixture.begins, 0); test.eq(fixture.cleanups, 0); test.eq(fixture.unregisters, 0)

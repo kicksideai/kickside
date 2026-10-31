@@ -361,7 +361,8 @@ end
 -- components. Request paths must use the access-gated component_service `delete`.
 -- Idempotent: an already-removed component is a successful no-op, so a retried reap
 -- never errors. The deletable runs under the ambient (system) actor + scope.
-local function system_delete(component_id: string, child_policy: string?): (boolean, error?)
+-- A live delete lease returns (false, nil, true); its holder completes the work.
+local function system_delete(component_id: string, child_policy: string?): (boolean, error?, boolean?)
     if type(component_id) ~= "string" or component_id == "" then
         return false, (errors.new({ message = "component_id is required", kind = errors.INVALID }) :: error)
     end
@@ -378,8 +379,9 @@ local function system_delete(component_id: string, child_policy: string?): (bool
         return true, nil
     end
 
-    local preflight_ok, preflight_step, preflight_err, owns_fence = teardown.begin_delete(component_id, nil, child_policy)
+    local preflight_ok, preflight_step, preflight_err, owns_fence, lease_token = teardown.begin_delete(component_id, nil, child_policy)
     if not preflight_ok then
+        if preflight_step == "busy" and preflight_err == nil then return false, nil, true end
         return false, envelope.call_error(preflight_err, "system_delete preflight (" .. tostring(preflight_step) .. ")")
     end
 
@@ -387,19 +389,21 @@ local function system_delete(component_id: string, child_policy: string?): (bool
     -- difference is the nil gate_user_id, so no DELETE access check is applied. A declared
     -- deletable that fails to open or clean up is a hard stop: unregistering now would
     -- orphan its side data, so the reap fails and the reaper's durable retry re-runs it.
-    local declared, cleanup_success, cleanup_err = teardown.run_deletable(component, security.actor(), security.scope(), component_id)
+    local declared, cleanup_success, cleanup_err = teardown.run_deletable(component, security.actor(), security.scope(), component_id, nil, lease_token)
     if declared and not cleanup_success then
         cleanup_err = teardown.retain_failed_delete(cleanup_err, owns_fence)
         if teardown.cleanup_pending(cleanup_err) then
+            local release_err = teardown.release_delete(component_id, lease_token :: string)
+            if release_err then return false, error_envelope.wrap_secondary(release_err, cleanup_err, "release component delete lease") end
             return false, cleanup_err
         end
-        local abandon_err = teardown.abandon_delete(component_id)
+        local abandon_err = teardown.abandon_delete(component_id, lease_token :: string)
         if abandon_err then
             cleanup_err = error_envelope.wrap_secondary(abandon_err, cleanup_err, "the delete mark stays")
         end
         return false, envelope.call_error(cleanup_err, "system_delete deletable cleanup failed")
     end
-    local released, step, err = teardown.unregister(component_id, child_policy)
+    local released, step, err = teardown.unregister(component_id, child_policy, lease_token :: string)
     if step == "purge" and released ~= nil then
         -- The component is released; only the thread reap failed. The release
         -- stands — an unreferenced thread is inert and its events age out under

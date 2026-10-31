@@ -2,6 +2,7 @@
 -- whose kind cleanup stopped between pages or whose caller crashed. The core
 -- retention service retries one bounded page after an eligibility change.
 local sql = require("sql")
+local time = require("time")
 local component_types = require("component_types")
 local component = require("component")
 local teardown = require("teardown")
@@ -25,12 +26,14 @@ function M.run(limit: integer, owner_id: string?): (integer?, error?, boolean?, 
     -- A released owner must not sit behind another page of live leases. The
     -- delete mark is the authority; unrelated owner ids are harmless misses.
     local query = "SELECT component_id FROM kickside_components WHERE deleting_at IS NOT NULL"
-    local params: { any } = { limit }
-    local limit_sql = "$1"
+        .. " AND (lease_until IS NULL OR lease_until < $1)"
+    local now = time.now():utc():format_rfc3339()
+    local params: { any } = { now, limit }
+    local limit_sql = "$2"
     if owner_id ~= nil then
-        query = query .. " AND CAST(component_id AS TEXT)=$1"
-        params = { owner_id, limit }
-        limit_sql = "$2"
+        query = query .. " AND CAST(component_id AS TEXT)=$2"
+        params = { now, owner_id, limit }
+        limit_sql = "$3"
     end
     local rows, read_err = db:query(query .. " ORDER BY deleting_at,component_id LIMIT " .. limit_sql, params)
     read_err = error_envelope.cleanup(function(): (any, error?) return db:release() end, read_err, "release component cleanup database")
@@ -46,9 +49,11 @@ function M.run(limit: integer, owner_id: string?): (integer?, error?, boolean?, 
         end
         -- The original request already passed the child-policy gate before it
         -- committed deleting_at. Reparenting is inert when there are no children.
-        local ok, err = component.system_delete(row.component_id, "reparent_root")
+        local ok, err, busy = component.system_delete(row.component_id, "reparent_root")
         local pending, continuation = teardown.cleanup_pending(err)
-        if err == nil and ok == true then removed = removed + 1
+        if busy == true then
+            -- Another caller claims the lease between scan and begin_delete.
+        elseif err == nil and ok == true then removed = removed + 1
         elseif pending then
             if ok then removed = removed + 1 end
             if continuation then

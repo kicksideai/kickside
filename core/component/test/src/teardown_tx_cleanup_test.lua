@@ -5,8 +5,8 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
     errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}
 local function invoke(operation: string): (any, string?, error?)
     if operation == "begin" then return teardown.begin_delete("component", "actor", nil) end
-    if operation == "unregister" then return teardown.unregister("component", nil) end
-    return nil, nil, teardown.abandon_delete("component")
+    if operation == "unregister" then return teardown.unregister("component", nil, "lease-token") end
+    return nil, nil, teardown.abandon_delete("component", "lease-token")
 end
 local function native(actual: error?, source: error)
     test.not_nil(actual); test.eq(actual:kind(), source:kind()); test.eq(actual:retryable(), source:retryable())
