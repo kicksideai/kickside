@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local refresh_schedule = require("refresh_schedule")
 local pending_delete = require("pending_delete")
 local M = { removed = 0 }
