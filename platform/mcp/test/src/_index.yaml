@@ -12,7 +12,7 @@ entries:
     meta: {type: test, suite: kickside_mcp}
     source: file://policy_retirement_upgrade_test.lua
     method: run
-    modules: [sql, json, funcs, uuid, security]
+    modules: [sql, json, funcs, uuid, security, time]
     imports:
       test: wippy.test:test
       mcp_repo: kickside.mcp.persist:repo
