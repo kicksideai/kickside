@@ -50,6 +50,9 @@ local function base_config(node: Map, blocks: Map): (Map?, string?, string?)
         local plan, plan_err = M._blocks.plan_descriptor(block, {
             def_node_id = node.def_id,
             config = cfg,
+            retry_policy = node.retry_policy,
+            start_to_close_timeout = node.start_to_close_timeout,
+            schedule_to_close_timeout = node.schedule_to_close_timeout,
         })
         if not plan then return nil, nil, plan_err end
         return (plan :: Map).config :: Map, str((plan :: Map).node_type), nil

@@ -72,6 +72,24 @@ function M.mark_materialized(names, revision)
     return true, nil
 end
 
+-- Read one registered legacy set by its owned identity. Projections are not
+-- authoritative for whether a composition or a registered set still exists.
+function M.get(name)
+    if type(name) ~= "string" or name == "" then return nil, (errors.new({kind = errors.INVALID, retryable = false, message = "group set name is required"}) :: error) end
+    local id, config_err = consts.db_id()
+    if config_err then return nil, config_err end
+    local db, db_err = sql.get(id)
+    if db_err then return nil, (errors.wrap(db_err, "group set persistence failed") :: error) end
+    local rows, read_err = db:query("SELECT scope_name, groups_json FROM kickside_security_group_sets WHERE scope_name=$1", {name})
+    db:release()
+    if read_err then return nil, (errors.wrap(read_err, "group set persistence failed") :: error) end
+    local row = rows and rows[1]
+    if not row then return nil, nil end
+    local groups, decode_err = persisted_json.decode_table(row.groups_json, "kickside_security_group_sets.groups_json")
+    if decode_err then return nil, decode_err end
+    return {scope_name = row.scope_name, groups = groups}, nil
+end
+
 function M.list()
     local id, config_err = consts.db_id()
     if config_err then return nil, config_err end

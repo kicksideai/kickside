@@ -204,7 +204,8 @@ local function resolve(input)
     end
 
     local trait_contexts = curator_specs.copy_trait_contexts(private_ctx.trait_contexts)
-    local context_validation = capability_context.validate_trait_contexts(private_ctx.traits, trait_contexts, registry.get)
+    local context_validation, context_err = capability_context.validate_trait_contexts(private_ctx.traits, trait_contexts, registry.get)
+    if context_err then return nil, context_err end
     if context_validation.ok ~= true then
         return nil, errors.new({
             kind = errors.INVALID,

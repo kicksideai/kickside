@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.2.23](https://github.com/kicksideai/kickside/compare/security-v0.2.22...security-v0.2.23) (2026-10-30)
+
+
+### Bug Fixes
+
+* **users:** keep per-login facts in the session block of actor metadata ([ea23ac2](https://github.com/kicksideai/kickside/commit/ea23ac223ad67b31e3076930223a5d77cd79b007))
+
+## [0.2.22](https://github.com/kicksideai/kickside/compare/security-v0.2.21...security-v0.2.22) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve only live group authority ([402ec62](https://github.com/kicksideai/kickside/commit/402ec625779094efa1df0b57a83bedc0b3e32c55))
+
+## [0.2.21](https://github.com/kicksideai/kickside/compare/security-v0.2.20...security-v0.2.21) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve live compositions before projection ([#255](https://github.com/kicksideai/kickside/issues/255)) ([f2db3b4](https://github.com/kicksideai/kickside/commit/f2db3b47a6bc809c500e0d3127418286aa77fb42))
+
+## [0.2.20](https://github.com/kicksideai/kickside/compare/security-v0.2.19...security-v0.2.20) (2026-10-30)
+
+
+### Features
+
+* **security:** simplify run-as permission management ([#175](https://github.com/kicksideai/kickside/issues/175)) ([42029e5](https://github.com/kicksideai/kickside/commit/42029e5d756361a8c42cfa8dc737138c2c3079c0))
+
+## [0.2.19](https://github.com/kicksideai/kickside/compare/security-v0.2.18...security-v0.2.19) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** isolate role source reads from caller denials ([#233](https://github.com/kicksideai/kickside/issues/233)) ([3ab6915](https://github.com/kicksideai/kickside/commit/3ab6915c56448b63a525ddcf1f8e1f7c460b4d7a))
+
+## [0.2.18](https://github.com/kicksideai/kickside/compare/security-v0.2.17...security-v0.2.18) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** preserve native delegation through composed roles ([#218](https://github.com/kicksideai/kickside/issues/218)) ([80c8747](https://github.com/kicksideai/kickside/commit/80c87475c238d8782ad422aafef249ea24b12a2b))
+
 ## [0.2.17](https://github.com/kicksideai/kickside/compare/security-v0.2.16...security-v0.2.17) (2026-10-28)
 
 

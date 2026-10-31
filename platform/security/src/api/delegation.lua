@@ -2,9 +2,9 @@ local delegation = require("delegation")
 local http = require("http")
 local json = require("json")
 local api_errors = require("api_errors")
-local M = {save = delegation.save, revoke = delegation.revoke, list = delegation.list}
+local M = {save = delegation.save, revoke = delegation.revoke, list = delegation.list, roots = delegation.roots}
 
-local function handler(operation: (any) -> (any?, error?), writes: boolean)
+local function handler(operation: (any) -> (any?, error?), writes: boolean, paged: boolean?)
     local res, req, context_err = api_errors.context()
     if context_err then return nil, context_err end
     local prepare_err = api_errors.prepare(res)
@@ -18,6 +18,15 @@ local function handler(operation: (any) -> (any?, error?), writes: boolean)
             return api_errors.write(res, http.STATUS.BAD_REQUEST, api_errors.invalid("invalid JSON body", "body", decode_err))
         end
         args = decoded
+    elseif paged then
+        local offset = req:query("offset")
+        if offset ~= nil and offset ~= "" then
+            local parsed = tonumber(offset)
+            if not parsed or parsed < 0 or parsed % 1 ~= 0 then
+                return api_errors.write(res, http.STATUS.BAD_REQUEST, api_errors.invalid("offset must be a non-negative integer", "offset"))
+            end
+            args.offset = parsed
+        end
     end
     local result, err = operation(args)
     if err then
@@ -31,4 +40,5 @@ end
 function M.handler_save() return handler(M.save, true) end
 function M.handler_revoke() return handler(M.revoke, true) end
 function M.handler_list() return handler(M.list, false) end
+function M.handler_roots() return handler(M.roots, false, true) end
 return M

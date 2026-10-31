@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.55](https://github.com/kicksideai/kickside/compare/widgets-v0.1.54...widgets-v0.1.55) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** discover externally created libraries in mounted catalogs ([#251](https://github.com/kicksideai/kickside/issues/251)) ([1065e22](https://github.com/kicksideai/kickside/commit/1065e22df386037b92147e42c192dfe365f52ba7))
+
+## [0.1.54](https://github.com/kicksideai/kickside/compare/widgets-v0.1.53...widgets-v0.1.54) (2026-10-29)
+
+
+### Bug Fixes
+
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
 ## [0.1.53](https://github.com/kicksideai/kickside/compare/widgets-v0.1.52...widgets-v0.1.53) (2026-10-28)
 
 

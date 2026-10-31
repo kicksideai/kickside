@@ -53,7 +53,7 @@ local function merge_registry_overlay(base: any, overlay: any): any
     return merged
 end
 
-local function by_name_map()
+local function by_name_map(): ({ [string]: any }?, any?)
     local map = {}
     local registry_cards = registry_models.get_all() or {}
     for _, card in ipairs(registry_cards) do

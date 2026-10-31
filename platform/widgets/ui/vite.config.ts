@@ -16,9 +16,9 @@ const entries = {
   component_picker: resolve(__dirname, 'src/component-picker/index.ts'),
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [vue(), wippyComponentPlugin()],
-  define: {
+  define: mode === 'test' ? {} : {
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env': '{}',
   },
@@ -46,4 +46,4 @@ export default defineConfig({
     },
     sourcemap: true,
   },
-})
+}))

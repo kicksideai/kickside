@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.73...knowledge-v0.1.74) (2026-10-30)
+
+
+### Bug Fixes
+
+* bound upload invalidation reads in file surfaces ([#269](https://github.com/kicksideai/kickside/issues/269)) ([6a90ddf](https://github.com/kicksideai/kickside/commit/6a90ddf86b813f273b1b0bf1609084c453764ecf))
+
+## [0.1.73](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.72...knowledge-v0.1.73) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
+## [0.1.72](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.71...knowledge-v0.1.72) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** discover externally created libraries in mounted catalogs ([#251](https://github.com/kicksideai/kickside/issues/251)) ([1065e22](https://github.com/kicksideai/kickside/commit/1065e22df386037b92147e42c192dfe365f52ba7))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.70...knowledge-v0.1.71) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** return nested views to their previous route ([#209](https://github.com/kicksideai/kickside/issues/209)) ([c62888e](https://github.com/kicksideai/kickside/commit/c62888e42bb0008e6fd512b86145653e2f835635))
+
+## [0.1.70](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.69...knowledge-v0.1.70) (2026-10-29)
+
+
+### Features
+
+* **knowledge:** admit file references for accepting engines ([#206](https://github.com/kicksideai/kickside/issues/206)) ([fc8c6b2](https://github.com/kicksideai/kickside/commit/fc8c6b218e6a77c45cca9106931d0b5c2f7130ef))
+
+
+### Bug Fixes
+
+* **knowledge:** reuse store statistics in detail responses ([f924751](https://github.com/kicksideai/kickside/commit/f92475169765155b5d3d631e9aebcbbfb191f7b3))
+
 ## [0.1.69](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.68...knowledge-v0.1.69) (2026-10-28)
 
 

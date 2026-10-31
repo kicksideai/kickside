@@ -117,6 +117,28 @@ entries:
         chunk_overlap: 0
         summary_max_chars: 0
 
+  - name: test_engine_ledger
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      kb_type: ledger_fixture
+      title: Ledger fixture
+      impl_id: test.kb:ledger
+      store_contract: shared:kb_store
+      thread: {class: kickside.knowledge.injection}
+      events:
+        output:
+          - type: kickside.knowledge.events:content.upserted
+      projections:
+        - kind: fixture.ledger
+          projection_key: ledger
+          cursor_key: ledger
+          worker_ref: "func://app:maintenance_stub"
+          input_mode: prefetch_events
+          events:
+            input:
+              - type: kickside.knowledge.events:content.upserted
+
   - name: test_engine_files
     kind: contract.binding
     meta:

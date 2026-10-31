@@ -23,12 +23,6 @@ entries:
     kind: ns.dependency
     component: wippy/test
     version: '*'
-  - name: delegation_validation_caller
-    kind: security.policy
-    policy:
-      actions: funcs.call
-      resources: app.security:delegation_validator
-      effect: allow
   - name: bot_execution_effects
     kind: store.memory
     lifecycle: {auto_start: true}
@@ -90,7 +84,6 @@ entries:
     component: kickside/security
     parameters:
       - {name: kickside.security:sessions_invalidator, value: kickside.users:custom_session_revoker}
-      - {name: kickside.security:delegation_validator, value: app.security:delegation_validator}
       - {name: api_router, value: app:api}
       - {name: ui_server, value: app:gateway}
       - {name: target_db, value: app:db}

@@ -376,3 +376,69 @@ entries:
     - {name: ui_server, value: app:gateway}
     - {name: target_db, value: app:db}
     - {name: process_host, value: app:processes}
+
+  - name: retry_policy_test
+    kind: function.lua
+    meta: { type: test, suite: retry_policy, group: Workflow retry policy }
+    source: file://suites/retry_policy_test.lua
+    method: run
+    modules: [json, uuid, sql]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      compiler: kickside.workflows.compiler:compiler
+      retry: userspace.dataflow:retry
+
+  - name: retry_execution_helper
+    kind: function.lua
+    meta: { type: test_helper, private: true, environment: test }
+    source: file://suites/retry_execution_helper.lua
+    method: run
+    modules: [ctx]
+
+  - name: block.retry_step
+    kind: registry.entry
+    meta: { type: kickside.block, private: true, environment: test, test_only: true }
+    data:
+      block:
+        api_version: kickside.block/v1
+        input: { type: object, additionalProperties: true }
+        config: { type: object, additionalProperties: false }
+        output: { type: object, additionalProperties: true }
+        ports: [{ id: result, direction: out }, { id: failed, direction: out }]
+        error: { type: object, additionalProperties: true }
+        execution: { kind: function, function_id: app:retry_execution_helper }
+
+  - name: retry_execution_test
+    kind: function.lua
+    meta: { type: test, suite: workflows_live_1_retry, group: Workflow retry policy }
+    source: file://suites/retry_execution_test.lua
+    method: run
+    modules: [json, uuid, time, funcs, security]
+    imports:
+      test: wippy.test:test
+      workflow: kickside.workflows:workflow
+      version_publish: kickside.workflows.repo:version_publish
+      runs: app:runs_fixture
+      types: kickside.workflows:types
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+      data_reader: userspace.dataflow.persist:data_reader
+      node_reader: userspace.dataflow.persist:node_reader
+      commit_repo: userspace.dataflow.persist:commit_repo
+      engine_scaffold: app:engine_scaffold
+
+  - name: retry_upgrade_db
+    kind: db.sql.sqlite
+    file: ":memory:"
+
+  - name: retry_upgrade_test
+    kind: function.lua
+    meta: { type: test, suite: retry_upgrade, group: Workflow retry policy }
+    source: file://suites/retry_upgrade_test.lua
+    method: run
+    modules: [sql, funcs, uuid]
+    imports:
+      test: wippy.test:test

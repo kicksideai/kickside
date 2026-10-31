@@ -59,25 +59,9 @@ local function runtime_for_kind(kind: string?): string?
 end
 
 local function parse_worker_ref(raw: any): (table?, error?)
-    local worker_ref = trim(raw)
-    if worker_ref == "" then
-        return nil, nil
-    end
-
-    local runtime: string? = nil
-    local target_id = ""
-    if worker_ref:sub(1, #job_types.WORKER_SCHEME.FUNC) == job_types.WORKER_SCHEME.FUNC then
-        runtime = job_types.WORKER_RUNTIME.FUNC
-        target_id = trim(worker_ref:sub(#job_types.WORKER_SCHEME.FUNC + 1))
-    elseif worker_ref:sub(1, #job_types.WORKER_SCHEME.PROC) == job_types.WORKER_SCHEME.PROC then
-        runtime = job_types.WORKER_RUNTIME.PROC
-        target_id = trim(worker_ref:sub(#job_types.WORKER_SCHEME.PROC + 1))
-    else
-        target_id = worker_ref
-    end
-    if target_id == "" then
-        return nil, (errors.new({ message = "job worker_ref target is required", kind = errors.INVALID }) :: error)
-    end
+    local parsed, parse_err = job_types.worker_reference(raw)
+    if parse_err or not parsed then return nil, parse_err end
+    local worker_ref, runtime, target_id = parsed.worker_ref, parsed.worker_runtime, parsed.target_id
     if PROC_BLOCKED[target_id] ~= nil then
         return nil, (errors.new({ message = PROC_BLOCKED[target_id], kind = errors.INVALID }) :: error)
     end

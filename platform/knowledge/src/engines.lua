@@ -129,6 +129,20 @@ local function shape(entry: any): (any, string?)
     }
 end
 
+-- The first content consumer in the engine's ordered declaration is its ingest
+-- cursor. Address that pair directly; other projections may also observe content.
+function M.ingest_projection(engine: any): (any?, error?)
+    for _, projection in ipairs(type(engine) == "table" and engine.projections or {}) do
+        local events = type(projection.events) == "table" and projection.events or {}
+        for _, event in ipairs(type(events.input) == "table" and events.input or {}) do
+            if event.type == "kickside.knowledge.events:content.upserted" then
+                return projection, nil
+            end
+        end
+    end
+    return nil, errors.new({kind = errors.INVALID, message = "knowledge engine declares no content ingestion projection"})
+end
+
 -- Resolve a dotted path (e.g. "document_count") against a public meta/count table.
 local function resolve_path(raw: any, path: any): any
     if type(raw) ~= "table" or type(path) ~= "string" then return nil end

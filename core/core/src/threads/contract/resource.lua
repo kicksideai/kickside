@@ -311,6 +311,9 @@ local function ensure_thread(args: any, output_target: any?): (any?, error?)
             local found, find_err = lookup_thread(ensured_component_id, true)
             if find_err then return nil, find_err end
             if found then
+                if output_target == nil and is_str(args.impl_id) then
+                    return M.converge_thread(args)
+                end
                 return { thread = found, thread_id = ensured_component_id, created = false, rollback = nil }, nil
             end
         end

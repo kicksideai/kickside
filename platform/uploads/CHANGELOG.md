@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.8](https://github.com/kicksideai/kickside/compare/uploads-v0.3.7...uploads-v0.3.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* bound upload invalidation reads in file surfaces ([#269](https://github.com/kicksideai/kickside/issues/269)) ([6a90ddf](https://github.com/kicksideai/kickside/commit/6a90ddf86b813f273b1b0bf1609084c453764ecf))
+
+## [0.3.7](https://github.com/kicksideai/kickside/compare/uploads-v0.3.6...uploads-v0.3.7) (2026-10-30)
+
+
+### Bug Fixes
+
+* **uploads:** preserve legacy presigned S3 addresses ([#260](https://github.com/kicksideai/kickside/issues/260)) ([12842ee](https://github.com/kicksideai/kickside/commit/12842ee9f460960707db8b69ed378ad1f599fff7))
+* **uploads:** preserve objects referenced across legacy S3 aliases ([#263](https://github.com/kicksideai/kickside/issues/263)) ([48b2c43](https://github.com/kicksideai/kickside/commit/48b2c438f152b8ef899fe99fd263d9b4f1259237))
+* **uploads:** remove unused S3 alias compatibility ([#265](https://github.com/kicksideai/kickside/issues/265)) ([9758d2c](https://github.com/kicksideai/kickside/commit/9758d2c33146550fb79619d0f03183331376dce6))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/uploads-v0.3.5...uploads-v0.3.6) (2026-10-29)
+
+
+### Bug Fixes
+
+* **uploads:** read original upload content and canonical artifact metadata ([#207](https://github.com/kicksideai/kickside/issues/207)) ([55ab0cc](https://github.com/kicksideai/kickside/commit/55ab0cc08dc67de4ddea699880d55e23b0370257))
+
 ## [0.3.5](https://github.com/kicksideai/kickside/compare/uploads-v0.3.4...uploads-v0.3.5) (2026-10-28)
 
 

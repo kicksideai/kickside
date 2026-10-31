@@ -6,6 +6,49 @@ namespace: app
 # from publish (see wippy.yaml exclude: app:**).
 
 entries:
+  - name: system_exists_test
+    kind: function.lua
+    meta: {type: test, suite: component_system_read}
+    source: file://system_exists_test.lua
+    method: run
+    modules: [funcs, security, sql, uuid]
+    imports:
+      test: wippy.test:test
+  - name: system_exists_client
+    kind: function.lua
+    source: file://system_exists_client.lua
+    method: run
+    modules: [funcs]
+  - name: system_exists_owner_call
+    kind: security.policy
+    policy:
+      actions: [funcs.call, funcs.security]
+      resources: kickside.component.system:exists
+      effect: allow
+  - name: system_exists_leaf_call
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: [kickside.component.system:read_exists, app:system_exists_client]
+      effect: allow
+  - name: system_exists_config_read
+    kind: security.policy
+    policy:
+      actions: registry.get
+      resources: kickside.component:db_config
+      effect: allow
+  - name: system_exists_db_deny
+    kind: security.policy
+    policy:
+      actions: db.get
+      resources: app:db
+      effect: deny
+  - name: system_exists_owner_deny
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: kickside.component.system:exists
+      effect: deny
   - name: owned_identity_selection_probe
     kind: function.lua
     source: file://owned_identity_selection_probe.lua
@@ -2836,3 +2879,13 @@ entries:
       context: app:context_access_source
       fixture: app:context_access_fixture
       envelope: kickside.component:envelope
+
+  - name: concurrent_grants_test
+    kind: function.lua
+    meta: {type: test, suite: component_concurrent_grants}
+    source: file://concurrent_grants_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      access_ops: kickside.component.persist:access_ops

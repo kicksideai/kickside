@@ -114,7 +114,7 @@ local function define_tests()
                 local uid = tostring(created.user_id)
 
                 with_groups_repo({
-                    get_user_groups = function()
+                    get_user_groups_batch = function()
                         return nil, "groups backend unavailable"
                     end,
                 }, function()

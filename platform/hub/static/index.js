@@ -1,4 +1,4 @@
-import { B as ht, s as zt, l as to, A as li, a as ri, b as Lt, R as no, c as ui, L as Eo, d as Oe, v as Xt, U as di, I as uo, e as ci, r as To, f as pi, g as Fo, h as Vo, C as mi, i as fi, S as Do, _ as bi, W as hi, z as Bo, j as An, k as sn, T as an, F as vi, M as co, m as gi, n as yi, Y as ki, o as wi, D as Si, $ as $i, J as Ci, p as Yt, q as cn, t as bt, u as Pn, w as Qt, x as Mn, K as Nt, y as po, E as Le, G as Hn, H as mo, N as fo, O as Ii, P as En, Q as _i, V as xi, X as Oi, Z as Li, a0 as zi, a1 as Ai, a2 as Ro, a3 as en, a4 as pn, a5 as jo, a6 as Pi, a7 as xn, a8 as le, a9 as Mi, aa as Ei, ab as Ti, ac as Fi, ad as Vi, ae as un, af as mn, ag as Tn, ah as dn, ai as Di, aj as Bi, ak as Ri } from "./styles-DQ3QkZVh.js";
+import { B as ht, s as zt, l as to, A as li, a as ri, b as Lt, R as no, c as ui, L as Eo, d as Oe, v as Xt, U as di, I as uo, e as ci, r as To, f as pi, g as Fo, h as Vo, C as mi, i as fi, S as Do, _ as bi, W as hi, z as Bo, j as An, k as sn, T as an, F as vi, M as co, m as gi, n as yi, Y as ki, o as wi, D as Si, $ as $i, J as Ci, p as Yt, q as cn, t as bt, u as Pn, w as Qt, x as Mn, K as Nt, y as po, E as Le, G as Hn, H as mo, N as fo, O as Ii, P as En, Q as _i, V as xi, X as Oi, Z as Li, a0 as zi, a1 as Ai, a2 as Ro, a3 as en, a4 as pn, a5 as jo, a6 as Pi, a7 as xn, a8 as le, a9 as Mi, aa as Ei, ab as Ti, ac as Fi, ad as Vi, ae as un, af as mn, ag as Tn, ah as dn, ai as Di, aj as Bi, ak as Ri } from "./styles-DVUR8J1m.js";
 import { openBlock as l, createElementBlock as u, mergeProps as W, createElementVNode as a, renderSlot as oe, createTextVNode as M, toDisplayString as d, resolveComponent as xe, resolveDirective as oo, withDirectives as Ve, createBlock as ye, resolveDynamicComponent as fn, withCtx as he, createCommentVNode as f, normalizeClass as te, computed as q, createVNode as y, Transition as Ho, Fragment as Y, renderList as ie, normalizeProps as ji, createSlots as Hi, withModifiers as On, defineComponent as tn, ref as j, watch as Ue, nextTick as bn, onBeforeUnmount as Uo, normalizeStyle as Kt, onUnmounted as io, onMounted as so, unref as o, useId as Ui, vModelText as Ln, vShow as ln, vModelCheckbox as Ni, isRef as Ot, withKeys as Ki } from "vue";
 import { Icon as C } from "@iconify/vue";
 import { api as ao, loadByTagName as No, host as Ko, on as qi, define as Gi } from "@wippy-fe/proxy";
@@ -7429,188 +7429,188 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
 }, Gr = {
   key: 1,
   class: "km-hint"
-}, Wr = { class: "km-field" }, Zr = { class: "km-row-gap" }, Yr = {
+}, Wr = { class: "km-field" }, Zr = {
   class: "km-seg",
   role: "group",
   "aria-label": "Version mode"
-}, Xr = ["aria-pressed"], Jr = ["aria-pressed"], Qr = { class: "km-hint" }, eu = { class: "km-ov-meta" }, tu = { class: "km-meta-row" }, nu = {
+}, Yr = ["aria-pressed"], Xr = ["aria-pressed"], Jr = { class: "km-hint" }, Qr = { class: "km-ov-meta" }, eu = { class: "km-meta-row" }, tu = {
   key: 0,
   class: "km-meta-row"
-}, ou = {
+}, nu = {
   key: 1,
   class: "km-meta-row"
-}, iu = ["title"], su = {
+}, ou = ["title"], iu = {
   key: 2,
+  class: "km-meta-row"
+}, su = {
+  key: 3,
   class: "km-meta-row"
 }, au = {
-  key: 3,
-  class: "km-meta-row"
-}, lu = {
   key: 4,
   class: "km-meta-row"
-}, ru = {
+}, lu = {
   key: 5,
   class: "km-meta-row"
-}, uu = {
+}, ru = {
   key: 2,
   class: "km-loading"
-}, du = {
+}, uu = {
   key: 3,
   class: "km-ov-readme"
-}, cu = { class: "km-sec" }, pu = {
+}, du = { class: "km-sec" }, cu = {
   key: 1,
   class: "km-msg km-msg-err"
-}, mu = {
+}, pu = {
   key: 0,
   class: "km-code"
-}, fu = { class: "km-sec-title" }, bu = {
+}, mu = { class: "km-sec-title" }, fu = {
   key: 0,
   class: "km-dim"
-}, hu = {
+}, bu = {
   key: 1,
   class: "km-tree-spacer",
   "aria-hidden": "true"
-}, vu = { class: "km-mrow-badge kx-tag-caps" }, gu = { class: "km-mrow-name km-mono" }, yu = {
+}, hu = { class: "km-mrow-badge kx-tag-caps" }, vu = { class: "km-mrow-name km-mono" }, gu = {
   key: 2,
   class: "km-mrow-ver km-mono"
-}, ku = {
+}, yu = {
   key: 3,
   class: "km-dim km-mono"
-}, wu = {
+}, ku = {
   key: 4,
   class: "km-dim"
-}, Su = { class: "km-sec" }, $u = {
+}, wu = { class: "km-sec" }, Su = {
   key: 1,
   class: "km-empty-inline"
-}, Cu = { class: "km-sec-title" }, Iu = { class: "km-dim" }, _u = { class: "km-req-toolbar" }, xu = ["disabled"], Ou = ["disabled"], Lu = {
+}, $u = { class: "km-sec-title" }, Cu = { class: "km-dim" }, Iu = { class: "km-req-toolbar" }, _u = ["disabled"], xu = ["disabled"], Ou = {
   key: 0,
   class: "km-code"
-}, zu = {
+}, Lu = {
   key: 1,
   class: "km-code"
-}, Au = {
+}, zu = {
   key: 2,
   class: "km-mono"
-}, Pu = {
+}, Au = {
   key: 1,
   class: "km-req-toolbar",
   role: "status"
-}, Mu = { class: "km-grow" }, Eu = ["disabled"], Tu = ["disabled"], Fu = { class: "km-req-group-head" }, Vu = { class: "km-mono" }, Du = {
+}, Pu = { class: "km-grow" }, Mu = ["disabled"], Eu = ["disabled"], Tu = { class: "km-req-group-head" }, Fu = { class: "km-mono" }, Vu = {
   key: 0,
   class: "km-dim"
-}, Bu = { class: "km-req-meta" }, Ru = { class: "km-mono km-req-name" }, ju = {
+}, Du = { class: "km-req-meta" }, Bu = { class: "km-mono km-req-name" }, Ru = {
   key: 0,
   class: "km-req-flag"
-}, Hu = {
+}, ju = {
   key: 1,
   class: "km-chip km-mono"
-}, Uu = ["onClick"], Nu = ["aria-label", "disabled", "value", "list", "placeholder", "onInput"], Ku = ["id"], qu = ["value", "title"], Gu = {
+}, Hu = ["onClick"], Uu = ["aria-label", "disabled", "value", "list", "placeholder", "onInput"], Nu = ["id"], Ku = ["value", "title"], qu = {
   key: 1,
   class: "km-readonly-field km-mono"
-}, Wu = { class: "km-req-foot" }, Zu = {
+}, Gu = { class: "km-req-foot" }, Wu = {
   key: 0,
   class: "km-req-src"
-}, Yu = {
+}, Zu = {
   key: 1,
   class: "km-req-invalid"
-}, Xu = {
+}, Yu = {
   key: 2,
   class: "km-req-invalid"
-}, Ju = {
+}, Xu = {
   key: 3,
   class: "km-req-info"
-}, Qu = {
+}, Ju = {
   key: 4,
   class: "km-req-info"
-}, ed = ["aria-label"], td = { class: "km-mono" }, nd = { class: "km-row-gap" }, od = ["disabled", "onClick"], id = ["onClick"], sd = ["onClick"], ad = {
+}, Qu = ["aria-label"], ed = { class: "km-mono" }, td = { class: "km-row-gap" }, nd = ["disabled", "onClick"], od = ["onClick"], id = ["onClick"], sd = {
   key: 3,
   class: "km-msg km-msg-err",
   role: "alert"
-}, ld = { class: "km-code" }, rd = { key: 0 }, ud = {
+}, ad = { class: "km-code" }, ld = { key: 0 }, rd = {
   key: 4,
   class: "km-req-desc"
-}, dd = { class: "km-sec" }, cd = { class: "km-sec-title" }, pd = {
+}, ud = { class: "km-sec" }, dd = { class: "km-sec-title" }, cd = {
   key: 0,
   class: "km-scan-run"
-}, md = ["disabled"], fd = {
+}, pd = ["disabled"], md = {
   key: 1,
   class: "km-msg km-msg-info"
-}, bd = ["disabled"], hd = {
+}, fd = ["disabled"], bd = {
   key: 2,
   class: "km-scan-run"
-}, vd = { class: "km-grow" }, gd = {
+}, hd = { class: "km-grow" }, vd = {
   key: 3,
   class: "km-empty-inline"
-}, yd = {
+}, gd = {
   key: 4,
   class: "km-msg km-msg-err"
-}, kd = ["disabled"], wd = {
+}, yd = ["disabled"], kd = {
   key: 5,
   class: "km-msg km-msg-info"
-}, Sd = ["disabled"], $d = {
+}, wd = ["disabled"], Sd = {
   key: 0,
   class: "km-scan-overall"
-}, Cd = {
+}, $d = {
   key: 1,
   class: "km-msg km-msg-err"
-}, Id = { class: "km-scan-mod-head" }, _d = { class: "km-mono km-scan-mod-name" }, xd = { class: "km-chip" }, Od = {
+}, Cd = { class: "km-scan-mod-head" }, Id = { class: "km-mono km-scan-mod-name" }, _d = { class: "km-chip" }, xd = {
   key: 0,
   class: "km-scan-mod-sum"
-}, Ld = { class: "km-grow km-min0" }, zd = { class: "km-finding-head" }, Ad = { class: "km-finding-title" }, Pd = {
+}, Od = { class: "km-grow km-min0" }, Ld = { class: "km-finding-head" }, zd = { class: "km-finding-title" }, Ad = {
   key: 0,
   class: "km-finding-detail"
-}, Md = {
+}, Pd = {
   key: 1,
   class: "km-finding-loc km-mono"
-}, Ed = ["onClick"], Td = {
+}, Md = ["onClick"], Ed = {
   key: 1,
   class: "km-dim km-scan-mod-clean"
-}, Fd = {
+}, Td = {
   key: 2,
   class: "km-check km-mt"
-}, Vd = { class: "km-sec" }, Dd = { class: "km-sec-title" }, Bd = { class: "km-review-grid" }, Rd = { class: "km-review-tile" }, jd = { class: "km-review-tile" }, Hd = { class: "km-review-tile" }, Ud = { class: "km-review-tile" }, Nd = { class: "km-field" }, Kd = {
+}, Fd = { class: "km-sec" }, Vd = { class: "km-sec-title" }, Dd = { class: "km-review-grid" }, Bd = { class: "km-review-tile" }, Rd = { class: "km-review-tile" }, jd = { class: "km-review-tile" }, Hd = { class: "km-review-tile" }, Ud = { class: "km-field" }, Nd = {
   key: 0,
   class: "km-hint"
-}, qd = {
+}, Kd = {
   key: 1,
   class: "km-mig-list"
-}, Gd = { class: "km-mono km-trunc" }, Wd = { class: "km-chip" }, Zd = { class: "km-hint" }, Yd = { class: "km-adv" }, Xd = { class: "km-adv-body" }, Jd = { class: "km-meta-row" }, Qd = { class: "km-mono" }, ec = { class: "km-meta-row" }, tc = { class: "km-mono" }, nc = {
+}, qd = { class: "km-mono km-trunc" }, Gd = { class: "km-chip" }, Wd = { class: "km-hint" }, Zd = { class: "km-adv" }, Yd = { class: "km-adv-body" }, Xd = { class: "km-meta-row" }, Jd = { class: "km-mono" }, Qd = { class: "km-meta-row" }, ec = { class: "km-mono" }, tc = {
   key: 0,
   class: "km-panel km-panel-ok"
-}, oc = { class: "km-panel-title" }, ic = {
+}, nc = { class: "km-panel-title" }, oc = {
   key: 0,
+  class: "km-dim"
+}, ic = {
+  key: 1,
   class: "km-dim"
 }, sc = {
-  key: 1,
-  class: "km-dim"
-}, ac = {
   key: 0,
   class: "km-dim"
-}, lc = { class: "km-mono" }, rc = {
+}, ac = { class: "km-mono" }, lc = {
   key: 1,
+  class: "km-dim"
+}, rc = {
+  key: 2,
   class: "km-dim"
 }, uc = {
-  key: 2,
-  class: "km-dim"
-}, dc = {
   key: 1,
   class: "km-ledger"
-}, cc = { class: "km-ledger-step" }, pc = { class: "km-grow" }, mc = { class: "km-chip" }, fc = {
+}, dc = { class: "km-ledger-step" }, cc = { class: "km-grow" }, pc = { class: "km-chip" }, mc = {
   key: 0,
   class: "km-ledger-msg"
-}, bc = {
+}, fc = {
   key: 2,
   class: "km-msg km-msg-err"
-}, hc = {
+}, bc = {
   key: 0,
   class: "km-code"
-}, vc = {
+}, hc = {
   key: 0,
   class: "km-running km-2p-progress"
-}, gc = { class: "km-grow km-running-label" }, yc = { class: "km-dim" }, kc = {
+}, vc = { class: "km-grow km-running-label" }, gc = { class: "km-dim" }, yc = {
   key: 0,
   class: "km-foot-note"
-}, wc = ["disabled"], Sc = ["disabled"], $c = ["disabled"], Cc = /* @__PURE__ */ tn({
+}, kc = ["disabled"], wc = ["disabled"], Sc = ["disabled"], $c = /* @__PURE__ */ tn({
   __name: "InstallDialog",
   props: {
     open: { type: Boolean },
@@ -7704,16 +7704,16 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
           ])
         ]),
         footer: he(() => [
-          o(i).running.value ? (l(), u("div", vc, [
+          o(i).running.value ? (l(), u("div", hc, [
             y(o(C), {
               icon: "tabler:loader-2",
               class: "km-i spin km-accent",
               "aria-hidden": "true"
             }),
-            a("span", gc, d(P.value), 1),
-            a("span", yc, d(o(i).elapsedSec.value) + "s", 1)
+            a("span", vc, d(P.value), 1),
+            a("span", gc, d(o(i).elapsedSec.value) + "s", 1)
           ])) : (l(), u(Y, { key: 1 }, [
-            o(i).blockingSection.value === "requirements" ? (l(), u("span", kc, [
+            o(i).blockingSection.value === "requirements" ? (l(), u("span", yc, [
               y(o(C), {
                 icon: "tabler:alert-triangle",
                 class: "km-i-sm",
@@ -7733,7 +7733,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 "aria-hidden": "true"
               }),
               c[69] || (c[69] = M(" Auto-fit ", -1))
-            ], 8, wc)) : f("", !0),
+            ], 8, kc)) : f("", !0),
             c[71] || (c[71] = a("span", { class: "km-grow" }, null, -1)),
             a("button", {
               class: "km-btn km-btn-text km-btn-secondary km-btn-sm",
@@ -7750,7 +7750,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 "aria-hidden": "true"
               }, null, 8, ["icon", "class"]),
               c[70] || (c[70] = M(" Preview changes ", -1))
-            ], 8, Sc),
+            ], 8, wc),
             a("button", {
               class: "km-btn km-btn-sm",
               disabled: o(i).primaryDisabled.value,
@@ -7762,7 +7762,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 "aria-hidden": "true"
               }, null, 8, ["icon"]),
               M(" " + d(o(i).primaryLabel.value), 1)
-            ], 8, $c)
+            ], 8, Sc)
           ], 64))
         ]),
         default: he(() => [
@@ -7822,17 +7822,14 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 n.mode === "update" && !n.currentId ? (l(), u("p", Gr, " Updating this module creates an application root dependency for the selected version. This version also applies to modules that depend on it; the plan shows any conflicts. ")) : f("", !0),
                 a("div", Wr, [
                   c[21] || (c[21] = a("label", { class: "km-label" }, "Version", -1)),
+                  y(Ao, {
+                    modelValue: o(i).version.value,
+                    "onUpdate:modelValue": c[0] || (c[0] = (m) => o(i).version.value = m),
+                    items: o(i).versionOptions.value.map((m) => ({ id: m.value, title: m.label })),
+                    placeholder: "latest",
+                    "aria-label": "Version"
+                  }, null, 8, ["modelValue", "items"]),
                   a("div", Zr, [
-                    y(Ao, {
-                      modelValue: o(i).version.value,
-                      "onUpdate:modelValue": c[0] || (c[0] = (m) => o(i).version.value = m),
-                      class: "km-sort km-grow",
-                      items: o(i).versionOptions.value.map((m) => ({ id: m.value, title: m.label })),
-                      placeholder: "latest",
-                      "aria-label": "Version"
-                    }, null, 8, ["modelValue", "items"])
-                  ]),
-                  a("div", Yr, [
                     a("button", {
                       class: te(["km-seg-btn", { active: o(i).versionMode.value === "pin" }]),
                       "aria-pressed": o(i).versionMode.value === "pin",
@@ -7844,7 +7841,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         "aria-hidden": "true"
                       }),
                       M(" Pin " + d(o(i).version.value || "latest"), 1)
-                    ], 10, Xr),
+                    ], 10, Yr),
                     a("button", {
                       class: te(["km-seg-btn", { active: o(i).versionMode.value === "track" }]),
                       "aria-pressed": o(i).versionMode.value === "track",
@@ -7856,12 +7853,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         "aria-hidden": "true"
                       }),
                       c[20] || (c[20] = M(" Track updates ", -1))
-                    ], 10, Jr)
+                    ], 10, Xr)
                   ]),
-                  a("p", Qr, d(o(i).versionMode.value === "pin" ? "Locks to this exact version; future updates are manual." : `Tracks ${o(i).version.value ? "≥ " + o(i).version.value : "all"} releases on the next resolve.`), 1)
+                  a("p", Jr, d(o(i).versionMode.value === "pin" ? "Locks to this exact version; future updates are manual." : `Tracks ${o(i).version.value ? "≥ " + o(i).version.value : "all"} releases on the next resolve.`), 1)
                 ]),
-                a("div", eu, [
-                  a("div", tu, [
+                a("div", Qr, [
+                  a("div", eu, [
                     y(o(C), {
                       icon: "tabler:download",
                       class: "km-i-sm",
@@ -7870,7 +7867,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[22] || (c[22] = a("span", null, "Downloads", -1)),
                     a("b", null, d(o(mn)(p.value.total_downloads)), 1)
                   ]),
-                  p.value.favorites_count ? (l(), u("div", nu, [
+                  p.value.favorites_count ? (l(), u("div", tu, [
                     y(o(C), {
                       icon: "tabler:star",
                       class: "km-i-sm",
@@ -7879,7 +7876,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[23] || (c[23] = a("span", null, "Favorites", -1)),
                     a("b", null, d(p.value.favorites_count), 1)
                   ])) : f("", !0),
-                  p.value.license ? (l(), u("div", ou, [
+                  p.value.license ? (l(), u("div", nu, [
                     y(o(C), {
                       icon: "tabler:license",
                       class: "km-i-sm",
@@ -7888,9 +7885,9 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[24] || (c[24] = a("span", null, "License", -1)),
                     a("b", {
                       title: p.value.license
-                    }, d(o(Tn)(p.value.license)), 9, iu)
+                    }, d(o(Tn)(p.value.license)), 9, ou)
                   ])) : f("", !0),
-                  p.value.type ? (l(), u("div", su, [
+                  p.value.type ? (l(), u("div", iu, [
                     y(o(C), {
                       icon: "tabler:category",
                       class: "km-i-sm",
@@ -7899,7 +7896,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[25] || (c[25] = a("span", null, "Type", -1)),
                     a("b", null, d(p.value.type), 1)
                   ])) : f("", !0),
-                  o(i).versionMeta.value?.entry_count ? (l(), u("div", au, [
+                  o(i).versionMeta.value?.entry_count ? (l(), u("div", su, [
                     y(o(C), {
                       icon: "tabler:list-numbers",
                       class: "km-i-sm",
@@ -7908,7 +7905,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[26] || (c[26] = a("span", null, "Entries", -1)),
                     a("b", null, d(o(i).versionMeta.value.entry_count), 1)
                   ])) : f("", !0),
-                  o(i).versionMeta.value?.size_bytes ? (l(), u("div", lu, [
+                  o(i).versionMeta.value?.size_bytes ? (l(), u("div", au, [
                     y(o(C), {
                       icon: "tabler:weight",
                       class: "km-i-sm",
@@ -7917,7 +7914,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[27] || (c[27] = a("span", null, "Size", -1)),
                     a("b", null, d(o(dn)(o(i).versionMeta.value.size_bytes)), 1)
                   ])) : f("", !0),
-                  p.value.update_time ? (l(), u("div", ru, [
+                  p.value.update_time ? (l(), u("div", lu, [
                     y(o(C), {
                       icon: "tabler:clock",
                       class: "km-i-sm",
@@ -7927,14 +7924,14 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     a("b", null, d(o(Fn)(p.value.update_time, { maxUnit: "year" })), 1)
                   ])) : f("", !0)
                 ]),
-                o(i).readmeLoading.value ? (l(), u("div", uu, [
+                o(i).readmeLoading.value ? (l(), u("div", ru, [
                   y(o(C), {
                     icon: "tabler:loader-2",
                     class: "km-i spin",
                     "aria-hidden": "true"
                   }),
                   c[29] || (c[29] = M(" Loading README…", -1))
-                ])) : o(i).readme.value ? (l(), u("article", du, [
+                ])) : o(i).readme.value ? (l(), u("article", uu, [
                   y(J, {
                     source: o(i).readme.value
                   }, null, 8, ["source"])
@@ -7942,7 +7939,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               ], 512), [
                 [ln, o(i).activeSection.value === "overview"]
               ]),
-              Ve(a("section", cu, [
+              Ve(a("section", du, [
                 o(i).planLoading.value ? (l(), u(Y, { key: 0 }, [
                   c[30] || (c[30] = a("div", {
                     class: "km-skel km-skel-line",
@@ -7952,18 +7949,18 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     class: "km-skel km-skel-card",
                     key: m
                   })), 64))
-                ], 64)) : o(i).planError.value ? (l(), u("div", pu, [
-                  o(i).planCode.value ? (l(), u("span", mu, d(o(i).planCode.value), 1)) : f("", !0),
+                ], 64)) : o(i).planError.value ? (l(), u("div", cu, [
+                  o(i).planCode.value ? (l(), u("span", pu, d(o(i).planCode.value), 1)) : f("", !0),
                   M(d(o(i).planError.value), 1)
                 ])) : o(i).plan.value ? (l(), u(Y, { key: 2 }, [
-                  a("div", fu, [
+                  a("div", mu, [
                     y(o(C), {
                       icon: "tabler:hierarchy-2",
                       class: "km-i km-accent",
                       "aria-hidden": "true"
                     }),
                     M(" Installs " + d(o(i).moduleCount.value) + " module" + d(o(i).moduleCount.value === 1 ? "" : "s") + " ", 1),
-                    o(i).totalSize.value ? (l(), u("span", bu, "· " + d(o(dn)(o(i).totalSize.value)), 1)) : f("", !0)
+                    o(i).totalSize.value ? (l(), u("span", fu, "· " + d(o(dn)(o(i).totalSize.value)), 1)) : f("", !0)
                   ]),
                   c[32] || (c[32] = a("p", { class: "km-hint" }, "The module plus its full dependency chain (ns.dependency), resolved to these versions.", -1)),
                   (l(!0), u(Y, null, ie(o(i).planRows.value, (m) => (l(), u("div", {
@@ -7976,23 +7973,23 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       icon: "tabler:corner-down-right",
                       class: "km-i-sm km-dim",
                       "aria-hidden": "true"
-                    })) : (l(), u("span", hu)),
-                    a("span", vu, d(m.direct || m.module === n.component ? "direct" : "transitive"), 1),
-                    a("span", gu, d(m.module), 1),
-                    m.version ? (l(), u("span", yu, d(m.version), 1)) : f("", !0),
-                    m.constraint ? (l(), u("span", ku, d(m.constraint), 1)) : f("", !0),
+                    })) : (l(), u("span", bu)),
+                    a("span", hu, d(m.direct || m.module === n.component ? "direct" : "transitive"), 1),
+                    a("span", vu, d(m.module), 1),
+                    m.version ? (l(), u("span", gu, d(m.version), 1)) : f("", !0),
+                    m.constraint ? (l(), u("span", yu, d(m.constraint), 1)) : f("", !0),
                     c[31] || (c[31] = a("span", { class: "km-grow" }, null, -1)),
                     (l(!0), u(Y, null, ie(o(i).badgesForNode(m), (w) => (l(), u("span", {
                       key: w.label,
                       class: te(K(w.tone))
                     }, d(w.label), 3))), 128)),
-                    m.size_bytes ? (l(), u("span", wu, d(o(dn)(m.size_bytes)), 1)) : f("", !0)
+                    m.size_bytes ? (l(), u("span", ku, d(o(dn)(m.size_bytes)), 1)) : f("", !0)
                   ], 6))), 128))
                 ], 64)) : f("", !0)
               ], 512), [
                 [ln, o(i).activeSection.value === "modules"]
               ]),
-              Ve(a("section", Su, [
+              Ve(a("section", wu, [
                 o(i).planLoading.value ? (l(), u(Y, { key: 0 }, [
                   c[33] || (c[33] = a("div", {
                     class: "km-skel km-skel-line",
@@ -8003,16 +8000,16 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     key: m
                   })), 64))
                 ], 64)) : o(i).requirements.value.length ? (l(), u(Y, { key: 2 }, [
-                  a("div", Cu, [
+                  a("div", $u, [
                     y(o(C), {
                       icon: "tabler:adjustments",
                       class: "km-i km-accent",
                       "aria-hidden": "true"
                     }),
                     c[35] || (c[35] = M(" Configuration ", -1)),
-                    a("span", Iu, "(" + d(o(i).boundRequirementCount.value) + "/" + d(o(i).requirements.value.length) + " set)", 1)
+                    a("span", Cu, "(" + d(o(i).boundRequirementCount.value) + "/" + d(o(i).requirements.value.length) + " set)", 1)
                   ]),
-                  a("div", _u, [
+                  a("div", Iu, [
                     c[37] || (c[37] = a("p", { class: "km-hint km-grow" }, "Bind root requirements to host resources. Transitive requirements are shown for review and are configured by their owning module.", -1)),
                     o(i).aiResolvableCount.value ? (l(), u("button", {
                       key: 0,
@@ -8026,7 +8023,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         "aria-hidden": "true"
                       }, null, 8, ["icon", "class"]),
                       M(" " + d(o(i).aiResolving.value ? "Resolving…" : "Resolve with AI"), 1)
-                    ], 8, xu)) : f("", !0),
+                    ], 8, _u)) : f("", !0),
                     o(i).missingRequirements.value.length ? (l(), u("button", {
                       key: 1,
                       class: "km-btn km-btn-secondary km-btn-outlined km-btn-sm",
@@ -8039,25 +8036,25 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         "aria-hidden": "true"
                       }),
                       c[36] || (c[36] = M(" Auto-fit ", -1))
-                    ], 8, Ou)) : f("", !0)
+                    ], 8, xu)) : f("", !0)
                   ]),
                   o(i).aiResolutionNotice.value ? (l(), u("div", {
                     key: 0,
                     class: te(["km-msg", o(i).aiResolutionNotice.value.tone === "success" ? "km-msg-ok" : "km-msg-warn"]),
                     role: "status"
                   }, [
-                    o(i).aiResolutionNotice.value.code ? (l(), u("span", Lu, d(o(i).aiResolutionNotice.value.code), 1)) : f("", !0),
-                    o(i).aiResolutionNotice.value.kind ? (l(), u("span", zu, d(o(i).aiResolutionNotice.value.kind), 1)) : f("", !0),
+                    o(i).aiResolutionNotice.value.code ? (l(), u("span", Ou, d(o(i).aiResolutionNotice.value.code), 1)) : f("", !0),
+                    o(i).aiResolutionNotice.value.kind ? (l(), u("span", Lu, d(o(i).aiResolutionNotice.value.kind), 1)) : f("", !0),
                     M(" " + d(o(i).aiResolutionNotice.value.message) + " ", 1),
-                    o(i).aiResolutionNotice.value.details ? (l(), u("pre", Au, d(JSON.stringify(o(i).aiResolutionNotice.value.details, null, 2)), 1)) : f("", !0)
+                    o(i).aiResolutionNotice.value.details ? (l(), u("pre", zu, d(JSON.stringify(o(i).aiResolutionNotice.value.details, null, 2)), 1)) : f("", !0)
                   ], 2)) : f("", !0),
-                  o(i).pendingCount.value ? (l(), u("div", Pu, [
-                    a("span", Mu, "Review " + d(o(i).pendingCount.value) + " AI suggestion" + d(o(i).pendingCount.value === 1 ? "" : "s") + " before applying.", 1),
+                  o(i).pendingCount.value ? (l(), u("div", Au, [
+                    a("span", Pu, "Review " + d(o(i).pendingCount.value) + " AI suggestion" + d(o(i).pendingCount.value === 1 ? "" : "s") + " before applying.", 1),
                     a("button", {
                       class: "km-btn km-btn-sm",
                       disabled: !o(i).planCurrent.value,
                       onClick: c[5] || (c[5] = (m) => o(i).acceptSuggestions(Object.keys(o(i).pendingSuggestions.value)))
-                    }, "Accept all", 8, Eu),
+                    }, "Accept all", 8, Mu),
                     a("button", {
                       class: "km-btn km-btn-secondary km-btn-sm",
                       onClick: c[6] || (c[6] = (m) => o(i).rejectSuggestions(Object.keys(o(i).pendingSuggestions.value)))
@@ -8066,29 +8063,29 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       class: "km-btn km-btn-secondary km-btn-sm",
                       disabled: !o(i).planCurrent.value,
                       onClick: c[7] || (c[7] = (m) => o(i).editSuggestions(Object.keys(o(i).pendingSuggestions.value)))
-                    }, "Edit all", 8, Tu)
+                    }, "Edit all", 8, Eu)
                   ])) : f("", !0),
                   (l(!0), u(Y, null, ie(o(i).requirementGroups.value, (m) => (l(), u("div", {
                     key: m.module,
                     class: "km-req-group"
                   }, [
-                    a("div", Fu, [
+                    a("div", Tu, [
                       y(o(C), {
                         icon: m.direct ? "tabler:package" : "tabler:corner-down-right",
                         class: "km-i-sm",
                         "aria-hidden": "true"
                       }, null, 8, ["icon"]),
-                      a("span", Vu, d(m.module), 1),
-                      m.direct ? f("", !0) : (l(), u("span", Du, "dependency"))
+                      a("span", Fu, d(m.module), 1),
+                      m.direct ? f("", !0) : (l(), u("span", Vu, "dependency"))
                     ]),
                     (l(!0), u(Y, null, ie(m.items, (w) => (l(), u("div", {
                       key: o(le)(w),
                       class: te(["km-req", { "is-missing": o(i).requirementMissing(w), "is-invalid": o(i).requirementTypeInvalid(w), "is-flash": R.value && (o(i).requirementMissing(w) || o(i).requirementTypeInvalid(w)) }])
                     }, [
-                      a("div", Bu, [
-                        a("span", Ru, d(w.name || o(le)(w)), 1),
-                        w.required || w.missing ? (l(), u("span", ju, "required")) : f("", !0),
-                        w.expected_kind ? (l(), u("span", Hu, d(w.expected_kind), 1)) : f("", !0),
+                      a("div", Du, [
+                        a("span", Bu, d(w.name || o(le)(w)), 1),
+                        w.required || w.missing ? (l(), u("span", Ru, "required")) : f("", !0),
+                        w.expected_kind ? (l(), u("span", ju, d(w.expected_kind), 1)) : f("", !0),
                         c[39] || (c[39] = a("span", { class: "km-grow" }, null, -1)),
                         o(i).requirementMissing(w) && o(i).canAutoFitRequirement(w) ? (l(), u("button", {
                           key: 2,
@@ -8101,9 +8098,9 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                             "aria-hidden": "true"
                           }),
                           c[38] || (c[38] = M(" Auto-fit ", -1))
-                        ], 8, Uu)) : f("", !0)
+                        ], 8, Hu)) : f("", !0)
                       ]),
-                      o(i).requirementReadOnly(w) ? (l(), u("div", Gu, d(o(i).requirementValue(w) || o(i).displayValue(w.default) || "not set"), 1)) : (l(), u(Y, { key: 0 }, [
+                      o(i).requirementReadOnly(w) ? (l(), u("div", qu, d(o(i).requirementValue(w) || o(i).displayValue(w.default) || "not set"), 1)) : (l(), u(Y, { key: 0 }, [
                         a("input", {
                           class: "km-input km-w-full",
                           "aria-label": w.name || o(le)(w),
@@ -8112,7 +8109,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           list: k(w).length ? S(w) : void 0,
                           placeholder: o(i).displayValue(w.default) || (w.expected_kind ? `Enter ${w.expected_kind} id` : "Enter registry id or value"),
                           onInput: (O) => o(i).setParameter(w, O.target.value)
-                        }, null, 40, Nu),
+                        }, null, 40, Uu),
                         k(w).length ? (l(), u("datalist", {
                           key: 0,
                           id: S(w)
@@ -8121,11 +8118,11 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                             key: O.value,
                             value: O.value,
                             title: O.title
-                          }, d(O.label), 9, qu))), 128))
-                        ], 8, Ku)) : f("", !0)
+                          }, d(O.label), 9, Ku))), 128))
+                        ], 8, Nu)) : f("", !0)
                       ], 64)),
-                      a("div", Wu, [
-                        x(w) ? (l(), u("span", Zu, [
+                      a("div", Gu, [
+                        x(w) ? (l(), u("span", Wu, [
                           y(o(C), {
                             icon: "tabler:wand",
                             class: "km-i-xs",
@@ -8133,14 +8130,14 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           M(" " + d(x(w)), 1)
                         ])) : f("", !0),
-                        o(i).requirementTypeInvalid(w) ? (l(), u("span", Yu, [
+                        o(i).requirementTypeInvalid(w) ? (l(), u("span", Zu, [
                           y(o(C), {
                             icon: "tabler:alert-triangle",
                             class: "km-i-xs",
                             "aria-hidden": "true"
                           }),
                           M(" " + d(o(i).requirementTypeHint(w)), 1)
-                        ])) : w.invalid ? (l(), u("span", Xu, [
+                        ])) : w.invalid ? (l(), u("span", Yu, [
                           y(o(C), {
                             icon: "tabler:alert-triangle",
                             class: "km-i-xs",
@@ -8148,7 +8145,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           M(" " + d(w.invalid_reason || "invalid value"), 1)
                         ])) : f("", !0),
-                        o(i).requirementMissing(w) && !o(i).canAutoFitRequirement(w) ? (l(), u("span", Ju, [
+                        o(i).requirementMissing(w) && !o(i).canAutoFitRequirement(w) ? (l(), u("span", Xu, [
                           y(o(C), {
                             icon: "tabler:hand-click",
                             class: "km-i-xs",
@@ -8156,7 +8153,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           c[40] || (c[40] = M(" choose a value to continue ", -1))
                         ])) : f("", !0),
-                        o(i).requirementReadOnly(w) ? (l(), u("span", Qu, [
+                        o(i).requirementReadOnly(w) ? (l(), u("span", Ju, [
                           y(o(C), {
                             icon: "tabler:lock",
                             class: "km-i-xs",
@@ -8171,33 +8168,33 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         role: "group",
                         "aria-label": `AI suggestion for ${w.name || o(le)(w)}`
                       }, [
-                        a("div", td, "Suggested value: " + d(o(i).displayValue(o(i).pendingSuggestions.value[o(le)(w)].value)), 1),
+                        a("div", ed, "Suggested value: " + d(o(i).displayValue(o(i).pendingSuggestions.value[o(le)(w)].value)), 1),
                         a("p", null, d(o(i).pendingSuggestions.value[o(le)(w)].choice_reason), 1),
-                        a("div", nd, [
+                        a("div", td, [
                           a("button", {
                             class: "km-btn km-btn-sm",
                             disabled: !o(i).planCurrent.value,
                             onClick: (O) => o(i).acceptSuggestions([o(le)(w)])
-                          }, "Accept", 8, od),
+                          }, "Accept", 8, nd),
                           a("button", {
                             class: "km-btn km-btn-secondary km-btn-sm",
                             onClick: (O) => o(i).rejectSuggestions([o(le)(w)])
-                          }, "Reject", 8, id),
+                          }, "Reject", 8, od),
                           a("button", {
                             class: "km-btn km-btn-secondary km-btn-sm",
                             onClick: (O) => o(i).editSuggestions([o(le)(w)])
-                          }, "Edit", 8, sd)
+                          }, "Edit", 8, id)
                         ])
-                      ], 8, ed)) : f("", !0),
-                      w.resolution_error ? (l(), u("div", ad, [
-                        a("span", ld, d(w.resolution_error.kind || w.resolution_error.code), 1),
+                      ], 8, Qu)) : f("", !0),
+                      w.resolution_error ? (l(), u("div", sd, [
+                        a("span", ad, d(w.resolution_error.kind || w.resolution_error.code), 1),
                         M(" " + d(w.resolution_error.message) + " ", 1),
-                        w.resolution_error.details ? (l(), u("pre", rd, d(JSON.stringify(w.resolution_error.details, null, 2)), 1)) : f("", !0)
+                        w.resolution_error.details ? (l(), u("pre", ld, d(JSON.stringify(w.resolution_error.details, null, 2)), 1)) : f("", !0)
                       ])) : f("", !0),
-                      w.description ? (l(), u("div", ud, d(w.description), 1)) : f("", !0)
+                      w.description ? (l(), u("div", rd, d(w.description), 1)) : f("", !0)
                     ], 2))), 128))
                   ]))), 128))
-                ], 64)) : (l(), u("div", $u, [
+                ], 64)) : (l(), u("div", Su, [
                   y(o(C), {
                     icon: "tabler:circle-check",
                     class: "km-i-lg km-sev-ok-fg",
@@ -8208,8 +8205,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               ], 512), [
                 [ln, o(i).activeSection.value === "requirements"]
               ]),
-              Ve(a("section", dd, [
-                a("div", cd, [
+              Ve(a("section", ud, [
+                a("div", dd, [
                   y(o(C), {
                     icon: "tabler:shield-check",
                     class: "km-i km-accent",
@@ -8218,7 +8215,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   c[41] || (c[41] = M(" Security scan", -1))
                 ]),
                 c[54] || (c[54] = a("p", { class: "km-hint" }, "An agent reviews the code of every module being installed. Heuristic, not a guarantee — review flagged items before proceeding.", -1)),
-                o(i).scan.value.status === "idle" ? (l(), u("div", pd, [
+                o(i).scan.value.status === "idle" ? (l(), u("div", cd, [
                   y(o(C), {
                     icon: "tabler:shield-question",
                     class: "km-i km-accent",
@@ -8247,8 +8244,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       "aria-hidden": "true"
                     }),
                     c[43] || (c[43] = M(" Run scan ", -1))
-                  ], 8, md)
-                ])) : o(i).scan.value.status === "skipped" ? (l(), u("div", fd, [
+                  ], 8, pd)
+                ])) : o(i).scan.value.status === "skipped" ? (l(), u("div", md, [
                   y(o(C), {
                     icon: "tabler:shield-off",
                     class: "km-i",
@@ -8266,25 +8263,25 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       "aria-hidden": "true"
                     }),
                     c[45] || (c[45] = M(" Run scan", -1))
-                  ], 8, bd)
-                ])) : o(i).scan.value.status === "scanning" ? (l(), u("div", hd, [
+                  ], 8, fd)
+                ])) : o(i).scan.value.status === "scanning" ? (l(), u("div", bd, [
                   y(o(C), {
                     icon: "tabler:loader-2",
                     class: "km-i spin km-accent",
                     "aria-hidden": "true"
                   }),
-                  a("span", vd, [
+                  a("span", hd, [
                     M("Scanning " + d(o(i).scan.value.total || "") + " module" + d(o(i).scan.value.total === 1 ? "" : "s") + "… ", 1),
                     c[47] || (c[47] = a("span", { class: "km-dim" }, "this can take a moment", -1))
                   ])
-                ])) : o(i).scan.value.status === "clean" ? (l(), u("div", gd, [
+                ])) : o(i).scan.value.status === "clean" ? (l(), u("div", vd, [
                   y(o(C), {
                     icon: "tabler:shield-check-filled",
                     class: "km-i-lg km-sev-ok-fg",
                     "aria-hidden": "true"
                   }),
                   a("p", null, "No issues found across " + d(o(i).scan.value.scanned) + " module" + d(o(i).scan.value.scanned === 1 ? "" : "s") + ".", 1)
-                ])) : o(i).scan.value.status === "error" ? (l(), u("div", yd, [
+                ])) : o(i).scan.value.status === "error" ? (l(), u("div", gd, [
                   M(" Scan failed: " + d(o(i).scan.value.error) + " ", 1),
                   a("button", {
                     class: "km-btn km-btn-secondary km-btn-outlined km-btn-sm km-mt",
@@ -8297,8 +8294,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       "aria-hidden": "true"
                     }),
                     c[48] || (c[48] = M(" Retry", -1))
-                  ], 8, kd)
-                ])) : o(i).scan.value.status === "unavailable" ? (l(), u("div", wd, [
+                  ], 8, yd)
+                ])) : o(i).scan.value.status === "unavailable" ? (l(), u("div", kd, [
                   y(o(C), {
                     icon: "tabler:shield-off",
                     class: "km-i",
@@ -8316,10 +8313,10 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       "aria-hidden": "true"
                     }),
                     c[49] || (c[49] = M(" Retry", -1))
-                  ], 8, Sd)
+                  ], 8, wd)
                 ])) : (l(), u(Y, { key: 6 }, [
-                  o(i).scan.value.summary ? (l(), u("p", $d, d(o(i).scan.value.summary), 1)) : f("", !0),
-                  o(i).scan.value.status === "critical" ? (l(), u("div", Cd, [
+                  o(i).scan.value.summary ? (l(), u("p", Sd, d(o(i).scan.value.summary), 1)) : f("", !0),
+                  o(i).scan.value.status === "critical" ? (l(), u("div", $d, [
                     y(o(C), {
                       icon: "tabler:shield-x",
                       class: "km-i",
@@ -8331,21 +8328,21 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     key: m.module,
                     class: "km-scan-mod"
                   }, [
-                    a("div", Id, [
+                    a("div", Cd, [
                       a("span", {
                         class: te(["km-dot", A(m.status)]),
                         "aria-hidden": "true"
                       }, null, 2),
-                      a("span", _d, [
+                      a("span", Id, [
                         M(d(m.module), 1),
                         m.version ? (l(), u(Y, { key: 0 }, [
                           M("@" + d(m.version), 1)
                         ], 64)) : f("", !0)
                       ]),
                       c[52] || (c[52] = a("span", { class: "km-grow" }, null, -1)),
-                      a("span", xd, d(m.status), 1)
+                      a("span", _d, d(m.status), 1)
                     ]),
-                    m.summary ? (l(), u("p", Od, d(m.summary), 1)) : f("", !0),
+                    m.summary ? (l(), u("p", xd, d(m.summary), 1)) : f("", !0),
                     (l(!0), u(Y, null, ie(m.findings, (w) => (l(), u("div", {
                       key: w.id,
                       class: te(["km-finding", `km-sev-${N(w)}`])
@@ -8355,12 +8352,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: "km-i km-finding-icon",
                         "aria-hidden": "true"
                       }, null, 8, ["icon"]),
-                      a("div", Ld, [
-                        a("div", zd, [
-                          a("span", Ad, d(w.title), 1)
+                      a("div", Od, [
+                        a("div", Ld, [
+                          a("span", zd, d(w.title), 1)
                         ]),
-                        w.detail ? (l(), u("div", Pd, d(w.detail), 1)) : f("", !0),
-                        w.location ? (l(), u("div", Md, d(w.location), 1)) : f("", !0),
+                        w.detail ? (l(), u("div", Ad, d(w.detail), 1)) : f("", !0),
+                        w.location ? (l(), u("div", Pd, d(w.location), 1)) : f("", !0),
                         w.severity !== "critical" ? (l(), u("button", {
                           key: 2,
                           class: te(["km-ack", { done: o(i).acknowledged.value.has(w.id) }]),
@@ -8372,12 +8369,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                             "aria-hidden": "true"
                           }, null, 8, ["icon"]),
                           M(" " + d(o(i).acknowledged.value.has(w.id) ? "Acknowledged" : "Acknowledge"), 1)
-                        ], 10, Ed)) : f("", !0)
+                        ], 10, Md)) : f("", !0)
                       ])
                     ], 2))), 128)),
-                    m.findings.length ? f("", !0) : (l(), u("p", Td, "No issues in this module."))
+                    m.findings.length ? f("", !0) : (l(), u("p", Ed, "No issues in this module."))
                   ]))), 128)),
-                  o(i).scan.value.status === "critical" ? (l(), u("label", Fd, [
+                  o(i).scan.value.status === "critical" ? (l(), u("label", Td, [
                     Ve(a("input", {
                       type: "checkbox",
                       "onUpdate:modelValue": c[13] || (c[13] = (m) => o(i).criticalConfirmed.value = m)
@@ -8390,8 +8387,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               ], 512), [
                 [ln, o(i).activeSection.value === "scan"]
               ]),
-              Ve(a("section", Vd, [
-                a("div", Dd, [
+              Ve(a("section", Fd, [
+                a("div", Vd, [
                   y(o(C), {
                     icon: "tabler:checklist",
                     class: "km-i km-accent",
@@ -8399,8 +8396,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   }),
                   c[55] || (c[55] = M(" Review & install", -1))
                 ]),
-                a("div", Bd, [
-                  a("div", Rd, [
+                a("div", Dd, [
+                  a("div", Bd, [
                     y(o(C), {
                       icon: "tabler:package",
                       class: "km-i km-accent",
@@ -8409,7 +8406,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     a("b", null, d(o(i).moduleCount.value), 1),
                     c[56] || (c[56] = a("span", null, "modules", -1))
                   ]),
-                  a("div", jd, [
+                  a("div", Rd, [
                     y(o(C), {
                       icon: "tabler:adjustments",
                       class: "km-i km-accent",
@@ -8418,7 +8415,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     a("b", null, d(o(i).boundRequirementCount.value) + "/" + d(o(i).requirements.value.length), 1),
                     c[57] || (c[57] = a("span", null, "configured", -1))
                   ]),
-                  a("div", Hd, [
+                  a("div", jd, [
                     y(o(C), {
                       icon: "tabler:database",
                       class: "km-i km-accent",
@@ -8427,7 +8424,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     a("b", null, d(o(i).migrations.value.length), 1),
                     c[58] || (c[58] = a("span", null, "migrations", -1))
                   ]),
-                  a("div", Ud, [
+                  a("div", Hd, [
                     y(o(C), {
                       icon: o(i).scan.value.status === "clean" ? "tabler:shield-check" : o(i).scan.value.status === "critical" ? "tabler:shield-x" : o(i).scan.value.status === "skipped" ? "tabler:shield-off" : "tabler:shield",
                       class: "km-i km-accent",
@@ -8437,17 +8434,16 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[59] || (c[59] = a("span", null, "scan findings", -1))
                   ])
                 ]),
-                a("div", Nd, [
+                a("div", Ud, [
                   c[62] || (c[62] = a("label", { class: "km-label" }, "Migration policy", -1)),
                   y(Ao, {
                     modelValue: o(i).migrationPolicy.value,
                     "onUpdate:modelValue": c[14] || (c[14] = (m) => o(i).migrationPolicy.value = m),
-                    class: "km-sort km-w-full",
                     items: o(i).migrationOptions.value.map((m) => ({ id: m.value, title: m.label })),
                     "aria-label": "Migration policy"
                   }, null, 8, ["modelValue", "items"]),
-                  o(i).requiredSetup.value ? (l(), u("p", Kd, "This module requires setup. Installation completes after migrations and setup pass verification.")) : f("", !0),
-                  o(i).migrations.value.length ? (l(), u("div", qd, [
+                  o(i).requiredSetup.value ? (l(), u("p", Nd, "This module requires setup. Installation completes after migrations and setup pass verification.")) : f("", !0),
+                  o(i).migrations.value.length ? (l(), u("div", Kd, [
                     (l(!0), u(Y, null, ie(o(i).migrations.value, (m) => (l(), u("div", {
                       key: m.id,
                       class: "km-mig-row"
@@ -8457,12 +8453,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: "km-i-xs km-dim",
                         "aria-hidden": "true"
                       }),
-                      a("span", Gd, d(m.id), 1),
+                      a("span", qd, d(m.id), 1),
                       c[60] || (c[60] = a("span", { class: "km-grow" }, null, -1)),
-                      a("span", Wd, d(m.status), 1)
+                      a("span", Gd, d(m.status), 1)
                     ]))), 128))
                   ])) : f("", !0),
-                  a("p", Zd, [
+                  a("p", Wd, [
                     y(o(C), {
                       icon: "tabler:shield-lock",
                       class: "km-i-xs",
@@ -8471,26 +8467,26 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     c[61] || (c[61] = M(" Changes are transactional — if any step fails, the registry, lock and migrations are rolled back.", -1))
                   ])
                 ]),
-                a("details", Yd, [
+                a("details", Zd, [
                   c[65] || (c[65] = a("summary", null, "Advanced", -1)),
-                  a("div", Xd, [
-                    a("div", Jd, [
+                  a("div", Yd, [
+                    a("div", Xd, [
                       c[63] || (c[63] = a("span", null, "Installs as", -1)),
-                      a("b", Qd, d(o(i).destinationId.value || "—"), 1)
+                      a("b", Jd, d(o(i).destinationId.value || "—"), 1)
                     ]),
-                    a("div", ec, [
+                    a("div", Qd, [
                       c[64] || (c[64] = a("span", null, "Version", -1)),
-                      a("b", tc, d(o(i).versionMode.value === "pin" ? o(i).version.value || "latest" : "≥ " + (o(i).version.value || "0.0.0")), 1)
+                      a("b", ec, d(o(i).versionMode.value === "pin" ? o(i).version.value || "latest" : "≥ " + (o(i).version.value || "0.0.0")), 1)
                     ])
                   ])
                 ]),
-                o(i).result.value ? (l(), u("div", nc, [
-                  a("div", oc, d(o(i).result.value.dry_run ? "Dry-run preview" : "Applied"), 1),
+                o(i).result.value ? (l(), u("div", tc, [
+                  a("div", nc, d(o(i).result.value.dry_run ? "Dry-run preview" : "Applied"), 1),
                   o(i).result.value.dry_run ? (l(), u(Y, { key: 0 }, [
                     c[66] || (c[66] = a("div", { class: "km-dim" }, "No changes were applied.", -1)),
-                    o(i).resultExecution.value.length ? (l(), u("div", ic, d(o(i).resultExecution.value.length) + " planned step" + d(o(i).resultExecution.value.length === 1 ? "" : "s") + " below.", 1)) : (l(), u("div", sc, "Keeper accepted the dry-run but returned no execution details."))
+                    o(i).resultExecution.value.length ? (l(), u("div", oc, d(o(i).resultExecution.value.length) + " planned step" + d(o(i).resultExecution.value.length === 1 ? "" : "s") + " below.", 1)) : (l(), u("div", ic, "Keeper accepted the dry-run but returned no execution details."))
                   ], 64)) : (l(), u(Y, { key: 1 }, [
-                    o(i).result.value.apply?.stage || o(i).result.value.operation_id ? (l(), u("div", ac, [
+                    o(i).result.value.apply?.stage || o(i).result.value.operation_id ? (l(), u("div", sc, [
                       o(i).result.value.apply?.stage ? (l(), u(Y, { key: 0 }, [
                         M("stage: " + d(o(i).result.value.apply.stage), 1)
                       ], 64)) : f("", !0),
@@ -8499,26 +8495,26 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       ], 64)) : f("", !0),
                       o(i).result.value.operation_id ? (l(), u(Y, { key: 2 }, [
                         c[67] || (c[67] = M("op: ", -1)),
-                        a("code", lc, d(o(i).result.value.operation_id), 1)
+                        a("code", ac, d(o(i).result.value.operation_id), 1)
                       ], 64)) : f("", !0)
-                    ])) : (l(), u("div", rc, "Changes applied successfully.")),
-                    o(i).result.value.apply?.message ? (l(), u("div", uc, d(o(i).result.value.apply.message), 1)) : f("", !0)
+                    ])) : (l(), u("div", lc, "Changes applied successfully.")),
+                    o(i).result.value.apply?.message ? (l(), u("div", rc, d(o(i).result.value.apply.message), 1)) : f("", !0)
                   ], 64))
                 ])) : f("", !0),
-                o(i).resultExecution.value.length ? (l(), u("div", dc, [
+                o(i).resultExecution.value.length ? (l(), u("div", uc, [
                   c[68] || (c[68] = a("div", { class: "km-panel-title" }, "Execution ledger", -1)),
                   (l(!0), u(Y, null, ie(o(i).resultExecution.value, (m, w) => (l(), u("div", {
                     key: `${m.step}-${w}`,
                     class: te(["km-ledger-row", H(m.status)])
                   }, [
-                    a("span", cc, d(w + 1), 1),
-                    a("span", pc, d(o(i).executionStepLabel(m)), 1),
-                    a("span", mc, d(m.status), 1),
-                    m.message ? (l(), u("span", fc, d(m.message), 1)) : f("", !0)
+                    a("span", dc, d(w + 1), 1),
+                    a("span", cc, d(o(i).executionStepLabel(m)), 1),
+                    a("span", pc, d(m.status), 1),
+                    m.message ? (l(), u("span", mc, d(m.message), 1)) : f("", !0)
                   ], 2))), 128))
                 ])) : f("", !0),
-                o(i).resultError.value ? (l(), u("div", bc, [
-                  o(i).resultCode.value ? (l(), u("span", hc, d(o(i).resultCode.value), 1)) : f("", !0),
+                o(i).resultError.value ? (l(), u("div", fc, [
+                  o(i).resultCode.value ? (l(), u("span", bc, d(o(i).resultCode.value), 1)) : f("", !0),
                   M(d(o(i).resultError.value), 1)
                 ])) : f("", !0)
               ], 512), [
@@ -8531,104 +8527,104 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
       }, 8, ["visible", "busy", "label", "style"]);
     };
   }
-}), Ic = { class: "d-hero" }, _c = { class: "d-hero-icon" }, xc = { class: "km-grow km-min0" }, Oc = { class: "km-row-wrap" }, Lc = { class: "d-hero-name" }, zc = { class: "d-ver" }, Ac = {
+}), Cc = { class: "d-hero" }, Ic = { class: "d-hero-icon" }, _c = { class: "km-grow km-min0" }, xc = { class: "km-row-wrap" }, Oc = { class: "d-hero-name" }, Lc = { class: "d-ver" }, zc = {
   key: 0,
   class: "badge-app kx-tag-caps"
-}, Pc = {
+}, Ac = {
   key: 1,
   class: "badge-installed kx-tag-caps"
-}, Mc = {
+}, Pc = {
   key: 2,
   class: "badge-private kx-tag-caps",
   title: "Private Hub module"
-}, Ec = {
+}, Mc = {
   key: 3,
   class: "badge-warn kx-tag-caps"
-}, Tc = { class: "d-hero-org" }, Fc = {
+}, Ec = { class: "d-hero-org" }, Tc = {
   key: 0,
   class: "d-hero-desc"
-}, Vc = { class: "d-hero-actions" }, Dc = ["title"], Bc = ["title"], Rc = ["href"], jc = ["href"], Hc = { class: "d-grid" }, Uc = { class: "d-side" }, Nc = { class: "d-block" }, Kc = { class: "d-row" }, qc = { class: "d-row-v" }, Gc = {
+}, Fc = { class: "d-hero-actions" }, Vc = ["title"], Dc = ["title"], Bc = ["href"], Rc = ["href"], jc = { class: "d-grid" }, Hc = { class: "d-side" }, Uc = { class: "d-block" }, Nc = { class: "d-row" }, Kc = { class: "d-row-v" }, qc = {
   key: 0,
   class: "d-row"
-}, Wc = { class: "d-row-v" }, Zc = {
+}, Gc = { class: "d-row-v" }, Wc = {
   key: 1,
   class: "d-row"
-}, Yc = ["title"], Xc = {
+}, Zc = ["title"], Yc = {
   key: 2,
   class: "d-row"
-}, Jc = { class: "d-row-v" }, Qc = {
+}, Xc = { class: "d-row-v" }, Jc = {
   key: 3,
   class: "d-row"
-}, ep = {
+}, Qc = {
   key: 4,
   class: "d-row"
-}, tp = { class: "d-row-v" }, np = {
+}, ep = { class: "d-row-v" }, tp = {
   key: 5,
   class: "d-row"
-}, op = { class: "d-row-v" }, ip = {
+}, np = { class: "d-row-v" }, op = {
   key: 6,
   class: "d-row"
-}, sp = { class: "d-row-v" }, ap = {
+}, ip = { class: "d-row-v" }, sp = {
   key: 0,
   class: "d-block"
-}, lp = { class: "km-pills" }, rp = {
+}, ap = { class: "km-pills" }, lp = {
   key: 1,
   class: "d-block"
-}, up = { class: "km-dep-list" }, dp = { class: "km-trunc" }, cp = { class: "km-dim" }, pp = {
+}, rp = { class: "km-dep-list" }, up = { class: "km-trunc" }, dp = { class: "km-dim" }, cp = {
   key: 2,
   class: "d-block"
-}, mp = { class: "km-pills" }, fp = { class: "d-main" }, bp = { class: "d-tabs" }, hp = ["disabled"], vp = {
+}, pp = { class: "km-pills" }, mp = { class: "d-main" }, fp = { class: "d-tabs" }, bp = ["disabled"], hp = {
   key: 0,
   class: "km-dim"
-}, gp = { class: "d-tab-body" }, yp = {
+}, vp = { class: "d-tab-body" }, gp = {
   key: 0,
   class: "km-loading"
-}, kp = {
+}, yp = {
   key: 0,
   class: "d-empty"
-}, wp = {
+}, kp = {
   key: 1,
   class: "rm"
-}, Sp = {
+}, wp = {
   key: 2,
   class: "km-stack-lg"
-}, $p = { key: 0 }, Cp = { class: "d-block-title d-accent" }, Ip = { class: "km-dim" }, _p = { class: "km-2col" }, xp = { class: "d-field-i" }, Op = { class: "km-grow km-min0" }, Lp = { class: "d-cfg-name" }, zp = {
+}, Sp = { key: 0 }, $p = { class: "d-block-title d-accent" }, Cp = { class: "km-dim" }, Ip = { class: "km-2col" }, _p = { class: "d-field-i" }, xp = { class: "km-grow km-min0" }, Op = { class: "d-cfg-name" }, Lp = {
   key: 0,
   class: "d-cfg-desc"
-}, Ap = { key: 1 }, Pp = { class: "d-block-title" }, Mp = { class: "km-2col" }, Ep = { class: "d-field-i d-field-i-req" }, Tp = { class: "km-grow km-min0" }, Fp = { class: "d-cfg-name" }, Vp = {
+}, zp = { key: 1 }, Ap = { class: "d-block-title" }, Pp = { class: "km-2col" }, Mp = { class: "d-field-i d-field-i-req" }, Ep = { class: "km-grow km-min0" }, Tp = { class: "d-cfg-name" }, Fp = {
   key: 0,
   class: "d-cfg-desc"
-}, Dp = { class: "d-field-i d-field-i-req" }, Bp = { class: "km-grow km-min0" }, Rp = { class: "d-cfg-name" }, jp = {
+}, Vp = { class: "d-field-i d-field-i-req" }, Dp = { class: "km-grow km-min0" }, Bp = { class: "d-cfg-name" }, Rp = {
   key: 0,
   class: "d-cfg-desc"
-}, Hp = {
+}, jp = {
   key: 1,
   class: "d-cfg-desc km-mono"
-}, Up = { class: "d-block-title" }, Np = { key: 0 }, Kp = { class: "d-sub" }, qp = { class: "km-pills" }, Gp = {
+}, Hp = { class: "d-block-title" }, Up = { key: 0 }, Np = { class: "d-sub" }, Kp = { class: "km-pills" }, qp = {
+  key: 1,
+  class: "km-muted"
+}, Gp = {
   key: 1,
   class: "km-muted"
 }, Wp = {
-  key: 1,
-  class: "km-muted"
-}, Zp = {
   key: 2,
   class: "km-stack"
-}, Yp = { class: "km-group-head" }, Xp = { class: "km-dim" }, Jp = { class: "km-2col" }, Qp = { class: "d-entry-name" }, em = { class: "d-entry-id" }, tm = {
+}, Zp = { class: "km-group-head" }, Yp = { class: "km-dim" }, Xp = { class: "km-2col" }, Jp = { class: "d-entry-name" }, Qp = { class: "d-entry-id" }, em = {
   key: 0,
   class: "km-muted"
-}, nm = {
+}, tm = {
   key: 1,
   class: "d-vers"
-}, om = { class: "d-ver-tag" }, im = {
+}, nm = { class: "d-ver-tag" }, om = {
   key: 0,
   class: "km-dim"
-}, sm = {
+}, im = {
   key: 1,
   class: "km-dim km-inline"
-}, am = {
+}, sm = {
   key: 2,
   class: "km-dim"
-}, lm = /* @__PURE__ */ tn({
+}, am = /* @__PURE__ */ tn({
   __name: "ModuleDetailView",
   props: {
     page: {}
@@ -8675,21 +8671,21 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
           }),
           O[7] || (O[7] = M(" Back to modules ", -1))
         ]),
-        a("header", Ic, [
-          a("div", _c, [
+        a("header", Cc, [
+          a("div", Ic, [
             y(o(C), {
               icon: o(n) ? o(en)(o(n)) : "tabler:package",
               class: "km-i-lg",
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
-          a("div", xc, [
-            a("div", Oc, [
-              a("h2", Lc, d(m.value.label), 1),
-              a("span", zc, d(m.value.version || "—"), 1),
-              o(un)(o(n)) ? (l(), u("span", Ac, "app")) : f("", !0),
-              m.value.installed ? (l(), u("span", Pc, "installed")) : f("", !0),
-              o(s) ? (l(), u("span", Mc, [
+          a("div", _c, [
+            a("div", xc, [
+              a("h2", Oc, d(m.value.label), 1),
+              a("span", Lc, d(m.value.version || "—"), 1),
+              o(un)(o(n)) ? (l(), u("span", zc, "app")) : f("", !0),
+              m.value.installed ? (l(), u("span", Ac, "installed")) : f("", !0),
+              o(s) ? (l(), u("span", Pc, [
                 y(o(C), {
                   icon: "tabler:lock",
                   class: "km-i-xs",
@@ -8697,11 +8693,11 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 }),
                 O[8] || (O[8] = M(" private", -1))
               ])) : f("", !0),
-              o(n)?.deprecated ? (l(), u("span", Ec, "deprecated")) : f("", !0)
+              o(n)?.deprecated ? (l(), u("span", Mc, "deprecated")) : f("", !0)
             ]),
-            a("div", Tc, d(m.value.component), 1),
-            m.value.description ? (l(), u("p", Fc, d(m.value.description), 1)) : f("", !0),
-            a("div", Vc, [
+            a("div", Ec, d(m.value.component), 1),
+            m.value.description ? (l(), u("p", Tc, d(m.value.description), 1)) : f("", !0),
+            a("div", Fc, [
               m.value.installed ? (l(), u(Y, { key: 0 }, [
                 o(i) ? (l(), u("button", {
                   key: 0,
@@ -8727,7 +8723,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     "aria-hidden": "true"
                   }),
                   O[10] || (O[10] = M(" Update ", -1))
-                ], 8, Dc)),
+                ], 8, Vc)),
                 o(p) ? (l(), u("button", {
                   key: 2,
                   class: "km-btn km-btn-text km-btn-danger km-btn-sm",
@@ -8752,7 +8748,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     "aria-hidden": "true"
                   }),
                   O[12] || (O[12] = M(" Uninstall ", -1))
-                ], 8, Bc)) : f("", !0)
+                ], 8, Dc)) : f("", !0)
               ], 64)) : (l(), u("button", {
                 key: 1,
                 class: "km-btn km-btn-sm",
@@ -8779,7 +8775,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   "aria-hidden": "true"
                 }),
                 O[14] || (O[14] = M(" Repository", -1))
-              ], 8, Rc)) : f("", !0),
+              ], 8, Bc)) : f("", !0),
               o(n)?.homepage ? (l(), u("a", {
                 key: 3,
                 href: String(o(n).homepage),
@@ -8793,32 +8789,32 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   "aria-hidden": "true"
                 }),
                 O[15] || (O[15] = M(" Homepage", -1))
-              ], 8, jc)) : f("", !0)
+              ], 8, Rc)) : f("", !0)
             ])
           ])
         ]),
-        a("div", Hc, [
-          a("aside", Uc, [
-            a("section", Nc, [
-              a("div", Kc, [
+        a("div", jc, [
+          a("aside", Hc, [
+            a("section", Uc, [
+              a("div", Nc, [
                 y(o(C), {
                   icon: "tabler:download",
                   class: "d-row-i",
                   "aria-hidden": "true"
                 }),
                 O[16] || (O[16] = a("span", { class: "d-row-k" }, "Downloads", -1)),
-                a("span", qc, d(o(mn)(o(n)?.total_downloads)), 1)
+                a("span", Kc, d(o(mn)(o(n)?.total_downloads)), 1)
               ]),
-              o(n)?.favorites_count ? (l(), u("div", Gc, [
+              o(n)?.favorites_count ? (l(), u("div", qc, [
                 y(o(C), {
                   icon: "tabler:star",
                   class: "d-row-i",
                   "aria-hidden": "true"
                 }),
                 O[17] || (O[17] = a("span", { class: "d-row-k" }, "Favorites", -1)),
-                a("span", Wc, d(o(n).favorites_count), 1)
+                a("span", Gc, d(o(n).favorites_count), 1)
               ])) : f("", !0),
-              o(n)?.license ? (l(), u("div", Zc, [
+              o(n)?.license ? (l(), u("div", Wc, [
                 y(o(C), {
                   icon: "tabler:license",
                   class: "d-row-i",
@@ -8828,18 +8824,18 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 a("span", {
                   class: "d-row-v",
                   title: o(n).license
-                }, d(o(Tn)(o(n).license)), 9, Yc)
+                }, d(o(Tn)(o(n).license)), 9, Zc)
               ])) : f("", !0),
-              o(n)?.type ? (l(), u("div", Xc, [
+              o(n)?.type ? (l(), u("div", Yc, [
                 y(o(C), {
                   icon: "tabler:category",
                   class: "d-row-i",
                   "aria-hidden": "true"
                 }),
                 O[19] || (O[19] = a("span", { class: "d-row-k" }, "Type", -1)),
-                a("span", Jc, d(o(n).type), 1)
+                a("span", Xc, d(o(n).type), 1)
               ])) : f("", !0),
-              o(s) ? (l(), u("div", Qc, [
+              o(s) ? (l(), u("div", Jc, [
                 y(o(C), {
                   icon: "tabler:lock",
                   class: "d-row-i",
@@ -8848,58 +8844,58 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 O[20] || (O[20] = a("span", { class: "d-row-k" }, "Visibility", -1)),
                 O[21] || (O[21] = a("span", { class: "d-row-v" }, "Private", -1))
               ])) : f("", !0),
-              o(n)?.update_time ? (l(), u("div", ep, [
+              o(n)?.update_time ? (l(), u("div", Qc, [
                 y(o(C), {
                   icon: "tabler:clock",
                   class: "d-row-i",
                   "aria-hidden": "true"
                 }),
                 O[22] || (O[22] = a("span", { class: "d-row-k" }, "Updated", -1)),
-                a("span", tp, d(o(Fn)(o(n).update_time, { maxUnit: "year" })), 1)
+                a("span", ep, d(o(Fn)(o(n).update_time, { maxUnit: "year" })), 1)
               ])) : f("", !0),
-              o(E)?.entry_count ? (l(), u("div", np, [
+              o(E)?.entry_count ? (l(), u("div", tp, [
                 y(o(C), {
                   icon: "tabler:list-numbers",
                   class: "d-row-i",
                   "aria-hidden": "true"
                 }),
                 O[23] || (O[23] = a("span", { class: "d-row-k" }, "Entries", -1)),
-                a("span", op, d(o(E).entry_count), 1)
+                a("span", np, d(o(E).entry_count), 1)
               ])) : f("", !0),
-              o(E)?.size_bytes ? (l(), u("div", ip, [
+              o(E)?.size_bytes ? (l(), u("div", op, [
                 y(o(C), {
                   icon: "tabler:weight",
                   class: "d-row-i",
                   "aria-hidden": "true"
                 }),
                 O[24] || (O[24] = a("span", { class: "d-row-k" }, "Size", -1)),
-                a("span", sp, d(o(dn)(o(E).size_bytes)), 1)
+                a("span", ip, d(o(dn)(o(E).size_bytes)), 1)
               ])) : f("", !0)
             ]),
-            (o(n)?.keywords || []).length ? (l(), u("section", ap, [
+            (o(n)?.keywords || []).length ? (l(), u("section", sp, [
               O[25] || (O[25] = a("div", { class: "d-block-title" }, "Keywords", -1)),
-              a("div", lp, [
+              a("div", ap, [
                 (l(!0), u(Y, null, ie(o(n).keywords, (v) => (l(), u("span", {
                   key: v,
                   class: "provides-pill"
                 }, d(v), 1))), 128))
               ])
             ])) : f("", !0),
-            (o(E)?.dependencies || []).length ? (l(), u("section", rp, [
+            (o(E)?.dependencies || []).length ? (l(), u("section", lp, [
               O[26] || (O[26] = a("div", { class: "d-block-title" }, "Dependencies", -1)),
-              a("div", up, [
+              a("div", rp, [
                 (l(!0), u(Y, null, ie(o(E).dependencies, (v, I) => (l(), u("div", {
                   key: I,
                   class: "km-dep"
                 }, [
-                  a("span", dp, d(v.org) + "/" + d(v.name), 1),
-                  a("span", cp, d(v.version_constraint), 1)
+                  a("span", up, d(v.org) + "/" + d(v.name), 1),
+                  a("span", dp, d(v.version_constraint), 1)
                 ]))), 128))
               ])
             ])) : f("", !0),
-            (o(E)?.lua_modules || []).length ? (l(), u("section", pp, [
+            (o(E)?.lua_modules || []).length ? (l(), u("section", cp, [
               O[27] || (O[27] = a("div", { class: "d-block-title" }, "Lua modules", -1)),
-              a("div", mp, [
+              a("div", pp, [
                 (l(!0), u(Y, null, ie(o(E).lua_modules, (v) => (l(), u("span", {
                   key: v,
                   class: "provides-pill"
@@ -8907,13 +8903,13 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               ])
             ])) : f("", !0)
           ]),
-          a("main", fp, [
-            a("div", bp, [
+          a("main", mp, [
+            a("div", fp, [
               a("button", {
                 class: te(["d-tab", { active: o(R) === "readme" }]),
                 disabled: !o(T) && !o(N),
                 onClick: O[4] || (O[4] = (v) => R.value = "readme")
-              }, "Readme", 10, hp),
+              }, "Readme", 10, bp),
               a("button", {
                 class: te(["d-tab", { active: o(R) === "overview" }]),
                 onClick: O[5] || (O[5] = (v) => R.value = "overview")
@@ -8923,11 +8919,11 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 onClick: O[6] || (O[6] = (v) => R.value = "versions")
               }, [
                 O[28] || (O[28] = M("Versions ", -1)),
-                o(A).length ? (l(), u("span", vp, d(o(A).length), 1)) : f("", !0)
+                o(A).length ? (l(), u("span", hp, d(o(A).length), 1)) : f("", !0)
               ], 2)
             ]),
-            a("div", gp, [
-              o(N) ? (l(), u("div", yp, [
+            a("div", vp, [
+              o(N) ? (l(), u("div", gp, [
                 y(o(C), {
                   icon: "tabler:loader-2",
                   class: "km-i spin",
@@ -8935,9 +8931,9 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 }),
                 O[29] || (O[29] = M(" Loading… ", -1))
               ])) : o(R) === "readme" ? (l(), u(Y, { key: 1 }, [
-                o(T) ? (l(), u("article", wp, [
+                o(T) ? (l(), u("article", kp, [
                   y(ae, { source: o(T) }, null, 8, ["source"])
-                ])) : (l(), u("div", kp, [
+                ])) : (l(), u("div", yp, [
                   y(o(C), {
                     icon: "tabler:file-off",
                     class: "km-i-xl km-dim",
@@ -8945,39 +8941,39 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   }),
                   O[30] || (O[30] = a("p", { class: "km-mt" }, "No README provided.", -1))
                 ]))
-              ], 64)) : o(R) === "overview" ? (l(), u("div", Sp, [
-                o(K).length ? (l(), u("section", $p, [
-                  a("div", Cp, [
+              ], 64)) : o(R) === "overview" ? (l(), u("div", wp, [
+                o(K).length ? (l(), u("section", Sp, [
+                  a("div", $p, [
                     y(o(C), {
                       icon: "tabler:settings-2",
                       class: "km-i-sm",
                       "aria-hidden": "true"
                     }),
                     O[31] || (O[31] = M(" Environment ", -1)),
-                    a("span", Ip, d(o(K).length), 1)
+                    a("span", Cp, d(o(K).length), 1)
                   ]),
                   O[32] || (O[32] = a("p", { class: "d-sub" }, "Variables this module reads — set them in your environment.", -1)),
-                  a("div", _p, [
+                  a("div", Ip, [
                     (l(!0), u(Y, null, ie(o(K), (v) => (l(), u("div", {
                       key: v.id,
                       class: "d-field d-field-env"
                     }, [
-                      a("span", xp, [
+                      a("span", _p, [
                         y(o(C), {
                           icon: o(P)(v, "tabler:variable"),
                           class: "km-i",
                           "aria-hidden": "true"
                         }, null, 8, ["icon"])
                       ]),
-                      a("span", Op, [
-                        a("span", Lp, d(o(B)(v)), 1),
-                        o(c)(v) ? (l(), u("span", zp, d(o(c)(v)), 1)) : f("", !0)
+                      a("span", xp, [
+                        a("span", Op, d(o(B)(v)), 1),
+                        o(c)(v) ? (l(), u("span", Lp, d(o(c)(v)), 1)) : f("", !0)
                       ])
                     ]))), 128))
                   ])
                 ])) : f("", !0),
-                o(H).length || (o(E)?.requirements || []).length ? (l(), u("section", Ap, [
-                  a("div", Pp, [
+                o(H).length || (o(E)?.requirements || []).length ? (l(), u("section", zp, [
+                  a("div", Ap, [
                     y(o(C), {
                       icon: "tabler:plug-connected",
                       class: "km-i-sm",
@@ -8986,43 +8982,43 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     O[33] || (O[33] = M(" Requires", -1))
                   ]),
                   O[34] || (O[34] = a("p", { class: "d-sub" }, "Host resources this module is wired to at install.", -1)),
-                  a("div", Mp, [
+                  a("div", Pp, [
                     o(H).length ? (l(!0), u(Y, { key: 0 }, ie(o(H), (v) => (l(), u("div", {
                       key: v.id,
                       class: "d-field d-field-req"
                     }, [
-                      a("span", Ep, [
+                      a("span", Mp, [
                         y(o(C), {
                           icon: "tabler:link",
                           class: "km-i",
                           "aria-hidden": "true"
                         })
                       ]),
-                      a("span", Tp, [
-                        a("span", Fp, d(o(B)(v)), 1),
-                        o(c)(v) ? (l(), u("span", Vp, d(o(c)(v)), 1)) : f("", !0)
+                      a("span", Ep, [
+                        a("span", Tp, d(o(B)(v)), 1),
+                        o(c)(v) ? (l(), u("span", Fp, d(o(c)(v)), 1)) : f("", !0)
                       ])
                     ]))), 128)) : (l(!0), u(Y, { key: 1 }, ie(o(E).requirements, (v, I) => (l(), u("div", {
                       key: I,
                       class: "d-field d-field-req"
                     }, [
-                      a("span", Dp, [
+                      a("span", Vp, [
                         y(o(C), {
                           icon: "tabler:link",
                           class: "km-i",
                           "aria-hidden": "true"
                         })
                       ]),
-                      a("span", Bp, [
-                        a("span", Rp, d(v.name), 1),
-                        v.description ? (l(), u("span", jp, d(v.description), 1)) : f("", !0),
-                        v.default ? (l(), u("span", Hp, "default: " + d(v.default), 1)) : f("", !0)
+                      a("span", Dp, [
+                        a("span", Bp, d(v.name), 1),
+                        v.description ? (l(), u("span", Rp, d(v.description), 1)) : f("", !0),
+                        v.default ? (l(), u("span", jp, "default: " + d(v.default), 1)) : f("", !0)
                       ])
                     ]))), 128))
                   ])
                 ])) : f("", !0),
                 a("section", null, [
-                  a("div", Up, [
+                  a("div", Hp, [
                     y(o(C), {
                       icon: "tabler:package",
                       class: "km-i-sm d-accent-i",
@@ -9030,39 +9026,39 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     }),
                     O[35] || (O[35] = M(" Provides", -1))
                   ]),
-                  m.value.installed ? o(J).length ? (l(), u("div", Zp, [
+                  m.value.installed ? o(J).length ? (l(), u("div", Wp, [
                     (l(!0), u(Y, null, ie(o(J), (v) => (l(), u("div", {
                       key: v.key
                     }, [
-                      a("div", Yp, [
+                      a("div", Zp, [
                         y(o(C), {
                           icon: v.icon,
                           class: "km-i-sm d-accent-i",
                           "aria-hidden": "true"
                         }, null, 8, ["icon"]),
                         M(" " + d(v.label) + " ", 1),
-                        a("span", Xp, d(v.items.length), 1)
+                        a("span", Yp, d(v.items.length), 1)
                       ]),
-                      a("div", Jp, [
+                      a("div", Xp, [
                         (l(!0), u(Y, null, ie(v.items, (I) => (l(), u("div", {
                           key: I.id,
                           class: "d-entry"
                         }, [
-                          a("div", Qp, d(I.meta && I.meta.title || o(B)(I)), 1),
-                          a("div", em, d(I.id), 1)
+                          a("div", Jp, d(I.meta && I.meta.title || o(B)(I)), 1),
+                          a("div", Qp, d(I.id), 1)
                         ]))), 128))
                       ])
                     ]))), 128))
-                  ])) : (l(), u("p", Wp, "No registry entries.")) : (l(), u("div", Np, [
+                  ])) : (l(), u("p", Gp, "No registry entries.")) : (l(), u("div", Up, [
                     (o(E)?.entry_kinds || []).length ? (l(), u(Y, { key: 0 }, [
-                      a("p", Kp, "Publishes " + d(o(E).entry_count || o(E).entry_kinds.length) + " entries; per-entry detail resolves after install.", 1),
-                      a("div", qp, [
+                      a("p", Np, "Publishes " + d(o(E).entry_count || o(E).entry_kinds.length) + " entries; per-entry detail resolves after install.", 1),
+                      a("div", Kp, [
                         (l(!0), u(Y, null, ie(o(E).entry_kinds, (v) => (l(), u("span", {
                           key: v,
                           class: "provides-pill"
                         }, d(v), 1))), 128))
                       ])
-                    ], 64)) : (l(), u("p", Gp, [...O[36] || (O[36] = [
+                    ], 64)) : (l(), u("p", qp, [...O[36] || (O[36] = [
                       M("See the ", -1),
                       a("strong", null, "Readme", -1),
                       M(" tab for details.", -1)
@@ -9070,15 +9066,15 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   ]))
                 ])
               ])) : (l(), u(Y, { key: 3 }, [
-                o(A).length ? (l(), u("div", nm, [
+                o(A).length ? (l(), u("div", tm, [
                   (l(!0), u(Y, null, ie(o(A), (v) => (l(), u("div", {
                     key: v.version,
                     class: "d-ver-row"
                   }, [
-                    a("span", om, d(v.version), 1),
-                    v.create_time ? (l(), u("span", im, d(o(Fn)(v.create_time, { maxUnit: "year" })), 1)) : f("", !0),
+                    a("span", nm, d(v.version), 1),
+                    v.create_time ? (l(), u("span", om, d(o(Fn)(v.create_time, { maxUnit: "year" })), 1)) : f("", !0),
                     O[37] || (O[37] = a("span", { class: "km-grow" }, null, -1)),
-                    v.download_count ? (l(), u("span", sm, [
+                    v.download_count ? (l(), u("span", im, [
                       y(o(C), {
                         icon: "tabler:download",
                         class: "km-i-xs",
@@ -9086,9 +9082,9 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       }),
                       M(" " + d(o(mn)(v.download_count)), 1)
                     ])) : f("", !0),
-                    v.size_bytes ? (l(), u("span", am, d(o(dn)(v.size_bytes)), 1)) : f("", !0)
+                    v.size_bytes ? (l(), u("span", sm, d(o(dn)(v.size_bytes)), 1)) : f("", !0)
                   ]))), 128))
-                ])) : (l(), u("p", tm, "No published versions."))
+                ])) : (l(), u("p", em, "No published versions."))
               ], 64))
             ])
           ])
@@ -9096,162 +9092,162 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
       ], 4);
     };
   }
-}), rm = { class: "km" }, um = {
+}), lm = { class: "km" }, rm = {
   key: 1,
   class: "km-loading km-center km-initial-loading",
   role: "status",
   "aria-live": "polite"
-}, dm = {
+}, um = {
   key: 2,
   class: "km-denied"
-}, cm = { class: "km-denied-box" }, pm = {
+}, dm = { class: "km-denied-box" }, cm = {
   key: 3,
   class: "km-scroll"
-}, mm = {
+}, pm = {
   key: 1,
   class: "km-list"
-}, fm = { class: "km-sec-bar km-sec-bar-toolbar" }, bm = { class: "km-controls" }, hm = ["disabled"], vm = ["disabled"], gm = ["disabled"], ym = {
+}, mm = { class: "km-sec-bar km-sec-bar-toolbar" }, fm = { class: "km-controls" }, bm = ["disabled"], hm = ["disabled"], vm = ["disabled"], gm = {
   key: 0,
   class: "km-btn-count"
-}, km = ["disabled"], wm = { class: "km-hub-auth-panel" }, Sm = { class: "km-hub-auth-row" }, $m = {
+}, ym = ["disabled"], km = { class: "km-hub-auth-panel" }, wm = { class: "km-hub-auth-row" }, Sm = {
   key: 0,
   class: "km-hub-auth-meta"
-}, Cm = { class: "km-hub-auth-meta" }, Im = {
+}, $m = { class: "km-hub-auth-meta" }, Cm = {
   key: 1,
   class: "km-hub-auth-orgs"
-}, _m = { class: "km-hub-auth-org-name" }, xm = {
+}, Im = { class: "km-hub-auth-org-name" }, _m = {
   key: 0,
   class: "km-hub-auth-org-role"
-}, Om = { class: "km-hub-auth-hint" }, Lm = ["href"], zm = { class: "km-hub-auth-actions" }, Am = ["disabled"], Pm = {
+}, xm = { class: "km-hub-auth-hint" }, Om = ["href"], Lm = { class: "km-hub-auth-actions" }, zm = ["disabled"], Am = {
   key: 0,
   class: "km-msg km-msg-err"
-}, Mm = {
+}, Pm = {
   key: 1,
   class: "km-msg"
-}, Em = {
+}, Mm = {
   key: 2,
   class: "km-msg km-msg-err"
-}, Tm = {
+}, Em = {
   key: 3,
   class: "km-loading km-center"
-}, Fm = { key: 0 }, Vm = { class: "hub-section-head" }, Dm = { class: "feat-grid" }, Bm = ["onClick"], Rm = { class: "feat-icon" }, jm = { class: "feat-body" }, Hm = { class: "km-row-wrap" }, Um = { class: "feat-name" }, Nm = {
+}, Tm = { key: 0 }, Fm = { class: "hub-section-head" }, Vm = { class: "feat-grid" }, Dm = ["onClick"], Bm = { class: "feat-icon" }, Rm = { class: "feat-body" }, jm = { class: "km-row-wrap" }, Hm = { class: "feat-name" }, Um = {
   key: 0,
   class: "badge-app kx-tag-caps"
-}, Km = {
+}, Nm = {
   key: 1,
   class: "badge-private kx-tag-caps",
   title: "Private Hub module"
-}, qm = {
+}, Km = {
   key: 2,
   class: "badge-warn kx-tag-caps"
-}, Gm = { class: "feat-org" }, Wm = {
+}, qm = { class: "feat-org" }, Gm = {
   key: 0,
   class: "feat-desc"
-}, Zm = { class: "feat-meta" }, Ym = { class: "meta-pill" }, Xm = { class: "meta-pill" }, Jm = ["title"], Qm = { class: "hub-section-head" }, ef = { class: "hub-section-title" }, tf = { class: "hub-section-sub" }, nf = { class: "mod-grid" }, of = ["onClick"], sf = { class: "mod-icon" }, af = { class: "mod-body" }, lf = { class: "km-row-wrap" }, rf = { class: "mod-name" }, uf = { class: "mod-version" }, df = {
+}, Wm = { class: "feat-meta" }, Zm = { class: "meta-pill" }, Ym = { class: "meta-pill" }, Xm = ["title"], Jm = { class: "hub-section-head" }, Qm = { class: "hub-section-title" }, ef = { class: "hub-section-sub" }, tf = { class: "mod-grid" }, nf = ["onClick"], of = { class: "mod-icon" }, sf = { class: "mod-body" }, af = { class: "km-row-wrap" }, lf = { class: "mod-name" }, rf = { class: "mod-version" }, uf = {
   key: 0,
   class: "badge-app kx-tag-caps"
-}, cf = {
+}, df = {
   key: 1,
   class: "badge-private kx-tag-caps",
   title: "Private Hub module"
-}, pf = {
+}, cf = {
   key: 2,
   class: "badge-warn kx-tag-caps"
-}, mf = { class: "mod-org" }, ff = {
+}, pf = { class: "mod-org" }, mf = {
   key: 0,
   class: "mod-desc"
-}, bf = { class: "mod-foot" }, hf = { class: "foot-stat" }, vf = {
+}, ff = { class: "mod-foot" }, bf = { class: "foot-stat" }, hf = {
   key: 0,
   class: "foot-stat"
-}, gf = ["title"], yf = {
+}, vf = ["title"], gf = {
   key: 2,
   class: "foot-stat km-dim km-ml-auto"
-}, kf = {
+}, yf = {
   key: 5,
   class: "km-empty"
-}, wf = { class: "km-muted" }, Sf = { class: "km-mono" }, $f = {
+}, kf = { class: "km-muted" }, wf = { class: "km-mono" }, Sf = {
   key: 6,
   class: "km-empty"
-}, Cf = {
+}, $f = {
   key: 7,
   class: "km-empty"
-}, If = { class: "km-muted" }, _f = { class: "km-mono" }, xf = {
+}, Cf = { class: "km-muted" }, If = { class: "km-mono" }, _f = {
   key: 0,
   class: "km-installed"
-}, Of = ["aria-expanded"], Lf = { class: "km-sub" }, zf = {
+}, xf = ["aria-expanded"], Of = { class: "km-sub" }, Lf = {
   key: 0,
+  class: "km-update-count"
+}, zf = {
+  key: 1,
   class: "km-update-count"
 }, Af = {
-  key: 1,
-  class: "km-update-count"
-}, Pf = {
   key: 0,
   class: "km-msg km-msg-err km-mb"
-}, Mf = {
+}, Pf = {
   key: 1,
   class: "inst-toolbar"
-}, Ef = {
+}, Mf = {
   key: 2,
   class: "inst-list"
-}, Tf = ["onClick"], Ff = { class: "inst-icon" }, Vf = { class: "km-grow km-min0" }, Df = { class: "km-row-tight" }, Bf = { class: "inst-name" }, Rf = {
+}, Ef = ["onClick"], Tf = { class: "inst-icon" }, Ff = { class: "km-grow km-min0" }, Vf = { class: "km-row-tight" }, Df = { class: "inst-name" }, Bf = {
   key: 0,
   class: "badge-app kx-tag-caps"
-}, jf = {
+}, Rf = {
   key: 1,
   class: "badge-private kx-tag-caps",
   title: "Private Hub module"
-}, Hf = {
+}, jf = {
   key: 2,
   class: "km-chip"
-}, Uf = ["title"], Nf = { class: "inst-id" }, Kf = {
+}, Hf = ["title"], Uf = { class: "inst-id" }, Nf = {
   key: 0,
   class: "km-dim"
-}, qf = {
+}, Kf = {
   key: 0,
   class: "inst-update-msg"
-}, Gf = { class: "inst-ver" }, Wf = { class: "inst-migs" }, Zf = { class: "inst-actions" }, Yf = ["disabled", "aria-label", "onClick"], Xf = ["disabled", "aria-label", "onClick"], Jf = ["title", "aria-label"], Qf = ["aria-label", "onClick"], eb = ["title", "aria-label"], tb = {
+}, qf = { class: "inst-ver" }, Gf = { class: "inst-migs" }, Wf = { class: "inst-actions" }, Zf = ["disabled", "aria-label", "onClick"], Yf = ["disabled", "aria-label", "onClick"], Xf = ["title", "aria-label"], Jf = ["aria-label", "onClick"], Qf = ["title", "aria-label"], eb = {
   key: 3,
   class: "km-empty inst-empty"
-}, nb = { class: "km-modal-body" }, ob = { class: "km-uninstall-target" }, ib = { class: "km-mono" }, sb = { class: "km-dim" }, ab = {
+}, tb = { class: "km-modal-body" }, nb = { class: "km-uninstall-target" }, ob = { class: "km-mono" }, ib = { class: "km-dim" }, sb = {
   key: 0,
   class: "km-msg km-msg-err"
-}, lb = {
+}, ab = {
   key: 0,
   class: "km-code"
-}, rb = {
+}, lb = {
   key: 1,
   class: "km-mt"
-}, ub = {
+}, rb = {
   key: 1,
   class: "km-msg km-msg-info"
-}, db = {
+}, ub = {
   key: 2,
   class: "km-running"
-}, cb = {
+}, db = {
   key: 3,
   class: "km-uninstall-preview"
-}, pb = {
+}, cb = {
   key: 0,
   class: "km-msg"
-}, mb = {
+}, pb = {
   key: 1,
   class: "km-preview-block"
-}, fb = { class: "km-mono" }, bb = { class: "km-dim" }, hb = {
+}, mb = { class: "km-mono" }, fb = { class: "km-dim" }, bb = {
   key: 2,
   class: "km-preview-block"
-}, vb = { class: "km-mono" }, gb = { class: "km-dim" }, yb = {
+}, hb = { class: "km-mono" }, vb = { class: "km-dim" }, gb = {
   key: 3,
   class: "km-preview-block"
-}, kb = { class: "km-mono" }, wb = { class: "km-dim" }, Sb = {
+}, yb = { class: "km-mono" }, kb = { class: "km-dim" }, wb = {
   key: 4,
   class: "km-ledger"
-}, $b = { class: "km-ledger-step" }, Cb = { class: "km-grow" }, Ib = { class: "km-chip" }, _b = {
+}, Sb = { class: "km-ledger-step" }, $b = { class: "km-grow" }, Cb = { class: "km-chip" }, Ib = {
   key: 0,
   class: "km-ledger-msg"
-}, xb = {
+}, _b = {
   key: 5,
   class: "km-running"
-}, Ob = { class: "km-grow km-running-label" }, Lb = { class: "km-dim" }, zb = ["disabled"], Ab = ["disabled"], Pb = ["disabled", "title"], Mb = /* @__PURE__ */ tn({
+}, xb = { class: "km-grow km-running-label" }, Ob = { class: "km-dim" }, Lb = ["disabled"], zb = ["disabled"], Ab = ["disabled", "title"], Pb = /* @__PURE__ */ tn({
   __name: "modules",
   setup(e) {
     const t = ql(), {
@@ -9363,20 +9359,20 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
       executionStepLabel: Zt,
       runUninstall: St
     } = t, $t = j(null);
-    return (Ie, _) => (l(), u("div", rm, [
+    return (Ie, _) => (l(), u("div", lm, [
       o(h) ? (l(), u("div", {
         key: 0,
         class: te(["km-banner", o(h).kind === "ok" ? "km-banner-ok" : "km-banner-err"])
       }, d(o(h).message), 3)) : f("", !0),
-      o(r) ? (l(), u("div", um, [
+      o(r) ? (l(), u("div", rm, [
         y(o(C), {
           icon: "tabler:loader-2",
           class: "km-i spin",
           "aria-hidden": "true"
         }),
         _[19] || (_[19] = M(" Loading modules… ", -1))
-      ])) : o(p) ? (l(), u("div", dm, [
-        a("div", cm, [
+      ])) : o(p) ? (l(), u("div", um, [
+        a("div", dm, [
           y(o(C), {
             icon: "tabler:lock",
             class: "km-denied-icon",
@@ -9389,14 +9385,14 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
             M(" scope to manage modules.")
           ], -1))
         ])
-      ])) : (l(), u("div", pm, [
-        o(m) ? (l(), ye(lm, {
+      ])) : (l(), u("div", cm, [
+        o(m) ? (l(), ye(am, {
           key: 0,
           page: o(t)
-        }, null, 8, ["page"])) : (l(), u("div", mm, [
+        }, null, 8, ["page"])) : (l(), u("div", pm, [
           a("section", null, [
-            a("div", fm, [
-              a("div", bm, [
+            a("div", mm, [
+              a("div", fm, [
                 a("button", {
                   class: "km-btn km-btn-secondary km-btn-outlined km-btn-sm",
                   disabled: o(Se) || o(it),
@@ -9409,7 +9405,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     "aria-hidden": "true"
                   }, null, 8, ["icon", "class"]),
                   _[22] || (_[22] = M(" Refresh ", -1))
-                ], 8, hm),
+                ], 8, bm),
                 a("button", {
                   class: "km-btn km-btn-secondary km-btn-outlined km-btn-sm",
                   disabled: o(Ge) || o(Be) || o(Se) || o(ot) === 0,
@@ -9422,7 +9418,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     "aria-hidden": "true"
                   }, null, 8, ["icon", "class"]),
                   _[23] || (_[23] = M(" Scan updates ", -1))
-                ], 8, vm),
+                ], 8, hm),
                 a("button", {
                   class: "km-btn km-btn-sm",
                   disabled: o(Be) || o(Ge) || o(Te).length === 0,
@@ -9435,8 +9431,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     "aria-hidden": "true"
                   }, null, 8, ["icon", "class"]),
                   _[24] || (_[24] = M(" Update all ", -1)),
-                  o(Te).length ? (l(), u("span", ym, d(o(Te).length), 1)) : f("", !0)
-                ], 8, gm),
+                  o(Te).length ? (l(), u("span", gm, d(o(Te).length), 1)) : f("", !0)
+                ], 8, vm),
                 Ve(a("input", {
                   "onUpdate:modelValue": _[3] || (_[3] = (b) => Ot($) ? $.value = b : null),
                   class: "km-input km-filter",
@@ -9478,7 +9474,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                       class: "km-i-sm",
                       "aria-hidden": "true"
                     })
-                  ], 10, km),
+                  ], 10, ym),
                   y(ai, {
                     open: o(x),
                     "onUpdate:open": _[10] || (_[10] = (b) => Ot(x) ? x.value = b : null),
@@ -9487,13 +9483,13 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     width: 300
                   }, {
                     default: he(() => [
-                      a("div", wm, [
+                      a("div", km, [
                         _[28] || (_[28] = a("div", { class: "km-hub-auth-title" }, "Wippy Hub token", -1)),
                         o(A) ? (l(), u("div", {
                           key: 0,
                           class: te(["km-hub-auth-active", o(K) && "is-expired"])
                         }, [
-                          a("div", Sm, [
+                          a("div", wm, [
                             y(o(C), {
                               icon: o(K) ? "tabler:alert-triangle" : "tabler:circle-check-filled",
                               class: te(["km-i-sm", o(K) ? "km-hub-warn" : "km-hub-ok"]),
@@ -9507,8 +9503,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                               ], 64)) : f("", !0)
                             ])
                           ]),
-                          o(k)?.registry ? (l(), u("div", $m, d(o(k).registry), 1)) : f("", !0),
-                          a("div", Cm, [
+                          o(k)?.registry ? (l(), u("div", Sm, d(o(k).registry), 1)) : f("", !0),
+                          a("div", $m, [
                             o(k)?.scope ? (l(), u(Y, { key: 0 }, [
                               M("scope: " + d(o(k).scope), 1)
                             ], 64)) : f("", !0),
@@ -9516,7 +9512,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                               M(" · expires " + d(o(B)), 1)
                             ], 64)) : f("", !0)
                           ]),
-                          o(T).length ? (l(), u("div", Im, [
+                          o(T).length ? (l(), u("div", Cm, [
                             _[26] || (_[26] = a("div", { class: "km-hub-auth-orgs-label" }, "Organizations", -1)),
                             (l(!0), u(Y, null, ie(o(T), (b) => (l(), u("div", {
                               key: b.id || b.name,
@@ -9527,12 +9523,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                                 class: "km-i-sm",
                                 "aria-hidden": "true"
                               }),
-                              a("span", _m, d(b.display_name || b.name), 1),
-                              b.role ? (l(), u("span", xm, d(b.role), 1)) : f("", !0)
+                              a("span", Im, d(b.display_name || b.name), 1),
+                              b.role ? (l(), u("span", _m, d(b.role), 1)) : f("", !0)
                             ]))), 128))
                           ])) : f("", !0)
                         ], 2)) : f("", !0),
-                        a("p", Om, [
+                        a("p", xm, [
                           M(d(o(A) ? "Replace the token, or" : "Paste a Hub registry token to browse and install private modules.") + " ", 1),
                           o(A) ? (l(), u(Y, { key: 0 }, [
                             M("create a new one")
@@ -9541,7 +9537,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                             href: o(s),
                             target: "_blank",
                             rel: "noopener"
-                          }, d(o(A) ? "↗" : "Create one →"), 9, Lm)
+                          }, d(o(A) ? "↗" : "Create one →"), 9, Om)
                         ]),
                         Ve(a("input", {
                           "onUpdate:modelValue": _[6] || (_[6] = (b) => Ot(S) ? S.value = b : null),
@@ -9557,7 +9553,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         }, null, 544), [
                           [Ln, o(S)]
                         ]),
-                        a("div", zm, [
+                        a("div", Lm, [
                           a("button", {
                             class: "km-btn km-btn-sm",
                             disabled: o(E),
@@ -9570,7 +9566,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                               "aria-hidden": "true"
                             }, null, 8, ["icon", "class"]),
                             M(" " + d(o(E) ? "Saving…" : o(A) ? "Replace token" : "Save token"), 1)
-                          ], 8, Am),
+                          ], 8, zm),
                           o(A) ? (l(), u("button", {
                             key: 0,
                             class: "km-btn km-btn-secondary km-btn-outlined km-btn-sm",
@@ -9592,10 +9588,10 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 ], 512)
               ])
             ]),
-            o(R) ? (l(), u("div", Pm, d(o(R)), 1)) : f("", !0),
-            !o(g) && o(K) ? (l(), u("div", Mm, "Your Wippy Hub token is expired.")) : f("", !0),
-            o(Ye) ? (l(), u("div", Em, d(o(Ye)), 1)) : f("", !0),
-            o(it) || o(Se) ? (l(), u("div", Tm, [
+            o(R) ? (l(), u("div", Am, d(o(R)), 1)) : f("", !0),
+            !o(g) && o(K) ? (l(), u("div", Pm, "Your Wippy Hub token is expired.")) : f("", !0),
+            o(Ye) ? (l(), u("div", Mm, d(o(Ye)), 1)) : f("", !0),
+            o(it) || o(Se) ? (l(), u("div", Em, [
               y(o(C), {
                 icon: "tabler:loader-2",
                 class: "km-i spin",
@@ -9603,8 +9599,8 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               }),
               _[29] || (_[29] = M(" Loading modules… ", -1))
             ])) : o(D).length > 0 ? (l(), u(Y, { key: 4 }, [
-              o(U).length ? (l(), u("div", Fm, [
-                a("div", Vm, [
+              o(U).length ? (l(), u("div", Tm, [
+                a("div", Fm, [
                   y(o(C), {
                     icon: "tabler:flame",
                     class: "km-i km-flame",
@@ -9613,7 +9609,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   _[30] || (_[30] = a("span", { class: "hub-section-title" }, "Most popular", -1)),
                   _[31] || (_[31] = a("span", { class: "hub-section-sub" }, "by downloads", -1))
                 ]),
-                a("div", Dm, [
+                a("div", Vm, [
                   (l(!0), u(Y, null, ie(o(U), (b) => (l(), u("button", {
                     key: "f" + o(En)(b),
                     class: "feat-card",
@@ -9621,18 +9617,18 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     onClick: (He) => o(gt)(b)
                   }, [
                     _[33] || (_[33] = a("span", { class: "feat-strip" }, null, -1)),
-                    a("span", Rm, [
+                    a("span", Bm, [
                       y(o(C), {
                         icon: o(en)(b),
                         class: "km-i-lg",
                         "aria-hidden": "true"
                       }, null, 8, ["icon"])
                     ]),
-                    a("span", jm, [
-                      a("span", Hm, [
-                        a("span", Um, d(o(Qt)(b)), 1),
-                        o(un)(b) ? (l(), u("span", Nm, "app")) : f("", !0),
-                        o(cn)(b) ? (l(), u("span", Km, [
+                    a("span", Rm, [
+                      a("span", jm, [
+                        a("span", Hm, d(o(Qt)(b)), 1),
+                        o(un)(b) ? (l(), u("span", Um, "app")) : f("", !0),
+                        o(cn)(b) ? (l(), u("span", Nm, [
                           y(o(C), {
                             icon: "tabler:lock",
                             class: "km-i-xs",
@@ -9640,12 +9636,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           _[32] || (_[32] = M(" private", -1))
                         ])) : f("", !0),
-                        b.deprecated ? (l(), u("span", qm, "deprecated")) : f("", !0)
+                        b.deprecated ? (l(), u("span", Km, "deprecated")) : f("", !0)
                       ]),
-                      a("span", Gm, d(o(Pn)(b)), 1),
-                      b.description ? (l(), u("span", Wm, d(b.description), 1)) : f("", !0),
-                      a("span", Zm, [
-                        a("span", Ym, [
+                      a("span", qm, d(o(Pn)(b)), 1),
+                      b.description ? (l(), u("span", Gm, d(b.description), 1)) : f("", !0),
+                      a("span", Wm, [
+                        a("span", Zm, [
                           y(o(C), {
                             icon: "tabler:tag",
                             class: "km-i-xs",
@@ -9653,7 +9649,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           M(" " + d(b.latest_version || "?"), 1)
                         ]),
-                        a("span", Xm, [
+                        a("span", Ym, [
                           y(o(C), {
                             icon: "tabler:download",
                             class: "km-i-xs",
@@ -9672,44 +9668,44 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                             "aria-hidden": "true"
                           }),
                           M(" " + d(o(Tn)(b.license)), 1)
-                        ], 8, Jm)) : f("", !0)
+                        ], 8, Xm)) : f("", !0)
                       ])
                     ])
-                  ], 12, Bm))), 128))
+                  ], 12, Dm))), 128))
                 ])
               ])) : f("", !0),
               a("div", {
                 class: te(o(U).length ? "km-mt-sm" : "")
               }, [
-                a("div", Qm, [
+                a("div", Jm, [
                   y(o(C), {
                     icon: "tabler:apps",
                     class: "km-i km-accent",
                     "aria-hidden": "true"
                   }),
-                  a("span", ef, d(o(U).length ? "All modules" : "Available"), 1),
-                  a("span", tf, d(o(D).length) + " available", 1)
+                  a("span", Qm, d(o(U).length ? "All modules" : "Available"), 1),
+                  a("span", ef, d(o(D).length) + " available", 1)
                 ]),
-                a("div", nf, [
+                a("div", tf, [
                   (l(!0), u(Y, null, ie(o(Z), (b) => (l(), u("button", {
                     key: o(En)(b),
                     class: "mod-card",
                     style: Kt({ "--accent": o(pn)(b) }),
                     onClick: (He) => o(gt)(b)
                   }, [
-                    a("span", sf, [
+                    a("span", of, [
                       y(o(C), {
                         icon: o(en)(b),
                         class: "km-i",
                         "aria-hidden": "true"
                       }, null, 8, ["icon"])
                     ]),
-                    a("span", af, [
-                      a("span", lf, [
-                        a("span", rf, d(o(Qt)(b)), 1),
-                        a("span", uf, d(b.latest_version || "—"), 1),
-                        o(un)(b) ? (l(), u("span", df, "app")) : f("", !0),
-                        o(cn)(b) ? (l(), u("span", cf, [
+                    a("span", sf, [
+                      a("span", af, [
+                        a("span", lf, d(o(Qt)(b)), 1),
+                        a("span", rf, d(b.latest_version || "—"), 1),
+                        o(un)(b) ? (l(), u("span", uf, "app")) : f("", !0),
+                        o(cn)(b) ? (l(), u("span", df, [
                           y(o(C), {
                             icon: "tabler:lock",
                             class: "km-i-xs",
@@ -9717,12 +9713,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           _[34] || (_[34] = M(" private", -1))
                         ])) : f("", !0),
-                        b.deprecated ? (l(), u("span", pf, "deprecated")) : f("", !0)
+                        b.deprecated ? (l(), u("span", cf, "deprecated")) : f("", !0)
                       ]),
-                      a("span", mf, d(o(Pn)(b)), 1),
-                      b.description ? (l(), u("span", ff, d(b.description), 1)) : f("", !0),
-                      a("span", bf, [
-                        a("span", hf, [
+                      a("span", pf, d(o(Pn)(b)), 1),
+                      b.description ? (l(), u("span", mf, d(b.description), 1)) : f("", !0),
+                      a("span", ff, [
+                        a("span", bf, [
                           y(o(C), {
                             icon: "tabler:download",
                             class: "km-i-xs",
@@ -9730,7 +9726,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           }),
                           M(" " + d(o(mn)(b.total_downloads)), 1)
                         ]),
-                        b.favorites_count ? (l(), u("span", vf, [
+                        b.favorites_count ? (l(), u("span", hf, [
                           y(o(C), {
                             icon: "tabler:star",
                             class: "km-i-xs",
@@ -9742,40 +9738,40 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           key: 1,
                           class: "foot-stat km-dim",
                           title: b.license
-                        }, d(o(Tn)(b.license)), 9, gf)) : f("", !0),
-                        b.update_time ? (l(), u("span", yf, d(o(Fn)(b.update_time, { maxUnit: "year" })), 1)) : f("", !0)
+                        }, d(o(Tn)(b.license)), 9, vf)) : f("", !0),
+                        b.update_time ? (l(), u("span", gf, d(o(Fn)(b.update_time, { maxUnit: "year" })), 1)) : f("", !0)
                       ])
                     ])
-                  ], 12, of))), 128))
+                  ], 12, nf))), 128))
                 ])
               ], 2)
-            ], 64)) : !o(Ye) && o(Et).length === 0 ? (l(), u("div", kf, [
+            ], 64)) : !o(Ye) && o(Et).length === 0 ? (l(), u("div", yf, [
               y(o(C), {
                 icon: "tabler:package-off",
                 class: "km-i-xl km-dim km-block",
                 "aria-hidden": "true"
               }),
-              a("p", wf, [
+              a("p", kf, [
                 _[35] || (_[35] = M(" No modules tagged ", -1)),
-                a("code", Sf, d(o(n)), 1),
+                a("code", wf, d(o(n)), 1),
                 _[36] || (_[36] = M(" are published yet. ", -1))
               ])
-            ])) : !o(Ye) && o($) ? (l(), u("div", $f, [..._[37] || (_[37] = [
+            ])) : !o(Ye) && o($) ? (l(), u("div", Sf, [..._[37] || (_[37] = [
               a("p", { class: "km-muted" }, "No available modules match this filter.", -1)
-            ])])) : o(Ye) ? f("", !0) : (l(), u("div", Cf, [
+            ])])) : o(Ye) ? f("", !0) : (l(), u("div", $f, [
               y(o(C), {
                 icon: "tabler:circle-check",
                 class: "km-i-xl km-dim km-block",
                 "aria-hidden": "true"
               }),
-              a("p", If, [
+              a("p", Cf, [
                 _[38] || (_[38] = M(" All ", -1)),
-                a("code", _f, d(o(n)), 1),
+                a("code", If, d(o(n)), 1),
                 _[39] || (_[39] = M(" modules are installed — manage them under Installed below. ", -1))
               ])
             ]))
           ]),
-          o(nt).length > 0 || o(We) ? (l(), u("section", xf, [
+          o(nt).length > 0 || o(We) ? (l(), u("section", _f, [
             a("button", {
               class: "km-collapse-head",
               "aria-expanded": o(Ze),
@@ -9787,19 +9783,19 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 "aria-hidden": "true"
               }, null, 8, ["icon"]),
               _[40] || (_[40] = a("span", { class: "km-h2" }, "Installed", -1)),
-              a("span", Lf, [
+              a("span", Of, [
                 M(d(o(X).length), 1),
                 o(X).length !== o(ot) ? (l(), u(Y, { key: 0 }, [
                   M(" of " + d(o(ot)), 1)
                 ], 64)) : f("", !0),
                 M(" module" + d(o(X).length === 1 ? "" : "s"), 1)
               ]),
-              o(Re) > 0 && o(Re) !== o(ot) ? (l(), u("span", zf, d(o(Tt)) + " of " + d(o(Re)) + " hub module" + d(o(Re) === 1 ? "" : "s"), 1)) : f("", !0),
-              o(Te).length ? (l(), u("span", Af, d(o(Te).length) + " update" + d(o(Te).length === 1 ? "" : "s"), 1)) : f("", !0)
-            ], 8, Of),
+              o(Re) > 0 && o(Re) !== o(ot) ? (l(), u("span", Lf, d(o(Tt)) + " of " + d(o(Re)) + " hub module" + d(o(Re) === 1 ? "" : "s"), 1)) : f("", !0),
+              o(Te).length ? (l(), u("span", zf, d(o(Te).length) + " update" + d(o(Te).length === 1 ? "" : "s"), 1)) : f("", !0)
+            ], 8, xf),
             o(Ze) ? (l(), u(Y, { key: 0 }, [
-              o(We) ? (l(), u("div", Pf, d(o(We)), 1)) : f("", !0),
-              o(nt).length > 0 ? (l(), u("div", Mf, [
+              o(We) ? (l(), u("div", Af, d(o(We)), 1)) : f("", !0),
+              o(nt).length > 0 ? (l(), u("div", Pf, [
                 Ve(a("input", {
                   "onUpdate:modelValue": _[12] || (_[12] = (b) => Ot(qe) ? qe.value = b : null),
                   class: "km-input km-filter inst-filter",
@@ -9823,7 +9819,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                   "aria-label": "Filter installed modules"
                 }, null, 8, ["modelValue"])
               ])) : f("", !0),
-              o(X).length > 0 ? (l(), u("div", Ef, [
+              o(X).length > 0 ? (l(), u("div", Mf, [
                 (l(!0), u(Y, null, ie(o(X), (b) => (l(), u("button", {
                   key: b.id,
                   class: "inst-row",
@@ -9834,21 +9830,21 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     class: "inst-strip",
                     "aria-hidden": "true"
                   }, null, -1)),
-                  a("div", Ff, [
+                  a("div", Tf, [
                     y(o(C), {
                       icon: o(st)(b),
                       class: "km-i",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"])
                   ]),
-                  a("div", Vf, [
-                    a("div", Df, [
-                      a("span", Bf, d(b.component), 1),
-                      o(un)(o(re)(b.component)) ? (l(), u("span", Rf, "app")) : f("", !0),
+                  a("div", Ff, [
+                    a("div", Vf, [
+                      a("span", Df, d(b.component), 1),
+                      o(un)(o(re)(b.component)) ? (l(), u("span", Bf, "app")) : f("", !0),
                       a("span", {
                         class: te(o(Ft)(b) ? "badge-installed kx-tag-caps" : "km-chip")
                       }, d(o(Fe)(b)), 3),
-                      o(de)(b) ? (l(), u("span", jf, [
+                      o(de)(b) ? (l(), u("span", Rf, [
                         y(o(C), {
                           icon: "tabler:lock",
                           class: "km-i-xs",
@@ -9856,7 +9852,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         }),
                         _[41] || (_[41] = M(" private", -1))
                       ])) : f("", !0),
-                      b.source ? (l(), u("span", Hf, d(b.source), 1)) : f("", !0),
+                      b.source ? (l(), u("span", jf, d(b.source), 1)) : f("", !0),
                       o(Xe)(b) && o(Xe)(b)?.status !== "current" ? (l(), u("span", {
                         key: 3,
                         class: te(["inst-update", o(Xe)(b)?.status]),
@@ -9868,17 +9864,17 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                           "aria-hidden": "true"
                         }, null, 8, ["icon", "class"]),
                         M(" " + d(o(nn)(b)), 1)
-                      ], 10, Uf)) : f("", !0)
+                      ], 10, Hf)) : f("", !0)
                     ]),
-                    a("div", Nf, [
+                    a("div", Uf, [
                       M(d(b.id) + " ", 1),
-                      o(at)(b) ? (l(), u("span", Kf, " · " + d(o(at)(b)), 1)) : f("", !0)
+                      o(at)(b) ? (l(), u("span", Nf, " · " + d(o(at)(b)), 1)) : f("", !0)
                     ]),
-                    o(Xe)(b)?.message ? (l(), u("div", qf, d(o(Xe)(b)?.message), 1)) : f("", !0)
+                    o(Xe)(b)?.message ? (l(), u("div", Kf, d(o(Xe)(b)?.message), 1)) : f("", !0)
                   ]),
-                  a("span", Gf, d(o(bt)(b)), 1),
-                  a("span", Wf, d(o(lt)(b)), 1),
-                  a("div", Zf, [
+                  a("span", qf, d(o(bt)(b)), 1),
+                  a("span", Gf, d(o(lt)(b)), 1),
+                  a("div", Wf, [
                     o(Xe)(b)?.status === "available" || o(Ct)(b) ? (l(), u("button", {
                       key: 0,
                       class: "km-icon-btn",
@@ -9891,7 +9887,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: te(["km-i", o(Ct)(b) && "spin"]),
                         "aria-hidden": "true"
                       }, null, 8, ["icon", "class"])
-                    ], 8, Yf)) : o(kt)(b) ? (l(), u("button", {
+                    ], 8, Zf)) : o(kt)(b) ? (l(), u("button", {
                       key: 1,
                       class: "km-icon-btn",
                       disabled: o(Be),
@@ -9903,7 +9899,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: "km-i",
                         "aria-hidden": "true"
                       })
-                    ], 8, Xf)) : (l(), u("button", {
+                    ], 8, Yf)) : (l(), u("button", {
                       key: 2,
                       class: "km-icon-btn",
                       disabled: "",
@@ -9915,7 +9911,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: "km-i",
                         "aria-hidden": "true"
                       })
-                    ], 8, Jf)),
+                    ], 8, Xf)),
                     o(fe)(b) ? (l(), u("button", {
                       key: 3,
                       class: "km-icon-btn km-danger",
@@ -9927,7 +9923,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: "km-i",
                         "aria-hidden": "true"
                       })
-                    ], 8, Qf)) : (l(), u("button", {
+                    ], 8, Jf)) : (l(), u("button", {
                       key: 4,
                       class: "km-icon-btn",
                       disabled: "",
@@ -9939,15 +9935,15 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                         class: "km-i",
                         "aria-hidden": "true"
                       })
-                    ], 8, eb))
+                    ], 8, Qf))
                   ]),
                   y(o(C), {
                     icon: "tabler:chevron-right",
                     class: "km-i km-chev",
                     "aria-hidden": "true"
                   })
-                ], 12, Tf))), 128))
-              ])) : o(nt).length > 0 ? (l(), u("div", tb, [
+                ], 12, Ef))), 128))
+              ])) : o(nt).length > 0 ? (l(), u("div", eb, [
                 y(o(C), {
                   icon: "tabler:filter-off",
                   class: "km-i-xl km-dim km-block",
@@ -9959,7 +9955,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
           ])) : f("", !0)
         ]))
       ])),
-      o(ke) ? (l(), ye(Cc, {
+      o(ke) ? (l(), ye($c, {
         key: 4,
         open: !0,
         mode: o(ke).mode,
@@ -9990,7 +9986,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
             class: "km-btn km-btn-text km-btn-secondary km-btn-sm",
             disabled: o(ve),
             onClick: _[15] || (_[15] = (b) => ct.value = !1)
-          }, "Cancel", 8, zb),
+          }, "Cancel", 8, Lb),
           a("button", {
             class: "km-btn km-btn-secondary km-btn-outlined km-btn-sm",
             disabled: o(ve) || o(Qe),
@@ -10003,7 +9999,7 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
             _[57] || (_[57] = M(" Preview ", -1))
-          ], 8, Ab),
+          ], 8, zb),
           a("button", {
             class: "km-btn km-btn-danger km-btn-sm",
             disabled: !!o(Ce),
@@ -10017,14 +10013,14 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
             _[58] || (_[58] = M(" Uninstall ", -1))
-          ], 8, Pb)
+          ], 8, Ab)
         ]),
         default: he(() => [
-          a("div", nb, [
-            a("p", ob, [
+          a("div", tb, [
+            a("p", nb, [
               _[45] || (_[45] = M(" Uninstall ", -1)),
-              a("code", ib, d(o(pt)?.component), 1),
-              a("span", sb, "(" + d(o(pt)?.id) + ")", 1)
+              a("code", ob, d(o(pt)?.component), 1),
+              a("span", ib, "(" + d(o(pt)?.id) + ")", 1)
             ]),
             a("div", null, [
               _[46] || (_[46] = a("label", { class: "km-label" }, "Migration policy", -1)),
@@ -10045,27 +10041,27 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                 M(" only if the module's down migrations are safe; data loss is possible.")
               ], -1))
             ]),
-            o(_t) ? (l(), u("div", ab, [
-              o($e) ? (l(), u("span", lb, d(o($e)), 1)) : f("", !0),
+            o(_t) ? (l(), u("div", sb, [
+              o($e) ? (l(), u("span", ab, d(o($e)), 1)) : f("", !0),
               M(d(o(_t)) + " ", 1),
-              o(Dt).length ? (l(), u("div", rb, "required by: " + d(o(Dt).join(", ")), 1)) : f("", !0)
+              o(Dt).length ? (l(), u("div", lb, "required by: " + d(o(Dt).join(", ")), 1)) : f("", !0)
             ])) : f("", !0),
-            o(xt) ? (l(), u("div", ub, [
+            o(xt) ? (l(), u("div", rb, [
               _[48] || (_[48] = a("strong", null, "Uninstall blocked:", -1)),
               M(" " + d(o(xt)), 1)
             ])) : f("", !0),
-            o(Qe) ? (l(), u("div", db, [
+            o(Qe) ? (l(), u("div", ub, [
               y(o(C), {
                 icon: "tabler:loader-2",
                 class: "km-i spin km-accent",
                 "aria-hidden": "true"
               }),
               _[49] || (_[49] = a("span", { class: "km-grow km-running-label" }, "Previewing uninstall", -1))
-            ])) : o(me) ? (l(), u("div", cb, [
-              o(me).warnings?.length ? (l(), u("div", pb, [
+            ])) : o(me) ? (l(), u("div", db, [
+              o(me).warnings?.length ? (l(), u("div", cb, [
                 (l(!0), u(Y, null, ie(o(me).warnings, (b) => (l(), u("div", { key: b }, d(b), 1))), 128))
               ])) : f("", !0),
-              o(me).removed?.length ? (l(), u("div", mb, [
+              o(me).removed?.length ? (l(), u("div", pb, [
                 _[51] || (_[51] = a("div", { class: "km-preview-title" }, "Removed", -1)),
                 (l(!0), u(Y, null, ie(o(me).removed, (b) => (l(), u("div", {
                   key: b.name || b.component,
@@ -10076,12 +10072,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     class: "km-i-xs km-danger-fg",
                     "aria-hidden": "true"
                   }),
-                  a("span", fb, d(b.name || b.component), 1),
+                  a("span", mb, d(b.name || b.component), 1),
                   _[50] || (_[50] = a("span", { class: "km-grow" }, null, -1)),
-                  a("span", bb, d(b.version), 1)
+                  a("span", fb, d(b.version), 1)
                 ]))), 128))
               ])) : f("", !0),
-              o(me).kept?.length ? (l(), u("div", hb, [
+              o(me).kept?.length ? (l(), u("div", bb, [
                 _[53] || (_[53] = a("div", { class: "km-preview-title" }, "Kept, still needed", -1)),
                 (l(!0), u(Y, null, ie(o(me).kept, (b) => (l(), u("div", {
                   key: b.name || b.component,
@@ -10092,12 +10088,12 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     class: "km-i-xs km-dim",
                     "aria-hidden": "true"
                   }),
-                  a("span", vb, d(b.name || b.component), 1),
+                  a("span", hb, d(b.name || b.component), 1),
                   _[52] || (_[52] = a("span", { class: "km-grow" }, null, -1)),
-                  a("span", gb, d(b.version), 1)
+                  a("span", vb, d(b.version), 1)
                 ]))), 128))
               ])) : f("", !0),
-              o(me).kept_under_uncertainty?.length ? (l(), u("div", yb, [
+              o(me).kept_under_uncertainty?.length ? (l(), u("div", gb, [
                 _[55] || (_[55] = a("div", { class: "km-preview-title" }, "Kept under uncertainty", -1)),
                 (l(!0), u(Y, null, ie(o(me).kept_under_uncertainty, (b) => (l(), u("div", {
                   key: b.name || b.component,
@@ -10108,32 +10104,32 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
                     class: "km-i-xs km-dim",
                     "aria-hidden": "true"
                   }),
-                  a("span", kb, d(b.name || b.component), 1),
+                  a("span", yb, d(b.name || b.component), 1),
                   _[54] || (_[54] = a("span", { class: "km-grow" }, null, -1)),
-                  a("span", wb, d(b.reason || b.version), 1)
+                  a("span", kb, d(b.reason || b.version), 1)
                 ]))), 128))
               ])) : f("", !0)
             ])) : f("", !0),
-            o(Gt).length ? (l(), u("div", Sb, [
+            o(Gt).length ? (l(), u("div", wb, [
               _[56] || (_[56] = a("div", { class: "km-panel-title" }, "Execution ledger", -1)),
               (l(!0), u(Y, null, ie(o(Gt), (b, He) => (l(), u("div", {
                 key: `${b.step}-${He}`,
                 class: te(["km-ledger-row", b.status === "failed" || b.status === "rollback_failed" ? "km-ledger-bad" : b.status === "rolled_back" ? "km-ledger-warn" : "km-ledger-ok"])
               }, [
-                a("span", $b, d(He + 1), 1),
-                a("span", Cb, d(o(Zt)(b)), 1),
-                a("span", Ib, d(b.status), 1),
-                b.message ? (l(), u("span", _b, d(b.message), 1)) : f("", !0)
+                a("span", Sb, d(He + 1), 1),
+                a("span", $b, d(o(Zt)(b)), 1),
+                a("span", Cb, d(b.status), 1),
+                b.message ? (l(), u("span", Ib, d(b.message), 1)) : f("", !0)
               ], 2))), 128))
             ])) : f("", !0),
-            o(ve) ? (l(), u("div", xb, [
+            o(ve) ? (l(), u("div", _b, [
               y(o(C), {
                 icon: "tabler:loader-2",
                 class: "km-i spin km-accent",
                 "aria-hidden": "true"
               }),
-              a("span", Ob, d(o(Bt)), 1),
-              a("span", Lb, d(o(Rt)) + "s", 1)
+              a("span", xb, d(o(Bt)), 1),
+              a("span", Ob, d(o(Rt)) + "s", 1)
             ])) : f("", !0)
           ])
         ]),
@@ -10141,20 +10137,20 @@ const Cr = { class: "km-2p-head-icon" }, Ir = { class: "km-2p-head-text" }, _r =
       }, 8, ["visible", "closable", "dismissable-mask", "close-on-escape"])
     ]));
   }
-}), Eb = { props: { type: "object", properties: {} } }, Tb = {
-  wippy: Eb
+}), Mb = { props: { type: "object", properties: {} } }, Eb = {
+  wippy: Mb
 };
-class Fb extends Di {
+class Tb extends Di {
   static get wippyConfig() {
     return {
-      propsSchema: Tb.wippy.props,
+      propsSchema: Eb.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
       inlineCss: Bi
     };
   }
   static get vueConfig() {
-    return { rootComponent: Mb, plugins: [Ri] };
+    return { rootComponent: Pb, plugins: [Ri] };
   }
 }
-Gi(import.meta.url, Fb);
+Gi(import.meta.url, Tb);
 //# sourceMappingURL=index.js.map

@@ -39,7 +39,7 @@
     "vue": "^3.5.0"
   },
   "wippy": {
-    "description": "Builds four web components from one package (per-tag registry entries live in src/_index.yaml): the primary tag kickside-knowledge (index.js) \u2014 the Knowledge surface that lists knowledge bases and opens a detail view mounting the KB engine's own component \u2014 plus wc-kb-picker (picker.js), the reusable knowledge configuration element, kx-kb-create-dialog (kb_create.js), the standalone create-KB dialog, and kickside-onboard-knowledge (onboard.js), the onboarding wizard step. The surface accepts a 'route' attribute (the sub-path under /knowledge: empty for the list, '<kbId>' or '<kbId>/<nodeId>' for deep links) and emits 'navigate' with the new sub-path for the shell to reflect into the URL. wc-kb-picker receives config { kb_ids: string[] } for multi-base trait scopes, or a schema declaring kb_id for one embed-sink destination; it emits 'config-changed' with that matching key. kx-kb-create-dialog accepts a 'parent-id' attribute and emits 'created' and 'close'; the onboarding element emits 'done' and 'back' to drive the host wizard. The props block below describes the primary kickside-knowledge tag, and the events block covers the surface's 'navigate' plus the picker's 'config-changed'; the other tags' schemas are declared in their own registry entries.",
+    "description": "Builds four web components from one package (per-tag registry entries live in src/_index.yaml): the primary tag kickside-knowledge (index.js) \u2014 the Knowledge surface that lists knowledge bases and opens a detail view mounting the KB engine's own component \u2014 plus wc-kb-picker (picker.js), the reusable knowledge configuration element, kx-kb-create-dialog (kb_create.js), the standalone create-KB dialog, and kickside-onboard-knowledge (onboard.js), the onboarding wizard step. The surface accepts a 'route' attribute (the sub-path under /knowledge: empty for the list, '<kbId>' or '<kbId>/<nodeId>' for deep links) and emits 'navigate' with the new sub-path for the shell to reflect into the URL. Nested Back emits {path: kbId, back: {within: kbId}}: the shell follows its own router history within that KB, or opens the KB root for a direct link. wc-kb-picker receives config { kb_ids: string[] } for multi-base trait scopes, or a schema declaring kb_id for one embed-sink destination; it emits 'config-changed' with that matching key. kx-kb-create-dialog accepts a 'parent-id' attribute and emits 'created' and 'close'; the onboarding element emits 'done' and 'back' to drive the host wizard. The props block below describes the primary kickside-knowledge tag, and the events block covers the surface's 'navigate' plus the picker's 'config-changed'; the other tags' schemas are declared in their own registry entries.",
     "tagName": "kickside-knowledge",
     "type": "component",
     "props": {
@@ -71,8 +71,37 @@
           "description": "Emitted by wc-kb-picker with kb_ids for trait scopes or kb_id when the supplied schema declares a single embed-sink destination."
         },
         "navigate": {
-          "type": "string",
-          "description": "Emitted to update the URL to the in-surface location (the sub-path under /knowledge)."
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "required": [
+                "path",
+                "back"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "back": {
+                  "type": "object",
+                  "required": [
+                    "within"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "within": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "description": "An in-surface sub-path, or a Back request bounded by a KB path, with path as the direct-link destination. The shell owns routing."
         }
       }
     },

@@ -26,6 +26,14 @@ Use the documented harness profiles for SQLite and PostgreSQL when persistence
 or migrations change. Frontend source and generated served assets belong in the
 same change; build through the checked-in Makefiles.
 
+Release Please owns versions and release tags. The release workflow builds each
+companion module, prepares it with native `wippy pack --module`, then publishes
+that exact file with `wippy publish --wapp`. Recovery must use the original tagged
+source and the same Wippy build: pack metadata includes the builder's identity.
+Existing versions are accepted only when their whole-file SHA-256 matches the
+prepared artifact. Never replace an existing version or mix preparation commands
+to resume a release.
+
 ## Pull requests
 
 Create a focused branch and submit a GitHub pull request to this repository.

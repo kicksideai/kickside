@@ -151,24 +151,6 @@ entries:
       execution_identity: kickside.execution:execution_identity
       trigger_reconcile: kickside.security:trigger_reconcile
 
-  - name: bot_delegation_host_test
-    kind: function.lua
-    meta: {type: test, suite: users}
-    source: file://bot_delegation_test.lua
-    method: run_host
-    security:
-      actor: {id: app:test_runner}
-      policies: [app:test_runtime]
-    modules: [sql, crypto, funcs, security, registry, store, json]
-    imports:
-      test: wippy.test:test
-      user_repo: kickside.users.persist:user_repo
-      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
-      user_group_sources_repo: kickside.users.persist:user_group_sources_repo
-      component: kickside.component:component
-      execution_identity: kickside.execution:execution_identity
-      trigger_reconcile: kickside.security:trigger_reconcile
-
   - name: bot_selection_test
     kind: function.lua
     meta: {type: test, suite: users}
@@ -537,9 +519,11 @@ entries:
     security:
       actor: {id: app:test_runner}
       policies: [app:test_runtime]
-    modules: [sql, crypto, security]
+    modules: [sql, crypto, security, registry]
     imports:
       test: wippy.test:test
+      execution_identity: kickside.execution:execution_identity
+      trigger_reconcile: kickside.security:trigger_reconcile
       session: kickside.users:session
       session_index: kickside.users.persist:session_index
       subject_lookup: kickside.users.binding:subject_lookup
@@ -773,3 +757,19 @@ entries:
       user_groups_repo: kickside.users.persist:user_groups_repo
       session: kickside.users:session_subject
       expiry_time: kickside.users:expiry_time
+
+  - name: session_metadata_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://session_metadata_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, http_client, json, funcs]
+    imports:
+      test: wippy.test:test
+      session_metadata: kickside.users:session_metadata
+      user_repo: kickside.users.persist:user_repo
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.9](https://github.com/kicksideai/kickside/compare/automation-v0.2.8...automation-v0.2.9) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
+## [0.2.8](https://github.com/kicksideai/kickside/compare/automation-v0.2.7...automation-v0.2.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* make direct grants atomic and select installed task providers ([#256](https://github.com/kicksideai/kickside/issues/256)) ([2e51908](https://github.com/kicksideai/kickside/commit/2e519081e032aabb2137ede2e5f3903e55012566))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/automation-v0.2.6...automation-v0.2.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
 ## [0.2.6](https://github.com/kicksideai/kickside/compare/automation-v0.2.5...automation-v0.2.6) (2026-10-28)
 
 

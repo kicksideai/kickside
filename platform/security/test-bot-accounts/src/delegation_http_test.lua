@@ -163,6 +163,65 @@ return {run = test.run_cases(function()
             local denied = request("GET", "/api/security/delegations", ungranted)
             test.eq(denied.status_code, 403, denied.body)
         end)
+        test.it("RA-H51 list names each component root the viewer can read by its title", function()
+            local token, admin = login({"app.security:admin"})
+            local function titled(id, title, readable)
+                if id ~= root then
+                    roots[#roots + 1] = id
+                    execute("INSERT INTO kickside_components (component_id,impl_id) VALUES ($1,$2)", {id, "app:http_fixture_root"})
+                end
+                if title then
+                    execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
+                        {uuid.v4(), id, "title", title})
+                end
+                if readable then
+                    execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_type,subject_id,access_mask) VALUES ($1,$2,$3,$4,$5,$6)",
+                        {uuid.v4(), id, id, "user", admin, 1})
+                end
+            end
+            titled(root, "Nightly digest", true)
+            local exact = save(token, args())
+            local untitled = uuid.v4()
+            titled(untitled, nil, true)
+            local plain = save(token, args({root = untitled}))
+            local hidden = uuid.v4()
+            titled(hidden, "Private digest", false)
+            local unreadable = save(token, args({root = hidden}))
+            local every = save(token, args({root = "*"}))
+            local response, payload = request("GET", "/api/security/delegations", token)
+            test.eq(response.status_code, 200, response.body)
+            local rows = {}
+            for _, row in ipairs(payload.delegations) do rows[row.policy_id] = row end
+            test.eq(rows[exact.policy_id].root, root)
+            test.eq(rows[exact.policy_id].root_label, "Nightly digest")
+            test.eq(rows[plain.policy_id].root, untitled)
+            test.is_nil(rows[plain.policy_id].root_label)
+            test.eq(rows[unreadable.policy_id].root, hidden)
+            test.is_nil(rows[unreadable.policy_id].root_label)
+            test.eq(rows[every.policy_id].root, "*")
+            test.is_nil(rows[every.policy_id].root_label)
+        end)
+        test.it("RA-H51 the root catalog lists only components the caller administers", function()
+            local token, admin = login({"app.security:admin"})
+            local managed = uuid.v4()
+            roots[#roots + 1] = managed
+            execute("INSERT INTO kickside_components (component_id,impl_id) VALUES ($1,$2)", {managed, "app:http_fixture_root"})
+            execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
+                {uuid.v4(), managed, "title", "Support bot"})
+            execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_type,subject_id,access_mask) VALUES ($1,$2,$3,$4,$5,$6)",
+                {uuid.v4(), managed, managed, "user", admin, 15})
+            local response, payload = request("GET", "/api/security/delegations/roots", token)
+            test.eq(response.status_code, 200, response.body)
+            test.eq(payload.success, true)
+            local listed = {}
+            for _, item in ipairs(payload.items) do listed[item.id] = item end
+            test.not_nil(listed[managed])
+            test.eq(listed[managed].label, "Support bot")
+            test.is_nil(listed[root])
+            local ungranted = login({"app.security:user"})
+            local denied = request("GET", "/api/security/delegations/roots", ungranted)
+            test.eq(denied.status_code, 403, denied.body)
+        end)
         test.it("RA-H50 DELETE retains canonical ID and removes native selection authority", function()
             local token = login({"app.security:admin"})
             local result = save(token, args())
@@ -193,6 +252,37 @@ return {run = test.run_cases(function()
             input = args()
             local inactive = request("POST", "/api/security/delegations", token, input)
             test.eq(inactive.status_code, 403, inactive.body)
+            unchanged(input)
+        end)
+        test.it("RA-H06 a grant names its target by canonical user ID, never an email alias or an absent account", function()
+            local token = login({"app.security:admin"})
+            for _, id in ipairs({target .. "@test.local", uuid.v4()}) do
+                local input = args({principal = {kind = "user", id = id}})
+                local refused = request("POST", "/api/security/delegations", token, input)
+                test.eq(refused.status_code, 403, refused.body)
+                test.is_nil((registry.get(identity.delegation_policy_id("user", id, root))))
+            end
+        end)
+        test.it("RA-H06 a live human target and the all-root grant both save", function()
+            local token = login({"app.security:admin"})
+            target = account()
+            save(token, args())
+            save(token, args({root = "*"}))
+        end)
+        test.it("RA-H45 a Component storage outage fails HTTP save with the storage error", function()
+            local token = login({"app.security:admin"})
+            local input = args()
+            execute("ALTER TABLE kickside_components RENAME TO fixture_unavailable_components", {})
+            local response: any, payload: any
+            local ok, call_err = pcall(function()
+                response, payload = request("POST", "/api/security/delegations", token, input)
+            end)
+            execute("ALTER TABLE fixture_unavailable_components RENAME TO kickside_components", {})
+            test.is_true(ok, tostring(call_err))
+            test.eq(payload.success, false)
+            test.eq(payload.kind, "Internal")
+            test.eq(response.status_code, payload.retryable and 500 or 400, response.body)
+            test.contains(payload.message, "kickside_components")
             unchanged(input)
         end)
         test.it("RA-H26 admin-group bot with valid stored password fails actual HTTP login", function()

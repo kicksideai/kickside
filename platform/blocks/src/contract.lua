@@ -1,4 +1,5 @@
 local json = require("json")
+local retry = require("retry")
 
 local M = {}
 
@@ -81,8 +82,11 @@ local function validate_execution(value: any, path: string): string?
     if type(value) ~= "table" then return path .. " must be an object" end
     local execution = value :: Map
     local kind = text(execution.kind)
+    local _, retry_err = retry.validate(execution, kind == "function" and "func" or kind)
+    if retry_err then return path .. ": " .. retry_err end
     if kind == "function" then
-        local unknown = reject_unknown(execution, { kind = true, function_id = true }, path)
+        local unknown = reject_unknown(execution, { kind = true, function_id = true,
+            retry_policy = true, start_to_close_timeout = true, schedule_to_close_timeout = true }, path)
         if unknown then return unknown end
         if not exact_id(execution.function_id) then return path .. ".function_id must be an exact namespace:name id" end
     elseif kind == "agent" then

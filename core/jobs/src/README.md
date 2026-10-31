@@ -25,6 +25,11 @@ resolves the identity held by its own owner record.
 Sits below `kickside/core`: core depends on jobs (thread append publishes demand through the jobs wake
 library); jobs depends on no core entry.
 
+PostgreSQL migration 04 creates the Jobs-owned `updated_at` trigger function, so
+Jobs can initialize its database without Core migrations. Migration 23 rebinds
+legacy installations to that function without changing Core's function. Undoing
+23 retains the Jobs trigger; undoing 04 removes its tables and function.
+
 ## Dependency interface
 
 The host must supply `target_db`; it is injected into both the jobs migration and the
@@ -57,6 +62,32 @@ with `details.cleanup_pending` preserves the existing continuation contract:
 `needs_continue = true` requests another page, while `wait_for = "lease_release"`
 or `"run_history_settlement"` requires settlement before retry. Running leases
 and unsettled history are retained. Callers import only `kickside.core.jobs:jobs`.
+
+### Worker capacity declarations
+
+A worker entry can declare a Settings-backed capacity shared with other worker
+entries:
+
+```yaml
+meta:
+  job_capacity: app.capacity
+  job_capacity_settings:
+    namespace: app.capacity
+    global_limit_key: global_limit
+    concurrency_key_limit_key: concurrency_key_limit
+```
+
+Workers in one group declare the same Settings values. Jobs for a declared
+worker require a nonempty `concurrency_key`. Claims enforce the group-wide
+global limit and the limit for each concurrency key. Both values are read from
+the declared Settings namespace at claim time. Jobs for workers without this
+declaration retain the ordinary single-flight behavior for a concurrency key.
+
+Declarations and limits are observed once per claim/backlog operation; they are
+not cached between operations. Invalid or unavailable declared Settings fail
+admission rather than removing the limit. The declared group must remain stable
+while its jobs are active. Enable declarations only after every Jobs claimant
+sharing that queue has been upgraded to support capacity enforcement.
 
 `jobs.complete_tx` accepts optional `demand_satisfied = true` when the worker proves under its durable source lock that the completed run covers the source head. It consumes ordinary demand received during that run; independent control wakes still rearm the slot. Omission retains the existing demand behavior.
 

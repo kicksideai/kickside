@@ -4,7 +4,12 @@ import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
+  resolve: {
+    alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') },
+    // Shared widget sources import the host proxy too; make their bare import
+    // resolve to this consumer's copy during Vite tests and development.
+    dedupe: ['@wippy-fe/proxy'],
+  },
   plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }), wippyComponentPlugin()],
   base: '',
   // Lib builds don't auto-replace process.env; provide it so deps that read
