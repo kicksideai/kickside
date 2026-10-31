@@ -13,6 +13,17 @@ self-hosted component is `<kickside-jobs-admin>`. Grant
 `kickside.jobs_admin.security:admin_access` to administrators; module discovery
 alone grants neither policy endpoints nor policy writes.
 
+For a Jobs-only administrator, compose a Security scope containing the
+`kickside.jobs_admin.security:admin_access` policy and assign that scope to the
+user alongside ordinary membership. The policy catalog supplies grants; the
+Users editor assigns scopes, so the policy ID itself is not a user group.
+
+A host that exposes System navigation can bind
+`kickside.jobs_admin:admin_navigation_policy` to its own navigation/discovery
+policy. KickSide binds `kickside.ui.security:system_tabs_access`, which permits
+tab discovery while each tab still checks its own endpoint permission. API-only
+hosts can leave this optional requirement at its empty default.
+
 Policy edits retain shipped defaults unless explicitly overridden. Running jobs
 keep the policy captured when claimed. Saves distinguish committed changes from
 pool application, and show the applied revision and failures. Realtime events
