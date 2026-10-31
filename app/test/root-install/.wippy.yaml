@@ -16,6 +16,7 @@ vars:
   pg_username: kickside
   pg_password: kickside
 override:
+  wippy.terminal:host:lifecycle.depends_on: [app:gateway]
   app:db:kind: db.sql.sqlite
   app:db:file: ${sqlite_path}
   app:gateway:addr: :${http_port}

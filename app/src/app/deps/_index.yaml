@@ -323,7 +323,7 @@ entries:
     - name: kickside.core.projections:api_router
       value: app:api
 
-  - version: ">=0.1.61"
+  - version: ">=0.1.67"
     name: kickside_jobs
     kind: ns.dependency
     meta: {}
@@ -333,6 +333,24 @@ entries:
       value: app:db
     - name: kickside.core.jobs:process_host
       value: app:processes
+    - name: kickside.core.jobs.performance:realtime
+      value: kickside.realtime:realtime_binding
+
+  # This new module has no older published API; 0.0.0 also resolves its
+  # source checkout before Release Please creates the first release.
+  - version: ">=0.0.0"
+    name: kickside_jobs_admin
+    kind: ns.dependency
+    meta:
+      comment: Jobs-owned performance controls, contributed as a System tab by the plugin.
+    component: kickside/jobs-admin
+    parameters:
+    - name: kickside.jobs_admin:api_router
+      value: app:api
+    - name: kickside.jobs_admin:ui_server
+      value: app:gateway
+    - name: kickside.jobs_admin:admin_navigation_policy
+      value: kickside.ui.security:system_tabs_access
 
   - version: ">=0.1.40"
     name: kickside_sso

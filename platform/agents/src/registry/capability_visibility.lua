@@ -30,35 +30,42 @@ function M.entry_is_public_capability(entry: any, capability_type: string): bool
     return false
 end
 
-function M.validate_ids(ids: any, capability_type: string, get_entry: any): (boolean, string?)
+local function invalid(message: string): error
+    return (errors.new({kind = errors.INVALID, message = message}) :: error)
+end
+
+function M.validate_ids(ids: any, capability_type: string, get_entry: any): (boolean, error?)
     local rule = rule_for(capability_type)
     if not rule then
-        return false, "unsupported capability type: " .. tostring(capability_type)
+        return false, invalid("unsupported capability type: " .. tostring(capability_type))
     end
     if ids == nil then return true, nil end
     if type(ids) ~= "table" then
-        return false, capability_type .. " ids must be an array"
+        return false, invalid(capability_type .. " ids must be an array")
     end
     if type(get_entry) ~= "function" then
-        return false, "capability registry getter is unavailable"
+        return false, invalid("capability registry getter is unavailable")
     end
 
     for _, id in ipairs(ids) do
         if type(id) ~= "string" or id == "" then
-            return false, capability_type .. " id must be a non-empty string"
+            return false, invalid(capability_type .. " id must be a non-empty string")
         end
 
         local entry, err = get_entry(id)
+        if err and not errors.is(err, errors.NOT_FOUND) then
+            return false, errors.wrap(err, "capability registry read failed: " .. id)
+        end
         if err or not entry then
-            return false, capability_type .. " not found: " .. id
+            return false, invalid(capability_type .. " not found: " .. id)
         end
 
         local meta = type(entry.meta) == "table" and entry.meta or {}
         if entry.kind ~= rule.kind or meta.type ~= rule.meta_type then
-            return false, capability_type .. " has invalid registry shape: " .. id
+            return false, invalid(capability_type .. " has invalid registry shape: " .. id)
         end
         if not M.entry_is_public_capability(entry, capability_type) then
-            return false, capability_type .. " is not public: " .. id
+            return false, invalid(capability_type .. " is not public: " .. id)
         end
     end
 

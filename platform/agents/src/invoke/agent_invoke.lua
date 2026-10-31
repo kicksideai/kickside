@@ -158,8 +158,9 @@ local function check_tool_ids(tool_ids: { string }, deps: Deps?): (string?, bool
     return nil
 end
 
-local function check_trait_contexts(traits: { string }, trait_contexts: Map, deps: Deps?): string?
-    local validation = capability_context.validate_trait_contexts(traits, trait_contexts, get_entry_fn(deps))
+local function check_trait_contexts(traits: { string }, trait_contexts: Map, deps: Deps?): (string?, error?)
+    local validation, err = capability_context.validate_trait_contexts(traits, trait_contexts, get_entry_fn(deps))
+    if err then return nil, err end
     if validation.ok == true then return nil end
     return "capability context invalid: " .. capability_context.error_message(validation)
 end
@@ -324,7 +325,8 @@ local function run_agent(req: any, deps: Deps?): (RunOk?, RunErr?)
     local traits = string_list(config.traits, 40)
     local trait_contexts = copy_selected_map(config.trait_contexts, traits)
     local trait_agent_options = copy_selected_map(config.trait_agent_options, traits)
-    local trait_err = check_trait_contexts(traits, trait_contexts, deps)
+    local trait_err, trait_read_err = check_trait_contexts(traits, trait_contexts, deps)
+    if trait_read_err then return nil, authorization_failure("capability context", trait_read_err) end
     if trait_err then return nil, run_fail(trait_err, false) end
     local max_iterations = positive_int(config.max_iterations, 8, 1, MAX_ITERATIONS)
     local title = trim(config.title) ~= "" and trim(config.title) or resolved_agent_ref

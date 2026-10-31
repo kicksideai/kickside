@@ -52,23 +52,21 @@ function part.attach(M: any, dependencies: any, P: any): ()
         return "append_only"
     end
 
-    -- Resolve the output face of an events port from its referenced event-type entry's
-    -- schema (the event's one home). Returns nil when the event entry cannot be read.
-    local function event_output_face(registry: automation_types.RegistryModule, event_id: string): any
-        if type(event_id) ~= "string" or event_id == "" then return nil end
+    -- Resolve the event's schema and optional shared output owner from its declaration.
+    local function event_output_face(registry: automation_types.RegistryModule, event_id: string): (any, string?, error?)
+        if type(event_id) ~= "string" or event_id == "" then return nil, nil, nil end
         local entry, err = registry.get(event_id)
-        if err or type(entry) ~= "table" then return nil end
-        local schema = (entry :: any).schema
-        if schema ~= nil then return schema_or_nil(schema) end
-        local data = (entry :: any).data
-        if type(data) == "table" then return schema_or_nil((data :: Map).schema) end
-        return nil
+        if err then return nil, nil, errors.wrap(err, "read event source declaration") end
+        if type(entry) ~= "table" then return nil, nil, nil end
+        local schema = entry_field(entry, "schema")
+        local meta = type(entry.meta) == "table" and entry.meta or {}
+        return schema_or_nil(schema), meta.output_kind, nil
     end
 
     -- port_descriptor derives one catalog descriptor from a port entry and its owning
     -- binding, by the ordered precedence markers > pullable backing. Returns nil + an
     -- error string when the port cannot be classified or its backing is missing.
-    local function port_descriptor(registry: automation_types.RegistryModule, port_entry: any, binding_index: { [string]: any }): (Map?, string?)
+    local function port_descriptor(registry: automation_types.RegistryModule, port_entry: any, binding_index: { [string]: any }): (Map?, any)
         local typed_port = port_entry :: automation_types.RegistryEntry
         local port_meta: Map = typed_port.meta or {}
         local binding = tostring(entry_field(port_entry, "binding") or "")
@@ -86,9 +84,12 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local output_schema = schema_or_nil(entry_field(port_entry, "output_schema"))
         local input_schema = schema_or_nil(entry_field(port_entry, "input_schema"))
         local input_mode = entry_field(port_entry, "input_mode")
+        local event_schema, output_kind, event_err = event_output_face(registry, type(event) == "string" and event or "")
+        if event_err then return nil, event_err end
+        local shared_output = output_kind == binding
 
-        -- A port selects instances of its binding's stored implementation. Several
-        -- kinds can share a thread class, so the class alone cannot scope a picker.
+        -- Ordinary ports select their stored implementation. An event with an
+        -- output_kind names a shared publisher over the binding's thread class.
         local config_schema = entry_field(port_entry, "config_schema")
         local binding_thread_class = tostring(binding_meta.thread_class or "")
         local impl_id = trim(binding_meta.impl_id)
@@ -100,7 +101,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
                     and tostring((field_value :: Map).picker or "") == "wc-component-picker" then
                     local field_copy: Map = {}
                     for k, v in pairs(field_value :: Map) do field_copy[k] = v end
-                    field_copy.impl_id = impl_id
+                    if shared_output then field_copy.impl_id = nil else field_copy.impl_id = impl_id end
+                    if shared_output then field_copy.class = first_class(binding_meta) end
                     if field_copy.class == nil and binding_thread_class ~= "" then
                         field_copy.class = binding_thread_class
                     end
@@ -133,7 +135,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
             -- schema (the event's one home).
             desc.surface = "events"
             desc.event = event
-            desc.output_schema = event_output_face(registry, event :: string)
+            desc.output_schema = event_schema
+            desc.output_kind = output_kind
         elseif operations ~= nil then
             desc.surface = "store"
             desc.operations = operations
@@ -210,6 +213,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
             if desc then
                 out[#out + 1] = desc
                 by_id[tostring((desc :: Map).id or "")] = desc
+            elseif type(derr) == "userdata" then
+                return nil, derr, nil
             elseif derr then
                 local logger_mod = dependencies.logger
                 if logger_mod then
@@ -300,14 +305,19 @@ function part.attach(M: any, dependencies: any, P: any): ()
     function M.source_thread(endpoint: Map, thread_id: string?): (string?, error?)
         if thread_id and thread_id ~= "" then
             local component = dependencies.component :: automation_types.ComponentModule
-            local rows, read_err = component.query({ component_ids = { thread_id }, access_mask = component.ACCESS.READ })
+            local rows, read_err = component.query({ component_ids = { thread_id }, access_mask = component.ACCESS.READ, include = {meta = true} })
             if read_err then return nil, read_err end
             local selected = rows and rows[1]
             if not selected then
                 return nil, errors.new({kind = errors.NOT_FOUND, retryable = false,
                     message = "source component not found", details = {code = "source_instance_missing", field = "trigger.config.thread_id"}})
             end
-            if selected.impl_id ~= endpoint.impl_id then
+            local matches = selected.impl_id == endpoint.impl_id
+            if not matches and endpoint.output_kind == endpoint.binding then
+                local meta = type(selected.meta) == "table" and selected.meta or {}
+                matches = trim(endpoint.class) ~= "" and meta.thread_class == endpoint.class
+            end
+            if not matches then
                 return nil, errors.new({kind = errors.INVALID, retryable = false,
                     message = "selected component does not belong to the source kind",
                     details = {code = "source_kind_mismatch", field = "trigger.config.thread_id"}})

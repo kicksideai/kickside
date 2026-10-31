@@ -45,14 +45,14 @@ local function define_tests()
             test.is_nil(provider_err)
             test.eq(provider.ok, true, tostring(provider.error))
             local tokens = assert(security.token_store("kickside.users.security:tokens"))
-            for _, token in ipairs({decode_response(response).token, provider.token}) do
+            for index, token in ipairs({decode_response(response).token, provider.token}) do
                 local actor, scope, validate_err = tokens:validate(token)
                 test.is_nil(validate_err)
                 test.eq(actor:id(), uid)
                 test.eq(scope:evaluate(actor, "access", "app:native-token-probe"), "allow")
                 local meta = actor:meta()
-                test.eq(meta.client_trace, "preserved")
-                test.eq(meta.auth_method, "sso")
+                test.eq(meta.client_trace, index == 2 and "preserved" or nil)
+                test.eq(meta.auth_method, index == 2 and "sso" or nil)
                 test.eq(meta.user_id, uid)
                 for field in pairs(injected) do
                     if field ~= "client_trace" and field ~= "auth_method" then

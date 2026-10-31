@@ -230,6 +230,7 @@ entries:
       - sql
       - funcs
     imports:
+      job_types: kickside.core.jobs:types
       row_bytes: kickside.core.jobs.persist:row_bytes
       clock: kickside.core.jobs:clock
       lifecycle: kickside.core.jobs.persist:lifecycle

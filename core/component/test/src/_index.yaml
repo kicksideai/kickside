@@ -2879,3 +2879,13 @@ entries:
       context: app:context_access_source
       fixture: app:context_access_fixture
       envelope: kickside.component:envelope
+
+  - name: concurrent_grants_test
+    kind: function.lua
+    meta: {type: test, suite: component_concurrent_grants}
+    source: file://concurrent_grants_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      access_ops: kickside.component.persist:access_ops

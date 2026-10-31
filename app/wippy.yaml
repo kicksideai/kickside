@@ -33,6 +33,7 @@ exclude_meta:
     - test_support
 exclude:
   - ".wippy/**"
+  - "**/node_modules/**"
   - "wippy.lock"
   - "test/**"
   - "tests/**"

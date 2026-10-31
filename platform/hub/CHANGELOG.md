@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.70](https://github.com/kicksideai/kickside/compare/hub-v0.1.69...hub-v0.1.70) (2026-10-31)
+
+
+### Bug Fixes
+
+* **hub:** style the version and migration pickers in the install dialog ([#272](https://github.com/kicksideai/kickside/issues/272)) ([7d88cfb](https://github.com/kicksideai/kickside/commit/7d88cfb6cc9ca42e37240a39e502cb9f8931990b))
+
 ## [0.1.69](https://github.com/kicksideai/kickside/compare/hub-v0.1.68...hub-v0.1.69) (2026-10-28)
 
 

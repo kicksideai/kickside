@@ -3,9 +3,7 @@ local base = require("thread_ingest_base")
 local THREAD_CLASS = base.THREAD_CLASS
 local EXTERNAL_SOURCE = base.EXTERNAL_SOURCE
 local GRAPH_EXTERNAL_SOURCE = base.GRAPH_EXTERNAL_SOURCE
-local SOURCE_PROJECTION_KIND = base.SOURCE_PROJECTION_KIND
-local SOURCE_PROJECTION_KEY = base.SOURCE_PROJECTION_KEY
-local SOURCE_CURSOR_KEY = base.SOURCE_CURSOR_KEY
+local engines = require("engines")
 local trim = base.trim
 local shallow_copy = base.shallow_copy
 local strip_private_upload_locators = base.strip_private_upload_locators
@@ -44,9 +42,13 @@ end
 -- the KB primary thread. Pure lookup: it addresses the cursor by the declared
 -- (kind, projection_key, cursor_key), never registers it. Returns nil when the
 -- projection has not been provisioned (KB not yet created through the engine).
-local function lookup_source_projection(exec: any, kb_id: string): (any?, any?)
+local function lookup_source_projection(exec: any, kb_id: string, impl_id: string): (any?, any?)
+    local engine, engine_err = engines.by_impl(impl_id)
+    if engine_err then return nil, engine_err end
+    local declaration, declaration_err = engines.ingest_projection(engine)
+    if declaration_err then return nil, declaration_err end
     local pair, err = exec:get_projection_cursor({ thread_id = kb_id,
-        kind = SOURCE_PROJECTION_KIND, projection_key = SOURCE_PROJECTION_KEY, cursor_key = SOURCE_CURSOR_KEY })
+        kind = declaration.kind, projection_key = declaration.projection_key, cursor_key = declaration.cursor_key })
     if err then
         if errors.is(err, errors.NOT_FOUND) then return nil, nil end
         return nil, err
@@ -94,8 +96,8 @@ end
 -- meta.projections through ensure_thread). A miss means the KB was never provisioned,
 -- so the producer path surfaces that as an error; it never materializes the thread or
 -- projection.
-local function source_projection(exec: any, kb_id: string): (any?, any?)
-    local projection, projection_err = lookup_source_projection(exec, kb_id)
+local function source_projection(exec: any, kb_id: string, impl_id: string): (any?, any?)
+    local projection, projection_err = lookup_source_projection(exec, kb_id, impl_id)
     if projection_err then return nil, projection_err end
     if not projection then
         return nil, "knowledge base is not provisioned: " .. kb_id
@@ -160,13 +162,13 @@ local function status_result(kb_id, thread_id, thread, projection)
     }
 end
 
-local function load_status(exec, kb_id)
+local function load_status(exec, kb_id, impl_id)
     local thread, thread_err = find_primary_thread(exec, kb_id)
     if thread_err then return nil, thread_err end
     if not thread then
         return status_result(kb_id, kb_id, nil, nil), nil
     end
-    local projection, projection_err = lookup_source_projection(exec, kb_id)
+    local projection, projection_err = lookup_source_projection(exec, kb_id, impl_id)
     if projection_err then return nil, projection_err end
     return status_result(kb_id, kb_id, thread, projection), nil
 end

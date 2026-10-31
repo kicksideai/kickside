@@ -42,16 +42,31 @@ function subPath(): string {
 
 function onNavigate(e: Event) {
   const detail = (e as CustomEvent).detail
+  const request = detail && typeof detail === 'object'
+    ? detail as { path?: string; route?: string; back?: { within: string } }
+    : undefined
   const raw = typeof detail === 'string'
     ? detail
-    : (detail && typeof detail === 'object'
-        ? ((detail as { path?: string; route?: string }).path ?? (detail as { route?: string }).route ?? '')
-        : '')
+    : (request?.path ?? request?.route ?? '')
   // One rule for every surface: an absolute path is a cross-surface route, a
   // relative one is an in-surface deep-link under this surface's base. Empty raw
   // keeps you on the surface base (a plain refresh of the surface).
   const target = raw ? resolveNavTarget(raw, props.basePath) : normalizePath(props.basePath || '/')
-  if (target && props.path !== target) router.push(target)
+  if (typeof request?.back?.within === 'string') {
+    const boundary = (resolveNavTarget(request.back.within, props.basePath) || props.basePath || '/').replace(/\/+$/, '') || '/'
+    const within = (path: string) => boundary === '/' || path === boundary || path.startsWith(boundary + '/')
+    const previous = router.options.history.state.surfacePreviousPath
+    if (typeof previous === 'string' && within(router.currentRoute.value.path) && within(router.resolve(previous).path)) {
+      router.back()
+      return
+    }
+  }
+  if (target && props.path !== target) {
+    const { path, query, hash } = router.resolve(target)
+    // The existing memory router owns the history. Its per-entry state keeps
+    // the previous surface path so Back can remain inside a requested scope.
+    router.push({ path, query, hash, state: { surfacePreviousPath: router.currentRoute.value.fullPath } })
+  }
 }
 
 function onInstrumentRequirementResolution(e: Event) {

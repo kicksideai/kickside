@@ -39,6 +39,44 @@ local function read_complete_membership(db, user_id)
     return rows, nil
 end
 
+-- User-list pages already carry canonical IDs. Read their complete memberships
+-- in one owner query, retaining existence checks and the per-user ceiling.
+local function read_page_memberships(db, user_ids)
+    if type(user_ids) ~= "table" or #user_ids > DEFAULT_LIMIT then
+        return nil, "User membership batch must contain at most " .. tostring(DEFAULT_LIMIT) .. " canonical IDs"
+    end
+    if #user_ids == 0 then return {}, nil end
+    for _, id in ipairs(user_ids) do
+        if type(id) ~= "string" or id == "" then
+            return nil, consts.ERROR.MISSING_REQUIRED_FIELD .. "user_id"
+        end
+    end
+    local placeholders = string.rep("?,", #user_ids):sub(1, -2)
+    local rows, err = sql.builder.select("u.user_id", "g.group_id")
+        :from("app_users u")
+        :left_join("app_user_groups g ON g.user_id = u.user_id")
+        :where("u.user_id IN (" .. placeholders .. ")", table.unpack(user_ids))
+        :order_by("u.user_id ASC, g.created_at ASC, g.group_id ASC")
+        :limit(#user_ids * (MEMBERSHIP_CEILING + 1))
+        :run_with(db):query()
+    if err then return nil, consts.ERROR.DB_OPERATION_FAILED .. ": " .. tostring(err) end
+    local memberships = {}
+    for _, row in ipairs(rows) do
+        local groups = memberships[row.user_id]
+        if not groups then groups = {}; memberships[row.user_id] = groups end
+        if row.group_id ~= nil then
+            groups[#groups + 1] = row.group_id
+            if #groups > MEMBERSHIP_CEILING then
+                return nil, "Security group membership exceeds the supported maximum of " .. tostring(MEMBERSHIP_CEILING)
+            end
+        end
+    end
+    for _, id in ipairs(user_ids) do
+        if memberships[id] == nil then return nil, consts.ERROR.USER_NOT_FOUND end
+    end
+    return memberships, nil
+end
+
 local function page(opts)
     opts = type(opts) == "table" and opts or {}
     local limit = tonumber(opts.limit) or DEFAULT_LIMIT
@@ -72,5 +110,6 @@ M.resolve_user_id = resolve_user_id
 M.page = page
 M.DEFAULT_LIMIT = DEFAULT_LIMIT
 M.read_complete_membership = read_complete_membership
+M.read_page_memberships = read_page_memberships
 
 return M

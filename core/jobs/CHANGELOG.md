@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.67](https://github.com/kicksideai/kickside/compare/jobs-v0.1.66...jobs-v0.1.67) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/jobs-v0.1.65...jobs-v0.1.66) (2026-10-30)
 
 

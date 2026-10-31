@@ -91,7 +91,7 @@ entries:
       comment: Public branding security policy tests.
     source: file://security_policy_test.lua
     method: run
-    modules: [security]
+    modules: [security, registry]
     imports:
       test: wippy.test:test
 
@@ -325,3 +325,8 @@ entries:
       contributions: kickside.ui:contributions_subject
       discovery: kickside.ui:discovery_subject
       source: kickside.ui:nav_settings_failure
+
+  - name: shell_fixture_management
+    kind: security.policy
+    meta: {type: test_helper, comment: Grants only the independently declared fixture tab.}
+    policy: {actions: access, resources: 'kickside.ui:fixture_management', effect: allow}
