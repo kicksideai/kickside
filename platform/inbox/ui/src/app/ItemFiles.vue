@@ -1,16 +1,48 @@
 <!-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
-import { loadByTagName } from '@wippy-fe/proxy'
+import { api, loadByTagName } from '@wippy-fe/proxy'
 import { typeIcon, formatSize } from '@widgets/app/fileMetadata'
+import { errMsg } from '@widgets/app/errMsg'
+import { isItem } from './item'
 import type { ItemFile } from './item'
 
-const props = defineProps<{ itemId: string; files: ItemFile[] }>()
+const props = defineProps<{ itemId: string; files?: ItemFile[]; count?: number; version?: string }>()
+const resolvedFiles = ref<ItemFile[]>([])
+const filesLoading = ref(false)
+const filesError = ref('')
+let request = 0
 const expanded = ref<number | null>(null)
 const loading = ref(false)
 const previewError = ref('')
+
+async function loadFiles() {
+  const current = ++request
+  expanded.value = null
+  resolvedFiles.value = props.files || []
+  filesError.value = ''
+  filesLoading.value = false
+  if (props.files !== undefined) return
+  filesLoading.value = true
+  try {
+    const { data } = await api.get<{ success?: boolean; items?: unknown[] }>(
+      `/api/v1/inbox?id=${encodeURIComponent(props.itemId)}&status=all&limit=1`,
+    )
+    if (current !== request) return
+    const item = data?.items?.[0]
+    if (!data?.success || !isItem(item) || item.id !== props.itemId) throw new Error('Attached files are unavailable')
+    resolvedFiles.value = item.files || []
+  } catch (err) {
+    if (current === request) filesError.value = errMsg(err, 'Attached files are unavailable')
+  } finally {
+    if (current === request) filesLoading.value = false
+  }
+}
+
+watch(() => [props.itemId, props.files, props.count, props.version], () => { void loadFiles() }, { immediate: true })
+onUnmounted(() => { request += 1 })
 
 function openUrl(value?: string): string | undefined {
   if (!value) return undefined
@@ -35,8 +67,13 @@ async function preview(index: number) {
 <template>
   <section class="kx-files" aria-label="Attached files">
     <h3>Files</h3>
+    <p v-if="filesLoading" role="status">Loading attached files…</p>
+    <div v-else-if="filesError">
+      <p role="alert">{{ filesError }}</p>
+      <Button type="button" size="small" text severity="secondary" label="Retry files" @click="loadFiles" />
+    </div>
     <ul class="kx-file-list">
-      <li v-for="(file, index) in files" :key="index">
+      <li v-for="(file, index) in resolvedFiles" :key="index">
         <div v-if="file.locked" class="kx-file-row kx-file-locked" data-testid="inbox-file-locked">
           <Icon icon="tabler:lock" aria-hidden="true" />
           <span>Locked file</span>

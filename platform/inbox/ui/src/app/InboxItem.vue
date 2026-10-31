@@ -245,7 +245,7 @@ watch(() => [props.tag, props.item.id], () => { wcFailed.value = false; void mou
           </div>
         </dl>
       </div>
-      <ItemFiles v-if="item.files?.length" :key="item.id" :item-id="item.id" :files="item.files" />
+      <ItemFiles v-if="item.file_count || item.files?.length" :key="item.id" :item-id="item.id" :files="item.files" :count="item.file_count" :version="item.file_version" />
     </div>
 
     <footer class="kx-detail-foot">

@@ -113,9 +113,14 @@ Item creation, the Inbox sink, SubmitToInbox, and review Block config accept opt
 `files: [{component_id, context?, title?}]` references. This reuses the generic
 `content_provider` reference shape; for example, an upload reference uses
 `component_id: "kickside.uploads:content_provider"` and `context: {upload_id: "..."}`.
-References grant no access. The list API resolves `get_info` under
-the viewer's actor and scope, returning only filename, content type, size, and the
-provider's optional `view_url`. Inaccessible references return `{locked: true}`.
+References grant no access. Page queries return attachment counts and the existing
+content-event version without calling providers or exposing references. The selected
+reading view uses `GET /inbox?id=…&status=all` to resolve `get_info` under the viewer's
+actor and scope, returning only filename, content type, size, and the provider's
+optional `view_url`. Inaccessible references return `{locked: true}`. A metadata
+outage affects the file section's manual retry, while the Inbox and item actions
+remain available. Content versions invalidate the selected file metadata even when
+the attachment count is unchanged.
 Resolution responses return the committed outcome without file references or
 provider reads, so unavailable preview storage cannot fail an approved decision.
 The shared resource viewer fetches preview bytes through the item file endpoint,

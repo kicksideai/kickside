@@ -3495,6 +3495,15 @@ function Ja(e, t, r, n, i, a) {
   });
 }
 tr.render = Ja;
+function pt(e) {
+  const t = e || "";
+  return t.startsWith("image/") ? "tabler:photo" : t === "application/pdf" ? "tabler:file-type-pdf" : t.includes("word") || t.includes("opendocument.text") || t === "application/rtf" ? "tabler:file-type-doc" : t.includes("sheet") || t.includes("excel") || t.includes("spreadsheet") || t === "text/csv" ? "tabler:file-type-xls" : t.includes("presentation") || t.includes("powerpoint") ? "tabler:file-type-ppt" : t === "application/epub+zip" ? "tabler:book" : t.startsWith("text/") || t === "application/json" || t === "application/xml" ? "tabler:file-text" : "tabler:file";
+}
+function Be(e) {
+  if (!e) return "0 B";
+  const t = ["B", "KB", "MB", "GB"], r = Math.min(Math.floor(Math.log(e) / Math.log(1024)), t.length - 1);
+  return `${(e / Math.pow(1024, r)).toFixed(r ? 1 : 0)} ${t[r]}`;
+}
 function pe(e) {
   return e === "failed" ? "error" : e || "uploaded";
 }
@@ -3520,10 +3529,6 @@ function Za(e) {
 function fe(e) {
   return (e.filename || "").trim() || "Untitled upload";
 }
-function pt(e) {
-  const t = e || "";
-  return t.startsWith("image/") ? "tabler:photo" : t === "application/pdf" ? "tabler:file-type-pdf" : t.includes("word") || t.includes("opendocument.text") || t === "application/rtf" ? "tabler:file-type-doc" : t.includes("sheet") || t.includes("excel") || t.includes("spreadsheet") || t === "text/csv" ? "tabler:file-type-xls" : t.includes("presentation") || t.includes("powerpoint") ? "tabler:file-type-ppt" : t === "application/epub+zip" ? "tabler:book" : t.startsWith("text/") || t === "application/json" || t === "application/xml" ? "tabler:file-text" : "tabler:file";
-}
 function nr(e) {
   const t = e.mime_type || "";
   if (t.startsWith("image/")) return t.slice(6).toUpperCase() + " image";
@@ -3539,11 +3544,6 @@ function nr(e) {
   if (t.startsWith("text/")) return "Text";
   const r = (e.filename || "").split(".").pop();
   return r && r !== e.filename ? r.toUpperCase() : t || "File";
-}
-function Be(e) {
-  if (!e) return "0 B";
-  const t = ["B", "KB", "MB", "GB"], r = Math.min(Math.floor(Math.log(e) / Math.log(1024)), t.length - 1);
-  return `${(e / Math.pow(1024, r)).toFixed(r ? 1 : 0)} ${t[r]}`;
 }
 function ut(e) {
   let t = e.trim().replace(/^[\w.]+:[\w.]+:\d+:\s*/, "");

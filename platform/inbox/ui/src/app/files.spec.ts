@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
-import { afterEach, describe, it, expect, vi } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import InboxItem from './InboxItem.vue'
 import { isItem, type Item } from './item'
+import ItemFiles from './ItemFiles.vue'
 
-vi.mock('@wippy-fe/proxy', () => ({ loadByTagName: vi.fn(async () => {}) }))
+const api = vi.hoisted(() => ({ get: vi.fn() }))
+vi.mock('@wippy-fe/proxy', () => ({ api, loadByTagName: vi.fn(async () => {}) }))
 vi.mock('@iconify/vue', () => ({ Icon: { template: '<span aria-hidden="true" />' } }))
 const views: ReturnType<typeof mount>[] = []
 afterEach(() => { for (const view of views.splice(0)) view.unmount() })
+beforeEach(() => api.get.mockReset())
 function mountItem(value: Item) {
   const view = mount(InboxItem, { props: { item: value }, global: { plugins: [PrimeVuePlugin], stubs: { 'wc-resource-view': true } } })
   views.push(view)
@@ -26,6 +29,54 @@ describe('Inbox files', () => {
     expect(isItem(item)).toBe(true)
     expect(isItem({ ...item, files: [{ locked: false, size: 'unknown' }] })).toBe(false)
     expect(isItem({ ...item, files: [{ filename: 'report.pdf' }] })).toBe(false)
+    expect(isItem({ ...item, files: undefined, file_count: 2 })).toBe(true)
+    expect(isItem({ ...item, file_count: -1 })).toBe(false)
+    expect(isItem({ ...item, file_count: 0.5 })).toBe(false)
+  })
+  it('loads metadata only for the selected item through the existing item query', async () => {
+    api.get.mockResolvedValueOnce({data: {success: true, items: [item]}})
+    const view = mountItem({...item, files: undefined, file_count: 2})
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/v1/inbox?id=review%3Adocument&status=all&limit=1')
+    expect(view.text()).toContain('report.pdf')
+    expect(view.find('[data-testid="inbox-file-locked"]').exists()).toBe(true)
+  })
+  it('keeps the item readable when metadata fails and retries only its files', async () => {
+    api.get.mockRejectedValueOnce(new Error('Storage unavailable'))
+    const view = mountItem({...item, files: undefined, file_count: 2})
+    await flushPromises()
+    expect(view.text()).toContain('Review document')
+    expect(view.find('[role="alert"]').text()).toContain('Storage unavailable')
+    api.get.mockResolvedValueOnce({data: {success: true, items: [item]}})
+    await view.findAll('button').find(button => button.text() === 'Retry files')!.trigger('click')
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledTimes(2)
+    expect(view.text()).toContain('report.pdf')
+  })
+  it('ignores a late metadata result after selecting another item', async () => {
+    let finish!: (response: unknown) => void
+    api.get.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    const view = mount(ItemFiles, {props: {itemId: item.id, count: 2}, global: {plugins: [PrimeVuePlugin]}})
+    views.push(view)
+    const next = {...item, id: 'next', files: [{locked: false, filename: 'next.txt'}]}
+    api.get.mockResolvedValueOnce({data: {success: true, items: [next]}})
+    await view.setProps({itemId: next.id})
+    await flushPromises()
+    finish({data: {success: true, items: [item]}})
+    await flushPromises()
+    expect(view.text()).toContain('next.txt')
+    expect(view.text()).not.toContain('report.pdf')
+  })
+  it('refreshes a selected content version even when the attachment count is unchanged', async () => {
+    api.get.mockResolvedValueOnce({data: {success: true, items: [item]}})
+    const view = mountItem({...item, files: undefined, file_count: 2, file_version: 'first'})
+    await flushPromises()
+    api.get.mockResolvedValueOnce({data: {success: true, items: [{...item, files: [{locked: false, filename: 'replacement.pdf'}]}]}})
+    await view.setProps({item: {...item, files: undefined, file_count: 2, file_version: 'second'}})
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledTimes(2)
+    expect(view.text()).toContain('replacement.pdf')
+    expect(view.text()).not.toContain('report.pdf')
   })
   it('shows metadata and the provider deep link with an inline shared preview', async () => {
     const view = mountItem(item)

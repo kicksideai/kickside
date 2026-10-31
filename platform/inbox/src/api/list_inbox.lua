@@ -122,15 +122,23 @@ local function handler()
             local decoded, derr = json.decode(r.metadata_json :: string)
             if not derr and type(decoded) == "table" then meta = decoded end
         end
-        local files, files_err = dependency("files", inbox_files).list(r.files)
-        if files_err then
-            res:set_status(http.STATUS.INTERNAL_ERROR)
-            res:write_json({ success = false, error = tostring(files_err) })
-            return
+        local files = nil
+        -- Provider metadata belongs to the selected item's reading view. Page
+        -- loads remain independent of every attached provider's availability.
+        if id and id ~= "" then
+            local files_err
+            files, files_err = dependency("files", inbox_files).list(r.files)
+            if files_err then
+                res:set_status(http.STATUS.INTERNAL_ERROR)
+                res:write_json({ success = false, error = tostring(files_err) })
+                return
+            end
         end
         items[#items + 1] = {
             id = r.id, item_type = r.item_type, title = r.title, content = r.content,
             files = files,
+            file_count = r.files ~= nil and #r.files or nil,
+            file_version = r.files ~= nil and (r.version_event_id or r.created_event_id) or nil,
             metadata = object_fields.object(meta), source_id = r.source_id, status = r.status,
             priority = r.priority, actor_id = r.actor_id,
             created_at = r.created_at, resolved_at = r.resolved_at,
