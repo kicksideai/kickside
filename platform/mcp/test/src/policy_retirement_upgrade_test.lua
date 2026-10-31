@@ -6,6 +6,7 @@ local uuid = require("uuid")
 local security = require("security")
 local time = require("time")
 local repo = require("mcp_repo")
+local owner_hooks = require("owner_hooks")
 
 local MIGRATION = "kickside.mcp.migrations:05_retired_policy_credentials"
 local RETIRED = {
@@ -90,7 +91,7 @@ local function define_tests()
             test.eq(stored(ids[1]).updated_at, revoked.updated_at)
         end)
 
-        test.it("revokes a stored identity restriction without changing history or similar policy ids", function()
+        test.it("revokes a stored identity restriction and a retention pass keeps recent history and similar policy ids", function()
             local identity = '{"restriction":{"policy_ids":["app.security:user.runtime_env_read"]}}'
             local affected = seed(nil, identity)
             local retained = seed('{"policy_ids":["app.security:user.runtime_registry_read","app.security:user.self_service_extra"],"groups":[]}', nil)
@@ -98,6 +99,9 @@ local function define_tests()
             local before = assert(json.encode(stored(historical)))
             local untouched = assert(json.encode(stored(retained)))
             migrate()
+            local report, retention_err = owner_hooks.run()
+            test.is_nil(retention_err)
+            test.eq(#report.failures, 0, json.encode(report))
             test.eq(stored(affected).status, "revoked")
             test.eq(stored(affected).execution_identity_json, identity)
             test.eq(assert(json.encode(stored(historical))), before)
