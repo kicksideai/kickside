@@ -8,7 +8,7 @@ local M = {}
 function M.run(steps, setup, handover)
     local function ch() return {case_receive = function(self) return self end} end
     local ctx: any = {events = ch(), registry = ch(), idle = ch(), wake = ch(), step = 0, spawned = 0, now_ns = 0,
-        reads = 0, revision_reads = 0, queries = 0, writes = {}, canceled = {}, live = {}, notices = {}, unlistened = 0,
+        reads = 0, revision_reads = 0, queries = 0, timers = 0, writes = {}, canceled = {}, live = {}, notices = {}, unlistened = 0,
         committed = {revision = 1, values = {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}}}
     if handover then for _, slot in ipairs(handover.slots) do ctx.live[slot.pid] = true end end
     if setup then setup(ctx) end
@@ -67,6 +67,7 @@ function M.run(steps, setup, handover)
             close = function() ctx.closed = true end}, nil end},
         time = {now = function() return {unix_nano = function() return ctx.now_ns end} end,
             after = function(duration)
+                ctx.timers = ctx.timers + 1
                 local timer = ch()
                 timer.duration = duration
                 ctx.timer = timer

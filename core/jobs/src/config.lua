@@ -102,6 +102,7 @@ type Resolved = {
     worker_count_postgres: integer,
     worker_awaited_slots: integer,
     worker_claim_batch: integer,
+    worker_policy_check_ms: integer?,
     lease_timeout_seconds: integer,
     lease_heartbeat_ms: integer,
     retry_max_attempts: integer,
@@ -159,6 +160,15 @@ function M.resolve(meta: any): (Resolved?, error?)
     if e_awaited then return nil, e_awaited end
     local claim_batch, e_batch = count(w.claim_batch, "worker.claim_batch", 1, job_types.MAX_WORKERS :: integer)
     if e_batch then return nil, e_batch end
+    local policy_check_ms: integer? = nil
+    if w.policy_check_interval ~= nil then
+        local interval, interval_err = duration_ms(w.policy_check_interval, "worker.policy_check_interval")
+        if interval_err then return nil, interval_err end
+        if (interval :: integer) < 1000 or (interval :: integer) > 3600000 then
+            return nil, invalid("worker.policy_check_interval must be between 1s and 1h")
+        end
+        policy_check_ms = interval
+    end
     local timeout_ms, e3 = duration_ms(l.timeout, "lease.timeout")
     if e3 then return nil, e3 end
     local heartbeat_ms, e4 = duration_ms(l.heartbeat, "lease.heartbeat")
@@ -214,6 +224,7 @@ function M.resolve(meta: any): (Resolved?, error?)
         worker_count_postgres = count_postgres :: integer,
         worker_awaited_slots = awaited_slots :: integer,
         worker_claim_batch = claim_batch :: integer,
+        worker_policy_check_ms = policy_check_ms,
         lease_timeout_seconds = math.floor((timeout_ms :: integer) / 1000) :: integer,
         lease_heartbeat_ms = heartbeat_ms :: integer,
         retry_max_attempts = max_attempts :: integer,
