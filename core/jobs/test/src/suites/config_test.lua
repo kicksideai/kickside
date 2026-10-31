@@ -10,11 +10,11 @@ local config = require("config")
 
 local function policy(overrides: table?): table
     local meta = {
-        worker = { count_sqlite = 1, count_postgres = 4, awaited_slots = 1, claim_batch = 16 },
+        worker = { count_sqlite = 1, count_postgres = 20, awaited_slots = 1, claim_batch = 16 },
         lease = { timeout = "45s", heartbeat = "10s" },
         retry = { max_attempts = 3, retry_after_ms = 1000, max_delay_ms = 900000 },
         slot_retry = { retry_after_ms = 10000, max_delay_ms = 900000 },
-        proc = { max_execution = "10m" },
+        proc = { max_execution = "60m" },
         health = { overdue_grace = "120s" },
         fairness = { shares = { live = 6, backfill = 2, maintenance = 2 } },
         wake = { fanout_batch = 200 },
@@ -31,6 +31,16 @@ end
 
 local function define_tests()
     test.describe("jobs.config policy", function()
+        test.it("validates the host policy reconciliation interval", function()
+            local resolved, err = config.resolve(policy({worker = {policy_check_interval = "5s"}}))
+            test.is_nil(err)
+            test.eq(resolved.worker_policy_check_ms, 5000)
+            for _, interval in ipairs({"100ms", "2h", "invalid"}) do
+                local invalid, invalid_err = config.resolve(policy({worker = {policy_check_interval = interval}}))
+                test.is_nil(invalid)
+                test.not_nil(invalid_err)
+            end
+        end)
         test.it("resolves a successful policy once per registry version and returns independent values", function()
             local original = config.resolve
             local resolutions = 0
@@ -45,6 +55,7 @@ local function define_tests()
             test.is_nil(first_err)
             test.is_nil(second_err)
             test.not_nil(second)
+            test.eq(second.worker_policy_check_ms, 30000)
             test.is_true(second.fairness_shares.live >= 0)
             test.eq(resolutions, 1)
         end)
@@ -78,7 +89,7 @@ local function define_tests()
             local resolved, err = config.resolve(policy())
             test.is_nil(err)
             test.eq(resolved.worker_count_sqlite, 1)
-            test.eq(resolved.worker_count_postgres, 4)
+            test.eq(resolved.worker_count_postgres, 20)
             test.eq(resolved.worker_awaited_slots, 1)
             test.eq(resolved.lease_timeout_seconds, 45)
             test.eq(resolved.lease_heartbeat_ms, 10000)
@@ -92,7 +103,7 @@ local function define_tests()
             test.eq(resolved.fairness_shares.live, 6)
             test.eq(resolved.fairness_shares.backfill, 2)
             test.eq(resolved.fairness_shares.maintenance, 2)
-            test.eq(resolved.proc_max_execution_ms, 600000)
+            test.eq(resolved.proc_max_execution_ms, 3600000)
             test.eq(resolved.health_overdue_grace_ms, 120000)
             test.eq(resolved.max_row_bytes, 4194304)
             for key in pairs(resolved :: any) do
@@ -155,7 +166,7 @@ local function define_tests()
             test.eq(config.db_id(), "app:db")
             local loaded, err = config.policy()
             test.is_nil(err)
-            local expected = config.resolve(policy({worker={count_sqlite=2}}))
+            local expected = config.resolve(policy({worker={count_sqlite=2, count_postgres=4}, proc={max_execution="10m"}}))
             for key, value in pairs(expected :: table) do
                 if key == "fairness_shares" then
                     local actual_shares = (loaded :: any).fairness_shares

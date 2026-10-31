@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.realtime
+
+# Supply the platform's canonical binding without a new Jobs host parameter.
+entries:
+  - name: realtime_binding
+    kind: contract.binding
+    meta: {comment: Jobs harness implementation of the platform realtime binding.}
+    contracts:
+      - contract: kickside.contract:realtime
+        default: true
+        methods:
+          broadcast: app:performance_broadcast_fixture
+          notify: app:performance_broadcast_fixture

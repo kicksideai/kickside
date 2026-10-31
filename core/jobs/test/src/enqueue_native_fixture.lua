@@ -48,4 +48,5 @@ function M.database(): any
     function db:begin() return M.result("begin", M.executor()) end
     return db
 end
+function M.resolve_from(...) return M.policy() end
 return M

@@ -2,6 +2,7 @@
 local sql = require("sql")
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local lifecycle = require("lifecycle")
 local row_bytes = require("row_bytes")
 local worker_marker = require("worker_marker")
@@ -64,7 +65,9 @@ function worker_fence.hold_unconfirmed_execution(db: sql.DB, job: table): error?
     if type(raw_type) ~= "string" or (raw_type ~= sql.type.SQLITE and raw_type ~= sql.type.POSTGRES) then
         return boundary.rollback(tx, response_error("database.type"), "termination fence rollback failed")
     end
-    local recheck = lifecycle.future_string(raw_type, (policy :: any).lease_timeout_seconds)
+    local captured, capture_err = execution_policy.load_from(tx, job)
+    if capture_err then return boundary.rollback(tx, capture_err, "termination fence rollback failed") end
+    local recheck = lifecycle.future_string(raw_type, captured.lease_timeout_seconds)
     local size_err = row_bytes.check_update(tx, "kickside_job", tostring(job.id), {
         lease_until = recheck, lease_token = row_bytes.NULL,
     }, (policy :: any).max_row_bytes, "hold_unconfirmed_execution")

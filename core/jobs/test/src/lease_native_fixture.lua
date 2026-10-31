@@ -5,6 +5,7 @@ function M.reset(route, stage, source)
     M.rollbacks, M.commits, M.updates = 0, 0, 0
     M.count, M.renewal, M.empty = 1, 0, false
     M.deadline, M.spawn_args = "2026-10-10 00:00:30", nil
+    M.future_seconds = nil
     M.releases, M.parses, M.selections, M.renewal_attempts, M.release_error = 0, 0, 0, 0, nil
 end
 function M.result(stage, value)
@@ -17,7 +18,7 @@ end
 function M.policy(...) return M.result("policy", {lease_timeout_seconds = 30, lease_heartbeat_ms = 1000, max_row_bytes = 1000}) end
 function M.process_host(...) return "app:process_host" end
 function M.now_string(...) return "2026-10-10 00:00:00" end
-function M.future_string(...) return "2026-10-10 00:00:30" end
+function M.future_string(_, seconds) M.future_seconds = seconds; return "2026-10-10 00:00:30" end
 function M.rows_affected(result) return tonumber(result and result.rows_affected) or 0 end
 function M.check_update(...)
     M.renewal_attempts = M.renewal_attempts + 1
@@ -51,4 +52,9 @@ function M.get(...) return M.result("database", M.database()) end
 function M.notify(job_id, token, sequence, kind, until_at)
     return M.result(kind == "revoked" and "revocation" or "notify", true)
 end
+function M.read(job)
+    if job and type(job.lease_policy) == "table" then return job.lease_policy, nil end
+    return M.policy()
+end
+function M.load_from(_, job) return M.read(job) end
 return M

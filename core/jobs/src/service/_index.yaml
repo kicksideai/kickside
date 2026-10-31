@@ -31,6 +31,7 @@ entries:
     source: file://worker_fence.lua
     modules: [sql]
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -53,6 +54,7 @@ entries:
     source: file://worker_dispatch.lua
     modules: [sql, funcs, registry, logger, time, process, security]
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       error_envelope: kickside.contract:error_envelope
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -67,6 +69,7 @@ entries:
     source: file://worker_child.lua
     modules: [sql, logger, time, process]
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -96,8 +99,9 @@ entries:
       comment: Supervised pool root; claims into idle slots and respawns every exited loop.
     source: file://worker_pool.lua
     method: main
-    modules: [sql, logger, time, channel, process, events, registry]
+    modules: [sql, logger, time, channel, process, events, registry, funcs]
     imports:
+      pool_applied: kickside.core.jobs.persist:pool_applied
       registry_version: kickside.core.jobs:registry_version
       proc_supervisor: kickside.core.jobs:proc_supervisor
       job_types: kickside.core.jobs:types
@@ -106,6 +110,7 @@ entries:
       reclaim: kickside.core.jobs.persist:reclaim
       claim_execution: kickside.core.jobs.persist:claim_execution
       jobs: kickside.core.jobs:jobs
+      policy_overrides: kickside.core.jobs.persist:policy_overrides
       retention_schedule: kickside.core.jobs.service:retention_schedule
       claim_refusal: kickside.core.jobs.service:claim_refusal
       job_class: kickside.core.jobs:job_class
@@ -116,8 +121,9 @@ entries:
     meta:
       comment: The pool root's sizing and respawn pacing.
     source: file://worker_pool.lua
-    modules: [sql, logger, time, channel, process, events, registry]
+    modules: [sql, logger, time, channel, process, events, registry, funcs]
     imports:
+      pool_applied: kickside.core.jobs.persist:pool_applied
       registry_version: kickside.core.jobs:registry_version
       proc_supervisor: kickside.core.jobs:proc_supervisor
       job_types: kickside.core.jobs:types
@@ -126,6 +132,7 @@ entries:
       reclaim: kickside.core.jobs.persist:reclaim
       claim_execution: kickside.core.jobs.persist:claim_execution
       jobs: kickside.core.jobs:jobs
+      policy_overrides: kickside.core.jobs.persist:policy_overrides
       retention_schedule: kickside.core.jobs.service:retention_schedule
       claim_refusal: kickside.core.jobs.service:claim_refusal
       job_class: kickside.core.jobs:job_class
