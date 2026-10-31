@@ -270,6 +270,7 @@ function pool.main(handover: any?): (any?, error?)
     local policy_error: error? = nil
     local policy_pending = false
     local policy_read_pending = false
+    local policy_check_ns: number? = nil
     local hinted_revision = -1
     local refresh_size: (number, table?) -> error?
     local record_state: (() -> error?)? = nil
@@ -282,6 +283,9 @@ function pool.main(handover: any?): (any?, error?)
     end
     local function apply_policy(registry_changed: boolean?, discover: boolean?): error?
         if not dependencies.overrides then return nil end
+        -- A failed SQL read follows the existing retry deadline; busy job
+        -- events must not turn a storage outage into a read per event.
+        if policy_read_pending and size_retry_ns ~= nil and pool_time.now():unix_nano() < size_retry_ns then return nil end
         if discover or policy_read_pending then
             local committed, read_err = dependencies.overrides.revision(cfg.db_id())
             if read_err then policy_read_pending = true; return read_err end
@@ -321,7 +325,12 @@ function pool.main(handover: any?): (any?, error?)
         -- A failed candidate leaves the last good execution snapshot active.
         local resize_err = refresh_size(pool_time.now():unix_nano(), snapshot)
         if resize_err then return resize_err end
+        local previous_interval = owner_policy and owner_policy.worker_policy_check_ms
         owner_policy, owner_values, revision = snapshot, values, next_revision
+        local interval = owner_policy.worker_policy_check_ms
+        if interval ~= previous_interval or policy_check_ns == nil then
+            policy_check_ns = interval and pool_time.now():unix_nano() + interval * 1000000 or nil
+        end
         policy_error, policy_pending = nil, false
         state_dirty = true
         if record_state then return record_state() end
@@ -752,6 +761,8 @@ function pool.main(handover: any?): (any?, error?)
     retention_driver.run(pool_time.now():unix_nano())
 
     publish_pending()
+    local wait_timer: any = nil
+    local wait_timer_at: number? = nil
     while true do
         local now = pool_time.now():unix_nano()
         local wait_ns: number? = nil
@@ -775,12 +786,19 @@ function pool.main(handover: any?): (any?, error?)
         end
         consider(deadline_ns)
         consider(retention_driver.deadline())
+        consider(policy_check_ns)
         local cases = { events_ch:case_receive(), registry_ch:case_receive(), idle_ch:case_receive(), wake_ch:case_receive() }
         if publication then cases[#cases + 1] = publication:response():case_receive() end
         if wait_ns ~= nil then
-            cases[#cases + 1] = pool_time.after(tostring(math.max(1, math.ceil((wait_ns :: number) / 1e6))) .. "ms"):case_receive()
+            local at = now + (wait_ns :: number)
+            if wait_timer == nil or wait_timer_at ~= at then
+                wait_timer = pool_time.after(tostring(math.max(1, math.ceil((wait_ns :: number) / 1e6))) .. "ms")
+                wait_timer_at = at
+            end
+            cases[#cases + 1] = wait_timer:case_receive()
         end
         local selected = pool_channel.select(cases)
+        if selected.channel == wait_timer then wait_timer, wait_timer_at = nil, nil end
         local publication_result = publication and selected.channel == publication:response()
         if publication_result then
             local _, result_err = publication:result()
@@ -881,6 +899,16 @@ function pool.main(handover: any?): (any?, error?)
             deadline_ns = nil
             deadline_kind = nil
             dispatch_idle(reclaim_due)
+        end
+        if policy_check_ns ~= nil and policy_check_ns <= now then
+            -- Notifications are hints. Reconcile one durable revision row on a
+            -- coalesced owner deadline, even when no job or notification arrives.
+            -- Ordinary events never postpone it or add reads to the claim path.
+            policy_check_ns = now + owner_policy.worker_policy_check_ms * 1000000
+            local previous_revision = revision
+            local apply_err = apply_policy(false, true)
+            if apply_err then fail_policy(apply_err)
+            elseif revision ~= previous_revision then dispatch_idle(false) end
         end
         local retention_deadline = retention_driver.deadline()
         if retention_deadline ~= nil and retention_deadline <= now then

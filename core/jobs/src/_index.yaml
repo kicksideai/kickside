@@ -59,6 +59,7 @@ entries:
         count_postgres: 4
         awaited_slots: 1
         claim_batch: 16
+        policy_check_interval: 30s
       lease:
         timeout: 45s
         heartbeat: 10s

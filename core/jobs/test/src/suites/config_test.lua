@@ -31,6 +31,16 @@ end
 
 local function define_tests()
     test.describe("jobs.config policy", function()
+        test.it("validates the host policy reconciliation interval", function()
+            local resolved, err = config.resolve(policy({worker = {policy_check_interval = "5s"}}))
+            test.is_nil(err)
+            test.eq(resolved.worker_policy_check_ms, 5000)
+            for _, interval in ipairs({"100ms", "2h", "invalid"}) do
+                local invalid, invalid_err = config.resolve(policy({worker = {policy_check_interval = interval}}))
+                test.is_nil(invalid)
+                test.not_nil(invalid_err)
+            end
+        end)
         test.it("resolves a successful policy once per registry version and returns independent values", function()
             local original = config.resolve
             local resolutions = 0
@@ -45,6 +55,7 @@ local function define_tests()
             test.is_nil(first_err)
             test.is_nil(second_err)
             test.not_nil(second)
+            test.eq(second.worker_policy_check_ms, 30000)
             test.is_true(second.fairness_shares.live >= 0)
             test.eq(resolutions, 1)
         end)

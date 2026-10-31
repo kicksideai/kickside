@@ -8,6 +8,88 @@ local function failure()
 end
 return {run = test.run_cases(function()
     test.describe("Durable owner policy lifecycle", function()
+        test.it("discovers a committed policy without a nudge while otherwise idle", function()
+            local ctx = harness.run({
+                function(c)
+                    test.eq(c.applied.applied_revision, 1)
+                    test.not_nil(c.timer, "durable policy reconciliation must wake an idle owner")
+                    c.committed = {revision = 2, values = {["worker.count_sqlite"] = 2, ["worker.awaited_slots"] = 1}}
+                    c.now_ns = 30000000000
+                    return {channel = c.timer}
+                end,
+                function(c)
+                    test.eq(c.applied.applied_revision, 2)
+                    test.eq(c.applied.total, 3)
+                    test.eq(c.reads, 2)
+                    return {channel = c.events, value = {kind = process.event.CANCEL}}
+                end,
+            })
+            test.is_nil(ctx.error)
+        end)
+        test.it("coalesces revision checks across busy owner events without postponing discovery", function()
+            local steps = {}
+            for index = 1, 29 do
+                local second = index
+                steps[#steps + 1] = function(c)
+                    test.eq(c.revision_reads, 1)
+                    test.eq(c.timers, 1, "busy events reuse the pending owner timer")
+                    c.now_ns = second * 1000000000
+                    return harness.nudge(c, 1)
+                end
+            end
+            steps[#steps + 1] = function(c)
+                test.eq(c.revision_reads, 1)
+                c.committed = {revision = 2, values = {["worker.count_sqlite"] = 2, ["worker.awaited_slots"] = 1}}
+                c.now_ns = 30000000000
+                return harness.nudge(c, 1)
+            end
+            steps[#steps + 1] = function(c)
+                test.eq(c.revision_reads, 2, "normal events do not add SQL revision reads")
+                test.eq(c.timers, 2)
+                test.eq(c.applied.applied_revision, 2)
+                test.eq(c.applied.total, 3)
+                c.now_ns = 60000000000
+                return {channel = c.timer}
+            end
+            steps[#steps + 1] = function(c)
+                test.eq(c.revision_reads, 3)
+                test.eq(c.reads, 2, "an unchanged revision does not reload or decode overrides")
+                return {channel = c.events, value = {kind = process.event.CANCEL}}
+            end
+            local ctx = harness.run(steps)
+            test.is_nil(ctx.error)
+        end)
+        test.it("retains the last good policy and retries a failed reconciliation read", function()
+            local steps = {}
+            steps[1] = function(c)
+                c.read_error = failure()
+                c.now_ns = 30000000000
+                return {channel = c.timer}
+            end
+            for _ = 1, 20 do
+                steps[#steps + 1] = function(c)
+                    test.eq(c.revision_reads, 2, "busy events respect the failed-read retry deadline")
+                    test.eq(c.applied.applied_revision, 1)
+                    test.not_nil(c.applied.apply_error)
+                    test.eq(#c.canceled, 0)
+                    return harness.nudge(c, 1)
+                end
+            end
+            steps[#steps + 1] = function(c)
+                c.read_error = nil
+                c.committed = {revision = 2, values = {["worker.count_sqlite"] = 2, ["worker.awaited_slots"] = 1}}
+                c.now_ns = 31000000000
+                return {channel = c.timer}
+            end
+            steps[#steps + 1] = function(c)
+                test.eq(c.applied.applied_revision, 2)
+                test.is_nil(c.applied.apply_error)
+                test.eq(c.applied.total, 3)
+                return {channel = c.events, value = {kind = process.event.CANCEL}}
+            end
+            local ctx = harness.run(steps)
+            test.is_nil(ctx.error)
+        end)
         test.it("retries a failed startup policy read without an external event", function()
             local ctx = harness.run({
                 function(c)
@@ -67,6 +149,7 @@ return {run = test.run_cases(function()
                         test.not_nil(c.applied.apply_error)
                         test.eq(#c.canceled, 0)
                         c.read_error = nil
+                        if kind == "read" then c.now_ns = 1000000000 end
                         c.committed = {revision = 3, values = {["worker.count_sqlite"] = 2, ["worker.awaited_slots"] = 1}}
                         return harness.nudge(c, 3)
                     end,
