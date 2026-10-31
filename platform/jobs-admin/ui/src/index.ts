@@ -4,6 +4,7 @@ import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponen
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import Performance from './app/App.vue'
 import stylesText from './styles.css?inline'
+import pkg from '../package.json'
 
 interface PerformanceProps { config?: unknown }
 interface PerformanceEvents {
@@ -11,7 +12,7 @@ interface PerformanceEvents {
   error: { message: string, error: unknown }
 }
 
-const PROPS_SCHEMA: WippyPropsSchema = { type: 'object', properties: { config: { type: 'object' } } }
+const PROPS_SCHEMA = pkg.wippy.props as WippyPropsSchema
 
 class KicksideJobsAdminElement extends WippyVueElement<PerformanceProps, PerformanceEvents> {
   static get wippyConfig(): WippyElementConfig<PerformanceProps> {

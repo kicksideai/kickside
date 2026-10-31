@@ -14,7 +14,6 @@
 h1, h2, h3, h4, h5, h6, .ap-h { font-family: var(--kx-font-heading); }
 .ks-input { min-width: 0; max-width: 100%; padding: .5rem .625rem; font: inherit; font-size: .8125rem;
   color: var(--p-text-color); background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: .5rem; }
-.ks-input:focus-visible { outline: 2px solid var(--p-primary-color); outline-offset: 2px; }
 .ks-tag { background: color-mix(in srgb, var(--p-text-color) 10%, transparent); color: var(--p-text-muted-color); }
 .ks-saved { display: inline-flex; align-items: center; gap: .25rem; font-size: .75rem; font-weight: 600; color: var(--p-primary-color); white-space: nowrap; }
 .ks-saved-tick { font-size: .8125rem; }
