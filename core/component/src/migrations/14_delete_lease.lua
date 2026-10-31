@@ -5,7 +5,9 @@ return require("migration").define(function()
             database(engine, function()
                 up(function(db)
                     local query = engine == "postgres"
-                        and "SELECT column_name AS name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='kickside_components'"
+                        and "SELECT attname AS name FROM pg_catalog.pg_attribute"
+                            .. " WHERE attrelid=pg_catalog.to_regclass('kickside_components')"
+                            .. " AND attnum>0 AND NOT attisdropped"
                         or "PRAGMA table_info(kickside_components)"
                     local rows, read_err = db:query(query)
                     if read_err then error(read_err) end

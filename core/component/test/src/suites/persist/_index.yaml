@@ -255,7 +255,7 @@ entries:
       suite: component_meta_migration
     source: file://meta_unique_migration_test.lua
     method: run
-    modules: [sql, funcs, uuid]
+    modules: [sql, funcs, uuid, registry]
     imports:
       test: wippy.test:test
 
