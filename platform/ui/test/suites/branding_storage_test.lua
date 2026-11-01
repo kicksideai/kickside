@@ -59,6 +59,14 @@ end
 
 local function define_tests()
     test.describe("instance branding storage", function()
+        test.it("initializes the legacy fallback under the host project without changing module source", function()
+            test.not_nil(volume("kickside.ui:legacy_branding_fs"):stat("."))
+            test.not_nil(volume("app:project_fs"):stat("branding"))
+            test.is_nil(volume("app:module_source"):stat("branding"))
+            local configured = registry.get("kickside.ui:legacy_branding_config") :: any
+            test.eq(configured.data.fs, "app:branding_fs", "the explicit host binding must remain selected")
+        end)
+
         test.it("declares the raster upload contract to the appearance editor", function()
             local response, err = http_client.get(base_url() .. "/api/auth/nav/list?manage=1", {
                 timeout = 10, headers = { Authorization = "Bearer " .. admin_token() },
