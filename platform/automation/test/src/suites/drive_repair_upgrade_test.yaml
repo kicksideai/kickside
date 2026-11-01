@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+- name: drive_repair_upgrade_test
+  kind: function.lua
+  source: file://drive_repair_upgrade_test.lua
+  method: run
+  meta: {type: test, suite: drive_repair_upgrade}
+  modules: [sql, funcs, uuid]
+  imports:
+    test: wippy.test:test
+    runner: wippy.migration:runner
+    drive: kickside.automation:drive
+    jobs: kickside.core.jobs:jobs
+    types: kickside.automation:types
+    cleanup: app:drive_repair_cleanup
