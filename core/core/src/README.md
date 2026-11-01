@@ -33,6 +33,30 @@ The `threads` slice additionally consumes the `kickside.component:component_serv
 contract (the component module is a sibling dependency) for ownership, access, and
 hierarchy.
 
+## Module-owned retention
+
+An installed module registers its maintenance function with
+`meta.type: kickside.retention.owner`. Core invokes ready owners on recovery,
+eligibility deadlines and change hints. Each owner retains its SQL, policy and
+bounded batch, returning `{success = true, deleted = count}` with optional
+`needs_continue`, `blocked` and `deadline_ms` fields.
+
+`deadline_ms` is the owner's earliest remaining eligibility time as a finite,
+nonnegative integer of UTC Unix milliseconds that the runtime timer can represent.
+Recompute the global owner deadline
+on every invocation, including scoped hints; omit it when no owned rows need a
+future wake. Core combines healthy owners' deadlines with its own next deadline
+and uses the existing timer. Owners that omit the field keep their existing
+behavior. Invalid deadlines are reported as owner failures without preventing
+other owners from running. The field adds no registry scan or SQL query in Core.
+
+Import `kickside.core.retention:notifier` and call its
+`notify({kind = "owner_eligibility_changed"})` method after committing an
+eligibility change. Grant the producer the existing
+`kickside.core.retention:notify_access` policy; it needs no process messaging
+authority. The notification lets a new earlier deadline rearm an idle sweeper;
+a missing sweeper discovers durable work on its boot recovery pass.
+
 ## Testing
 
 From the module root:

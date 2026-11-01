@@ -3,6 +3,7 @@
 -- "count" deletes one row's worth; every armed call increments calls.
 
 local sql = require("sql")
+local time = require("time")
 
 local TABLE = "kickside_test_retention_owner_probe"
 
@@ -26,8 +27,18 @@ local function run_owner(owner: string, input: any?): any
         return { success = true, deleted = 0 }
     end
     local _, update_err = db:execute("UPDATE " .. TABLE .. " SET calls=calls+1 WHERE owner=$1", { owner })
+    local declared_deadline = tostring(row.mode):match("^deadline:(%d+)$")
+    local deadline = declared_deadline and tonumber(declared_deadline)
+    if not update_err and deadline and time.now():unix_nano() / 1000000 >= deadline then
+        local _, expired_err = db:execute("UPDATE " .. TABLE .. " SET mode='expired' WHERE owner=$1", { owner })
+        db:release()
+        if expired_err then return { success = false, error = expired_err } end
+        return { success = true, deleted = 1 }
+    end
     db:release()
     if update_err then return { success = false, error = tostring(update_err) } end
+    if deadline then return { success = true, deleted = 0, deadline_ms = deadline } end
+    if row.mode == "expired" then return { success = true, deleted = 0 } end
     if row.mode == "fail" then
         return { success = false, error = errors.new({ message = "probe owner " .. owner .. " refused",
             kind = errors.INTERNAL }) }

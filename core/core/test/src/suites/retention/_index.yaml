@@ -196,7 +196,7 @@ entries:
       comment: Probe retention owner armed by the owner isolation suite.
     source: file://owner_probe.lua
     method: first
-    modules: [sql]
+    modules: [sql, time]
 
   - name: owner_probe_second
     kind: function.lua
@@ -205,7 +205,7 @@ entries:
       comment: Probe retention owner armed by the owner isolation suite.
     source: file://owner_probe.lua
     method: second
-    modules: [sql]
+    modules: [sql, time]
 
   - name: owner_isolation_test
     kind: function.lua
@@ -217,7 +217,7 @@ entries:
       comment: One retention owner's failure is reported and never stops the other owners or the Core pass.
     source: file://owner_isolation_test.lua
     method: run
-    modules: [sql, process, channel, time, registry]
+    modules: [sql, process, channel, time, registry, funcs]
     imports:
       test: wippy.test:test
       owner_hooks: kickside.core.retention.service:owner_hooks

@@ -6,6 +6,7 @@ local channel = require("channel")
 local time = require("time")
 local owner_hooks = require("owner_hooks")
 local runner = require("retention_runner")
+local funcs = require("funcs")
 
 local TABLE = "kickside_test_retention_owner_probe"
 local FIRST = "kickside.core.retention.pin_tests:owner_probe_first"
@@ -222,6 +223,47 @@ local function define_tests()
             test.is_nil(next_err, tostring(next_err))
             test.eq(calls("first"), 2, "the failed owner runs again on the next pass")
             test.is_nil(failure_of((next_pass :: table).owner_failures, FIRST))
+        end)
+        test.it("wakes an idle real sweeper at an owner's deadline without another change hint", function()
+            arm("count", "count")
+            local events = process.events()
+            local pid = assert(process.spawn_monitored("kickside.core.retention.service:sweeper_process", "app:processes"))
+            local ok, failure = pcall(function()
+                local ready = time.now():unix_nano() + 5 * time.SECOND
+                while calls("first") == 0 and time.now():unix_nano() < ready do time.sleep("20ms") end
+                test.is_true(calls("first") > 0, "owned sweeper never completes its boot read")
+                local due = math.floor(time.now():unix_nano() / 1000000) + 1000
+                arm("deadline:" .. tostring(due), "count")
+                local delivered, notify_err = funcs.call("kickside.core.retention:notify", {kind = "owner_deadline_created"})
+                test.is_nil(notify_err, tostring(notify_err)); test.is_true(delivered)
+                local db = assert(sql.get("app:db"))
+                local expired, saw_pending = false, false
+                local limit = time.now():unix_nano() + 5 * time.SECOND
+                local read_ok, read_failure = pcall(function()
+                    while time.now():unix_nano() < limit do
+                        local rows = assert(db:query("SELECT mode,calls FROM " .. TABLE .. " WHERE owner='first'"))
+                        local row = rows[1]
+                        if row.mode == "expired" then expired = true; break end
+                        if tonumber(row.calls) > 0 then saw_pending = true end
+                        time.sleep("20ms")
+                    end
+                end)
+                db:release()
+                if not read_ok then error(read_failure) end
+                test.is_true(saw_pending, "owner must first declare a future deadline")
+                test.is_true(expired, "idle sweeper never wakes at the owner's deadline")
+            end)
+            process.cancel(pid)
+            local timeout = time.after("5s")
+            while true do
+                local selected = channel.select({ events:case_receive(), timeout:case_receive() })
+                if selected.channel ~= events then error("owned retention sweeper did not stop") end
+                if selected.value.kind == process.event.EXIT and tostring(selected.value.from) == tostring(pid) then
+                    if ok then test.is_nil(selected.value.result.error) end
+                    break
+                end
+            end
+            if not ok then error(failure) end
         end)
     end)
 end
