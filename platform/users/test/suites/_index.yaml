@@ -451,7 +451,9 @@ entries:
       - json
       - security
       - funcs
+      - time
     imports:
+      security_consts: kickside.security:security_consts
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_store: kickside.security.persist:scope_store
       session: kickside.users:session

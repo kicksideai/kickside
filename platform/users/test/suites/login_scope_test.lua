@@ -13,6 +13,8 @@ local scope_store = require("scope_store")
 local trigger_reconcile = require("trigger_reconcile")
 local consts = require("user_consts")
 local funcs = require("funcs")
+local time = require("time")
+local security_consts = require("security_consts")
 
 local USER_ID = "login_scope_test_user"
 local EMAIL = "login-scope@test.local"
@@ -36,12 +38,47 @@ end
 
 local function define_tests()
     test.describe("login actor metadata", function()
+        local fixture
+
+        test.before_all(function()
+            -- Supervised startup precedes the process registering its name.
+            -- Await the real owner before testing synchronous projection writes.
+            local deadline = time.now():add(5 * time.SECOND)
+            while not process.registry.lookup(security_consts.SCOPE_PROJECTION_TOPIC) and time.now():before(deadline) do
+                time.sleep("10ms")
+            end
+            test.not_nil((process.registry.lookup(security_consts.SCOPE_PROJECTION_TOPIC)), "scope projector registered")
+            local ready, ready_err = trigger_reconcile.trigger()
+            test.is_nil(ready_err)
+            test.not_nil(ready, "scope projector acknowledges readiness")
+        end)
+
+        test.after_each(function()
+            if not fixture then return end
+            local owned = fixture
+            fixture = nil
+            if user_repo.get(owned.uid) then assert(user_lifecycle_repo.delete(owned.uid)) end
+            local _, delete_err = scope_store.delete(owned.slug)
+            local changes = assert(registry.snapshot()):changes()
+            for _, id in ipairs(owned.policies) do
+                if registry.get(id) then changes:delete(id) end
+            end
+            local config = owned.config
+            changes:update({id = tostring(config.id), kind = config.kind, meta = config.meta, data = config.data})
+            local _, apply_err = changes:apply()
+            local projected, projection_err = trigger_reconcile.trigger()
+            test.is_nil(delete_err)
+            test.is_nil(apply_err)
+            test.is_nil(projection_err)
+            test.not_nil(projected, "fixture removal acknowledged")
+        end)
 
         test.it("applies added group policies to an existing token without login", function()
             local uid, slug = "session_allow_expansion", "session_allow_expansion"
             local group = "kickside.security.scopes:" .. slug
             local first, added = "app:expansion_initial", "app:expansion_added"
             local config = assert(registry.get("kickside.security:composition_config"))
+            fixture = {uid = uid, slug = slug, policies = {first, added}, config = config}
             local changes = assert(registry.snapshot()):changes()
             changes:update({id = tostring(config.id), kind = config.kind,
                 meta = {delegation_fencer = "kickside.users.persist:delegation_fencer"}, data = config.data})
@@ -87,14 +124,6 @@ local function define_tests()
             end
             test.eq(assert(user_repo.get(uid)).auth_generation, before)
             tokens:close()
-            test.not_nil((user_lifecycle_repo.delete(uid)))
-            test.is_true((scope_store.delete(slug)))
-            test.not_nil((trigger_reconcile.trigger()))
-            changes = assert(registry.snapshot()):changes()
-            changes:delete(first)
-            changes:delete(added)
-            changes:update({id = tostring(config.id), kind = config.kind, meta = config.meta, data = config.data})
-            test.is_nil(select(2, changes:apply()))
         end)
 
         for _, binding in ipairs({"delegation_fencer", "sessions_invalidator"}) do
@@ -103,6 +132,7 @@ local function define_tests()
             local group = "kickside.security.scopes:" .. slug
             local policy_id = "app:login_projection_policy"
             local config = assert(registry.get("kickside.security:composition_config"))
+            fixture = {uid = uid, slug = slug, policies = {policy_id}, config = config}
             local changes = assert(registry.snapshot()):changes()
             local metadata = {}
             for key, value in pairs(config.meta or {}) do metadata[key] = value end
@@ -153,15 +183,6 @@ local function define_tests()
                 test.eq(scope:evaluate(actor, "access", "app:old.endpoint"), "undefined")
             end
             tokens:close()
-            test.not_nil((user_lifecycle_repo.delete(uid)), "account deleted")
-            test.is_true((scope_store.delete(slug)))
-            projected, projection_err = trigger_reconcile.trigger()
-            test.is_nil(projection_err)
-            test.not_nil(projected, "deleted custom group reconciled")
-            changes = assert(registry.snapshot()):changes()
-            changes:delete(policy_id)
-            changes:update({id = tostring(config.id), kind = config.kind, meta = config.meta, data = config.data})
-            test.is_nil(select(2, changes:apply()))
         end)
 
         end
