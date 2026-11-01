@@ -21,6 +21,11 @@ entries:
     kind: fs.directory
     directory: ..
 
+  - name: project_fs
+    kind: fs.directory
+    base: project
+    directory: .
+
   - name: api.auth
     kind: http.router
     meta:
