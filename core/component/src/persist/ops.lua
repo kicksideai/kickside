@@ -122,18 +122,29 @@ local function fence(tx: Executor, component_id: string, db_id: string): error?
     return nil
 end
 
--- Set or clear the delete mark the fence honours.
-local function mark_deleting_tx(tx: Executor, component_id: string, deleting: boolean): error?
-    local value: any = sql.as.null()
-    if deleting then value = time.now():utc():format_rfc3339() end
-    local _, err = sql.builder.update(component_types.TABLES.COMPONENTS)
-        :set("deleting_at", value)
-        :where("component_id = ?", component_id)
-        :run_with(tx):exec()
-    if err then
-        return errors.wrap(err, "delete mark failed")
+-- Claim the delete mark and its attempt lease atomically, or abandon that lease.
+local function mark_deleting_tx(tx: Executor, component_id: string, deleting: boolean, lease_token: string): (error?, boolean?)
+    local statement: string
+    local params: { any }
+    if deleting then
+        local now = time.now():utc()
+        statement = "UPDATE kickside_components SET deleting_at=COALESCE(deleting_at,$1),lease_token=$2,lease_until=$3"
+            .. " WHERE component_id=$4 AND (lease_until IS NULL OR lease_until < $1)"
+        params = {now:format_rfc3339(), lease_token,
+            now:add(component_types.DELETE_LEASE_SECONDS * time.SECOND):format_rfc3339(), component_id}
+    else
+        statement = "UPDATE kickside_components SET deleting_at=NULL,lease_token=NULL,lease_until=NULL"
+            .. " WHERE component_id=$1 AND lease_token=$2"
+        params = {component_id, lease_token}
     end
-    return nil
+    local result, err = tx:execute(statement, params)
+    if err then return errors.wrap(err, "delete mark failed") end
+    if not result or tonumber(result.rows_affected) == nil then
+        return errors.new({message = "delete mark returned no affected-row count", kind = errors.INTERNAL,
+            retryable = false, details = {code = "component_delete_response", field = "mark.rows_affected"}})
+    end
+    if tonumber(result.rows_affected) == 0 and not deleting then return component_types.lease_lost_error() end
+    return nil, tonumber(result.rows_affected) == 1
 end
 
 return {

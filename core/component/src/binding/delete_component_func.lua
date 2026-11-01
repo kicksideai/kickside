@@ -108,8 +108,11 @@ local function handle(request_dto)
     -- retry with reparent_root) without restoring already-cleaned state. Past the
     -- gates the delete mark is committed: the component fence refuses consumer
     -- writes from here on.
-    local preflight_ok, preflight_step, preflight_err, owns_fence = teardown.begin_delete(component_id, user_id, child_policy)
+    local preflight_ok, preflight_step, preflight_err, owns_fence, lease_token = teardown.begin_delete(component_id, user_id, child_policy)
     if not preflight_ok then
+        if preflight_step == "busy" and preflight_err == nil then
+            return {success = true, component_id = component_id, status = "in_progress", in_progress = true, deleted = false}
+        end
         if preflight_step == "access" and not preflight_err then
             return envelope.fail(DATABASE_ERRORS.ACCESS_DENIED, errors.PERMISSION_DENIED)
         end
@@ -123,12 +126,16 @@ local function handle(request_dto)
     -- fails and the row stays for the reaper's durable retry. declared=false means no
     -- deletable is wired; the unregister is the only step.
     local declared, cleanup_success, cleanup_err, cleanup_result = teardown.run_deletable(
-        component, actor, scope, component_id, delete_options)
+        component, actor, scope, component_id, delete_options, lease_token)
     if declared and not cleanup_success then
         cleanup_err = teardown.retain_failed_delete(cleanup_err, owns_fence)
         local cleanup_pending = teardown.cleanup_pending(cleanup_err)
         local details = type(cleanup_err) == "userdata" and cleanup_err:details() or nil
         if cleanup_pending then
+            local release_err = teardown.release_delete(component_id, lease_token :: string)
+            if release_err then
+                return envelope.from_error(error_envelope.wrap_secondary(release_err, cleanup_err, "release component delete lease"))
+            end
             -- The deletable committed one bounded page and left deleting_at in
             -- place. That mark is owned by the retention continuation, so this
             -- is accepted work in progress rather than a failed delete.
@@ -145,7 +152,7 @@ local function handle(request_dto)
                 discarded = type(details) == "table" and details.discarded or nil,
             }
         end
-        local abandon_failure = teardown.abandon_delete(component_id)
+        local abandon_failure = teardown.abandon_delete(component_id, lease_token :: string)
         local failure = envelope.call_error(cleanup_err, "component deletable cleanup")
         if abandon_failure then
             failure = error_envelope.wrap_secondary(
@@ -167,7 +174,7 @@ local function handle(request_dto)
     end
     local discarded = type(cleanup_result) == "table" and cleanup_result.discarded or nil
 
-    local delete_result, step, err = teardown.unregister(component_id, child_policy)
+    local delete_result, step, err = teardown.unregister(component_id, child_policy, lease_token :: string)
     if step == "purge" and delete_result ~= nil then
         -- The component is released; only its thread reap failed. The release
         -- stands (an unreferenced thread is inert), and the reap error rides the

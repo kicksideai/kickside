@@ -82,6 +82,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.component.migrations:13_unique_component_meta
         path: .meta.target_db
+      - entry: kickside.component.migrations:14_delete_lease
+        path: .meta.target_db
       - entry: kickside.component:db_config
         path: .meta.db_id
       - entry: kickside.component.system:read_db
