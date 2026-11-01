@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/kicksideai/kickside/compare/core-v0.3.7...core-v0.3.8) (2026-11-01)
+
+
+### Bug Fixes
+
+* **core:** schedule module-owned retention deadlines ([#277](https://github.com/kicksideai/kickside/issues/277)) ([1289a1c](https://github.com/kicksideai/kickside/commit/1289a1cf59ebb0aa67147c89079e9f601342434b))
+
 ## [0.3.7](https://github.com/kicksideai/kickside/compare/core-v0.3.6...core-v0.3.7) (2026-10-29)
 
 
