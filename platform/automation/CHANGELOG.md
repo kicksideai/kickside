@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.10](https://github.com/kicksideai/kickside/compare/automation-v0.2.9...automation-v0.2.10) (2026-11-01)
+
+
+### Bug Fixes
+
+* **automation:** run drive repairs after Jobs schema upgrades ([#285](https://github.com/kicksideai/kickside/issues/285)) ([5b32173](https://github.com/kicksideai/kickside/commit/5b32173b6f95925c871a63cada5b02f9bbd259cf))
+
 ## [0.2.9](https://github.com/kicksideai/kickside/compare/automation-v0.2.8...automation-v0.2.9) (2026-10-30)
 
 
