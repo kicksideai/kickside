@@ -79,3 +79,19 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
+
+Hosts can administer the live worker pool through the Jobs library. Postgres
+uses 4 general workers by default. See [the runtime policy API](src/README.md#live-performance-policy)
+for override precedence, bounds, notifications, and graceful slot retirement.
+
+Performance policy edits apply through the singleton owner. Each execution keeps
+its persisted claim snapshot through heartbeat, cancellation and recovery. A
+pending application leaves busy workers running on the last good policy. Saves
+return the committed revision immediately; status reads the database's applied
+revision and last apply error without messaging the owner.
+
+The owner reconciles the persisted policy revision every 30 seconds so a lost
+notification cannot leave a live pool on an older revision indefinitely. Hosts
+can set `kickside.core.jobs:policy:meta.worker.policy_check_interval` between
+`1s` and `1h`. This uses the existing owner timer and one indexed revision read;
+unchanged revisions do not reload overrides or scan jobs.

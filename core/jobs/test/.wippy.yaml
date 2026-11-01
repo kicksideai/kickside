@@ -40,6 +40,22 @@ profiles:
       "app:jobs_migration_db:username": "${pg_username}"
       "app:jobs_migration_db:password": "${pg_password}"
       "app:jobs_migration_db:options.sslmode": disable
+      "app:policy_migration_db:kind": db.sql.postgres
+      "app:policy_migration_db:host": "${pg_host}"
+      "app:policy_migration_db:port": "${pg_port}"
+      "app:policy_migration_db:database": "${pg_database}"
+      "app:policy_migration_db:username": "${pg_username}"
+      "app:policy_migration_db:password": "${pg_password}"
+      "app:policy_migration_db:options.sslmode": disable
+      "app:policy_migration_db:options.search_path": jobs_policy_migration_test
+      "app:private_queue_claim_policy:kind": db.sql.postgres
+      "app:private_queue_claim_policy:host": "${pg_host}"
+      "app:private_queue_claim_policy:port": "${pg_port}"
+      "app:private_queue_claim_policy:database": "${pg_database}"
+      "app:private_queue_claim_policy:username": "${pg_username}"
+      "app:private_queue_claim_policy:password": "${pg_password}"
+      "app:private_queue_claim_policy:options.sslmode": disable
+      "app:private_queue_claim_policy:options.search_path": jobs_claim_policy_test
       "app:db:kind": db.sql.postgres
       "app:db:host": "${pg_host}"
       "app:db:port": "${pg_port}"

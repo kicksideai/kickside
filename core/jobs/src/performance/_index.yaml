@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.core.jobs.performance
+entries:
+- name: notify
+  meta:
+    comment: Publishes coalesced count and policy invalidations through the bound
+      realtime implementation.
+  kind: function.lua
+  source: file://notify.lua
+  method: run
+  modules:
+  - contract
+  - registry
+  imports:
+    config: kickside.core.jobs:config
+    error_envelope: kickside.contract:error_envelope
+  security:
+    actor:
+      id: kickside.core.jobs.performance:notify
+    policies:
+    - kickside.core.jobs.performance:broadcast
+    - kickside.core.jobs.performance:contract
+    - kickside.core.jobs.performance:binding
+    - kickside.core.jobs.performance:method
+    - kickside.core.jobs.performance:read
+- name: broadcast
+  kind: security.policy
+  meta:
+    comment: Grants only the two Jobs invalidation topics.
+    private: true
+  policy:
+    resources:
+    - kickside.realtime:kickside.jobs.performance.changed
+    - kickside.realtime:kickside.jobs.policy.changed
+    actions: realtime.broadcast
+    effect: allow
+- name: contract
+  kind: security.policy
+  meta:
+    comment: Performance contract.
+    private: true
+  policy:
+    resources: kickside.contract:realtime
+    actions: contract.get
+    effect: allow
+- name: binding
+  kind: security.policy
+  meta:
+    comment: Opens only the host-selected realtime implementation.
+    private: true
+  policy:
+    resources: []
+    actions: contract.open
+    effect: allow
+- name: method
+  kind: security.policy
+  meta:
+    comment: Calls only the realtime broadcast method.
+    private: true
+  policy:
+    resources: broadcast
+    actions: contract.call
+    effect: allow
+- name: config
+  kind: registry.entry
+  meta:
+    comment: Stores the requirement-bound realtime implementation ID.
+- name: realtime
+  kind: ns.requirement
+  default: ''
+  meta:
+    value_kind: contract.binding
+    comment: Selects the exact realtime binding used for Jobs invalidations.
+  targets:
+  - entry: kickside.core.jobs.performance:binding
+    path: ".policy.resources +="
+  - entry: kickside.core.jobs.performance:config
+    path: .meta.binding_id
+- name: read
+  kind: security.policy
+  meta:
+    private: true
+    comment: Reads only notifier realtime wiring.
+  policy:
+    resources: kickside.core.jobs.performance:config
+    actions: registry.get
+    effect: allow

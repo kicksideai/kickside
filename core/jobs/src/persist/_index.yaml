@@ -18,6 +18,7 @@ entries:
       - time
       - uuid
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -74,6 +75,7 @@ entries:
       - json
       - uuid
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -141,10 +143,12 @@ entries:
       comment: Atomic claim-with-lease of due pending jobs.
     source: file://claim.lua
     modules:
+      - json
       - sql
       - uuid
       - time
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -163,6 +167,8 @@ entries:
     modules:
       - sql
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
+      runtime_policy: kickside.core.jobs.policy:runtime
       lease_release: kickside.core.jobs:lease_release
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -282,6 +288,7 @@ entries:
       - channel
       - process
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       row_bytes: kickside.core.jobs.persist:row_bytes
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -305,3 +312,39 @@ entries:
     imports:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
+
+  - name: policy_overrides
+    meta: {comment: "Stores explicit admin overrides and increments their revision transactionally."}
+    kind: library.lua
+    source: file://policy_overrides.lua
+    modules: [sql, json]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: pool_counts
+    kind: library.lua
+    meta:
+      comment: Aggregates pending and running jobs by queue tier.
+    source: file://pool_counts.lua
+    modules:
+    - sql
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: pool_applied
+    kind: library.lua
+    meta: {comment: Stores the singleton owner applied revision and slot configuration.}
+    source: file://pool_applied.lua
+    modules: [sql, json]
+    imports:
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+
+  - name: pool_state
+    meta: {comment: "Reads durable applied state and persistent queue counts."}
+    kind: library.lua
+    source: file://pool_state.lua
+    imports:
+      config: kickside.core.jobs:config
+      pool_applied: kickside.core.jobs.persist:pool_applied
+      pool_counts: kickside.core.jobs.persist:pool_counts

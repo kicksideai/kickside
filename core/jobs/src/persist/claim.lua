@@ -8,6 +8,8 @@
 
 local sql = require("sql")
 local uuid = require("uuid")
+local json = require("json")
+local committed_policy = require("runtime_policy")
 
 local job_types = require("job_types")
 local cfg = require("config")
@@ -26,8 +28,8 @@ local function response_error(field: string): error
         details = {code = "job_claim_response", field = field}})
 end
 
-local function read_policy()
-    local policy, err = cfg.policy()
+local function read_committed(db: any): (table?, error?)
+    local policy, err = committed_policy.resolve_from(db)
     if err then return nil, err end
     if type(policy) ~= "table" then return nil, response_error("policy") end
     return policy, nil
@@ -136,14 +138,21 @@ local available_concurrency_key = eligibility.available_key
 -- the run history starts from the value this statement wrote. Returns nil when
 -- the row is no longer pending.
 function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token: string,
-        lease_until: string, now: string): (table?, error?)
+        lease_until: string, now: string, captured: string?): (table?, error?)
+    if not captured then
+        local policy, policy_err = read_committed(tx)
+        if policy_err then return nil, policy_err end
+        local encode_err
+        captured, encode_err = json.encode(cfg.capture(policy))
+        if encode_err then return nil, encode_err end
+    end
     local greatest = dbtype == sql.type.POSTGRES and "GREATEST" or "MAX"
     local rows, err = tx:query("UPDATE kickside_job SET status=$1, attempts=attempts+1, execution_seq="
         .. greatest .. "(execution_seq, COALESCE((SELECT MAX(r.execution_seq) FROM kickside_job_run r"
         .. " WHERE r.job_id=kickside_job.id), 0)) + 1, lease_token=$2, lease_until=$3, heartbeat_at=$4,"
-        .. " wake_demand_at=NULL WHERE id=$5 AND status=$6"
+        .. " wake_demand_at=NULL, lease_policy=$5 WHERE id=$6 AND status=$7"
         .. " AND " .. available_concurrency_key("$1") .. " RETURNING attempts, execution_seq",
-        { job_types.JOB_STATE.RUNNING, token, lease_until, now, id, job_types.JOB_STATE.PENDING })
+        { job_types.JOB_STATE.RUNNING, token, lease_until, now, captured, id, job_types.JOB_STATE.PENDING })
     rows, err = boundary.bounded_rows(rows, err, "claim lease failed", "lease", 0, 1, response_error)
     if err then return nil, err end
     local row = rows[1]
@@ -174,8 +183,10 @@ end
 -- Legacy single claims retain their existing one-row path. Capacity-declared
 -- rows re-enter the shared batch path, which reserves their group resources.
 function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
-    local policy, policy_err = read_policy()
+    local policy, policy_err = read_committed(db)
     if policy_err then return nil, policy_err end
+    local captured, capture_err = json.encode(cfg.capture(policy))
+    if capture_err then return nil, capture_err end
     local lease_seconds = (policy :: any).lease_timeout_seconds
     local now = lifecycle.now_string(dbtype)
     local lock_suffix = dbtype == sql.type.POSTGRES and "FOR UPDATE SKIP LOCKED" or ""
@@ -206,18 +217,28 @@ function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
     local lease_until = lifecycle.future_string(dbtype, lease_seconds)
     local size_err = row_bytes.check_update(tx, "kickside_job", job.id, function(row)
         local attempts, sequence = tonumber(row.attempts), tonumber(row.execution_seq)
-        if not attempts or not sequence then return nil, (errors.new({ message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
-        return { status = job_types.JOB_STATE.RUNNING, attempts = attempts + 1, execution_seq = sequence + 1,
-            lease_token = lease_token, lease_until = lease_until, heartbeat_at = now, wake_demand_at = row_bytes.NULL }
+        if not attempts or not sequence then return nil, (errors.new({
+            message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
+        return { status = job_types.JOB_STATE.RUNNING,
+            attempts = attempts + 1, execution_seq = sequence + 1,
+            lease_token = lease_token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL }
     end, (policy :: any).max_row_bytes, "claim_job")
     if size_err then return nil, boundary.rollback(tx, size_err, "claim rollback failed") end
-    local leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), lease_token, lease_until, now)
-    if update_err then return nil, boundary.rollback(tx, errors.wrap(update_err, "claim update failed"), "claim rollback failed") end
-    if not leased then return nil, boundary.rollback(tx, nil, "claim rollback failed") end
+    local leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), lease_token, lease_until, now, captured)
+    if update_err then
+        return nil, boundary.rollback(tx, errors.wrap(update_err, "claim update failed"), "claim rollback failed")
+    end
+    -- A losing racer's guarded update affects zero rows; yield the job to the winner.
+    if not leased then
+        return nil, boundary.rollback(tx, nil, "claim rollback failed")
+    end
+
+
     local _, commit_err = tx:commit()
     if commit_err then return nil, errors.wrap(commit_err, "claim commit failed") end
     job.wake_demand_at = nil
     job.lease_token = lease_token
+    job.lease_policy = cfg.capture(policy)
     job.lease_until = lease_until
     job.attempts = leased.attempts
     job.execution_seq = leased.execution_seq
@@ -228,7 +249,8 @@ claim.due_backlog = eligibility.due_backlog
 
 local TIER_ORDER = cfg.FAIRNESS_TIERS
 
-type Reservation = { awaited_types: { string }, general_capacity: integer, tier_step: integer }
+type Reservation = {
+    policy: any?, awaited_types: { string }, general_capacity: integer, tier_step: integer }
 
 local function candidate_rows(db: sql.DB, n: integer,
         job_type_set: { string }?, reservation: Reservation?, pending: table): (table[]?, error?)
@@ -416,8 +438,11 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         or reservation.tier_step % 1 ~= 0) then
         return nil, (errors.new({ message = "invalid claim capacity reservation", kind = errors.INVALID }) :: error)
     end
-    local policy, policy_err = read_policy()
+    local policy, policy_err = reservation and reservation.policy, nil
+    if not policy then policy, policy_err = read_committed(db) end
     if policy_err then return nil, policy_err end
+    local captured, capture_err = json.encode(cfg.capture(policy))
+    if capture_err then return nil, capture_err end
     local lease_seconds = (policy :: any).lease_timeout_seconds
     local requested_n = tonumber(requested) or (policy :: any).worker_claim_batch
     if requested_n < 1 or requested_n > (policy :: any).worker_claim_batch
@@ -707,12 +732,12 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
                 message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
             return { status = job_types.JOB_STATE.RUNNING,
                 attempts = attempts + 1, execution_seq = sequence + 1,
-                lease_token = token, lease_until = lease_until, heartbeat_at = now, wake_demand_at = row_bytes.NULL }
+                lease_token = token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL }
         end, (policy :: any).max_row_bytes, "claim_job", retained[tostring(job.id)])
         local leased: table? = nil
         if not refusal then
             local update_err: error? = nil
-            leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), token, lease_until, now)
+            leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), token, lease_until, now, captured)
             if update_err then
                 return nil, boundary.rollback(tx, errors.wrap(update_err, "claim batch update failed"), "claim rollback failed")
             end
@@ -720,6 +745,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         if leased then
             job.wake_demand_at = nil
             job.lease_token = token
+            job.lease_policy = cfg.capture(policy)
             job.lease_until = lease_until
             job.attempts = leased.attempts
             job.execution_seq = leased.execution_seq

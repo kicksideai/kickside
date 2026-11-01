@@ -16,3 +16,16 @@ entries:
       resources: '*'
       actions: component.own.maintenance
       effect: deny
+
+  - name: policy_admin
+    kind: security.policy
+    meta:
+      title: Jobs policy administration
+      surface: kickside.core.jobs
+      intent: admin_access
+      comment: Authorizes validated changes to the Jobs-owned runtime policy.
+    groups: []
+    policy:
+      resources: kickside.core.jobs:policy
+      actions: jobs.policy.write
+      effect: allow

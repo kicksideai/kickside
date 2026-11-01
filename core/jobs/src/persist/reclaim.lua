@@ -7,6 +7,8 @@ local sql = require("sql")
 
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
+local committed_policy = require("runtime_policy")
 local lifecycle = require("lifecycle")
 local row_bytes = require("row_bytes")
 local worker_marker = require("worker_marker")
@@ -117,8 +119,13 @@ function M.close_lost_runs(db: sql.DB, dbtype: string, requested_limit: integer?
     local policy, policy_err = cfg.policy()
     if policy_err then return 0, policy_err end
     if type(policy) ~= "table" then return 0, response_error("policy") end
-    local limit = requested_limit or (policy :: any).worker_claim_batch
-    if type(limit) ~= "number" or limit < 1 or limit > (policy :: any).worker_claim_batch
+    if requested_limit == nil then
+        local current, err = committed_policy.resolve_from(db)
+        if err then return 0, err end
+        requested_limit = current.worker_claim_batch
+    end
+    local limit = requested_limit
+    if type(limit) ~= "number" or limit < 1 or limit > job_types.MAX_WORKERS
         or limit ~= math.floor(limit) then
         return 0, (errors.new({ message = "lost run limit exceeds worker.claim_batch policy",
             kind = errors.INVALID }) :: error)
@@ -155,14 +162,19 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     local policy, policy_err = cfg.policy()
     if policy_err then return 0, policy_err end
     if type(policy) ~= "table" then return 0, response_error("policy") end
-    local reclaim_limit = requested_limit or (policy :: any).worker_claim_batch
+    if requested_limit == nil then
+        local current, err = committed_policy.resolve_from(db)
+        if err then return 0, err end
+        requested_limit = current.worker_claim_batch
+    end
+    local reclaim_limit = requested_limit
     if type(reclaim_limit) ~= "number" or reclaim_limit < 1
-        or reclaim_limit > (policy :: any).worker_claim_batch or reclaim_limit ~= math.floor(reclaim_limit) then
+        or reclaim_limit > job_types.MAX_WORKERS or reclaim_limit ~= math.floor(reclaim_limit) then
         return 0, (errors.new({ message = "reclaim limit exceeds worker.claim_batch policy",
             kind = errors.INVALID }) :: error)
     end
     local now = lifecycle.now_string(dbtype)
-    local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id")
+    local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id", "lease_policy")
         :from("kickside_job")
         :where(sql.builder.eq({ status = job_types.JOB_STATE.RUNNING })), scope, now, plan.execution, dbtype)
         :order_by("id ASC")
@@ -226,7 +238,9 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             alive = observations[tostring(row.id)].alive
         end
         if alive then
-            local recheck = lifecycle.future_string(dbtype, (policy :: any).lease_timeout_seconds)
+            local captured, capture_err = execution_policy.read(row)
+            if capture_err then return 0, sql_boundary.rollback(tx, capture_err, "reclaim rollback failed") end
+            local recheck = lifecycle.future_string(dbtype, captured.lease_timeout_seconds)
             local size_err = row_bytes.check_update(tx, "kickside_job", row.id, { lease_until = recheck },
                 (policy :: any).max_row_bytes, "recheck_termination")
             if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed") end

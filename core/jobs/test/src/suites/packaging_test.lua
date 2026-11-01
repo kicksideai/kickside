@@ -112,6 +112,17 @@ local function define_tests()
             test.eq(config.db_id(), "app:db")
         end)
 
+        test.it("limits realtime access to the explicitly selected host binding", function()
+            local expected = "kickside.realtime:realtime_binding"
+            local wiring = registry.get("kickside.core.jobs.performance:config")
+            local meta = wiring.meta or data_value(wiring, "meta") or {}
+            test.eq(meta.binding_id, expected)
+            local resources = data_value(registry.get("kickside.core.jobs.performance:binding"), "policy").resources
+            test.eq(#resources, 1)
+            test.eq(resources[1], expected)
+            test.eq(entry_kind(registry.get(expected)), "contract.binding")
+        end)
+
         test.it("routes the service and every dynamic job child through process_host", function()
             local requirement = registry.get("kickside.core.jobs:process_host")
             test.not_nil(requirement)

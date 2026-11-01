@@ -243,7 +243,7 @@ local function define_tests()
             test.eq(handover.slots[1].assignment.job.id, "drain-job")
             test.eq(handover.slots[1].assignment.run_id, "drain-run")
             test.eq(#handover.retired, 1)
-            test.eq(handover.retired[1], "drain-slot-2")
+            test.eq(handover.retired[1].pid, "drain-slot-2")
         end)
 
         test.it("adopts handed-over slots: an adopted slot's exit settles its assignment and respawns it", function()

@@ -28,4 +28,9 @@ function M.database(): any
     function db:commit() M.commits = M.commits + 1; return M.result("commit", true) end
     return db
 end
+function M.read(job)
+    if job and type(job.lease_policy) == "table" then return job.lease_policy, nil end
+    return M.policy()
+end
+function M.load_from(_, job) return M.read(job) end
 return M

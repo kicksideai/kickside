@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.core.jobs.policy
+entries:
+- name: fields
+  meta:
+    comment: Lists editable policy paths and their presentation bounds.
+  kind: library.lua
+  source: file://fields.lua
+- name: runtime
+  meta:
+    comment: Reads committed policy and validates atomic admin override writes.
+  kind: library.lua
+  source: file://runtime.lua
+  modules:
+  - security
+  - funcs
+  imports:
+    error_envelope: kickside.contract:error_envelope
+    config: kickside.core.jobs:config
+    policy_overrides: kickside.core.jobs.persist:policy_overrides
+- name: execution
+  kind: library.lua
+  meta:
+    comment: Reads only the immutable snapshot captured by a claim.
+  source: file://execution.lua
+  modules:
+  - json
+  imports:
+    config: kickside.core.jobs:config

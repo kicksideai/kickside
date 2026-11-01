@@ -33,6 +33,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:22_capacity_groups
         path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:24_policy_overrides
+        path: .meta.target_db
       - entry: kickside.core.jobs.migrations:23_jobs_updated_at
         path: .meta.target_db
       - entry: kickside.core.jobs:db_config
@@ -49,13 +51,15 @@ entries:
   # .wippy.yaml "kickside.core.jobs:policy:meta.<path>".
   - name: policy
     kind: registry.entry
-    meta:
-      comment: Jobs runtime policy — worker pool, fairness, retry, wake fanout, age-based retention, and per-row size limits.
+    # Defaults stay outside meta so explicit host assignments retain presence,
+    # including assignments whose value equals the shipped default.
+    defaults:
       worker:
         count_sqlite: 2
         count_postgres: 4
         awaited_slots: 1
         claim_batch: 16
+        policy_check_interval: 30s
       lease:
         timeout: 45s
         heartbeat: 10s
@@ -87,6 +91,19 @@ entries:
         batch: 500
         thread_cleanup_batch: 100
 
+    meta:
+      comment: Jobs runtime policy defaults with explicit host overrides under meta.
+      worker: {}
+      lease: {}
+      retry: {}
+      slot_retry: {}
+      fairness: {}
+      wake: {}
+      proc: {}
+      health: {}
+      limits: {}
+      retention: {}
+
   - name: process_host
     kind: ns.requirement
     meta:
@@ -116,6 +133,7 @@ entries:
     imports:
       registry_version: kickside.core.jobs:registry_version
       job_types: kickside.core.jobs:types
+      policy_fields: kickside.core.jobs.policy:fields
 
   - name: run_status
     kind: library.lua
@@ -245,6 +263,8 @@ entries:
       - sql
       - logger
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
+      pool_state: kickside.core.jobs.persist:pool_state
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
@@ -294,3 +314,9 @@ entries:
   - name: registry_version
     kind: library.lua
     source: file://registry_version.lua
+
+  - name: dep.kickside.contract
+    meta: {comment: "Dep kickside contract."}
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

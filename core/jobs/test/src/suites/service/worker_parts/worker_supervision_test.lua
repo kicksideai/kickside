@@ -427,11 +427,11 @@ local function define_tests()
         end)
 
         test.it("resolves the per-job max_execution_ms from payload, else the policy ceiling", function()
-            local policy = { proc_max_execution_ms = 600000 }
+            local policy = { proc_max_execution_ms = 3600000 }
             test.eq(dispatch.resolve_max_execution_ms({ payload = json.encode({ max_execution_ms = 1234 }) }, policy), 1234)
-            test.eq(dispatch.resolve_max_execution_ms({ payload = "{}" }, policy), 600000)
+            test.eq(dispatch.resolve_max_execution_ms({ payload = "{}" }, policy), 3600000)
             -- A non-positive override is ignored in favor of the policy ceiling.
-            test.eq(dispatch.resolve_max_execution_ms({ payload = json.encode({ max_execution_ms = 0 }) }, policy), 600000)
+            test.eq(dispatch.resolve_max_execution_ms({ payload = json.encode({ max_execution_ms = 0 }) }, policy), 3600000)
         end)
 
         test.it("extracts native EXIT errors and leaves output data uninterpreted", function()

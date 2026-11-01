@@ -80,6 +80,10 @@ local function define_tests()
                 end
             end)
         end
+        local log_subscription = assert(events.subscribe("logs", "logs.entry"))
+        local log_channel = log_subscription:channel()
+        local recent_logs: {string} = {}
+        local recent_events: {string} = {}
         if started.original_version then
             attempt(function()
                 local _, err = registry.apply_version(started.original_version)
@@ -89,14 +93,30 @@ local function define_tests()
         attempt(function()
             local deadline = time.after("15s")
             while next(roots) do
-                local selected = channel.select({ proc_events:case_receive(), deadline:case_receive() })
-                test.eq(selected.channel, proc_events, "probe services did not stop")
+                local selected = channel.select({ proc_events:case_receive(), log_channel:case_receive(), deadline:case_receive() })
+                local pending: {string} = {}
+                for pid in pairs(roots) do pending[#pending + 1] = pid end
+                table.sort(pending)
+                if selected.channel == log_channel then
+                    local entry = selected.value.data.entry
+                    recent_logs[#recent_logs + 1] = entry.message
+                    if #recent_logs > 50 then table.remove(recent_logs, 1) end
+                else
+                    test.eq(selected.channel, proc_events, "probe services did not stop: " .. table.concat(pending, ",")
+                        .. "; shutdown logs=" .. table.concat(recent_logs, " | ")
+                        .. "; lifecycle events=" .. table.concat(recent_events, " | "))
+                end
                 local event = selected.value
+                if selected.channel == proc_events and type(event) == "table" then
+                    recent_events[#recent_events + 1] = "kind=" .. tostring(event.kind) .. ",from=" .. tostring(event.from)
+                    if #recent_events > 50 then table.remove(recent_events, 1) end
+                end
                 if type(event) == "table" and event.kind == process.event.EXIT then
                     roots[tostring(event.from)] = nil
                 end
             end
         end)
+        log_subscription:close()
         if db then
             if started.table_created then
                 attempt(function()

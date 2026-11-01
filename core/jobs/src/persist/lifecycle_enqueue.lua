@@ -6,6 +6,7 @@ local uuid = require("uuid")
 local clock = require("clock")
 local job_types = require("job_types")
 local cfg = require("config")
+local committed_policy = require("runtime_policy")
 local trace_context = require("trace_context")
 local thread_fence = require("thread_fence")
 local row_bytes = require("row_bytes")
@@ -240,7 +241,12 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if carried_err then return nil, carried_err end
     local owner_err = owner_locator_error(params)
     if owner_err then return nil, owner_err end
-    local policy, policy_err = cfg.policy()
+    local policy, policy_err
+    if params.max_attempts == nil then
+        policy, policy_err = committed_policy.resolve_from(db_or_tx)
+    else
+        policy, policy_err = cfg.policy()
+    end
     if policy_err then return nil, policy_err end
     if type(policy) ~= "table" then return nil, response_error("policy") end
     if type(params.job_type) ~= "string" or params.job_type == "" then

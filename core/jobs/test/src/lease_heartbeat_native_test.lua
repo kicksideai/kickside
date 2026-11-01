@@ -6,6 +6,14 @@ local function invoke()
 end
 return {run = test.run_cases(function()
     test.describe("native lease heartbeat exit causes", function()
+        test.it("keeps renewal timeout paired with the running heartbeat interval", function()
+            fixture.reset("main", "", nil)
+            local ok, err = pcall(lease.main, {job_id = "job", lease_token = "token", execution_seq = 1,
+                lease_until = "future", interval_ms = 4500, lease_timeout_seconds = 60})
+            test.is_true(ok)
+            test.is_nil(err)
+            test.eq(fixture.future_seconds, 60)
+        end)
         for _, stage in ipairs({"database", "dialect", "policy", "deadline", "extend", "revocation", "notify", "committed_deadline", "release"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
                 errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
