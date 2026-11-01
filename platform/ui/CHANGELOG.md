@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/ui-v0.2.6...ui-v0.2.7) (2026-11-01)
+
+
+### Bug Fixes
+
+* **ui:** initialize legacy branding storage under the host project ([#283](https://github.com/kicksideai/kickside/issues/283)) ([cb43ab6](https://github.com/kicksideai/kickside/commit/cb43ab6aa21805838f168e0319cab5cfe9e5c44e))
+
 ## [0.2.6](https://github.com/kicksideai/kickside/compare/ui-v0.2.5...ui-v0.2.6) (2026-10-30)
 
 
