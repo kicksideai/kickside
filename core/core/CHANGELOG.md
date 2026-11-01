@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/kicksideai/kickside/compare/core-v0.3.8...core-v0.3.9) (2026-11-01)
+
+
+### Bug Fixes
+
+* **core:** retry transient retention owner failures ([#279](https://github.com/kicksideai/kickside/issues/279)) ([f1bb3db](https://github.com/kicksideai/kickside/commit/f1bb3db4f3b0012be9e63d05baadcc32a5a22147))
+
 ## [0.3.8](https://github.com/kicksideai/kickside/compare/core-v0.3.7...core-v0.3.8) (2026-11-01)
 
 
