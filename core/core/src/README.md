@@ -41,13 +41,20 @@ eligibility deadlines and change hints. Each owner retains its SQL, policy and
 bounded batch, returning `{success = true, deleted = count}` with optional
 `needs_continue`, `blocked` and `deadline_ms` fields.
 
+A failed callback remains in `owner_failures`. If its native error is retryable,
+Core schedules a retry in 30 seconds through the existing timer. A failed result
+may supply `deadline_ms` between one second and one hour ahead instead. An invalid
+retry deadline is reported alongside the original failure and arms no timer.
+Permanent errors are reported without an automatic retry, even if they supply a
+deadline. Failure retries never request an immediate continuation.
+
 `deadline_ms` is the owner's earliest remaining eligibility time as a finite,
 nonnegative integer of UTC Unix milliseconds that the runtime timer can represent.
 Recompute the global owner deadline
 on every invocation, including scoped hints; omit it when no owned rows need a
 future wake. Core combines healthy owners' deadlines with its own next deadline
-and uses the existing timer. Owners that omit the field keep their existing
-behavior. Invalid deadlines are reported as owner failures without preventing
+and uses the existing timer. Successful owners that omit the field keep their
+existing behavior. Invalid deadlines are reported as owner failures without preventing
 other owners from running. The field adds no registry scan or SQL query in Core.
 
 Import `kickside.core.retention:notifier` and call its

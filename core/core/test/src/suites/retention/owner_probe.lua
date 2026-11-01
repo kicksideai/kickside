@@ -27,6 +27,14 @@ local function run_owner(owner: string, input: any?): any
         return { success = true, deleted = 0 }
     end
     local _, update_err = db:execute("UPDATE " .. TABLE .. " SET calls=calls+1 WHERE owner=$1", { owner })
+    if not update_err and row.mode == "retry_once" then
+        local _, recover_err = db:execute("UPDATE " .. TABLE .. " SET mode='recovered' WHERE owner=$1", { owner })
+        db:release()
+        if recover_err then return { success = false, error = recover_err } end
+        return { success = false, error = errors.new({kind = errors.UNAVAILABLE,
+            message = "probe owner temporarily unavailable", retryable = true}),
+            deadline_ms = math.floor(time.now():unix_nano() / 1000000) + 1500 }
+    end
     local declared_deadline = tostring(row.mode):match("^deadline:(%d+)$")
     local deadline = declared_deadline and tonumber(declared_deadline)
     if not update_err and deadline and time.now():unix_nano() / 1000000 >= deadline then

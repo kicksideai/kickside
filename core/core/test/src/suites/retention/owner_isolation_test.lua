@@ -224,6 +224,27 @@ local function define_tests()
             test.eq(calls("first"), 2, "the failed owner runs again on the next pass")
             test.is_nil(failure_of((next_pass :: table).owner_failures, FIRST))
         end)
+        test.it("retries a transient owner failure on the real sweeper timer without another hint", function()
+            arm("retry_once", "count")
+            local events = process.events()
+            local pid = assert(process.spawn_monitored("kickside.core.retention.service:sweeper_process", "app:processes"))
+            local ok, failure = pcall(function()
+                local limit = time.now():unix_nano() + 5 * time.SECOND
+                while calls("first") < 2 and time.now():unix_nano() < limit do time.sleep("20ms") end
+                test.is_true(calls("first") >= 2, "transient owner failure loses its retry wake")
+            end)
+            process.cancel(pid)
+            local timeout = time.after("5s")
+            while true do
+                local selected = channel.select({ events:case_receive(), timeout:case_receive() })
+                if selected.channel ~= events then error("owned retention sweeper did not stop") end
+                if selected.value.kind == process.event.EXIT and tostring(selected.value.from) == tostring(pid) then
+                    if ok then test.is_nil(selected.value.result.error) end
+                    break
+                end
+            end
+            if not ok then error(failure) end
+        end)
         test.it("wakes an idle real sweeper at an owner's deadline without another change hint", function()
             arm("count", "count")
             local events = process.events()

@@ -33,6 +33,7 @@ entries:
     modules: [registry, funcs, sql, time]
     imports:
       migration_repository: wippy.migration:repository
+      retention_policy: kickside.core:policy_config
 
   - name: runner
     kind: library.lua
