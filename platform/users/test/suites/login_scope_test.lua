@@ -13,8 +13,6 @@ local scope_store = require("scope_store")
 local trigger_reconcile = require("trigger_reconcile")
 local consts = require("user_consts")
 local funcs = require("funcs")
-local time = require("time")
-local security_consts = require("security_consts")
 
 local USER_ID = "login_scope_test_user"
 local EMAIL = "login-scope@test.local"
@@ -39,19 +37,6 @@ end
 local function define_tests()
     test.describe("login actor metadata", function()
         local fixture
-
-        test.before_all(function()
-            -- Supervised startup precedes the process registering its name.
-            -- Await the real owner before testing synchronous projection writes.
-            local deadline = time.now():add(5 * time.SECOND)
-            while not process.registry.lookup(security_consts.SCOPE_PROJECTION_TOPIC) and time.now():before(deadline) do
-                time.sleep("10ms")
-            end
-            test.not_nil((process.registry.lookup(security_consts.SCOPE_PROJECTION_TOPIC)), "scope projector registered")
-            local ready, ready_err = trigger_reconcile.trigger()
-            test.is_nil(ready_err)
-            test.not_nil(ready, "scope projector acknowledges readiness")
-        end)
 
         test.after_each(function()
             if not fixture then return end

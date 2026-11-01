@@ -3,6 +3,20 @@ namespace: kickside.users
 
 # Harness-owned declarations for colocated production tests.
 entries:
+  - name: scope_projection_ready_test
+    kind: function.lua
+    meta: {type: test, suite: 00_users_ready}
+    source: file://scope_projection_ready_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [time]
+    imports:
+      test: wippy.test:test
+      security_consts: kickside.security:security_consts
+      trigger_reconcile: kickside.security:trigger_reconcile
+
   - name: token_continuity_test
     kind: function.lua
     meta: {type: test, suite: users}
@@ -451,9 +465,7 @@ entries:
       - json
       - security
       - funcs
-      - time
     imports:
-      security_consts: kickside.security:security_consts
       trigger_reconcile: kickside.security:trigger_reconcile
       scope_store: kickside.security.persist:scope_store
       session: kickside.users:session
