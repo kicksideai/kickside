@@ -5,6 +5,7 @@ local funcs = require("funcs")
 local sql = require("sql")
 local migration_repository = require("migration_repository")
 local time = require("time")
+local retention_policy = require("retention_policy")
 
 local M = {}
 local META_TYPE = "kickside.retention.owner"
@@ -138,7 +139,7 @@ local function ready(owner: Owner, definitions: table[], ledgers: { [string]: Ap
 end
 
 -- invoke runs one ready owner callback and returns its validated deleted count.
-local function invoke(owner: Owner, definitions: table[], ledgers: { [string]: Applied }, change: table?): (integer?, error?, boolean?, table[]?, integer?)
+local function invoke(owner: Owner, definitions: table[], ledgers: { [string]: Applied }, change: table?): (integer?, error?, boolean?, table[]?, any)
     local is_ready, ready_err = ready(owner, definitions, ledgers)
     if ready_err then return nil, ready_err end
     if not is_ready then return 0, nil end
@@ -148,7 +149,7 @@ local function invoke(owner: Owner, definitions: table[], ledgers: { [string]: A
         if not result.error then
             return nil, invalid_response("retention owner " .. owner.id .. " failed", "retention.owner.error")
         end
-        return nil, errors.wrap(result.error, "retention owner " .. owner.id .. " failed")
+        return nil, errors.wrap(result.error, "retention owner " .. owner.id .. " failed"), nil, nil, result.deadline_ms
     end
     if type(result) ~= "table" or result.success ~= true
         or type(result.deleted) ~= "number" or result.deleted < 0
@@ -187,6 +188,21 @@ local function invoke(owner: Owner, definitions: table[], ledgers: { [string]: A
     return math.floor(result.deleted) :: integer, nil, result.needs_continue == true, result.blocked, deadline :: integer?
 end
 
+-- Failure deadlines cannot become an immediate continuation loop or strand an
+-- owner behind Core's unrelated retention window. Permanent failures do not
+-- reach this function: their native error remains visible until a real wake.
+local function retry_deadline(value: any, owner: string): (integer?, error?)
+    local now_ms = math.floor(time.now():unix_nano() / 1000000)
+    if value == nil then return (now_ms + retention_policy.OWNER_RETRY_MS) :: integer, nil end
+    if type(value) ~= "number" or value ~= math.floor(value)
+        or value < now_ms + retention_policy.OWNER_RETRY_MIN_MS
+        or value > now_ms + retention_policy.OWNER_RETRY_MAX_MS then
+        return nil, invalid_response("retention owner " .. owner .. " returned invalid retry deadline",
+            "retention.owner.deadline_ms", owner)
+    end
+    return value :: integer, nil
+end
+
 -- run invokes every declared owner in id order. One owner's failure is recorded
 -- in the report and never prevents the remaining owners from running; only a
 -- failed owner discovery fails the pass.
@@ -222,16 +238,25 @@ function M.run(change: table?): (Report?, error?)
         local deleted, owner_err, needs_continue, blocked, deadline = invoke(owner, definitions, ledgers, change)
         if owner_err then
             report.failures[#report.failures + 1] = { owner = owner.id, error = owner_err }
+            if owner_err:retryable() then
+                local retry_err
+                deadline, retry_err = retry_deadline(deadline, owner.id)
+                if retry_err then
+                    report.failures[#report.failures + 1] = { owner = owner.id, error = retry_err }
+                end
+            else
+                deadline = nil
+            end
         else
             report.deleted = report.deleted + (deleted :: integer)
             report.needs_continue = report.needs_continue or needs_continue == true
-            if deadline ~= nil then
-                report.deadline_ms = report.deadline_ms == nil and deadline or math.min(report.deadline_ms, deadline)
-            end
             for _, item in ipairs(blocked or {}) do
                 report.blocked[#report.blocked + 1] = { owner = owner.id,
                     component_id = item.component_id, error = item.error }
             end
+        end
+        if deadline ~= nil then
+            report.deadline_ms = report.deadline_ms == nil and deadline or math.min(report.deadline_ms, deadline)
         end
     end
     return report, nil

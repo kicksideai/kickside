@@ -2016,6 +2016,7 @@ entries:
       sql: app:owner_discovery_native_sql_adapter
       funcs: app:owner_discovery_native_funcs_adapter
       migration_repository: app:owner_discovery_native_migration_adapter
+      retention_policy: kickside.core:policy_config
 
   - name: owner_discovery_native_test
     kind: function.lua
@@ -2054,6 +2055,7 @@ entries:
     meta: {type: test, suite: core_owner_callback_native}
     source: file://owner_callback_native_test.lua
     method: run
+    modules: [time]
     imports:
       test: wippy.test:test
       hooks: app:owner_discovery_native_source

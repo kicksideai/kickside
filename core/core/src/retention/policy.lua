@@ -6,6 +6,10 @@ local row_size = require("row_size")
 
 local M = {}
 M.ENTRY = "kickside.core:policy"
+-- Retrying a failed owner is scheduler infrastructure, not a retention window.
+M.OWNER_RETRY_MS = 30000
+M.OWNER_RETRY_MIN_MS = 1000
+M.OWNER_RETRY_MAX_MS = 3600000
 
 local function invalid(message: string): error
     return (errors.new({ message = M.ENTRY .. " " .. message, kind = errors.INVALID,
