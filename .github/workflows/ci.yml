@@ -1699,6 +1699,8 @@ jobs:
       with:
         version: 0.3.52a
         hub-url: https://hub.wippy.ai
+    - name: Test deployment bundle limits
+      run: python3 -m unittest discover -s tests -p test_deployment_bundle.py
     - name: Test missing and incomplete application bundles
       run: node --test app/scripts/check-app-bundle.test.mjs
     - name: Build, validate and pack the application frontend

@@ -11,6 +11,7 @@ import tarfile
 
 
 MAX_BUNDLE_BYTES = 256 << 20
+MAX_EXPANDED_BYTES = 1 << 30
 SOURCE = "https://github.com/kicksideai/kickside"
 
 
@@ -67,6 +68,7 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest,
         raise ValueError("the dependency index is invalid")
     previous = ""
     artifacts = []
+    expanded_bytes = len(pack) + len(lock) + len(config) + len(executable)
     for entry in index:
         name, checksum = entry["path"], entry["sha256"]
         if not re.fullmatch(r"\.wippy/vendor/[a-z0-9][a-z0-9_-]*/[a-z0-9][a-z0-9_.+-]*\.sha256-[0-9a-f]{64}\.wapp", name) or name <= previous:
@@ -82,6 +84,9 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest,
             data = read_file(source / "app" / original)
         if hashlib.sha256(data).hexdigest() != checksum:
             raise ValueError("the dependency digest is invalid")
+        expanded_bytes += len(data)
+        if expanded_bytes > MAX_EXPANDED_BYTES:
+            raise ValueError("the expanded bundle exceeds the size limit")
         artifacts.append((name, data))
         previous = name
     metadata["dependencies"] = [{"path": entry["path"], "sha256": entry["sha256"]} for entry in index]
@@ -90,7 +95,7 @@ def build_bundle(source, snapshot, tag, commit, runtime_version, runtime_digest,
         raise ValueError("the deployment manifest exceeds its limit")
     files = [("kickside.wapp", pack), ("deployment-manifest.json", encoded), ("wippy.lock", lock),
              ("runtime.json", config), ("kickside-launch", executable)] + artifacts
-    if sum(len(data) for _, data in files) > 1 << 30:
+    if expanded_bytes + len(encoded) > MAX_EXPANDED_BYTES:
         raise ValueError("the expanded bundle exceeds the size limit")
     result = io.BytesIO()
     with gzip.GzipFile(fileobj=result, mode="wb", filename="", mtime=0) as compressed:
