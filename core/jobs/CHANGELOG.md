@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.69](https://github.com/kicksideai/kickside/compare/jobs-v0.1.68...jobs-v0.1.69) (2026-11-02)
+
+
+### Bug Fixes
+
+* **jobs:** resume claims after registry-driven schema admission ([#290](https://github.com/kicksideai/kickside/issues/290)) ([86d3056](https://github.com/kicksideai/kickside/commit/86d30561c480b50b21e6e7e65947c5dd21bd45a7))
+
 ## [0.1.68](https://github.com/kicksideai/kickside/compare/jobs-v0.1.67...jobs-v0.1.68) (2026-11-02)
 
 
