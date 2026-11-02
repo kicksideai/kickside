@@ -110,6 +110,7 @@ entries:
       claim_refusal: kickside.core.jobs.service:claim_refusal
       job_class: kickside.core.jobs:job_class
       clock: kickside.core.jobs:clock
+      migration_runner: wippy.migration:runner
 
   - name: worker_pool
     kind: library.lua
@@ -130,6 +131,7 @@ entries:
       claim_refusal: kickside.core.jobs.service:claim_refusal
       job_class: kickside.core.jobs:job_class
       clock: kickside.core.jobs:clock
+      migration_runner: wippy.migration:runner
 
   - name: retention_schedule
     kind: library.lua

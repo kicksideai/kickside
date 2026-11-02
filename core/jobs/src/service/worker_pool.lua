@@ -29,6 +29,30 @@ local retention_schedule = require("retention_schedule")
 local claim_refusal = require("claim_refusal")
 local job_class = require("job_class")
 local clock = require("clock")
+local migration_runner = require("migration_runner")
+
+-- Registry publication can replace this pool before the install's migrations
+-- run. The migration owner supplies readiness; Jobs never executes migrations.
+local function schema_ready(): (boolean, error?)
+    local rows, err = migration_runner.setup(cfg.db_id()):find_migrations()
+    if err or not rows then
+        return false, errors.new({kind = errors.UNAVAILABLE, retryable = true,
+            message = "Jobs migration status unavailable: " .. tostring(err)})
+    end
+    local found = false
+    local prefix = "kickside.core.jobs.migrations:"
+    for _, row in ipairs(rows) do
+        if string.sub(tostring(row.id), 1, #prefix) == prefix then
+            found = true
+            if row.applied ~= true then return false, nil end
+        end
+    end
+    if not found then
+        return false, errors.new({kind = errors.INTERNAL, retryable = false,
+            message = "Jobs migrations are absent from the configured database"})
+    end
+    return true, nil
+end
 
 local function construct(dependencies: any): any
 local pool = {}
@@ -78,6 +102,7 @@ local pool_claim_execution = dependencies.claim_execution or claim_execution
 local pool_jobs = dependencies.jobs or jobs
 local pool_retention_schedule = dependencies.retention_schedule or retention_schedule
 local pool_job_class = dependencies.job_class or job_class
+local pool_schema_ready = dependencies.schema_ready or schema_ready
 local pool_names = pool_process.registry
 
 local function unavailable(message: string, cause: error?): error
@@ -176,6 +201,8 @@ function pool.main(handover: any?): (any?, error?)
     -- Retired slots remain children until their monitored EXIT arrives.
     local children: { [string]: boolean } = {}
     local draining = false
+    local admitted = false
+    local waiting_for_schema = false
     local started_ns: { [integer]: number } = {}
     local due_ns: { [integer]: number } = {}
     local idle: { [string]: string } = {}
@@ -239,7 +266,7 @@ function pool.main(handover: any?): (any?, error?)
     -- due_evidence is a due backlog read before this dispatch's claim: every row
     -- it counts was committed before the claim read its candidates.
     local function dispatch_idle(reclaim_due: boolean, due_evidence: table?): ()
-        if draining then return end
+        if draining or not admitted then return end
         local policy = active_policy
         if not policy then return end
         -- Apply queued capacity reports before the authoritative scan, under
@@ -486,6 +513,20 @@ function pool.main(handover: any?): (any?, error?)
     end
 
     local function refresh_size(now: number): ()
+        if not admitted then
+            local ready, schema_err = pool_schema_ready()
+            if ready ~= true or schema_err then
+                if schema_err then
+                    logger:error("job_worker pool: schema readiness failed: " .. tostring(schema_err))
+                elseif not waiting_for_schema then
+                    logger:info("job_worker pool waiting for Jobs migrations")
+                end
+                waiting_for_schema = true
+                size_retry_ns = now + delay_ns
+                return
+            end
+            admitted = true
+        end
         local desired, policy, detect_err = detect_size_policy()
         if detect_err or not desired or not policy then
             logger:error("job_worker pool: size detection failed: " .. tostring(detect_err))
@@ -559,7 +600,7 @@ function pool.main(handover: any?): (any?, error?)
     -- Recover due work and leases before processing messages. There is no idle
     -- rescan timer; only durable deadlines discovered here can arm one.
     dispatch_idle(true)
-    retention_driver.run(pool_time.now():unix_nano())
+    if admitted then retention_driver.run(pool_time.now():unix_nano()) end
 
     while true do
         local now = pool_time.now():unix_nano()
@@ -572,9 +613,11 @@ function pool.main(handover: any?): (any?, error?)
         end
         consider_retry(dispatch_retry_ns)
         consider_retry(size_retry_ns)
-        for _, at in pairs(due_ns) do
-            local left = math.max(0, at - now)
-            if wait_ns == nil or left < (wait_ns :: number) then wait_ns = left end
+        if admitted then
+            for _, at in pairs(due_ns) do
+                local left = math.max(0, at - now)
+                if wait_ns == nil or left < (wait_ns :: number) then wait_ns = left end
+            end
         end
         local function consider(at: number?): ()
             if at ~= nil then
@@ -583,7 +626,7 @@ function pool.main(handover: any?): (any?, error?)
             end
         end
         consider(deadline_ns)
-        consider(retention_driver.deadline())
+        if admitted then consider(retention_driver.deadline()) end
         local cases = { events_ch:case_receive(), registry_ch:case_receive(), idle_ch:case_receive(), wake_ch:case_receive() }
         if wait_ns ~= nil then
             cases[#cases + 1] = pool_time.after(tostring(math.max(1, math.ceil((wait_ns :: number) / 1e6))) .. "ms"):case_receive()
@@ -649,9 +692,18 @@ function pool.main(handover: any?): (any?, error?)
             dispatch_retry_ns = nil
             dispatch_idle(reclaim_retry)
         end
-        if size_retry_ns ~= nil and now >= size_retry_ns then refresh_size(now) end
-        for slot, at in pairs(due_ns) do
-            if at <= now then spawn(slot) end
+        if size_retry_ns ~= nil and now >= size_retry_ns then
+            local was_admitted = admitted
+            refresh_size(now)
+            if admitted and not was_admitted then
+                dispatch_idle(true)
+                retention_driver.run(now)
+            end
+        end
+        if admitted then
+            for slot, at in pairs(due_ns) do
+                if at <= now then spawn(slot) end
+            end
         end
         if deadline_ns ~= nil and deadline_ns <= now then
             local reclaim_due = deadline_kind == "lease"
@@ -660,7 +712,7 @@ function pool.main(handover: any?): (any?, error?)
             dispatch_idle(reclaim_due)
         end
         local retention_deadline = retention_driver.deadline()
-        if retention_deadline ~= nil and retention_deadline <= now then
+        if admitted and retention_deadline ~= nil and retention_deadline <= now then
             retention_driver.run(now)
         end
     end
