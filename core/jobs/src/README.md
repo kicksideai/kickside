@@ -11,7 +11,12 @@ Durable leased-job engine: slots, claims, leases, supervised execution and wake 
   the contract-phase migration drops them; nothing writes them.
 
 A Hub update that changes the worker code upgrades the pool in place: the pool
-keeps its PID, slots and assignments and keeps claiming on the new code. A slot
+keeps its PID, slots and assignments. Before admitting new claims or replacement
+slots, the upgraded pool checks its own migrations through the migration
+framework. Pending migrations defer admission through the existing retry timer;
+registry and wake notices do not bypass that deadline. Running children remain
+alive, cancellation remains available, and retention waits for the schema too.
+Once ready, the pool stops reading migration status for that incarnation. A slot
 running an execution lets it finish under the code it started with, then exits
 and is replaced by a slot on the new code; idle slots are replaced at once. The
 drain of an in-flight execution is bounded by that execution's own declared
