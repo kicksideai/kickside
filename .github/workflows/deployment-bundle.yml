@@ -1,0 +1,206 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+
+name: Deployment bundle
+on:
+  workflow_call:
+    inputs:
+      source_tag:
+        type: string
+        required: true
+      runtime_version:
+        type: string
+        default: 0.3.55a
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Published application tag with the app release-build target
+        type: string
+        required: true
+      runtime_version:
+        description: Exact Wippy release version
+        type: string
+        default: 0.3.55a
+permissions: {}
+jobs:
+  lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      RUNTIME_VERSION: ${{ inputs.runtime_version }}
+      SOURCE_TAG: ${{ inputs.source_tag }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+        path: control
+    - name: Verify the published source tag
+      shell: python
+      run: |
+        import json, os, re, urllib.request
+        tag = os.environ['SOURCE_TAG']
+        if not re.fullmatch(r'kickside-v[0-9]+\.[0-9]+\.[0-9]+', tag):
+            raise ValueError('a published application tag is required')
+        url = 'https://api.github.com/repos/kicksideai/kickside/releases/tags/' + tag
+        with urllib.request.urlopen(url, timeout=30) as response:
+            body = response.read((1 << 20) + 1)
+        if len(body) > 1 << 20:
+            raise ValueError('release metadata exceeds the limit')
+        release = json.loads(body)
+        if release['tag_name'] != tag or release['draft'] or release['prerelease']:
+            raise ValueError('the application release is invalid')
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ inputs.source_tag }}
+        persist-credentials: false
+        path: source
+    - name: Verify the source build interface
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${SOURCE_TAG#kickside-v}"
+        if ! make -C source/app --dry-run release-build VERSION="$version" WIPPY_BIN=wippy > "$RUNNER_TEMP/deployment-build-interface.log" 2>&1; then
+          cat "$RUNNER_TEMP/deployment-build-interface.log" >&2
+          echo 'The selected release must provide app/release-build for complete frontend packaging.' >&2
+          exit 1
+        fi
+    - name: Freeze compatible application dependencies
+      shell: bash
+      run: |
+        set -euo pipefail
+        binary="$RUNNER_TEMP/verified-wippy/wippy"
+        python3 control/.github/scripts/deployment_runtime.py --version "$RUNTIME_VERSION" --architecture amd64 --output "$binary"
+        ruby control/.github/scripts/deployment_config.rb source/app/.wippy.yaml source/app/deployment-config.json
+        mv source/app/deployment-config.json source/app/.wippy.yaml
+        cd source/app
+        "$binary" update
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: deployment-lock
+        path: source/app/wippy.lock
+        if-no-files-found: error
+        retention-days: 30
+  bundle:
+    needs: lock
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - architecture: amd64
+          runner: ubuntu-24.04
+        - architecture: arm64
+          runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      RUNTIME_VERSION: ${{ inputs.runtime_version }}
+      SOURCE_TAG: ${{ inputs.source_tag }}
+      TARGET_ARCHITECTURE: ${{ matrix.architecture }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+        path: control
+    - name: Verify the published source tag
+      shell: python
+      run: |
+        import json, os, re, urllib.request
+        tag = os.environ['SOURCE_TAG']
+        if not re.fullmatch(r'kickside-v[0-9]+\.[0-9]+\.[0-9]+', tag):
+            raise ValueError('a published application tag is required')
+        url = 'https://api.github.com/repos/kicksideai/kickside/releases/tags/' + tag
+        with urllib.request.urlopen(url, timeout=30) as response:
+            body = response.read((1 << 20) + 1)
+        if len(body) > 1 << 20:
+            raise ValueError('release metadata exceeds the limit')
+        release = json.loads(body)
+        if release['tag_name'] != tag or release['draft'] or release['prerelease']:
+            raise ValueError('the application release is invalid')
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ inputs.source_tag }}
+        persist-credentials: false
+        path: source
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '22'
+    - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+      with:
+        go-version: '1.27.3'
+        cache: false
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        name: deployment-lock
+        path: locked
+    - name: Verify and prepare Wippy
+      id: runtime
+      shell: bash
+      run: |
+        set -euo pipefail
+        binary="$RUNNER_TEMP/verified-wippy/wippy"
+        digest=$(python3 control/.github/scripts/deployment_runtime.py --version "$RUNTIME_VERSION" --architecture "$TARGET_ARCHITECTURE" --output "$binary")
+        printf 'digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+        printf '%s\n' "${binary%/*}" >> "$GITHUB_PATH"
+    - name: Build the locked application snapshot
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p output
+        ruby control/.github/scripts/deployment_config.rb source/app/.wippy.yaml output/published-config.json
+        cp output/published-config.json source/app/.wippy.yaml
+        version="${SOURCE_TAG#kickside-v}"
+        cp locked/wippy.lock source/app/wippy.lock
+        printf '\nversion: %s\n' "$version" >> source/app/wippy.yaml
+        make -C source/app release-build VERSION="$version" WIPPY_BIN=wippy
+        cd source/app
+        wippy install
+        cmp wippy.lock ../../locked/wippy.lock
+        wippy pack --list ../../output/inventory.wapp > ../../output/filesystems.txt
+        ruby ../../control/.github/scripts/deployment_filesystems.rb ../../output/filesystems.txt
+        wippy pack --module kickside/kickside --embed app:app_fs ../../output/kickside.wapp
+        ruby ../../control/.github/scripts/deployment_dependencies.rb . ../../output/dependencies.json ../../output/kickside.wapp
+    - name: Build the fixed workspace launcher
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd control/.github/deployment-launcher
+        CGO_ENABLED=0 GOOS=linux GOARCH="$TARGET_ARCHITECTURE" go build -trimpath -buildvcs=false -ldflags='-s -w' -o ../../../output/kickside-launch .
+    - name: Create the deployment archive
+      shell: bash
+      env:
+        RUNTIME_DIGEST: ${{ steps.runtime.outputs.digest }}
+      run: |
+        set -euo pipefail
+        commit=$(git -C source rev-parse HEAD)
+        python3 control/.github/scripts/deployment_bundle.py \
+          --source source --snapshot output/kickside.wapp --tag "$SOURCE_TAG" --commit "$commit" \
+          --dependencies output/dependencies.json \
+          --launcher output/kickside-launch \
+          --runtime-version "$RUNTIME_VERSION" --runtime-digest "$RUNTIME_DIGEST" \
+          --architecture "$TARGET_ARCHITECTURE" --output "output/kickside-deployment-linux-$TARGET_ARCHITECTURE.tar.gz"
+    - name: Attest the deployment archive
+      id: attest
+      uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
+      with:
+        subject-path: output/kickside-deployment-linux-${{ matrix.architecture }}.tar.gz
+    - name: Retain the archive and publisher proof
+      shell: bash
+      env:
+        PUBLISHER_PROOF: ${{ steps.attest.outputs.bundle-path }}
+      run: cp "$PUBLISHER_PROOF" "output/kickside-deployment-linux-$TARGET_ARCHITECTURE.sigstore.json"
+    - name: Upload the verified deployment archive
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: kickside-deployment-${{ inputs.source_tag }}-${{ matrix.architecture }}
+        path: |
+          output/kickside-deployment-linux-${{ matrix.architecture }}.tar.gz
+          output/kickside-deployment-linux-${{ matrix.architecture }}.sigstore.json
+        if-no-files-found: error
+        retention-days: 30
