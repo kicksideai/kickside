@@ -4,8 +4,8 @@ local proc_supervisor = require("proc_supervisor")
 -- execution settles (its replacement loads the new code), when its heartbeat
 -- dies, or when it cannot start (database, dialect, policy); the root respawns
 -- every exited slot. On OUTDATED the root upgrades in place and hands its slots
--- and their assignments to the new code, so executions keep running and new
--- claims continue; it drains and ends on its own cancel.
+-- and their assignments to the new code. Executions keep running while new
+-- claims wait for this code's Jobs migrations; it drains on its own cancel.
 -- A slot that exits sooner than
 -- LOOP_RESPAWN_DELAY_MS after its spawn waits that long before its replacement
 -- starts, so a loop that cannot start retries at a steady pace.
@@ -514,6 +514,7 @@ function pool.main(handover: any?): (any?, error?)
 
     local function refresh_size(now: number): ()
         if not admitted then
+            if size_retry_ns ~= nil and now < size_retry_ns then return end
             local ready, schema_err = pool_schema_ready()
             if ready ~= true or schema_err then
                 if schema_err then

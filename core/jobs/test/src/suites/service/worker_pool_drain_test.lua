@@ -232,7 +232,8 @@ local function define_tests()
                 test.eq(#state.assignments, 0)
                 test.eq(#state.released, 0)
                 test.is_nil(next(state.cancels))
-                if n == 1 then return { channel = state.channels.wake } end
+                if n == 1 then return { channel = state.channels.registry } end
+                if n == 2 then return { channel = state.channels.wake } end
                 return { channel = state.channels.events, value = { kind = process.event.OUTDATED } }
             end, { desired = 1, name_held = true, version = "v2", schema_ready = function()
                 reads = reads + 1
@@ -242,7 +243,7 @@ local function define_tests()
                 assignment = { job = { id = "busy-job" }, run_id = "busy-run", epoch = 1 } }},
                 due = {{ slot = 2, at = 0 }} })
             test.is_nil(err)
-            test.eq(reads, 1, "wake notices do not poll migration status")
+            test.eq(reads, 1, "registry and wake notices respect the pending readiness retry")
             test.eq(outcome.unregistered, 0)
             test.eq(outcome.upgrades[1].handover.slots[1].assignment.job.id, "busy-job")
             test.eq(outcome.upgrades[1].handover.due[1].slot, 2)
