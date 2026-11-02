@@ -645,9 +645,10 @@ function pool.main(handover: any?): (any?, error?)
             else
                 local previous_version = current_version
                 current_version = fresh
+                local was_admitted = admitted
                 refresh_size(pool_time.now():unix_nano())
-                if current_version ~= previous_version then
-                    dispatch_idle(false)
+                if current_version ~= previous_version or (admitted and not was_admitted) then
+                    dispatch_idle(not was_admitted)
                 end
             end
         end
