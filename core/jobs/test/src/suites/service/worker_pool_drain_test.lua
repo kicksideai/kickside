@@ -282,6 +282,27 @@ local function define_tests()
             test.eq(outcome.unregistered, 1)
         end)
 
+        test.it("recovers idle handover when schema becomes ready on a same-version registry notice", function()
+            local reads = 0
+            local pool, outcome = pool_driver(function(n: integer, state: table): table
+                if n == 1 then
+                    state.now = 1e9
+                    return { channel = state.channels.registry }
+                end
+                test.eq(#state.assignments, 1, "admission recovers work even when the registry version is unchanged")
+                return { channel = state.channels.events, value = { kind = process.event.OUTDATED } }
+            end, { desired = 1, name_held = true, version = "v2", claim_once = true, schema_ready = function()
+                reads = reads + 1
+                return reads >= 2, nil
+            end })
+            local _, err = pool.main({ size = 1, slots = {{ slot = 1, pid = "idle-slot", epoch = 0, idle_version = "v2" }} })
+            test.is_nil(err)
+            test.eq(reads, 2)
+            test.eq(#outcome.assignments, 1)
+            test.eq(#outcome.spawned, 0)
+            test.is_nil(next(outcome.cancels))
+        end)
+
         test.it("remains cancellable with no new slots when migration status cannot be read", function()
             local reads = 0
             local pool, outcome = pool_driver(function(_, state: table): table
