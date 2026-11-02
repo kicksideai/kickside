@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.68](https://github.com/kicksideai/kickside/compare/jobs-v0.1.67...jobs-v0.1.68) (2026-11-02)
+
+
+### Bug Fixes
+
+* **jobs:** wait for schema before admitting upgraded claims ([1c030c0](https://github.com/kicksideai/kickside/commit/1c030c02e83c6fdf34ca6fb6b5aa674cd20f2fdc))
+
 ## [0.1.67](https://github.com/kicksideai/kickside/compare/jobs-v0.1.66...jobs-v0.1.67) (2026-10-30)
 
 
