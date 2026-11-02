@@ -112,6 +112,7 @@ entries:
       http: kickside.inbox:http_error_context
       security: kickside.inbox:http_security_context
       inbox_resolve: kickside.inbox:http_mutation_context
+      inbox_files: kickside.inbox:inbox_files
       http_errors: kickside.contract:http_errors
   - name: http_errors_test
     kind: function.lua

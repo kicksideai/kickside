@@ -1,0 +1,47 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local context = require("context")
+local handler = require("handler")
+local reader = require("reader")
+local provider = require("provider")
+return { run = test.run_cases(function()
+    test.describe("Inbox file content", function()
+        test.before_each(function()
+            reader.item, reader.err = nil, nil
+            provider.denied, provider.calls = false, 0
+        end)
+        test.after_each(function()
+            reader.item, reader.err = nil, nil
+        end)
+        test.it("checks access again after a preview and never returns bytes after revocation", function()
+            reader.item = { files = { { component_id = "example:content", context = {} } } }
+            handler.handler()
+            test.eq(context.body, "file bytes")
+            test.eq(context.mime, "text/plain")
+            test.eq(context.headers["Cache-Control"], "no-store")
+            test.eq(context.headers["Content-Disposition"], "attachment")
+            provider.denied = true
+            handler.handler()
+            test.eq(context.status, 403)
+            test.is_nil(context.body)
+            test.eq(context.output.error, "file access denied")
+            test.eq(provider.calls, 2)
+        end)
+        test.it("does not open a provider when the item is outside the viewer inbox", function()
+            reader.item = { files = { { component_id = "example:content", context = {} } } }
+            reader.err = errors.new({ kind = errors.PERMISSION_DENIED, message = "private inbox item" })
+            handler.handler()
+            test.eq(context.status, 403)
+            test.eq(provider.calls, 0)
+            test.is_nil(context.body)
+            test.eq(context.output.error, "file access denied")
+        end)
+        test.it("does not open a provider or disclose whether a missing item exists", function()
+            handler.handler()
+            test.eq(context.status, 403)
+            test.eq(provider.calls, 0)
+            test.is_nil(context.body)
+            test.eq(context.output.error, "file access denied")
+        end)
+    end)
+end) }

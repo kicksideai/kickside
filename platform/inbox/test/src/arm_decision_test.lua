@@ -69,6 +69,14 @@ end
 
 local function define_tests()
     test.describe("Review content keys", function()
+        test.it("carries generic file references into review items", function()
+            local input = args("reviewer")
+            input.config.files = { { component_id = "example:content", context = { document_id = "document" } } }
+            local params, err = arm.preview_decision(input)
+            test.is_nil(err)
+            test.eq(params.files[1].context.document_id, "document")
+        end)
+
         test.it("renders mixed string and number keys without losing their values", function()
             local rendered, err = decision_content.render({ [2] = "numeric", named = "string" }, {})
             test.is_nil(err)

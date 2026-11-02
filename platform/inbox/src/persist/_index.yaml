@@ -19,6 +19,7 @@ entries:
     source: file://events.lua
     modules: [contract, uuid, security, json]
     imports:
+      inbox_files: kickside.inbox:inbox_files
       object_fields: kickside.inbox.persist:object_fields
       inbox_types: kickside.inbox:inbox_types
       inbox_item_types: kickside.inbox:inbox_item_types

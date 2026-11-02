@@ -4,6 +4,69 @@ local list = require("list_handler")
 local context = require("list_context")
 local function run()
     test.describe("Inbox list decision contract", function()
+        test.before_each(function() context.query_params = nil; list._modules = {} end)
+        test.after_each(function() context.query_params = nil; list._modules = {} end)
+        test.it("returns only viewer-authorized file metadata", function()
+            context.query_params = { id = "file-item", status = "all" }
+            context.rows = { { id = "file-item", item_type = "notice", metadata_json = "{}",
+                files = { { component_id = "private:provider", title = "private name", context = { key = "private" } } } } }
+            list._modules = { http = context, security = context, reader = context, events = context,
+                files = { list = function(refs: any): (any?, any?)
+                    test.eq(refs[1].context.key, "private")
+                    return { { locked = true } }, nil
+                end } }
+            list.handler()
+            list._modules = {}
+            context.query_params = nil
+            local file = context.body().items[1].files[1]
+            test.is_true(file.locked)
+            test.is_nil(file.title)
+            test.is_nil(file.context)
+            test.is_nil(file.component_id)
+        end)
+
+        test.it("lists attachment counts without calling providers or exposing references", function()
+            context.rows = {}
+            for index = 1, 40 do
+                context.rows[index] = { id = tostring(index), item_type = "notice", metadata_json = "{}",
+                    files = { { component_id = "private:provider", title = "private name" },
+                        { component_id = "other:provider", context = { key = "private" } } } }
+            end
+            local calls = 0
+            list._modules = { http = context, security = context, reader = context, events = context,
+                files = { list = function(): (any?, any?)
+                    calls = calls + 1
+                    return nil, errors.new({ kind = errors.UNAVAILABLE, message = "provider unavailable" })
+                end } }
+            list.handler()
+            list._modules = {}
+            test.eq(calls, 0)
+            test.eq(context.status, 200)
+            test.eq(#context.body().items, 40)
+            for _, item in ipairs(context.body().items) do
+                test.eq(item.file_count, 2)
+                test.is_nil(item.files)
+            end
+        end)
+
+        test.it("reports metadata failure only when the attached item is requested", function()
+            context.rows = { { id = "file-item", item_type = "notice", metadata_json = "{}",
+                files = { { component_id = "unavailable:provider" } } } }
+            context.query_params = { id = "file-item", status = "all" }
+            local calls = 0
+            list._modules = { http = context, security = context, reader = context, events = context,
+                files = { list = function(): (any?, any?)
+                    calls = calls + 1
+                    return nil, errors.new({ kind = errors.UNAVAILABLE, message = "provider unavailable" })
+                end } }
+            list.handler()
+            list._modules = {}
+            context.query_params = nil
+            test.eq(calls, 1)
+            test.eq(context.status, 500)
+            test.is_false(context.body().success)
+        end)
+
         for _, identifier in ipairs({ "target", "absent", "" }) do
             test.it("filters a requested item identity before pagination: " .. identifier, function()
                 context.rows = {
