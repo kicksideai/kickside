@@ -57,12 +57,20 @@ local function lookup(args: any, credential: boolean?): any
     -- bot lookup carries only its explicitly selected groups.
     local include_baseline = credential == true or not authority_only or not bot_accounts.is_bot(user)
     local scope_name, _, effective_groups, scope_err, resolved = consts.resolve_scope(config, user.security_groups, true, include_baseline)
-    if scope_err then return failure(subject_id, tostring(scope_err), errors.UNAVAILABLE, "infrastructure", true) end
+    if scope_err then
+        if errors.is(scope_err, errors.NOT_FOUND) then
+            return failure(subject_id, tostring(scope_err), errors.NOT_FOUND, "subject", false)
+        end
+        if errors.is(scope_err, errors.PERMISSION_DENIED) then
+            return failure(subject_id, tostring(scope_err), errors.PERMISSION_DENIED, "subject", false)
+        end
+        return failure(subject_id, tostring(scope_err), errors.UNAVAILABLE, "infrastructure", true)
+    end
 
     local stored_meta = type(args.actor_meta) == "table" and args.actor_meta or {}
     local live_groups = effective_groups
     local metadata = session_metadata.actor(user, authority_epochs, stored_meta.scope_id or scope_name,
-        live_groups, stored_meta.login_time, stored_meta)
+        live_groups, stored_meta.session or {}, stored_meta)
 
     return {
         authority_epochs = authority_epochs,

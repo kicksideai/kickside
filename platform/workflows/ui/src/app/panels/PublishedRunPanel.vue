@@ -37,9 +37,3 @@ onBeforeUnmount(() => { sequence += 1 })
     </template>
   </section>
 </template>
-<style scoped>
-.wf-published-run { padding: 1rem; display: grid; gap: 0.75rem; border-block-end: 1px solid var(--p-content-border-color); background: var(--p-content-background); }
-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-h2, p { margin: 0; }
-h2 { font-size: 1rem; }
-</style>

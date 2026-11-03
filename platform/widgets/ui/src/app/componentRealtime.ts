@@ -62,10 +62,10 @@ function coerceMeta(meta: Record<string, unknown>, fieldTypes?: MetaFieldTypes):
 
 export function componentMetaEvent(
   msg: unknown,
-  componentId: string,
+  componentId?: string,
   fieldTypes?: MetaFieldTypes,
 ): ComponentMetaEvent | null {
-  if (!componentId) return null
+  if (componentId !== undefined && !componentId) return null
   const root = isRecord(msg) ? msg : {}
   const candidates = [
     root,
@@ -78,11 +78,15 @@ export function componentMetaEvent(
     if (item.event !== 'component.meta.changed') continue
     const id = String(item.component_id || '')
     const topic = String(root.topic || item.topic || '')
-    if (id && id !== componentId) continue
-    if (!id && topic !== `component.${componentId}`) continue
+    if (componentId === undefined) {
+      if (!id && (!topic.startsWith('component.') || topic === 'component.')) continue
+    } else {
+      if (id && id !== componentId) continue
+      if (!id && topic !== `component.${componentId}`) continue
+    }
     return {
       event: 'component.meta.changed',
-      component_id: id || componentId,
+      component_id: id || componentId || topic.slice('component.'.length),
       meta: coerceMeta(isRecord(item.meta) ? item.meta : {}, fieldTypes),
       deleted: Array.isArray(item.deleted) ? item.deleted.map(String) : [],
     }

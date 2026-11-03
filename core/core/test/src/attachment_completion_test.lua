@@ -19,6 +19,14 @@ local function invoke(method: string): (any, error?)
 end
 return {run = test.run_cases(function()
     test.describe("attached threads retain permanent marker and notification failures", function()
+        test.it("completes the declared projection when a peer creates the primary thread", function()
+            fixture.reset("ensure_thread", "attach_cleanup", errors.new({kind = errors.CONFLICT, message = "concurrent thread creation"}), nil)
+            local result, err = api.ensure_thread({component_id = "thread", impl_id = "declared-kind"})
+            test.is_nil(err, tostring(err))
+            test.eq(result.thread_id, "thread")
+            test.eq(fixture.completions, 1)
+            test.eq(fixture.removes, 0)
+        end)
         for _, method in ipairs({"create", "ensure_thread", "emit"}) do
             local stages = method == "emit" and {"marker", "both", "notify"} or {"notify"}
             for _, stage in ipairs(stages) do

@@ -78,6 +78,19 @@ local function define_tests()
         exec = funcs.new():with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE))
     end)
 
+    test.it("rejects a selected component of another source kind through install", function()
+        local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+        local wrong, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:schema_record_feed",
+            external_ref = "wrong-source:" .. uuid.v4(), title = "Other feed kind" })
+        test.is_nil(create_err, tostring(create_err))
+        local result, err = install(declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
+            config = { thread_id = wrong.thread_id }, backfill = "none" } }))
+        test.is_nil(result)
+        test.is_true(errors.is(err, errors.INVALID), tostring(err))
+        test.eq(err:details().code, "source_kind_mismatch")
+        test.eq(err:details().field, "trigger.config.thread_id")
+    end)
+
     test.describe("kickside.sync declarations", function()
         test.it("remains a native Data Sync Automation with its own create surface", function()
             local entry = registry.get("kickside.sync:sync") :: any
@@ -121,12 +134,16 @@ local function define_tests()
         end)
 
         test.it("uses the normalized selected instance for its schema and event source", function()
+            local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:schema_record_feed",
+                external_ref = "normalized-source:" .. uuid.v4(), title = "Schema feed" })
+            test.is_nil(create_err, tostring(create_err))
             local result, err = exec:call("kickside.sync:sync_install", declaration({
                 trigger = { v = 2, source = "app.fixture:selected_schema_record", backfill = "none",
-                    config = { thread_id = "  selected-feed  " } },
+                    config = { thread_id = "  " .. created.thread_id .. "  " } },
             }))
             test.is_nil(err, tostring(err))
-            test.eq(result.source.source_thread_id, "selected-feed")
+            test.eq(result.source.source_thread_id, created.thread_id)
         end)
 
         test.it("keeps destination-configured content in expression mapping validation", function()
@@ -306,7 +323,7 @@ local function define_tests()
 
         test.it("declares an events source as an event drive on its thread from its history boundary", function()
             local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
-            local created, created_err = threads:upsert({ thread_class = "automation", external_ref = "sync-kind:" .. uuid.v4(), title = "Upstream" })
+            local created, created_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed", external_ref = "sync-kind:" .. uuid.v4(), title = "Upstream" })
             test.is_nil(created_err, tostring(created_err))
             local thread_id = tostring(created.thread_id)
             local installed, err = install(declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",

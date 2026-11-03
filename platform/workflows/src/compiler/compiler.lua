@@ -7,7 +7,7 @@
 -- metadata.def_node_id, and injects the run input — this is what the launcher calls
 -- per run so each run is an independent dataflow.
 
-local json = require("json")
+local mapping = require("mapping")
 local graph = require("graph")
 local materialize = require("materialize")
 local consts = require("consts")
@@ -52,12 +52,7 @@ local function is_entry_marker(value: string): boolean
     return value == "__entry_input__" or value:sub(1, 16) == "__entry_input__:"
 end
 
-local function deep_copy(v: any): any
-    if type(v) ~= "table" then return v end
-    local out: any = next(v) == nil and json.encode(v) == "{}" and table.create(0, 1) or {}
-    for k, item in pairs(v :: { [any]: any }) do out[k] = deep_copy(item) end
-    return out
-end
+local copy_tree = mapping.copy_tree
 
 -- remint(commands, gen_id, input, opts) -> (fresh_commands, id_map). gen_id() must return a
 -- fresh unique id per call (uuid.v7 in production). Rewrites every CREATE_NODE node_id
@@ -93,7 +88,7 @@ function M.remint(commands: any, gen_id: any, input: any, opts: any?): ({ Map }?
 
     local out: { Map } = {}
     for _, cmd in ipairs(list) do
-        local c = deep_copy(cmd) :: Map
+        local c = copy_tree(cmd) :: Map
         local p = type(c.payload) == "table" and (c.payload :: Map) or {}
         if c.type == "CREATE_NODE" then
             local old = tostring(p.node_id or "")
@@ -117,7 +112,7 @@ function M.remint(commands: any, gen_id: any, input: any, opts: any?): ({ Map }?
                     dataflow_id = dataflow_id,
                     flow_ref = flow_id ~= "" and flow_version > 0 and { kind = "flow", id = flow_id, version = flow_version } or nil,
                     def_node_id = tostring(md.def_node_id or old),
-                    workflow_stack = workflow_stack and deep_copy(workflow_stack) or nil,
+                    workflow_stack = workflow_stack and copy_tree(workflow_stack) or nil,
                     depth = depth,
                 }
                 cfg.context = context

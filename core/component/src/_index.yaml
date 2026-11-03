@@ -84,6 +84,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.component:db_config
         path: .meta.db_id
+      - entry: kickside.component.system:read_db
+        path: '.policy.resources +='
 
   - name: db_config
     kind: registry.entry

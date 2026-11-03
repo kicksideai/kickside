@@ -26,7 +26,7 @@ const automationId = computed(() => String(inputPreset(props.value.config).id ||
 const title = ref('')
 const enabled = ref(true)
 const schedule = ref<TriggerSchedule | null>(null)
-const target = ref<TaskTarget>({ kind: 'workflow' })
+const target = ref<TaskTarget>({ kind: '' })
 const targetError = ref('Choose a target.')
 const loading = ref(true)
 const loaded = ref(false)
@@ -40,7 +40,7 @@ function seed(input: Record<string, unknown>) {
   title.value = typeof input.title === 'string' ? input.title : ''
   enabled.value = input.enabled !== false
   schedule.value = fromRecurringSchedule(input.schedule as RecurringSchedule || null)
-  target.value = input.target as TaskTarget || { kind: 'workflow' }
+  target.value = input.target as TaskTarget || { kind: '' }
 }
 async function load() {
   loading.value = true; loaded.value = false; error.value = ''

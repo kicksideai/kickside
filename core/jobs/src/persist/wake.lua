@@ -5,6 +5,7 @@ local funcs = require("funcs")
 local cfg = require("config")
 local row_bytes = require("row_bytes")
 local boundary = require("sql_boundary")
+local job_types = require("job_types")
 
 local wake = {}
 type DialectTransaction = { db_type: (any) -> (string?, error?) }
@@ -13,7 +14,7 @@ type WakePlan = { key: string, generation: number, candidates: { table }, extras
 
 -- The published demand of one wake key (CONTRACTS jobs.wake_tx).
 type WakeResult = { demand_generation: integer, touched_count: integer, continuation_id: string? }
-local CONTINUATION_TYPE = "kickside.wake.continuation"
+local CONTINUATION_TYPE = job_types.WAKE_CONTINUATION_TYPE
 local POOL_NUDGE = "kickside.core.jobs.persist:pool_nudge"
 wake.CONTINUATION_TYPE = CONTINUATION_TYPE
 

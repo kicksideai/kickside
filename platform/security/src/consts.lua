@@ -9,6 +9,8 @@ local registry = require("registry")
 local M = {}
 
 M.POLICY_KIND = "security.policy"
+-- Runtime-only native source kind; never used by catalog/projection.
+M.EXPRESSION_POLICY_KIND = "security.policy.expr"
 M.SCOPE_KIND = "security.scope"
 
 -- Role descriptor discovered for the catalog from meta.title/meta.comment.

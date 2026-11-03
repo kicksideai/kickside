@@ -234,7 +234,7 @@ function reader.list(db_or_tx: Executor, options: table?): (table[]?, error?)
         meta_filters = { thread_class = thread_class }
     end
 
-    local component_ids, list_err, component_display = component.list_thread_components(meta_filters, (masks.ACCESS.READ :: integer), limit)
+    local component_ids, list_err, component_display = component.list_thread_components(meta_filters, (masks.ACCESS.READ :: integer), limit, nil, trim(opts.impl_id))
     if list_err then
         return nil, list_err
     end

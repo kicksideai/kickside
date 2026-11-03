@@ -2,6 +2,17 @@ version: "1.0"
 namespace: kickside.knowledge.api
 
 entries:
+  - name: detail_statistics_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://detail_statistics_test.lua
+    method: run
+    modules: [http]
+    imports:
+      test: wippy.test:test
+      get_kb: kickside.knowledge.api:get_kb
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
   - name: query_params_test
     kind: function.lua
     meta: { type: test, suite: knowledge }

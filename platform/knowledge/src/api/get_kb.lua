@@ -57,8 +57,8 @@ local function handler()
         return
     end
 
-    -- The owner projections maintain public status on component meta. This read
-    -- path never opens a KB store to compute counts on page render.
+    -- Public metadata carries identity and status. Detail already reads the
+    -- engine store for configuration, so reuse its statistics when available.
     local meta = type(comp.meta) == "table" and comp.meta or {}
     local embedding_model = meta.embedding_model
     local auto_summary = meta.auto_summary
@@ -76,9 +76,8 @@ local function handler()
         end
     end
 
-    -- Detail/manage needs engine config, which is not public component meta.
-    -- Read only the store row; counts remain owner-maintained public meta.
     local config = nil
+    local statistics = meta
     local store_contract = engine and type(engine.store_contract) == "string" and engine.store_contract or ""
     if store_contract ~= "" then
         local kb_store = stores.open_engine_store(engine)
@@ -88,6 +87,7 @@ local function handler()
             store_row, store_err = kb_store:get_store({ component_id = kb_id })
         end
         if not store_err and store_row then
+            statistics = type(store_row.stats) == "table" and store_row.stats or meta
             embedding_model = store_row.embedding_model or embedding_model
             config = store_row.config
             kb_type = store_row.kb_type or kb_type
@@ -100,9 +100,9 @@ local function handler()
     end
 
     -- Badge + stat labels are declared by the resolved engine (meta.ui), not a
-    -- per-type map; the engine library formats stat_items from public meta.
+    -- per-type map; the engine library formats the selected statistics.
     local badge = engine and engine.badge or nil
-    local stat_items = engines.format_stats(meta, engine and engine.stats_spec)
+    local stat_items = engines.format_stats(statistics, engine and engine.stats_spec)
 
     res:set_status(http.STATUS.OK)
     res:write_json({
@@ -116,14 +116,14 @@ local function handler()
         updated_at = comp.updated_at,
         embedding_model = embedding_model,
         config = config,
-        node_count = tonumber(meta.node_count) or 0,
-        edge_count = tonumber(meta.edge_count) or 0,
-        embedding_count = tonumber(meta.embedding_count) or 0,
-        document_count = tonumber(meta.document_count) or 0,
-        concept_count = tonumber(meta.concept_count) or 0,
-        chunk_count = tonumber(meta.chunk_count) or 0,
-        summary_count = tonumber(meta.summary_count) or 0,
-        claim_count = tonumber(meta.claim_count) or 0,
+        node_count = tonumber(statistics.node_count) or 0,
+        edge_count = tonumber(statistics.edge_count) or 0,
+        embedding_count = tonumber(statistics.embedding_count) or 0,
+        document_count = tonumber(statistics.document_count) or 0,
+        concept_count = tonumber(statistics.concept_count) or 0,
+        chunk_count = tonumber(statistics.chunk_count) or 0,
+        summary_count = tonumber(statistics.summary_count) or 0,
+        claim_count = tonumber(statistics.claim_count) or 0,
         auto_summary = auto_summary,
         auto_description = auto_description,
         kb_type = kb_type,

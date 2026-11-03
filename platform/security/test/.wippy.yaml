@@ -14,6 +14,8 @@ workspace:
     kickside/security: ..
     kickside/contract: ../../../core/contract
     kickside/execution: ../../../core/execution
+    kickside/component: ../../../core/component
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
 vars:
   sqlite_path: ":memory:"
   pg_host: localhost

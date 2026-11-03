@@ -2,6 +2,9 @@ local test = require("test")
 local sql = require("sql")
 local crypto = require("crypto")
 local security = require("security")
+local registry = require("registry")
+local execution_identity = require("execution_identity")
+local trigger_reconcile = require("trigger_reconcile")
 local session = require("session")
 local user_repo = require("user_repo")
 local user_groups_repo = require("user_groups_repo")
@@ -36,21 +39,38 @@ return { run = test.run_cases(function()
             test.eq(looked.initial_authority_epochs["kickside.users:" .. uid], 0)
         end)
         test.it("retains every live group in authority-only subject lookups", function()
-            test.not_nil((user_groups_repo.assign_user_to_group(uid, "app.security:admin")))
-            local looked = subject_lookup.lookup({subject_id = uid, authority_only = true})
-            test.is_nil(looked.error)
-            local found = {}
-            for _, group in ipairs(looked.scope_groups) do found[group] = true end
-            test.is_true(found["app.security:user"] == true)
-            test.is_true(found["app.security:admin"] == true)
-            test.not_nil((user_groups_repo.remove_user_from_group(uid, "app.security:admin")))
-            local reduced = subject_lookup.lookup({subject_id = uid, authority_only = true})
-            test.is_nil(reduced.error)
-            local remaining = {}
-            for _, group in ipairs(reduced.scope_groups) do remaining[group] = true end
-            test.is_true(remaining["app.security:user"] == true)
-            test.is_nil(remaining["app.security:admin"])
-            test.eq(reduced.authority_epochs["kickside.users:" .. uid], 1)
+            local original = assert(registry.current_version())
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = "app:authority_only_admin_deny", kind = "security.policy", data = {
+                groups = {"app.security:admin"}, policy = {
+                    actions = "access", resources = "app:authority_only_admin_marker", effect = "deny"}}})
+            assert(changes:apply())
+            assert(trigger_reconcile.trigger())
+            local ok, failure = pcall(function()
+                test.not_nil((user_groups_repo.assign_user_to_group(uid, "app.security:admin")))
+                local looked = subject_lookup.lookup({subject_id = uid, authority_only = true})
+                test.is_nil(looked.error)
+                local found = {}
+                for _, group in ipairs(looked.groups) do found[group] = true end
+                test.is_true(found["app.security:user"] == true)
+                test.is_true(found["app.security:admin"] == true)
+                local authority_epoch = looked.authority_epochs["kickside.users:" .. uid]
+                local actor = assert(security.new_actor("user:" .. uid))
+                local scope = assert(execution_identity.scope_from_groups(looked.scope_groups, looked.scope_policy_ids))
+                test.eq(scope:evaluate(actor, "access", "app:authority_only_admin_marker"), "deny")
+                test.not_nil((user_groups_repo.remove_user_from_group(uid, "app.security:admin")))
+                local reduced = subject_lookup.lookup({subject_id = uid, authority_only = true})
+                test.is_nil(reduced.error)
+                local remaining = {}
+                for _, group in ipairs(reduced.groups) do remaining[group] = true end
+                test.is_true(remaining["app.security:user"] == true)
+                test.is_nil(remaining["app.security:admin"])
+                local reduced_scope = assert(execution_identity.scope_from_groups(reduced.scope_groups, reduced.scope_policy_ids))
+                test.eq(reduced_scope:evaluate(actor, "access", "app:authority_only_admin_marker"), "allow")
+                test.eq(reduced.authority_epochs["kickside.users:" .. uid], authority_epoch + 1)
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            if not ok then error(failure) end
         end)
         test.it("advances on status and password mutations", function()
             test.not_nil((user_lifecycle_repo.update(uid, {status = "inactive"})))

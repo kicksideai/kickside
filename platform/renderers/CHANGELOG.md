@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.37](https://github.com/kicksideai/kickside/compare/renderers-v0.1.36...renderers-v0.1.37) (2026-10-29)
+
+
+### Bug Fixes
+
+* **renderers:** support image padding in compact previews ([#208](https://github.com/kicksideai/kickside/issues/208)) ([76243e1](https://github.com/kicksideai/kickside/commit/76243e1c495a2d03ae0f3114dc3ec4342e9b213e))
+
 ## [0.1.36](https://github.com/kicksideai/kickside/compare/renderers-v0.1.35...renderers-v0.1.36) (2026-10-28)
 
 

@@ -65,6 +65,12 @@ end
 
 local function define_tests()
     test.describe("kickside.flow artifact", function()
+        test.it("preserves empty retry policy objects in portable documents", function()
+            local doc = document()
+            node(doc, "component-step").retry_policy = {}
+            local artifact = build(doc)
+            test.eq(json.encode(node(artifact.document, "component-step").retry_policy), "{}")
+        end)
         test.it("computes deterministic sha256 without the checksum field", function()
             local minimal, build_err = flow_artifact.build({
                 key = "test/minimal", title = "Minimal", version = 1,

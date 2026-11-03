@@ -53,7 +53,7 @@ local function cloud_open(storage: any, key: string, volume: any, mode: string?)
     return handle, nil
 end
 
-function M.get(storage_id: string, _db_id: string, _staging_id: string, _legacy_cloud_id: string?, _query_db: any?): (any?, any?)
+function M.get(storage_id: string, _db_id: string, _staging_id: string, _cloud_id: string?, _query_db: any?): (any?, any?)
     local volume, volume_err = fs.get(storage_id)
     if volume_err then return nil, volume_err end
     local adapter: any = {}

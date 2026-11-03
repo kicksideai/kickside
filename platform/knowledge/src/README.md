@@ -69,6 +69,11 @@ binding), UI tags, stats labels, and default config there. The knowledge control
 create, read/list, query, delete, and source projection from that descriptor
 instead of branching on engine names.
 
+Detail responses use the store row's `stats` object for both `stat_items` and
+numeric counters, reusing the configuration lookup. Stores that omit `stats`
+retain their public metadata counts. Lists read the owner-maintained public
+projections.
+
 Engines that support durable content ingestion declare source projections in
 the descriptor. Those workers materialize canonical KB content events into the
 engine’s storage. Public content writes go through the KB-owned thread;

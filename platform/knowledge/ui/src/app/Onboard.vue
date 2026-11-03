@@ -15,6 +15,7 @@ const emit = useComponentEvents()
 
 type FileState = 'uploading' | 'processing' | 'ready' | 'error'
 interface Item { name: string; size: number; upload_id?: string; status: FileState; error?: string }
+const STATUS_READ_CONCURRENCY = 4
 
 // Human labels for the per-file ingest state so the row never shows a raw enum.
 const FILE_STATE_LABEL: Record<FileState, string> = {
@@ -31,14 +32,18 @@ const error = ref('')
 const result = ref<{ kb_id: string; kb_name: string; queued: number; total: number } | null>(null)
 let uploadsComponentId = ''
 let uploadsUnsub: (() => void) | null = null
+let statusRead: Promise<void> | null = null
+let statusRefreshQueued = false
+let disposed = false
 
 const ready = computed(() => items.value.filter(i => i.status === 'ready'))
 const busy = computed(() => items.value.some(i => i.status === 'uploading' || i.status === 'processing'))
 
 async function refreshUpload(item: Item) {
-  if (!item.upload_id || item.status !== 'processing') return
+  if (disposed || !items.value.includes(item) || !item.upload_id || item.status !== 'processing') return
   try {
     const { data } = await api.get(`/api/v1/uploads/${encodeURIComponent(item.upload_id)}`)
+    if (disposed || !items.value.includes(item)) return
     const s = String(data?.upload?.status || '')
     if (s === 'completed') {
       item.status = 'ready'
@@ -49,15 +54,34 @@ async function refreshUpload(item: Item) {
       item.error = data?.upload?.error || 'extraction failed'
     }
   } catch (e) {
+    if (disposed || !items.value.includes(item)) return
     item.status = 'error'
     item.error = e instanceof Error ? e.message : 'failed to read upload status'
   }
 }
 
-function refreshPendingUploads() {
-  for (const item of items.value) {
-    if (item.status === 'processing') void refreshUpload(item)
-  }
+function refreshPendingUploads(): Promise<void> {
+  if (disposed) return Promise.resolve()
+  statusRefreshQueued = true
+  if (statusRead) return statusRead
+  // Events arriving during a pass request one more pass, not another read for
+  // every file already being checked. New uploads join through this same queue.
+  statusRead = Promise.resolve().then(async () => {
+    try {
+      while (statusRefreshQueued && !disposed) {
+        statusRefreshQueued = false
+        const pending = items.value.filter(item => item.status === 'processing')
+        let next = 0
+        const readNext = async () => {
+          while (!disposed && next < pending.length) await refreshUpload(pending[next++])
+        }
+        await Promise.all(Array.from({ length: Math.min(STATUS_READ_CONCURRENCY, pending.length) }, readNext))
+      }
+    } finally {
+      statusRead = null
+    }
+  })
+  return statusRead
 }
 
 function ensureUploadsRealtime(componentId?: string) {
@@ -65,7 +89,7 @@ function ensureUploadsRealtime(componentId?: string) {
   if (uploadsUnsub) uploadsUnsub()
   uploadsUnsub = null
   uploadsComponentId = ''
-  uploadsUnsub = subscribeComponentMeta(componentId, () => refreshPendingUploads())
+  uploadsUnsub = subscribeComponentMeta(componentId, () => { void refreshPendingUploads() })
   if (uploadsUnsub) uploadsComponentId = componentId
 }
 
@@ -78,12 +102,14 @@ async function uploadOne(file: File) {
     const fd = new FormData()
     fd.append('file', file)
     const { data } = await api.post('/api/v1/uploads', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    if (disposed || !items.value.includes(item)) return
     if (!data?.success || !data.uuid) { item.status = 'error'; item.error = data?.error || 'upload failed'; return }
     item.upload_id = data.uuid
     ensureUploadsRealtime(typeof data.component_id === 'string' ? data.component_id : undefined)
     item.status = 'processing'
-    await refreshUpload(item)
+    await refreshPendingUploads()
   } catch (e) {
+    if (disposed || !items.value.includes(item)) return
     item.status = 'error'
     item.error = e instanceof Error ? e.message : 'upload failed'
   }
@@ -129,6 +155,8 @@ function fmtSize(n: number): string {
 }
 
 onUnmounted(() => {
+  disposed = true
+  statusRefreshQueued = false
   if (uploadsUnsub) uploadsUnsub()
   uploadsUnsub = null
   uploadsComponentId = ''

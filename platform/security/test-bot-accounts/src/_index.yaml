@@ -11,17 +11,19 @@ entries:
   - name: ui_server
     value: app:gateway
   - name: target_db
-    value: app:db
+    value: app:security_db
   - name: process_host
     value: app:processes
-  - name: kickside.security:delegation_validator
-    value: app.security:delegation_validator
 - name: db
   kind: db.sql.sqlite
   foreign_keys: true
   meta:
     comment: In-memory database for the users suite.
   file: ${sqlite_path}
+- name: security_db
+  kind: db.sql.sqlite
+  foreign_keys: true
+  file: ${security_sqlite_path}
 - name: env_storage
   kind: env.storage.file
   meta:
@@ -202,6 +204,7 @@ entries:
     - kickside.security.api:delegation_save.endpoint
     - kickside.security.api:delegation_revoke.endpoint
     - kickside.security.api:delegation_list.endpoint
+    - kickside.security.api:delegation_roots.endpoint
     effect: allow
   groups:
   - app.security:security_admin
@@ -221,7 +224,7 @@ entries:
   kind: security.policy
   policy:
     actions: db.get
-    resources: app:db
+    resources: app:security_db
     effect: allow
   groups:
   - app.security:security_admin

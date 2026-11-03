@@ -22,7 +22,7 @@ return { run = test.run_cases(function()
                     body = { meta = { worker_ref = "proc://fixture:source" } } },
                 cursor = { id = "cursor", cursor_key = "source", status = "active", generation = 2,
                     last_seq = 7, job_id = "slot", debounce_idle_ms = 13, debounce_max_ms = 21 },
-            }), "kb")
+            }), "kb", "test.kb:embeddable")
             test.is_nil(err)
             test.eq(found.projection_id, "projection")
             test.eq(found.cursor_id, "cursor")
@@ -48,7 +48,7 @@ return { run = test.run_cases(function()
             for _, body in ipairs({ "{broken", "false", "42" }) do
                 local found, err = status.lookup_source_projection(executor({
                     projection = { id = "projection", body = body }, cursor = { id = "cursor" },
-                }), "kb")
+                }), "kb", "test.kb:embeddable")
                 test.is_nil(found)
                 test.not_nil(err)
             end
@@ -56,14 +56,14 @@ return { run = test.run_cases(function()
 
         test.it("treats only typed NOT_FOUND as unprovisioned", function()
             local found, err = status.lookup_source_projection(executor(nil,
-                errors.new({ kind = errors.NOT_FOUND, message = "absent" })), "kb")
+                errors.new({ kind = errors.NOT_FOUND, message = "absent" })), "kb", "test.kb:embeddable")
             test.is_nil(found)
             test.is_nil(err)
         end)
         test.it("propagates access and infrastructure failures even when prose names absence", function()
             for _, kind in ipairs({ errors.PERMISSION_DENIED, errors.UNAVAILABLE }) do
                 local failure = errors.new({ kind = kind, message = "projection not found in an unavailable read" })
-                local found, err = status.lookup_source_projection(executor(nil, failure), "kb")
+                local found, err = status.lookup_source_projection(executor(nil, failure), "kb", "test.kb:embeddable")
                 test.is_nil(found)
                 test.not_nil(err)
                 test.contains(tostring(err), "unavailable read")
@@ -72,7 +72,7 @@ return { run = test.run_cases(function()
         end)
         test.it("refuses an incomplete pair instead of reporting it as unprovisioned", function()
             for _, pair in ipairs({ false, {}, { projection = {} }, { projection = {}, cursor = {} } }) do
-                local found, err = status.lookup_source_projection(executor(pair), "kb")
+                local found, err = status.lookup_source_projection(executor(pair), "kb", "test.kb:embeddable")
                 test.is_nil(found)
                 test.not_nil(err)
                 test.is_true(errors.is(err, errors.INTERNAL))

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app.catalog_visibility
+entries:
+  - name: catalog_visibility_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_catalog_visibility }
+    source: file://catalog_visibility_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+  - name: probe
+    kind: function.lua
+    source: file://catalog_visibility_probe.lua
+    method: run
+    modules: [http]
+    imports:
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+      listing: kickside.knowledge.api:list_kb

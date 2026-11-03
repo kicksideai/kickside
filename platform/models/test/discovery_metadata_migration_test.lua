@@ -21,6 +21,7 @@ local function define_tests()
         test.it("corrects the previous published card shape without rewriting user settings", function()
             local db, db_err = sql.get("app:db")
             test.is_nil(db_err)
+            db = assert(db)
             local ok, err = pcall(function()
                 local fixtures = {
                     { "reasoning", "gpt-6", "discovered", "wippy.llm.openai:provider", {}, { "generate" }, {} },

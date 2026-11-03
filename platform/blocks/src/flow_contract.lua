@@ -90,9 +90,10 @@ local function normalize_document_object_fields(document: Map): Map
     document.params = normalize_empty_object(document.params)
     document.layout = normalize_empty_object(document.layout)
     for _, raw_node in ipairs(type(document.nodes) == "table" and (document.nodes :: { any }) or {}) do
-        if type(raw_node) == "table" and (raw_node :: Map).config ~= nil then
+        if type(raw_node) == "table" then
             local node = raw_node :: Map
             node.config = normalize_empty_object(node.config)
+            node.retry_policy = normalize_empty_object(node.retry_policy)
         end
     end
     for _, raw_edge in ipairs(type(document.edges) == "table" and (document.edges :: { any }) or {}) do

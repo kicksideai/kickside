@@ -12,6 +12,7 @@ local TABLE_COLUMNS: { [string]: { string } } = {
     workflow_def_nodes = {
         "workflow_id", "id", "kind", "ref", "title", "config", "status",
         "created_by", "created_at", "updated_at",
+        "retry_policy", "start_to_close_timeout", "schedule_to_close_timeout",
     },
     workflow_def_edges = {
         "workflow_id", "id", "source_id", "target_id", "source_port", "target_port",

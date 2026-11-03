@@ -11,7 +11,6 @@ function M.executor(): any
     end
     function db:execute(operation)
         M.calls = M.calls + 1
-        if M.route == "grant_insert" and operation == "update" then return {rows_affected = 0}, nil end
         if M.route == "email_delete" and operation:sub(1,6) == "INSERT" then return {rows_affected = 1}, nil end
         return nil, M.source
     end

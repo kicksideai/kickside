@@ -127,6 +127,9 @@ M.RUN_STATE = {
     PARKED = "parked",
 }
 
+-- Wake fanout instead runs this built-in type, which has no registry worker.
+M.WAKE_CONTINUATION_TYPE = "kickside.wake.continuation"
+
 -- Optional generic job worker URI. A job with worker_ref is executed by the
 -- core job engine under the worker frame; the target resolves the execution
 -- identity held by its own record.
@@ -139,6 +142,27 @@ M.WORKER_RUNTIME = {
     FUNC = "func",
     PROC = "proc",
 }
+
+-- Reference syntax is shared by dispatch and declaration lookup. Target kind
+-- validation remains with dispatch; callers retain the original stored URI.
+function M.worker_reference(raw: any): (table?, error?)
+    if type(raw) ~= "string" then return nil, nil end
+    local reference = raw:gsub("^%s*(.-)%s*$", "%1")
+    if reference == "" then return nil, nil end
+    local runtime: string? = nil
+    local target = reference
+    if reference:sub(1, #M.WORKER_SCHEME.FUNC) == M.WORKER_SCHEME.FUNC then
+        runtime = M.WORKER_RUNTIME.FUNC
+        target = reference:sub(#M.WORKER_SCHEME.FUNC + 1):gsub("^%s*(.-)%s*$", "%1")
+    elseif reference:sub(1, #M.WORKER_SCHEME.PROC) == M.WORKER_SCHEME.PROC then
+        runtime = M.WORKER_RUNTIME.PROC
+        target = reference:sub(#M.WORKER_SCHEME.PROC + 1):gsub("^%s*(.-)%s*$", "%1")
+    end
+    if target == "" then
+        return nil, errors.new({message = "job worker_ref target is required", kind = errors.INVALID})
+    end
+    return {worker_ref = reference, worker_runtime = runtime, target_id = target}, nil
+end
 
 -- The published marker remains available; Jobs control flow uses ERROR_CODE.
 M.LEASE_LOST_MARKER = "lease lost"

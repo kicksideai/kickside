@@ -23,17 +23,10 @@ return require("migration").define(function()
                 ]=])
                 if err then error(err) end
             end)
-            down(function(db)
-                local _, err = db:execute("DROP TRIGGER IF EXISTS trg_kickside_job_updated_at ON kickside_job")
-                if err then error(err) end
-                local _, err = db:execute([=[
-                    CREATE TRIGGER trg_kickside_job_updated_at BEFORE UPDATE ON kickside_job
-                    FOR EACH ROW EXECUTE FUNCTION core_set_updated_at()
-                ]=])
-                if err then error(err) end
-                local _, err = db:execute("DROP FUNCTION IF EXISTS kickside_jobs_set_updated_at()")
-                if err then error(err) end
-            end)
+            -- Migration 04 now owns this function. Keep the working Jobs
+            -- trigger when undoing the legacy rebind; 04 removes it with its
+            -- tables. Restoring Core's function would break Core-free installs.
+            down(function(_db) end)
         end)
         database("sqlite", function()
             -- SQLite's inline trigger already belongs to Jobs.

@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 -->
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
 import PickerSelect from '@widgets/app/PickerSelect.vue'
@@ -11,7 +11,7 @@ import { validateInstall } from './install-form'
 import type { InputSchema } from './automation-types'
 
 export interface TaskTarget {
-  kind: 'agent' | 'workflow' | 'action'
+  kind: '' | 'agent' | 'workflow' | 'action'
   agent_id?: string
   prompt?: string
   flow_ref?: { kind: 'flow'; id: string; version: number }
@@ -34,6 +34,27 @@ interface Destination {
 }
 const props = defineProps<{ modelValue: TaskTarget; disabled?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [TaskTarget]; validation: [string] }>()
+const targetProviders = [
+  { kind: 'workflow', title: 'Published workflow', tag: 'wc-workflow-picker' },
+  { kind: 'action', title: 'Writable action', tag: 'wc-schema-form' },
+] as const
+const installedTags = ref<string[]>([])
+const providerLoading = ref(true)
+const providerError = ref('')
+const availableProviders = computed(() => targetProviders.filter(provider => installedTags.value.includes(provider.tag)))
+const targetOptions = computed(() => targetProviders.filter(provider =>
+  installedTags.value.includes(provider.tag) || provider.kind === props.modelValue.kind))
+onMounted(async () => {
+  try {
+    const { data } = await api.get<{ success: boolean; components?: { wippy?: { tagName?: string } }[] }>('/api/v1/views/components/list')
+    if (!data.success || !Array.isArray(data.components)) throw new Error('The task target provider catalog is unavailable.')
+    installedTags.value = data.components.flatMap((component: { wippy?: { tagName?: string } }) => component.wippy?.tagName ? [component.wippy.tagName] : [])
+    if (!props.modelValue.kind && availableProviders.value.length) {
+      emit('update:modelValue', { kind: availableProviders.value[0].kind })
+    }
+  } catch (error) { providerError.value = errMsg(error, 'Could not load task target providers.') }
+  finally { providerLoading.value = false }
+})
 const destinations = ref<Destination[]>([])
 const catalogError = ref('')
 const loading = ref(false)
@@ -72,6 +93,10 @@ function requiredError(schema: unknown, values: Record<string, unknown>): string
 }
 const validation = computed(() => {
   const target = props.modelValue
+  if (!kind.value) {
+    if (providerLoading.value) return 'Loading task target providers…'
+    return providerError.value || 'No task target providers are available.'
+  }
   if (kind.value === 'agent') {
     if (!target.agent_id?.trim()) return 'Choose an agent.'
     return target.prompt?.trim() ? '' : 'Enter a prompt.'
@@ -128,11 +153,12 @@ watch(() => props.modelValue.flow_ref, async (reference, _previous, onCleanup) =
   <div class="task-target">
     <label class="task-field">Target
       <select :value="kind" aria-label="Target kind" :disabled="disabled" @change="changeKind">
+        <option value="" disabled>Choose a target…</option>
         <option v-if="kind === 'agent'" value="agent">Agent prompt (existing task)</option>
-        <option value="workflow">Published workflow</option>
-        <option value="action">Writable action</option>
+        <option v-for="provider in targetOptions" :key="provider.kind" :value="provider.kind">{{ provider.title }}</option>
       </select>
     </label>
+    <p v-if="providerError" role="alert">{{ providerError }}</p>
     <template v-if="kind === 'agent'">
       <WcMount tag="wc-agent-picker" :config="agentConfig" :schema="agentSchema" @change="onAgent" />
       <label class="task-field">Prompt
@@ -144,7 +170,7 @@ watch(() => props.modelValue.flow_ref, async (reference, _previous, onCleanup) =
       <WcMount tag="wc-workflow-picker" :config="workflowConfig" :schema="workflowSchema" @change="onFlow" />
       <p v-if="flowError" role="alert">{{ flowError }}</p>
     </template>
-    <template v-else>
+    <template v-else-if="kind === 'action'">
       <PickerSelect :items="items" :model-value="modelValue.port || ''" :loading="loading" :error="catalogError"
         :disabled="disabled" aria-label="Writable action" placeholder="Pick a writable action…"
         @update:model-value="emit('update:modelValue', { kind: 'action', port: $event, config: {}, input: {} })" />

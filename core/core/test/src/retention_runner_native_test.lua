@@ -73,5 +73,24 @@ return {run = test.run_cases(function()
             test.eq(fixture.sent_change.owner_locator.id, "owner")
             test.eq(fixture.deadlines, 1)
         end)
+        for _, case in ipairs({{name = "owner before Core", core = 9000, owner = 3000, expected = 3000},
+            {name = "Core before owner", core = 3000, owner = 9000, expected = 3000},
+            {name = "owner only", owner = 3000, expected = 3000},
+            {name = "neither"}, {name = "already due", core = 9000, owner = 0, expected = 0}}) do
+            for _, method in ipairs({"recover", "on_deadline", "on_wake", "on_wakes"}) do
+                test.it("selects the effective deadline/" .. method .. "/" .. case.name, function()
+                    fixture.reset("", nil, false, nil)
+                    fixture.core_deadline, fixture.owner_deadline = case.core, case.owner
+                    local changes = method == "on_wakes" and {{kind = "changed", owner_locator = {id = "first"}},
+                        {kind = "changed", owner_locator = {id = "second"}}} or {kind = "changed"}
+                    local result, err = runner[method]({} :: any, "retention-pid", changes)
+                    test.is_nil(err); test.eq(result.deadline_ms, case.expected)
+                    local passes = method == "on_wakes" and 2 or 1
+                    test.eq(fixture.sweeps, passes); test.eq(fixture.owners, passes)
+                    test.eq(fixture.deadlines, passes); test.eq(fixture.sends, 0)
+                    test.is_true(result.stats.needs_continue ~= true)
+                end)
+            end
+        end
     end)
 end)}

@@ -148,22 +148,22 @@ end
 function M.status(kb_id, opts)
     kb_id = trim(kb_id)
     if kb_id == "" then return nil, "kb_id is required" end
-    local access_err = validate_kb_access(kb_id, component.ACCESS.READ)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.READ)
     if access_err then return nil, access_err end
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    return load_status(exec, kb_id)
+    return load_status(exec, kb_id, kb.impl_id)
 end
 
 function M.pause(kb_id, opts)
     kb_id = trim(kb_id)
     if kb_id == "" then return nil, "kb_id is required" end
-    local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
 
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    local injection_status, status_err = load_status(exec, kb_id)
+    local injection_status, status_err = load_status(exec, kb_id, kb.impl_id)
     if status_err then return nil, status_err end
     if not injection_status or not injection_status.cursor_id then
         return nil, "knowledge injection cursor is not configured"
@@ -174,18 +174,18 @@ function M.pause(kb_id, opts)
         cursor_id = injection_status.cursor_id,
     })
     if pause_err then return nil, pause_err end
-    return load_status(exec, kb_id)
+    return load_status(exec, kb_id, kb.impl_id)
 end
 
 function M.resume(kb_id, opts)
     kb_id = trim(kb_id)
     if kb_id == "" then return nil, "kb_id is required" end
-    local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
 
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    local injection_status, status_err = load_status(exec, kb_id)
+    local injection_status, status_err = load_status(exec, kb_id, kb.impl_id)
     if status_err then return nil, status_err end
     if not injection_status or not injection_status.cursor_id then
         return nil, "knowledge injection cursor is not configured"
@@ -196,7 +196,7 @@ function M.resume(kb_id, opts)
         cursor_id = injection_status.cursor_id,
     })
     if resume_err then return nil, resume_err end
-    return load_status(exec, kb_id)
+    return load_status(exec, kb_id, kb.impl_id)
 end
 
 -- configure updates the KB's per-KB materialization config, which lives on the KB
@@ -206,7 +206,7 @@ function M.configure(kb_id, opts)
     kb_id = trim(kb_id)
     if kb_id == "" then return nil, "kb_id is required" end
     opts = type(opts) == "table" and opts or {}
-    local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
 
     local config = type(opts.config) == "table" and opts.config or nil
@@ -224,7 +224,7 @@ function M.configure(kb_id, opts)
 
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    return load_status(exec, kb_id)
+    return load_status(exec, kb_id, kb.impl_id)
 end
 
 -- Component lifecycle cleanup is already authorized by its owner. It uses the
@@ -342,7 +342,7 @@ function M.append_content(kb_id, params)
 
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    local projection, projection_err = source_projection(exec, kb_id)
+    local projection, projection_err = source_projection(exec, kb_id, kb.impl_id)
     if projection_err then return nil, projection_err end
 
     local title = trim(params.title)
@@ -423,7 +423,7 @@ function M.delete_content(kb_id, params)
     metadata.kb_id = kb_id
     metadata.source = trim(metadata.source) ~= "" and metadata.source or "manual"
 
-    local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
 
     local external_id = natural_external_id_for(params, metadata)
@@ -449,7 +449,7 @@ function M.delete_content(kb_id, params)
 
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    local projection, projection_err = source_projection(exec, kb_id)
+    local projection, projection_err = source_projection(exec, kb_id, kb.impl_id)
     if projection_err then return nil, projection_err end
 
     local appended, append_err = emit_event(exec, kb_id, {
@@ -492,12 +492,12 @@ function M.append_graph_change(kb_id, params)
     if kb_id == "" then return nil, "kb_id is required" end
     params = type(params) == "table" and params or {}
 
-    local access_err = validate_kb_access(kb_id, component.ACCESS.WRITE)
+    local access_err, kb = validate_kb_access(kb_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
 
     local exec, exec_err = current_executor()
     if exec_err or not exec then return nil, exec_err end
-    local _, projection_err = source_projection(exec, kb_id)
+    local _, projection_err = source_projection(exec, kb_id, kb.impl_id)
     if projection_err then return nil, projection_err end
 
     local actor_id = current_actor_id()

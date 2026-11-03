@@ -9,6 +9,12 @@ Component service and registry for user-owned resources (kickside fork).
 - Hierarchy/placement (lexorank ordering + materialized/ltree paths)
 - Secure component access library
 
+Trusted owners may call `kickside.component.system:exists` after their own
+authorization checks. It reads Component's configured database and returns only
+a boolean; it exposes no metadata, context or database handle. Its private
+reader grants no authority when called directly. Public component queries and
+their ACL checks keep using the existing component service.
+
 Backed by the `kickside_components`, `kickside_component_meta`, and
 `kickside_component_access` tables. Depends on the `kickside.contract:*` base
 contracts (`component`, `deletable`).

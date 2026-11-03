@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.9](https://github.com/kicksideai/kickside/compare/core-v0.3.8...core-v0.3.9) (2026-11-01)
+
+
+### Bug Fixes
+
+* **core:** retry transient retention owner failures ([#279](https://github.com/kicksideai/kickside/issues/279)) ([f1bb3db](https://github.com/kicksideai/kickside/commit/f1bb3db4f3b0012be9e63d05baadcc32a5a22147))
+
+## [0.3.8](https://github.com/kicksideai/kickside/compare/core-v0.3.7...core-v0.3.8) (2026-11-01)
+
+
+### Bug Fixes
+
+* **core:** schedule module-owned retention deadlines ([#277](https://github.com/kicksideai/kickside/issues/277)) ([1289a1c](https://github.com/kicksideai/kickside/commit/1289a1cf59ebb0aa67147c89079e9f601342434b))
+
+## [0.3.7](https://github.com/kicksideai/kickside/compare/core-v0.3.6...core-v0.3.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* **core:** converge thread declarations after concurrent creation ([#232](https://github.com/kicksideai/kickside/issues/232)) ([115401c](https://github.com/kicksideai/kickside/commit/115401c09445cbe8d806e89c45184340b2017f1f))
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
 ## [0.3.6](https://github.com/kicksideai/kickside/compare/core-v0.3.5...core-v0.3.6) (2026-10-28)
 
 

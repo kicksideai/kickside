@@ -5,6 +5,7 @@ function M.reset(stage: string, source: any, malformed: boolean, value: any)
     M.versions, M.finds, M.queries, M.gets, M.releases, M.calls = 0, 0, 0, 0, 0, 0
     M.serial = M.serial + 1
     M.owners = nil
+    M.responses = nil
 end
 function M.current_version(): (any, error?)
     M.versions = M.versions + 1
@@ -56,6 +57,7 @@ function M.table_exists(db: any): (any, error?)
 end
 function M.call(id: string, input: table): (any, error?)
     M.calls = M.calls + 1
+    if M.responses then return M.responses[id], nil end
     if M.stage == "response" then return M.value, nil end
     if M.stage == "call" then return nil, M.source end
     if M.stage == "owner" then return {success = false, error = M.source}, nil end

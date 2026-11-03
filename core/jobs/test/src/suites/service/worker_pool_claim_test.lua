@@ -244,7 +244,15 @@ local function define_tests()
             local probe: sql.DB = job_fixture.observe_db(db)
             probe.query = function(_, statement: string, params: table?)
                 if not params then error("claim candidate parameters are absent") end
-                observed = tostring(params[2])
+                if statement:find("AS candidates ORDER", 1, true) then
+                    observed = nil
+                    for _, value in ipairs(params) do
+                        if type(value) == "string" and value:match("^%d%d%d%d%-%d%d%-%d%d[ T]") then
+                            observed = value
+                        end
+                    end
+                    test.not_nil(observed, "candidate query binds the observation cutoff")
+                end
                 return db:query(statement, params)
             end
             local empty, empty_err, _, _, empty_at = claim.claim_batch(probe, dbtype, 1)

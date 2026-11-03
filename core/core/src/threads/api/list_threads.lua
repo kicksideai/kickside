@@ -1,4 +1,4 @@
--- GET /threads — list threads the actor can read. Query: ?thread_class&limit.
+-- GET /threads — list threads the actor can read. Query: ?thread_class&impl_id&limit.
 -- Response: { success, threads, items }. `threads` is the raw thread rows;
 -- `items` is the canonical picker envelope: one flat { id, label, icon } per row.
 
@@ -43,6 +43,10 @@ local function handler(): ()
     local thread_class = req:query("thread_class")
     if type(thread_class) == "string" and thread_class ~= "" then
         args.thread_class = thread_class
+    end
+    local impl_id = req:query("impl_id")
+    if type(impl_id) == "string" and impl_id ~= "" then
+        args.impl_id = impl_id
     end
     local limit, limit_err = http_params.query_int(req, "limit", nil, { min = 1, max = 1000 })
     if limit_err then

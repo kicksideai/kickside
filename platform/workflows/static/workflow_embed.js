@@ -1,13 +1,13 @@
-import { u as ue, a as ie, s as w, W as de, P as ce } from "./index-BhiG6P-P.js";
-import { defineComponent as fe, defineAsyncComponent as ve, computed as _, ref as h, onBeforeUnmount as pe, watch as me, openBlock as n, createElementBlock as m, createVNode as d, unref as a, createElementVNode as u, createBlock as v, withCtx as c, createTextVNode as b, toDisplayString as k, withModifiers as be, createCommentVNode as I, Fragment as he } from "vue";
-import { L as ye, X as we, f as A, m as ke, J as ge, h as _e, W as Ce } from "./pickerselect-CbBE-k9N.js";
-import { s as K } from "./index-BpA9WGJi.js";
-import { a as Ee, b as Re, C as Se, s as We, _ as z, g as Ie, D as Pe, A as Oe, i as Ae } from "./http-error-B_1dDIXt.js";
-import { on as G, define as je } from "@wippy-fe/proxy";
+import { u as ue, a as ie, s as w, W as de, P as ce } from "./index-B9KLaL2S.js";
+import { defineComponent as fe, defineAsyncComponent as ve, computed as _, ref as y, onBeforeUnmount as pe, watch as me, openBlock as n, createElementBlock as m, createVNode as d, unref as a, createElementVNode as u, createBlock as v, withCtx as c, createTextVNode as b, toDisplayString as k, withModifiers as be, createCommentVNode as I, Fragment as ye } from "vue";
+import { M as he, Z as we, s as A, o as ke, L as ge, i as _e, Y as Ce } from "./pickerselect-BuC_5yaD.js";
+import { s as K } from "./index-DRigRSgk.js";
+import { a as Ee, b as Re, C as Se, s as We, _ as z, g as Ie, D as Pe, A as Oe, i as Ae } from "./http-error-B4DMrBUB.js";
+import { on as Y, define as je } from "@wippy-fe/proxy";
 import { Icon as j } from "@iconify/vue";
-import { _ as Ve, s as $e } from "./workflow-embed-BP7UAaSy.js";
+import { _ as Ve, s as $e } from "./workflow-embed-DJ9drdSy.js";
 const Le = "Run Workflow";
-function X(t, r) {
+function G(t, r) {
   const l = t[r];
   return typeof l == "string" ? l : "";
 }
@@ -31,9 +31,9 @@ function xe(t) {
   return { value: null, error: "Input must be a JSON object." };
 }
 function Fe(t) {
-  const r = t && typeof t == "object" ? t : {}, { value: l, error: f } = xe(r.input), i = X(r, "label").trim() || Le;
+  const r = t && typeof t == "object" ? t : {}, { value: l, error: f } = xe(r.input), i = G(r, "label").trim() || Le;
   return {
-    workflowId: X(r, "flowId").trim(),
+    workflowId: G(r, "flowId").trim(),
     input: l,
     inputError: f,
     mode: Ne(r.mode),
@@ -41,7 +41,7 @@ function Fe(t) {
   };
 }
 function Te(t, r) {
-  const l = ye(r), f = Array.isArray(l?.required) ? l?.required.map(String) : [];
+  const l = he(r), f = Array.isArray(l?.required) ? l?.required.map(String) : [];
   if (!f.length) return [];
   const i = t && typeof t == "object" && !Array.isArray(t) ? t : {};
   return f.filter((o) => {
@@ -74,19 +74,19 @@ function De(t) {
   }
   return { phase: "running", tone: r, statusLabel: l, output: void 0, hasOutput: !1, outputPending: !1, reason: "", hasReason: !1 };
 }
-const Je = { class: "wf-embed" }, Be = {
+const Be = { class: "wf-embed" }, He = {
   key: 0,
   class: "wf-embed-note"
-}, He = {
+}, Je = {
   key: 3,
   class: "wf-embed-run"
-}, qe = { class: "wf-embed-hd" }, Me = { class: "wf-embed-hd-ico" }, Ke = { class: "wf-embed-hd-main" }, ze = { class: "wf-embed-hd-title" }, Ge = { class: "wf-embed-input" }, Xe = {
+}, Me = { class: "wf-embed-hd" }, qe = { class: "wf-embed-hd-ico" }, Ke = { class: "wf-embed-hd-main" }, ze = { class: "wf-embed-hd-title" }, Ye = { class: "wf-embed-input" }, Ge = {
   key: 3,
   class: "wf-embed-subtle"
-}, Ye = { class: "wf-embed-actions" }, Qe = {
+}, Ze = { class: "wf-embed-actions" }, Qe = {
   key: 1,
   class: "wf-embed-status is-running"
-}, Ze = {
+}, Xe = {
   key: 0,
   class: "wf-embed-runid"
 }, et = {
@@ -107,13 +107,13 @@ const Je = { class: "wf-embed" }, Be = {
 }, ot = { class: "wf-embed-actions" }, ut = /* @__PURE__ */ fe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ve(() => import("./SchemaEditor-BJPzdnjt.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
-    let N = null, H = null, x = !1;
-    const Y = _(() => o.value ? `/workflows/${o.value.id}` : "");
+    const r = ve(() => import("./SchemaEditor-BLXx3DMB.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = y(null), S = y(!1), C = y(""), P = y({}), H = y(0), L = y(!0), p = y("ready"), V = y(!1), E = y(""), g = y(""), h = y(null);
+    let N = null, J = null, x = !1;
+    const Z = _(() => o.value ? `/workflows/${o.value.id}` : "");
     function Q() {
       o.value && f("navigate", { route: `/workflows/${o.value.id}` });
     }
-    const F = _(() => o.value?.input_schema), Z = _(() => we(F.value)), ee = _(() => i.value.input !== null), T = _(() => Ue(P.value, F.value)), q = _(() => p.value === "ready" && !V.value && !i.value.inputError && L.value && T.value.ok), $ = _(() => E.value.length > 8 ? E.value.slice(0, 8) : E.value), te = _(() => !i.value.workflowId);
+    const F = _(() => o.value?.input_schema), X = _(() => we(F.value)), ee = _(() => i.value.input !== null), T = _(() => Ue(P.value, F.value)), M = _(() => p.value === "ready" && !V.value && !i.value.inputError && L.value && T.value.ok), $ = _(() => E.value.length > 8 ? E.value.slice(0, 8) : E.value), te = _(() => !i.value.workflowId);
     function U(s, e) {
       return Oe(s) === 403 ? "You don’t have access to this Workflow." : _e(s, e);
     }
@@ -128,7 +128,7 @@ const Je = { class: "wf-embed" }, Be = {
           const { run: R } = await Ie(s, e);
           if (o.value?.id !== s || E.value !== e) return;
           const W = De(R);
-          y.value = W, p.value = W.phase;
+          h.value = W, p.value = W.phase;
         } catch (R) {
           g.value = U(R, "Lost track of this run."), p.value = "failed";
         } finally {
@@ -139,7 +139,7 @@ const Je = { class: "wf-embed" }, Be = {
     function se(s) {
       O();
       try {
-        const e = G(`kickside.thread.${s}`, (R) => {
+        const e = Y(`kickside.thread.${s}`, (R) => {
           Ae(R, s) && D();
         });
         N = typeof e == "function" ? e : null;
@@ -147,11 +147,11 @@ const Je = { class: "wf-embed" }, Be = {
       }
     }
     async function ae() {
-      if (!(!o.value || !q.value)) {
+      if (!(!o.value || !M.value)) {
         g.value = "", V.value = !0;
         try {
           const s = Number(o.value.published_version), e = await Pe(o.value.id, s, P.value || {});
-          E.value = e, i.value.mode === "dispatch" ? p.value = "dispatched" : (y.value = null, p.value = "running", se(o.value.id), await D());
+          E.value = e, i.value.mode === "dispatch" ? p.value = "dispatched" : (h.value = null, p.value = "running", se(o.value.id), await D());
         } catch (s) {
           g.value = U(s, "Could not start the run.");
         } finally {
@@ -159,22 +159,22 @@ const Je = { class: "wf-embed" }, Be = {
         }
       }
     }
-    function M(s) {
-      O(), o.value = s, C.value = "", p.value = "ready", E.value = "", y.value = null, g.value = "", P.value = i.value.input ? { ...i.value.input } : {}, L.value = !0;
+    function q(s) {
+      O(), o.value = s, C.value = "", p.value = "ready", E.value = "", h.value = null, g.value = "", P.value = i.value.input ? { ...i.value.input } : {}, L.value = !0;
     }
     async function le(s) {
       S.value = !0, C.value = "";
       try {
         const R = (await ke({ filter: "published" })).map((W) => ge(W, {}, [], "")).find((W) => W.id === s && !!W.published_version);
-        R ? M(R) : (o.value = null, C.value = "This Workflow isn’t published, or you don’t have access to it.");
+        R ? q(R) : (o.value = null, C.value = "This Workflow isn’t published, or you don’t have access to it.");
       } catch (e) {
         o.value = null, C.value = U(e, "Could not load this Workflow.");
       } finally {
         S.value = !1;
       }
     }
-    function J() {
-      O(), p.value = "ready", E.value = "", y.value = null, g.value = "", B.value += 1;
+    function B() {
+      O(), p.value = "ready", E.value = "", h.value = null, g.value = "", H.value += 1;
     }
     function ne() {
       O(), o.value = null, C.value = "";
@@ -186,22 +186,22 @@ const Je = { class: "wf-embed" }, Be = {
       L.value = s;
     }
     try {
-      const s = G("@visibility", (e) => {
+      const s = Y("@visibility", (e) => {
         e === !0 && D();
       });
-      H = typeof s == "function" ? s : null;
+      J = typeof s == "function" ? s : null;
     } catch {
     }
     return pe(() => {
-      O(), H?.();
+      O(), J?.();
     }), me(
       () => i.value.workflowId,
       (s) => {
         O(), s ? le(s) : (o.value = null, C.value = "");
       },
       { immediate: !0 }
-    ), (s, e) => (n(), m("div", Je, [
-      S.value ? (n(), m("div", Be, [
+    ), (s, e) => (n(), m("div", Be, [
+      S.value ? (n(), m("div", He, [
         d(a(K), {
           class: "wf-status-spinner",
           "stroke-width": "4",
@@ -218,9 +218,9 @@ const Je = { class: "wf-embed" }, Be = {
           b(k(C.value), 1)
         ]),
         _: 1
-      })) : o.value ? (n(), m("div", He, [
-        u("header", qe, [
-          u("span", Me, [
+      })) : o.value ? (n(), m("div", Je, [
+        u("header", Me, [
+          u("span", qe, [
             d(a(j), {
               icon: "tabler:route",
               "aria-hidden": "true"
@@ -237,7 +237,7 @@ const Je = { class: "wf-embed" }, Be = {
           d(a(A), {
             as: "a",
             class: "wf-embed-open",
-            href: Y.value,
+            href: Z.value,
             severity: "secondary",
             text: "",
             title: "Open this Workflow in the editor",
@@ -266,8 +266,8 @@ const Je = { class: "wf-embed" }, Be = {
             _: 1
           })) : I("", !0)
         ]),
-        p.value === "ready" ? (n(), m(he, { key: 0 }, [
-          u("div", Ge, [
+        p.value === "ready" ? (n(), m(ye, { key: 0 }, [
+          u("div", Ye, [
             i.value.inputError ? (n(), v(a(w), {
               key: 0,
               class: "wf-field-err",
@@ -284,18 +284,18 @@ const Je = { class: "wf-embed" }, Be = {
               label: "Input",
               icon: "tabler:arrow-right-circle",
               open: !0
-            }, null, 8, ["value"])) : Z.value ? (n(), v(a(r), {
+            }, null, 8, ["value"])) : X.value ? (n(), v(a(r), {
               key: 2,
               mode: "value",
               schema: F.value,
               "model-value": P.value,
-              "reset-key": B.value,
+              "reset-key": H.value,
               rows: 6,
               label: "Input",
               placeholder: '{ "key": "value" }',
               "onUpdate:modelValue": re,
               onValid: oe
-            }, null, 8, ["schema", "model-value", "reset-key"])) : (n(), m("p", Xe, "This Workflow needs no input.")),
+            }, null, 8, ["schema", "model-value", "reset-key"])) : (n(), m("p", Ge, "This Workflow needs no input.")),
             !i.value.inputError && !T.value.ok ? (n(), v(a(w), {
               key: 4,
               class: "wf-embed-gate",
@@ -308,11 +308,11 @@ const Je = { class: "wf-embed" }, Be = {
               _: 1
             })) : I("", !0)
           ]),
-          u("div", Ye, [
+          u("div", Ze, [
             d(a(A), {
               type: "button",
               class: "wf-embed-action",
-              disabled: !q.value,
+              disabled: !M.value,
               loading: V.value,
               onClick: ae
             }, {
@@ -346,7 +346,7 @@ const Je = { class: "wf-embed" }, Be = {
           }),
           u("span", null, [
             e[3] || (e[3] = b("Running…", -1)),
-            $.value ? (n(), m("span", Ze, " · " + k($.value), 1)) : I("", !0)
+            $.value ? (n(), m("span", Xe, " · " + k($.value), 1)) : I("", !0)
           ])
         ])) : p.value === "dispatched" ? (n(), m("div", et, [
           d(a(w), {
@@ -366,7 +366,7 @@ const Je = { class: "wf-embed" }, Be = {
             d(a(A), {
               type: "button",
               class: "wf-embed-action",
-              onClick: J
+              onClick: B
             }, {
               default: c(() => [
                 d(a(j), {
@@ -389,9 +389,9 @@ const Je = { class: "wf-embed" }, Be = {
             ])]),
             _: 1
           }),
-          y.value && y.value.hasOutput ? (n(), v(z, {
+          h.value && h.value.hasOutput ? (n(), v(z, {
             key: 0,
-            value: y.value.output,
+            value: h.value.output,
             label: "Result",
             icon: "tabler:file-check",
             open: !0
@@ -400,7 +400,7 @@ const Je = { class: "wf-embed" }, Be = {
             d(a(A), {
               type: "button",
               class: "wf-embed-action",
-              onClick: J
+              onClick: B
             }, {
               default: c(() => [
                 d(a(j), {
@@ -433,14 +433,14 @@ const Je = { class: "wf-embed" }, Be = {
               b(k(g.value), 1)
             ]),
             _: 1
-          })) : y.value && y.value.hasReason ? (n(), v(a(w), {
+          })) : h.value && h.value.hasReason ? (n(), v(a(w), {
             key: 1,
             class: "wf-embed-reason",
             severity: "error",
             closable: !1
           }, {
             default: c(() => [
-              b(k(y.value.reason), 1)
+              b(k(h.value.reason), 1)
             ]),
             _: 1
           })) : (n(), v(a(w), {
@@ -458,7 +458,7 @@ const Je = { class: "wf-embed" }, Be = {
             d(a(A), {
               type: "button",
               class: "wf-embed-action",
-              onClick: J
+              onClick: B
             }, {
               default: c(() => [
                 d(a(j), {
@@ -473,7 +473,7 @@ const Je = { class: "wf-embed" }, Be = {
         ])) : I("", !0)
       ])) : (n(), v(Ve, {
         key: 2,
-        onSelect: M
+        onSelect: q
       }))
     ]));
   }

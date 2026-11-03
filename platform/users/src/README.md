@@ -42,6 +42,16 @@ membership labels remain in actor metadata for ACL checks. Live authority uses
 actual memberships; a session-mint default does not add authority to an account
 with no memberships.
 
+Login time, IP address and user agent live in the reserved `actor.meta.session`
+block. Password login derives these facts from the request and ignores client
+metadata. Trusted provisioning metadata still retains its non-reserved fields.
+Subject lookup preserves valid session context, and the profile response keeps
+its existing `session` fields. Missing or non-object context supplies no login
+facts; readers do not borrow the former top-level fields. Existing token payloads
+expire normally. The application requires Relay 0.3.20 or newer to keep these
+per-login facts out of authority comparison while retaining other actor metadata
+and authority epochs.
+
 Custom-scope writes ask the existing Security writer to fence the affected groups,
 including composed memberships, before changing their DB selections. The writer
 calls `kickside.users.persist:delegation_fencer`; Users locks those accounts and

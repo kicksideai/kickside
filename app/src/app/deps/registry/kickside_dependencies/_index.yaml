@@ -42,7 +42,7 @@ entries:
     - name: kickside.identity:ui_server
       value: app:gateway
 
-  - version: ">=0.1.64"
+  - version: ">=0.1.68"
     name: kickside_inbox
     kind: ns.dependency
     meta: {}
@@ -108,14 +108,12 @@ entries:
     component: kickside/realtime
 
   # app.deps:kickside_security
-  - version: ">=0.2.16"
+  - version: ">=0.2.20"
     name: kickside_security
     kind: ns.dependency
     meta: {}
     component: kickside/security
     parameters:
-      - name: kickside.security:delegation_validator
-        value: app.security:delegation_validator
       - name: kickside.security:sessions_invalidator
         value: kickside.users.persist:session_revoker
       - name: api_router
@@ -193,7 +191,7 @@ entries:
     - name: kickside.ui.security:admin_scope
       value: app.security:admin
 
-  - version: ">=0.2.11"
+  - version: ">=0.2.14"
     name: kickside_users
     kind: ns.dependency
     meta: {}

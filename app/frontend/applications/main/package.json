@@ -43,6 +43,7 @@
     "build": "vite build",
     "build:debug": "vite build --mode development",
     "dev": "vite build --watch",
+    "test": "vitest run --environment happy-dom",
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {

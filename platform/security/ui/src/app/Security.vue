@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
@@ -157,6 +157,7 @@ const canSave = computed(() => !!draft.value && draft.value.slug.trim() !== '' &
 // alone left it ambiguous whether the change persisted.
 const savedMsg = ref('')
 let savedTimer: ReturnType<typeof setTimeout> | null = null
+onUnmounted(() => { if (savedTimer) clearTimeout(savedTimer) })
 function flashSaved(msg: string) {
   savedMsg.value = msg
   if (savedTimer) clearTimeout(savedTimer)
@@ -210,10 +211,10 @@ function shortId(id: string): string {
     <Tabs class="ks-tabs" :value="activeTab" @update:value="selectTab">
       <TabList :pt="{ tabList: { 'aria-label': 'Security administration' } }">
         <Tab value="scopes">Roles</Tab>
-        <Tab value="delegations" data-tab="delegations">Act-as grants</Tab>
+        <Tab value="delegations" data-tab="delegations">Run as</Tab>
       </TabList>
     </Tabs>
-    <Delegations v-if="delegationsOpened" v-show="activeTab === 'delegations'" ref="delegationPanel" />
+    <Delegations v-if="delegationsOpened" v-show="activeTab === 'delegations'" ref="delegationPanel" :scopes="scopes" />
     <Notice v-if="error" severity="danger" class="ks-top-notice" @dismiss="error = ''">{{ error }}</Notice>
     <Notice v-else-if="savedMsg" severity="success" class="ks-top-notice" @dismiss="savedMsg = ''">{{ savedMsg }}</Notice>
 

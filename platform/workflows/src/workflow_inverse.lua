@@ -19,6 +19,9 @@ local function full_node_body(n: any): any
     return {
         id = n.id, kind = n.kind, ref = n.ref, title = n.title,
         config = copy_map(n.config),
+        retry_policy = n.retry_policy ~= nil and copy_tree(n.retry_policy) or false,
+        start_to_close_timeout = n.start_to_close_timeout ~= nil and n.start_to_close_timeout or false,
+        schedule_to_close_timeout = n.schedule_to_close_timeout ~= nil and n.schedule_to_close_timeout or false,
         status = n.status,
     }
 end

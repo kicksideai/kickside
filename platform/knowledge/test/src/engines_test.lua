@@ -7,6 +7,22 @@ local test = require("test")
 local engines = require("engines")
 
 local function define_tests()
+    test.describe("engine ingestion projection", function()
+        test.it("selects the first declared content consumer instead of a fixed engine kind", function()
+            local first = {kind = "fixture.ledger", projection_key = "ledger", cursor_key = "fold",
+                events = {input = {{type = "kickside.knowledge.events:content.upserted"}}}}
+            local second = {kind = "fixture.statistics", events = first.events}
+            local selected, err = engines.ingest_projection({projections = {
+                {kind = "fixture.other", events = {input = {{type = "fixture:other"}}}}, first, second}})
+            test.is_nil(err)
+            test.eq(selected, first)
+        end)
+        test.it("refuses an engine without a content consumer", function()
+            local selected, err = engines.ingest_projection({projections = {}})
+            test.is_nil(selected)
+            test.is_true(errors.is(err, errors.INVALID))
+        end)
+    end)
     test.describe("engines.format_stats", function()
         test.it("resolves dotted paths and pluralizes by count", function()
             local spec = {

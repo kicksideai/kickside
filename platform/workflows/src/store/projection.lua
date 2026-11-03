@@ -8,22 +8,43 @@ local now, encode, decode, copy_tree, decode_optional, encode_config, encode_sch
     I.now, I.encode, I.decode, I.copy_tree, I.decode_optional, I.encode_config, I.encode_schema_optional, I.num, I.query
 local exec = store_state.exec
 
+local function encode_retry(value: any): string
+    if value == false or value == nil then return "null" end
+    local encoded, err = I.json.encode(value)
+    if err then error("encode node retry field: " .. tostring(err)) end
+    return encoded
+end
+
+local function decode_retry(raw: any): any
+    if raw == nil or raw == "null" then return nil end
+    local value, err = I.json.decode(raw)
+    if err then error("decode node retry field: " .. tostring(err)) end
+    return value
+end
+
 local function node_upsert(h: any, workflow_id: string, p: any): error?
     local ts = now()
     return exec(h, [[
         INSERT INTO ]] .. T.NODES .. [[
-            (workflow_id, id, kind, ref, title, config, status, created_by, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            (workflow_id, id, kind, ref, title, config, status, created_by, created_at, updated_at,
+                retry_policy, start_to_close_timeout, schedule_to_close_timeout)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         ON CONFLICT(workflow_id, id) DO UPDATE SET
             kind = excluded.kind,
             ref = excluded.ref,
             title = excluded.title,
             config = excluded.config,
+            retry_policy = excluded.retry_policy,
+            start_to_close_timeout = excluded.start_to_close_timeout,
+            schedule_to_close_timeout = excluded.schedule_to_close_timeout,
             status = excluded.status,
             updated_at = excluded.updated_at
     ]], {
         workflow_id, tostring(p.id or ""), tostring(p.kind or ""), p.ref, p.title,
         encode_config(p.config), tostring(p.status or "active"), p.created_by, ts, ts,
+        encode_retry(p.retry_policy),
+        encode_retry(p.start_to_close_timeout),
+        encode_retry(p.schedule_to_close_timeout),
     })
 end
 
@@ -39,6 +60,9 @@ local function node_update(h: any, workflow_id: string, p: any): error?
     if p.title ~= nil then put("title", p.title) end
     if p.config ~= nil then put("config", encode_config(p.config)) end
     if p.status ~= nil then put("status", p.status) end
+    for _, field in ipairs(types.RETRY_FIELDS) do
+        if p[field] ~= nil then put(field, encode_retry(p[field])) end
+    end
     params[#params + 1] = tostring(p.id or "")
     params[#params + 1] = workflow_id
     return exec(h, "UPDATE " .. T.NODES .. " SET " .. table.concat(sets, ", ") ..
@@ -308,6 +332,9 @@ function M.list_nodes(h: any, workflow_id: string, options: any): (any?, error?)
             title = r.title,
             config = schema_json.normalize_config_schemas(decode(r.config)),
             status = r.status,
+            retry_policy = decode_retry(r.retry_policy),
+            start_to_close_timeout = decode_retry(r.start_to_close_timeout),
+            schedule_to_close_timeout = decode_retry(r.schedule_to_close_timeout),
         }
     end
     return out, nil

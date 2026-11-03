@@ -165,7 +165,9 @@ entries:
         bases and opens a KB detail view that mounts the KB engine's own
         component. Takes the route prop (the sub-path under /knowledge: "" for
         the list, "kbId" or "kbId/nodeId" for deep links) and emits navigate
-        with the new sub-path for the shell to reflect into the URL.
+        with the new sub-path for the shell to reflect into the URL. Nested
+        Back emits {path: kbId, back: {within: kbId}} so the shell can go Back
+        within that base, or open its root when following a direct link.
       announced: true
       tag_name: kickside-knowledge
       base_path: kickside-knowledge

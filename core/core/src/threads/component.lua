@@ -201,7 +201,8 @@ function component.list_thread_components(
     meta_filters: { [string]: any }?,
     access_mask: integer,
     limit: integer,
-    start_offset: integer?
+    start_offset: integer?,
+    impl_id: string?
 ): (string[]?, error?, { [string]: ComponentDisplay }?, table?)
     local svc, svc_err = open()
     if svc_err then
@@ -210,7 +211,7 @@ function component.list_thread_components(
 
     -- Thread-backed components are identified by public meta.type=thread. Their
     -- impl_id may be the generic thread shell or a real declared component kind
-    -- such as uploads/inbox, so list scoping must not depend on impl_id.
+    -- such as uploads/inbox. An optional implementation narrows the kind set.
     local meta: { [string]: any } = { type = "thread" }
     if type(meta_filters) == "table" then
         for key, value in pairs(meta_filters) do
@@ -221,6 +222,10 @@ function component.list_thread_components(
         access_mask = access_mask,
         meta = meta,
     }
+
+    if type(impl_id) == "string" and impl_id ~= "" then
+        filters.impl_ids = { impl_id }
+    end
 
     -- The component service caps a single page at PAGE_MAX; the access-id set this
     -- resolves can exceed it, so page through until limit ids are gathered or the

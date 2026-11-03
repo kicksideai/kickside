@@ -1,4 +1,6 @@
 @import "@wippy-fe/theme/theme-config.css";
+/* Shared PickerSelect (searchable grouped single-select) styles. */
+@import "@widgets/app/pickerselect.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
 @import "@kickside/ui-kit/kx-tokens.css";

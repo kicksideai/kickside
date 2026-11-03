@@ -201,6 +201,15 @@ function user_groups_repo.get_user_groups(user_id, opts)
     }
 end
 
+function user_groups_repo.get_user_groups_batch(user_ids)
+    if type(user_ids) == "table" and #user_ids == 0 then return {}, nil end
+    local db, err = get_db()
+    if err then return nil, err end
+    local memberships, read_err = support.read_page_memberships(db, user_ids)
+    db:release()
+    return memberships, read_err
+end
+
 function user_groups_repo.get_group_users(group_id, opts)
     if not group_id or group_id == "" then
         return nil, consts.ERROR.MISSING_REQUIRED_FIELD .. "group_id"

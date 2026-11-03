@@ -5,7 +5,7 @@ local RESERVED_METADATA = {
     security_groups = true, login_time = true, scope_id = true, scope_used = true,
     created_at = true, is_admin = true,
     principal = true, authorized_by = true, component_id = true, execution_root = true,
-    authority_epochs = true,
+    authority_epochs = true, session = true, ip_address = true, user_agent = true,
     credential_id = true, link_id = true, execution_identity = true,
     _execution_identity = true, inherited_identity = true,
 }
@@ -17,7 +17,8 @@ function M.merge(destination, extra)
     end
 end
 
-function M.actor(user, authority_epochs, scope_id, groups, login_time, extra)
+function M.actor(user, authority_epochs, scope_id, groups, session_context, extra)
+    session_context = type(session_context) == "table" and session_context or {}
     local metadata = {
         authority_epochs = authority_epochs,
         user_id = user.user_id,
@@ -26,7 +27,11 @@ function M.actor(user, authority_epochs, scope_id, groups, login_time, extra)
         status = user.status,
         security_groups = groups,
         scope_id = scope_id,
-        login_time = login_time,
+        session = {
+            login_time = session_context.login_time,
+            ip_address = session_context.ip_address,
+            user_agent = session_context.user_agent,
+        },
     }
     M.merge(metadata, extra)
     return metadata

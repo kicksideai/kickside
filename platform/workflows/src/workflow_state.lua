@@ -4,6 +4,7 @@
 local uuid = require("uuid")
 local json = require("json")
 local mapping = require("mapping")
+local schema_json = require("schema_json")
 local policy = require("policy")
 local types = require("types")
 
@@ -115,6 +116,10 @@ local function node_from(p: any, prior: any): any
     if p.title ~= nil then n.title = p.title end
     if p.config ~= nil then n.config = copy_map(p.config) end
     if p.status ~= nil then n.status = p.status end
+    for _, field in ipairs(types.RETRY_FIELDS) do
+        if p[field] == false then n[field] = nil
+        elseif p[field] ~= nil then n[field] = copy_tree(p[field]) end
+    end
     if n.config == nil then n.config = {} end
     if n.status == nil then n.status = "active" end
     return n
@@ -462,6 +467,10 @@ local function pipeline(items: any, state: any, from_commands: boolean, opts: an
             end
         end
         local body = copy_tree(raw_body)
+        if (etype == E.NODE_ADDED or etype == E.NODE_UPDATED)
+            and type(body.retry_policy) == "table" and next(body.retry_policy) == nil then
+            body.retry_policy = schema_json.empty_object()
+        end
 
         if from_commands and ADD_COMMANDS[raw_type] and not is_str(body.id) then
             body.id = uuid.v4()

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.settings
+entries:
+  - name: settings
+    kind: contract.definition
+    meta:
+      comment: Harness Settings read surface for Jobs capacity declarations.
+    methods:
+      - name: get
+        description: Reads one capacity value.
+
+  - name: capacity_fixture
+    kind: function.lua
+    meta:
+      comment: Returns declared capacity limits for Jobs claim tests.
+    source: file://capacity_fixture.lua
+    method: get
+
+  - name: capacity_binding
+    kind: contract.binding
+    meta:
+      comment: Binds the harness Settings capacity reader.
+    contracts:
+      - contract: kickside.settings:settings
+        default: true
+        methods:
+          get: kickside.settings:capacity_fixture

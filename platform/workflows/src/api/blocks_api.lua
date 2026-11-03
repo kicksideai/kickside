@@ -11,7 +11,7 @@ type Map = { [string]: any }
 
 local DETAIL_FIELDS = {
     blurb = true, input_schema = true, config_schema = true, config_wc = true, output_schema = true,
-    error_schema = true, ports = true,
+    error_schema = true, ports = true, execution = true,
 }
 
 local function requested_fields(raw: any): (Map?, string?)

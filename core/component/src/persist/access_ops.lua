@@ -50,30 +50,20 @@ local function grant_access(tx: Executor, _db: Executor, command: component_type
     local access_mask, mask_err = access_policy.normalize_access_mask(payload.access_mask)
     if mask_err then return nil, mask_err end
 
-    local result, err = sql.builder.update(component_types.TABLES.ACCESS)
-        :set("access_mask", access_mask)
-        :where("component_id = ?", payload.component_id)
-        :where("subject_type = ?", subject.subject_type)
-        :where("subject_id = ?", subject.subject_id)
-        :where("source_component_id = ?", payload.component_id)
+    local _, err = sql.builder.insert(component_types.TABLES.ACCESS)
+        :set_map({
+            access_id = uuid.v7(),
+            subject_id = subject.subject_id,
+            subject_type = subject.subject_type,
+            component_id = payload.component_id,
+            source_component_id = payload.component_id,
+            access_mask = access_mask,
+            inherited = 0,
+            created_at = time.now():utc():format_rfc3339(),
+        })
+        :suffix("ON CONFLICT (subject_type, subject_id, component_id, source_component_id) DO UPDATE SET access_mask = excluded.access_mask")
         :run_with(tx):exec()
-    if err then return nil, internal("failed to update access", err) end
-
-    if result.rows_affected == 0 then
-        local _, insert_err = sql.builder.insert(component_types.TABLES.ACCESS)
-            :set_map({
-                access_id = uuid.v7(),
-                subject_id = subject.subject_id,
-                subject_type = subject.subject_type,
-                component_id = payload.component_id,
-                source_component_id = payload.component_id,
-                access_mask = access_mask,
-                inherited = 0,
-                created_at = time.now():utc():format_rfc3339(),
-            })
-            :run_with(tx):exec()
-        if insert_err then return nil, internal("failed to grant access", insert_err) end
-    end
+    if err then return nil, internal("failed to grant access", err) end
 
     return {
         component_id = payload.component_id,

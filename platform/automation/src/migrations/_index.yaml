@@ -66,6 +66,9 @@ entries:
     kind: function.lua
     meta:
       type: migration
+      # The repair provisions through the current Jobs API. The migration
+      # runner orders by timestamp, not registry lifecycle dependencies.
+      timestamp: "2026-10-28T00:00:24Z"
       depends_on: [ns:wippy.migration, kickside.core.jobs.migrations:21_retire_upload_intent_slot]
     source: file://13_stranded_drives.lua
     method: migration
@@ -76,6 +79,7 @@ entries:
     kind: function.lua
     meta:
       type: migration
+      timestamp: "2026-10-28T00:00:25Z"
       depends_on: [kickside.automation.migrations:13_stranded_drives]
     source: file://14_stranded_drive_wake_recovery.lua
     method: migration

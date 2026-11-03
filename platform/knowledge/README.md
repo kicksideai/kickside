@@ -19,9 +19,17 @@ Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
 
+## Engine ingestion
+
+An engine declares its primary-thread projections in `meta.projections`. The first
+projection that consumes `kickside.knowledge.events:content.upserted` supplies the
+ingest receipt and status cursor. Creation provisions the declared cursors before
+returning; ingestion addresses that cursor without registering another projection.
+
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.

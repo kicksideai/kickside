@@ -30,7 +30,9 @@ entries:
     method: handler_save
     modules: [http, json]
     security:
-      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_validate_call]
+      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_directory_get,
+        kickside.security:delegation_directory_open, kickside.security:delegation_directory_groups,
+        kickside.security:delegation_component_read]
     imports:
       delegation: kickside.security:delegation
       api_errors: kickside.security.api:errors
@@ -70,6 +72,20 @@ entries:
     method: GET
     path: /security/delegations
     func: delegation_list_http
+  - name: delegation_roots_http
+    kind: function.lua
+    source: file://delegation.lua
+    method: handler_roots
+    modules: [http, json]
+    imports:
+      delegation: kickside.security:delegation
+      api_errors: kickside.security.api:errors
+  - name: delegation_roots.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    path: /security/delegations/roots
+    func: delegation_roots_http
   - name: errors
     kind: library.lua
     source: file://errors.lua
