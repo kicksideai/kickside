@@ -104,6 +104,7 @@ local function handler()
                     external_id = result.external_id,
                     thread_id = result.thread_id,
                     projection_id = result.projection_id,
+                    run_id = result.run_id,
                     trace_context = result.trace_context,
                 })
             end

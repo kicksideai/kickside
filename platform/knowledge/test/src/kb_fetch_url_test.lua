@@ -4,9 +4,45 @@ local test = require("test")
 local fetch_url = require("fetch_url")
 local http_stub = require("http_stub")
 local llm_stub = require("llm_stub")
+local component_stub = require("component_stub")
 
 local function define_tests()
 	test.describe("kb_ingest fetch_url extraction", function()
+        for _, engine in ipairs({ "document", "wiki", "memory" }) do
+            test.it("admits fetched text through the " .. engine .. " binding", function()
+                local request = nil
+                local receipt = { success = true, thread_id = "kb-fetch-url", external_id = "url:page", external_version = "v2",
+                    trace_context = { trace_id = "fetch-trace" }, source_ref = { kind = "url" } }
+                if engine == "memory" then receipt.run_id = "derive-run" else receipt.projection_id = "projection" end
+                component_stub.open = function(id, access, contract_id)
+                    test.eq(id, "kb-fetch-url")
+                    test.eq(access, component_stub.ACCESS.WRITE)
+                    test.eq(contract_id, "kickside.contract:embeddable")
+                    return { embed_content = function(_, args) request = args; return receipt, nil end }, nil
+                end
+                http_stub.get = function()
+                    return { status_code = 200, headers = { ["Content-Type"] = "text/plain" }, body = "Reference text" }, nil
+                end
+                local result, err = fetch_url.handle({ url = "https://example.com/page.txt", kb_id = "kb-fetch-url", external_version = "v2" })
+                test.is_nil(err, tostring(err))
+                test.not_nil(request)
+                test.eq(request.content, "Reference text")
+                test.eq(request.source_ref.kind, "url")
+                test.eq(request.external_version, "v2")
+                for key, value in pairs(receipt) do test.eq(result[key], value, key) end
+            end)
+        end
+        test.it("returns the bound engine's refusal without admitting a document", function()
+            component_stub.open = function()
+                return { embed_content = function() return { success = false, error = "content admission refused" }, nil end }, nil
+            end
+            http_stub.get = function()
+                return { status_code = 200, headers = { ["Content-Type"] = "text/plain" }, body = "Reference text" }, nil
+            end
+            local result, err = fetch_url.handle({ url = "https://example.com/page.txt", kb_id = "kb-fetch-url" })
+            test.is_nil(result)
+            test.contains(tostring(err), "content admission refused")
+        end)
 		test.it("extracts from the complete fetched page", function()
 			local page = string.rep("Line of page text about the product.\n", 4000)
 			local source_text: string? = nil
