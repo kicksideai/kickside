@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.75](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.74...knowledge-v0.1.75) (2026-11-03)
+
+
+### Bug Fixes
+
+* **knowledge:** admit content through the bound engine ([#292](https://github.com/kicksideai/kickside/issues/292)) ([759a4f7](https://github.com/kicksideai/kickside/commit/759a4f783e79a06e232ddea7c82e2238ce0790b1))
+
 ## [0.1.74](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.73...knowledge-v0.1.74) (2026-10-30)
 
 
