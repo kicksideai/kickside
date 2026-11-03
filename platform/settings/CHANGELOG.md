@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.4](https://github.com/kicksideai/kickside/compare/settings-v0.3.3...settings-v0.3.4) (2026-11-03)
+
+
+### Features
+
+* **settings:** report overridden keys from get_namespace ([#299](https://github.com/kicksideai/kickside/issues/299)) ([4a3d80e](https://github.com/kicksideai/kickside/commit/4a3d80e01974709bfa8f6a826c2f9aaa6e594005))
+
+
+### Bug Fixes
+
+* **settings:** default the change keeper to the host's processes ([#301](https://github.com/kicksideai/kickside/issues/301)) ([826c844](https://github.com/kicksideai/kickside/commit/826c84437413170d45f467000f8505a8ddc2411f))
+
 ## [0.3.3](https://github.com/kicksideai/kickside/compare/settings-v0.3.2...settings-v0.3.3) (2026-11-03)
 
 
