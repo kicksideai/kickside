@@ -75,6 +75,39 @@ entries:
       test: wippy.test:test
       settings_writer: kickside.settings.persist:settings_writer
 
+  - name: changes_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: Committed revisions reach every keeper; keepers reload and tell local subscribers once.
+    source: file://changes_test.lua
+    method: run
+    modules: [contract, security, sql, json, time, channel, process]
+    imports:
+      test: wippy.test:test
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_changes: kickside.settings:settings_changes
+
+  - name: change_listener
+    kind: process.lua
+    meta: { comment: Harness subscriber that forwards settings revisions to the test process. }
+    source: file://change_listener.lua
+    method: main
+    modules: [process, channel]
+    imports:
+      settings_changes: kickside.settings:settings_changes
+
+  - name: keeper_peer
+    kind: process.lua
+    meta: { comment: Harness stand-in for a keeper joining from another node. }
+    source: file://keeper_peer.lua
+    method: main
+    modules: [pg, process]
+    imports:
+      settings_changes: kickside.settings:settings_changes
+
   - name: cache_bootloader_dedup_test
     kind: function.lua
     meta: { type: test, suite: kickside_settings, group: KickSide Settings }
@@ -283,6 +316,8 @@ entries:
         value: app:api
       - name: kickside.settings:ui_server
         value: app:gateway
+      - name: kickside.settings:process_host
+        value: app:processes
 
   - name: dep.wippy.security
     kind: ns.dependency

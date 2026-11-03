@@ -98,6 +98,8 @@ entries:
   parameters:
   - name: kickside.users:env_storage
     value: app.env:store
+  - name: kickside.settings:process_host
+    value: app:processes
   - name: kickside.users:public_router
     value: app:api.public
   - name: kickside.users:api_router

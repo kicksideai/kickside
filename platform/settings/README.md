@@ -68,6 +68,7 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | [`kickside.settings:target_db`](src/_index.yaml) | Host supplies the value |
 | [`kickside.settings:api_router`](src/_index.yaml) | Host supplies the value |
 | [`kickside.settings:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.settings:process_host`](src/_index.yaml) | Host supplies the value |
 
 ## Links
 
