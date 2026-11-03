@@ -84,7 +84,7 @@ entries:
       comment: Committed revisions reach every keeper; keepers reload and tell local subscribers once.
     source: file://changes_test.lua
     method: run
-    modules: [contract, security, sql, json, time, channel, process]
+    modules: [contract, security, sql, json, time, channel, process, registry]
     imports:
       test: wippy.test:test
       settings_writer: kickside.settings.persist:settings_writer
@@ -316,8 +316,6 @@ entries:
         value: app:api
       - name: kickside.settings:ui_server
         value: app:gateway
-      - name: kickside.settings:process_host
-        value: app:processes
 
   - name: dep.wippy.security
     kind: ns.dependency

@@ -47,6 +47,9 @@ entries:
 
   - name: process_host
     kind: ns.requirement
+    # Hosts that installed Settings before the keeper existed keep booting on
+    # update; an explicit binding takes precedence.
+    default: app:processes
     meta:
       value_kind: process.host
       description: Process host the per-node settings change keeper runs on.
