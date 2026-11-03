@@ -31,6 +31,75 @@ content deduplication and queues the declared ingestion pipeline. Result snapsho
 use `store_file` so storing a permitted tool result does not require access to
 another component or start jobs.
 
+## Upload lifecycle and completion callbacks
+
+An upload moves through storage, processing, and completion:
+
+1. The client or module submits bytes: `POST /uploads` (multipart), the presigned
+   flow (`POST /uploads/presigned`, then `POST /uploads/complete`), or
+   `kickside.uploads:uploads.upload_file(actor_id, data, filename, size, mime_type, storage_id, metadata, parent_upload_id)`.
+2. Uploads stores the original and queues the processing pipeline that the
+   matching `upload.type` declares (text extraction, Markdown conversion, OCR,
+   archive expansion). Each stage writes artifacts; the primary artifact holds
+   the readable text an agent or Knowledge base consumes.
+3. When processing settles as `completed` or `error`, Uploads runs every
+   completion callback attached to the upload.
+
+Work that depends on a processed file attaches a completion callback instead of
+polling upload status. A callback is an upload token minted by the module that
+owns the follow-up work:
+
+```lua
+local execution_identity = require("execution_identity") -- kickside.execution:execution_identity
+local upload_tokens = require("upload_tokens")           -- kickside.uploads.persist:upload_tokens
+
+local identity = assert(execution_identity.capture())
+local row = assert(execution_identity.to_row(identity))
+local upload_id = uuid.v4()
+local token = assert(upload_tokens.pack({
+    upload_id = upload_id,                    -- the record Uploads creates for these bytes
+    function_id = "my.module:on_file_ready",  -- runs when processing completes
+    on_error_id = "my.module:on_file_failed", -- optional; runs when processing fails
+    actor_id = row.actor_id,
+    actor_context = row.actor_context,
+    params = { record_id = record_id },       -- returned to the callback unchanged
+}))
+```
+
+Attach the token as the `upload_token` multipart field of `POST /uploads`, as
+`upload_token` in the presigned or complete request body, or as
+`metadata.__upload_token` for `upload_file`. Several tokens may be attached as
+`metadata.__upload_tokens`.
+
+Uploads runs each callback as a durable Jobs job under the identity frozen in
+the token, with up to eight attempts, once per upload, token and outcome. The
+function receives:
+
+| Field | Value |
+| --- | --- |
+| `upload_id` | The processed upload |
+| `status` | `completed` or `error` |
+| `error` | The failure message when `status` is `error` |
+| `mime_type`, `size`, `type_id` | The upload's detected type and size |
+| `storage_id`, `storage_path` | Where the original is stored |
+| `metadata` | Upload metadata without `_`-prefixed internal keys |
+| `params` | The token's `params` |
+| `trace_context` | The trace the token started |
+
+Read derived content from the upload's artifacts (the primary artifact for
+text) with the same authority. A failed upload without `on_error_id` runs no
+callback.
+
+Identical bytes from the same owner reuse an existing upload. A callback
+attached to such an upload runs at once with that upload's settled outcome, or
+waits until it settles. An archive runs no callback itself: each extracted
+member carries the archive's tokens, rebound to that member, and runs them when
+it settles.
+
+Knowledge ingestion uses this flow: `kickside.knowledge.api:upload_token` mints
+a token for `kickside.knowledge.injection:on_upload_complete`, and the
+Knowledge URL fetch tool attaches one before it stores fetched content.
+
 ## Packed storage and delivery
 
 Available starting with Uploads 0.3.2. The default storage adapter accepts
