@@ -44,7 +44,7 @@ local function exercise(args: any): any
         if read_err then return nil, read_err end
         local _, delete_err = repo.delete(created.id)
         if delete_err then return nil, delete_err end
-        return {failure = tostring(failure), remaining = #rows, failed_head = failed_state.head_seq,
+        return {failure = tostring(failure), failed_id = failed_id, remaining = #rows, failed_head = failed_state.head_seq,
             created = created, replay = replay, state = state}
     end
     local created, err
@@ -113,7 +113,7 @@ end
 
 local function define_tests()
     test.describe("source-seeded workflow creation", function()
-        test.it("rolls back failed seeds and replays the same seeded workflow", function()
+        test.it("completes a failed seed on replay and seeds each workflow once", function()
             local actor = security.new_actor("source-atomic-" .. uuid.v4(), {})
             local scope = security.new_scope({security.policy("app:workflows_suite_policy")})
             local result, err = funcs.new():with_actor(actor):with_scope(scope):call("app:source_creation_exercise", {
@@ -122,11 +122,13 @@ local function define_tests()
             test.is_nil(err, tostring(err))
             test.not_nil(result)
             test.is_true(result.failure:find("injected seed projection failure", 1, true) ~= nil)
-            test.eq(result.remaining, 0, "failed seeding leaves no component")
-            test.eq(result.failed_head, 0, "failed seeding leaves no definition events")
+            test.eq(result.remaining, 1, "the registered draft survives a failed seed")
+            test.eq(result.failed_head, 0, "a failed seed writes no definition events")
+            test.eq(result.created.id, result.failed_id, "the same key completes the failed workflow")
+            test.is_true(result.created.replayed)
             test.eq(result.replay.id, result.created.id)
             test.is_true(result.replay.replayed)
-            test.eq(result.state.counts.nodes, 2)
+            test.eq(result.state.counts.nodes, 2, "a repeated create seeds the definition once")
             local start = result.state.nodes[1]
             test.eq(start.kind, "start")
             test.eq(canonical_json.encode(start.config.input_schema.required), canonical_json.encode({"customer_id", "region"}))

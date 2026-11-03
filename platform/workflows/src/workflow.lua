@@ -83,9 +83,17 @@ local function finish(db: any, tx: any?, primary: error?, committed: boolean): e
 end
 
 local function write_tx(tx: any, workflow_id: string, items: any, actor: any, from_commands: boolean,
-        runtime_policy: any, history_action: string?): (any?, error?)
+        runtime_policy: any, history_action: string?, empty_only: boolean?): (any?, error?)
     local lock_err = store.lock_history(tx, workflow_id)
     if lock_err then return nil, lock_err end
+    if empty_only then
+        local current_head, head_err = store.head_seq(tx, workflow_id)
+        if head_err then return nil, head_err end
+        if type(current_head) ~= "number" then
+            return nil, errors.new({message = "workflow head is unavailable", kind = errors.INTERNAL, retryable = false})
+        end
+        if current_head > 0 then return {workflow_id = workflow_id, events = {}, head_seq = current_head}, nil end
+    end
     local tracker, history_err = store.read_history(tx, workflow_id)
     if history_err then return nil, history_err end
     local entry: any = nil
@@ -165,13 +173,13 @@ local function write_tx(tx: any, workflow_id: string, items: any, actor: any, fr
 end
 
 local function write_attempt(workflow_id: string, items: any, actor: any, from_commands: boolean,
-        runtime_policy: any, history_action: string?): (any?, error?)
+        runtime_policy: any, history_action: string?, empty_only: boolean?): (any?, error?)
     local db, db_err = store.open_db()
     if db_err then return nil, db_err end
     if not db then return nil, errors.new({message = "workflow database unavailable", kind = errors.INTERNAL, retryable = false}) end
     local tx, tx_err = db:begin()
     if tx_err then return nil, finish(db, nil, errors.wrap(tx_err, "workflow begin failed"), false) end
-    local result, write_err = write_tx(tx, workflow_id, items, actor, from_commands, runtime_policy, history_action)
+    local result, write_err = write_tx(tx, workflow_id, items, actor, from_commands, runtime_policy, history_action, empty_only)
     if write_err then return nil, finish(db, tx, write_err, false) end
     if #result.events == 0 and not history_action then
         local cleanup_err = finish(db, tx, nil, false)
@@ -188,11 +196,12 @@ local function write_attempt(workflow_id: string, items: any, actor: any, from_c
     return result, nil
 end
 
-local function write(workflow_id: string, items: any, actor: any, from_commands: boolean, history_action: string?): (any?, error?)
+local function write(workflow_id: string, items: any, actor: any, from_commands: boolean, history_action: string?,
+        empty_only: boolean?): (any?, error?)
     if not is_str(workflow_id) then return nil, errors.new({message = "workflow id required", kind = errors.INVALID, retryable = false}) end
     local runtime_policy, policy_err = policy.policy()
     if policy_err or not runtime_policy then return nil, policy_err end
-    local result, err = write_attempt(workflow_id, items, actor, from_commands, runtime_policy, history_action)
+    local result, err = write_attempt(workflow_id, items, actor, from_commands, runtime_policy, history_action, empty_only)
     if err and errors.is(err, errors.CONFLICT) and err:retryable() == true then
         return nil, errors.new({ message = "workflow changed since you opened it, reload and retry",
             kind = errors.CONFLICT, retryable = true, details = err:details() })
@@ -206,12 +215,10 @@ function M.apply(workflow_id: string, commands: any, actor: any): (any?, any?)
     return write(workflow_id, commands, actor, true)
 end
 
--- The caller owns the transaction and commits definition writes with its component.
-function M.apply_tx(tx: any, workflow_id: string, commands: any, actor: any): (any?, error?)
-    if not is_str(workflow_id) then return nil, errors.new({message = "workflow id required", kind = errors.INVALID, retryable = false}) end
-    local runtime_policy, policy_err = policy.policy()
-    if policy_err or not runtime_policy then return nil, policy_err end
-    return write_tx(tx, workflow_id, commands, actor, true, runtime_policy)
+-- seed(workflow_id, commands, actor) applies commands only to a definition with no
+-- events yet, so a repeated seed of the same workflow writes once.
+function M.seed(workflow_id: string, commands: any, actor: any): (any?, any?)
+    return write(workflow_id, commands, actor, true, nil, true)
 end
 
 -- apply_events(workflow_id, events, actor) -> (result, err). Applies already-formed

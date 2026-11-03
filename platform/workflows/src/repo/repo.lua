@@ -14,7 +14,6 @@ local envelope = require("envelope")
 local automation = require("automation")
 local workflow = require("workflow")
 local schema_validate = require("schema_validate")
-local register = require("register")
 
 local M = {}
 type Map = { [string]: any }
@@ -185,9 +184,28 @@ local function enrich_rows(rows: { any }): (boolean, error?)
     return true, nil
 end
 
+-- Start/Finish nodes for a workflow whose items come from an automation source.
+local function source_seed(input_schema: any): { any }
+    return {
+        {type = "node.add", body = {id = "start", kind = "start", title = "Start", config = {input_schema = input_schema}}},
+        {type = "node.add", body = {id = "finish", kind = "finish", title = "Finish", config = {output_schema = {type = "object"}}}},
+        {type = "layout.set-position", body = {node_id = "start", x = 240, y = 80}},
+        {type = "layout.set-position", body = {node_id = "finish", x = 240, y = 340}},
+    }
+end
+
+local function seeded(created: any, input_schema: any): (any?, error?)
+    if not input_schema then return created, nil end
+    local _, seed_err = workflow.seed(created.id, source_seed(input_schema), actor_id())
+    if seed_err then return nil, errors.wrap(seed_err, "workflow source seed failed") end
+    return created, nil
+end
+
 -- create(title, parent_id?, idempotency_key?, source_context?) -> ({ id, title, replayed? }, err).
 -- A caller-supplied key is scoped to its actor and deterministically identifies one
 -- component, so duplicate POSTs replay the original draft instead of minting one.
+-- A source context seeds Start/Finish into an empty definition; a replay with the
+-- same key completes a seed that did not land.
 function M.create(title: any, parent_id: any?, supplied_key: any?, source_context: any?): (any?, error?)
     local input_schema: any = nil
     if source_context ~= nil then
@@ -219,38 +237,24 @@ function M.create(title: any, parent_id: any?, supplied_key: any?, source_contex
         component_id = id
         local existing, existing_err = existing_idempotent_workflow(component_id)
         if existing_err then return nil, existing_err end
-        if existing then return existing, nil end
+        if existing then return seeded(existing, input_schema) end
     end
 
+    local svc, err = M._open_service()
+    if not svc then return nil, err end
     local name = display_title(title)
-    local request = {
+    local res, reg_err = (svc :: any):register({
         impl_id = types.WORKFLOW_IMPL,
         meta = { title = name, icon = "tabler:route" },
         private_context = {},
         parent_id = (type(parent_id) == "string" and parent_id ~= "") and parent_id or nil,
         component_id = component_id,
-    }
-    local res, reg_err
-    if input_schema then
-        res = register.handle(request, function(tx: any, _db: any, id: string): (boolean, error?)
-            local _, seed_err = workflow.apply_tx(tx, id, {
-                {type = "node.add", body = {id = "start", kind = "start", title = "Start", config = {input_schema = input_schema}}},
-                {type = "node.add", body = {id = "finish", kind = "finish", title = "Finish", config = {output_schema = {type = "object"}}}},
-                {type = "layout.set-position", body = {node_id = "start", x = 240, y = 80}},
-                {type = "layout.set-position", body = {node_id = "finish", x = 240, y = 340}},
-            }, actor_id())
-            return seed_err == nil, seed_err
-        end)
-    else
-        local svc, err = M._open_service()
-        if not svc then return nil, err end
-        res, reg_err = (svc :: any):register(request)
-    end
+    })
     if reg_err or not res or (res :: any).success == false then
         if component_id then
             local existing, existing_err = existing_idempotent_workflow(component_id)
             if existing_err then return nil, existing_err end
-            if existing then return existing, nil end
+            if existing then return seeded(existing, input_schema) end
         end
         if reg_err then return nil, errors.wrap(reg_err, "workflow create failed") end
         local response_error = type(res) == "table" and (res :: any).error or nil
@@ -260,12 +264,11 @@ function M.create(title: any, parent_id: any?, supplied_key: any?, source_contex
         if component_id then
             local existing, existing_err = existing_idempotent_workflow(component_id)
             if existing_err then return nil, existing_err end
-            if existing then return existing, nil end
+            if existing then return seeded(existing, input_schema) end
         end
         return nil, errors.new({ kind = errors.INTERNAL, message = "workflow create returned no id" })
     end
-    local id = tostring(res.component_id)
-    return { id = id, title = name }, nil
+    return seeded({ id = tostring(res.component_id), title = name }, input_schema)
 end
 
 -- list(options?) -> ({ workflow }, err). `published_only` is the picker-facing
