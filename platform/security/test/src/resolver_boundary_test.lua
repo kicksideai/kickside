@@ -228,7 +228,7 @@ local function run()
             local relative_policy = "app.resolver_expression:relative"
             local qualified_policy = "app.resolver_expression:qualified"
             local relative_group = "app.resolver_expression:members"
-            -- Runtime v0.3.55a exposes fully qualified expression groups using
+            -- Runtime exposes fully qualified expression groups using
             -- the same canonical registry ID as ordinary policy groups.
             local qualified_group = "app.other:members"
             local changes = assert(registry.snapshot()):changes()
