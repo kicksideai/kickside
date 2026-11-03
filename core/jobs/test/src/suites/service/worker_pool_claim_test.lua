@@ -37,7 +37,7 @@ local function run_pool(claim_batch: (integer) -> (table[]?, error?), queued_wak
     local idle_ch = { case_receive = function(self) return self end }
     local wake_ch = { case_receive = function(self) return self end }
     local timer_ch = { case_receive = function(self) return self end }
-    local outcome = { backlog_reads = 0, claims = 0, cancels = 0, retired = 0, assignments = 0, timers = 0, max_drained = 0, trace = {} }
+    local outcome = { db_acquisitions = 0, backlog_reads = 0, claims = 0, cancels = 0, retired = 0, assignments = 0, timers = 0, max_drained = 0, trace = {} }
     local selections = 0
     local pending_wakes = queued_wakes or 0
     local pending_idle = queued_idle or 0
@@ -45,7 +45,9 @@ local function run_pool(claim_batch: (integer) -> (table[]?, error?), queued_wak
     local pool = worker_pool.new({
         job_class = { awaited_types = function() return awaited and { "awaited" } or {}, nil end },
         retention_schedule = job_fixture.no_retention_schedule,
-        sql_get = function() return {
+        sql_get = function()
+            outcome.db_acquisitions = outcome.db_acquisitions + 1
+            return {
             type = function() return sql.type.SQLITE end,
             query = function() outcome.trace[#outcome.trace + 1] = "deadline"; return { {} }, nil end,
             release = function() end,
@@ -142,6 +144,11 @@ end
 
 local function define_tests()
     test.describe("job pool claim refusals", function()
+        test.it("coalesces ordinary wakes without extra capacity SQL", function()
+            local empty = run_pool(function() return {}, nil end)
+            local waking = run_pool(function() return {}, nil end, 3)
+            test.eq(waking.db_acquisitions, empty.db_acquisitions)
+        end)
         test.it("observes both durable deadline classes in one database read", function()
             local db, dbtype, db_err = job_fixture.private_queue("app:private_queue_claim_selection_test")
             test.is_nil(db_err)

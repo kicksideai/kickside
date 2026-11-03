@@ -23,4 +23,9 @@ function M.supervise_loop(hooks, pid, opts)
 end
 function M.process_host() return "fixture-host" end
 function M.decode_payload(...) return {}, nil end
+function M.read(job)
+    if job and type(job.lease_policy) == "table" then return job.lease_policy, nil end
+    return M.policy()
+end
+function M.load_from(_, job) return M.read(job) end
 return M

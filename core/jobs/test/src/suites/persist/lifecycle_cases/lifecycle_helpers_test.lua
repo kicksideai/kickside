@@ -41,35 +41,9 @@ local function make_thread(db): string
     return id
 end
 
--- Insert a job already in running state under a known lease token.
+-- Create a fenced execution with the shared claim-snapshot fixture.
 local function make_running_job(db, dbtype, thread_id, attempts, max_attempts): table
-    local id = uuid.v7()
-    local token = uuid.v7()
-    local _, err = sql.builder.insert("kickside_job")
-        :set_map({
-            id = id,
-            owner_kind = "test",
-            owner_id = "lifecycle_test",
-            job_identity = "7:oneshot" .. tostring(#id) .. ":" .. id .. tostring(#id) .. ":" .. id,
-            thread_id = thread_id,
-            job_type = "test.job",
-            payload = "{}",
-            status = job_types.JOB_STATE.RUNNING,
-            attempts = attempts,
-            max_attempts = max_attempts,
-            queue_tier = job_types.QUEUE_TIER.LIVE,
-            lease_token = token,
-            execution_seq = 1,
-            lease_until = lifecycle.future_string(dbtype, 60),
-        })
-        :run_with(db)
-        :exec()
-    if err then
-        error("make_running_job failed: " .. tostring(err))
-    end
-    return { id = id, thread_id = thread_id, job_type = "test.job", attempts = attempts,
-        max_attempts = max_attempts, lease_token = token, execution_seq = 1, payload = "{}",
-        owner_kind = "test", owner_id = "lifecycle_test" }
+    return assert(job_fixture.running_job(db, dbtype, thread_id, attempts, max_attempts))
 end
 
 local function job_status(db, id): string?

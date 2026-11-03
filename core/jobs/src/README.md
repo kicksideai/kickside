@@ -114,3 +114,52 @@ job ID. When fan-out locks jobs, it includes that row in the globally ordered
 prelock without waking it unless it independently qualifies for a supplied key.
 With no fan-out job locks, completion takes its sole job lock itself. Wake keys
 are published before any job row is locked.
+
+## Live performance policy
+
+The editable policy paths are Settings definitions in namespace
+`kickside.core.jobs` (`kickside.core.jobs.policy.settings`):
+`worker.count_postgres` (default **4**, range 1–256), `worker.count_sqlite` (1–2),
+`worker.awaited_slots` (1–256), `worker.claim_batch` (1–256), `fairness.shares`
+(0–1000 per tier, nonzero total), `lease.timeout`, `lease.heartbeat`,
+`retry.max_attempts` (1–1000000), `retry.retry_after_ms` (1–86400000),
+`retry.max_delay_ms` (1000–86400000), and `proc.max_execution` (default **10m**).
+
+Precedence is administrator override, then the host assignment in
+`kickside.core.jobs:policy` meta, then the shipped default in its `defaults`.
+Settings stores only overrides; Jobs reads the keys `get_namespace` reports as
+`overridden`, so a value without an override follows the host configuration
+rather than the Settings default. Each override is validated by
+`kickside.core.jobs.policy:validate`, which resolves the whole policy with the
+candidate: durations are positive, the lease timeout is a whole number of
+seconds and at least 1s, and the heartbeat is strictly shorter. Edits that move
+both lease values may need the heartbeat lowered before the timeout.
+
+Without Settings, Jobs runs on its registry and host policy.
+
+The singleton pool owner subscribes to Settings change notifications before its
+first policy read. Each notification, registry commit and startup re-resolves the
+policy from the current overrides and applies it through the existing
+wake/idle/registry loop: there is no policy timer, revision table or polling. A
+failed read or resolution leaves the owner and its busy workers on the last good
+policy and retries on the owner's existing retry deadline. A smaller pool stops
+assigning surplus slots, lets busy slots finish, then retires them. An in-place
+upgrade hands the live slots, their assignments and the last good policy to the
+new code.
+
+Out-of-pool readers (enqueue attempt defaults and recovery batch limits) resolve
+the same committed policy through `kickside.core.jobs.policy:settings_overrides`,
+which reads Settings under its own policy, so callers need no Settings access.
+Fixed registry reads (`config.policy`) never include overrides.
+
+Every claim entry point persists its execution snapshot in `kickside_job.lease_policy`
+and passes it with the assignment. Dispatch, heartbeats, completion, retries,
+cancellation fences and reclaim preserve that snapshot after database reloads;
+live edits cannot shorten a running execution's renewal or termination window.
+Migration 24 leaves pre-upgrade running rows with NULL `lease_policy`. Those jobs
+started before live policy existed, so the shared execution-policy reader
+resolves NULL to the registry/host policy on every execution path. It never
+guesses timing from heartbeat/deadline timestamps or adopts later overrides.
+New executions use the new lease pair and execution ceiling; new one-shot jobs
+inherit the new attempt limit. Retry delays travel with the claim and apply when
+that execution fails. Job-specific attempt/execution limits retain precedence.

@@ -10,10 +10,12 @@
 -- one queue preserves the rows and schema of every other active suite.
 
 local sql = require("sql")
+local json = require("json")
 local process = require("process")
 local uuid = require("uuid")
 local lifecycle = require("lifecycle")
 local cfg = require("config")
+local committed_policy = require("runtime_policy")
 local wake = require("wake")
 
 local fixture = {}
@@ -272,13 +274,14 @@ end
 -- becomes due now. Returns the full leased row.
 function fixture.lease_own(db: sql.DB, dbtype: string, id: string?): (table?, error?)
     if not id or id == "" then return nil, failure("job fixture requires a job id") end
-    local policy, policy_err = cfg.policy()
+    local policy, policy_err = committed_policy.resolve()
     if policy_err then return nil, policy_err end
     local now = lifecycle.now_string(dbtype)
     local due = dbtype == sql.type.POSTGRES and "COALESCE(scheduled_at, CAST(? AS TIMESTAMPTZ))"
         or "COALESCE(scheduled_at, ?)"
     local result, update_err = sql.builder.update("kickside_job")
         :set("status", "running")
+        :set("lease_policy", assert(json.encode(cfg.capture(policy))))
         :set("attempts", sql.builder.expr("attempts + 1"))
         :set("execution_seq", sql.builder.expr("execution_seq + 1"))
         :set("lease_token", uuid.v7())
@@ -295,6 +298,7 @@ function fixture.lease_own(db: sql.DB, dbtype: string, id: string?): (table?, er
         :where(sql.builder.eq({ id = id })):run_with(db):query()
     if read_err then return nil, failure("leased job " .. id .. " unreadable", read_err) end
     if not rows or #rows ~= 1 then return nil, failure("leased job " .. id .. " is missing") end
+    rows[1].lease_policy = cfg.capture(policy)
     return rows[1] :: table, nil
 end
 
@@ -313,6 +317,24 @@ function fixture.enqueue_leased(db: sql.DB, dbtype: string, params: lifecycle.En
     local id, enqueue_err = lifecycle.enqueue_job(db, dbtype, own)
     if enqueue_err then return nil, enqueue_err end
     return fixture.lease_own(db, dbtype, tostring(id))
+end
+
+-- Lifecycle fixtures use the same claim snapshot path as execution fixtures;
+-- an attempt-count setup changes only the counter under test.
+function fixture.running_job(db: sql.DB, dbtype: string, thread_id: string?, attempts: integer, max_attempts: integer,
+        owner_id: string?): (table?, error?)
+    local scope = uuid.v7()
+    local id, enqueue_err = lifecycle.enqueue_job(db, dbtype, {
+        owner_locator = {kind = "test", id = owner_id or "lifecycle_test"},
+        job_identity = {namespace = "oneshot", scope = scope, key = scope},
+        thread_id = thread_id, job_type = "test.job", payload = {}, parked = true, max_attempts = max_attempts})
+    if enqueue_err then return nil, enqueue_err end
+    local job, claim_err = fixture.lease_own(db, dbtype, id)
+    if claim_err then return nil, claim_err end
+    local _, count_err = db:execute("UPDATE kickside_job SET attempts=$1 WHERE id=$2", {attempts, id})
+    if count_err then return nil, count_err end
+    job.attempts = attempts
+    return job, nil
 end
 
 -- Test-only public-contract caller: publish wake demand in its transaction and

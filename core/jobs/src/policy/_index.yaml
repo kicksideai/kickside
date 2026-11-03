@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.core.jobs.policy
+entries:
+- name: fields
+  meta:
+    comment: Lists editable policy paths and their presentation bounds.
+  kind: library.lua
+  source: file://fields.lua
+- name: runtime
+  meta:
+    comment: Resolves the committed policy from Settings overrides and subscribes to Settings changes.
+  kind: library.lua
+  source: file://runtime.lua
+  modules:
+  - funcs
+  - pg
+  - registry
+  - process
+  imports:
+    config: kickside.core.jobs:config
+- name: settings_reader
+  kind: security.policy
+  meta:
+    private: true
+    comment: The override reader opens the Settings contract and checks whether Settings is installed.
+  policy:
+    resources:
+    - kickside.settings:settings
+    actions:
+    - registry.get
+    - contract.get
+    - contract.open
+    - contract.call
+    effect: allow
+- name: settings_overrides
+  kind: function.lua
+  meta:
+    comment: Returns the Jobs policy values an administrator overrode in Settings.
+  source: file://settings_overrides.lua
+  method: run
+  modules:
+  - registry
+  - contract
+  imports:
+    config: kickside.core.jobs:config
+  security:
+    policies:
+    - kickside.core.jobs.policy:settings_reader
+- name: settings_overrides_lib
+  kind: library.lua
+  meta:
+    comment: The override reader as a library for the Settings validator.
+  source: file://settings_overrides.lua
+  modules:
+  - registry
+  - contract
+  imports:
+    config: kickside.core.jobs:config
+- name: validate
+  kind: function.lua
+  meta:
+    comment: Settings validate_func for Jobs policy values; accepts a value only when the policy it produces resolves.
+  source: file://validate.lua
+  method: run
+  imports:
+    config: kickside.core.jobs:config
+    policy_settings_overrides: kickside.core.jobs.policy:settings_overrides_lib
+  security:
+    policies:
+    - kickside.core.jobs.policy:settings_reader
+- name: execution
+  kind: library.lua
+  meta:
+    comment: Reads only the immutable snapshot captured by a claim.
+  source: file://execution.lua
+  modules:
+  - json
+  imports:
+    config: kickside.core.jobs:config

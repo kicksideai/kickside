@@ -257,8 +257,6 @@ M.CLAIM_REFUSAL = {
 -- Worker-pool sizing. The supervised worker process is the pool root: it keeps
 -- one linked claim-loop child per slot (one on sqlite's single writer) and
 -- respawns each exited slot.
-M.SQLITE_WORKERS = 1
-M.PG_WORKERS = 4
 M.MIN_WORKERS = 1
 M.MAX_WORKERS = 256
 

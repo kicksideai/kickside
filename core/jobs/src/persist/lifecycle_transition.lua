@@ -4,6 +4,7 @@ local time = require("time")
 local clock = require("clock")
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local enqueue = require("lifecycle_enqueue")
 local row_bytes = require("row_bytes")
 local row_mutations = require("row_mutations")
@@ -181,11 +182,13 @@ local function heartbeat_job(db_or_tx: Executor, job: table, dbtype: string): er
     if lease_token == "" then
         return (errors.new({ message = "missing lease_token for heartbeat", kind = errors.INVALID }) :: error)
     end
+    local captured, capture_err = execution_policy.load_from(db_or_tx, job)
+    if capture_err then return capture_err end
     local policy, policy_err = cfg.policy()
     if policy_err then return policy_err end
     if type(policy) ~= "table" then return response_error("policy") end
     local heartbeat_at = now_string(dbtype)
-    local lease_until = future_string(dbtype, (policy :: any).lease_timeout_seconds)
+    local lease_until = future_string(dbtype, captured.lease_timeout_seconds)
     local size_err = row_mutations.heartbeat(db_or_tx, job.id, heartbeat_at,
         lease_until, (policy :: any).max_row_bytes)
     if size_err then return size_err end
@@ -286,6 +289,8 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
         or retry_floor.retry_after_ms == math.huge) then
         return errors.new({kind = errors.INVALID, message = "retry floor requires nonnegative integer retry_after_ms"})
     end
+    local captured, capture_err = execution_policy.load_from(db_or_tx, job)
+    if capture_err then return capture_err end
     local policy, policy_err = cfg.policy()
     if policy_err then return policy_err end
     if type(policy) ~= "table" then return response_error("policy") end
@@ -298,8 +303,8 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
         local override, decode_err = resolve_max_backoff(job)
         if decode_err then return decode_err end
         local slot = job.slot == true or tonumber(job.slot) == 1
-        local base_ms = slot and (policy :: any).slot_retry_after_ms or (policy :: any).retry_after_ms
-        local cap_ms = slot and (policy :: any).slot_retry_max_delay_ms or (policy :: any).retry_max_delay_ms
+        local base_ms = slot and (policy :: any).slot_retry_after_ms or captured.retry_after_ms
+        local cap_ms = slot and (policy :: any).slot_retry_max_delay_ms or captured.retry_max_delay_ms
         local cap = (override and override >= 1) and override or math.floor(cap_ms / 1000)
         local base = math.max(1, math.ceil(base_ms / 1000))
         local ceiling = math.max(base, retry_delay_seconds(attempts, base, math.floor(cap) :: integer))

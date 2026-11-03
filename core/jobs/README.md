@@ -79,3 +79,10 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
+
+Administrators tune the worker pool, leases, retries and the execution limit
+in **System → Settings** when the host installs Settings. Postgres uses 4
+general workers and a 10-minute execution limit by default. Changes apply to the
+running pool without a restart; see
+[the runtime policy](src/README.md#live-performance-policy) for precedence,
+bounds and graceful slot retirement.
