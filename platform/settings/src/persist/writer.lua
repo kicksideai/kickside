@@ -1,9 +1,10 @@
 -- The canonical settings writer: the ONLY module that mutates an override. Every
 -- edit (the contract's set/unset, the admin PUT endpoint) flows through here, so
 -- there is a single write path. Each mutation validates against the declaration,
--- persists to kickside_settings, and updates the store.memory cache write-through.
--- It also owns the bulk DB read used to warm the cache (boot + cold-cache reload),
--- since it is the layer that holds DB access.
+-- persists to kickside_settings with a revision bump in one transaction, updates
+-- this node's store.memory cache, and publishes the revision so every other node
+-- reloads. It also owns the bulk DB read used to warm the cache (boot, cold-cache
+-- reload, and change propagation), since it is the layer that holds DB access.
 
 local sql = require("sql")
 local json = require("json")
@@ -12,6 +13,10 @@ local defs = require("settings_defs")
 local cache = require("settings_cache")
 local secrets = require("settings_secrets")
 local settings_types = require("settings_types")
+local changes = require("settings_changes")
+local logger = require("logger")
+
+local log = logger:named("kickside.settings.writer")
 
 local M = {}
 
@@ -52,14 +57,40 @@ local function run_validate(def: settings_types.Definition, value: settings_type
     return true
 end
 
+local function read_revision(dbh: any): (number?, any?)
+    local rows, qerr = dbh:query("SELECT revision FROM kickside_settings_revision WHERE id = 1", {})
+    if qerr then return nil, qerr end
+    local row = rows and rows[1]
+    if not row or row.revision == nil then return nil, "settings revision row is missing" end
+    return tonumber(row.revision), nil
+end
+
+-- stored_revision returns the committed override revision.
+function M.stored_revision(): (number?, any?)
+    local db, err = sql.get(settings_types.db_id())
+    if err then return nil, err end
+    if not db then return nil, "settings db unavailable" end
+    local dbh = db :: sql.DB
+    local revision, rerr = read_revision(dbh)
+    dbh:release()
+    return revision, rerr
+end
+
 -- reload reads every override row from the DB into the cache and returns the
--- resulting map. The bootloader calls this once at boot; reads call it on a cold
--- cache. Reads never hit the DB once the cache is warm.
+-- resulting map. The bootloader calls it at boot, reads call it on a cold cache,
+-- and the change keeper calls it when another node commits a newer revision.
+-- The revision is read before the rows, so the cache never claims a revision
+-- newer than the rows it holds.
 function M.reload(): (settings_types.OverrideMap?, any?)
     local db, err = sql.get(settings_types.db_id())
     if err then return nil, err end
     if not db then return nil, "settings db unavailable" end
     local dbh = db :: sql.DB
+    local revision, rerr = read_revision(dbh)
+    if rerr then
+        dbh:release()
+        return nil, rerr
+    end
     local rows, qerr = dbh:query(
         "SELECT namespace, key, value, value_type, updated_by, updated_at FROM kickside_settings", {})
     dbh:release()
@@ -91,8 +122,55 @@ function M.reload(): (settings_types.OverrideMap?, any?)
         }
         map[combine(r.namespace, r.key)] = rec
     end
-    cache.replace(map)
+    cache.replace(map, revision :: number)
     return map
+end
+
+-- commit runs one override mutation and the revision bump in a transaction and
+-- returns the new revision.
+local function commit(statement: string, params: { any }): (number?, any?)
+    local db, err = sql.get(settings_types.db_id())
+    if err or not db then return nil, "settings db unavailable" end
+    local dbh = db :: sql.DB
+    local tx, terr = dbh:begin()
+    if terr or not tx then
+        dbh:release()
+        return nil, "settings write failed: " .. tostring(terr)
+    end
+    local _, xerr = tx:execute(statement, params)
+    if not xerr then
+        _, xerr = tx:execute("UPDATE kickside_settings_revision SET revision = revision + 1 WHERE id = 1", {})
+    end
+    local revision: number? = nil
+    if not xerr then revision, xerr = read_revision(tx) end
+    if xerr then
+        tx:rollback()
+        dbh:release()
+        return nil, "settings write failed: " .. tostring(xerr)
+    end
+    local _, cerr = tx:commit()
+    dbh:release()
+    if cerr then return nil, "settings write failed: " .. tostring(cerr) end
+    return revision, nil
+end
+
+-- apply updates this node's cache after a commit at revision. The local change
+-- applies in place only when no other write committed in between; otherwise the
+-- cache reloads every row. Every node then learns the revision.
+local function apply(map: settings_types.OverrideMap, cached_revision: number?, revision: number): (boolean, any?)
+    if cached_revision == revision - 1 then
+        cache.replace(map, revision)
+    else
+        local reloaded, rerr = M.reload()
+        if not reloaded then return false, rerr end
+    end
+    local _, perr = changes.publish(revision)
+    if perr then
+        -- The change is committed; nodes that miss this revision reload on the next
+        -- change or when cluster membership changes.
+        log:error("settings change publication failed", { revision = revision, error = tostring(perr) })
+    end
+    return true
 end
 
 -- set validates the value against the declaration, upserts the override row, and
@@ -112,6 +190,7 @@ function M.set(ns: any, key: any, value: any, actor_id: any): (boolean, any?)
         if not reloaded then return false, rerr end
         map = reloaded
     end
+    local cached_revision = cache.revision()
 
     -- Declarative on-change validation: the previous override value (nil = still
     -- the declared default) is passed so a validate_func can compare transitions.
@@ -130,26 +209,21 @@ function M.set(ns: any, key: any, value: any, actor_id: any): (boolean, any?)
         stored = enc :: string
     end
 
-    local db, err = sql.get(settings_types.db_id())
-    if err or not db then return false, "settings db unavailable" end
-    local dbh = db :: sql.DB
     local now = time.now():utc():format_rfc3339()
-    local _, xerr = dbh:execute([[
+    local revision, xerr = commit([[
         INSERT INTO kickside_settings (namespace, key, value, value_type, updated_by, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6)
         ON CONFLICT (namespace, key) DO UPDATE SET
             value = excluded.value, value_type = excluded.value_type,
             updated_by = excluded.updated_by, updated_at = excluded.updated_at
     ]], { ns, key, stored, def.value_type, actor_id, now })
-    dbh:release()
-    if xerr then return false, "settings write failed: " .. tostring(xerr) end
+    if xerr or not revision then return false, xerr end
 
     map[combine(ns, key)] = {
         value = typed, value_type = def.value_type,
         updated_by = actor_id, updated_at = now,
     }
-    cache.replace(map)
-    return true
+    return apply(map, cached_revision, revision)
 end
 
 -- clear removes an override (revert to the declared default) from DB + cache.
@@ -161,17 +235,13 @@ function M.clear(ns: any, key: any, actor_id: any): (boolean, any?)
         if not reloaded then return false, rerr end
         map = reloaded
     end
-    local db, err = sql.get(settings_types.db_id())
-    if err or not db then return false, "settings db unavailable" end
-    local dbh = db :: sql.DB
-    local _, xerr = dbh:execute(
+    local cached_revision = cache.revision()
+    local revision, xerr = commit(
         "DELETE FROM kickside_settings WHERE namespace = $1 AND key = $2", { ns, key })
-    dbh:release()
-    if xerr then return false, tostring(xerr) end
+    if xerr or not revision then return false, xerr end
 
     map[combine(ns, key)] = nil
-    cache.replace(map)
-    return true
+    return apply(map, cached_revision, revision)
 end
 
 return M
